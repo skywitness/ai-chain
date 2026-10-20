@@ -19,6 +19,10 @@
 - 整合 run：`wf_6f186578-e36`，5 個步驟全數成功。
 - 截圖總覽：`artifacts/screens/index.html`。
 - 部署前一定要設定 `SITE_URL`（必要時也設定 `BASE_PATH`）。
+- **已上線（2026-10-20）**：https://skywitness.github.io/ai-chain/
+  - GitHub repo：https://github.com/skywitness/ai-chain（公開，分支 `main`）。
+  - push 到 `main` 時，`.github/workflows/deploy.yml` 會以 `BASE_PATH=/ai-chain/` 自動建置並部署。
+  - 第一次部署 run 39434199569 成功。線上檢查結果：首頁 3D 場景正常、console 沒有錯誤、中文搜尋「台積電」的第 2 筆就是公司頁。
 - **之後的更新**請依 **`docs/UPDATING.md`**。根目錄的 `CLAUDE.md` 會讓新的 session 自動讀到這份指南。
   - 參數產生器：`scripts/plan/make-update-args.mjs`。
   - `content-wf.js` 新增了 `financials-update` 與 `refresh` 兩種類型，以及 `asOf`（資料基準日）參數。
