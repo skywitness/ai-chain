@@ -1,5 +1,7 @@
 # AI 產業鏈全景
 
+🌐 **網站：<https://skywitness.github.io/ai-chain/>**
+
 由淺入深認識 AI 產業鏈：從電力、半導體設備、晶圓代工、記憶體、AI 晶片、網通、伺服器、資料中心，到雲端、基礎模型、開發工具、應用與實體 AI。網站以繁體中文（台灣用語）撰寫，並搭配 three.js 互動 3D 場景。
 
 ## 內容
@@ -45,6 +47,8 @@ npx astro preview  # 預覽正式版
 - 部署到子路徑時要設定 `BASE_PATH`，例如 GitHub Pages 的 `/ai-chain/`。
 
 詳細步驟見 [docs/QA-REPORT.md](docs/QA-REPORT.md) §6。
+
+本 repo 已設定 GitHub Pages 自動部署：推送到 `main` 時，[.github/workflows/deploy.yml](.github/workflows/deploy.yml) 會自動建置並發布到 <https://skywitness.github.io/ai-chain/>。也可以在 Actions 頁籤手動執行。
 
 ## 文件
 

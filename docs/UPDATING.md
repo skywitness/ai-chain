@@ -39,7 +39,7 @@
    - `npx tsx scripts/check-content-rules.ts`
    - `npm run build`
    - `npx tsx scripts/check-links.ts`
-6. **部署**：上傳 `dist/`，方式見 `docs/QA-REPORT.md` §6，記得設定 `SITE_URL`。
+6. **部署**：本 repo 已設定 GitHub Pages 自動部署。只要 commit 並 push 到 `main`（需經使用者同意），`.github/workflows/deploy.yml` 就會建置並發布到 https://skywitness.github.io/ai-chain/ 。其他平台的部署方式見 `docs/QA-REPORT.md` §6。
 
 如果 workflow 中途中斷（例如用量用完），重新執行相同的參數產生指令即可。查核完成的檔案會更新 `lastVerified` 與 `editorial.status`，可以用來判斷哪些已經做完。新公司的批次則可以用 `node research/plan/next-batches.mjs` 的作法，以磁碟上的檔案是否存在來判斷。
 

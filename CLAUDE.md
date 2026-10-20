@@ -49,4 +49,4 @@ node scripts/plan/make-update-args.mjs ... # 產生更新 workflow 的參數（�
 - 只能引用名冊中存在的 id。新增公司、模型、趨勢或文章時，要先改名冊。
 - 每個數字都要附來源與存取日期，查不到的內容寧可省略。網站內容不提供投資建議。
 - 不要在 `src/content`、`src/pages` 留下測試檔。
-- 部署前要設定 `SITE_URL`；部署到 GitHub Pages 時也要設定 `BASE_PATH`。
+- 部署：GitHub repo 是 https://github.com/skywitness/ai-chain（公開，分支 `main`）。push 到 `main` 會自動部署到 https://skywitness.github.io/ai-chain/（`.github/workflows/deploy.yml`，`BASE_PATH=/ai-chain/`）。只在使用者要求時才 commit 或 push。
