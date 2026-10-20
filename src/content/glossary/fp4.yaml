@@ -1,0 +1,43 @@
+term: "FP4"
+zh: "4 位元浮點數"
+en: "4-bit Floating Point"
+aliases:
+  - "4 位元浮點數"
+  - "NVFP4"
+  - "MXFP4"
+  - "E2M1"
+  - "4-bit Floating Point"
+category: hardware
+level: 3
+short: "只用 4 個位元表示一個數字的極低精度格式，能大幅節省記憶體與運算成本，主要用於大型模型推論。"
+definition: "FP4 以 4 個位元存放一個浮點數（1 位元符號、2 位元指數、1 位元尾數，簡稱 E2M1），只有 16 種位元組合，能表示的數值非常少，因此必須搭配「區塊縮放」：每一小組數字共用一個縮放係數，把數值拉回合適範圍。主要格式有兩種：業界共同制定的微縮放格式 MXFP4，每 32 個數共用一個 2 的次方縮放係數；輝達 Blackwell 引入的 NVFP4，則每 16 個數共用一個 FP8 縮放係數，再加上整個張量層級的 FP32 係數，精度較好。輝達表示，NVFP4 的記憶體用量約為 FP16 的 1／3.5、FP8 的 1／1.8，DeepSeek-R1-0528 從原生的 FP8 量化為 NVFP4 後，主要語言任務的準確度下降在 1% 以內。OpenAI 的 gpt-oss-120b 也以 MXFP4 量化 MoE 權重，讓模型能在單顆 80 GB GPU 上執行。"
+example: "像用一把只有 16 個刻度的尺量東西，本身很粗糙；但如果每量一小段就先換一把單位合適的尺（區塊縮放），整體量起來仍相當準確。"
+related:
+  - fp8
+  - quantization
+  - tensor-core
+  - inference
+  - moe
+learnMore:
+  - inference-optimization
+segments:
+  - ai-accelerators
+sources:
+  - title: "Introducing NVFP4 for Efficient and Accurate Low-Precision Inference"
+    publisher: "NVIDIA Technical Blog"
+    url: "https://developer.nvidia.com/blog/introducing-nvfp4-for-efficient-and-accurate-low-precision-inference/"
+    type: company-site
+    lang: en
+    published: "2025-06-24"
+    accessed: "2026-10-06"
+  - title: "openai/gpt-oss-120b"
+    publisher: "Hugging Face（OpenAI 模型卡）"
+    url: "https://huggingface.co/openai/gpt-oss-120b"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-hardware
+  checkedBy: "gloss-hardware-check"
+  checkedOn: "2026-10-06"

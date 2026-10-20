@@ -1,0 +1,126 @@
+---
+/**
+ * Upstream / downstream navigation for a segment page: arrow cards in the segment colours.
+ *   <SegmentNav upstream={['semi-equipment-materials']} downstream={['ai-accelerators']} taglines={…} />
+ */
+import Icon from '../ui/Icon.astro';
+import { layerMeta, type SegmentId } from '../../lib/collections';
+import { segmentHref } from '../../lib/paths';
+import { segmentMetas } from './chain-data';
+
+interface Props {
+  upstream: readonly SegmentId[];
+  downstream: readonly SegmentId[];
+  taglines?: Record<string, string> | undefined;
+  headingLevel?: 3 | 4 | undefined;
+}
+const { upstream, downstream, taglines = {}, headingLevel = 3 } = Astro.props;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+const groups = [
+  { key: 'up', title: '上游：供應這一環', hint: '這一環需要的設備、材料、晶片或服務', icon: 'arrow-left' as const, items: segmentMetas(upstream) },
+  { key: 'down', title: '下游：這一環供應給誰', hint: '這一環的產品與服務流向', icon: 'arrow-right' as const, items: segmentMetas(downstream) },
+].filter((g) => g.items.length > 0);
+---
+
+{
+  groups.length > 0 && (
+    <div class="snav" data-pagefind-ignore>
+      {groups.map((g) => (
+        <div class:list={['snav__group', `snav__group--${g.key}`]}>
+          <H class="snav__title">
+            <Icon name={g.icon} />
+            {g.title}
+          </H>
+          <p class="snav__hint">{g.hint}</p>
+          <ul class="snav__list" role="list">
+            {g.items.map((s) => (
+              <li>
+                <a class="snav__card" href={segmentHref(s.id)} style={`--sn-c: ${s.color}`}>
+                  <span class="snav__layer">
+                    第 {s.order} 環 · {layerMeta(s.layer)?.title}
+                  </span>
+                  <span class="snav__name">{s.title}</span>
+                  {taglines[s.id] && <span class="snav__tag">{taglines[s.id]}</span>}
+                  <Icon name="arrow-right" class="snav__arrow" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+<style>
+  .snav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: var(--space-5) var(--space-6);
+  }
+  .snav__group {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+  }
+  .snav__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-size: var(--fs-m);
+  }
+  .snav__hint {
+    font-size: var(--fs-s);
+    color: var(--c-fg-subtle);
+    margin-block-end: var(--space-2);
+  }
+  .snav__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .snav__card {
+    position: relative;
+    display: grid;
+    gap: 2px;
+    padding: var(--space-3) calc(var(--space-6) + var(--space-2)) var(--space-3) var(--space-4);
+    border: 1px solid var(--c-border);
+    border-inline-start: 4px solid var(--sn-c);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-elev);
+    color: var(--c-fg);
+    text-decoration: none;
+    transition:
+      background var(--dur-2) ease,
+      border-color var(--dur-2) ease;
+  }
+  .snav__card:hover {
+    background: color-mix(in srgb, var(--sn-c) 8%, var(--c-bg-elev));
+    border-color: color-mix(in srgb, var(--sn-c) 40%, var(--c-border));
+    color: var(--c-fg);
+  }
+  .snav__layer {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    letter-spacing: 0.02em;
+  }
+  .snav__name {
+    font-weight: var(--fw-semibold);
+    line-height: 1.4;
+  }
+  .snav__tag {
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    line-height: 1.6;
+  }
+  .snav__card :global(.snav__arrow) {
+    position: absolute;
+    inset-inline-end: var(--space-4);
+    inset-block-start: 50%;
+    translate: 0 -50%;
+    color: var(--sn-c);
+    font-size: 1.15em;
+  }
+</style>

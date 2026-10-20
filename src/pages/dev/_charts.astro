@@ -1,0 +1,523 @@
+---
+/**
+ * /dev/charts/ — chart & finance-library gallery (development only: routed by ./[page].astro, which
+ * emits nothing in production builds).
+ * Real samples: src/content/financials/<id>.json when present, else research/tmp/financials.
+ * Everything marked 「示意資料」 is synthetic and exists only to exercise the components.
+ */
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BarChart from '../../components/charts/BarChart.astro';
+import ChartFrame from '../../components/charts/ChartFrame.astro';
+import CompanyFinancials from '../../components/charts/CompanyFinancials.astro';
+import DotPlot from '../../components/charts/DotPlot.astro';
+import Heatmap from '../../components/charts/Heatmap.astro';
+import LineChart from '../../components/charts/LineChart.astro';
+import MarginLadder from '../../components/charts/MarginLadder.astro';
+import MarginLines from '../../components/charts/MarginLines.astro';
+import MonthlyRevenue from '../../components/charts/MonthlyRevenue.astro';
+import MultiLine from '../../components/charts/MultiLine.astro';
+import RevenueBars from '../../components/charts/RevenueBars.astro';
+import SegmentMix from '../../components/charts/SegmentMix.astro';
+import Sparkline from '../../components/charts/Sparkline.astro';
+import type { FinancialsInput, FinSeriesInput } from '../../lib/financial-metrics';
+import { calendarQuarterPoints, monthlyRevenue, monthlyYoyMatrix, summarizeFinancials, ttmUsd } from '../../lib/financial-metrics';
+import {
+  calendarQuarterLabel,
+  formatChange,
+  formatDate,
+  formatDateRange,
+  formatMoney,
+  formatPercent,
+  formatPointChange,
+  moneyUnitLabel,
+} from '../../lib/format';
+import { calendarQuarterOf, detectGaps, periodLabel, periodLongLabel } from '../../lib/fiscal';
+import { FX_COVERAGE, FX_GENERATED, toUsd, usdNote, usdRate } from '../../lib/fx';
+
+
+function loadFin(id: string): FinancialsInput | null {
+  for (const p of [`src/content/financials/${id}.json`, `research/tmp/financials/${id}.json`]) {
+    const f = resolve(process.cwd(), p);
+    if (!existsSync(f)) continue;
+    try {
+      return JSON.parse(readFileSync(f, 'utf8')) as FinancialsInput;
+    } catch {
+      /* skip malformed drafts */
+    }
+  }
+  return null;
+}
+const tsmc = loadFin('tsmc');
+const nvidia = loadFin('nvidia');
+const tel = loadFin('tokyo-electron');
+const DEMO_SRC = { title: '示意資料（元件測試用）', publisher: 'AI 產業鏈全景', url: 'https://example.org/', accessed: '2026-10-06' };
+
+// ── synthetic additions on top of the real drafts ──
+const tsmcDemo: FinancialsInput | null = tsmc && {
+  ...tsmc,
+  sources: { ...tsmc.sources, demo: DEMO_SRC },
+  mix: [
+    { group: 'platform', groupZh: '平台', period: 'FY2025-Q3', periodType: 'quarter', basis: 'share', unit: 'percent', items: mixItems([57, 30, 5, 5, 1, 2]), src: 'demo' },
+    { group: 'platform', groupZh: '平台', period: 'FY2025-Q4', periodType: 'quarter', basis: 'share', unit: 'percent', items: mixItems([58, 31, 4, 4, 1, 2]), src: 'demo' },
+    { group: 'platform', groupZh: '平台', period: 'FY2026-Q1', periodType: 'quarter', basis: 'share', unit: 'percent', items: mixItems([60, 28, 5, 5, 1, 1]), src: 'demo' },
+    { group: 'platform', groupZh: '平台', period: 'FY2026-Q2', periodType: 'quarter', basis: 'share', unit: 'percent', items: mixItems([61, 27, 5, 5, 1, 1]), src: 'demo' },
+    { group: 'node', groupZh: '製程', period: 'FY2026-Q1', periodType: 'quarter', basis: 'share', unit: 'percent', items: nodeItems([16, 34, 24, 10, 16]), src: 'demo' },
+    { group: 'node', groupZh: '製程', period: 'FY2026-Q2', periodType: 'quarter', basis: 'share', unit: 'percent', items: nodeItems([18, 35, 22, 9, 16]), src: 'demo' },
+  ],
+  guidance: [{ forPeriod: 'FY2026-Q3', metric: 'revenue', low: 41_000, high: 42_400, unit: 'million', currency: 'USD', issued: '2026-07-16', src: 'demo' }],
+};
+function mixItems(v: number[]) {
+  const names: Array<[string, string]> = [['HPC', '高效能運算'], ['Smartphone', '智慧型手機'], ['IoT', '物聯網'], ['Automotive', '車用電子'], ['DCE', '消費性電子'], ['Others', '其他']];
+  return names.map(([name, nameZh], i) => ({ name, nameZh, value: v[i]! }));
+}
+function nodeItems(v: number[]) {
+  const names: Array<[string, string]> = [['3nm', '3 奈米'], ['5nm', '5 奈米'], ['7nm', '7 奈米'], ['16nm', '16 奈米'], ['Others', '其他']];
+  return names.map(([name, nameZh], i) => ({ name, nameZh, value: v[i]! }));
+}
+const nvidiaDemo: FinancialsInput | null = nvidia && {
+  ...nvidia,
+  sources: { ...nvidia.sources, demo: DEMO_SRC },
+  guidance: [{ forPeriod: 'FY2027-Q3', metric: 'revenue', low: 104_000, high: 108_000, unit: 'million', currency: 'USD', issued: '2026-08-26', src: 'demo' }],
+  mix: [
+    { group: 'business-segment', groupZh: '業務部門', period: 'FY2027-Q1', periodType: 'quarter', basis: 'value', unit: 'million', currency: 'USD', items: [{ name: 'Data Center', nameZh: '資料中心', value: 73_000 }, { name: 'Gaming', nameZh: '遊戲', value: 4_300 }, { name: 'Pro Viz', nameZh: '專業視覺化', value: 800 }, { name: 'Automotive', nameZh: '車用', value: 700 }, { name: 'OEM', nameZh: 'OEM 與其他', value: 2_800 }], src: 'demo' },
+    { group: 'business-segment', groupZh: '業務部門', period: 'FY2027-Q2', periodType: 'quarter', basis: 'value', unit: 'million', currency: 'USD', items: [{ name: 'Data Center', nameZh: '資料中心', value: 87_000 }, { name: 'Gaming', nameZh: '遊戲', value: 4_900 }, { name: 'Pro Viz', nameZh: '專業視覺化', value: 900 }, { name: 'Automotive', nameZh: '車用', value: 750 }, { name: 'OEM', nameZh: 'OEM 與其他', value: 2_671 }], src: 'demo' },
+  ],
+};
+
+// half-yearly reporter (synthetic)
+const halves = [
+  ['FY2023-H1', '2023-01-01', '2023-06-30', 41_200, 38.1, 12.4],
+  ['FY2023-H2', '2023-07-01', '2023-12-31', 46_900, 39.5, 14.0],
+  ['FY2024-H1', '2024-01-01', '2024-06-30', 52_300, 41.2, 16.8],
+  ['FY2024-H2', '2024-07-01', '2024-12-31', 61_800, 42.0, 18.1],
+  ['FY2025-H1', '2025-01-01', '2025-06-30', 70_500, 43.6, 19.9],
+  ['FY2025-H2', '2025-07-01', '2025-12-31', 77_200, 44.1, 21.3],
+  ['FY2026-H1', '2026-01-01', '2026-06-30', 86_400, 45.0, 22.6],
+] as const;
+const halfSeries = (metric: FinSeriesInput['metric'], k: 3 | 4 | 5, unit: FinSeriesInput['unit']): FinSeriesInput => ({
+  metric,
+  periodType: 'half',
+  unit,
+  ...(unit === 'percent' ? {} : { currency: 'EUR' as const }),
+  points: halves.map((h) => ({ period: h[0], start: h[1], end: h[2], value: h[k], status: 'reported' as const, src: 'demo' })),
+});
+const halfCo: FinancialsInput = {
+  company: 'demo-half',
+  reportingCurrency: 'EUR',
+  fiscalYear: { endMonth: 12, naming: 'end-year', description: '會計年度與日曆年相同，僅發布半年報。' },
+  series: [halfSeries('revenue', 3, 'million'), halfSeries('gross-margin', 4, 'percent'), halfSeries('operating-margin', 5, 'percent')],
+  sources: { demo: DEMO_SRC },
+  lastVerified: '2026-10-06',
+};
+
+// private company with estimates (synthetic)
+const q = (p: string, s: string, e: string, v: number, est = false) => ({
+  period: p,
+  start: s,
+  end: e,
+  value: v,
+  status: est ? ('estimate' as const) : ('reported' as const),
+  ...(est ? { estimateBasis: '依媒體報導之年化營收推估（示意）' } : {}),
+  src: 'demo',
+});
+const privateCo: FinancialsInput = {
+  company: 'demo-private',
+  reportingCurrency: 'USD',
+  fiscalYear: { endMonth: 12, naming: 'end-year', description: '會計年度與日曆年相同。' },
+  series: [
+    {
+      metric: 'revenue',
+      periodType: 'quarter',
+      unit: 'million',
+      currency: 'USD',
+      points: [
+        q('FY2025-Q1', '2025-01-01', '2025-03-31', 610),
+        q('FY2025-Q2', '2025-04-01', '2025-06-30', 820),
+        q('FY2025-Q3', '2025-07-01', '2025-09-30', 1_050),
+        q('FY2025-Q4', '2025-10-01', '2025-12-31', 1_400, true),
+        q('FY2026-Q1', '2026-01-01', '2026-03-31', 1_900, true),
+        q('FY2026-Q2', '2026-04-01', '2026-06-30', 2_500, true),
+      ],
+    },
+  ],
+  sources: { demo: DEMO_SRC },
+  lastVerified: '2026-10-06',
+};
+const noRevenue: FinancialsInput = { ...privateCo, series: [{ ...privateCo.series[0]!, metric: 'arr' }] };
+
+// hyperscaler capex (synthetic, 億美元)
+const capexQ = ['2024 Q3', '2024 Q4', '2025 Q1', '2025 Q2', '2025 Q3', '2025 Q4', '2026 Q1', '2026 Q2', '2026 Q3'];
+const capex = (name: string, base: number, g: number) => ({
+  name,
+  points: capexQ.map((x, i) => ({ x, y: Math.round(base * (1 + g) ** i), estimate: i === capexQ.length - 1 })),
+});
+const capexSeries = [capex('Microsoft', 200, 0.085), capex('Alphabet', 130, 0.1), capex('Amazon', 225, 0.07), capex('Meta', 92, 0.12)];
+
+// benchmark dot plot (synthetic)
+const bench = [
+  { label: '模型 A 旗艦版', value: 82.4, date: '2026-09-18', series: '實驗室自評', highlight: true },
+  { label: '模型 B 推理版', value: 79.1, date: '2026-08-05', series: '實驗室自評' },
+  { label: '模型 C', value: 76.8, date: '2026-07-22', series: '第三方' },
+  { label: '模型 D 開放權重', value: 71.5, date: '2026-05-30', series: '第三方' },
+  { label: '模型 E 小型', value: 63.2, date: '2026-04-11', series: '實驗室自評' },
+  { label: '模型 F（台灣）', value: 54.9, date: '2026-02-14', series: '第三方', sublabel: '繁中微調' },
+];
+
+// heatmap: real TSMC monthly YoY + synthetic rows
+const months = tsmc ? monthlyRevenue(tsmc).slice(-24) : [];
+const cols = months.map((m) => m.period);
+let seed = 7;
+const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+const synth = (bias: number, vol: number) => cols.map((_, i) => Math.round((bias + (rnd() - 0.5) * vol + i * 0.6) * 10) / 10);
+const realMatrix = tsmc ? monthlyYoyMatrix([{ label: '台積電', group: '晶圓代工與先進封裝', financials: tsmc }], 24) : null;
+const heatRows = [
+  ...(realMatrix?.rows ?? []),
+  { label: '示意封測 A', group: '晶圓代工與先進封裝', values: synth(8, 30) },
+  { label: '示意載板 B', group: '晶圓代工與先進封裝', values: synth(-12, 40) },
+  { label: '示意 IC 設計 C', group: 'AI 晶片與加速器', values: synth(25, 50) },
+  { label: '示意 ASIC D', group: 'AI 晶片與加速器', values: synth(60, 80) },
+  { label: '示意 ODM E', group: '伺服器、系統與關鍵零組件', values: synth(35, 60) },
+  { label: '示意散熱 F', group: '伺服器、系統與關鍵零組件', values: synth(48, 70) },
+  { label: '示意電源 G', group: '伺服器、系統與關鍵零組件', values: synth(10, 30) },
+  { label: '示意 PCB H', group: '伺服器、系統與關鍵零組件', values: [...synth(-20, 30).slice(0, 20), null, null, 4.1, 12.5] },
+  { label: '示意光通訊 I', group: '網通與光通訊', values: synth(40, 90) },
+];
+
+// margin ladder (synthetic)
+const ladder = [
+  { label: '晶片設計工具、矽智財與設計服務', segment: 'eda-ip-design', value: 81.2, n: 6, min: 64.0, max: 89.5 },
+  { label: 'AI 晶片與加速器', segment: 'ai-accelerators', value: 61.5, n: 12, min: 38.2, max: 75.0 },
+  { label: '晶圓代工與先進封裝', segment: 'foundry-packaging', value: 34.8, n: 10, min: 15.1, max: 67.7 },
+  { label: '半導體設備與材料', segment: 'semi-equipment-materials', value: 47.3, n: 11, min: 30.4, max: 59.8 },
+  { label: '記憶體與儲存', segment: 'memory-storage', value: 41.0, n: 7, min: 18.5, max: 63.2 },
+  { label: '網通與光通訊', segment: 'networking-optics', value: 44.6, n: 9, min: 22.0, max: 66.1 },
+  { label: '伺服器、系統與關鍵零組件', segment: 'servers-systems', value: 12.4, n: 14, min: 5.8, max: 31.0 },
+  { label: '雲端與新雲', segment: 'cloud-neocloud', value: 58.9, n: 8, min: 21.3, max: 71.4 },
+  { label: '能源與電力', segment: 'energy-power', value: 27.5, n: 9, min: 14.0, max: 42.2 },
+];
+
+// lib demo rows
+const nv = nvidia ? summarizeFinancials(nvidia) : null;
+const libRows: Array<[string, string]> = [
+  ['formatMoney(933700, "TWD")', formatMoney(933700, 'TWD')],
+  ['formatMoney(467400, "USD")', formatMoney(467400, 'USD')],
+  ['formatMoney(3809054.3, "TWD")', formatMoney(3809054.3, 'TWD')],
+  ['formatMoney(2443533, "JPY")', formatMoney(2443533, 'JPY')],
+  ['formatMoney(52, "KRW")', formatMoney(52, 'KRW')],
+  ['formatChange(53.27, "yoy")', formatChange(53.27, 'yoy')],
+  ['formatChange(-2.1, "qoq")', formatChange(-2.1, 'qoq')],
+  ['formatPointChange(-0.4)', formatPointChange(-0.4)],
+  ['formatPercent(67.7)', formatPercent(67.7)],
+  ['formatDate("2026-09-03")', formatDate('2026-09-03')],
+  ['formatDateRange("2025-12-29","2026-03-29")', formatDateRange('2025-12-29', '2026-03-29')],
+  ['calendarQuarterLabel(2026, 2, "long")', calendarQuarterLabel(2026, 2, 'long')],
+  ['moneyUnitLabel("億", "TWD")', moneyUnitLabel('億', 'TWD')],
+  ['periodLongLabel(NVIDIA FY2027-Q2)', periodLongLabel({ period: 'FY2027-Q2', start: '2026-04-27', end: '2026-07-26' })],
+  ['periodLongLabel(TEL FY2027-Q1)', periodLongLabel({ period: 'FY2027-Q1', start: '2026-04-01', end: '2026-06-30' })],
+  ['periodLabel(TSMC FY2026-Q2)', periodLabel({ period: 'FY2026-Q2', start: '2026-04-01', end: '2026-06-30' })],
+  ['calendarQuarterOf(2026-04-27, 2026-07-26)', (() => { const c = calendarQuarterOf('2026-04-27', '2026-07-26'); return `${c.label}（重疊 ${c.overlapDays}／${c.totalDays} 天）`; })()],
+  ['detectGaps(FY26 Q1, FY26 Q3)', JSON.stringify(detectGaps([{ period: 'FY2026-Q1', start: '2026-01-01', end: '2026-03-31' }, { period: 'FY2026-Q3', start: '2026-07-01', end: '2026-09-30' }])[0]?.missing)],
+  ['usdRate("TWD", "2026-Q2")', String(usdRate('TWD', '2026-Q2')?.toFixed(4))],
+  ['toUsd(1270380, "TWD", "2026-Q2")', formatMoney(toUsd(1270380, 'TWD', '2026-Q2'), 'USD')],
+  ['usdNote(732388, "JPY", {2026/4/1–6/30})', usdNote(732388, 'JPY', { start: '2026-04-01', end: '2026-06-30' })],
+  ['usdNote(514805, "TWD", "2026-08")', usdNote(514805, 'TWD', '2026-08')],
+  ['ttmUsd(TSMC)', tsmc ? formatMoney(ttmUsd(tsmc)?.valueUsd, 'USD') : '—'],
+  ['summarizeFinancials(NVIDIA).ttm', nv?.ttm ? `${nv.ttm.label} ${formatMoney(nv.ttm.value, 'USD')}，${formatChange(nv.ttm.yoy)}` : '—'],
+  ['FX coverage', `${FX_COVERAGE.from} – ${FX_COVERAGE.to}（產生於 ${FX_GENERATED}）`],
+];
+const sparkCards = [
+  tsmc && { name: '台積電', fin: tsmc },
+  nvidia && { name: '輝達', fin: nvidia },
+  tel && { name: '東京威力科創', fin: tel },
+  { name: '示意新創（含估計）', fin: privateCo },
+].filter((x): x is { name: string; fin: FinancialsInput } => !!x);
+---
+
+<BaseLayout
+  title="圖表元件展示"
+  description="AI 產業鏈全景圖表元件與財務函式庫的開發用展示頁。"
+  noindex
+  pagefind={false}
+  sources={[{ key: 'demo-key', title: '示意來源（元件測試用）', publisher: 'AI 產業鏈全景', url: 'https://example.org/', type: 'other', lang: 'zh-TW', accessed: '2026-10-06' }]}
+  mainClass="gal"
+>
+  <script is:inline slot="head">
+    try {
+      const t = new URLSearchParams(location.search).get('theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  </script>
+    <header class="gal__head">
+      <h1>圖表元件展示</h1>
+      <p>
+        charts-finance 元件與財務函式庫的開發用展示頁。標示「示意資料」者為合成資料，只用於測試版面；其餘取自 <code>research/tmp/financials</code> 的財報草稿。
+      </p>
+      <nav aria-label="本頁目錄">
+        <a href="#company">公司財務總覽</a>
+        <a href="#revenue">營收圖</a>
+        <a href="#generic">通用圖表</a>
+        <a href="#lib">函式庫輸出</a>
+      </nav>
+    </header>
+    <div class="gal__main">
+      <section id="company" class="gal__sec">
+        <h2>CompanyFinancials（full）</h2>
+        {tsmcDemo && <CompanyFinancials financials={tsmcDemo} profile="full" company="台積電" />}
+        {nvidiaDemo && <CompanyFinancials financials={nvidiaDemo} profile="full" company="輝達" />}
+        <CompanyFinancials financials={halfCo} profile="full" company="示意歐洲公司（半年報）" />
+        <CompanyFinancials financials={privateCo} profile="full" company="示意 AI 新創（含估計）" />
+        <h2>CompanyFinancials（compact）</h2>
+        {tel && <CompanyFinancials financials={tel} profile="compact" company="東京威力科創" />}
+        {tsmc && <CompanyFinancials financials={tsmc} profile="compact" company="台積電" />}
+      </section>
+
+      <section id="revenue" class="gal__sec">
+        <h2>營收、月營收、利潤率與組成</h2>
+        <div class="gal__grid">
+          {tel && <RevenueBars financials={tel} company="東京威力科創" />}
+          {nvidiaDemo && <RevenueBars financials={nvidiaDemo} periodType="year" company="輝達" />}
+          <RevenueBars financials={halfCo} company="示意歐洲公司" badge="示意資料" />
+          <RevenueBars financials={privateCo} company="示意 AI 新創" badge="示意資料" />
+          {tsmc && <MonthlyRevenue financials={tsmc} company="台積電" months={13} />}
+          {tel && <MarginLines financials={tel} company="東京威力科創" />}
+          <MarginLines financials={halfCo} company="示意歐洲公司" badge="示意資料" />
+          {nvidiaDemo && <SegmentMix financials={nvidiaDemo} company="輝達" badge="示意資料" />}
+          {tsmcDemo && <SegmentMix financials={tsmcDemo} group="node" mode="share" company="台積電" badge="示意資料" />}
+          <RevenueBars financials={noRevenue} company="示意（無營收序列）" title="空狀態：沒有營收資料" />
+        </div>
+      </section>
+
+      <section id="generic" class="gal__sec">
+        <h2>通用圖表</h2>
+        {
+          tsmc && nvidia && (
+            <MultiLine
+              title="台積電與輝達季營收（以美元換算）"
+              subtitle="依日曆季對齊（期間重疊最多的季度），每季以該期間平均匯率換算"
+              unit="億美元"
+              valueSuffix=" 億美元"
+              series={[
+                { name: '輝達', points: calendarQuarterPoints(nvidia, 'revenue', { usd: true, from: '2023-Q3' }).map((p) => ({ x: p.x, y: Math.round(p.y / 100) })) },
+                { name: '台積電', points: calendarQuarterPoints(tsmc, 'revenue', { usd: true, from: '2023-Q3' }).map((p) => ({ x: p.x, y: Math.round(p.y / 100) })) },
+              ]}
+              asOf={tsmc.lastVerified}
+              sources={[...Object.values(nvidia.sources), ...Object.values(tsmc.sources)].filter((x) => /quarterly/i.test(x.title)).map((x) => ({ title: x.title, url: x.url, publisher: x.publisher }))}
+              notes={['以美元換算僅供比較；匯率為各期間之期間平均（FRED／Federal Reserve H.10）。']}
+            />
+          )
+        }
+        <MultiLine
+          title="四大雲端業者季度資本支出"
+          subtitle="2026 Q3 為估計值（虛線）"
+          unit="億美元"
+          valueSuffix=" 億美元"
+          series={capexSeries}
+          badge="示意資料"
+          asOf="2026-10-06"
+          sources={[{ title: '示意資料（元件測試用）', url: 'https://example.org/' }]}
+        />
+        <div class="gal__grid">
+          <DotPlot title="SWE-bench Verified 解決率" scale="% 解決率" rows={bench} badge="示意資料" asOf="2026-10-06" />
+          <MarginLadder title="各環節一線公司毛利率中位數" subtitle="最近一季，範圍為最低至最高" rows={ladder} badge="示意資料" asOf="2026-10-06" />
+          <BarChart
+            title="全球 AI 資料中心資本支出"
+            unit="十億美元"
+            data={[
+              { label: '2023', value: 160 },
+              { label: '2024', value: 230 },
+              { label: '2025', value: 380 },
+              { label: '2026', value: 520, estimate: true },
+            ]}
+            source="demo-key"
+            note="2026 年為估計值（示意資料）。"
+          />
+          <BarChart
+            title="各國 AI 新創募資金額"
+            unit="億美元"
+            data={[
+              { label: '美國', value: 1092.4 },
+              { label: '中國', value: 162.3 },
+              { label: '英國', value: 58.1 },
+              { label: '以色列（含跨國團隊）', value: 31.6 },
+              { label: '法國', value: 27.9 },
+              { label: '台灣', value: 4.2, estimate: true },
+            ]}
+            source="https://example.org/funding"
+            note="示意資料。"
+          />
+          <LineChart
+            title="大型語言模型 API 價格"
+            unit="美元／百萬 tokens"
+            series={[
+              { name: '旗艦模型', points: [{ x: '2024', y: 15 }, { x: '2025', y: 10 }, { x: '2026', y: 5 }] },
+              { name: '小型模型', points: [{ x: '2024', y: 1.25 }, { x: '2025', y: 0.8 }, { x: '2026', y: 0.4 }] },
+            ]}
+            note="示意資料。"
+          />
+          <LineChart
+            title="單一序列（時間軸）"
+            unit="%"
+            series={[
+              {
+                name: '使用率',
+                points: [
+                  { x: '2025-01-15', y: 41.2 },
+                  { x: '2025-03-02', y: 44.9 },
+                  { x: '2025-06-20', y: 52.3 },
+                  { x: '2025-11-05', y: 58.0 },
+                  { x: '2026-02-11', y: 63.4 },
+                  { x: '2026-08-30', y: 70.8 },
+                ],
+              },
+            ]}
+            note="示意資料；不等距日期使用時間軸。"
+          />
+        </div>
+        {
+          cols.length > 0 && (
+            <Heatmap
+              title="台灣 AI 供應鏈月營收年增率"
+              subtitle="台積電為實際資料，其餘為示意資料"
+              columns={cols}
+              rows={heatRows}
+              badge="部分示意"
+              asOf={tsmc?.lastVerified}
+              notes={['月營收為公司自結數，未經會計師查核。']}
+            />
+          )
+        }
+        <ChartFrame title="Sparkline（卡片用）" subtitle="近 8 季營收；新創的估計值以虛線或淡色表示">
+          <ul class="gal__cards">
+            {
+              sparkCards.map((c) => {
+                const s = summarizeFinancials(c.fin);
+                return (
+                  <li>
+                    <strong>{c.name}</strong>
+                    <span>{s.ttm ? `近四季 ${formatMoney(s.ttm.valueUsd, 'USD')}` : s.latestIncludingEstimates ? `最新 ${formatMoney(s.latestIncludingEstimates.value, s.currency)}` : '—'}</span>
+                    <Sparkline financials={c.fin} />
+                    <Sparkline financials={c.fin} kind="bars" />
+                  </li>
+                );
+              })
+            }
+          </ul>
+        </ChartFrame>
+        <MultiLine title="空狀態：沒有序列" series={[]} />
+      </section>
+
+      <section id="lib" class="gal__sec">
+        <h2>函式庫輸出（format／fiscal／fx／financial-metrics）</h2>
+        <div class="gal__tablewrap" tabindex="0" role="region" aria-label="函式庫輸出">
+          <table class="gal__table">
+            <thead>
+              <tr><th scope="col">呼叫</th><th scope="col">結果</th></tr>
+            </thead>
+            <tbody>
+              {libRows.map(([k, v]) => (
+                <tr>
+                  <th scope="row"><code>{k}</code></th>
+                  <td>{v}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+</BaseLayout>
+
+<style>
+  .gal__head,
+  .gal__main {
+    max-width: var(--container, 76rem);
+    margin-inline: auto;
+    padding-inline: var(--gutter, 1rem);
+  }
+  .gal__head {
+    padding-block: var(--space-6) var(--space-4);
+    display: grid;
+    gap: var(--space-3);
+  }
+  .gal__head h1 {
+    margin: 0;
+    font-size: var(--fs-2xl);
+  }
+  .gal__head p {
+    margin: 0;
+    max-width: var(--measure);
+    color: var(--c-fg-muted);
+  }
+  .gal__head nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+  }
+  .gal__head nav a {
+    color: var(--c-link);
+  }
+  .gal__main {
+    display: grid;
+    gap: var(--space-8);
+    padding-block-end: var(--space-9);
+  }
+  .gal__sec {
+    display: grid;
+    gap: var(--space-5);
+    min-width: 0;
+  }
+  .gal__sec h2 {
+    margin: var(--space-4) 0 0;
+    font-size: var(--fs-xl);
+  }
+  .gal__grid {
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr));
+    align-items: start;
+  }
+  .gal__cards {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  }
+  .gal__cards li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-1) var(--space-3);
+    align-items: center;
+    padding: var(--space-3);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-m);
+  }
+  .gal__cards span {
+    color: var(--c-fg-muted);
+    font-size: var(--fs-xs);
+  }
+  .gal__tablewrap {
+    overflow-x: auto;
+  }
+  .gal__table {
+    border-collapse: collapse;
+    font-size: var(--fs-s);
+  }
+  .gal__table :is(th, td) {
+    padding: 0.4em 0.8em;
+    border-bottom: 1px solid var(--c-border);
+    text-align: start;
+    vertical-align: top;
+  }
+  .gal__table th {
+    font-weight: 400;
+  }
+  .gal__table code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    overflow-wrap: anywhere;
+  }
+</style>

@@ -1,0 +1,226 @@
+---
+/**
+ * Reading notes under 「營收表現」 on a company profile (owner: pages-companies): 財年說明, 會計準則,
+ * 美元換算 and the data status of the financials file (part="notes", a disclosure), or a row of stat
+ * tiles (part="headline": 近四季營收 in the native currency with YoY, ≈ USD, 毛利率) — used above
+ * <CompanyFinancials profile="compact">, which shows no headline figures of its own.
+ *
+ *   <FinNotes financials={fin} part="headline" />
+ *   <FinNotes financials={fin} part="notes" />
+ */
+import { summarizeFinancials, type FinancialsInput } from '../../lib/financial-metrics';
+import { currencyName, formatChange, formatMoney, formatPercent } from '../../lib/format';
+import { fxCitation } from '../../lib/fx';
+
+interface Props {
+  financials: FinancialsInput;
+  /** headline: stat tiles (compact profiles) · notes: the 「如何閱讀這些數字」 disclosure */
+  part?: 'headline' | 'notes' | undefined;
+}
+const { financials: fin, part = 'notes' } = Astro.props;
+const headline = part === 'headline';
+
+let sum: ReturnType<typeof summarizeFinancials> | null = null;
+try {
+  sum = summarizeFinancials(fin);
+} catch (err) {
+  console.warn(`[FinNotes] summary failed: ${(err as Error).message}`);
+}
+const cur = sum?.currency ?? fin.reportingCurrency;
+const isUsd = cur === 'USD';
+const t = sum?.ttm ?? sum?.ttmNative ?? null;
+const usd = sum?.ttm?.valueUsd ?? null;
+const gm = sum?.grossMargin ?? null;
+const fx = cur === 'USD' ? null : fxCitation(cur);
+const monthly = (fin.series ?? []).some((s) => s.metric === 'revenue' && s.periodType === 'month');
+
+const ACCT: Record<string, string> = {
+  'US-GAAP': '美國一般公認會計原則（US GAAP）',
+  IFRS: '國際財務報導準則（IFRS）',
+  TIFRS: '台灣版國際財務報導準則（TIFRS）',
+  'J-GAAP': '日本會計準則（J-GAAP）',
+  'K-IFRS': '韓國版國際財務報導準則（K-IFRS）',
+  CAS: '中國企業會計準則（CAS）',
+  HKFRS: '香港財務報告準則（HKFRS）',
+  none: '未適用（估計值）',
+};
+const acct = fin.accountingStandard;
+const status = (fin as { editorial?: { status?: string } }).editorial?.status;
+const unverified = status === 'stub' || status === 'draft';
+const notes: Array<{ k: string; v: string }> = [
+  {
+    k: '財年說明',
+    v:
+      fin.fiscalYear?.endMonth === 12
+        ? '會計年度與日曆年度相同（1 月至 12 月），例如 FY2025 就是 2025 年。'
+        : fin.fiscalYear?.description || '會計年度與日曆年度不同，季別以公司財報的財年命名。',
+  },
+  ...(acct ? [{ k: '會計準則', v: ACCT[acct] ?? acct }] : []),
+  {
+    k: '幣別與換算',
+    v: isUsd
+      ? '財報以美元編製，不需換算。'
+      : `財報以${currencyName(cur)}編製，圖表維持原幣；「以美元換算」是每一期依當期平均匯率換算，只供跨公司比較，不代表公司實際收到的美元。`,
+  },
+  ...(monthly ? [{ k: '月營收', v: '台灣上市櫃公司每月 10 日前公告上月營收，未經會計師核閱，季報公布後以季報為準。' }] : []),
+  ...(unverified
+    ? [{ k: '資料狀態', v: '財務數字自公司公開財報整理，尚未逐筆人工查核；如有出入，以公司公告為準。' }]
+    : []),
+];
+---
+
+{
+  headline && t && (
+    <dl class="fh">
+      <div class="fh__tile">
+        <dt>{t.label}營收</dt>
+        <dd>
+          <span class="fh__val">{formatMoney(t.value, cur)}</span>
+          {t.yoy != null && (
+            <span class:list={['fh__chg', t.yoy < 0 ? 'is-neg' : 'is-pos']}>{formatChange(t.yoy, 'yoy')}</span>
+          )}
+        </dd>
+      </div>
+      {!isUsd && usd != null && (
+        <div class="fh__tile">
+          <dt>以美元換算</dt>
+          <dd>
+            <span class="fh__val">≈ {formatMoney(usd, 'USD')}</span>
+            <span class="fh__sub">依各期平均匯率</span>
+          </dd>
+        </div>
+      )}
+      {gm && (
+        <div class="fh__tile">
+          <dt>毛利率（{gm.label}）</dt>
+          <dd>
+            <span class="fh__val">{formatPercent(gm.value)}</span>
+          </dd>
+        </div>
+      )}
+    </dl>
+  )
+}
+
+{
+  !headline && (
+    <aside class="fn" aria-label="財報閱讀說明">
+      <p class="fn__title">財報閱讀說明</p>
+      <dl class="fn__list">
+        {notes.map((n) => (
+          <div class="fn__row">
+            <dt>{n.k}</dt>
+            <dd>{n.v}</dd>
+          </div>
+        ))}
+      </dl>
+      {fx && (
+        <p class="fn__fx">
+          匯率資料：
+          <a href={fx.url} rel="noopener noreferrer" target="_blank">
+            {fx.title}
+            <span class="sr-only">（另開新視窗）</span>
+          </a>
+          ；月、季、年平均匯率以每日匯率算術平均計算。
+        </p>
+      )}
+    </aside>
+  )
+}
+
+<style>
+  .fh {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr));
+    gap: var(--space-3);
+    margin: 0 0 var(--space-4);
+  }
+  .fh__tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: inset 0 3px 0 color-mix(in srgb, var(--profile-accent, var(--c-accent)) 70%, transparent);
+  }
+  .fh__tile dt {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .fh__tile dd {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0.6rem;
+    margin: 0;
+  }
+  .fh__val {
+    font-size: var(--fs-l);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+    color: var(--c-fg);
+    line-height: 1.35;
+  }
+  .fh__chg,
+  .fh__sub {
+    font-size: var(--fs-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--c-fg-muted);
+  }
+  .fh__chg.is-pos {
+    color: var(--c-pos);
+  }
+  .fh__chg.is-neg {
+    color: var(--c-neg);
+  }
+
+  .fn {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-start: var(--space-4);
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-sunken);
+    font-size: var(--fs-xs);
+    line-height: 1.75;
+  }
+  .fn__title {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg);
+  }
+  .fn__list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+  }
+  .fn__row {
+    display: grid;
+    gap: 0 var(--space-4);
+  }
+  @media (min-width: 640px) {
+    .fn__row {
+      grid-template-columns: 5.5rem minmax(0, 1fr);
+    }
+  }
+  .fn__row dt {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .fn__row dd {
+    margin: 0;
+    color: var(--c-fg-muted);
+  }
+  .fn__fx {
+    padding-block-start: var(--space-2);
+    border-block-start: 1px solid var(--c-border);
+    color: var(--c-fg-subtle);
+  }
+  .fn__fx a {
+    color: var(--c-fg-muted);
+  }
+</style>

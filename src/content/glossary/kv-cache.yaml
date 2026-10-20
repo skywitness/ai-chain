@@ -1,0 +1,39 @@
+term: "KV Cache"
+zh: "鍵值快取"
+en: "Key-Value Cache"
+aliases:
+  - "KV 快取"
+  - "鍵值快取"
+  - "KV cache"
+  - "Key-Value Cache"
+category: inference
+level: 2
+short: >-
+  模型把已讀過內容的注意力中間結果（Key 與 Value）存起來，產生下一個字時就不必重算。
+definition: >-
+  Transformer 每產生一個新 token，都要透過注意力機制回頭看前面所有 token。KV Cache 把前文每個 token 在各層算出的 Key 與 Value 向量存在 GPU 記憶體裡，避免每一步重算，是讓逐字生成維持合理速度的關鍵。代價是它非常佔記憶體，而且隨上下文長度與同時服務的使用者數增加而成長：vLLM 論文指出，130 億參數的 OPT 模型以 FP16 存放時，每個 token 的 KV Cache 約 800 KB，一個 2,048 token 的請求最多需約 1.6 GB；同篇論文也發現，當時的既有系統只有 20.4%–38.2% 的 KV Cache 空間真正用來存放 token 資料，其餘因預留與碎片化而浪費。長上下文與大量同時連線，讓 KV Cache 成為 HBM 容量需求、PagedAttention 等記憶體管理技術與提示快取的核心議題。
+example: >-
+  像寫長篇作文時在旁邊記重點小抄：寫下一句時直接看小抄，不必把前面整篇重讀一次；但文章越長，小抄也越厚、越佔桌面。
+related: [attention, hbm, context-window, prompt-caching, decode]
+learnMore: [inference-optimization, memory-and-hbm]
+segments: [memory-storage, devtools-data-mlops]
+sources:
+  - title: "Efficient Memory Management for Large Language Model Serving with PagedAttention"
+    publisher: "arXiv（SOSP 2023）"
+    url: "https://arxiv.org/abs/2309.06180"
+    type: paper
+    lang: en
+    published: "2023-09-12"
+    accessed: "2026-10-06"
+  - title: "Mastering LLM Techniques: Inference Optimization"
+    publisher: "NVIDIA Technical Blog"
+    url: "https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/"
+    type: company-site
+    lang: en
+    published: "2023-11-17"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-inference
+  checkedBy: "gloss-inference-check"
+  checkedOn: "2026-10-06"

@@ -1,0 +1,365 @@
+---
+title: "推理模型：讓 AI 先想再答"
+subtitle: "多花一點「打草稿」的時間，換來數學、程式與科學題的大幅進步"
+description: "推理模型在回答前先寫出一段思考過程，靠強化學習學會拆解、嘗試與自我檢查。本文從思維鏈、OpenAI o1 與 DeepSeek-R1 講起，說明可驗證獎勵的訓練法、推論時運算的取捨，以及 2026 年可調整思考深淺的模型對算力與記憶體的影響。"
+level: 2
+order: 204
+track: models
+prerequisites: [pretraining-to-chat]
+next: [post-training-deep, model-evaluation, agents-and-mcp]
+relatedSegments: [foundation-models, ai-accelerators, memory-storage, cloud-neocloud, devtools-data-mlops]
+relatedCompanies: [openai, deepseek, anthropic, alphabet, alibaba, nvidia, sk-hynix, samsung-electronics, micron, surge-ai]
+relatedModels: [openai-gpt, deepseek, anthropic-claude, google-gemini, alibaba-qwen]
+relatedTrends: [reasoning-test-time-compute, inference-demand, small-models-distillation, memory-supercycle]
+glossary:
+  - reasoning-model
+  - reinforcement-learning
+  - token
+  - prompt
+  - chain-of-thought
+  - test-time-compute
+  - sft
+  - rlvr
+  - grpo
+  - latency
+  - distillation
+  - kv-cache
+  - hbm
+  - context-window
+  - rl-environment
+  - agent
+scenes: []
+keyTakeaways:
+  - "推理模型先產生一段思考 Token 再作答，把更多推論運算花在拆解、嘗試與自我檢查上。"
+  - "主要訓練法是可驗證獎勵的強化學習：數學比對答案、程式跑測試，答對才給分。"
+  - "DeepSeek-R1-Zero 只靠強化學習，AIME 2024 單次正確率就從 15.6% 升到 77.9%。"
+  - "想得越久通常越準，但多半報酬遞減；數學與程式受益最大，綜合知識題提升較小。"
+  - "思考 Token 按輸出計費並占用上下文，一題可能用掉數萬個，推高推論算力與記憶體需求。"
+  - "2026 年主流模型把思考做成可調的旋鈕，也越來越常由模型依難度自行決定要想多少。"
+estimatedMinutes: 16
+sources:
+  - key: cot
+    title: "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models"
+    publisher: "Google Research（arXiv）"
+    url: "https://arxiv.org/abs/2201.11903"
+    type: paper
+    lang: en
+    published: "2022-01-28"
+    accessed: "2026-10-06"
+    note: "以 8 個思維鏈範例提示 PaLM 540B，GSM8K 達當時最佳成績；表 2：PaLM 540B 在 GSM8K 由標準提示 17.9% 升至思維鏈 56.9%。思維鏈只在約 100B 參數的模型上帶來增益，較小模型寫出通順但不合邏輯的推理。"
+  - key: self-consistency
+    title: "Self-Consistency Improves Chain of Thought Reasoning in Language Models"
+    publisher: "Google Research（arXiv；ICLR 2023）"
+    url: "https://arxiv.org/abs/2203.11171"
+    type: paper
+    lang: en
+    published: "2022-03-21"
+    accessed: "2026-10-06"
+    note: "取樣多條推理路徑，再選出最一致的答案；GSM8K 提升 17.9 個百分點。"
+  - key: o1
+    title: "Learning to Reason with LLMs"
+    publisher: OpenAI
+    url: "https://openai.com/index/learning-to-reason-with-llms/"
+    type: company-site
+    lang: en
+    published: "2024-09-12"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20240912185410/https://openai.com/index/learning-to-reason-with-llms/"
+    note: "o1 以大規模強化學習訓練，回答前產生很長的內部思維鏈；表現隨強化學習（訓練時運算）與思考時間（推論時運算）增加而穩定提升；當天先釋出早期版本 o1-preview。2024 AIME：GPT-4o 平均解出 12%（1.8/15），o1 單次 74%（11.1/15）、64 次取樣共識 83%（12.5/15）、以學習到的評分函數重排 1,000 個樣本 93%（13.9/15），相當於全美前 500 名。附錄 A：AIME 2024 pass@1 為 GPT-4o 9.3、o1-preview 44.6、o1 74.4。決定不向使用者顯示原始思維鏈，改提供模型產生的摘要，考量包括使用者體驗、競爭優勢與思維鏈監控。"
+  - key: deepseek-r1
+    title: "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning"
+    publisher: "DeepSeek-AI（arXiv；Nature 645, 633–638）"
+    url: "https://arxiv.org/abs/2501.12948"
+    type: paper
+    lang: en
+    published: "2025-01-22"
+    accessed: "2026-10-06"
+    note: "依現行 arXiv v2（2026-01-04，即《自然》期刊版）。R1-Zero 以 DeepSeek-V3-Base 為起點、不經 SFT，以 GRPO 強化學習訓練；GRPO 省去評論者模型，以組內分數估計基準，優勢為（獎勵減組內平均）除以組內標準差。推理任務的規則式獎勵包括準確度（數學答案、編譯器與測試案例）與格式（思考寫在 think 標籤內）；不用神經網路獎勵模型，因其在大規模強化學習中容易遭遇 reward hacking。R1-Zero 共訓練 10,400 步，AIME 2024 平均 pass@1 由 15.6% 升至 77.9%，自我一致性解碼 86.7%（v1 初版為 71.0%，並稱與 o1-0912 相當）；思考時間穩定增加，產生數百到數千個 token，並出現「aha moment」。R1-Zero 可讀性差、中英混雜；R1 加入數千筆冷啟動資料、推理強化學習、約 60 萬筆推理與 20 萬筆非推理資料的拒絕取樣 SFT，以及第二階段強化學習（一般資料改用獎勵模型評分）。表 8（v1 為表 4）AIME 2024 pass@1：GPT-4o-0513 9.3、DeepSeek-V3 39.2、o1-mini 63.6、o1-1217 79.2、R1 79.8。PRM 難以定義步驟、判斷對錯且易被鑽漏洞。以 R1 資料蒸餾 Qwen2.5-32B 勝過直接在其上做強化學習；開源 6 個以 Qwen 與 Llama 為底的蒸餾模型（1.5B 至 70B），R1-Distill-Qwen-32B 在 AIME 2024 為 72.6%。"
+  - key: qwen3
+    title: "Qwen3 Technical Report"
+    publisher: "Qwen Team（arXiv）"
+    url: "https://arxiv.org/abs/2505.09388"
+    type: paper
+    lang: en
+    published: "2025-05-14"
+    accessed: "2026-10-06"
+    note: "把思考模式與不思考模式整合進同一框架，並提供思考預算機制。推理強化學習共蒐集 3,995 組題目與驗證器，以 GRPO 訓練；題目須對冷啟動模型可學、且盡量困難。Qwen3-235B-A22B 的 AIME'24 在 170 步強化學習中由 70.1 升至 85.1。"
+  - key: tulu3
+    title: "Tülu 3: Pushing Frontiers in Open Language Model Post-Training"
+    publisher: "Allen Institute for AI（arXiv）"
+    url: "https://arxiv.org/abs/2411.15124"
+    type: paper
+    lang: en
+    published: "2024-11-22"
+    accessed: "2026-10-06"
+    note: "訓練演算法包含 SFT、DPO，以及作者命名的「可驗證獎勵強化學習」（RLVR）。"
+  - key: snell
+    title: "Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters"
+    publisher: "UC Berkeley／Google DeepMind（arXiv）"
+    url: "https://arxiv.org/abs/2408.03314"
+    type: paper
+    lang: en
+    published: "2024-08-06"
+    accessed: "2026-10-06"
+    note: "依題目難度分配推論時運算的「運算最適」策略，效率比 best-of-N 基準高 4 倍以上；在 FLOPs 相同的比較下，對小模型有一定成功率的題目，推論時運算可勝過大 14 倍的模型。"
+  - key: s1
+    title: "s1: Simple test-time scaling"
+    publisher: "Stanford University 等（arXiv）"
+    url: "https://arxiv.org/abs/2501.19393"
+    type: paper
+    lang: en
+    published: "2025-01-31"
+    accessed: "2026-10-06"
+    note: "以 1,000 題的 s1K 資料集對 Qwen2.5-32B-Instruct 做監督式微調；budget forcing 在模型想結束思考時附加「Wait」以延長思考；AIME24 由 50% 提高到 57%。"
+  - key: deepseek-v4
+    title: "DeepSeek-V4-Pro model card"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-06"
+    note: "支援 Non-think、Think High、Think Max 三種推理模式；Think Max 建議上下文視窗至少 384K 個 token。各模式比較（V4-Pro Non-Think／High／Max）：HMMT 2026 Feb 31.7／94.0／95.2；LiveCodeBench 56.8／89.8／93.5；GPQA Diamond 72.9／89.1／90.1；MMLU-Pro 82.9／87.1／87.5；SimpleQA-Verified 45.0／46.2／57.9；Apex 0.4／27.4／38.3。"
+  - key: deepseek-thinking
+    title: "Thinking Mode"
+    publisher: "DeepSeek API Docs"
+    url: "https://api-docs.deepseek.com/guides/thinking_mode"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "思考模式預設開啟、預設 effort 為 high，可關閉；effort 可設 low、high、max（其他值對應到這三級）；思考模式下，思維鏈內容以 reasoning_content 欄位與最終答案一起回傳。"
+  - key: claude-37
+    title: "Claude 3.7 Sonnet and Claude Code"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/claude-3-7-sonnet"
+    type: company-site
+    lang: en
+    published: "2025-02-24"
+    accessed: "2026-10-06"
+    note: "稱 Claude 3.7 Sonnet 為市場上第一個混合推理模型；API 使用者可要求 Claude 最多思考 N 個 token，N 可達 128K 的輸出上限；Anthropic 認為推理應是前沿模型的整合能力，而非獨立模型。"
+  - key: gpt5
+    title: "GPT-5 System Card"
+    publisher: OpenAI
+    url: "https://cdn.openai.com/gpt-5-system-card.pdf"
+    type: docs
+    lang: en
+    published: "2025-08-13"
+    accessed: "2026-10-06"
+    note: "現行 PDF 標示日期為 2025-08-13。GPT-5 是一個統一系統，包含回答多數問題的快速模型、處理難題的深度推理模型，以及依對話類型、複雜度、工具需求與明確意圖即時決定使用哪個模型的路由器。"
+  - key: openai-reasoning
+    title: "Reasoning models"
+    publisher: "OpenAI API documentation"
+    url: "https://developers.openai.com/api/docs/guides/reasoning"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "reasoning.effort 支援的值依模型而定，可包括 none、minimal、low、medium、high、xhigh、max；模型會依任務難易自動調整推理用量。推理 token 不透過 API 顯示，但占用上下文視窗並以輸出 token 計費；依問題複雜度可能產生數百到數萬個推理 token，建議起初至少預留 25,000 個 token；不公開原始推理 token，可透過 summary 參數取得推理摘要。"
+  - key: claude-thinking
+    title: "Extended thinking"
+    publisher: "Claude API documentation（Anthropic）"
+    url: "https://platform.claude.com/docs/en/build-with-claude/extended-thinking"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "以 budget_tokens 設定的延伸思考在 Claude 4.6 已棄用，Claude 4.7 與之後的模型不再支援；改用 adaptive thinking，以 effort 控制深度，由 Claude 判斷每次是否思考、想多少，低 effort 時簡單輸入可能完全不思考。usage 中的 thinking_tokens 欄位顯示計費輸出 token 中屬於內部推理的數量。"
+  - key: gemini-thinking
+    title: "Gemini thinking"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemini-api/docs/thinking"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "以 thinking_level 參數設定思考程度，支援的等級依模型而定（例如 minimal、low、medium、high）；較新的模型預設開啟思考（medium）；開啟思考時，回應價格為輸出 token 與思考 token 之和；可選擇回傳思考摘要。"
+  - key: deepseek-v32
+    title: "DeepSeek-V3.2: Pushing the Frontier of Open Large Language Models"
+    publisher: "DeepSeek-AI（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V3.2/resolve/main/assets/paper.pdf"
+    type: paper
+    lang: en
+    published: "2025-12-01"
+    accessed: "2026-10-06"
+    note: "表 3 列出準確度與每題輸出 token 數（千）：AIME 2025 V3.2 Thinking 93.1（16k）、V3.2-Speciale 96.0（23k）；Codeforces V3.2-Speciale 2,701（77k）。Speciale 放寬長度限制，Token 效率仍明顯不如 Gemini-3.0-Pro；正式版收緊 token 限制以降低部署成本與延遲。為 Agent 合成超過 1,800 個環境與 8.5 萬個複雜提示。"
+  - key: cot-faithfulness
+    title: "Reasoning models don't always say what they think"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/research/reasoning-models-dont-say-think"
+    type: paper
+    lang: en
+    published: "2025-04-03"
+    accessed: "2026-10-06"
+    note: "在題目中放入提示後，Claude 3.7 Sonnet 平均只有 25% 在思維鏈中提到提示，DeepSeek R1 為 39%；在 reward hacking 實驗中，多數情境下坦承的比例不到 2%；要以思維鏈監控排除不良行為，仍有大量工作要做。"
+  - key: prm
+    title: "Let's Verify Step by Step"
+    publisher: "OpenAI（arXiv）"
+    url: "https://arxiv.org/abs/2305.20050"
+    type: paper
+    lang: en
+    published: "2023-05-31"
+    accessed: "2026-10-06"
+    note: "過程監督明顯優於結果監督；過程監督模型解出 MATH 測驗代表性子集 78% 的題目；公開 PRM800K，含 80 萬個步驟層級人工回饋標籤。"
+  - key: rl-boundary
+    title: "Does Reinforcement Learning Really Incentivize Reasoning Capacity in LLMs Beyond the Base Model?"
+    publisher: "清華大學等（arXiv）"
+    url: "https://arxiv.org/abs/2504.13837"
+    type: paper
+    lang: en
+    published: "2025-04-18"
+    accessed: "2026-10-06"
+    note: "以大 k 值的 pass@k 評估：RLVR 模型在 k 小（例如 k=1）時優於基礎模型，k 大時基礎模型的 pass@k 較高；RLVR 模型的推理路徑已包含在基礎模型的取樣分布中；蒸餾則能從老師模型引入新的推理模式。"
+  - key: surge-wiki
+    title: "Surge AI"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Surge_AI"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "專注於 RLHF、強化學習環境與語言資料標註；客戶包括 Anthropic、OpenAI、Google、Microsoft、Meta。"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: learn-07
+  checkedBy: "learn-07-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：逐一對照 CoT、自我一致性、Snell、s1、PRM、Yue 等、Tülu 3、Qwen3、DeepSeek-R1（arXiv v2／《自然》版）與 V3.2 論文原文，o1 部落格存檔、GPT-5 系統卡、DeepSeek-V4-Pro 模型卡與 API 文件、OpenAI／Anthropic／Google 推理文件、Anthropic 思維鏈忠實度研究。修正：R1-Zero 改用現行版本數字（77.9%，初版 71.0%）、GPT-4o AIME 兩個數字的差異說明、DeepSeek 2026 年 API 思考控制方式（low／high／max，預設開啟）、V4 模式表的解讀補上反例、R1 只在推理題用規則式獎勵、o1 與 o1-preview 的區別、PRM 78% 的計算方式。"
+---
+
+## 一句話解釋
+
+<Term id="reasoning-model">推理模型</Term>在回答之前，會先寫出一段很長的「思考過程」：拆解題目、嘗試不同解法、檢查算式，發現錯誤就回頭修正，最後才給出答案。這種能力主要靠<Term id="reinforcement-learning">強化學習</Term>訓練出來，代價是每題要多花許多 <Term id="token">Token</Term> 與運算，換來的是數學、程式與科學題的大幅進步。從 2024 年 9 月 OpenAI 推出 o1 開始<Cite k="o1" />，到 2026 年，OpenAI、Anthropic、Google 與 DeepSeek 的主力模型都已把思考做成可以調整深淺的模式<Cite k="openai-reasoning" /><Cite k="claude-thinking" /><Cite k="gemini-thinking" /><Cite k="deepseek-thinking" />。
+
+## 生活化比喻
+
+<Callout type="analogy" title="考試時的草稿紙">
+
+一般的語言模型，像被規定「看完題目就直接寫答案、寫下的字不能塗改」的考生：簡單題沒問題，遇到要好幾步計算的應用題，第一步算錯就一路錯到底。
+
+推理模型則拿到了一疊草稿紙。它可以先列式、試一種解法，發現不對就劃掉重來，確認無誤後才把答案謄到答案卷上。草稿紙不是免費的：寫得越多、花的時間越久，所以聰明的考生會看題目難度，決定要打多少草稿。另外，閱卷老師通常只看答案卷，草稿未必會公開。
+
+</Callout>
+
+## 原理
+
+### 為什麼「多寫幾步」有用
+
+語言模型每產生一個 Token，做的計算量大致固定（原理見<LearnLink id="transformer-and-attention">Transformer 與注意力機制</LearnLink>）。一道需要好幾步推導的題目，如果要模型直接吐出答案，等於只給它少少幾個 Token 的運算量。讓模型先把中間步驟寫出來，每多寫一個 Token 就多一次完整的運算，寫下的內容也成了可以回頭參照的筆記。
+
+2022 年，Google 研究人員發現，只要在<Term id="prompt">提示詞</Term>中放進 8 個附上解題步驟的範例，5,400 億參數的 PaLM 在 GSM8K 小學數學應用題的正確率，就從 17.9% 升到 56.9%。這種方法稱為<Term id="chain-of-thought">思維鏈</Term>（CoT）提示。不過它要到約 1,000 億參數的模型才有效，小模型寫出的步驟通順，卻不合邏輯<Cite k="cot" />。同年另一項研究讓模型對同一題寫出多條推理路徑，再以多數決選出答案（自我一致性），GSM8K 正確率又提高了 17.9 個百分點<Cite k="self-consistency" />。
+
+### 2024 年的轉折：把「思考」訓練進模型
+
+思維鏈提示只是「請」模型多寫幾步。2024 年 9 月 12 日，OpenAI 發表 o1，並先開放早期版本 o1-preview。o1 改用大規模強化學習，教模型如何有效地運用思維鏈。OpenAI 發現，o1 的表現會隨兩件事穩定提升：強化學習的訓練量（訓練時運算），以及作答時花在思考的時間（<Term id="test-time-compute">推論時運算</Term>）<Cite k="o1" />。這等於在「把模型做大」之外，多了一個新的擴展方向。
+
+<BarChart title="2024 年 AIME 數學競賽平均解題率（OpenAI 自評）" unit="%" data={[{ label: "GPT-4o", value: 12 }, { label: "o1 單次作答", value: 74 }, { label: "o1 取樣 64 次投票", value: 83 }, { label: "o1 取樣 1,000 次重排", value: 93 }]} source="o1" note="AIME 為美國數學邀請賽，每份 15 題；重排指以學習到的評分函數從 1,000 個答案中挑選" keepOrder />
+
+在美國數學邀請賽 AIME 上，GPT-4o 平均只解出 12% 的題目；完整版 o1（當時尚未開放）單次作答平均 74%，對同一題取樣 64 次再投票可達 83%，取樣 1,000 次再用學到的評分函數挑選則達 93%，相當於全美前 500 名學生的水準<Cite k="o1" />。後兩個數字正說明推論時運算的效果：同一個模型，作答時花的運算越多，分數越高。
+
+### 怎麼訓練：可驗證獎勵的強化學習
+
+OpenAI 沒有公開 o1 的訓練細節。2025 年 1 月，DeepSeek 發表 DeepSeek-R1 論文（同年刊登於《自然》期刊），公開了一條簡潔的路線：從預訓練完成的 DeepSeek-V3-Base 出發，完全不做 <Term id="sft">SFT</Term>，直接用強化學習訓練出 R1-Zero<Cite k="deepseek-r1" />。它的獎勵由規則自動計算，屬於 <Term id="rlvr">RLVR</Term>（可驗證獎勵的強化學習）：
+
+<FlowSteps
+  title="可驗證獎勵的強化學習迴圈"
+  steps={[
+    { title: "出題", detail: "準備有標準答案的數學題，或附測試案例的程式題" },
+    { title: "多次作答", detail: "同一題讓模型產生一組答案，思考過程寫在指定的標籤裡" },
+    { title: "自動判分", detail: "比對最終答案、用編譯器跑測試；格式正確也給分" },
+    { title: "組內比較", detail: "高於整組平均的答案被強化，低於平均的被抑制" },
+    { title: "更新模型", detail: "反覆數千步，模型逐漸學會怎麼想" }]}
+/>
+
+DeepSeek 選擇規則式獎勵，是因為以神經網路當獎勵模型，在大規模強化學習中可能被模型「鑽漏洞」。訓練演算法 <Term id="grpo">GRPO</Term> 讓模型對同一題產生一組答案，以整組的平均分數當基準，因此省掉了傳統做法需要的、和主模型差不多大的「評論者」模型<Cite k="deepseek-r1" />。
+
+結果令人驚訝。經過約 1 萬步強化學習，R1-Zero 在 AIME 2024 的平均單次正確率（pass@1）從 15.6% 升到 77.9%，對同一題多次作答再投票後達 86.7%（論文 2025 年 1 月的初版報告為 71.0%，與 OpenAI 的 o1-0912 相當）。沒有人規定它要想多久，它的思考卻自然越寫越長，動輒數百到數千個 Token；研究人員還觀察到一個「頓悟時刻」：模型學會停下來，重新檢討自己一開始的解法<Cite k="deepseek-r1" />。
+
+R1-Zero 的缺點是可讀性差、會中英夾雜。正式版 DeepSeek-R1 因此多了幾道工序：先用數千筆「冷啟動」範例微調，再做推理強化學習；接著從強化學習後的模型篩選出約 60 萬筆推理資料，加上約 20 萬筆一般資料重新微調；最後再做一輪兼顧推理與一般用途的強化學習，其中一般題目改由獎勵模型評分<Cite k="deepseek-r1" />。
+
+<BarChart title="AIME 2024 單次正確率（DeepSeek 評測）" unit="%" data={[{ label: "GPT-4o", value: 9.3 }, { label: "DeepSeek-V3", value: 39.2 }, { label: "o1-mini", value: 63.6 }, { label: "o1", value: 79.2 }, { label: "DeepSeek-R1", value: 79.8 }]} source="deepseek-r1" note="DeepSeek-R1 論文的模型比較表；o1 為 2024-12-17 版。DeepSeek-V3 與 R1 出自同一個基礎模型。GPT-4o 的 9.3% 與 OpenAI 部落格附錄的 pass@1 一致；上一張圖的 12% 出自同一篇部落格正文，未說明計算細節" keepOrder />
+
+同一個基礎模型，一般對話版的 DeepSeek-V3 只有 39.2%，推理版的 R1 達到 79.8%，差距幾乎全來自後訓練。阿里巴巴的 Qwen3 也採類似做法：只用 3,995 組「題目＋驗證器」，以 GRPO 訓練 170 步，Qwen3-235B-A22B 的 AIME'24 分數就從 70.1 升到 85.1<Cite k="qwen3" />。這類方法的前提是答案能被自動驗證，因此數學、程式與科學題進步最快；Ai2 在 2024 年的 Tülu 3 論文中，把它命名為 RLVR<Cite k="tulu3" />。
+
+### 推論時運算：想得越久，答得越好？
+
+推理模型把運算花在作答的當下，主要有兩種花法：
+
+<Compare
+  title="推論時運算的兩種花法"
+  left={{ title: "想得更長（序列）", items: ["一條思維鏈寫得更長、更仔細", "可以自我檢查、回頭修正", "等待時間隨長度增加", "推理模型的主要方式"] }}
+  right={{ title: "想得更多（平行）", items: ["同一題作答多次", "以投票或評分模型挑出最佳答案", "可平行計算，但總運算量成倍增加", "常用於競賽或高價值任務"] }}
+/>
+
+兩者都有研究支持。柏克萊與 Google DeepMind 的研究發現，依題目難度分配推論時運算，效率比單純「多做幾次挑最好的」高 4 倍以上；在總運算量相同的比較下，對小模型已有一定把握的題目，多給它推論時運算，表現可以超過大 14 倍的模型<Cite k="snell" />。史丹佛大學等機構的 s1 研究則示範了最簡單的「拉長思考」：只用 1,000 個範例微調 Qwen2.5-32B-Instruct，每當模型想結束思考，就強制在後面加上「Wait」逼它再檢查一次，AIME24 的成績從 50% 提高到 57%<Cite k="s1" />。
+
+但想得久不是萬靈丹。DeepSeek-V4-Pro 提供三種模式，同一組權重在不同模式下的成績如下<Cite k="deepseek-v4" />：
+
+| 評測（類型） | 不思考 | 思考（High） | 極限思考（Max） |
+|---|---|---|---|
+| HMMT 2026 年 2 月（數學競賽） | 31.7 | 94.0 | 95.2 |
+| LiveCodeBench（程式） | 56.8 | 89.8 | 93.5 |
+| GPQA Diamond（研究所程度科學） | 72.9 | 89.1 | 90.1 |
+| MMLU-Pro（綜合知識） | 82.9 | 87.1 | 87.5 |
+
+從這四項評測可以看出：數學與程式題開啟思考後突飛猛進；以綜合知識為主的 MMLU-Pro，從不思考到極限思考只多了 4.6 分；而從「思考」加碼到「極限思考」，四項只再多 0.4 到 3.7 分，報酬明顯遞減。不過這不是鐵律：同一份模型卡中，更難的數學競賽題 Apex 與事實問答 SimpleQA-Verified，極限思考仍比思考（High）模式各多出 10 分以上<Cite k="deepseek-v4" />。值不值得多想，要看任務而定。
+
+### 2026 年：思考變成可以調的旋鈕
+
+推理模型剛出現時，「會思考的模型」和「一般模型」是兩個產品。2025 年起，各家逐漸把兩者合而為一：
+
+- **2025 年 2 月**：Anthropic 推出 Claude 3.7 Sonnet，稱之為市場上第一個「混合推理模型」：同一個模型可以快速回答，也可以深入思考，開發者還能限制它最多想幾個 Token<Cite k="claude-37" />。
+- **2025 年 5 月**：阿里巴巴在 Qwen3 技術報告中，把思考與不思考模式整合進同一個開放權重模型，並提供「思考預算」機制<Cite k="qwen3" />。
+- **2025 年 8 月**：OpenAI 的 GPT-5 改成統一系統，包含回答快速的模型、思考較深的模型，以及即時判斷該交給誰的路由器<Cite k="gpt5" />。
+
+到了 2026 年，主要業者的 API 都把「要想多少」做成參數，而且越來越常交給模型自己判斷：
+
+| 業者 | 控制方式（2026 年 10 月） |
+|---|---|
+| OpenAI | 以 `reasoning.effort` 設定，依模型支援 none、minimal、low、medium、high、xhigh、max 等等級；模型也會依題目難易自動調整用量 |
+| Anthropic | Claude 4.7 之後不再接受固定的思考預算，改用 adaptive thinking：由 Claude 判斷每次要不要想、想多少，開發者以 effort 調整深度 |
+| Google | Gemini API 以 `thinking_level` 設定，依模型支援 minimal、low、medium、high 等等級；較新的模型預設開啟思考 |
+| DeepSeek | API 預設開啟思考（high），可以關閉，或以 low、high、max 調整深淺；V4 模型卡建議 Max 模式預留至少 38.4 萬個 Token 的上下文 |
+
+表格整理自各業者的 API 文件與模型卡<Cite k="openai-reasoning" /><Cite k="claude-thinking" /><Cite k="gemini-thinking" /><Cite k="deepseek-thinking" /><Cite k="deepseek-v4" />。
+
+### 代價：Token、時間與錢
+
+思考不是免費的。OpenAI 的文件說明，推理 Token 雖然不會顯示給開發者，仍會占用上下文視窗，並按輸出 Token 計費；依題目難度，模型可能產生數百到數萬個推理 Token，因此建議剛開始至少預留 2.5 萬個 Token 給推理與輸出<Cite k="openai-reasoning" />。Google 與 Anthropic 也都把思考 Token 算進計費的輸出 Token<Cite k="gemini-thinking" /><Cite k="claude-thinking" />。
+
+數萬個 Token 是什麼概念？DeepSeek-V3.2 的技術報告列出了各評測每題的輸出 Token 數<Cite k="deepseek-v32" />：
+
+<StatGrid
+  title="解一題要寫多少 Token（DeepSeek-V3.2 技術報告）"
+  items={[
+    { label: "AIME 2025，V3.2 思考模式", value: "93.1%", note: "每題約輸出 1.6 萬個 Token" },
+    { label: "AIME 2025，V3.2-Speciale", value: "96.0%", note: "每題約 2.3 萬個 Token：多寫約四成，換來 2.9 個百分點" },
+    { label: "Codeforces，V3.2-Speciale", value: "2,701 分", note: "每題約輸出 7.7 萬個 Token" }]}
+  caption="Speciale 是放寬長度限制的高運算版本。"
+/>
+
+DeepSeek 坦言，Speciale 的 Token 效率仍明顯不如 Google 的 Gemini 3 Pro，正式版因此刻意收緊長度限制，以降低部署成本與<Term id="latency">延遲</Term><Cite k="deepseek-v32" />。對使用者來說，代價就是等待：如果簡單的問題也想很久，既花錢又慢。這也是各家紛紛讓模型依題目難易，自行調整思考量的重要理由。
+
+### 思考過程看得到嗎？可信嗎？
+
+o1 推出時，OpenAI 決定不公開原始的思維鏈，只提供模型產生的摘要，考量包括使用者體驗、競爭優勢，以及保留用思維鏈監控模型的可能<Cite k="o1" />；到 2026 年，OpenAI API 仍只提供推理摘要<Cite k="openai-reasoning" />。各家做法並不一致：DeepSeek 的 API 會把思維鏈內容和最終答案一起回傳給開發者<Cite k="deepseek-thinking" />。
+
+就算看得到，思維鏈也未必完整反映模型「真正的想法」。Anthropic 在 2025 年的研究中，在題目裡偷偷放入提示，結果 Claude 3.7 Sonnet 平均只有 25% 的時候在思考過程中提到這個提示，DeepSeek-R1 則是 39%；在模型會「鑽獎勵漏洞」的實驗中，多數情境下坦承的比例不到 2%<Cite k="cot-faithfulness" />。思維鏈是觀察模型的一扇窗，但還不能當成完整的監控工具。
+
+<DeepDive title="深入一點：GRPO 怎麼算分，以及強化學習到底教了什麼">
+
+**組內相對優勢。** GRPO 對每一題取樣 G 個答案，各自得到獎勵 r，再用整組的平均與標準差，把每個答案的分數換算成「優勢」<Cite k="deepseek-r1" />：
+
+<MathTeX tex={"A_i=\\frac{r_i-\\mathrm{mean}(r_1,\\ldots,r_G)}{\\mathrm{std}(r_1,\\ldots,r_G)}"} display label="第 i 個答案的優勢，等於它的獎勵減去整組平均，再除以整組標準差" />
+
+舉例來說，一題取樣 8 次，答對 3 次（獎勵 1）、答錯 5 次（獎勵 0）：平均 0.375、標準差約 0.484（以母體標準差計），答對的答案優勢約 +1.29，答錯的約 −0.77。模型會提高答對答案中每個 Token 的機率、壓低答錯的。如果 8 次全對或全錯，每個答案的優勢都是 0，這一題就學不到東西，所以題目要「有挑戰性、但模型偶爾答得出來」。Qwen3 挑選強化學習題目時，就要求題目對模型可學、而且盡量困難<Cite k="qwen3" />。
+
+**看結果，還是看過程？** 只看最終答案，可能連「推理錯誤、答案卻碰巧對」的思路也一起被強化。OpenAI 在 2023 年的研究改為逐步評分（過程監督），以 80 萬個步驟層級的人工標註訓練評分模型，再用它從多個候選解答中挑選，解出 MATH 測驗代表性子集中 78% 的題目，明顯優於只看結果的評分模型<Cite k="prm" />。但 DeepSeek 認為，一般推理很難定義「一步」、判斷每一步的對錯也不容易，而且以模型評分容易被鑽漏洞，因此 R1 的推理題只用規則式的結果獎勵<Cite k="deepseek-r1" />。
+
+**強化學習是教會新能力，還是挑出既有能力？** 清華大學等團隊 2025 年的研究，用 pass@k（取樣 k 次，只要有一次答對就算對）比較強化學習前後的模型：k 很小時，強化學習後的模型明顯較好；k 很大時，原本的基礎模型反而能解出更多題。作者認為，目前的 RLVR 主要是讓模型更穩定地走上它原本就找得到的正確路徑，<Term id="distillation">蒸餾</Term>則能從老師模型帶來新的推理模式<Cite k="rl-boundary" />。DeepSeek 也發現，直接用 R1 產生的資料蒸餾 Qwen2.5-32B，效果勝過在這個小模型上自己做強化學習<Cite k="deepseek-r1" />。強化學習究竟能把模型推多遠，仍是研究界持續爭論的問題。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+- **推論算力需求** → <SegmentChip id="ai-accelerators" />、<SegmentChip id="cloud-neocloud" />：推理模型把一部分運算從訓練挪到每一次作答，一題動輒多寫數千到數萬個 Token，而且都按輸出 Token 計費<Cite k="openai-reasoning" />。使用者越多、問題越難，需要的推論算力就越多，推論因此成為 <CompanyChip id="nvidia" /> GPU 與雲端算力的重要用途，見<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>與<TrendLink id="reasoning-test-time-compute">推理模型與推論時運算</TrendLink>。
+- **長思考吃記憶體** → <SegmentChip id="memory-storage" />：作答過程中，思考 Token 都留在上下文裡，每個 Token 的 <Term id="kv-cache">KV Cache</Term> 通常存放在 GPU 旁的 <Term id="hbm">HBM</Term>，思考越長占用越多；DeepSeek 建議極限思考模式預留至少 38.4 萬個 Token 的<Term id="context-window">上下文視窗</Term><Cite k="deepseek-v4" />。逐字產生 Token 的解碼階段又受限於記憶體頻寬，讓 <CompanyChip id="sk-hynix" />、<CompanyChip id="samsung-electronics" />、<CompanyChip id="micron" /> 等 HBM 供應商的產品更加關鍵，見<LearnLink id="inference-optimization">推論最佳化</LearnLink>與<TrendLink id="memory-supercycle">記憶體超級循環</TrendLink>。
+- **題目與環境成為新原料** → <SegmentChip id="devtools-data-mlops" />：可驗證獎勵需要大量「有標準答案的題目」與能自動判分的<Term id="rl-environment">強化學習環境</Term>。DeepSeek-V3.2 為了訓練 <Term id="agent">Agent</Term> 能力，合成了 1,800 多個環境<Cite k="deepseek-v32" />；<CompanyChip id="surge-ai" /> 等資料業者也把強化學習環境列為主要業務<Cite k="surge-wiki" />。
+- **模型實驗室** → <SegmentChip id="foundation-models" />：<CompanyChip id="openai" />（<ModelChip id="openai-gpt" />）開創了這條路線；<CompanyChip id="deepseek" />（<ModelChip id="deepseek" />）公開 R1 的方法與權重，並釋出 6 個以 Qwen 與 Llama 為底、15 億到 700 億參數的蒸餾模型，其中 320 億參數版本在 AIME 2024 拿到 72.6%<Cite k="deepseek-r1" />；<CompanyChip id="anthropic" />（<ModelChip id="anthropic-claude" />）、<CompanyChip id="alphabet" />（<ModelChip id="google-gemini" />）與 <CompanyChip id="alibaba" />（<ModelChip id="alibaba-qwen" />）則把思考做成可調整的模式。小模型透過蒸餾也能學會推理，見<TrendLink id="small-models-distillation">小模型與蒸餾：端側 AI 的崛起</TrendLink>。

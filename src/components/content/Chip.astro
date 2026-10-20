@@ -1,0 +1,83 @@
+---
+/**
+ * Shared visual for inline entity chips (CompanyChip, ModelChip, SegmentChip). A link when `href`
+ * is set, plain text otherwise. The marker colour is passed as a CSS colour expression.
+ */
+interface Props {
+  href?: string | undefined;
+  color?: string | undefined;
+  kind?: 'company' | 'model' | 'segment' | undefined;
+  title?: string | undefined;
+  class?: string | undefined;
+}
+const { href, color, kind = 'company', title, class: className } = Astro.props;
+const Tag = href ? 'a' : 'span';
+---
+
+<Tag
+  class:list={['chip', `chip--${kind}`, { 'chip--static': !href }, className]}
+  href={href}
+  title={title}
+  style={color ? `--chip-c: ${color}` : undefined}
+  data-kind={kind}><span class="chip__mark" aria-hidden="true"></span><span class="chip__text"><slot /></span></Tag>
+
+<style>
+  @layer components {
+    .chip {
+      --chip-c: var(--c-accent);
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.35em;
+      max-width: 100%;
+      padding: 0 0.45em 0 0.4em;
+      margin-inline: 0.05em;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-s);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      font-size: 0.94em;
+      line-height: 1.55;
+      text-decoration: none;
+      white-space: nowrap;
+      vertical-align: baseline;
+      transition:
+        border-color var(--dur-1) ease,
+        background-color var(--dur-1) ease;
+    }
+    a.chip:hover {
+      border-color: color-mix(in srgb, var(--chip-c) 60%, var(--c-border));
+      background: color-mix(in srgb, var(--chip-c) 9%, var(--c-bg-elev));
+      color: var(--c-fg);
+    }
+    .chip__text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chip__mark {
+      align-self: center;
+      flex: none;
+      inline-size: 0.55em;
+      block-size: 0.55em;
+      border-radius: 50%;
+      background: var(--chip-c);
+    }
+    .chip--model .chip__mark {
+      border-radius: 2px;
+      transform: rotate(45deg) scale(0.9);
+    }
+    .chip--segment .chip__mark {
+      border-radius: 1px;
+      inline-size: 0.35em;
+      block-size: 0.9em;
+    }
+    .chip--static {
+      border-style: dashed;
+      color: var(--c-fg-muted);
+    }
+    @media (forced-colors: active) {
+      .chip__mark {
+        background: CanvasText;
+      }
+    }
+  }
+</style>

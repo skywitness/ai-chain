@@ -1,0 +1,1231 @@
+---
+title: "Anthropic Claude 系列"
+family: "Claude"
+kind: "llm"
+lab: "anthropic"
+labName: "Anthropic"
+origin: "US"
+summary: "Anthropic 的 Claude 是以程式開發、長時程 Agent 與知識工作見長的封閉權重模型系列。截至 2026-10-06，官方預設推薦 Opus 5.5，並有速度較快的 Sonnet 5.5、最便宜的 Haiku 4.5，以及最高階的 Fable 5.1 與只提供給通過 Anthropic 驗證計畫機構的 Mythos 5.1；全系列可透過 Claude API、Amazon Bedrock、Google Cloud 與 Microsoft Foundry 使用。"
+strengths:
+  - "代理式程式開發領先：Anthropic 公布 Opus 5.5 的 Terminal-Bench 4.0 為 66.4%、Sonnet 5.5 為 70.6%（廠商自報，2026-09）"
+  - "第三方綜合指數居首：Artificial Analysis 智慧指數 v4.3.2 前兩名為 Opus 5.5（58）與 Sonnet 5.5（56）（2026-10-06）"
+  - "Opus、Sonnet、Fable 5.x 皆提供 1M token 上下文與 128K 輸出，並支援工具呼叫與電腦操作"
+  - "Opus 等級價格一年多內大降：從 Opus 4.1 的每百萬 token 15／75 美元降到 Opus 5.5 的 4／20 美元，快取讀取 0.20 美元"
+  - "同時上架 Claude API 與 AWS、Google Cloud、Microsoft 三大雲端平台"
+weaknesses:
+  - "封閉權重，無法自行部署、檢視或微調權重"
+  - "最高推理強度下單一任務成本與延遲偏高：AA 測得 Opus 5.5（max）每任務約 5.98 美元、Sonnet 5.5（max）約 7.67 美元"
+  - "API 破壞性變更多：Opus 5.5 無法關閉思考、不支援強制工具呼叫，舊程式需調整"
+  - "網安、生物等安全分類器可能拒答，正式部署需設計備援模型"
+  - "小模型線更新慢：Haiku 仍停在 4.5（知識截止 2025-02）"
+bestFor:
+  - "大型程式碼庫遷移、稽核與自動修錯的 Coding Agent"
+  - "長文件、試算表、簡報等知識工作與研究整理"
+  - "電腦與瀏覽器操作型 Agent"
+  - "希望在既有 AWS、Google Cloud 或 Azure 環境內採用前沿模型的企業"
+positioning:
+  capability: 58
+  costIndex: 67
+  openness: 0
+  method: "computed"
+  asOf: "2026-10-06"
+  note: "以旗艦 Opus 5.5 計算。capability 直接採用 Artificial Analysis 智慧指數 v4.3.2（max effort、含預設備援）= 58（2026-10-06）。costIndex 以 3:1 輸入／輸出混合價格（(3×4 + 20)÷4 = 8 美元／百萬 token）對數換算：0.05 美元 → 0、100 美元 → 100，得 66.8，取 67。openness 為 0（封閉權重）。"
+versions:
+  - id: "claude-opus-4"
+    name: "Claude Opus 4"
+    released: "2025-05-22"
+    status: "retired"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    reasoning: "hybrid"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 15
+        outputPerMTok: 75
+        cachedInputPerMTok: 1.5
+        currency: "USD"
+        tierNote: "已於 2026-06-15 在 Claude API 退役，Google Cloud 仍可能提供"
+        source:
+          title: "Pricing"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/about-claude/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 72.5
+        reportedBy: "lab"
+        date: "2025-05-22"
+        source:
+          title: "Introducing Claude 4"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/news/claude-4"
+          type: "press-release"
+          lang: "en"
+          published: "2025-05-22"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 43.2
+        setting: "Terminal-bench（2025 年 5 月版本）"
+        reportedBy: "lab"
+        date: "2025-05-22"
+        source:
+          title: "Introducing Claude 4"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/news/claude-4"
+          type: "press-release"
+          lang: "en"
+          published: "2025-05-22"
+          accessed: "2026-10-06"
+    notes: "Claude 4 世代首發；2026-04-14 公告淘汰，2026-06-15 退役，建議改用 Opus 4.8。"
+  - id: "claude-sonnet-4"
+    name: "Claude Sonnet 4"
+    released: "2025-05-22"
+    status: "retired"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    reasoning: "hybrid"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 3
+        outputPerMTok: 15
+        cachedInputPerMTok: 0.3
+        currency: "USD"
+        tierNote: "已於 2026-06-15 在 Claude API 退役，Bedrock 與 Google Cloud 仍可能提供"
+        source:
+          title: "Pricing"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/about-claude/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 72.7
+        reportedBy: "lab"
+        date: "2025-05-22"
+        source:
+          title: "Introducing Claude 4"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/news/claude-4"
+          type: "press-release"
+          lang: "en"
+          published: "2025-05-22"
+          accessed: "2026-10-06"
+    notes: "2026-04-14 公告淘汰，2026-06-15 在 Claude API 退役；官方淘汰頁目前列出的建議替代為 Sonnet 5.5。"
+  - id: "claude-opus-4-1"
+    name: "Claude Opus 4.1"
+    released: "2025-08-05"
+    status: "retired"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    reasoning: "hybrid"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 15
+        outputPerMTok: 75
+        cachedInputPerMTok: 1.5
+        currency: "USD"
+        tierNote: "已於 2026-08-05 在 Claude API 退役，Bedrock 與 Google Cloud 仍可能提供"
+        source:
+          title: "Pricing"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/about-claude/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 74.5
+        reportedBy: "lab"
+        date: "2025-08-05"
+        source:
+          title: "Claude Opus 4.1"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/news/claude-opus-4-1"
+          type: "press-release"
+          lang: "en"
+          published: "2025-08-05"
+          accessed: "2026-10-06"
+    notes: "最後一個每百萬 token 15／75 美元的 Opus；2026-08-05 退役。"
+  - id: "claude-sonnet-4-5"
+    name: "Claude Sonnet 4.5"
+    released: "2025-09-29"
+    status: "deprecated"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 200000
+    maxOutputTokens: 64000
+    knowledgeCutoff: "2025-01"
+    reasoning: "hybrid"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 3
+        outputPerMTok: 15
+        cachedInputPerMTok: 0.3
+        currency: "USD"
+        source:
+          title: "Claude Sonnet 4.5 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/sonnet-4-5/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 77.2
+        setting: "10 次平均，無額外推論時運算"
+        reportedBy: "lab"
+        date: "2025-09-29"
+        source:
+          title: "Introducing Claude Sonnet 4.5"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/news/claude-sonnet-4-5"
+          type: "press-release"
+          lang: "en"
+          published: "2025-09-29"
+          accessed: "2026-10-06"
+      - benchmark: "osworld"
+        score: 61.4
+        setting: "OSWorld-Verified，100 步上限"
+        reportedBy: "lab"
+        date: "2025-09-29"
+        source:
+          title: "Introducing Claude Sonnet 4.5"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/news/claude-sonnet-4-5"
+          type: "press-release"
+          lang: "en"
+          published: "2025-09-29"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1457
+        setting: "claude-sonnet-4-5-20250929-high-32k，±3"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+    notes: "2026-09-30 公告淘汰，預定 2026-11-30 在 Claude API 退役，建議改用 Sonnet 5.5。"
+  - id: "claude-haiku-4-5"
+    name: "Claude Haiku 4.5"
+    released: "2025-10-15"
+    status: "ga"
+    tier: "small"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 200000
+    maxOutputTokens: 64000
+    knowledgeCutoff: "2025-02"
+    reasoning: "hybrid"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1
+        outputPerMTok: 5
+        cachedInputPerMTok: 0.1
+        currency: "USD"
+        source:
+          title: "Claude Haiku 4.5 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/haiku-4-5/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 17
+        setting: "推理模式；Index v4.3.2"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v4.3.2)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Intelligence Index v4.3.2; Claude results use the \"with fallback\" configuration"
+      - benchmark: "lmarena-text"
+        score: 1414
+        setting: "claude-haiku-4-5-20251001，±2"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+    notes: "截至 2026-10-06 仍是最新的 Haiku；Anthropic 表示 Haiku 5.5 將在未來幾週推出。"
+  - id: "claude-opus-4-5"
+    name: "Claude Opus 4.5"
+    released: "2025-11-24"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 200000
+    maxOutputTokens: 64000
+    knowledgeCutoff: "2025-05"
+    reasoning: "hybrid"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 5
+        outputPerMTok: 25
+        cachedInputPerMTok: 0.5
+        currency: "USD"
+        source:
+          title: "Claude Opus 4.5 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/opus-4-5/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "lmarena-text"
+        score: 1474
+        setting: "claude-opus-4-5-20251101-high-32k，±4"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+    notes: "Opus 價格首度降為每百萬 token 5／25 美元；目前為 legacy 狀態。"
+  - id: "claude-opus-4-6"
+    name: "Claude Opus 4.6"
+    released: "2026-02-05"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    maxOutputTokens: 128000
+    knowledgeCutoff: "2025-05"
+    reasoning: "hybrid"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 5
+        outputPerMTok: 25
+        cachedInputPerMTok: 0.5
+        currency: "USD"
+        source:
+          title: "Claude Opus 4.6 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/opus-4-6/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "lmarena-text"
+        score: 1505
+        setting: "claude-opus-4-6-high，±3（第 2 名）"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+    notes: "首個 1M 上下文的 Opus；目前為 legacy 狀態。"
+  - id: "claude-sonnet-4-6"
+    name: "Claude Sonnet 4.6"
+    released: "2026-02-17"
+    status: "ga"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    maxOutputTokens: 128000
+    knowledgeCutoff: "2025-08"
+    reasoning: "hybrid"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 3
+        outputPerMTok: 15
+        cachedInputPerMTok: 0.3
+        currency: "USD"
+        source:
+          title: "Claude Sonnet 4.6 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/sonnet-4-6/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "lmarena-text"
+        score: 1472
+        setting: "claude-sonnet-4-6，±4"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+  - id: "claude-mythos-preview"
+    name: "Claude Mythos Preview"
+    released: "2026-04-07"
+    status: "deprecated"
+    tier: "specialized"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    reasoning: "always"
+    availability: [ "api" ]
+    notes: "未公開發售，只透過 Project Glasswing 提供給合作夥伴與 40 多個機構用於防禦性資安；2026-06-09 公告淘汰（退役日期未定），同日推出 Mythos 5。"
+  - id: "claude-opus-4-7"
+    name: "Claude Opus 4.7"
+    released: "2026-04-16"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    maxOutputTokens: 128000
+    knowledgeCutoff: "2026-01"
+    reasoning: "hybrid"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 5
+        outputPerMTok: 25
+        cachedInputPerMTok: 0.5
+        currency: "USD"
+        source:
+          title: "Claude Opus 4.7 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/opus-4-7/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "lmarena-text"
+        score: 1501
+        setting: "claude-opus-4-7-high，±4"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+    notes: "改用新分詞器，同樣文字約多 30% token。"
+  - id: "claude-opus-4-8"
+    name: "Claude Opus 4.8"
+    released: "2026-05-28"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    maxOutputTokens: 128000
+    knowledgeCutoff: "2026-01"
+    reasoning: "hybrid"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 5
+        outputPerMTok: 25
+        cachedInputPerMTok: 0.5
+        currency: "USD"
+        source:
+          title: "Claude Opus 4.8 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/opus-4-8/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "lmarena-text"
+        score: 1482
+        setting: "claude-opus-4-8-high，±4"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+  - id: "claude-fable-5"
+    name: "Claude Fable 5"
+    released: "2026-06-09"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    maxOutputTokens: 128000
+    knowledgeCutoff: "2026-01"
+    reasoning: "always"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 10
+        outputPerMTok: 50
+        cachedInputPerMTok: 1
+        currency: "USD"
+        source:
+          title: "Claude Fable 5 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/fable-5/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "terminal-bench"
+        score: 42
+        setting: "Terminal-Bench 4.0（Fable 5.1 發表時的對照數字）"
+        reportedBy: "lab"
+        date: "2026-09-01"
+        source:
+          title: "Introducing Claude Fable 5.1 and Claude Mythos 5.1"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-fable-and-mythos-5-1"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-01"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1504
+        setting: "claude-fable-5-high，±4"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+    notes: "在 Opus 之上新增的最高價層級；同日推出限量的 Mythos 5。"
+  - id: "claude-sonnet-5"
+    name: "Claude Sonnet 5"
+    released: "2026-06-30"
+    status: "ga"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    maxOutputTokens: 128000
+    knowledgeCutoff: "2026-01"
+    reasoning: "hybrid"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 2
+        outputPerMTok: 10
+        cachedInputPerMTok: 0.2
+        currency: "USD"
+        tierNote: "上市時的優惠價已改為正式價，原訂 2026-09-01 調漲為 3／15 美元的計畫取消"
+        source:
+          title: "Claude Sonnet 5 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/sonnet-5/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "lmarena-text"
+        score: 1462
+        setting: "claude-sonnet-5-high，±4"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+  - id: "claude-opus-5"
+    name: "Claude Opus 5"
+    released: "2026-07-24"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    maxOutputTokens: 128000
+    knowledgeCutoff: "2026-05"
+    reasoning: "hybrid"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 5
+        outputPerMTok: 25
+        cachedInputPerMTok: 0.5
+        currency: "USD"
+        source:
+          title: "Claude Opus 5 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/opus-5/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "terminal-bench"
+        score: 52.3
+        setting: "Terminal-Bench 4.0，Anthropic 重測（公開榜為 51.8%）"
+        reportedBy: "lab"
+        date: "2026-09-22"
+        source:
+          title: "Introducing Claude Opus 5.5"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-opus-5-5"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-22"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 63.6
+        setting: "含工具"
+        reportedBy: "lab"
+        date: "2026-09-22"
+        source:
+          title: "Introducing Claude Opus 5.5"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-opus-5-5"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-22"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1490
+        setting: "claude-opus-5-high，±4"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+  - id: "claude-fable-5-1"
+    name: "Claude Fable 5.1"
+    released: "2026-09-01"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    maxOutputTokens: 128000
+    knowledgeCutoff: "2026-06"
+    reasoning: "always"
+    availability: [ "api", "chat-app", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 10
+        outputPerMTok: 50
+        cachedInputPerMTok: 0.25
+        currency: "USD"
+        tierNote: "快取讀取為基礎輸入價的 2.5%"
+        source:
+          title: "Claude Fable 5.1 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/fable-5-1/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - asOf: "2026-10-06"
+        inputPerMTok: 5
+        outputPerMTok: 25
+        currency: "USD"
+        tierNote: "Batch API（五折）"
+        source:
+          title: "Pricing"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/about-claude/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 53
+        setting: "max effort，含預設備援；Index v4.3.2"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v4.3.2)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Intelligence Index v4.3.2; Claude results use the \"with fallback\" configuration"
+      - benchmark: "lmarena-text"
+        score: 1501
+        setting: "claude-fable-5.1-max，±6"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+      - benchmark: "terminal-bench"
+        score: 55.8
+        setting: "Terminal-Bench 4.0"
+        reportedBy: "lab"
+        date: "2026-09-01"
+        source:
+          title: "Introducing Claude Fable 5.1 and Claude Mythos 5.1"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-fable-and-mythos-5-1"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-01"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 65.6
+        setting: "含工具（Opus 5.5 發表時的對照數字）"
+        reportedBy: "lab"
+        date: "2026-09-22"
+        source:
+          title: "Introducing Claude Opus 5.5"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-opus-5-5"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-22"
+          accessed: "2026-10-06"
+      - benchmark: "osworld"
+        score: 77.9
+        setting: "OSWorld 2.0，部分給分"
+        reportedBy: "lab"
+        date: "2026-09-01"
+        source:
+          title: "Introducing Claude Fable 5.1 and Claude Mythos 5.1"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-fable-and-mythos-5-1"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-01"
+          accessed: "2026-10-06"
+    notes: "官方定位為高難度推理與長時程 Agent 工作用的模型；輸入、輸出價格與 Fable 5 相同，但快取讀取降價 75%，Anthropic 估計典型工作的成本比 Fable 5 低約 25%（高度 Agent 化的工作最多約 45%）。"
+  - id: "claude-mythos-5-1"
+    name: "Claude Mythos 5.1"
+    released: "2026-09-01"
+    status: "ga"
+    tier: "specialized"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    maxOutputTokens: 128000
+    knowledgeCutoff: "2026-06"
+    reasoning: "always"
+    availability: [ "api", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 10
+        outputPerMTok: 50
+        cachedInputPerMTok: 0.25
+        currency: "USD"
+        tierNote: "限通過 Anthropic 驗證計畫（如網安驗證計畫 Cyber Verification Program）的機構"
+        source:
+          title: "Claude Mythos 5.1 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/mythos-5-1/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "terminal-bench"
+        score: 60.9
+        setting: "Terminal-Bench 4.0"
+        reportedBy: "lab"
+        date: "2026-09-01"
+        source:
+          title: "Introducing Claude Fable 5.1 and Claude Mythos 5.1"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-fable-and-mythos-5-1"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-01"
+          accessed: "2026-10-06"
+    notes: "與 Fable 5.1 為同一模型、規格與價格相同，但安全限制較寬鬆，只透過受信任存取計畫（網安驗證計畫與生命科學驗證計畫）提供給通過審核的機構。"
+  - id: "claude-opus-5-5"
+    name: "Claude Opus 5.5"
+    released: "2026-09-22"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    maxOutputTokens: 128000
+    knowledgeCutoff: "2026-06"
+    reasoning: "always"
+    availability: [ "api", "chat-app", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 4
+        outputPerMTok: 20
+        cachedInputPerMTok: 0.2
+        currency: "USD"
+        tierNote: "標準價；快取讀取為基礎輸入價的 5%"
+        source:
+          title: "Claude Opus 5.5 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/opus-5-5/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - asOf: "2026-10-06"
+        inputPerMTok: 2
+        outputPerMTok: 10
+        currency: "USD"
+        tierNote: "Batch API（五折）"
+        source:
+          title: "Pricing"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/about-claude/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - asOf: "2026-10-06"
+        inputPerMTok: 8
+        outputPerMTok: 40
+        currency: "USD"
+        tierNote: "Fast mode（Claude API 等第一方平台，輸出速度最高約 2.5 倍；不適用 Batch API）"
+        source:
+          title: "Introducing Claude Opus 5.5"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-opus-5-5"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-22"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 58
+        setting: "max effort，含預設備援；Index v4.3.2（第 1 名）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v4.3.2)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Intelligence Index v4.3.2; Claude results use the \"with fallback\" configuration"
+      - benchmark: "lmarena-text"
+        score: 1504
+        setting: "claude-opus-5.5-high，±9（第 4 名，約 4,552 票）"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+      - benchmark: "terminal-bench"
+        score: 66.4
+        setting: "Terminal-Bench 4.0，xhigh effort"
+        reportedBy: "lab"
+        date: "2026-09-22"
+        source:
+          title: "Introducing Claude Opus 5.5"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-opus-5-5"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-22"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 67.7
+        setting: "含工具，max effort"
+        reportedBy: "lab"
+        date: "2026-09-22"
+        source:
+          title: "Introducing Claude Opus 5.5"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-opus-5-5"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-22"
+          accessed: "2026-10-06"
+      - benchmark: "osworld"
+        score: 81.8
+        setting: "OSWorld 2.1，部分給分"
+        reportedBy: "lab"
+        date: "2026-09-22"
+        source:
+          title: "Introducing Claude Opus 5.5"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-opus-5-5"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-22"
+          accessed: "2026-10-06"
+    notes: "官方建議多數工作的起點；思考無法關閉，預設 effort 為 medium。"
+  - id: "claude-sonnet-5-5"
+    name: "Claude Sonnet 5.5"
+    released: "2026-09-28"
+    status: "ga"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    maxOutputTokens: 128000
+    knowledgeCutoff: "2026-06"
+    reasoning: "hybrid"
+    availability: [ "api", "chat-app", "cloud-marketplace" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 2
+        outputPerMTok: 10
+        cachedInputPerMTok: 0.1
+        currency: "USD"
+        tierNote: "標準價；快取讀取為基礎輸入價的 5%（Sonnet 5 為 0.20 美元）"
+        source:
+          title: "Claude Sonnet 5.5 (model overview)"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/models/sonnet-5-5/overview"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - asOf: "2026-10-06"
+        inputPerMTok: 1
+        outputPerMTok: 5
+        currency: "USD"
+        tierNote: "Batch API（五折）"
+        source:
+          title: "Pricing"
+          publisher: "Anthropic"
+          url: "https://platform.claude.com/docs/en/about-claude/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 56
+        setting: "max effort，含預設備援；Index v4.3.2（第 2 名）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v4.3.2)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Intelligence Index v4.3.2; Claude results use the \"with fallback\" configuration"
+      - benchmark: "lmarena-text"
+        score: 1471
+        setting: "claude-sonnet-5.5-xhigh，±10"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+      - benchmark: "terminal-bench"
+        score: 70.6
+        setting: "Terminal-Bench 4.0"
+        reportedBy: "lab"
+        date: "2026-09-28"
+        source:
+          title: "Introducing Claude Sonnet 5.5"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-sonnet-5-5"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-28"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 64.5
+        setting: "含工具"
+        reportedBy: "lab"
+        date: "2026-09-28"
+        source:
+          title: "Introducing Claude Sonnet 5.5"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-sonnet-5-5"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-28"
+          accessed: "2026-10-06"
+      - benchmark: "osworld"
+        score: 80.1
+        setting: "OSWorld 2.1，部分給分"
+        reportedBy: "lab"
+        date: "2026-09-28"
+        source:
+          title: "Introducing Claude Sonnet 5.5"
+          publisher: "Anthropic"
+          url: "https://www.anthropic.com/claude-sonnet-5-5"
+          type: "press-release"
+          lang: "en"
+          published: "2026-09-28"
+          accessed: "2026-10-06"
+    notes: "Anthropic 稱比 Sonnet 5 快 30% 以上、多數工作每任務成本最多低 30%。"
+flagshipVersion: "claude-opus-5-5"
+relatedLearn: [ "reasoning-models", "agents-and-mcp", "model-evaluation", "open-vs-closed-models", "inference-optimization" ]
+glossary: [ "agent", "context-window", "test-time-compute", "prompt-caching", "computer-use", "elo-rating" ]
+sources:
+  - key: "claude-overview"
+    title: "Models overview"
+    publisher: "Anthropic"
+    url: "https://platform.claude.com/docs/en/about-claude/models/overview"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "claude-pricing"
+    title: "Pricing"
+    publisher: "Anthropic"
+    url: "https://platform.claude.com/docs/en/about-claude/pricing"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "claude-deprecations"
+    title: "Model deprecations"
+    publisher: "Anthropic"
+    url: "https://platform.claude.com/docs/en/about-claude/model-deprecations"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "opus-5-5"
+    title: "Introducing Claude Opus 5.5"
+    publisher: "Anthropic"
+    url: "https://www.anthropic.com/claude-opus-5-5"
+    type: "press-release"
+    lang: "en"
+    published: "2026-09-22"
+    accessed: "2026-10-06"
+  - key: "sonnet-5-5"
+    title: "Introducing Claude Sonnet 5.5"
+    publisher: "Anthropic"
+    url: "https://www.anthropic.com/claude-sonnet-5-5"
+    type: "press-release"
+    lang: "en"
+    published: "2026-09-28"
+    accessed: "2026-10-06"
+  - key: "fable-5-1"
+    title: "Introducing Claude Fable 5.1 and Claude Mythos 5.1"
+    publisher: "Anthropic"
+    url: "https://www.anthropic.com/claude-fable-and-mythos-5-1"
+    type: "press-release"
+    lang: "en"
+    published: "2026-09-01"
+    accessed: "2026-10-06"
+  - key: "glasswing"
+    title: "Project Glasswing: Securing critical software for the AI era"
+    publisher: "Anthropic"
+    url: "https://www.anthropic.com/glasswing"
+    type: "press-release"
+    lang: "en"
+    published: "2026-04-07"
+    accessed: "2026-10-06"
+  - key: "claude-4"
+    title: "Introducing Claude 4"
+    publisher: "Anthropic"
+    url: "https://www.anthropic.com/news/claude-4"
+    type: "press-release"
+    lang: "en"
+    published: "2025-05-22"
+    accessed: "2026-10-06"
+  - key: "opus-4-1"
+    title: "Claude Opus 4.1"
+    publisher: "Anthropic"
+    url: "https://www.anthropic.com/news/claude-opus-4-1"
+    type: "press-release"
+    lang: "en"
+    published: "2025-08-05"
+    accessed: "2026-10-06"
+  - key: "sonnet-4-5"
+    title: "Introducing Claude Sonnet 4.5"
+    publisher: "Anthropic"
+    url: "https://www.anthropic.com/news/claude-sonnet-4-5"
+    type: "press-release"
+    lang: "en"
+    published: "2025-09-29"
+    accessed: "2026-10-06"
+  - key: "aa-leaderboard"
+    title: "LLM Leaderboard (Intelligence Index v4.3.2)"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "Intelligence Index v4.3.2; Claude results use the \"with fallback\" configuration"
+  - key: "arena-text"
+    title: "Text Arena leaderboard (Overall)"
+    publisher: "LMArena"
+    url: "https://arena.ai/leaderboard/text"
+    type: "leaderboard"
+    lang: "en"
+    published: "2026-10-02"
+    accessed: "2026-10-06"
+    note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-02"
+  checkedBy: "models-02-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：版本、價格、退役日期對照官方模型總覽、定價頁與淘汰頁；AA 與 Arena 數字以 2026-10-07／10-05 的 Wayback 存檔核對。已修正 Sonnet 5.5 快取讀取價（0.10 美元）、Opus 5.5 Fast mode 說明與 Mythos 5.1 取得資格（驗證計畫而非 Project Glasswing）。"
+---
+
+## 系列概覽
+
+<CompanyChip id="anthropic">Anthropic</CompanyChip> 的 Claude 是封閉權重的大型語言模型系列，依能力與價格分成幾條產品線：Fable（最高階）、Opus（官方預設推薦的主力）、Sonnet（速度與能力的平衡點）與 Haiku（最快、最便宜）；另有能力與 Fable 相同、但只提供給通過 Anthropic 驗證計畫（網路安全、生命科學）之機構的 Mythos<Cite k="fable-5-1" />。截至 2026-10-06，官方模型總覽建議多數工作先從 Claude Opus 5.5 開始，評測後仍不夠的困難長時程任務才改用 Fable 5.1<Cite k="claude-overview" />。
+
+所有現行模型都支援文字與影像輸入、文字輸出與工具呼叫，並同時上架 Claude API、Amazon Bedrock、Google Cloud 與 Microsoft Foundry<Cite k="claude-overview" />。換句話說，Claude 同時出現在三大雲端的模型目錄中，企業不必搬家就能採用，這也讓它成為 <SegmentChip id="foundation-models" /> 與 <SegmentChip id="cloud-neocloud" /> 兩個環節交會處的重要商品。
+
+## 特性分析
+
+- **程式與 Agent 是核心強項**：Claude 的定位集中在長時間、多步驟的 <Term id="agent">Agent</Term> 工作。Anthropic 公布 Opus 5.5 在 Terminal-Bench 4.0 得到 66.4%、OSWorld 2.1 為 81.8%（部分給分）<Cite k="opus-5-5" />；Sonnet 5.5 的 Terminal-Bench 4.0 則為 70.6%<Cite k="sonnet-5-5" />。
+- **長上下文**：Opus、Sonnet、Fable 5.x 都提供 1M token 的 <Term id="context-window">上下文視窗</Term> 與 128K 輸出上限；Haiku 4.5 為 200K<Cite k="claude-overview" />。
+- **自適應思考**：新世代由模型自行決定要想多久，開發者以 effort（low 到 max）調整深度。Opus 5.5 的思考無法關閉、預設 effort 為 medium<Cite k="claude-overview" />。這是典型的 <Term id="test-time-compute">推論時運算</Term> 取捨：想得越久通常越準，但也越貴、越慢。
+- **價格持續下探**：Opus 等級每百萬 token 的輸入／輸出價格，從 Opus 4.1 的 15／75 美元降到 Opus 4.5 至 Opus 5 的 5／25 美元，再到 Opus 5.5 的 4／20 美元；Opus 5.5 與 Sonnet 5.5 的 <Term id="prompt-caching">提示快取</Term> 讀取價也降為基礎輸入價的 5%，分別只要 0.20 美元與 0.10 美元<Cite k="claude-pricing" />。Anthropic 稱在預設設定下，Opus 5.5 典型工作的成本比 Opus 5 低 40%，輸出速度快 30% 以上<Cite k="opus-5-5" />。
+- **較嚴格的安全機制**：Opus 5.5 附帶與 Fable 5.1 類似的網安與生物安全防護，敏感請求可能被攔下，需要由備援模型接手或申請驗證計畫<Cite k="opus-5-5" />。
+
+## 適合與不適合的用途
+
+**適合**：大型程式碼庫的遷移、稽核與除錯（官方案例中，測試者在不到一天內完成 68 萬行程式碼遷移<Cite k="opus-5-5" />）；長文件、試算表與簡報類知識工作；<Term id="computer-use">電腦操作</Term>與瀏覽器自動化；已在 AWS、Google Cloud 或 Azure 上、希望直接在原平台採用前沿模型的企業。延伸閱讀：<TrendLink id="ai-coding">AI 寫程式</TrendLink>。
+
+**不適合**：需要自行部署、檢視或微調權重的場景（Claude 不開放權重，可參考 <LearnLink id="open-vs-closed-models">開放權重 vs 封閉模型</LearnLink>）；超大量、極低延遲的簡單任務若用 Opus 或 Fable，成本與等待時間都偏高，Haiku 4.5 或更小的開放權重模型可能更省錢；涉及漏洞利用或高風險生物研究的請求，會被安全機制攔下。另外，Haiku 線仍停在 4.5（知識截止 2025 年 2 月），小模型的更新明顯落後大模型<Cite k="claude-overview" />。
+
+## 版本演進
+
+過去 18 個月，Claude 的發布節奏從「半年一代」加快到「每月都有新版本」：
+
+1. **Claude 4 世代**：2025-05-22 推出 Opus 4 與 Sonnet 4<Cite k="claude-4" />，2025-08-05 推出 Opus 4.1<Cite k="opus-4-1" />，2025-09-29 Sonnet 4.5<Cite k="sonnet-4-5" />，2025-10-15 Haiku 4.5，2025-11-24 Opus 4.5（Opus 價格降為 5／25 美元）。
+2. **百萬上下文與密集迭代**：2026-02 的 Opus 4.6 與 Sonnet 4.6 把上下文擴大到 1M，之後 4 月 Opus 4.7、5 月 Opus 4.8。
+3. **網安模型與新層級**：2026-04-07 Anthropic 以 Mythos Preview 啟動 Project Glasswing，與 AWS、Apple、Google、Microsoft、NVIDIA 等合作找出關鍵軟體的漏洞<Cite k="glasswing" />；2026-06-09 推出 Fable 5 與 Mythos 5，形成 Opus 之上的新層級，接著是 6 月底的 Sonnet 5 與 7 月的 Opus 5。
+4. **5.5 世代**：2026-09-01 Fable 5.1／Mythos 5.1（快取讀取降到每百萬 token 0.25 美元）<Cite k="fable-5-1" />，9-22 Opus 5.5，9-28 Sonnet 5.5；Anthropic 表示 Haiku 5.5 將在未來幾週推出<Cite k="sonnet-5-5" />。
+
+退役方面，Opus 4 與 Sonnet 4 已於 2026-06-15 在 Claude API 退役，Opus 4.1 於 2026-08-05 退役，Sonnet 4.5 預定 2026-11-30 退役<Cite k="claude-deprecations" />。
+
+## 評測解讀
+
+| 指標（日期） | Opus 5.5 | Sonnet 5.5 | Fable 5.1 | 來源性質 |
+|---|---|---|---|---|
+| AA 智慧指數 v4.3.2（2026-10-06） | 58 | 56 | 53 | 第三方 |
+| Arena 文字榜 Elo（2026-10-02） | 1,504 | 1,471 | 1,501 | 人類盲測投票 |
+| Terminal-Bench 4.0（2026-09） | 66.4% | 70.6% | 55.8% | 廠商自報 |
+| HLE，含工具（2026-09） | 67.7% | 64.5% | 65.6% | 廠商自報 |
+
+解讀時有幾點要注意：
+
+- **第三方指數**：Artificial Analysis 的前兩名都是 Claude，但它測的是「max effort、含預設備援」的設定，而且 v4.3 才把 Terminal-Bench 換成 4.0 並加入 AutomationBench，不同版本的指數不能直接相比<Cite k="aa-leaderboard" />。
+- **<Term id="elo-rating">Elo 分數</Term>的誤差**：Arena 上 Opus 5.5 為 1,504 ±9，與 Opus 4.6（1,505）、Fable 5（1,504）幾乎重疊，且票數只有約 4,500 票，排名仍可能變動<Cite k="arena-text" />。Arena 反映的是一般對話偏好，和 Agent 能力不完全相關。
+- **廠商自報分數**：Anthropic 自己也提醒，在這個能力水準下，評測差距已不太能反映真實差異，Opus 5.5 與 Fable 5.1 的實際落差比分數小；Opus 5.5 測試時開啟正式安全機制，被攔下的網安任務改由 Opus 4.8 完成，可能壓低分數<Cite k="opus-5-5" />。同一張表中，<ModelChip id="openai-gpt">OpenAI GPT</ModelChip> 的 GPT-6 Astra 在 Terminal-Bench 4.0 為 57.9%（OpenAI 自報）<Cite k="opus-5-5" />。同一個模型在不同發表文中的數字也可能略有出入，例如 Fable 5.1 的 HLE（含工具）在自家發表文中為 65.0%<Cite k="fable-5-1" />，在 Opus 5.5 發表文的對照表中則是 65.6%。
+- **單一評測不代表整體**：Sonnet 5.5 的 Terminal-Bench 4.0 高於 Opus 5.5，但 Anthropic 仍表示 Opus 5.5 在需要持續判斷的開放式工作上明顯較強<Cite k="sonnet-5-5" />。想進一步了解評測方法，可閱讀 <LearnLink id="model-evaluation">模型評測</LearnLink>。

@@ -1,0 +1,60 @@
+# Proposals from the learn-mountain scene agent, 2026-10-06.
+# Nothing here blocks the scene: each capability is implemented locally in
+# src/three/scenes/learn-mountain/ and can move to the kit / core unchanged.
+
+- id: tube-batch
+  target: src/three/kit/TubeBatch.ts
+  problem: >
+    The mountain draws 47 prerequisite trails as solid tubes whose colour ramps from the
+    prerequisite's track colour to the article's, and whose opacity changes per trail on hover and
+    per step (lit / resting / hidden). PathFlow gives the moving light but no continuous line;
+    ArcRibbons only does planar or great-circle arcs, not arbitrary terrain-hugging polylines.
+    One Mesh per trail would cost 47 draw calls.
+  proposal: >
+    `new TubeBatch({ paths: { points: Vec3Like[], color: Color | [Color, Color] }[], radius,
+    radialSegments, tubularSegments, theme })` → one indexed mesh with vertex RGBA colour;
+    `setAlpha(i, a)`, `setColor(i, a, b?)`, `setTheme(theme)`, `dispose()`. Same API shape as
+    ArcRibbons so scenes can swap between them.
+  workaround: src/three/scenes/learn-mountain/index.ts (the 「trails」 block: merged TubeGeometry
+    with a per-vertex u coordinate, rewritten by writeTubes()).
+
+- id: heightfield-occluder
+  target: src/three/core/labels.ts (helper) or src/three/kit/occluders.ts
+  problem: >
+    Labels and pick points on the far side of a terrain (the back of a terrace, behind the
+    summit) must hide, like Globe.isBehind does for the globe. Scenes with terrain (this one,
+    taiwan-map, energy) each write a ray march against their own height function.
+  proposal: >
+    `heightfieldOccluder(heightAt: (x, z) => number, { samples = 16, bias = 0.04 })` returning a
+    `(world, camera) => boolean` usable by both `ctx.labels.setOccluder` and
+    `ctx.picker.addPoints(..., { cull })`.
+  workaround: src/three/scenes/learn-mountain/index.ts (`occluded`).
+
+- id: portrait-step-poses
+  target: src/three/core/types.ts (SceneStep pose) or SceneMeta
+  problem: >
+    Same request as scene-hbm.yaml `portrait-step-poses`. The mountain is much wider than tall, so
+    on a 4:5 stage each terrace step needs a steeper, re-centred pose, not only a longer distance;
+    the scene keeps a second pose table and re-applies it when the stage flips orientation.
+  proposal: >
+    Accept `setPose({ ...pose, portrait?: Partial<CameraPose> })` and let the host re-apply the
+    current step's pose on an orientation flip (unless the reader has orbited).
+  workaround: src/three/scenes/learn-mountain/index.ts (STEP_POSES_PORTRAIT, stepPose, onResize).
+
+# Added by the learn-mountain reviewer, 2026-10-06.
+- id: label-candidate-sides
+  target: src/three/core/labels.ts (LabelSpec.align as a list of candidates)
+  problem: >
+    LabelLayer places each label on one fixed side of its anchor and drops it on any collision,
+    and it only avoids other labels, not the objects they name. Rows of beacons that run across the
+    screen (the terraces' flanks, the route on the mountain's left side) therefore either lost
+    3–7 labels per step or covered the neighbouring beacons with them.
+  proposal: >
+    `align` may be a list such as `['above', 'below', 'left', 'right', 'belowR']` (sides tried in
+    order, the last chosen side kept while it still fits), plus `ctx.labels.setObstacles(() =>
+    Rect[])` (screen rects labels must not cover, e.g. projected beacons) and an `obstacleSoft`
+    flag for dimmed objects that may be covered as a last resort.
+  workaround: >
+    src/three/scenes/learn-mountain/labelPlace.ts (greedy multi-side placement, pure maths) and
+    the 「article-label pass」 in index.ts, which projects beacons and fixed labels, picks a side for
+    each article label and hands the LabelLayer the matching align and pixel offset.

@@ -1,0 +1,107 @@
+---
+/**
+ * The three reading levels (入門／進階／深入) as cards: what each level covers, how many articles it
+ * has (curriculum registry) and a link to its first article. Used by /about/ (and AboutFallback).
+ * Render inside a .prose container or anywhere; the list resets prose list styles itself.
+ *   <LevelPath />
+ */
+import { getCurriculum, LEVELS } from '../../lib/collections';
+import { learnHref, sectionHref } from '../../lib/paths';
+
+interface Props {
+  class?: string | undefined;
+}
+const { class: className } = Astro.props;
+
+const articles = getCurriculum().articles;
+const firstOf = (level: number) => articles.find((a) => a.level === level);
+const countOf = (level: number) => articles.filter((a) => a.level === level).length;
+const LEVEL_TEXT: Record<number, string> = {
+  1: '不需要任何背景。先建立整體圖像：AI 是什麼、為什麼需要這麼多晶片與電力、產業鏈有哪些環節。',
+  2: '選一個好奇的主題往下讀：Transformer、GPU 架構、先進封裝、HBM、資料中心網路，搭配產業鏈與公司頁面。',
+  3: '進入產業的關鍵議題：擴展定律、推論最佳化、EUV 微影、CoWoS 與 HBM4、AI 資本支出，並查看財報數字與評測結果。',
+};
+---
+
+<ol class:list={['lp', className]} role="list">
+  {
+    LEVELS.map((lv) => {
+      const first = firstOf(lv.level);
+      const n = countOf(lv.level);
+      return (
+        <li class="lp__item" style={`--lv: ${lv.color}`}>
+          <p class="lp__head">
+            <span class="lp__badge">{lv.label}</span>
+            {n > 0 && <span class="lp__n">{n} 篇</span>}
+          </p>
+          <p class="lp__text">{LEVEL_TEXT[lv.level]}</p>
+          {first ? (
+            <p class="lp__start">
+              從<a href={learnHref(first.slug)}>{first.title}</a>開始
+            </p>
+          ) : (
+            <p class="lp__start">
+              <a href={sectionHref('learn')}>查看學習路徑</a>
+            </p>
+          )}
+        </li>
+      );
+    })
+  }
+</ol>
+
+<style>
+  @layer components {
+    .lp {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+      gap: var(--space-3);
+      max-width: none;
+      margin: var(--space-4) 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .lp__item {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: var(--space-2);
+      margin: 0;
+      padding: var(--space-4) var(--space-4) var(--space-5);
+      border: 1px solid var(--c-border);
+      border-block-start: 3px solid var(--lv);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+    }
+    .lp__item::marker {
+      content: none;
+    }
+    .lp__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      margin: 0;
+    }
+    .lp__badge {
+      font-size: var(--fs-l);
+      font-weight: var(--fw-bold);
+      color: var(--lv);
+    }
+    .lp__n {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+    .lp__text {
+      margin: 0;
+      font-size: var(--fs-s);
+      line-height: 1.75;
+      color: var(--c-fg-muted);
+    }
+    .lp__start {
+      margin: 0;
+      font-size: var(--fs-s);
+      line-height: 1.6;
+    }
+  }
+</style>

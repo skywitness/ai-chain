@@ -1,0 +1,569 @@
+---
+title: "OpenAI gpt-oss 開放權重系列"
+family: "gpt-oss"
+kind: "llm"
+lab: "openai"
+labName: "OpenAI"
+origin: "US"
+summary: "OpenAI 於 2025 年 8 月釋出的開放權重推理模型，包含 gpt-oss-120b（總參數約 1,168 億、每個 token 啟用約 51 億）與 gpt-oss-20b（約 209 億／36 億），採 MoE 架構與 Apache 2.0 授權。120b 經 MXFP4 量化後可放進單張 80GB GPU，20b 約 16GB 記憶體即可執行。2025 年 10 月另推出內容安全分類用的 gpt-oss-safeguard；截至 2026-10 尚無新一代版本，能力已落後新一代開放模型。"
+strengths:
+  - "Apache 2.0 寬鬆授權，可商用、可微調，也能完全離線部署"
+  - "MoE 啟用參數少：120b 每個 token 只用約 51 億參數，AA 量測輸出約每秒 180 tokens 以上"
+  - "硬體門檻低：120b 可放進單張 80GB GPU，20b 約 16GB 記憶體即可執行"
+  - "推理強度可調（low、medium、high），完整思維鏈可供除錯，原生支援函式呼叫與結構化輸出"
+weaknesses:
+  - "發布逾一年未更新，知識截止 2024 年 6 月；AA 綜合智慧指數 120b 僅 12，遠落後 MiMo-V2.6-Pro（46）、GLM-5.3（45）、Kimi K3（44）等開放權重模型"
+  - "只支援文字，上下文 131,072 tokens，遠少於主流閉源模型的百萬級"
+  - "必須使用 harmony 對話格式；長程 Agent 任務表現弱，AA 量測 Terminal-Bench 4.0 為 0%"
+bestFor:
+  - "資料不能離開自家機房的企業與公部門內部部署"
+  - "在單張 GPU 或高階筆電上做本地推論、原型與教學"
+  - "以自有資料微調的垂直領域應用"
+  - "以 gpt-oss-safeguard 依自訂政策做內容安全分類"
+positioning:
+  capability: 12
+  costIndex: 22
+  openness: 0.8
+  method: "computed"
+  asOf: "2026-10-06"
+  note: "capability 取 gpt-oss-120b（high）的 AA 綜合智慧指數 v4.3.2（11.6）；OpenAI 未提供官方 API 定價，costIndex 改用 AA 彙整的第三方託管中位價（0.15／0.59 美元，3:1 混合約 0.26 美元／百萬 tokens）依對數換算（0.05 美元 = 0、100 美元 = 100）；Apache 2.0 開放權重但未公開訓練資料，openness = 0.8。"
+versions:
+  - id: "gpt-oss-120b"
+    name: "gpt-oss-120b"
+    released: "2025-08-05"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    reasoning: "always"
+    params:
+      totalB: 116.8
+      activeB: 5.1
+      disclosed: true
+    contextTokens: 131072
+    maxOutputTokens: 131072
+    knowledgeCutoff: "2024-06"
+    availability:
+      - "self-host"
+      - "api"
+    benchmarks:
+      - benchmark: "aime-2025"
+        score: 92.5
+        setting: "high 推理強度，無工具（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-08-08"
+        source:
+          title: "gpt-oss-120b & gpt-oss-20b Model Card"
+          publisher: "OpenAI (arXiv)"
+          url: "https://arxiv.org/abs/2508.10925"
+          type: "paper"
+          published: "2025-08-08"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 80.1
+        setting: "high 推理強度，無工具（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-08-08"
+        source:
+          title: "gpt-oss-120b & gpt-oss-20b Model Card"
+          publisher: "OpenAI (arXiv)"
+          url: "https://arxiv.org/abs/2508.10925"
+          type: "paper"
+          published: "2025-08-08"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 14.9
+        setting: "high 推理強度，無工具（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-08-08"
+        source:
+          title: "gpt-oss-120b & gpt-oss-20b Model Card"
+          publisher: "OpenAI (arXiv)"
+          url: "https://arxiv.org/abs/2508.10925"
+          type: "paper"
+          published: "2025-08-08"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "swe-bench-verified"
+        score: 62.4
+        setting: "high 推理強度，477 題子集（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-08-08"
+        source:
+          title: "gpt-oss-120b & gpt-oss-20b Model Card"
+          publisher: "OpenAI (arXiv)"
+          url: "https://arxiv.org/abs/2508.10925"
+          type: "paper"
+          published: "2025-08-08"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 11.6
+        setting: "v4.3.2，high 推理強度"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "gpt-oss-120b (High) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/gpt-oss-120b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aime-2025"
+        score: 93.4
+        setting: "AA 獨立測試，high"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "gpt-oss-120b (High) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/gpt-oss-120b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 78.2
+        setting: "AA 獨立測試，high"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "gpt-oss-120b (High) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/gpt-oss-120b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 19.6
+        setting: "AA 獨立測試，high"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "gpt-oss-120b (High) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/gpt-oss-120b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "livecodebench"
+        score: 87.8
+        setting: "AA 獨立測試，high"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "gpt-oss-120b (High) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/gpt-oss-120b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 65.8
+        setting: "AA 獨立測試，high"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "gpt-oss-120b (High) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/gpt-oss-120b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1352
+        setting: "第 212 名，±4"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          published: "2026-10-02"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "36 層 MoE；MoE 權重以 MXFP4 量化，可放進單張 80GB GPU。官方定價頁未列價格，api 指第三方推論服務，AA 彙整的中位價約為輸入 0.15、輸出 0.59 美元／百萬 tokens（2026-10 初，隨供應商調價變動）。"
+  - id: "gpt-oss-20b"
+    name: "gpt-oss-20b"
+    released: "2025-08-05"
+    status: "ga"
+    tier: "small"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    reasoning: "always"
+    params:
+      totalB: 20.9
+      activeB: 3.6
+      disclosed: true
+    contextTokens: 131072
+    maxOutputTokens: 131072
+    knowledgeCutoff: "2024-06"
+    availability:
+      - "self-host"
+      - "on-device"
+      - "api"
+    benchmarks:
+      - benchmark: "aime-2025"
+        score: 91.7
+        setting: "high 推理強度，無工具（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-08-08"
+        source:
+          title: "gpt-oss-120b & gpt-oss-20b Model Card"
+          publisher: "OpenAI (arXiv)"
+          url: "https://arxiv.org/abs/2508.10925"
+          type: "paper"
+          published: "2025-08-08"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 71.5
+        setting: "high 推理強度，無工具（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-08-08"
+        source:
+          title: "gpt-oss-120b & gpt-oss-20b Model Card"
+          publisher: "OpenAI (arXiv)"
+          url: "https://arxiv.org/abs/2508.10925"
+          type: "paper"
+          published: "2025-08-08"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 10.9
+        setting: "high 推理強度，無工具（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-08-08"
+        source:
+          title: "gpt-oss-120b & gpt-oss-20b Model Card"
+          publisher: "OpenAI (arXiv)"
+          url: "https://arxiv.org/abs/2508.10925"
+          type: "paper"
+          published: "2025-08-08"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "swe-bench-verified"
+        score: 60.7
+        setting: "high 推理強度，477 題子集（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-08-08"
+        source:
+          title: "gpt-oss-120b & gpt-oss-20b Model Card"
+          publisher: "OpenAI (arXiv)"
+          url: "https://arxiv.org/abs/2508.10925"
+          type: "paper"
+          published: "2025-08-08"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 9
+        setting: "v4.3.2，high 推理強度"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "gpt-oss-20b (High) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/gpt-oss-20b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aime-2025"
+        score: 89.3
+        setting: "AA 獨立測試，high"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "gpt-oss-20b (High) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/gpt-oss-20b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 68.8
+        setting: "AA 獨立測試，high"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "gpt-oss-20b (High) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/gpt-oss-20b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 11
+        setting: "AA 獨立測試，high"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "gpt-oss-20b (High) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/gpt-oss-20b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "livecodebench"
+        score: 77.7
+        setting: "AA 獨立測試，high"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "gpt-oss-20b (High) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/gpt-oss-20b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 60.2
+        setting: "AA 獨立測試，high"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "gpt-oss-20b (High) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/gpt-oss-20b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1318
+        setting: "第 263 名，±6"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          published: "2026-10-02"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "24 層 MoE；約 16GB 記憶體即可執行，適合本地與邊緣裝置。"
+  - id: "gpt-oss-safeguard-120b"
+    name: "gpt-oss-safeguard-120b"
+    released: "2025-10-29"
+    status: "ga"
+    tier: "specialized"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    reasoning: "always"
+    params:
+      totalB: 117
+      activeB: 5.1
+      disclosed: true
+    availability:
+      - "self-host"
+    notes: "以 gpt-oss 微調的安全推理模型，依開發者自行撰寫的政策分類內容，並附上推理過程；與 ROOST 社群合作。"
+  - id: "gpt-oss-safeguard-20b"
+    name: "gpt-oss-safeguard-20b"
+    released: "2025-10-29"
+    status: "ga"
+    tier: "specialized"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    reasoning: "always"
+    params:
+      totalB: 21
+      activeB: 3.6
+      disclosed: true
+    availability:
+      - "self-host"
+      - "on-device"
+    notes: "以 gpt-oss-20b 微調，16GB 顯示記憶體的 GPU 即可執行。"
+flagshipVersion: "gpt-oss-120b"
+relatedLearn:
+  - "open-vs-closed-models"
+  - "mixture-of-experts"
+  - "reasoning-models"
+  - "inference-optimization"
+glossary:
+  - "open-weights"
+  - "moe"
+  - "active-parameters"
+  - "quantization"
+  - "chain-of-thought"
+  - "function-calling"
+  - "fine-tuning"
+  - "context-window"
+sources:
+  - key: "gpt-oss-card"
+    title: "gpt-oss-120b & gpt-oss-20b Model Card"
+    publisher: "OpenAI (arXiv)"
+    url: "https://arxiv.org/abs/2508.10925"
+    type: "paper"
+    published: "2025-08-08"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-gpt-oss-120b"
+    title: "openai/gpt-oss-120b"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/openai/gpt-oss-120b"
+    type: "docs"
+    note: "下載數取自 Hugging Face API（近 30 天滾動計算，數值每日變動）"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-gpt-oss-20b"
+    title: "openai/gpt-oss-20b"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/openai/gpt-oss-20b"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-gpt-oss-safeguard"
+    title: "openai/gpt-oss-safeguard-20b"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/openai/gpt-oss-safeguard-20b"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "oai-gpt-oss-120b"
+    title: "gpt-oss-120b | OpenAI API model page"
+    publisher: "OpenAI"
+    url: "https://developers.openai.com/api/docs/models/gpt-oss-120b"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "oai-changelog"
+    title: "Changelog | OpenAI API"
+    publisher: "OpenAI"
+    url: "https://developers.openai.com/api/docs/changelog"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "wiki-gpt-5"
+    title: "GPT-5"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/GPT-5"
+    type: "other"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "wiki-openai-products"
+    title: "Products and applications of OpenAI"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Products_and_applications_of_OpenAI"
+    type: "other"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-leaderboard"
+    title: "LLM Leaderboard - Comparison of AI models"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    note: "Artificial Analysis Intelligence Index v4.3.2"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-gpt-oss-120b"
+    title: "gpt-oss-120b (High) Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/gpt-oss-120b"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "lmarena-text"
+    title: "Text Arena Leaderboard (Overall)"
+    publisher: "LMArena"
+    url: "https://arena.ai/leaderboard/text"
+    type: "leaderboard"
+    published: "2026-10-02"
+    note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02"
+    lang: "en"
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-01"
+  checkedBy: "models-01-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：參數、層數、MXFP4、知識截止與官方評測分數對照 arXiv 模型卡（2508.10925）與 Hugging Face 模型頁；AA 分數對照 AA 頁面與 2026-10-04／07 網頁封存；Arena 名次對照 2026-10-02 快照。修正：開放權重榜首應為 MiMo-V2.6-Pro（46.3）而非 GLM-5.3；美國開放權重對照補上分數更高的 Nemotron 3 Ultra 與 Muse Glimmer；AA 中位輸出價 0.60 改為 0.59 美元；速度改為較保守的每秒 180 tokens 以上；下載量改為不易過時的區間描述。"
+---
+
+## 系列概覽
+
+gpt-oss 是 <CompanyChip id="openai">OpenAI</CompanyChip> 在 2025-08-05 釋出的<Term id="open-weights">開放權重</Term>推理模型，兩天後 OpenAI 才推出 GPT-5<Cite k="wiki-gpt-5" />。這是 OpenAI 自 2019 年完整公開 GPT-2 之後，再度公開語言模型的權重<Cite k="wiki-openai-products" />。系列有兩個尺寸，都採 Apache 2.0 授權：
+
+| 模型 | 總參數 | 每個 token 啟用參數 | 層數 | 建議硬體 |
+|---|---|---|---|---|
+| gpt-oss-120b | 約 1,168 億 | 約 51 億 | 36 | 單張 80GB GPU（如 H100、MI300X） |
+| gpt-oss-20b | 約 209 億 | 約 36 億 | 24 | 約 16GB 記憶體 |
+
+參數與層數取自官方模型卡<Cite k="gpt-oss-card" />，硬體需求取自 Hugging Face 模型頁<Cite k="hf-gpt-oss-120b" />。2025-10-29 又推出以它微調的 gpt-oss-safeguard-120b 與 20b，專門做內容安全分類<Cite k="oai-changelog" />。截至 2026-10-06，OpenAI 沒有發布新一代 gpt-oss，但舊版仍被大量使用：2026 年 10 月 Hugging Face 顯示，20b 與 120b 近 30 天下載量都超過 300 萬次，20b 較多<Cite k="hf-gpt-oss-20b" /><Cite k="hf-gpt-oss-120b" />。
+
+## 特性分析
+
+**MoE 架構換取速度。** gpt-oss 是<Term id="moe">混合專家（MoE）</Term>Transformer，每個 token 只動用少數專家，120b 的<Term id="active-parameters">啟用參數</Term>只有約 51 億<Cite k="gpt-oss-card" />。Artificial Analysis（AA）量測 120b 輸出速度約每秒 180 tokens 以上，第三方託管的中位價格約為每百萬 tokens 輸入 0.15、輸出 0.59 美元（2026 年 10 月初，會隨供應商調價變動）<Cite k="aa-gpt-oss-120b" />。
+
+**先量化再發布。** MoE 權重在後訓練階段就採用 MXFP4 <Term id="quantization">量化</Term>，官方評測也全部以同一個量化版本進行，因此開發者下載到的就是官方評測所用的版本<Cite k="hf-gpt-oss-120b" />。
+
+**推理過程看得到。** 推理強度可設 low、medium、high；完整<Term id="chain-of-thought">思維鏈</Term>開放給開發者除錯，但 OpenAI 提醒不宜直接展示給終端使用者<Cite k="hf-gpt-oss-120b" />。模型原生支援<Term id="function-calling">函式呼叫</Term>、網頁瀏覽、Python 執行與結構化輸出，也可以再做<Term id="fine-tuning">微調</Term><Cite k="oai-gpt-oss-120b" />。
+
+**限制也很明顯。** 只支援文字輸入與輸出，<Term id="context-window">上下文視窗</Term>為 131,072 tokens，知識截止於 2024 年 6 月<Cite k="oai-gpt-oss-120b" />；而且必須使用 OpenAI 的 harmony 對話格式，否則輸出會不正確<Cite k="hf-gpt-oss-120b" />。
+
+## 適合與不適合的用途
+
+適合：
+
+- **資料不能出機房的內部部署**：金融、醫療、公部門可以在自有伺服器上執行，不必把資料送到外部 API。
+- **本地與邊緣推論**：20b 約 16GB 記憶體即可執行，適合工作站或高階筆電做原型與教學。
+- **垂直領域微調**：Apache 2.0 允許商用與修改，可用自有資料訓練專屬版本。
+- **內容安全把關**：gpt-oss-safeguard 會讀取開發者自己寫的政策，判斷內容是否違規並附上理由<Cite k="hf-gpt-oss-safeguard" />。
+- **研究與教學**：可直接觀察思維鏈、調整推理強度，是理解<LearnLink id="reasoning-models">推理模型</LearnLink>的好教材。
+
+不適合：
+
+- **前沿等級的長程 Agent 任務**：AA 量測 Terminal-Bench 4.0 成績為 0%，和閉源旗艦差距很大。
+- **圖片、語音等多模態工作**：只能處理文字。
+- **需要新知識或超長文件的應用**：知識停在 2024 年中，上下文只有約 13 萬 tokens。
+- **追求最強開放權重模型**：2026 年開放權重榜前段已由中國實驗室佔據，例如 <ModelChip id="xiaomi-mimo" />、<ModelChip id="zhipu-glm" /> 與 <ModelChip id="moonshot-kimi" /><Cite k="aa-leaderboard" />。
+
+## 版本演進
+
+| 發布日 | 版本 | 說明 |
+|---|---|---|
+| 2025-08-05 | gpt-oss-120b、gpt-oss-20b | 首批開放權重推理模型，Apache 2.0 授權 |
+| 2025-10-29 | gpt-oss-safeguard-120b、20b | 以 gpt-oss 微調的安全推理模型，可套用自訂政策 |
+| 2026 年（至 10 月） | 無新版本 | 官方模型頁仍以 120b、20b 為準 |
+
+即使只和美國實驗室的開放權重模型相比，gpt-oss 也已不再領先：AA 綜合智慧指數中，<ModelChip id="nvidia-nemotron" /> 的 Nemotron 3 Ultra 為 23 分、<ModelChip id="meta-muse-llama" /> 的 Muse Glimmer 約 17 分、<ModelChip id="google-gemma" /> 的 Gemma 4 31B 約 15 分，都高於 gpt-oss-120b 的 12 分；開放權重榜前段的 MiMo-V2.6-Pro、GLM-5.3 與 Kimi K3 則在 44 到 46 分<Cite k="aa-leaderboard" />。它目前的價值在於授權乾淨、部署簡單、生態系工具成熟，而不是能力領先。
+
+## 評測解讀
+
+<Callout type="warn" title="注意評測時間差">官方數字來自 2025 年 8 月的模型卡，AA 欄位讀取於 2026-10-06。兩者的提示方式與評分設定不完全相同，差幾個百分點屬正常範圍。</Callout>
+
+| 評測 | 120b 官方 | 120b AA | 20b 官方 | 20b AA |
+|---|---|---|---|---|
+| AIME 2025（無工具） | 92.5% | 93.4% | 91.7% | 89.3% |
+| GPQA Diamond（無工具） | 80.1% | 78.2% | 71.5% | 68.8% |
+| Humanity's Last Exam | 14.9% | 19.6% | 10.9% | 11.0% |
+| SWE-bench Verified | 62.4% | 未測 | 60.7% | 未測 |
+| AA 綜合智慧指數 v4.3.2 | 無 | 12 | 無 | 9 |
+
+- **舊題目可被重現**：AIME 與 GPQA 的官方數字和 AA 自測相差都在 3 個百分點以內，表示模型卡的數字大致可信<Cite k="gpt-oss-card" /><Cite k="aa-gpt-oss-120b" />。
+- **但舊題目已失去鑑別力**：AIME 分數超過九成，很難再區分模型高下。AA 指數 v4.3.2 改以 Agent、專業文件與長上下文任務為主，gpt-oss-120b 在這套標準下只有 12 分<Cite k="aa-leaderboard" />。
+- **人類偏好排名偏後**：LMArena 文字競技場上，120b 為 1352 分（第 212 名）、20b 為 1318 分（第 263 名）<Cite k="lmarena-text" />。
+- **讀數時記得它的年紀**：這些分數代表 2025 年中的中階推理能力。把它當作可控、可部署的基礎模型很合適，但不應拿來代表開放權重模型的前沿水準。

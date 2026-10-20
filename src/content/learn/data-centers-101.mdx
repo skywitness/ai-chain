@@ -1,0 +1,257 @@
+---
+title: "資料中心入門：AI 工廠長什麼樣子"
+subtitle: "電力、散熱、網路與機櫃：把電力變成 Token 的大型建築"
+description: "資料中心是放伺服器的建築，AI 資料中心則是以電力為原料、生產 Token 的「AI 工廠」。本文說明它的四大系統、AI 機櫃為何又熱又耗電、PUE 怎麼算，以及台灣廠商在其中的角色。"
+level: 1
+order: 108
+track: infra-business
+prerequisites: [why-gpus]
+next: [networking-for-ai, cloud-and-ai-business, datacenter-power-cooling]
+relatedSegments: [datacenter-infra, energy-power, servers-systems, networking-optics, cloud-neocloud, ai-accelerators]
+relatedCompanies: [nvidia, microsoft, alphabet, coreweave, vertiv, schneider-electric, eaton, equinix, digital-realty, ge-vernova, fortune-electric, delta-electronics, lite-on, avc, auras, kaori, foxconn, quanta, wiwynn, accton]
+relatedModels: []
+relatedTrends: [liquid-cooling-mainstream, 800v-dc-power, power-bottleneck-onsite-generation, hyperscaler-capex, rack-scale-systems, datacenter-local-impact]
+glossary:
+  - datacenter
+  - ai-factory
+  - token
+  - gpu
+  - ai-server
+  - rack
+  - nvl72
+  - rack-power-density
+  - power-grid
+  - power-transformer
+  - ups
+  - pdu
+  - 800v-dc
+  - pue
+  - liquid-cooling
+  - cold-plate
+  - cdu
+  - immersion-cooling
+  - nvlink
+  - scale-up
+  - scale-out
+  - network-switch
+  - optical-fiber
+  - gigawatt
+  - capex
+  - colocation
+  - hyperscaler
+  - neocloud
+scenes:
+  - { id: datacenter, variant: overview }
+keyTakeaways:
+  - "資料中心由運算、電力、散熱、網路四大系統組成，AI 資料中心是以電力生產 Token 的工廠。"
+  - "2025 年初機櫃平均約 15 kW，AI 機櫃動輒 60–132 kW，輝達更規劃 2027 年起支援 1 MW 機櫃。"
+  - "耗掉的電幾乎都變成熱，所以 AI 機房從吹冷氣改成用液體直接把熱帶走。"
+  - "PUE 是總用電除以 IT 用電，越接近 1 越省電；業界平均約 1.54，Google 約 1.09。"
+  - "電力取得已成 AI 擴建的關鍵限制，也帶動電源、散熱與重電廠商的需求。"
+estimatedMinutes: 11
+sources:
+  - key: iea-energy-ai
+    title: "Energy and AI – Executive summary"
+    publisher: "International Energy Agency (IEA)"
+    url: "https://www.iea.org/reports/energy-and-ai/executive-summary"
+    type: government
+    lang: en
+    published: "2025-04-10"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20261014190230/https://www.iea.org/reports/energy-and-ai/executive-summary"
+    note: "2024 年資料中心用電約 415 TWh（約佔全球 1.5%），2030 年增加一倍以上至約 945 TWh，AI 為最主要成長動力"
+  - key: delloro-rack-2025
+    title: "Dell'Oro Group Raises Market Forecast for Data Center Liquid Cooling and Rack Power Distribution"
+    publisher: "Dell'Oro Group"
+    url: "https://www.delloro.com/news/delloro-group-raises-market-forecast-for-data-center-liquid-cooling-and-rack-power-distribution/"
+    type: analyst
+    lang: en
+    published: "2025-02-05"
+    accessed: "2026-10-06"
+    note: "目前平均機櫃功率密度約 15 kW；AI 工作負載需要每櫃 60–120 kW"
+  - key: vertiv-gb200
+    title: "Vertiv Codevelops with NVIDIA Complete Power and Cooling Blueprint for NVIDIA GB200 NVL72 Platform"
+    publisher: Vertiv
+    url: "https://investors.vertiv.com/news/news-details/2024/Vertiv-Codevelops-with-NVIDIA-Complete-Power-and-Cooling-Blueprint-for-NVIDIA-GB200-NVL72-Platform/default.aspx"
+    type: press-release
+    lang: en
+    published: "2024-10-15"
+    accessed: "2026-10-06"
+    note: "7 MW 參考架構，支援每櫃最高 132 kW，採液冷與氣冷混合散熱"
+  - key: nvidia-gb200
+    title: "NVIDIA GB200 NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/gb200-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "單一機櫃連接 36 顆 Grace CPU 與 72 顆 Blackwell GPU，採機櫃級液冷設計；72 顆 GPU 的 NVLink 網域總頻寬每秒 130 TB"
+  - key: nvidia-vera-rubin
+    title: "NVIDIA Vera Rubin NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "整櫃 72 顆 Rubin GPU、36 顆 Vera CPU；頁面標示「Available Now」，稱 Vera Rubin 平台正放量進入全面量產（ramping into full production），台灣伺服器廠已開始出貨相關系統"
+  - key: nvidia-800v
+    title: "NVIDIA 800 VDC Architecture Will Power the Next Generation of AI Factories"
+    publisher: NVIDIA
+    url: "https://developer.nvidia.com/blog/nvidia-800-v-hvdc-architecture-will-power-the-next-generation-of-ai-factories/"
+    type: company-site
+    lang: en
+    published: "2025-05-20"
+    accessed: "2026-10-06"
+    note: "2027 年起支援 1 MW 等級機櫃，與 Kyber 機櫃同步全面量產；在園區邊界把 13.8 kV 交流電直接轉為 800V 直流；相較 415V 交流配電少用 45% 銅；電源元件夥伴含台達電與光寶科，系統夥伴含伊頓、施耐德電機與維諦技術"
+  - key: google-pue
+    title: "Efficiency: How we do it"
+    publisher: "Google Data Centers"
+    url: "https://datacenters.google/efficiency/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "Google 全球資料中心 2025 年的年平均 PUE 為 1.09（截至 2026 年第二季的過去 12 個月 PUE 同為 1.09）；引述 Uptime Institute 2025 年全球資料中心調查，受訪資料中心平均 PUE 為 1.54"
+  - key: ms-fairwater
+    title: "Inside the world's most powerful AI datacenter"
+    publisher: Microsoft
+    url: "https://blogs.microsoft.com/blog/2025/09/18/inside-the-worlds-most-powerful-ai-datacenter/"
+    type: company-site
+    lang: en
+    published: "2025-09-18"
+    accessed: "2026-10-06"
+    note: "威斯康辛州 Fairwater 園區佔地 315 英畝、三棟建築合計 120 萬平方英尺，串連數十萬顆最新的輝達 GPU；每櫃 72 顆 Blackwell GPU；閉迴路液冷，水只需注入一次即可循環使用；172 具 20 英尺風扇；機櫃間以 800 Gbps 的 InfiniBand 與乙太網路連接"
+  - key: goog-q2-2026
+    title: "Alphabet Announces Second Quarter 2026 Results (Form 8-K Exhibit 99.1)"
+    publisher: Alphabet
+    url: "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-06"
+    note: "2026 年第二季購置不動產與設備支出 449 億美元，2025 年同期為 224 億美元"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial: { status: fact-checked, author: learn-04, checkedBy: "learn-04-check", checkedOn: "2026-10-06" }
+---
+
+## 一句話解釋
+
+**<Term id="datacenter">資料中心</Term>是一棟專門放伺服器的建築，負責提供不間斷的電力、散熱、網路與安全；AI 資料中心則把成千上萬顆 <Term id="gpu">GPU</Term> 塞進高密度機櫃，吃進電力、產出 <Term id="token">Token</Term>，所以又被稱為「<Term id="ai-factory">AI 工廠</Term>」。** 你每問聊天機器人一個問題，背後都有某座資料中心裡的晶片在運轉。
+
+## 生活化比喻
+
+<Callout type="analogy" title="AI 資料中心是一座 24 小時運轉的工廠">
+
+傳統資料中心比較像一座大型倉庫兼圖書館：存放資料、回應網頁與手機 App 的請求。AI 資料中心則更像一座重工業工廠：
+
+- **原料是電**：工廠每分每秒都在吃進大量電力。
+- **機台是 GPU 伺服器**：一排排機櫃就是生產線。
+- **產品是 Token**：模型寫出的每一個字，都是這座工廠的產出。
+- **副產品是熱**：吃進去的電幾乎全部變成熱，必須不斷搬走，就像煉鋼廠需要大量冷卻水。
+- **輸送帶是網路**：把資料在機台之間、工廠與外界之間來回搬運。
+- **備用電源**：像醫院一樣，停電一秒都不行，所以要有電池與發電機隨時待命。
+
+</Callout>
+
+## 原理：一座 AI 資料中心的四大系統
+
+不論規模大小，資料中心都由四個系統組成：**運算、電力、散熱、網路**。下面的 3D 剖面可以切換導覽步驟，逐一觀察：
+
+<Scene3D id="datacenter" variant="overview" caption="AI 資料中心剖面：一排排機櫃分成冷通道與熱通道，上方與地下佈滿供電線路與冷卻管線。切換導覽步驟，看電力與熱如何進出機房。" />
+
+### 運算：裝滿 GPU 的機櫃
+
+<Term id="ai-server">AI 伺服器</Term>被裝進約一人高的<Term id="rack">機櫃</Term>裡，再一排排整齊排列。以輝達的 GB200 <Term id="nvl72">NVL72</Term> 為例，一個機櫃就連接了 72 顆 Blackwell GPU 與 36 顆 Grace CPU，採用機櫃級的液冷設計<Cite k="nvidia-gb200" />；新一代 Vera Rubin NVL72 已開始出貨、正放量邁向全面量產，同樣是一櫃 72 顆 Rubin GPU 搭配 36 顆 Vera CPU<Cite k="nvidia-vera-rubin" />。
+
+機櫃塞得越滿，用電就越驚人。業界用<Term id="rack-power-density">機櫃功率密度</Term>來描述一個機櫃吃多少電：
+
+<Compare title="傳統機房與 AI 機房" left={{ title: "傳統資料中心", items: ["放一般伺服器，處理網站、資料庫與企業軟體", "每櫃功率較低，2025 年初全體機櫃平均約 15 kW", "以空調吹冷風散熱為主", "伺服器各自運作，彼此連線需求較低"] }} right={{ title: "AI 資料中心", items: ["放滿 GPU 伺服器，負責模型訓練與推論", "每櫃 60–120 kW，GB200 NVL72 參考設計可達 132 kW", "改用液體把熱直接從晶片帶走", "數萬顆 GPU 必須用高速網路連成一體"] }} />
+
+研究機構 Dell'Oro 在 2025 年初指出，當時機櫃平均功率約 15 kW，AI 工作負載卻需要每櫃 60–120 kW<Cite k="delloro-rack-2025" />；維諦技術（Vertiv）與輝達合作的 GB200 NVL72 參考設計，可支援每櫃最高 132 kW<Cite k="vertiv-gb200" />，大約是當時平均機櫃的 9 倍。輝達更規劃從 2027 年起支援 1 MW（1,000 kW）等級的機櫃<Cite k="nvidia-800v" />。
+
+<BarChart title="一個機櫃要用多少電？" unit="kW" data={[{ label: "業界平均", value: 15 }, { label: "AI 需求上緣", value: 120 }, { label: "GB200 NVL72", value: 132 }, { label: "2027 目標", value: 1000, estimate: true }]} source={["delloro-rack-2025", "vertiv-gb200", "nvidia-800v"]} note="業界平均為 Dell'Oro 2025 年初數字；GB200 NVL72 為 Vertiv 參考設計的上限；2027 目標為輝達規劃，尚未量產" />
+
+### 電力：從電網到晶片的接力
+
+電從發電廠出發，要經過好幾道轉換，才會進到 GPU：
+
+<FlowSteps title="AI 資料中心的供電路徑" steps={[{ title: "電網", detail: "發電廠經高壓輸電線送電" }, { title: "變電站", detail: "變壓器把高壓降成中壓" }, { title: "UPS", detail: "停電時由電池撐到發電機啟動" }, { title: "PDU", detail: "把電分配到每一個機櫃" }, { title: "機櫃電源", detail: "交流電轉成直流電" }, { title: "GPU", detail: "最後變成運算與熱" }]} />
+
+資料中心從<Term id="power-grid">電網</Term>取電，經過<Term id="power-transformer">變壓器</Term>降壓，再通過 <Term id="ups">UPS</Term>（不斷電系統）與 <Term id="pdu">PDU</Term>（配電單元）分到每個機櫃。機櫃功率越來越高，傳統做法開始吃不消：輝達在 2025 年 5 月提出 <Term id="800v-dc">800V 直流</Term>架構，在園區邊界就把 13.8 kV 交流電直接轉成 800V 直流，相較 415V 交流配電可少用 45% 的銅，並預計隨 Kyber 機櫃在 2027 年全面量產<Cite k="nvidia-800v" />。
+
+衡量機房省不省電，最常用的指標是 <Term id="pue">PUE</Term>（電力使用效率）：
+
+<MathTeX tex={"\\mathrm{PUE}=\\frac{\\text{資料中心總用電}}{\\text{IT 設備用電}}"} display label="PUE 等於資料中心總用電除以 IT 設備用電" />
+
+PUE 越接近 1，代表花在冷卻與配電上的「額外負擔」越少。根據 Uptime Institute 2025 年的調查，受訪資料中心的平均 PUE 為 1.54，也就是每 1 度電給 IT 設備，還要另外花約 0.54 度在冷卻與配電等用途；Google 全球資料中心 2025 年的年平均 PUE 則是 1.09<Cite k="google-pue" />。
+
+### 散熱：從吹冷氣到「泡水」
+
+GPU 吃進去的電，最後幾乎都變成熱。傳統機房用空調吹冷風：冷空氣從機櫃正面吸入，熱空氣從背面排出，再把機櫃排成「冷通道」與「熱通道」，避免冷熱空氣混在一起。
+
+但機櫃功率衝上百 kW 等級之後，光靠吹風已經很難把熱帶走，像 GB200 NVL72 這類機櫃從設計上就採用液冷<Cite k="nvidia-gb200" />，<Term id="liquid-cooling">液冷</Term>因此成為 AI 機房的主流做法：
+
+1. **直接液冷**：在 GPU 上貼一塊金屬<Term id="cold-plate">水冷板</Term>，冷卻液流過時把熱帶走，再由 <Term id="cdu">CDU</Term>（冷卻液分配裝置）和機房的冷卻水交換熱量。
+2. **<Term id="immersion-cooling">浸沒式冷卻</Term>**：把整台伺服器泡進不導電的液體裡，目前仍屬於較少見的做法。
+
+微軟在威斯康辛州的 Fairwater AI 資料中心就是一例：它採用閉迴路液冷，水只需注入一次就能持續循環使用，再由 172 具 20 英尺（約 6 公尺）的大型風扇把水冷卻後送回機房<Cite k="ms-fairwater" />。
+
+### 網路：讓幾萬顆 GPU 像一台電腦
+
+訓練大型模型時，數萬顆 GPU 必須不停交換資料，網路因此和晶片一樣重要。網路分成兩個層次：
+
+- **<Term id="scale-up">Scale-up</Term>（機櫃內）**：GB200 NVL72 用 <Term id="nvlink">NVLink</Term> 把 72 顆 GPU 連成單一網域，總頻寬每秒 130 TB，讓它們像一顆超大 GPU 一樣運作<Cite k="nvidia-gb200" />。
+- **<Term id="scale-out">Scale-out</Term>（機櫃之間）**：再用<Term id="network-switch">交換器</Term>與<Term id="optical-fiber">光纖</Term>把成千上萬個機櫃連起來。Fairwater 就以速率 800 Gbps 的 InfiniBand 與乙太網路串連機櫃<Cite k="ms-fairwater" />。
+
+### 規模：從 MW 到 GW
+
+AI 資料中心的規模，已經從過去以 MW（百萬瓦）計，走向以 <Term id="gigawatt">GW</Term>（十億瓦）計。Fairwater 園區佔地 315 英畝（約 127 公頃），三棟建築合計 120 萬平方英尺（約 11 萬平方公尺），串連數十萬顆最新的輝達 GPU<Cite k="ms-fairwater" />。
+
+<StatGrid title="AI 資料中心的幾個關鍵數字" items={[{ label: "機櫃平均功率", value: "約 15 kW", note: "Dell'Oro，2025 年初" }, { label: "GB200 NVL72 參考設計", value: "最高 132 kW", note: "Vertiv，2024" }, { label: "業界平均 PUE", value: "1.54", note: "Uptime Institute 2025 年調查" }, { label: "全球資料中心用電", value: "約 415 TWh", note: "2024 年，IEA" }]} />
+
+國際能源總署（IEA）估計，2024 年全球資料中心用電約 415 TWh，約佔全球用電的 1.5%；到 2030 年將增加一倍以上，達到約 945 TWh，AI 是最主要的成長動力<Cite k="iea-energy-ai" />。蓋這些工廠的錢也非常驚人：Google 母公司 Alphabet 光是 2026 年第二季購置不動產與設備的支出就達 449 億美元，是一年前 224 億美元的兩倍<Cite k="goog-q2-2026" />。
+
+### 選址：先找電，再找地
+
+蓋一座 AI 工廠，第一個問題往往不是「地在哪裡」，而是「電從哪裡來」。業者選址時通常會考慮四件事：
+
+1. **電力**：附近的電網能不能在幾年內供應數百 MW 甚至 GW 等級的電，必要時是否能自建電廠。
+2. **散熱與水**：氣候越涼爽、冷卻水越容易取得，散熱就越省電。
+3. **網路**：要有足夠的光纖幹線，把資料中心和使用者、其他園區連起來。
+4. **社區與法規**：大型園區會影響地方電價、用水與景觀，需要地方政府與居民的支持。
+
+用途不同，選址邏輯也不同。訓練大型模型時，GPU 最好集中在同一個園區，才能高速同步；推論則更在意離使用者近不近、回應快不快，可以分散在更多城市。
+
+<DeepDive title="深入一點：1 GW 的資料中心能放多少顆 GPU？">
+
+用前面學到的數字，可以做一個粗估。先做三個假設：
+
+1. 整座園區從電網取得 1 GW（1,000 MW）電力。
+2. PUE 為 1.2，介於 Google 的 1.09 與業界平均 1.54 之間<Cite k="google-pue" />。
+3. 每個機櫃都是 GB200 NVL72 等級機櫃，以參考設計上限 132 kW 計算，每櫃 72 顆 GPU<Cite k="vertiv-gb200" /><Cite k="nvidia-gb200" />。
+
+**第一步，算出 IT 設備能分到多少電**：1,000 MW ÷ 1.2 ≈ 833 MW。
+
+**第二步，算出能放幾個機櫃**：833,000 kW ÷ 132 kW ≈ 6,300 個。
+
+**第三步，算出 GPU 數量**：6,300 × 72 ≈ 45 萬顆。
+
+這是粗估，不是任何園區的實際數字，但數量級和 Fairwater「數十萬顆 GPU」的描述相當<Cite k="ms-fairwater" />。實際數字會更少，因為園區還要放儲存設備、網路設備與一般伺服器，也要保留備援容量。
+
+這個算式也說明了 PUE 為什麼重要：如果 PUE 是業界平均的 1.54，IT 設備只分得到約 649 MW，大約只能放 4,900 個機櫃、35 萬顆 GPU，同樣的電少了約 10 萬顆 GPU。在電力取得越來越難的今天，省下來的每一度電，都能換成更多算力。
+
+最後看用電量：1 GW 全年滿載運轉是 1 GW × 8,760 小時 ＝ 8.76 TWh，約等於 2024 年全球資料中心總用電的 2%<Cite k="iea-energy-ai" />。一座園區就有這麼大的份量，這也是為什麼電網與發電設備會成為 AI 擴建的瓶頸。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+一座 AI 資料中心，幾乎把產業鏈中段的每個環節都串了起來：
+
+- **機房設備與營運**：<SegmentChip id="datacenter-infra" /> 提供 UPS、配電與 CDU 等設備，代表廠商有<CompanyChip id="vertiv">維諦技術（Vertiv）</CompanyChip>、<CompanyChip id="schneider-electric">施耐德電機</CompanyChip>與<CompanyChip id="eaton">伊頓（Eaton）</CompanyChip>，三家都是輝達 800V 直流架構的系統夥伴<Cite k="nvidia-800v" />。<CompanyChip id="equinix">易昆尼克斯（Equinix）</CompanyChip>與 <CompanyChip id="digital-realty">Digital Realty</CompanyChip> 則是出租機房空間的「房東」，這種模式稱為 <Term id="colocation">Colocation</Term>（主機代管）。
+- **電力**：<SegmentChip id="energy-power" /> 包括發電與電網設備，例如供應燃氣渦輪機的<CompanyChip id="ge-vernova">奇異維諾瓦（GE Vernova）</CompanyChip>，以及台灣的變壓器廠<CompanyChip id="fortune-electric">華城</CompanyChip>。
+- **伺服器與零組件**：<SegmentChip id="servers-systems" /> 由<CompanyChip id="foxconn">鴻海</CompanyChip>、<CompanyChip id="quanta">廣達</CompanyChip>、<CompanyChip id="wiwynn">緯穎</CompanyChip>組裝整座機櫃；水冷板有<CompanyChip id="avc">奇鋐</CompanyChip>與<CompanyChip id="auras">雙鴻</CompanyChip>；<CompanyChip id="delta-electronics">台達電</CompanyChip>與<CompanyChip id="lite-on">光寶科</CompanyChip>則名列輝達 800V 架構的電源元件夥伴<Cite k="nvidia-800v" />。機房端的 CDU 與熱交換器，台灣以<CompanyChip id="kaori">高力</CompanyChip>為代表。
+- **網路**：<SegmentChip id="networking-optics" /> 提供交換器與光模組，台灣的<CompanyChip id="accton">智邦</CompanyChip>為雲端業者打造資料中心交換器。
+- **使用者**：<SegmentChip id="cloud-neocloud" /> 的<Term id="hyperscaler">超大規模業者</Term>（例如<CompanyChip id="microsoft">微軟</CompanyChip>、<CompanyChip id="alphabet">Alphabet</CompanyChip>）與<Term id="neocloud">新雲</Term>（例如 <CompanyChip id="coreweave">CoreWeave</CompanyChip>）是資料中心的主要買家，它們的<Term id="capex">資本支出</Term>決定了整條鏈的訂單。
+
+想繼續深入，可以看趨勢文章<TrendLink id="liquid-cooling-mainstream">液冷成為主流</TrendLink>、<TrendLink id="800v-dc-power">800V 直流供電</TrendLink>與<TrendLink id="power-bottleneck-onsite-generation">電力瓶頸</TrendLink>，以及資料中心對電價、用水與社區的<TrendLink id="datacenter-local-impact">在地影響</TrendLink>。下一篇建議閱讀<LearnLink id="networking-for-ai">AI 叢集網路：Scale-up 與 Scale-out</LearnLink>，或從商業角度讀<LearnLink id="cloud-and-ai-business">雲端與 AI 的商業模式</LearnLink>。

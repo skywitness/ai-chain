@@ -1,0 +1,265 @@
+---
+/**
+ * 「延伸閱讀」 block at the end of a company profile (owner: pages-companies):
+ *  1. 「本站提及此公司的頁面」 — backlinks from learn / segments / trends / models / companies;
+ *  2. the primary segment page and same-segment peers from the roster.
+ *
+ *   <RelatedPages id="tsmc" name="台積電" segment="foundry-packaging" />
+ */
+import Icon from '../ui/Icon.astro';
+import CompanyChip from '../content/CompanyChip.astro';
+import { getRoster, segmentMeta, type SegmentId } from '../../lib/collections';
+import { sectionHref, segmentHref } from '../../lib/paths';
+import { zhConcat } from '../../lib/format';
+import { getCompanyRows } from '../../lib/scene-data/companies';
+import { BACKLINK_GROUPS, getBacklinks } from './backlinks';
+
+interface Props {
+  id: string;
+  name: string;
+  segment: SegmentId;
+  /** how many peers to list (default 10) */
+  peers?: number | undefined;
+}
+const { id, name, segment, peers: peerCount = 10 } = Astro.props;
+const links = await getBacklinks(id);
+const groups = BACKLINK_GROUPS.map((g) => ({ ...g, items: links.filter((l) => l.kind === g.kind) })).filter((g) => g.items.length);
+const seg = segmentMeta(segment);
+const sameSeg = getRoster().filter((r) => r.segment === segment && r.id !== id);
+const peers = [...sameSeg].sort((a, b) => a.tier - b.tier).slice(0, peerCount);
+const MAX = 6;
+const dirHref = `${sectionHref('companies')}?seg=${segment}`;
+// same rule as the directory's 環節 filter (primary or secondary segment), so the link count matches what it lists
+const dirCount = (await getCompanyRows()).filter((r) => r.segments.includes(segment)).length;
+---
+
+<div class="rp">
+  <div class="rp__col rp__col--wide">
+    <h3 class="rp__title">{zhConcat('本站提及', name, '的頁面')}</h3>
+    {
+      groups.length > 0 ? (
+        <div class="rp__groups">
+          {groups.map((g) =>
+            g.kind === 'company' ? (
+              <div class="rp__group">
+                <p class="rp__group-label">
+                  {g.label}
+                  <span class="rp__count">{g.items.length}</span>
+                </p>
+                <p class="rp__chips">
+                  {g.items.map((l) => (
+                    <CompanyChip id={l.id} />
+                  ))}
+                </p>
+              </div>
+            ) : (
+              <div class="rp__group">
+                <p class="rp__group-label">
+                  {g.label}
+                  <span class="rp__count">{g.items.length}</span>
+                </p>
+                <ul class="rp__links" role="list">
+                  {g.items.slice(0, MAX).map((l) => (
+                    <li>
+                      <a href={l.href}>
+                        {l.title}
+                        <Icon name="arrow-right" class="rp__arrow" />
+                      </a>
+                      {l.note && <span class="rp__note">{l.note}</span>}
+                    </li>
+                  ))}
+                </ul>
+                {g.items.length > MAX && (
+                  <details class="rp__more-links">
+                    <summary>再顯示 {g.items.length - MAX} 篇</summary>
+                    <ul class="rp__links" role="list">
+                      {g.items.slice(MAX).map((l) => (
+                        <li>
+                          <a href={l.href}>
+                            {l.title}
+                            <Icon name="arrow-right" class="rp__arrow" />
+                          </a>
+                          {l.note && <span class="rp__note">{l.note}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            ),
+          )}
+        </div>
+      ) : (
+        <p class="rp__empty">其他頁面整理中，目前尚未有文章引用這家公司。可以先從所屬環節認識它的上下游。</p>
+      )
+    }
+  </div>
+  <div class="rp__col">
+    <h3 class="rp__title">同環節公司</h3>
+    {
+      seg && (
+        <a class="rp__seg" href={segmentHref(segment)} style={`--sc:${seg.color}`}>
+          <span class="rp__seg-kicker">產業鏈環節</span>
+          <span class="rp__seg-title">{seg.title}</span>
+          <Icon name="arrow-right" class="rp__arrow" />
+        </a>
+      )
+    }
+    {
+      peers.length > 0 && (
+        <p class="rp__peers">
+          {peers.map((p) => (
+            <CompanyChip id={p.id} />
+          ))}
+        </p>
+      )
+    }
+    {
+      dirCount > peers.length + 1 && (
+        <a class="rp__more" href={dirHref}>
+          {zhConcat(`看全部 ${dirCount} 家`, seg?.short ?? '', '相關公司')}
+        </a>
+      )
+    }
+  </div>
+</div>
+
+<style>
+  /* Single-column grids use minmax(0, 1fr): an implicit auto track would grow to the widest
+     unbreakable chip or link (e.g. 「Prometheus（貝佐斯的工業 AI 公司）」) and widen the page at 320 px. */
+  .rp {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+  @media (min-width: 760px) {
+    .rp {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: var(--space-6);
+    }
+  }
+  .rp__col {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+  .rp__title {
+    font-size: var(--fs-m);
+  }
+  .rp__groups {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+  .rp__group-label {
+    margin-block-end: var(--space-1);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.04em;
+    color: var(--c-fg-subtle);
+  }
+  .rp__count {
+    margin-inline-start: 0.5em;
+    font-weight: var(--fw-regular);
+    font-variant-numeric: tabular-nums;
+  }
+  .rp__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.25rem;
+  }
+  .rp__more-links summary {
+    padding-block: 0.5rem;
+    font-size: var(--fs-s);
+    color: var(--c-link);
+    cursor: pointer;
+  }
+  .rp__more-links .rp__links {
+    border-block-start: 0;
+  }
+  .rp__links {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-block-start: 1px solid var(--c-border);
+  }
+  .rp__links li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0 var(--space-3);
+    padding-block: 0.55rem;
+    border-block-end: 1px solid var(--c-border);
+    font-size: var(--fs-s);
+  }
+  .rp__links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    min-block-size: 1.75rem;
+    font-weight: var(--fw-semibold);
+    text-decoration: none;
+  }
+  .rp__links a:hover {
+    text-decoration: underline;
+  }
+  .rp__links :global(.rp__arrow),
+  .rp__seg :global(.rp__arrow) {
+    flex: none;
+    opacity: 0.6;
+  }
+  .rp__note {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .rp__empty {
+    padding: var(--space-4);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .rp__seg {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0 var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid color-mix(in srgb, var(--sc) 40%, var(--c-border));
+    border-radius: var(--radius-l);
+    background: color-mix(in srgb, var(--sc) 8%, var(--c-bg-elev));
+    color: var(--c-fg);
+    text-decoration: none;
+  }
+  .rp__seg:hover {
+    background: color-mix(in srgb, var(--sc) 14%, var(--c-bg-elev));
+  }
+  .rp__seg-kicker {
+    grid-column: 1;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .rp__seg-title {
+    grid-column: 1;
+    font-weight: var(--fw-bold);
+  }
+  .rp__seg :global(.rp__arrow) {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+  .rp__peers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.25rem;
+  }
+  .rp__more {
+    justify-self: start;
+    font-size: var(--fs-s);
+  }
+</style>

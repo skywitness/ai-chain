@@ -1,0 +1,286 @@
+---
+title: "TAIDE 台灣可信任生成式 AI"
+family: "TAIDE"
+kind: "llm"
+labName: "國科會／國家實驗研究院"
+origin: "TW"
+summary: "國科會於 2023 年啟動、國家實驗研究院執行的「推動臺灣可信任生成式 AI 發展計畫」，以國外開放權重模型為基礎，用合法授權的台灣資料續訓成繁體中文對話模型。目前主力是 2026-02-13 釋出的 Gemma-3-TAIDE-12b-Chat-2602（124 億參數、128K 上下文），TMMLU+ 自測平均 58.02，高於 Google 原版 Gemma 3 12B 的 53.82；2026 年 6 月另推出法規檢索用的嵌入模型。規模小、沒有推理模式，定位是公部門與在地應用的基礎模型。"
+strengths:
+  - "訓練資料來自與政府單位、出版社洽談的合法授權，2602 版公開列出中央社、光華雜誌、司法院裁判書、教育部辭典等資料來源"
+  - "台灣在地知識有實際提升：TMMLU+ 平均 58.02、台灣地理 70.05，皆高於基礎模型 Gemma-3-12b-it 的 53.82 與 60.93"
+  - "授權免費，條款未禁止商業使用，散布衍生模型時也可收費；可在自有伺服器部署，12B 模型的 BF16 權重檔約 27GB"
+  - "針對摘要、寫信、寫文章、中英互譯等辦公室任務，以及修正翻譯腔做加強"
+weaknesses:
+  - "只有 12B 等級，沒有推理模式；基礎模型 Gemma 3 12B 在 AA 綜合智慧指數僅 3.75 分"
+  - "沒有官方 API 或按 token 計價服務，AA 與 Arena 也未收錄，缺乏第三方評測"
+  - "授權有額外限制：禁止軍事用途、只能從國研院授權網站取得，並同時受 Gemma 或 Llama 原始條款約束"
+  - "建議只用文字輸入；TMMLU+ 閩南語子項僅 37.98 分"
+bestFor:
+  - "公部門與教育單位的繁體中文文書處理：摘要、公文與信件草稿、中英互譯"
+  - "重視訓練資料來源合法性、需要地端部署的機關與企業"
+  - "以嵌入模型 Embeddinggemma-GTAIDE 建立法規檢索與陳情回覆的 RAG 系統"
+  - "作為繁體中文微調與在地化研究的起點"
+positioning:
+  capability: 4
+  costIndex: 5
+  openness: 0.5
+  method: "editorial"
+  asOf: "2026-10-06"
+  note: "TAIDE 沒有被 Artificial Analysis 評測，三項座標皆為編輯判斷。capability 以基礎模型 Gemma 3 12B Instruct 在 AA 智慧指數 v4.3.2 的 3.75 分（實測值）為參考；TAIDE 2602 主要提升繁中知識（TMMLU+ 高約 4 個百分點），通用推理沒有證據顯示大幅改變，故取 4。官方沒有 API，costIndex 以 Arena 列出的 Gemma-3-12b-it 第三方託管價（輸入 0.05、輸出 0.15 美元／百萬 tokens）按 3:1 混合為 0.075 美元，套用 0.05 美元 → 0、100 美元 → 100 的對數換算約 5。權重免費開放但須登入同意條款、禁止軍事用途並限定取得管道，openness 為 0.5。"
+versions:
+  - id: "gemma-3-taide-12b-chat-2602"
+    name: "Gemma-3-TAIDE-12b-Chat-2602"
+    released: "2026-02-13"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "Gemma-TAIDE 模型授權條款（另受 Gemma 條款約束）"
+    architecture: "dense"
+    params:
+      totalB: 12.4
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 131072
+    reasoning: "none"
+    availability:
+      - "self-host"
+    benchmarks:
+      - benchmark: "tmmluplus"
+        score: 58.02
+        setting: "lm-evaluation-harness，66 個子類別 20,118 題平均（TAIDE 自測）"
+        reportedBy: "lab"
+        date: "2026-02-13"
+        source:
+          title: "taide/Gemma-3-TAIDE-12b-Chat-2602"
+          publisher: "TAIDE（Hugging Face）"
+          url: "https://huggingface.co/taide/Gemma-3-TAIDE-12b-Chat-2602"
+          type: "docs"
+          lang: "zh-TW"
+          accessed: "2026-10-06"
+    notes: "以 google/gemma-3-12b-pt 為基礎，使用約 220 億 tokens 正體中文資料續訓並加入中期訓練，再做指令微調；訓練使用 NVIDIA H200 共 1,520 GPU 小時，微調資料 20 萬筆。TMMLU+ 台灣地理 70.05、台灣用語 76.11、閩南語 37.98。Hugging Face 需登入同意條款後下載，模型頁顯示沒有推論服務商部署。"
+  - id: "gemma-3-taide-12b-chat"
+    name: "Gemma-3-TAIDE-12b-Chat"
+    released: "2025-08-22"
+    status: "ga"
+    tier: "mid"
+    weights: "open-weights"
+    license: "Gemma-TAIDE 模型授權條款（另受 Gemma 條款約束）"
+    architecture: "dense"
+    params:
+      totalB: 12.4
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 131072
+    reasoning: "none"
+    availability:
+      - "self-host"
+    benchmarks:
+      - benchmark: "tmmluplus"
+        score: 49.95
+        setting: "lm-evaluation-harness，與 2602 版同一套方法（TAIDE 自測，刊於 2602 版模型卡）"
+        reportedBy: "lab"
+        date: "2026-02-13"
+        source:
+          title: "taide/Gemma-3-TAIDE-12b-Chat-2602"
+          publisher: "TAIDE（Hugging Face）"
+          url: "https://huggingface.co/taide/Gemma-3-TAIDE-12b-Chat-2602"
+          type: "docs"
+          lang: "zh-TW"
+          accessed: "2026-10-06"
+    notes: "TAIDE 第一個改用 Google Gemma 3 12B 的版本；繁中訓練資料 460 億 tokens，訓練使用 642 個 H200 GPU 小時。已由 2602 版接替，但仍可下載。"
+  - id: "llama-3-1-taide-lx-8b-chat"
+    name: "Llama-3.1-TAIDE-LX-8B-Chat"
+    released: "2025-02-11"
+    status: "ga"
+    tier: "small"
+    weights: "open-weights"
+    license: "Llama3-TAIDE 模型授權條款（另受 Llama 3.1 社群授權約束）"
+    architecture: "dense"
+    params:
+      totalB: 8.5
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 131584
+    reasoning: "none"
+    availability:
+      - "self-host"
+    benchmarks:
+      - benchmark: "tmmluplus"
+        score: 45.58
+        setting: "lm-evaluation-harness，與 2602 版同一套方法（TAIDE 自測，刊於 2602 版模型卡）"
+        reportedBy: "lab"
+        date: "2026-02-13"
+        source:
+          title: "taide/Gemma-3-TAIDE-12b-Chat-2602"
+          publisher: "TAIDE（Hugging Face）"
+          url: "https://huggingface.co/taide/Gemma-3-TAIDE-12b-Chat-2602"
+          type: "docs"
+          lang: "zh-TW"
+          accessed: "2026-10-06"
+    notes: "以 Meta Llama 3.1 8B 為基礎，繁中訓練資料 450 億 tokens，使用 2,896 個 H100 GPU 小時；上下文由前一版的 8K 增至 131,584 tokens（約 131K），官方稱繁中解碼速度快 20%。"
+flagshipVersion: "gemma-3-taide-12b-chat-2602"
+relatedLearn:
+  - "open-vs-closed-models"
+  - "pretraining-to-chat"
+  - "tokens-and-embeddings"
+  - "rag-and-vector-search"
+  - "model-evaluation"
+  - "ai-safety-and-regulation"
+glossary:
+  - "sovereign-ai"
+  - "open-weights"
+  - "fine-tuning"
+  - "pretraining"
+  - "context-window"
+  - "embedding"
+  - "rag"
+  - "benchmark"
+sources:
+  - key: "taide-site"
+    title: "TAIDE - 推動臺灣可信任生成式AI發展計畫"
+    publisher: "國家實驗研究院"
+    url: "https://taide.stpi.niar.org.tw/index"
+    type: "government"
+    lang: "zh-TW"
+    accessed: "2026-10-06"
+    note: "首頁「重點研發與活動歷程」列出計畫啟動與各版本釋出日期（民國紀年）"
+  - key: "taide-license"
+    title: "TAIDE模型：Llama3-TAIDE 與 Gemma-TAIDE 模型授權條款"
+    publisher: "國家實驗研究院"
+    url: "https://taide.stpi.niar.org.tw/public/download-model"
+    type: "docs"
+    lang: "zh-TW"
+    accessed: "2026-10-06"
+  - key: "hf-taide-2602"
+    title: "taide/Gemma-3-TAIDE-12b-Chat-2602"
+    publisher: "TAIDE（Hugging Face）"
+    url: "https://huggingface.co/taide/Gemma-3-TAIDE-12b-Chat-2602"
+    type: "docs"
+    lang: "zh-TW"
+    accessed: "2026-10-06"
+    note: "模型卡含訓練資料清單、TMMLU+ 評測與授權說明"
+  - key: "hf-taide-12b"
+    title: "taide/Gemma-3-TAIDE-12b-Chat"
+    publisher: "TAIDE（Hugging Face）"
+    url: "https://huggingface.co/taide/Gemma-3-TAIDE-12b-Chat"
+    type: "docs"
+    lang: "zh-TW"
+    accessed: "2026-10-06"
+  - key: "hf-taide-llama31"
+    title: "taide/Llama-3.1-TAIDE-LX-8B-Chat"
+    publisher: "TAIDE（Hugging Face）"
+    url: "https://huggingface.co/taide/Llama-3.1-TAIDE-LX-8B-Chat"
+    type: "docs"
+    lang: "zh-TW"
+    accessed: "2026-10-06"
+  - key: "hf-taide-lx7b"
+    title: "taide/TAIDE-LX-7B"
+    publisher: "TAIDE（Hugging Face）"
+    url: "https://huggingface.co/taide/TAIDE-LX-7B"
+    type: "docs"
+    lang: "zh-TW"
+    accessed: "2026-10-06"
+    note: "模型卡載明以 Llama 2 7B 為基礎，額外擴充 24,720 個中文字元與字詞"
+  - key: "hf-taide-embed"
+    title: "taide/embeddinggemma-GTAIDE-300m-2605"
+    publisher: "TAIDE（Hugging Face）"
+    url: "https://huggingface.co/taide/embeddinggemma-GTAIDE-300m-2605"
+    type: "docs"
+    lang: "zh-TW"
+    accessed: "2026-10-06"
+  - key: "aa-gemma3-12b"
+    title: "Gemma 3 12B Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/gemma-3-12b"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "TAIDE 基礎模型的參考分數（Intelligence Index v4.3.2）"
+  - key: "arena-text"
+    title: "Text Arena Leaderboard (Overall)"
+    publisher: "LMArena"
+    url: "https://arena.ai/leaderboard/text"
+    type: "leaderboard"
+    lang: "en"
+    published: "2026-10-02"
+    accessed: "2026-10-06"
+    note: "lmarena.ai 已轉址至 arena.ai；榜上未列出 TAIDE，僅有基礎模型 gemma-3-12b-it"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-13"
+  checkedBy: "models-13-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+TAIDE 是「推動臺灣可信任生成式 AI 發展計畫」的簡稱，由國科會在 2023-04-27 啟動，國家實驗研究院（國研院）負責執行，目標是開發符合台灣語言與文化的對話模型，避免過度依賴外國技術<Cite k="taide-site" />。它不從零訓練，而是拿國外的<Term id="open-weights">開放權重</Term>模型當基礎（先是 Meta Llama，現在是 Google Gemma 3），再用台灣資料續訓與<Term id="fine-tuning">微調</Term>。這是典型的<Term id="sovereign-ai">主權 AI</Term>做法：用較少的算力，換取在地語言能力與資料自主。
+
+目前的主力對話模型是 2026-02-13 釋出的 Gemma-3-TAIDE-12b-Chat-2602；2026-06-12 又釋出法規檢索用的嵌入模型<Cite k="taide-site" />。
+
+## 特性分析
+
+**資料來源經過授權。** 訓練文本是團隊與政府單位、民間出版社洽談後合法取得<Cite k="taide-site" />。2602 版公開的<Term id="pretraining">續訓</Term>資料包括中央社 1993 至 2024 年的新聞、光華雜誌、今周刊、法規資料庫、司法院裁判書、教育部辭典與公視字幕等<Cite k="hf-taide-2602" />。
+
+**小規模在地化訓練。** 2602 版以 Gemma 3 12B 預訓練版為基礎，加入約 220 億 tokens 正體中文資料續訓，並新增以高品質台灣資料進行的中期訓練，加強台灣在地知識，最後再做指令微調，整個過程使用 1,520 個 H200 GPU 小時；官方也稱這一版修正了翻譯腔<Cite k="hf-taide-2602" /><Cite k="taide-site" />。
+
+**規格保守。** 模型有 124 億參數，<Term id="context-window">上下文視窗</Term>為 128K tokens。由於沒有用圖片資料訓練，官方建議只用文字輸入，模型卡也沒有提供推理模式或工具呼叫的說明<Cite k="hf-taide-2602" />。
+
+**授權免費但有條件。** 國研院的授權免費、全球適用，條款沒有禁止商業使用，但禁止軍事用途，也不得宣稱模型產生的內容出自人類；模型只能從國研院授權的網站取得，散布衍生模型時須標示是基於 TAIDE，並同時遵守 Gemma 或 Llama 的原始條款<Cite k="taide-license" />。
+
+## 適合與不適合的用途
+
+適合：
+
+- **繁體中文文書工作**：官方主打摘要、寫信、寫文章、中翻英與英翻中五大任務<Cite k="taide-site" />，適合公部門與學校。
+- **需要台灣在地知識的應用**：TMMLU+ 的台灣地理子項為 70.05，高於基礎模型 Gemma-3-12b-it 的 60.93<Cite k="hf-taide-2602" />。
+- **地端部署**：BF16 權重檔約 27GB，適合資料不能離開機關的情境<Cite k="hf-taide-2602" />。
+- **法規檢索**：Embeddinggemma-GTAIDE-300m-2605 是 3 億參數的<Term id="embedding">嵌入模型</Term>，以全國法規資料微調，用來協助公務人員回覆民眾陳情，可作為 <Term id="rag">RAG</Term> 系統的檢索元件<Cite k="hf-taide-embed" />。
+
+不適合：
+
+- **複雜推理、程式與 Agent 任務**：沒有推理模式，基礎模型 Gemma 3 12B 在 AA 綜合智慧指數只有 3.75 分<Cite k="aa-gemma3-12b" />。
+- **圖片理解**：官方建議只用文字輸入。
+- **想直接呼叫雲端 API**：官方沒有按 token 計價的服務，Hugging Face 也顯示沒有推論服務商部署<Cite k="hf-taide-2602" />。
+- **台語應用**：TMMLU+ 閩南語子項只有 37.98 分<Cite k="hf-taide-2602" />。
+
+## 版本演進
+
+| 發布日 | 版本 | 重點 |
+|---|---|---|
+| 2024-04-15 | TAIDE-LX-7B | 以 Llama 2 7B 為基礎，擴充 24,720 個中文字元與字詞 |
+| 2024-04-29 | Llama3-TAIDE-LX-8B-Chat-Alpha1 | Meta 發表 Llama 3 後 4 天完成訓練的搶先版 |
+| 2025-02-11 | Llama-3.1-TAIDE-LX-8B-Chat | 上下文由 8K 增至約 131K，繁中解碼快 20% |
+| 2025-08-22 | Gemma-3-TAIDE-12b-Chat | 改以 Gemma 3 12B 為基礎，強化辦公室任務 |
+| 2026-02-13 | Gemma-3-TAIDE-12b-Chat-2602 | 加入中期訓練，修正翻譯腔 |
+| 2026-06-12 | Embeddinggemma-GTAIDE-300m-2605 | 法規檢索用嵌入模型 |
+
+版本日期取自 TAIDE 官網的研發歷程<Cite k="taide-site" />，TAIDE-LX-7B 的詞彙擴充數取自其模型卡<Cite k="hf-taide-lx7b" />。可以看出 TAIDE 的策略是「跟著主流開放模型換底座」：從 Llama 2、Llama 3、Llama 3.1 一路換到 Gemma 3，每次換底座都要重做續訓。2025-08 那一版使用 460 億 tokens 繁中資料<Cite k="hf-taide-12b" />，2602 版只用 220 億 tokens，但多了中期訓練，分數反而較高。
+
+## 評測解讀
+
+<Callout type="warn" title="目前只有官方自測">以下 TMMLU+ 分數都由 TAIDE 團隊以 lm-evaluation-harness 自行測得，刊於 2026-02-13 的模型卡。Artificial Analysis 與 Arena 都沒有收錄 TAIDE，尚無第三方驗證。</Callout>
+
+| 模型 | TMMLU+ 平均 | 台灣地理 | 台灣用語 | 閩南語 |
+|---|---|---|---|---|
+| Gemma-3-TAIDE-12b-Chat-2602 | 58.02 | 70.05 | 76.11 | 37.98 |
+| Gemma-3-TAIDE-12b-Chat | 49.95 | 69.14 | 80.53 | 38.76 |
+| Gemma-3-12b-it（Google 原版） | 53.82 | 60.93 | 71.68 | 28.68 |
+| Llama-3.1-TAIDE-LX-8B-Chat | 45.58 | 62.36 | 75.10 | 31.78 |
+
+資料來源：TAIDE 模型卡<Cite k="hf-taide-2602" />。
+
+- **續訓不一定加分**：2025-08 版的平均分 49.95 反而低於 Google 原版的 53.82，可能是續訓時遺忘了部分通用知識，也可能與 TAIDE 自行做的指令微調不如 Google 官方版有關；2602 版加入中期訓練後才回升到 58.02，比原版高約 4.2 個百分點。
+- **各子項有取捨**：2602 版的台灣用語子項（76.11）低於前一版（80.53），平均分進步不代表每個面向都進步。
+- **TMMLU+ 只測知識**：它是選擇題，無法反映生成品質、推理、工具使用或安全性。
+- **用基礎模型推估水準**：基礎模型 Gemma-3-12b-it 在 Arena 文字競技場為 1342 分、排第 230 名<Cite k="arena-text" />，AA 綜合智慧指數 3.75 分<Cite k="aa-gemma3-12b" />。TAIDE 的通用能力合理推估落在相近水準，強項主要在台灣在地知識與用語。

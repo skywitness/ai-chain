@@ -1,0 +1,68 @@
+# Proposals from the energy scene agent, 2026-10-09.
+# Nothing here blocks the scene: each capability is implemented locally in
+# src/three/scenes/energy/ and can move to the kit / core unchanged.
+
+- id: merged-facility
+  target: src/three/kit/MergedParts.ts
+  problem: >
+    Diorama scenes (energy, datacenter, gpu-scale) build facilities from dozens of primitives
+    (rounded boxes, cylinders, domes, lathe shells) that share one lit material but need different
+    palette tints. One Mesh per part blows the draw-call budget; BatchedMesh needs per-instance
+    colours re-applied on every theme switch and still costs a texture fetch per vertex. Step focus
+    also needs to recede a whole facility toward the background and hover needs a glow, without
+    cloning materials.
+  proposal: >
+    `new MergedParts()` with `.add(geometry, tint: (p: Palette) => Color, place?: {x,y,z,rx,ry,rz})`
+    and `.build(params?)` → `{ mesh, recolor(p), fx: { dim, hot, warn, warnTint, apply(p) } }`.
+    Parts are merged (position + normal, non-indexed) into ONE vertex-coloured MeshStandardMaterial
+    mesh; `recolor(p)` rewrites only the colour attribute per part range; `fx.apply(p)` sets
+    material.color (dim → scale toward bg) and emissive (dim wash, hover highlight, warning tint),
+    tuned per theme. One draw call per facility; theme switches cost one attribute upload.
+  workaround: >
+    src/three/scenes/energy/parts.ts (PartList, mergeParts, Fx, Facility). The energy scene draws
+    a nuclear plant, SMR site, combined-cycle plant, battery yard, the grid substation, gantry
+    steel and a six-hall campus with its substation as nine merged facility meshes.
+
+- id: transmission-lines
+  target: src/three/kit/PowerLines.ts
+  problem: >
+    Power scenes (energy, datacenter power-chain, taiwan-map) need overhead lines that read as
+    real engineering: lattice pylons with insulator strings, three conductors per circuit, sagging
+    spans, gantries at substation ends, and a particle path that follows one conductor.
+  proposal: >
+    Kit module `PowerLines({ routes: { pts: [x, z][], startKind?, endKind? }[], pylon?: { h, arm,
+    top } })` → `{ pylons: InstancedMesh, gantries: BufferGeometry (for MergedParts),
+    wires: LineSegments, paths: Vector3[][] }`. Pylon yaw bisects the turn at each support;
+    conductors are parabolic catenaries with sag ∝ span; `paths[i]` is the top-phase polyline for
+    PathFlow. Three draw calls for any number of routes.
+  workaround: >
+    src/three/scenes/energy/parts.ts (pylonGeometry, addGantry, supportsFor, phasePoint, sagPoints,
+    routeWires) plus addRoute() in index.ts.
+
+- id: capacity-columns
+  target: src/three/kit/CompareColumns.ts
+  problem: >
+    "Scale comparison" steps (energy: a 1 GW campus vs a large reactor; nameplate vs average
+    output per source) need translucent outer columns (capacity), solid inner fills (average
+    output), a rim ring and a dashed level line, animated between steps, in a few draw calls.
+  proposal: >
+    `CompareColumns({ count, radius, height })` with `.set(i, { x, z, top, fill, color })`,
+    `.animateTo(states, tween)` and `.setTheme(theme)`; three InstancedMeshes (outer glass,
+    inner fill, rim torus) plus an optional dashed level line between two columns.
+  workaround: cols / drawCols / level in src/three/scenes/energy/index.ts.
+
+- id: label-shape-rules
+  target: src/three/core/labels.ts (LabelSpec)
+  problem: >
+    Labels keep their pixel size while the scene shrinks on phones (4:3 at the default height,
+    4:5 tall), so the same label can fit 'above' on desktop but fall off the stage edge on a phone
+    (the inside check hides even `always` labels) or collide with a neighbour. Scenes then need
+    per-shape rules (side, anchor, offset, shorter text) and must re-apply them on resize.
+  proposal: >
+    Optional `fallback?: LabelAlign[]` on LabelSpec: when the preferred placement is outside the
+    stage (or collides, for non-`always` labels), the layout pass tries the fallbacks in order
+    before hiding the label. Plus `short?: string`, used instead of `text` when the stage is
+    narrower than a threshold (e.g. 640 px).
+  workaround: >
+    adapt() / applyAdapts() in src/three/scenes/energy/index.ts: rules keyed on { portrait,
+    narrow (< 640 px) } that set align / position / offset / text / always, re-applied in onResize.

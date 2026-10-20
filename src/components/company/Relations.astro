@@ -1,0 +1,159 @@
+---
+/**
+ * Competitors and supplier / customer / partner / investor relationships as CompanyChips
+ * (owner: pages-companies). Unknown ids render as plain chips (CompanyChip handles that).
+ *
+ *   <Relations competitors={d.competitors} relationships={d.relationships} />
+ */
+import CompanyChip from '../content/CompanyChip.astro';
+import { RELATION_LABELS, RELATION_ORDER } from './labels';
+
+type Ref = string | { id: string };
+interface RelationLike {
+  company: Ref;
+  type: string;
+  note?: string | undefined;
+}
+interface Props {
+  competitors?: readonly Ref[] | undefined;
+  relationships?: readonly RelationLike[] | undefined;
+  self: string;
+}
+const { competitors = [], relationships = [], self } = Astro.props;
+const idOf = (r: Ref) => (typeof r === 'string' ? r : r.id);
+
+const groups = new Map<string, Array<{ id: string; note?: string | undefined }>>();
+for (const t of RELATION_ORDER) groups.set(t, []);
+for (const r of relationships) {
+  const id = idOf(r.company);
+  if (id === self) continue;
+  const list = groups.get(r.type) ?? [];
+  if (!list.some((x) => x.id === id)) list.push({ id, note: r.note });
+  groups.set(r.type, list);
+}
+const comp = groups.get('competitor') ?? [];
+for (const c of competitors) {
+  const id = idOf(c);
+  if (id !== self && !comp.some((x) => x.id === id)) comp.push({ id });
+}
+groups.set('competitor', comp);
+const rel = RELATION_ORDER.filter((t) => t !== 'competitor')
+  .map((t) => ({ type: t, label: RELATION_LABELS[t] ?? t, items: groups.get(t) ?? [] }))
+  .filter((g) => g.items.length > 0);
+const withNotes = comp.filter((c) => c.note);
+const plain = comp.filter((c) => !c.note);
+---
+
+<div class="rel">
+  {
+    comp.length > 0 && (
+      <div class="rel__block">
+        <h3 class="rel__title">主要競爭者</h3>
+        {plain.length > 0 && (
+          <p class="rel__chips">
+            {plain.map((c) => (
+              <CompanyChip id={c.id} />
+            ))}
+          </p>
+        )}
+        {withNotes.length > 0 && (
+          <ul class="rel__list" role="list">
+            {withNotes.map((c) => (
+              <li>
+                <CompanyChip id={c.id} />
+                <span class="rel__note">{c.note}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    )
+  }
+  {
+    rel.length > 0 && (
+      <div class="rel__grid">
+        {rel.map((g) => (
+          <div class="rel__block rel__block--card">
+            <h3 class="rel__title">
+              {g.label}
+              <span class="rel__n">{g.items.length}</span>
+            </h3>
+            <ul class="rel__list" role="list">
+              {g.items.map((c) => (
+                <li>
+                  <CompanyChip id={c.id} />
+                  {c.note && <span class="rel__note">{c.note}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .rel {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .rel__block {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .rel__block--card {
+    align-content: start;
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  /* masonry-like columns: cards of very different heights pack without holes */
+  .rel__grid {
+    columns: 17rem 3;
+    column-gap: var(--space-3);
+  }
+  .rel__grid > .rel__block--card {
+    break-inside: avoid;
+    margin-block-end: var(--space-3);
+  }
+  .rel__grid > .rel__block--card:last-child {
+    margin-block-end: 0;
+  }
+  .rel__title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.03em;
+    color: var(--c-fg-muted);
+  }
+  .rel__n {
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .rel__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.3rem;
+    font-size: var(--fs-base);
+  }
+  .rel__list {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .rel__list li {
+    font-size: var(--fs-s);
+    line-height: 1.7;
+  }
+  .rel__note {
+    margin-inline-start: 0.35rem;
+    color: var(--c-fg-muted);
+  }
+</style>

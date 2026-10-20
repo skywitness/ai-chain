@@ -1,0 +1,202 @@
+---
+/**
+ * Table of contents from MDX headings (`const { headings } = await render(entry)`).
+ * The current section is highlighted while scrolling (aria-current="location").
+ *
+ *   <TOC headings={headings} />                       sidebar list (sticky placement is up to the layout)
+ *   <TOC headings={headings} variant="disclosure" />  collapsed <details> for narrow screens
+ *
+ * Extra entries (e.g. LevelSection titles, which are not markdown headings) can be passed via `extra`
+ * and are merged in document order by the caller's array order.
+ */
+import type { MarkdownHeading } from 'astro';
+import { uid as pageUid } from '../content/page-state';
+
+interface Props {
+  headings: readonly MarkdownHeading[];
+  minDepth?: number | undefined;
+  maxDepth?: number | undefined;
+  title?: string | undefined;
+  variant?: 'list' | 'disclosure' | undefined;
+  class?: string | undefined;
+}
+const {
+  headings,
+  minDepth = 2,
+  maxDepth = 3,
+  title = '本頁目錄',
+  variant = 'list',
+  class: className,
+} = Astro.props;
+const items = headings.filter((h) => h.depth >= minDepth && h.depth <= maxDepth && h.slug);
+const uid = pageUid(Astro, 'toc-title');
+---
+
+{
+  items.length > 0 &&
+    (variant === 'disclosure' ? (
+      <details class:list={['toc', 'toc--disclosure', className]} data-toc data-pagefind-ignore>
+        <summary class="toc__title">
+          {title}
+          <span class="toc__count">{items.length} 節</span>
+        </summary>
+        <ol class="toc__list" role="list">
+          {items.map((h) => (
+            <li class:list={['toc__item', `toc__item--d${h.depth}`]}>
+              <a href={`#${h.slug}`}>{h.text}</a>
+            </li>
+          ))}
+        </ol>
+      </details>
+    ) : (
+      <nav class:list={['toc', 'toc--list', className]} aria-labelledby={uid} data-toc data-pagefind-ignore>
+        <p class="toc__title" id={uid}>
+          {title}
+        </p>
+        <ol class="toc__list" role="list">
+          {items.map((h) => (
+            <li class:list={['toc__item', `toc__item--d${h.depth}`]}>
+              <a href={`#${h.slug}`}>{h.text}</a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    ))
+}
+
+<script>
+  // Scroll-spy: mark the heading nearest the top of the viewport.
+  const tocs = document.querySelectorAll<HTMLElement>('[data-toc]');
+  if (tocs.length && 'IntersectionObserver' in window) {
+    const links = new Map<string, HTMLAnchorElement[]>();
+    tocs.forEach((toc) =>
+      toc.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {
+        const id = decodeURIComponent(a.hash.slice(1));
+        links.set(id, [...(links.get(id) ?? []), a]);
+      }),
+    );
+    const targets = [...links.keys()]
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => !!el);
+    const visible = new Set<string>();
+    let current = '';
+    const setCurrent = (id: string) => {
+      if (id === current) return;
+      links.get(current)?.forEach((a) => a.removeAttribute('aria-current'));
+      current = id;
+      links.get(id)?.forEach((a) => a.setAttribute('aria-current', 'location'));
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) visible.add(e.target.id);
+          else visible.delete(e.target.id);
+        }
+        const firstVisible = targets.find((t) => visible.has(t.id));
+        if (firstVisible) {
+          setCurrent(firstVisible.id);
+          return;
+        }
+        // Nothing in the band: use the last heading above the viewport.
+        const above = targets.filter((t) => t.getBoundingClientRect().top < 0);
+        const last = above[above.length - 1];
+        if (last) setCurrent(last.id);
+      },
+      { rootMargin: '-72px 0px -60% 0px', threshold: 0 },
+    );
+    targets.forEach((t) => io.observe(t));
+  }
+</script>
+
+<style>
+  @layer components {
+    .toc {
+      font-size: var(--fs-s);
+      line-height: 1.5;
+    }
+    .toc__title {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--c-fg-subtle);
+      margin-block-end: var(--space-2);
+    }
+    .toc__list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      border-inline-start: 1px solid var(--c-border);
+    }
+    .toc__item a {
+      display: block;
+      margin-inline-start: -1px;
+      padding: 0.35em 0 0.35em var(--space-3);
+      border-inline-start: 2px solid transparent;
+      color: var(--c-fg-muted);
+      text-decoration: none;
+      transition:
+        color var(--dur-1) ease,
+        border-color var(--dur-1) ease;
+    }
+    .toc__item--d3 a {
+      padding-inline-start: calc(var(--space-3) + 0.9em);
+      font-size: 0.95em;
+    }
+    .toc__item--d4 a {
+      padding-inline-start: calc(var(--space-3) + 1.8em);
+      font-size: 0.92em;
+    }
+    .toc__item a:hover {
+      color: var(--c-fg);
+    }
+    .toc__item a[aria-current] {
+      color: var(--c-fg);
+      font-weight: var(--fw-semibold);
+      border-inline-start-color: var(--c-accent);
+    }
+
+    .toc--disclosure {
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+    }
+    .toc--disclosure .toc__title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+      min-height: var(--tap);
+      margin: 0;
+      padding: 0 var(--space-4);
+      cursor: pointer;
+      list-style: none;
+      font-size: var(--fs-s);
+      color: var(--c-fg);
+      letter-spacing: 0.02em;
+    }
+    .toc--disclosure .toc__title::-webkit-details-marker {
+      display: none;
+    }
+    .toc--disclosure .toc__title::after {
+      content: '';
+      inline-size: 0.5em;
+      block-size: 0.5em;
+      border-inline-end: 1.5px solid currentColor;
+      border-block-end: 1.5px solid currentColor;
+      transform: rotate(45deg) translateY(-2px);
+      transition: transform var(--dur-2) ease;
+      margin-inline-start: auto;
+    }
+    .toc--disclosure[open] .toc__title::after {
+      transform: rotate(-135deg) translateY(-2px);
+    }
+    .toc__count {
+      font-weight: var(--fw-regular);
+      color: var(--c-fg-subtle);
+      font-size: var(--fs-xs);
+    }
+    .toc--disclosure .toc__list {
+      margin: 0 var(--space-4) var(--space-4);
+    }
+  }
+</style>

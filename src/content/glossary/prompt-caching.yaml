@@ -1,0 +1,38 @@
+term: "提示快取"
+zh: "提示快取"
+en: "Prompt Caching"
+aliases:
+  - "提示詞快取"
+  - "上下文快取"
+  - "快取輸入"
+  - "Prompt Cache"
+  - "Context Caching"
+category: inference
+level: 2
+short: >-
+  把每次都重複的提示開頭（如系統指令、長文件）的計算結果存起來，下次直接重用，省錢又省時間。
+definition: >-
+  許多應用每次請求都會送出相同的開頭，例如系統指令、工具說明或一份長文件。提示快取把這段相同前綴在 Prefill 階段算出的 KV Cache 暫存起來，之後的請求只要開頭完全一致就能直接重用，縮短首 token 延遲並降低成本。各家 API 都把它反映在價格上：依 Anthropic 2026 年 10 月的文件，寫入 5 分鐘快取的 token 收基本輸入價格的 1.25 倍、寫入 1 小時快取收 2 倍，讀取快取一般只收 0.1 倍，部分新模型更低；OpenAI 則對支援的模型預設啟用，快取輸入最多可折價 95%。對 Agent、程式開發工具這類一再重送長上下文的應用，快取命中率對推論成本影響很大。
+example: >-
+  像老師每堂課都要用同一份教材：第一次讀完就做好筆記，之後上課直接看筆記，不必把整份教材從頭再讀一遍。
+related: [kv-cache, prefill, ttft, token-pricing, context-window]
+learnMore: [inference-optimization, cloud-and-ai-business]
+segments: [cloud-neocloud, foundation-models]
+sources:
+  - title: "Prompt caching"
+    publisher: "Anthropic"
+    url: "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - title: "Prompt caching"
+    publisher: "OpenAI"
+    url: "https://developers.openai.com/api/docs/guides/prompt-caching"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-inference
+  checkedBy: "gloss-inference-check"
+  checkedOn: "2026-10-06"

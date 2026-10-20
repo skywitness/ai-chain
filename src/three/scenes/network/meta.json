@@ -1,0 +1,145 @@
+{
+  "id": "network",
+  "title": "AI 網路與光通訊",
+  "description": "這個場景分三個視圖說明 AI 叢集怎麼把 GPU 連在一起，光點代表資料封包。第一個視圖是機櫃內的 Scale-up 網路（NVLink 網域）：機櫃上下兩群運算托盤裝著 GPU，中間是 NVLink 交換托盤；每顆 GPU 都經由機櫃背面的銅纜背板，各有一條連線接到每一顆 NVLink 交換晶片，所以任兩顆 GPU 之間只隔一個交換晶片，而且可以同時以極高頻寬互傳資料；每顆 GPU 另有一張網卡，經光纖接到 Scale-out 交換器，再通往左側半透明的另一個機櫃（另一個 NVLink 網域）；這條機櫃外的路頻寬比 NVLink 小得多。第二個視圖是機櫃之間的 Scale-out 網路：GPU 伺服器接到葉交換器（leaf），每台葉交換器再接到每一台脊交換器（spine），任兩台伺服器之間最多經過「葉、脊、葉」三台交換器，並有多條等價路徑可分攤流量。AI 叢集常改用「軌道最佳化」接法：每台伺服器的第 1 號 GPU 都接到同一台葉交換器（軌道 1），依此類推；訓練時的 All-Reduce 先分段加總（Reduce-Scatter）、再把結果發回每顆 GPU（All-Gather），沿著同一條軌道環狀傳遞，每一步只經過一台交換器。跨軌道的大流量要經過脊交換器，若兩條大流量被雜湊到同一條上行鏈路，封包就會排隊，形成壅塞熱點；適應性路由會把其中一條改派到空閒的路徑。第三個視圖比較訊號離開交換晶片之後的三種走法：銅纜 DAC 一路都是電訊號，最省電但只能傳數公尺；可插拔光收發模組在面板上用 DSP 整理訊號、再由雷射把電轉成光，經光纖可傳數百公尺以上，但較耗電；共同封裝光學（CPO）把光引擎放在交換晶片四周的同一個封裝上，電訊號只走幾毫米就轉成光，雷射則放在面板上可插拔的外部光源模組。後方的比較卡以示意高度並列兩種柱：橘色柱是每位元功耗，藍色柱是傳輸距離。銅纜最省電但距離最短；可插拔光模組傳得遠但最耗電，其中一段是 DSP 的耗電，線性驅動光模組（LPO）就是省掉這一段；CPO 傳得一樣遠又省電。功耗等於每位元能耗乘以頻寬。圖中的 GPU、托盤、伺服器與交換器數量都是示意。",
+  "variants": ["scale-up", "scale-out", "cpo"],
+  "defaultVariant": "scale-up",
+  "steps": [
+    {
+      "id": "overview",
+      "title": "總覽",
+      "caption": "AI 訓練要讓大量 GPU 不停交換資料，光點就是資料封包。機櫃內用 NVLink 等 Scale-up 互連把 GPU 連成一台「大 GPU」；機櫃之間靠乙太網路或 InfiniBand 的 Scale-out 網路串連；訊號則走銅線，或轉成光在光纖裡傳。"
+    },
+    {
+      "id": "nvlink-domain",
+      "title": "NVLink 網域",
+      "caption": "同一個機櫃裡，上下兩群運算托盤的 GPU 透過中間的 NVLink 交換托盤彼此相連，可以直接讀寫對方的記憶體。光點越密代表頻寬越高：通往左側另一個機櫃（另一個 NVLink 網域）只能走網卡，頻寬遠小於機櫃內的 NVLink（示意）。",
+      "variant": "scale-up"
+    },
+    {
+      "id": "all-to-all",
+      "title": "全互連",
+      "caption": "每顆 GPU 都有一條連線接到每一顆 NVLink 交換晶片，這些連線經由機櫃背面的銅纜背板接起來。因此任兩顆 GPU 之間只隔一個交換晶片，所有 GPU 可以同時全速互傳。",
+      "variant": "scale-up"
+    },
+    {
+      "id": "leaf-spine",
+      "title": "葉脊架構",
+      "caption": "機櫃之間由交換器串連：伺服器接到葉交換器（leaf），每台葉交換器再接到每一台脊交換器（spine）。任兩台伺服器最多經過「葉→脊→葉」三台交換器，而且有多條等價路徑可以分攤流量（ECMP）。",
+      "variant": "scale-out"
+    },
+    {
+      "id": "rail-optimized",
+      "title": "軌道最佳化",
+      "caption": "AI 叢集常把每台伺服器的第 1 號 GPU 都接到同一台葉交換器（軌道 1），第 2 號接到軌道 2，依此類推。訓練時的 All-Reduce 沿著軌道環狀傳遞梯度：先分段加總（Reduce-Scatter），再把結果發回每顆 GPU（All-Gather），每一步只經過一台交換器。",
+      "variant": "scale-out"
+    },
+    {
+      "id": "congestion",
+      "title": "壅塞熱點",
+      "caption": "跨軌道的流量（例如 MoE 的 All-to-All）要經過脊交換器。若兩條大流量被雜湊到同一條上行鏈路，封包就在交換器排隊，形成壅塞熱點，整步訓練都得等最慢的那條流量。適應性路由與封包噴灑會把流量改派到空閒的路徑。",
+      "variant": "scale-out"
+    },
+    {
+      "id": "copper-optics",
+      "title": "銅纜與光模組",
+      "caption": "訊號離開交換晶片後，先沿電路板上的銅線走到面板。直接插銅纜（DAC）最省電，但速度越高能傳的距離越短，只夠連到同一或隔壁機櫃；插上光收發模組，由 DSP 整理訊號、雷射把電轉成光，經光纖可傳數百公尺以上，但模組相當耗電。",
+      "variant": "cpo"
+    },
+    {
+      "id": "cpo",
+      "title": "CPO 光引擎",
+      "caption": "共同封裝光學（CPO）把光引擎放進交換晶片的封裝，電訊號只走幾毫米就轉成光；容易故障的雷射則放在面板上可插拔的外部光源模組。後方比較卡以示意高度並列每位元功耗與傳輸距離：功耗（W）＝每位元能耗（pJ/bit）× 頻寬（Tb/s）。",
+      "variant": "cpo"
+    }
+  ],
+  "hotspots": [
+    {
+      "id": "gpu",
+      "label": "GPU",
+      "detail": "AI 運算晶片。每個運算托盤裝有數顆 GPU 與 CPU（圖中每托盤 4 顆 GPU 為示意）。在同一個 NVLink 網域裡，GPU 可以直接讀寫其他 GPU 的記憶體，整櫃像一顆放大版的晶片。",
+      "glossary": "gpu"
+    },
+    {
+      "id": "nvlink-switch",
+      "label": "NVLink 交換晶片",
+      "detail": "裝在機櫃中段的 NVLink 交換托盤上。每顆 GPU 都有一條連線接到每一顆交換晶片，所以任兩顆 GPU 之間只隔一跳，而且能同時全速互通。以 NVL72 機櫃為例，72 顆 GPU 就是這樣透過 NVLink 交換托盤全互連。",
+      "glossary": "nvlink"
+    },
+    {
+      "id": "copper-spine",
+      "label": "銅纜背板",
+      "detail": "機櫃背面成束的高速銅纜（NVLink spine），把每個運算托盤接到每個交換托盤。機櫃內的距離只有一兩公尺，用銅線不需要光電轉換，比光纖省電也便宜。",
+      "glossary": "scale-up"
+    },
+    {
+      "id": "nic",
+      "label": "網卡（通往機櫃外）",
+      "detail": "每顆 GPU 另外搭配一張高速網卡，連到機櫃外的 Scale-out 網路。網卡的頻寬遠低於 NVLink（圖中光點較稀疏，為示意），所以需要大量交換資料的工作會盡量留在同一個 NVLink 網域內。",
+      "glossary": "nic"
+    },
+    {
+      "id": "leaf-switch",
+      "label": "葉交換器（Leaf）",
+      "detail": "第一層交換器，直接連接伺服器的網卡。傳統做法放在機櫃頂端（Top of Rack），每台葉交換器都接到每一台脊交換器。",
+      "glossary": "network-switch"
+    },
+    {
+      "id": "spine-switch",
+      "label": "脊交換器（Spine）",
+      "detail": "第二層交換器，連接所有葉交換器。跨葉交換器的流量走「葉→脊→葉」，中間有多條等價路徑，可用 ECMP 分攤流量；叢集更大時會再往上加一層交換器。",
+      "glossary": "network-switch"
+    },
+    {
+      "id": "rail",
+      "label": "軌道（Rail）",
+      "detail": "軌道最佳化（rail-optimized）接法：每台伺服器第 N 號 GPU 的網卡都接到第 N 台葉交換器。同號 GPU 之間的 All-Reduce 只要經過一台交換器，延遲低，也不會佔用脊交換器的頻寬。",
+      "glossary": "scale-out"
+    },
+    {
+      "id": "all-reduce",
+      "label": "All-Reduce",
+      "detail": "分散式訓練最基本的通訊：每顆 GPU 貢獻自己算出的梯度，全部加總後再把同一份結果發回每顆 GPU。環狀演算法分兩段：Reduce-Scatter 與 All-Gather，各需 N−1 步（N 為參與的 GPU 數）。",
+      "glossary": "all-reduce"
+    },
+    {
+      "id": "congestion",
+      "label": "壅塞熱點",
+      "detail": "ECMP 依封包標頭的雜湊值選路，幾條大流量可能剛好擠進同一條鏈路，交換器緩衝區開始排隊、延遲飆高，甚至丟包。InfiniBand，以及 Spectrum-X、Ultra Ethernet 等 AI 乙太網路，用適應性路由、封包噴灑與壅塞控制來緩解。",
+      "glossary": "ultra-ethernet"
+    },
+    {
+      "id": "dac",
+      "label": "銅纜 DAC",
+      "detail": "被動式直連銅纜（Direct Attach Copper）：線材本身不耗電、延遲最低也最便宜，但每通道速度越高，訊號衰減越快，只能傳數公尺。稍遠一點可改用兩端內建訊號晶片的主動式電纜（AEC）。",
+      "glossary": "aec"
+    },
+    {
+      "id": "pluggable",
+      "label": "可插拔光收發模組",
+      "detail": "插在交換器面板上的模組：DSP 重整電訊號，雷射與調變器把電轉成光送進光纖，接收端的光偵測器再轉回電。可傳數百公尺到數公里、壞了能直接抽換，但 DSP 與雷射相當耗電。拿掉 DSP、由主晶片直接驅動的版本稱為 LPO。",
+      "glossary": "optical-transceiver"
+    },
+    {
+      "id": "cpo-engine",
+      "label": "CPO 光引擎",
+      "detail": "共同封裝光學（Co-Packaged Optics）把矽光子光引擎和交換晶片放在同一個封裝基板上，環繞在晶片四周。電訊號只走幾毫米就轉成光，省下長走線與 DSP 的耗電；缺點是光引擎故障時不能像模組那樣直接抽換。",
+      "glossary": "cpo"
+    },
+    {
+      "id": "laser-source",
+      "label": "外部雷射光源",
+      "detail": "雷射是光通訊裡最容易故障、也最怕熱的元件，所以 CPO 通常把雷射放在面板上可插拔的外部光源模組（ELS），用光纖把連續光送到光引擎，再由光引擎上的調變器把資料載上去。",
+      "glossary": "silicon-photonics"
+    },
+    {
+      "id": "power-per-bit",
+      "label": "功耗與距離比較",
+      "detail": "比較連線方案常看「每傳 1 位元耗多少能量」（pJ/bit）。功耗（W）＝每位元能耗（pJ/bit）× 頻寬（Tb/s）。示意：10 pJ/bit × 100 Tb/s ＝ 1,000 W；若降到 4 pJ/bit，同樣頻寬只要 400 W。比較卡上橘色柱是每位元功耗、藍色柱是傳輸距離，柱高只表示相對高低（示意）：銅纜省電但只到數公尺，可插拔光模組傳得遠但耗電，CPO 兩者兼顧。",
+      "glossary": "cpo"
+    }
+  ],
+  "data": "none",
+  "loop": "continuous",
+  "budgetKB": 30
+}

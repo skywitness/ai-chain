@@ -1,0 +1,677 @@
+---
+title: "階躍星辰 Step 系列"
+family: "Step"
+kind: "llm"
+lab: "stepfun"
+labName: "階躍星辰（StepFun）"
+origin: "CN"
+summary: "上海階躍星辰（StepFun）的大型語言模型系列，走「高效率」路線：Step 3.5 Flash 與 Step 3.7 Flash 以約 2,000 億總參數、110 億啟用參數提供 Apache 2.0 開放權重。2026-09-20 推出的旗艦 Step 5 Preview 為 6,000 億參數 MoE、支援 100 萬 tokens 與圖片影片輸入，Artificial Analysis 綜合智慧指數 44 分，官方表示將於 10 月 15 日開放權重。"
+strengths:
+  - "Step 5 Preview 在 AA 綜合智慧指數 v4.3.2 得 44 分，與 GLM-5.3（45 分）、Kimi K3（44 分）同一級距，官方混合價格低於 GLM-5.3"
+  - "每個 token 只啟用 110 億到 270 億參數，推論成本低；Step 3.5 Flash 每百萬 tokens 輸入 0.10、輸出 0.30 美元"
+  - "Flash 系列採 Apache 2.0 授權，可商用、可微調，官方說明可在 128GB 統一記憶體的電腦本地執行"
+  - "Step 3.7 Flash 與 Step 5 Preview 原生支援圖片與影片輸入，適合需要「看畫面再動手」的 Agent"
+  - "官方特別強化金融研究與專業文件工作，Step 5 Preview 在外部金融評測 FrontierFinance 得 66.4%"
+weaknesses:
+  - "旗艦 Step 5 Preview 截至 2026-10-06 仍是預覽版且權重未公開，開放時程只有官方預告"
+  - "Flash 系列的 AA 指數只有 17 到 19 分（估計值），與同期旗艦差距大"
+  - "Step 5 Preview 在 Terminal-Bench 4.0 為 33.3%，低於 GLM-5.3 的 41.9% 與封閉前沿模型"
+  - "模型代號汰換快：2026-07-08 已停止 Step 3 與多款 Step 1、Step 2 舊模型的 API"
+bestFor:
+  - "大量、低成本的 Agent 與工具呼叫流程（Step 3.5／3.7 Flash）"
+  - "需要圖片、影片理解並在本地部署的應用"
+  - "金融研究、財報整理與長文件分析（Step 5 Preview）"
+  - "想以 Apache 2.0 授權模型做微調的團隊"
+positioning:
+  capability: 44
+  costIndex: 44.1
+  openness: 0
+  method: "computed"
+  asOf: "2026-10-06"
+  note: "capability 取旗艦 Step 5 Preview 的 AA 綜合智慧指數 v4.3.2（43.7）；costIndex 以官方定價每百萬 tokens 輸入 1.00、輸出 2.70 美元，按 3:1 混合為 1.425 美元，依對數換算（0.05 美元 = 0、100 美元 = 100）得 44.1；openness 以旗艦計為 0，因截至 2026-10-06 權重尚未公開（官方預告 10 月 15 日開放），系列中的 Step 3.5／3.7 Flash 為 Apache 2.0 開放權重，若以其計算則為 0.8。"
+versions:
+  - id: "step-5-preview"
+    name: "Step 5 Preview"
+    released: "2026-09-20"
+    status: "preview"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "moe"
+    params:
+      totalB: 600
+      activeB: 27
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+      - "video"
+    modalitiesOut:
+      - "text"
+    contextTokens: 1000000
+    maxOutputTokens: 65536
+    reasoning: "always"
+    availability:
+      - "api"
+      - "chat-app"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1
+        outputPerMTok: 2.7
+        cachedInputPerMTok: 0.05
+        currency: "USD"
+        tierNote: "未命中快取的輸入價已含寫入快取；輸出含推理過程"
+        source:
+          title: "Pricing and Rate Limits"
+          publisher: "StepFun Open Platform Docs"
+          url: "https://platform.stepfun.ai/docs/en/guides/pricing/details"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 43.7
+        setting: "v4.3.2"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Step 5 Preview Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/step-5"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 46.5
+        setting: "官方發布頁，High 推理強度，無工具（數值與 AA 獨立測試的 46.5% 相同）"
+        reportedBy: "lab"
+        date: "2026-09-20"
+        source:
+          title: "Step 5 Preview：向前一步，智能效率的新一代「帕累托前沿」"
+          publisher: "StepFun 階躍星辰"
+          url: "https://www.stepfun.com/step-5-preview"
+          type: "press-release"
+          lang: "zh-CN"
+          published: "2026-09-20"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 93.5
+        setting: "官方，High 推理強度"
+        reportedBy: "lab"
+        date: "2026-09-20"
+        source:
+          title: "Step 5 Preview：向前一步，智能效率的新一代「帕累托前沿」"
+          publisher: "StepFun 階躍星辰"
+          url: "https://www.stepfun.com/step-5-preview"
+          type: "press-release"
+          lang: "zh-CN"
+          published: "2026-09-20"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 85
+        setting: "官方，Terminal-Bench 2.1"
+        reportedBy: "lab"
+        date: "2026-09-20"
+        source:
+          title: "Step 5 Preview：向前一步，智能效率的新一代「帕累托前沿」"
+          publisher: "StepFun 階躍星辰"
+          url: "https://www.stepfun.com/step-5-preview"
+          type: "press-release"
+          lang: "zh-CN"
+          published: "2026-09-20"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 33.3
+        setting: "AA 獨立測試，Terminal-Bench 4.0（官方發布頁引用同一數字）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Step 5 Preview Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/step-5"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1453.7
+        setting: "第 74 名，僅 2,701 票，屬初步排名"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "發布日依階躍星辰官網新聞頁（2026-09-20），Artificial Analysis 則記為 2026-09-18。官方發布頁表示模型將於 10 月 15 日開放權重，但未說明採用何種授權；截至 2026-10-06 仍為封閉權重。API 模型代號 step-5-preview，單次請求最多 60 張圖片，推理強度分 low、medium、high。"
+  - id: "step-3-7-flash"
+    name: "Step 3.7 Flash"
+    released: "2026-05-29"
+    status: "ga"
+    tier: "mid"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    params:
+      totalB: 198
+      activeB: 11
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+      - "video"
+    modalitiesOut:
+      - "text"
+    contextTokens: 262144
+    reasoning: "always"
+    availability:
+      - "api"
+      - "self-host"
+      - "cloud-marketplace"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.2
+        outputPerMTok: 1.15
+        cachedInputPerMTok: 0.04
+        currency: "USD"
+        source:
+          title: "Pricing and Rate Limits"
+          publisher: "StepFun Open Platform Docs"
+          url: "https://platform.stepfun.ai/docs/en/guides/pricing/details"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "swe-bench-pro"
+        score: 56.3
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-05-29"
+        source:
+          title: "stepfun-ai/Step-3.7-Flash model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/stepfun-ai/Step-3.7-Flash"
+          type: "docs"
+          lang: "en"
+          published: "2026-05-29"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 59.5
+        setting: "官方，Terminal-Bench 2.1"
+        reportedBy: "lab"
+        date: "2026-05-29"
+        source:
+          title: "stepfun-ai/Step-3.7-Flash model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/stepfun-ai/Step-3.7-Flash"
+          type: "docs"
+          lang: "en"
+          published: "2026-05-29"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 48.1
+        setting: "官方，含工具"
+        reportedBy: "lab"
+        date: "2026-05-29"
+        source:
+          title: "stepfun-ai/Step-3.7-Flash model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/stepfun-ai/Step-3.7-Flash"
+          type: "docs"
+          lang: "en"
+          published: "2026-05-29"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 19.5
+        setting: "v4.3.2（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Step 3.7 Flash Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/step-3-7-flash"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 80.9
+        setting: "AA 獨立測試"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Step 3.7 Flash Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/step-3-7-flash"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 98.5
+        setting: "AA 獨立測試（Telecom 領域）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Step 3.7 Flash Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/step-3-7-flash"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "1,960 億參數語言主幹加 18 億參數視覺編碼器，每個 token 啟用約 110 億；推理強度分 low、medium、high，官方稱吞吐量最高每秒 400 tokens。可在 128GB 統一記憶體的 Mac 等高記憶體裝置本地執行。"
+  - id: "step-3-5-flash"
+    name: "Step 3.5 Flash"
+    released: "2026-02-02"
+    status: "ga"
+    tier: "mid"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    params:
+      totalB: 196
+      activeB: 11
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 262144
+    reasoning: "always"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.1
+        outputPerMTok: 0.3
+        cachedInputPerMTok: 0.02
+        currency: "USD"
+        tierNote: "step-3.5-flash 與 Agent 調校版 step-3.5-flash-2603 同價"
+        source:
+          title: "Pricing and Rate Limits"
+          publisher: "StepFun Open Platform Docs"
+          url: "https://platform.stepfun.ai/docs/en/guides/pricing/details"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 74.4
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-02-02"
+        source:
+          title: "stepfun-ai/Step-3.5-Flash model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/stepfun-ai/Step-3.5-Flash"
+          type: "docs"
+          lang: "en"
+          published: "2026-02-01"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 51
+        setting: "官方，Terminal-Bench 2.0"
+        reportedBy: "lab"
+        date: "2026-02-02"
+        source:
+          title: "stepfun-ai/Step-3.5-Flash model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/stepfun-ai/Step-3.5-Flash"
+          type: "docs"
+          lang: "en"
+          published: "2026-02-01"
+          accessed: "2026-10-06"
+      - benchmark: "aime-2025"
+        score: 97.3
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-02-02"
+        source:
+          title: "stepfun-ai/Step-3.5-Flash model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/stepfun-ai/Step-3.5-Flash"
+          type: "docs"
+          lang: "en"
+          published: "2026-02-01"
+          accessed: "2026-10-06"
+      - benchmark: "livecodebench"
+        score: 86.4
+        setting: "官方，LiveCodeBench v6"
+        reportedBy: "lab"
+        date: "2026-02-02"
+        source:
+          title: "stepfun-ai/Step-3.5-Flash model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/stepfun-ai/Step-3.5-Flash"
+          type: "docs"
+          lang: "en"
+          published: "2026-02-01"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 88.2
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-02-02"
+        source:
+          title: "stepfun-ai/Step-3.5-Flash model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/stepfun-ai/Step-3.5-Flash"
+          type: "docs"
+          lang: "en"
+          published: "2026-02-01"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 16.6
+        setting: "v4.3.2（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Step 3.5 Flash Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/step-3-5-flash-0202"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 83.1
+        setting: "AA 獨立測試"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Step 3.5 Flash Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/step-3-5-flash-0202"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 21.1
+        setting: "AA 獨立測試，無工具"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Step 3.5 Flash Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/step-3-5-flash-0202"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1393.3
+        setting: "第 169 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "以三層滑動視窗注意力搭配一層全注意力（3:1）壓低長上下文成本，並用 3 路多 token 預測（MTP-3），官方稱一般使用每秒 100 到 300 tokens。API 另有針對 Agent 調校、可選低推理模式的 step-3.5-flash-2603。"
+  - id: "step-3"
+    name: "Step 3"
+    released: "2025-07-31"
+    status: "retired"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    params:
+      totalB: 321
+      activeB: 38
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 65536
+    reasoning: "always"
+    availability:
+      - "self-host"
+    benchmarks:
+      - benchmark: "lmarena-text"
+        score: 1349.4
+        setting: "第 215 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "多模態推理模型，語言部分 3,160 億參數、含視覺共 3,210 億，每個 token 啟用 380 億；2025 年 7 月發表（技術報告 7 月 25 日上線），7 月 31 日上傳權重。官方 API 已於 2026-07-08 停止服務，建議改用 step-3.7-flash；權重仍可下載。"
+flagshipVersion: "step-5-preview"
+relatedLearn:
+  - "open-vs-closed-models"
+  - "mixture-of-experts"
+  - "multimodal-models"
+  - "inference-optimization"
+  - "model-evaluation"
+glossary:
+  - "moe"
+  - "active-parameters"
+  - "open-weights"
+  - "multimodal"
+  - "context-window"
+  - "speculative-decoding"
+  - "agent"
+  - "elo-rating"
+  - "benchmark-contamination"
+sources:
+  - key: "step5-page"
+    title: "Step 5 Preview：向前一步，智能效率的新一代「帕累托前沿」"
+    publisher: "StepFun 階躍星辰"
+    url: "https://www.stepfun.com/step-5-preview"
+    type: "press-release"
+    lang: "zh-CN"
+    published: "2026-09-20"
+    accessed: "2026-10-06"
+  - key: "step5-doc"
+    title: "Step 5 Preview"
+    publisher: "StepFun Open Platform Docs"
+    url: "https://platform.stepfun.ai/docs/en/guides/models/step-5-preview"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "step-pricing"
+    title: "Pricing and Rate Limits"
+    publisher: "StepFun Open Platform Docs"
+    url: "https://platform.stepfun.ai/docs/en/guides/pricing/details"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "step-lifecycle"
+    title: "Model Lifecycle & Deprecations"
+    publisher: "StepFun Open Platform Docs"
+    url: "https://platform.stepfun.ai/docs/en/guides/model-migration"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "step37-doc"
+    title: "Step 3.7 Flash"
+    publisher: "StepFun Open Platform Docs"
+    url: "https://platform.stepfun.ai/docs/en/guides/models/step-3.7-flash"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "step35-doc"
+    title: "Step 3.5 Flash"
+    publisher: "StepFun Open Platform Docs"
+    url: "https://platform.stepfun.ai/docs/en/guides/models/step-3.5-flash"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "step37-blog"
+    title: "Step 3.7 Flash: A high-efficiency Flash model for real-world agents"
+    publisher: "StepFun"
+    url: "https://static.stepfun.com/blog/step-3.7-flash/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-05-29"
+    accessed: "2026-10-06"
+  - key: "hf-step37"
+    title: "stepfun-ai/Step-3.7-Flash model card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/stepfun-ai/Step-3.7-Flash"
+    type: "docs"
+    lang: "en"
+    published: "2026-05-29"
+    accessed: "2026-10-06"
+  - key: "hf-step35"
+    title: "stepfun-ai/Step-3.5-Flash model card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/stepfun-ai/Step-3.5-Flash"
+    type: "docs"
+    lang: "en"
+    published: "2026-02-01"
+    accessed: "2026-10-06"
+  - key: "step35-paper"
+    title: "Step 3.5 Flash: Open Frontier-Level Intelligence with 11B Active Parameters"
+    publisher: "StepFun (arXiv)"
+    url: "https://arxiv.org/abs/2602.10604"
+    type: "paper"
+    lang: "en"
+    published: "2026-02-11"
+    accessed: "2026-10-06"
+  - key: "hf-step3"
+    title: "stepfun-ai/step3 model card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/stepfun-ai/step3"
+    type: "docs"
+    lang: "en"
+    published: "2025-07-31"
+    accessed: "2026-10-06"
+  - key: "step3-paper"
+    title: "Step-3 is Large yet Affordable: Model-system Co-design for Cost-effective Decoding"
+    publisher: "StepFun (arXiv)"
+    url: "https://arxiv.org/abs/2507.19427"
+    type: "paper"
+    lang: "en"
+    published: "2025-07-25"
+    accessed: "2026-10-06"
+  - key: "wiki-stepfun"
+    title: "StepFun"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/StepFun"
+    type: "other"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-step5"
+    title: "Step 5 Preview Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/step-5"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-step37"
+    title: "Step 3.7 Flash Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/step-3-7-flash"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-step35"
+    title: "Step 3.5 Flash Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/step-3-5-flash-0202"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-glm53"
+    title: "GLM-5.3 (Max) Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/glm-5-3"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-leaderboard"
+    title: "LLM Leaderboard: Comparison of AI Models"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "lmarena-text"
+    title: "Text Arena Leaderboard"
+    publisher: "LMArena"
+    url: "https://lmarena.ai/leaderboard/text"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "Leaderboard last updated 2026-10-02"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-11"
+  checkedBy: "models-11-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+Step 是<CompanyChip id="stepfun">階躍星辰（StepFun）</CompanyChip>的模型系列。這家公司 2023 年 4 月由前微軟員工在上海創立，被投資人列為中國「AI 六小虎」之一，一向重視多模態<Cite k="wiki-stepfun" />。近 18 個月，Step 系列分成兩條路線：
+
+- **開放權重的 Flash 系列**：Step 3.5 Flash（2026-02）與 Step 3.7 Flash（2026-05-29）都是約 2,000 億參數的<Term id="moe">混合專家（MoE）</Term>模型，每個 token 只啟用約 110 億參數，採 Apache 2.0 授權<Cite k="hf-step35" /><Cite k="hf-step37" />。
+- **旗艦 Step 5 Preview**：2026-09-20 發布，總參數 6,000 億、每個 token 啟用 270 億，支援 100 萬 tokens <Term id="context-window">上下文</Term>與圖片、影片輸入<Cite k="step5-page" />。截至 2026-10-06 仍是封閉權重，官方預告 10 月 15 日開放權重<Cite k="step5-page" />。
+
+在 Artificial Analysis（AA）綜合智慧指數 v4.3.2 中，Step 5 Preview 得 44 分，與 <ModelChip id="zhipu-glm" /> 的 GLM-5.3（45 分）、<ModelChip id="moonshot-kimi" /> 的 Kimi K3（44 分）同一級距<Cite k="aa-leaderboard" />。
+
+## 特性分析
+
+**效率優先的架構。** Step 3.5 Flash 以三層滑動視窗注意力搭配一層全注意力，壓低 25.6 萬 tokens 長上下文的成本，並用 3 路多 token 預測（MTP-3，可用於<Term id="speculative-decoding">推測解碼</Term>）加速生成，官方稱一般使用每秒 100 到 300 tokens<Cite k="hf-step35" />。這類「少量<Term id="active-parameters">啟用參數</Term>、高吞吐」的設計，讓它能在 Mac Studio 等配備約 128GB 統一記憶體的高階個人電腦上執行<Cite k="hf-step35" />。
+
+**看得見才做得到。** Step 3.7 Flash 在 1,960 億參數語言主幹外加上 18 億參數的視覺編碼器，能理解介面截圖、圖表與文件，再寫程式或呼叫工具處理<Cite k="hf-step37" />。Step 5 Preview 同樣原生支援圖片與影片，單次請求最多 60 張圖片<Cite k="step5-doc" />，屬於<Term id="multimodal">多模態</Term> <Term id="agent">Agent</Term> 的路線。
+
+**主打金融與專業工作。** Step 5 Preview 的發布頁花了大量篇幅在財報研究、估值與可追溯的分析報告，外部金融評測 FrontierFinance 得 66.4%，高於同表的 GLM-5.3（64.1%）與 Kimi K3（62.6%），但低於 Claude Opus 5（69.7%）<Cite k="step5-page" />。
+
+**價格。** 官方定價每百萬 tokens：Step 5 Preview 輸入 1.00、輸出 2.70 美元；Step 3.7 Flash 為 0.20／1.15 美元；Step 3.5 Flash 只要 0.10／0.30 美元<Cite k="step-pricing" />。依 AA 實測（2026-10-06 讀取），跑完指數測試平均每題的費用，Step 5 Preview 約 0.72 美元，GLM-5.3 約 2.01 美元<Cite k="aa-step5" /><Cite k="aa-glm53" />。
+
+## 適合與不適合的用途
+
+適合：
+
+- **大量、低成本的 Agent 流程**：Flash 系列價格低、吞吐量高，官方也強調其工具呼叫的穩定性<Cite k="step35-doc" />。
+- **需要在地部署的多模態應用**：Step 3.7 Flash 開放權重，可在 128GB 統一記憶體的電腦或資料中心自行部署<Cite k="hf-step37" />。
+- **金融研究與長文件分析**：Step 5 Preview 的 100 萬 tokens 上下文與金融調校。
+
+不適合：
+
+- **需要現在就能自建的前沿模型**：Step 5 Preview 權重尚未公開，開放時程只有官方預告。
+- **最困難的長時程終端機任務**：Step 5 Preview 在 Terminal-Bench 4.0 為 33.3%，低於 GLM-5.3 的 41.9%<Cite k="step5-page" />。
+- **需要長期固定模型代號的系統**：階躍星辰在 2026-07-08 一次停止 Step 3 與多款 Step 1、Step 2 舊模型的 API<Cite k="step-lifecycle" />。
+
+## 版本演進
+
+| 發布日 | 版本 | 重點 |
+|---|---|---|
+| 2025-07 | Step 3 | 3,210 億參數多模態推理模型，Apache 2.0；API 已於 2026-07-08 停止 |
+| 2026-02-02 | Step 3.5 Flash | 1,960 億參數、啟用 110 億，純文字，25.6 萬 tokens 上下文 |
+| 2026 年 3–4 月 | step-3.5-flash-2603 | 僅 API 的 Agent 調校版，可選低推理模式 |
+| 2026-05-29 | Step 3.7 Flash | 加入視覺編碼器，支援圖片與影片 |
+| 2026-09-20 | Step 5 Preview | 6,000 億參數、100 萬 tokens，預告 10 月 15 日開放權重 |
+
+Step 3 的權重仍可在 Hugging Face 下載，但官方建議 API 使用者改用 step-3.7-flash<Cite k="step-lifecycle" />。
+
+## 評測解讀
+
+<Callout type="warn" title="留意誰測的、用什麼設定">Step 5 Preview 發布頁的表格混合了自測與 AA 的獨立結果，含工具的 HLE 還只測純文字子集，官方也提醒不能與其他模型直接比較。AA 讀取於 2026-10-06，LMArena 文字榜更新於 2026-10-02。</Callout>
+
+| 評測 | Step 5 Preview | Step 3.7 Flash | Step 3.5 Flash |
+|---|---|---|---|
+| AA 綜合智慧指數 v4.3.2 | 44 | 19（估計） | 17（估計） |
+| GPQA Diamond | 93.5%（官方） | 80.9%（AA） | 83.1%（AA） |
+| HLE | 46.5%（官方，無工具） | 48.1%（官方，含工具） | 21.1%（AA，無工具） |
+| Terminal-Bench | 85.0%（2.1 版）、33.3%（4.0 版） | 59.5%（2.1 版） | 51.0%（2.0 版） |
+| SWE-bench | 未公布 | Pro 56.3% | Verified 74.4% |
+
+- **Flash 的官方數字好看，綜合指數卻偏低**：Step 3.5 Flash 官方 AIME 2025 為 97.3%、SWE-bench Verified 為 74.4%<Cite k="hf-step35" />，但在偏重長程 Agent 與專業工作的 AA 指數只有約 17 分<Cite k="aa-step35" />。舊題目接近飽和，也可能有<Term id="benchmark-contamination">評測汙染</Term>，不宜只看單一高分。
+- **Step 5 Preview 的強項在知識與推理**：GPQA 93.5% 與同表的 Kimi K3 相同；HLE（無工具）46.5% 明顯高於 GLM-5.3 的 42.3%，與 Kimi K3 的 46.9% 相近<Cite k="step5-page" />。發布頁表中 GLM-5.3 的 GPQA（91.7%）與 HLE（42.3%）都和 AA 自測值相同，可見表格也引用了第三方結果<Cite k="aa-glm53" />。
+- **人類偏好資料還不夠**：LMArena 文字榜上 Step 5 Preview 為 1,454 分（第 74 名），但只有 2,701 票，分數區間約 1,443 到 1,465、名次可能落在第 47 到 98 名，宜視為初步結果<Cite k="lmarena-text" />。
+- **開放權重之後再比一次**：若 10 月 15 日如期開放權重，授權條款、第三方託管價格與自建成本都會影響它的定位，屆時定位值需要更新。

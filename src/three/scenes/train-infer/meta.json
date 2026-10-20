@@ -1,0 +1,139 @@
+{
+  "id": "train-infer",
+  "title": "訓練與推論：算力的兩種用法",
+  "description": "這個場景用一張「AI 工廠」桌面上的三座立體模型，說明 AI 算力的兩種用法。「訓練」視角：中央的訓練資料被切成小批次，分送給環狀排列的 8 張 GPU（示意）；每張 GPU 上方都有一份相同的模型副本，資料由下往上做前向傳播、算出損失，再由上往下做反向傳播、算出梯度；接著 GPU 之間沿著環狀路線交換並平均梯度（環狀 all-reduce：先 reduce-scatter 分段加總，再 all-gather 分送結果，8 張 GPU 共 14 步），所有副本用相同的梯度更新權重；後方的損失曲線隨著訓練步數由快而慢地下降。「推論」視角：前排的使用者送出請求，請求在佇列中等候，排程器把多個請求組成批次送進 GPU（連續批次）；Prefill 階段一次平行處理整段提示詞，屬於運算受限；Decode 階段每一步為批次中每個請求各產生 1 個 token 並立即串流回使用者，每一步都要讀取全部權重與 KV Cache，屬於記憶體頻寬受限；GPU 後方的面板代表 HBM 記憶體的內容：左邊是模型權重，右邊是 KV Cache，每處理一個 token 就多存一格，請求完成後才釋放。「流程」視角：一條環形輸送帶依序經過資料收集、品質過濾、去重、分詞、預訓練、後訓練（SFT、RLHF）、評測與部署，部署後的使用回饋與監控資料再回到資料端，開始下一輪。圖中的 GPU 數量、批次大小、曲線與使用率皆為示意。",
+  "variants": ["training", "inference", "pipeline"],
+  "defaultVariant": "training",
+  "steps": [
+    {
+      "id": "overview",
+      "title": "總覽",
+      "caption": "AI 的算力有兩種用法：訓練是一次投入大量 GPU，從資料中學出模型的權重；推論是每當有人提問，就用學好的權重即時算出回答。兩者串成一條從資料到部署的流水線，接下來依序看訓練、推論與完整流程。"
+    },
+    {
+      "id": "training-loop",
+      "title": "訓練迴圈",
+      "caption": "每一步，訓練資料被切成小批次分給每張 GPU（資料平行）。資料由下往上通過模型副本（前向傳播）算出損失，再由上往下算出梯度（反向傳播），最後更新權重，損失曲線隨之下降。",
+      "variant": "training"
+    },
+    {
+      "id": "all-reduce",
+      "title": "梯度同步",
+      "caption": "每張 GPU 看到的資料不同，算出的梯度也不同。環狀 all-reduce 讓每張 GPU 只和鄰居交換：先分段加總（reduce-scatter），再把結果傳回所有 GPU（all-gather），8 張 GPU 共 14 步；之後每份副本做出完全相同的更新。",
+      "variant": "training"
+    },
+    {
+      "id": "batching",
+      "title": "批次推論",
+      "caption": "推論時，使用者的請求先排隊，排程器把多個請求組成一批一起送進 GPU，一次讀出的權重就能服務更多人。連續批次（continuous batching）讓完成的請求立刻讓出位置給下一個。",
+      "variant": "inference"
+    },
+    {
+      "id": "prefill-decode",
+      "title": "預填與解碼",
+      "caption": "Prefill 一次平行處理整段提示詞，運算量大，屬於運算受限，決定第一個字多快出現；Decode 每一步只為每個請求產生 1 個 token，卻要讀遍全部權重與 KV Cache，屬於記憶體頻寬受限。",
+      "variant": "inference"
+    },
+    {
+      "id": "kv-cache",
+      "title": "KV 快取",
+      "caption": "每處理一個 token，模型就把它在每一層的 Key 與 Value 存進 HBM 裡的 KV Cache，之後不必重算。上下文越長、同時服務的請求越多，KV Cache 越佔記憶體；請求結束後空間才會釋放。",
+      "variant": "inference"
+    },
+    {
+      "id": "data-prep",
+      "title": "資料處理",
+      "caption": "模型開發是一條流水線。前段先處理資料：收集網頁、書籍與程式碼等來源，過濾低品質與有害內容，去除重複，再用分詞器（tokenizer）切成 token。",
+      "variant": "pipeline"
+    },
+    {
+      "id": "train-to-deploy",
+      "title": "訓練到部署",
+      "caption": "token 先餵給預訓練，讓模型學會語言與知識；後訓練（SFT、RLHF）讓模型學會遵循指令與人類偏好；評測通過後才部署上線。上線後的使用回饋與監控資料，又回到資料端開始下一輪。",
+      "variant": "pipeline"
+    }
+  ],
+  "hotspots": [
+    {
+      "id": "data-parallel",
+      "label": "訓練資料與資料平行",
+      "detail": "訓練資料被切成一批批（batch）。每一步，每張 GPU 各拿到其中不重複的一小份，並用自己那份完整的模型副本計算，這種分工方式稱為資料平行。大型模型還會再把模型本身切開，分散到更多 GPU 上（張量平行、管線平行）。",
+      "glossary": "data-parallelism"
+    },
+    {
+      "id": "model-replica",
+      "label": "模型副本：前向與反向傳播",
+      "detail": "每張 GPU 上方的四片板子代表模型的各層。前向傳播時，資料由下往上逐層計算，最後得到預測並算出損失；反向傳播時，誤差由上往下傳回，用連鎖律算出每個權重的梯度。",
+      "glossary": "backpropagation"
+    },
+    {
+      "id": "all-reduce",
+      "label": "梯度 all-reduce",
+      "detail": "每張 GPU 的梯度不同，必須加總平均後才能更新。環狀 all-reduce 讓每張 GPU 只和相鄰的 GPU 交換：先 reduce-scatter（分段加總），再 all-gather（分送結果），共 2×(GPU 數−1) 步，每張 GPU 要傳送的資料量幾乎不隨 GPU 數增加。這一步非常依賴 NVLink、InfiniBand 或乙太網路的頻寬。",
+      "glossary": "all-reduce"
+    },
+    {
+      "id": "loss-curve",
+      "label": "損失曲線",
+      "detail": "損失（loss）衡量模型的預測和正確答案差多少。每更新一次權重，損失就略為下降：一開始降得快，之後越來越慢。圖中的曲線形狀為示意，沒有對應任何真實模型。",
+      "glossary": "loss-function"
+    },
+    {
+      "id": "request-batching",
+      "label": "請求佇列與批次",
+      "detail": "每位使用者的提問（提示詞）先進入佇列，排程器再把多個請求組成一個批次一起送進 GPU。批次越大，GPU 越忙、總吞吐量越高，但每個人等待的時間（延遲）也可能變長。連續批次讓完成的請求立刻讓出位置，新的請求隨時補進來。",
+      "glossary": "batching"
+    },
+    {
+      "id": "serving-gpu",
+      "label": "推論 GPU 與 HBM",
+      "detail": "推論時，模型權重常駐在 GPU 旁的 HBM（高頻寬記憶體）裡，正在服務的請求的 KV Cache 也放在這裡。每產生一個 token，都要把權重從 HBM 讀進運算核心，所以記憶體容量與頻寬往往比算力更早成為瓶頸。",
+      "glossary": "hbm"
+    },
+    {
+      "id": "prefill-decode",
+      "label": "Prefill 與 Decode",
+      "detail": "Prefill 一次平行處理整段提示詞，矩陣運算量大，屬於運算受限（compute-bound），決定第一個 token 出現的時間（TTFT）。Decode 每一步只為每個請求產生 1 個 token，卻要讀取全部權重與 KV Cache，屬於記憶體頻寬受限（memory-bound）。兩階段特性不同，大型服務會把它們拆到不同的 GPU 上執行（分離式推論）。右側的使用率長條為示意。",
+      "glossary": "prefill"
+    },
+    {
+      "id": "kv-cache",
+      "label": "KV Cache",
+      "detail": "Transformer 產生每個新 token 時都要回頭看前文。KV Cache 把前文每個 token 在每一層算出的 Key 與 Value 存起來，下一步就不必重算。面板上每一列是批次中的一個請求，每一格是一個 token：顏色較淡的是提示詞，顏色鮮明的是已產生的輸出，尺寸較小的格子則是尚未使用的空位。上下文越長、同時服務的請求越多，KV Cache 越大，也限制了批次能開多大。",
+      "glossary": "kv-cache"
+    },
+    {
+      "id": "data-prep",
+      "label": "資料準備：收集、過濾、去重、分詞",
+      "detail": "預訓練資料來自網頁、書籍、程式碼等來源。先過濾掉低品質、有害或含個資的內容，再去除完全相同與高度相似的重複資料，最後用分詞器把文字切成 token。資料品質往往和模型大小一樣重要。",
+      "glossary": "training-data"
+    },
+    {
+      "id": "pretraining",
+      "label": "預訓練",
+      "detail": "用大量 token 訓練模型「預測下一個 token」，讓它學會語言、知識與推理的基礎能力。這是整條流程中最耗算力的一段，需要大型 GPU 叢集連續運算很長一段時間，產出的是基礎模型（base model）。",
+      "glossary": "pretraining"
+    },
+    {
+      "id": "post-training",
+      "label": "後訓練：SFT 與 RLHF",
+      "detail": "基礎模型只會接話，還不會當助理。監督式微調（SFT）用人工撰寫的示範對話教它遵循指令；RLHF 再用人類偏好訓練出的獎勵模型，透過強化學習讓回答更有幫助、更安全。能自動驗證答案的任務（數學、程式）也常用強化學習加強推理能力。",
+      "glossary": "post-training"
+    },
+    {
+      "id": "evaluation",
+      "label": "評測",
+      "detail": "上線前用基準測試（benchmark）、人工評估與紅隊演練檢查模型的能力與安全性，確認沒有退步、沒有新的風險，才放行部署。評測題目若混進訓練資料（資料汙染），分數就會失真。",
+      "glossary": "benchmark"
+    },
+    {
+      "id": "deployment",
+      "label": "部署與監控",
+      "detail": "通過評測的模型常先經過量化等最佳化，再部署到推論伺服器，透過 API 或產品服務使用者。上線後持續監控品質、延遲與成本，蒐集使用回饋，作為下一輪資料與訓練的依據，這一整套做法稱為 MLOps。",
+      "glossary": "mlops"
+    }
+  ],
+  "data": "none",
+  "loop": "continuous",
+  "budgetKB": 30
+}

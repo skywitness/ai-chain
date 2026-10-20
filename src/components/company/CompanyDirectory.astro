@@ -1,0 +1,797 @@
+---
+/**
+ * The /companies/ directory: filter form, live result count, and every company card rendered on the
+ * server (owner: pages-companies). src/client/filters.ts adds filtering, search, sorting, URL sync
+ * and paging (the first PAGE matches, then 「再顯示」/「全部列出」); without JS the full list stays
+ * visible. Grid/list switching is CSS-only (:has()).
+ *
+ *   <CompanyDirectory rows={rows} />
+ */
+import CompanyCard from './CompanyCard.astro';
+import Icon from '../ui/Icon.astro';
+import { LAYERS, segmentMeta } from '../../lib/collections';
+import type { CompanyRow } from '../../lib/scene-data/companies';
+import { REGION_LABELS, TIER_LABELS } from './labels';
+
+interface Props {
+  rows: readonly CompanyRow[];
+  id?: string | undefined;
+}
+const { rows, id = 'directory' } = Astro.props;
+const total = rows.length;
+/** cards listed before 「再顯示」 (with JS; divisible by 2–6 columns) */
+const PAGE = 60;
+
+// ── sort positions (one per sort option, in option order) ──
+const SORTS = [
+  { value: '', label: '推薦（一線優先）' },
+  { value: 'name', label: '名稱（A–Z）' },
+  { value: 'rev', label: '近四季營收（美元換算）' },
+  { value: 'yoy', label: '營收年增率' },
+  { value: 'founded', label: '成立年份（新到舊）' },
+] as const;
+const byName = (a: CompanyRow, b: CompanyRow) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' });
+const desc = (k: 'revenueUsdM' | 'yoy' | 'founded') => (a: CompanyRow, b: CompanyRow) => {
+  const x = a[k];
+  const y = b[k];
+  if (x == null && y == null) return a.tier - b.tier || byName(a, b);
+  if (x == null) return 1;
+  if (y == null) return -1;
+  return y - x || byName(a, b);
+};
+const comparators: Array<(a: CompanyRow, b: CompanyRow) => number> = [
+  (a, b) => a.tier - b.tier || desc('revenueUsdM')(a, b),
+  byName,
+  desc('revenueUsdM'),
+  desc('yoy'),
+  desc('founded'),
+];
+const ranks = new Map<string, number[]>(rows.map((r) => [r.id, []]));
+for (const cmp of comparators) {
+  [...rows].sort(cmp).forEach((r, i) => ranks.get(r.id)!.push(i));
+}
+const ordered = [...rows].sort(comparators[0]);
+
+// ── option lists with counts ──
+const segCount = new Map<string, number>();
+for (const r of rows) for (const s of r.segments) segCount.set(s, (segCount.get(s) ?? 0) + 1);
+const regionCount = new Map<string, number>();
+for (const r of rows) regionCount.set(r.region, (regionCount.get(r.region) ?? 0) + 1);
+const regions = [...regionCount.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+const tierCount = [1, 2, 3].map((t) => rows.filter((r) => r.tier === t).length);
+const listedCount = rows.filter((r) => r.listings.length > 0).length;
+const twCount = regionCount.get('TW') ?? 0;
+---
+
+<div class="dir" id={id} data-filter-root data-view="grid" data-page-size={String(PAGE)}>
+  <form class="dir__form" data-filter-form method="get" action="" role="search" aria-label="篩選與搜尋公司">
+    <div class="dir__row dir__row--main">
+      <label class="fld fld--q">
+        <span class="fld__label">搜尋公司名稱、別名或股票代號</span>
+        <span class="fld__search">
+          <Icon name="search" class="fld__icon" />
+          <input
+            type="search"
+            name="q"
+            placeholder="例如：台積電、NVDA、2330"
+            autocomplete="off"
+            spellcheck="false"
+            enterkeyhint="search"
+          />
+        </span>
+      </label>
+      <label class="fld fld--sort">
+        <span class="fld__label">排序</span>
+        <select name="sort">
+          {SORTS.map((s) => <option value={s.value}>{s.label}</option>)}
+        </select>
+      </label>
+      <div class="fld view" role="radiogroup" aria-labelledby={`${id}-view-label`}>
+        <span class="fld__label" id={`${id}-view-label`}>檢視方式</span>
+        <div class="view__opts">
+          <label class="view__opt" title="卡片">
+            <input type="radio" name="view" value="grid" checked />
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1" /><rect x="9" y="1.5" width="5.5" height="5.5" rx="1" /><rect x="1.5" y="9" width="5.5" height="5.5" rx="1" /><rect x="9" y="9" width="5.5" height="5.5" rx="1" /></svg>
+            <span>卡片</span>
+          </label>
+          <label class="view__opt" title="清單">
+            <input type="radio" name="view" value="list" />
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2" width="13" height="2.5" rx="1" /><rect x="1.5" y="6.75" width="13" height="2.5" rx="1" /><rect x="1.5" y="11.5" width="13" height="2.5" rx="1" /></svg>
+            <span>清單</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="dir__row dir__row--filters">
+      <label class="fld">
+        <span class="fld__label">環節</span>
+        <select name="seg">
+          <option value="">全部環節</option>
+          {
+            LAYERS.map((l) => (
+              <optgroup label={l.title}>
+                {l.segments.map((s) => (
+                  <option value={s}>
+                    {segmentMeta(s)?.short}（{segCount.get(s) ?? 0}）
+                  </option>
+                ))}
+              </optgroup>
+            ))
+          }
+        </select>
+      </label>
+      <label class="fld">
+        <span class="fld__label">地區</span>
+        <select name="region">
+          <option value="">全部地區</option>
+          {regions.map(([r, n]) => <option value={r}>{REGION_LABELS[r] ?? r}（{n}）</option>)}
+        </select>
+      </label>
+      <label class="fld">
+        <span class="fld__label">層級</span>
+        <select name="tier">
+          <option value="">全部層級</option>
+          {([1, 2, 3] as const).map((t, i) => <option value={String(t)}>{TIER_LABELS[t]}（{tierCount[i]}）</option>)}
+        </select>
+      </label>
+      <label class="fld">
+        <span class="fld__label">上市與否</span>
+        <select name="listed">
+          <option value="">全部</option>
+          <option value="1">已上市（{listedCount}）</option>
+          <option value="0">未上市（{total - listedCount}）</option>
+        </select>
+      </label>
+      <label class="chk">
+        <input type="checkbox" name="tw" value="1" />
+        <span>只看台灣公司（{twCount}）</span>
+      </label>
+      <button type="reset" class="dir__reset">清除篩選</button>
+    </div>
+    <noscript><p class="dir__noscript">篩選、搜尋與排序需要啟用 JavaScript；下方列出全部 {total} 家公司。</p></noscript>
+  </form>
+
+  <div class="dir__bar">
+    <p class="dir__count" data-filter-count aria-live="polite">符合 {total}／{total} 家</p>
+    <p class="dir__note">營收為近四季合計（無季資料者用最近財年），各期依期間平均匯率換算為美元，僅供比較。</p>
+  </div>
+
+  <ul class="cards" data-filter-list role="list">
+    {ordered.map((r) => <CompanyCard row={r} rank={ranks.get(r.id)!.join(' ')} />)}
+  </ul>
+
+  <div class="dir__more" data-filter-more hidden>
+    <p class="dir__more-status" data-filter-shown>已列出 {Math.min(PAGE, total)}／{total} 家</p>
+    <div class="dir__more-actions">
+      <button type="button" class="dir__more-btn" data-filter-next>再顯示 {PAGE} 家</button>
+      <button type="button" class="dir__reset" data-filter-all>全部列出</button>
+    </div>
+  </div>
+
+  <div class="dir__empty" data-filter-empty hidden>
+    <p class="dir__empty-title">沒有符合條件的公司</p>
+    <p>試試縮短關鍵字、改用英文名稱或股票代號，或清除部分篩選條件。</p>
+    <button type="button" class="dir__reset" data-filter-reset>清除全部篩選</button>
+  </div>
+</div>
+
+<script>
+  import '../../client/filters';
+</script>
+
+<style>
+  .dir {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  /* ── form ── */
+  .dir__form {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: var(--shadow-1);
+  }
+  @media (min-width: 768px) {
+    .dir__form {
+      padding: var(--space-4) var(--space-5) var(--space-5);
+    }
+  }
+  .dir__row {
+    display: grid;
+    gap: var(--space-3);
+    align-items: end;
+  }
+  .dir__row--main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dir__row--filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  @media (max-width: 639.98px) {
+    /* phones: search on its own line, then sort and view side by side (keeps the form short) */
+    .dir__row--main {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .fld--q {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (min-width: 640px) {
+    .dir__row--main {
+      grid-template-columns: minmax(0, 1fr) minmax(11rem, 14rem) auto;
+    }
+  }
+  @media (min-width: 900px) {
+    .dir__row--filters {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) auto auto;
+    }
+  }
+  .fld {
+    display: grid;
+    gap: 0.3rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .fld__label {
+    padding: 0;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.04em;
+    color: var(--c-fg-muted);
+  }
+  .fld select,
+  .fld input[type='search'] {
+    inline-size: 100%;
+    min-block-size: var(--tap, 44px);
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-m);
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font: inherit;
+    font-size: var(--fs-s);
+  }
+  .fld select {
+    padding-inline-end: 2rem;
+    appearance: none;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--c-fg-muted) 50%),
+      linear-gradient(135deg, var(--c-fg-muted) 50%, transparent 50%);
+    background-position:
+      calc(100% - 1.05rem) 50%,
+      calc(100% - 0.75rem) 50%;
+    background-size: 0.3rem 0.3rem;
+    background-repeat: no-repeat;
+    text-overflow: ellipsis;
+  }
+  .fld select option,
+  .fld select optgroup {
+    background: var(--c-bg-elev);
+    color: var(--c-fg);
+  }
+  .fld__search {
+    position: relative;
+    display: block;
+  }
+  .fld__search :global(.fld__icon) {
+    position: absolute;
+    inset-inline-start: 0.75rem;
+    inset-block-start: 50%;
+    translate: 0 -50%;
+    color: var(--c-fg-subtle);
+    pointer-events: none;
+  }
+  .fld--q input[type='search'] {
+    padding-inline-start: 2.2rem;
+    font-size: var(--fs-base);
+  }
+  .fld select:hover,
+  .fld input[type='search']:hover {
+    border-color: var(--c-fg-subtle);
+  }
+  .fld select:focus-visible,
+  .fld input[type='search']:focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 1px;
+    border-color: var(--c-focus);
+  }
+
+  .view__opts {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-m);
+    background: var(--c-bg);
+    min-block-size: var(--tap, 44px);
+  }
+  .view__opt {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0 0.75rem;
+    border-radius: calc(var(--radius-m) - 3px);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  .view__opt input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+  .view__opt svg {
+    inline-size: 1rem;
+    block-size: 1rem;
+    fill: currentColor;
+  }
+  @media (max-width: 419.98px) {
+    /* icons only on the narrowest phones; the text stays for screen readers */
+    .view__opt {
+      padding: 0 0.8rem;
+    }
+    .view__opt span {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+  .view__opt:has(input:checked) {
+    background: var(--c-accent-soft);
+    color: var(--c-accent);
+    font-weight: var(--fw-semibold);
+  }
+  .view__opt:has(input:focus-visible) {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 1px;
+  }
+
+  .chk {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-block-size: var(--tap, 44px);
+    font-size: var(--fs-s);
+    color: var(--c-fg);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .chk input {
+    inline-size: 1.15rem;
+    block-size: 1.15rem;
+    accent-color: var(--c-accent);
+    margin: 0;
+  }
+  .dir__reset {
+    min-block-size: var(--tap, 44px);
+    padding: 0 1rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-m);
+    background: transparent;
+    color: var(--c-link);
+    font: inherit;
+    font-size: var(--fs-s);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .dir__reset:hover {
+    background: var(--c-hover);
+  }
+  .dir__reset:focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 1px;
+  }
+  .dir__noscript {
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+
+  /* ── result bar ── */
+  .dir__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-4);
+    padding-inline: var(--space-1);
+  }
+  .dir__count {
+    font-weight: var(--fw-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--c-fg);
+  }
+  .dir__note {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    max-width: 46em;
+  }
+
+  /* ── cards (CompanyCard has no styles of its own) ── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15.5rem), 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cards :global(.cc) {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'seg tier'
+      'name name'
+      'meta meta'
+      'rev spark';
+    align-content: start;
+    gap: 0.3rem var(--space-2);
+    min-width: 0;
+    padding: 0.85rem 1rem 0.8rem;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-elev);
+    box-shadow: inset 3px 0 0 var(--seg);
+    transition:
+      border-color var(--dur-1) ease,
+      box-shadow var(--dur-1) ease,
+      transform var(--dur-2) var(--ease-out);
+  }
+  /* primary segment = first token of data-segs → colour (keeps 700+ cards free of inline styles) */
+  .cards :global(.cc[data-segs^='energy-power']) {
+    --seg: var(--seg-energy-power);
+  }
+  .cards :global(.cc[data-segs^='semi-equipment-materials']) {
+    --seg: var(--seg-semi-equipment-materials);
+  }
+  .cards :global(.cc[data-segs^='foundry-packaging']) {
+    --seg: var(--seg-foundry-packaging);
+  }
+  .cards :global(.cc[data-segs^='memory-storage']) {
+    --seg: var(--seg-memory-storage);
+  }
+  .cards :global(.cc[data-segs^='eda-ip-design']) {
+    --seg: var(--seg-eda-ip-design);
+  }
+  .cards :global(.cc[data-segs^='ai-accelerators']) {
+    --seg: var(--seg-ai-accelerators);
+  }
+  .cards :global(.cc[data-segs^='networking-optics']) {
+    --seg: var(--seg-networking-optics);
+  }
+  .cards :global(.cc[data-segs^='servers-systems']) {
+    --seg: var(--seg-servers-systems);
+  }
+  .cards :global(.cc[data-segs^='datacenter-infra']) {
+    --seg: var(--seg-datacenter-infra);
+  }
+  .cards :global(.cc[data-segs^='cloud-neocloud']) {
+    --seg: var(--seg-cloud-neocloud);
+  }
+  .cards :global(.cc[data-segs^='foundation-models']) {
+    --seg: var(--seg-foundation-models);
+  }
+  .cards :global(.cc[data-segs^='devtools-data-mlops']) {
+    --seg: var(--seg-devtools-data-mlops);
+  }
+  .cards :global(.cc[data-segs^='apps-agents']) {
+    --seg: var(--seg-apps-agents);
+  }
+  .cards :global(.cc[data-segs^='physical-ai']) {
+    --seg: var(--seg-physical-ai);
+  }
+  .cards :global(.cc__spark) {
+    --k: var(--seg);
+  }
+  .cards :global(.cc:hover) {
+    border-color: color-mix(in srgb, var(--seg) 55%, var(--c-border));
+    box-shadow:
+      inset 3px 0 0 var(--seg),
+      var(--shadow-1);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .cards :global(.cc:hover) {
+      transform: translateY(-1px);
+    }
+  }
+  .cards :global(.cc:has(.cc__link:focus-visible)) {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  .cards :global(.cc__link) {
+    grid-area: name;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.5em;
+    min-width: 0;
+    color: var(--c-fg);
+    text-decoration: none;
+    outline: none;
+  }
+  .cards :global(.cc__link::after) {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+  .cards :global(.cc__name) {
+    font-size: var(--fs-m);
+    font-weight: var(--fw-bold);
+    line-height: 1.35;
+  }
+  .cards :global(.cc__en) {
+    min-width: 0;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  .cards :global(.cc:hover .cc__name) {
+    color: var(--c-link-hover);
+  }
+  .cards :global(.cc__seg) {
+    grid-area: seg;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-width: 0;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cards :global(.cc__dot) {
+    flex: none;
+    inline-size: 0.55rem;
+    block-size: 0.55rem;
+    border-radius: 50%;
+    background: var(--seg);
+  }
+  .cards :global(.cc__tier) {
+    grid-area: tier;
+    align-self: center;
+    justify-self: end;
+    padding: 0.05rem 0.5rem;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    font-size: 0.72rem;
+    font-weight: var(--fw-semibold);
+    line-height: 1.6;
+    color: var(--c-fg-muted);
+    white-space: nowrap;
+  }
+  .cards :global(.cc__tier--1) {
+    border-color: transparent;
+    background: var(--c-accent-soft);
+    color: var(--c-accent);
+  }
+  .cards :global(.cc__tier--3) {
+    border-style: dashed;
+    color: var(--c-fg-subtle);
+  }
+  .cards :global(.cc__meta) {
+    grid-area: meta;
+    min-width: 0;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cards :global(.cc__tk) {
+    font-family: var(--font-mono);
+    font-size: 0.95em;
+    color: var(--c-fg);
+  }
+  .cards :global(.cc__rev) {
+    grid-area: rev;
+    align-self: end;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.45em;
+    min-width: 0;
+    margin-block-start: 0.35rem;
+    padding-block-start: 0.5rem;
+    border-block-start: 1px dashed var(--c-border);
+    font-size: var(--fs-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--c-fg-muted);
+  }
+  .cards :global(.cc__rev-label) {
+    flex-basis: 100%;
+    font-size: 0.7rem;
+    color: var(--c-fg-subtle);
+  }
+  .cards :global(.cc__rev-val) {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg);
+  }
+  .cards :global(.cc__yoy.is-pos) {
+    color: var(--c-pos);
+  }
+  .cards :global(.cc__yoy.is-neg) {
+    color: var(--c-neg);
+  }
+  .cards :global(.cc__rev--none) {
+    color: var(--c-fg-subtle);
+  }
+  .cards :global(.cc__rev--none),
+  .cards :global(.cc__rev) {
+    grid-column: 1 / -1;
+  }
+  .cards :global(.cc:has(.cc__spark) .cc__rev) {
+    grid-column: rev;
+  }
+  .cards :global(.cc__spark) {
+    grid-area: spark;
+    align-self: end;
+    margin-block-end: 0.15rem;
+  }
+
+  @media (max-width: 559.98px) {
+    .cards :global(.cc) {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        'name name tier'
+        'seg meta meta'
+        'rev rev spark';
+      gap: 0.2rem var(--space-2);
+      padding: 0.7rem 0.9rem 0.65rem 1rem;
+    }
+    .cards :global(.cc__meta::before) {
+      content: '·';
+      margin-inline-end: 0.4em;
+      color: var(--c-fg-subtle);
+    }
+    .cards :global(.cc__rev) {
+      margin-block-start: 0.2rem;
+      padding-block-start: 0.35rem;
+    }
+    .cards :global(.cc__rev-label) {
+      flex-basis: auto;
+    }
+  }
+
+  /* ── list view (CSS-only; the radio drives it with or without JS) ── */
+  .dir:has(input[name='view'][value='list']:checked) .cards {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    overflow: hidden;
+  }
+  .dir:has(input[name='view'][value='list']:checked) .cards :global(.cc) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name name tier'
+      'seg meta meta'
+      'rev rev rev';
+    gap: 0.15rem var(--space-2);
+    padding: 0.65rem 1rem 0.65rem 1.1rem;
+    border: 0;
+    border-block-end: 1px solid var(--c-border);
+    border-radius: 0;
+    box-shadow: inset 3px 0 0 var(--seg);
+    transform: none;
+  }
+  .dir:has(input[name='view'][value='list']:checked) .cards :global(.cc:hover) {
+    background: var(--c-hover);
+  }
+  .dir:has(input[name='view'][value='list']:checked) .cards :global(.cc__rev) {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .dir:has(input[name='view'][value='list']:checked) .cards :global(.cc__rev-label),
+  .dir:has(input[name='view'][value='list']:checked) .cards :global(.cc__spark) {
+    display: none;
+  }
+  @media (max-width: 859.98px) {
+    .dir:has(input[name='view'][value='list']:checked) .cards :global(.cc__meta::before) {
+      content: '·';
+      margin-inline-end: 0.4em;
+      color: var(--c-fg-subtle);
+    }
+  }
+  @media (min-width: 860px) {
+    .dir:has(input[name='view'][value='list']:checked) .cards :global(.cc) {
+      grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.1fr) 6.5rem minmax(0, 1.5fr) minmax(0, 1.6fr) 4.5rem;
+      grid-template-areas: 'name seg tier meta rev spark';
+      align-items: center;
+      padding-block: 0.55rem;
+    }
+    .dir:has(input[name='view'][value='list']:checked) .cards :global(.cc__tier) {
+      justify-self: start;
+    }
+    .dir:has(input[name='view'][value='list']:checked) .cards :global(.cc__rev),
+    .dir:has(input[name='view'][value='list']:checked) .cards :global(.cc__rev--none) {
+      grid-column: auto;
+      grid-area: rev;
+      align-self: center;
+    }
+    .dir:has(input[name='view'][value='list']:checked) .cards :global(.cc__spark) {
+      display: block;
+      align-self: center;
+      margin: 0;
+    }
+  }
+
+  /* ── paging ── */
+  .dir__more {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    padding-block: var(--space-3) var(--space-2);
+    text-align: center;
+  }
+  .dir__more-status {
+    font-size: var(--fs-s);
+    font-variant-numeric: tabular-nums;
+    color: var(--c-fg-muted);
+  }
+  .dir__more-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+  }
+  .dir__more-btn {
+    min-block-size: var(--tap, 44px);
+    min-inline-size: 12rem;
+    padding: 0 1.4rem;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-pill);
+    background: var(--c-bg-elev);
+    color: var(--c-fg);
+    font: inherit;
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    cursor: pointer;
+    box-shadow: var(--shadow-1);
+  }
+  .dir__more-btn:hover {
+    border-color: var(--c-accent);
+    color: var(--c-accent);
+  }
+  .dir__more-btn:focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+
+  /* ── empty state ── */
+  .dir__empty {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-2);
+    padding: var(--space-7) var(--space-4);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    text-align: center;
+    color: var(--c-fg-muted);
+  }
+  .dir__empty-title {
+    font-size: var(--fs-l);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg);
+  }
+</style>

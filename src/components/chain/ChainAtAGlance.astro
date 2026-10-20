@@ -1,0 +1,181 @@
+---
+/**
+ * 「一眼看懂」 card for /chain/: the segments that are tightest right now (瓶頸程度, highest first)
+ * and how many segments fall under each market structure. Everything is computed from the segment
+ * entries; segments whose entry is still missing are simply left out of the ranking.
+ *   <ChainAtAGlance rows={[{ id, title, short, color, bottleneck, concentration }]} />
+ */
+import BottleneckMeter from './BottleneckMeter.astro';
+import { segmentHref } from '../../lib/paths';
+import { CONCENTRATION } from './chain-data';
+
+export interface GlanceRow {
+  id: string;
+  title: string;
+  short: string;
+  color: string;
+  bottleneck?: number | undefined;
+  /** concentration key: monopoly | oligopoly | competitive | fragmented */
+  concentration?: string | undefined;
+}
+
+interface Props {
+  rows: readonly GlanceRow[];
+  /** how many of the tightest segments to list */
+  top?: number | undefined;
+}
+const { rows, top = 6 } = Astro.props;
+
+const tight = rows
+  .filter((r) => typeof r.bottleneck === 'number')
+  .map((r, i) => ({ ...r, i }))
+  .sort((a, b) => (b.bottleneck ?? 0) - (a.bottleneck ?? 0) || a.i - b.i)
+  .slice(0, top);
+
+const structure = (['monopoly', 'oligopoly', 'competitive', 'fragmented'] as const)
+  .map((k) => ({ key: k, label: CONCENTRATION[k]?.label ?? k, note: CONCENTRATION[k]?.note ?? '', items: rows.filter((r) => r.concentration === k) }))
+  .filter((g) => g.items.length > 0);
+const known = structure.reduce((a, g) => a + g.items.length, 0);
+---
+
+{
+  (tight.length > 0 || structure.length > 0) && (
+    <div class="gl">
+      {tight.length > 0 && (
+        <section class="gl__block" aria-labelledby="gl-tight">
+          <h3 class="gl__title" id="gl-tight">
+            最吃緊的環節
+          </h3>
+          <p class="gl__hint">瓶頸程度 1–5，愈高代表愈可能卡住 AI 擴張。</p>
+          <ol class="gl__list" role="list">
+            {tight.map((r) => (
+              <li style={`--gl-c: ${r.color}`}>
+                <a class="gl__seg" href={segmentHref(r.id)}>
+                  {r.short}
+                </a>
+                <BottleneckMeter level={r.bottleneck!} color={r.color} />
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+      {structure.length > 0 && (
+        <section class="gl__block" aria-labelledby="gl-structure">
+          <h3 class="gl__title" id="gl-structure">
+            市場結構
+          </h3>
+          <p class="gl__hint">{known} 個環節中，由少數業者主導的有 {structure.filter((g) => g.key === 'monopoly' || g.key === 'oligopoly').reduce((a, g) => a + g.items.length, 0)} 個。</p>
+          <ul class="gl__bars" role="list">
+            {structure.map((g) => (
+              <li title={g.note}>
+                <span class="gl__bar-label">{g.label}</span>
+                <span class="gl__bar" aria-hidden="true">
+                  {g.items.map((r) => (
+                    <span class="gl__chip" style={`--gl-c: ${r.color}`} />
+                  ))}
+                </span>
+                <span class="gl__bar-n">{g.items.length} 個</span>
+                <span class="gl__bar-segs">{g.items.map((r) => r.short).join('、')}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  )
+}
+
+<style>
+  .gl {
+    display: grid;
+    gap: var(--space-5);
+    padding: var(--space-5);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: var(--shadow-1);
+  }
+  .gl__block {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .gl__block + .gl__block {
+    padding-block-start: var(--space-5);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .gl__title {
+    font-size: var(--fs-m);
+    line-height: 1.4;
+  }
+  .gl__hint {
+    font-size: var(--fs-xs);
+    line-height: 1.6;
+    color: var(--c-fg-subtle);
+  }
+  .gl__list {
+    list-style: none;
+    margin: var(--space-1) 0 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+  }
+  .gl__list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-block-size: 2.25rem;
+    padding-inline-start: var(--space-3);
+    border-inline-start: 3px solid var(--gl-c);
+  }
+  .gl__seg {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg);
+    text-decoration: none;
+  }
+  .gl__seg:hover {
+    color: var(--c-link);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .gl__bars {
+    list-style: none;
+    margin: var(--space-1) 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .gl__bars li {
+    display: grid;
+    grid-template-columns: 2.6em minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 2px var(--space-2);
+    font-size: var(--fs-s);
+  }
+  .gl__bar-label {
+    font-weight: var(--fw-semibold);
+  }
+  .gl__bar {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+  }
+  .gl__chip {
+    inline-size: 1.1rem;
+    block-size: 0.85rem;
+    border-radius: 3px;
+    background: var(--gl-c);
+  }
+  .gl__bar-n {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .gl__bar-segs {
+    grid-column: 2 / -1;
+    font-size: var(--fs-xs);
+    line-height: 1.6;
+    color: var(--c-fg-subtle);
+  }
+</style>

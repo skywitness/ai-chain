@@ -1,0 +1,430 @@
+---
+/**
+ * Dev-only scene sandbox: /dev/scenes/<id>/
+ * Lists every scene folder and renders one scene with variant, step, quality, theme, motion and
+ * size toggles, a live stats overlay and an event log. Not built for production.
+ *
+ * URL parameters (all optional): ?variant= &step= &quality=high|medium|low|off &theme=light|dark
+ * &motion=reduce &seed= &height=normal|tall|hero
+ * &poster=1 — capture mode for scripts/capture-posters.ts: only the bare 800×450 stage (no sandbox
+ * chrome, stats overlay, toolbar, badge, hint or old poster), so a DPR 2 screenshot is 1600×900.
+ */
+import '../../../styles/global.css';
+import Scene3D from '../../../components/scene/Scene3D.astro';
+import type { SceneId } from '../../../schemas/common';
+import type { SceneJson } from '../../../three/core/types';
+import { withBase } from '../../../lib/paths';
+
+export function getStaticPaths() {
+  if (import.meta.env.PROD) return [];
+  const ids = Object.keys(import.meta.glob('/src/three/scenes/*/index.ts')).map((p) => p.split('/')[4] ?? '');
+  return ids.filter(Boolean).map((id) => ({ params: { id } }));
+}
+
+const { id } = Astro.params as { id: string };
+const metas = import.meta.glob<{ default: SceneJson }>('/src/three/scenes/*/meta.json', { eager: true });
+const folders = Object.keys(import.meta.glob('/src/three/scenes/*/index.ts'))
+  .map((p) => p.split('/')[4] ?? '')
+  .filter(Boolean)
+  .sort();
+const meta = metas[`/src/three/scenes/${id}/meta.json`]?.default;
+const title = meta?.title ?? id;
+---
+
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <title>{`場景沙盒：${title}｜AI 產業鏈全景`}</title>
+    <script is:inline>
+      (function () {
+        var q = new URLSearchParams(location.search);
+        var t = q.get('theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+        if (q.get('motion') === 'reduce') document.documentElement.dataset.motion = 'reduce';
+        if (q.get('poster') === '1') document.documentElement.dataset.poster = '';
+      })();
+    </script>
+  </head>
+  <body class="sandbox">
+    <a class="sr-only sandbox-skip" href="#sandbox-main">跳到場景</a>
+    <div class="sandbox-shell">
+      <nav class="sandbox-nav" aria-label="場景清單">
+        <p class="sandbox-brand">場景沙盒 <span>dev</span></p>
+        <ul>
+          {
+            folders.map((f) => (
+              <li>
+                <a href={withBase(`/dev/scenes/${f}/`)} aria-current={f === id ? 'page' : undefined}>
+                  <span class="sandbox-nav-title">{metas[`/src/three/scenes/${f}/meta.json`]?.default.title ?? f}</span>
+                  <code>{f}</code>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <main id="sandbox-main" class="sandbox-main">
+        <header class="sandbox-head">
+          <h1>{title}</h1>
+          <p><code>{id}</code> · 變體 {meta?.variants.join('、')} · 資料 {meta?.data} · 迴圈 {meta?.loop} · 預算 {meta?.budgetKB} KB</p>
+        </header>
+
+        <form class="sandbox-controls" aria-label="沙盒設定" onsubmit="return false">
+          <fieldset>
+            <legend>變體</legend>
+            {
+              (meta?.variants ?? []).map((v) => (
+                <label>
+                  <input type="radio" name="variant" value={v} checked={v === meta?.defaultVariant} />
+                  {v}
+                </label>
+              ))
+            }
+          </fieldset>
+          <fieldset>
+            <legend>畫質</legend>
+            {
+              [
+                ['', '自動'],
+                ['high', '高'],
+                ['medium', '中'],
+                ['low', '低'],
+                ['off', '關閉 3D'],
+              ].map(([v, l]) => (
+                <label>
+                  <input type="radio" name="quality" value={v} />
+                  {l}
+                </label>
+              ))
+            }
+          </fieldset>
+          <fieldset>
+            <legend>主題</legend>
+            {
+              [
+                ['', '跟隨系統'],
+                ['light', '亮色'],
+                ['dark', '暗色'],
+              ].map(([v, l]) => (
+                <label>
+                  <input type="radio" name="theme" value={v} />
+                  {l}
+                </label>
+              ))
+            }
+          </fieldset>
+          <fieldset>
+            <legend>動態</legend>
+            {
+              [
+                ['', '正常'],
+                ['reduce', '減少動態'],
+              ].map(([v, l]) => (
+                <label>
+                  <input type="radio" name="motion" value={v} />
+                  {l}
+                </label>
+              ))
+            }
+          </fieldset>
+          <fieldset>
+            <legend>高度</legend>
+            {
+              ['normal', 'tall', 'hero'].map((v) => (
+                <label>
+                  <input type="radio" name="height" value={v} checked={v === 'normal'} />
+                  {v}
+                </label>
+              ))
+            }
+          </fieldset>
+        </form>
+
+        <div class="sandbox-stage">
+          {
+            meta ? (
+              <Scene3D id={id as SceneId} caption={`開發沙盒：${title}（未傳入 data 時使用 fixtures 示意資料）`} urlOverrides />
+            ) : (
+              <p>找不到 meta.json：src/three/scenes/{id}/meta.json</p>
+            )
+          }
+          <aside class="sandbox-stats" aria-label="效能統計">
+            <pre id="sandbox-stats">—</pre>
+          </aside>
+        </div>
+
+        <section class="sandbox-log" aria-labelledby="log-h">
+          <h2 id="log-h">事件紀錄</h2>
+          <ol id="sandbox-log" reversed></ol>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const q = new URLSearchParams(location.search);
+      const form = document.querySelector<HTMLFormElement>('.sandbox-controls')!;
+      const el = document.querySelector('ai-scene');
+      const setRadio = (name: string, value: string) => {
+        const r = form.querySelector<HTMLInputElement>(`input[name="${name}"][value="${value}"]`);
+        if (r) r.checked = true;
+      };
+      setRadio('quality', q.get('quality') ?? '');
+      setRadio('theme', q.get('theme') ?? '');
+      setRadio('motion', q.get('motion') ?? '');
+      setRadio('height', q.get('height') ?? 'normal');
+      if (q.get('variant')) setRadio('variant', q.get('variant')!);
+      const fig = document.querySelector('.scene');
+      const applyHeight = (h: string) => {
+        fig?.classList.remove('scene--normal', 'scene--tall', 'scene--hero');
+        fig?.classList.add(`scene--${h}`);
+      };
+      applyHeight(q.get('height') ?? 'normal');
+
+      const replace = (k: string, v: string) => {
+        if (v) q.set(k, v);
+        else q.delete(k);
+        history.replaceState(null, '', `${location.pathname}?${q}`);
+      };
+      form.addEventListener('change', (e) => {
+        const t = e.target as HTMLInputElement;
+        const v = t.value;
+        switch (t.name) {
+          case 'variant':
+            replace('variant', v);
+            el?.dispatchEvent(new CustomEvent('scene:command', { detail: { type: 'variant', variant: v } }));
+            break;
+          case 'theme':
+            replace('theme', v);
+            if (v) document.documentElement.dataset['theme'] = v;
+            else delete document.documentElement.dataset['theme'];
+            break;
+          case 'height':
+            replace('height', v === 'normal' ? '' : v);
+            applyHeight(v);
+            break;
+          case 'quality':
+          case 'motion':
+            replace(t.name, v);
+            location.reload();
+            break;
+          default:
+        }
+      });
+
+      const out = document.getElementById('sandbox-stats')!;
+      let last = { f: 0, t: performance.now() };
+      setInterval(() => {
+        if (!el) return;
+        const s = el.stats;
+        const now = performance.now();
+        const fps = ((s.frames - last.f) * 1000) / (now - last.t);
+        last = { f: s.frames, t: now };
+        out.textContent = [
+          `state     ${s.state}`,
+          `quality   ${s.quality ?? '—'}`,
+          `variant   ${s.variant}  step ${s.step}`,
+          `loop      ${s.loop}  animate ${s.animate}`,
+          `frames    ${s.frames}  (${fps.toFixed(0)} fps)`,
+          `calls     ${s.drawCalls}`,
+          `tris      ${s.triangles.toLocaleString()}`,
+          `geo/tex   ${s.geometries} / ${s.textures}`,
+        ].join('\n');
+      }, 250);
+
+      const log = document.getElementById('sandbox-log')!;
+      for (const type of ['scene:ready', 'scene:state', 'scene:step', 'scene:variant', 'scene:hotspot', 'scene:navigate']) {
+        document.addEventListener(type, (e) => {
+          const li = document.createElement('li');
+          li.textContent = `${new Date().toLocaleTimeString('zh-TW')}  ${type}  ${JSON.stringify((e as CustomEvent).detail)}`;
+          log.prepend(li);
+          while (log.children.length > 12) log.lastElementChild?.remove();
+          if (type === 'scene:navigate' && q.get('nonav') !== null) e.preventDefault();
+        });
+      }
+    </script>
+
+    <style>
+      body.sandbox {
+        background: var(--c-bg);
+        color: var(--c-fg);
+        font-family: var(--font-sans);
+      }
+      .sandbox-skip:focus {
+        position: fixed;
+        top: 8px;
+        left: 8px;
+        width: auto;
+        height: auto;
+        clip-path: none;
+        padding: 8px 12px;
+        background: var(--c-bg-elev);
+        z-index: 10;
+      }
+      .sandbox-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+        min-height: 100dvh;
+      }
+      @media (max-width: 52rem) {
+        .sandbox-shell {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .sandbox-nav ul {
+          display: flex;
+          overflow-x: auto;
+          gap: 4px;
+        }
+      }
+      .sandbox-nav {
+        border-inline-end: 1px solid var(--c-border);
+        background: var(--c-bg-sunken);
+        padding: var(--space-3);
+        font-size: var(--fs-s);
+        min-width: 0;
+      }
+      .sandbox-brand {
+        font-weight: 700;
+        margin-block-end: var(--space-2);
+      }
+      .sandbox-brand span {
+        font-size: var(--fs-xs);
+        color: var(--c-fg-subtle);
+        border: 1px solid var(--c-border);
+        border-radius: 99px;
+        padding: 0 6px;
+      }
+      .sandbox-nav ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .sandbox-nav a {
+        display: grid;
+        padding: 6px 8px;
+        border-radius: var(--radius-m);
+        color: var(--c-fg);
+        text-decoration: none;
+        min-width: 9rem;
+      }
+      .sandbox-nav a[aria-current='page'] {
+        background: var(--c-accent-soft);
+        outline: 1px solid var(--c-accent);
+      }
+      .sandbox-nav code {
+        font-size: var(--fs-xs);
+        color: var(--c-fg-subtle);
+      }
+      .sandbox-main {
+        padding: var(--space-4) var(--gutter);
+        min-width: 0;
+        max-width: 80rem;
+      }
+      .sandbox-head h1 {
+        font-size: var(--fs-2xl);
+      }
+      .sandbox-head p {
+        color: var(--c-fg-muted);
+        font-size: var(--fs-s);
+      }
+      .sandbox-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2) var(--space-4);
+        margin-block: var(--space-3);
+        font-size: var(--fs-s);
+      }
+      .sandbox-controls fieldset {
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-m);
+        padding: 4px 10px 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px 10px;
+      }
+      .sandbox-controls label {
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+        min-height: 28px;
+      }
+      .sandbox-stage {
+        position: relative;
+      }
+      .sandbox-stage .scene {
+        margin-block-start: 0;
+      }
+      .sandbox-stats {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        z-index: 10;
+        pointer-events: none;
+      }
+      .sandbox-stats pre {
+        margin: 0;
+        padding: 6px 8px;
+        font: 11px/1.35 var(--font-mono);
+        background: color-mix(in srgb, var(--c-bg-elev) 82%, transparent);
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-s);
+        color: var(--c-fg);
+      }
+      .sandbox-log {
+        font-size: var(--fs-xs);
+        color: var(--c-fg-muted);
+      }
+      .sandbox-log h2 {
+        font-size: var(--fs-s);
+        margin-block: var(--space-4) var(--space-1);
+      }
+      .sandbox-log ol {
+        font-family: var(--font-mono);
+        padding-inline-start: 2em;
+        overflow-wrap: anywhere;
+      }
+    </style>
+
+    <style is:global>
+      /* ?poster=1 (scripts/capture-posters.ts): a bare 800×450 stage at the top-left, nothing on top of it. */
+      :root[data-poster] body.sandbox {
+        background: var(--scene-bg);
+      }
+      :root[data-poster] :is(.sandbox-skip, .sandbox-nav, .sandbox-head, .sandbox-controls, .sandbox-stats, .sandbox-log) {
+        display: none;
+      }
+      :root[data-poster] .sandbox-shell {
+        display: block;
+        min-height: 0;
+      }
+      :root[data-poster] .sandbox-main {
+        padding: 0;
+        max-width: none;
+      }
+      :root[data-poster] .sandbox-stage .scene {
+        width: 800px;
+        margin: 0;
+      }
+      :root[data-poster] .scene-stage {
+        aspect-ratio: 16 / 9;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+      }
+      :root[data-poster] :is(.scene-skip, .scene-toolbar, .scene-stepinfo, .scene-hotspots-wrap, .scene-caption, .scene-desc),
+      :root[data-poster] :is(.scene-poster, .scene-badge, .scene-hint, .scene-status, .scene-load) {
+        display: none !important;
+      }
+      /* In-stage controls added by scenes (chip filters, segmented toggles, sliders) would be dead
+         pictures on the poster (the poster is also the no-WebGL fallback); legends and notes stay. */
+      :root[data-poster] .scene-stage :is([role='group'], [role='radiogroup'], [role='toolbar']),
+      :root[data-poster] .scene-stage :is(div, fieldset, form, ul, ol, p, label):has(> :is(button, input, select)) {
+        visibility: hidden !important;
+      }
+    </style>
+  </body>
+</html>

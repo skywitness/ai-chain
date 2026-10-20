@@ -1,0 +1,55 @@
+---
+/**
+ * Colour key for the five chain layers with company counts (owner: pages-companies). Used under the
+ * 2D HQ map on /companies/.
+ *
+ *   <LayerLegend counts={new Map([['silicon', 236], …])} />
+ */
+import { LAYERS, type LayerId } from '../../lib/collections';
+
+interface Props {
+  counts: ReadonlyMap<LayerId, number>;
+}
+const { counts } = Astro.props;
+---
+
+<ul class="ll" role="list" aria-label="顏色圖例：產業鏈五層">
+  {
+    [...LAYERS].reverse().map((l) => (
+      <li style={`--c:${l.color}`}>
+        <span class="ll__dot" aria-hidden="true" />
+        {l.title}
+        <span class="ll__n">{counts.get(l.id) ?? 0} 家</span>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .ll {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-s);
+    color: var(--c-fg);
+  }
+  .ll li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+  }
+  .ll__dot {
+    inline-size: 0.7em;
+    block-size: 0.7em;
+    border-radius: 50%;
+    background: var(--c);
+  }
+  .ll__n {
+    color: var(--c-fg-subtle);
+    font-size: var(--fs-xs);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

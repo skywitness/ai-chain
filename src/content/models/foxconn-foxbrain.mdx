@@ -1,0 +1,191 @@
+---
+title: "鴻海 FoxBrain"
+family: "FoxBrain"
+kind: "llm"
+lab: "foxconn"
+labName: "鴻海研究院（Hon Hai Research Institute）"
+origin: "TW"
+summary: "鴻海研究院人工智慧研究所開發的繁體中文大型語言模型，2025-03-10 發表，以 Meta Llama 3.1 70B 為基礎，用自行生成的 980 億 tokens 中文資料續訓，並以 120 張 NVIDIA H100 約四週完成訓練。2025 年 7 月釋出的 v1.2 加入兩種思考模式。權重放在 Hugging Face，但須先寄信申請並經人工審核，v1.2 的使用協議目前只開放學術與研究機構、不授權商用；官方定位是製造、供應鏈與決策輔助等應用，截至 2026-10 沒有新版本，也沒有第三方評測。"
+strengths:
+  - "以 70B 規模續訓繁中資料，官方稱在 TMMLU+ 多數領域優於同規模的 Llama-3-Taiwan-70B，尤其是數學與邏輯推理"
+  - "訓練成本透明：120 張 H100、總計 2,688 個 GPU 天，並使用 NVIDIA Taipei-1 超級電腦與 NeMo 框架"
+  - "v1.2 提供兩種思考模式：逐步分配推理預算的 Budget_Thinking，與以 think 標籤長考的 Extend_Thinking"
+  - "鎖定製造業場景，可在 2 到 8 張 H100 上以 vLLM 自行部署"
+weaknesses:
+  - "取得門檻高：v1.2 須先寄信申請、經人工審核，目前只授權學術與研究機構使用並禁止商用；Hugging Face 顯示 v1.0 累計下載 226 次、v1.2 僅 71 次"
+  - "沒有公開數字化的評測：TMMLU+ 結果只以圖片呈現，Artificial Analysis 與 Arena 都未收錄"
+  - "基礎模型是 2024 年 7 月的 Llama 3.1 70B，發表時官方即承認仍落後 DeepSeek 的蒸餾模型"
+  - "只支援文字；官方範例的服務上下文設為 32K，完整 128K 需要更多 GPU"
+bestFor:
+  - "鴻海集團內部的資料分析、文書協作與決策輔助"
+  - "製造流程最佳化、品管與故障排除等需要逐步推理的工業問答"
+  - "學術與研究機構研究繁中推理模型，或觀察台灣企業如何以有限算力在開放模型上做繁中續訓"
+positioning:
+  capability: 7
+  costIndex: 27
+  openness: 0.4
+  method: "editorial"
+  asOf: "2026-10-06"
+  note: "以旗艦 FoxBrain v1.2 計算，三項座標皆為編輯判斷。FoxBrain 未被 Artificial Analysis 評測；其基礎模型 Llama 3.1 70B 在 AA 智慧指數 v4.3.2 為 6.6、改良版 Llama 3.3 70B 為 7.7（皆為 AA 估計值），v1.2 加入思考模式，capability 取 7（不確定性高）。官方沒有 API，costIndex 以 Arena 列出的 Llama 3.1 70B 第三方託管價（輸入、輸出皆 0.40 美元／百萬 tokens）為參考，套用 0.05 美元 → 0、100 美元 → 100 的對數換算約 27。權重雖可在 Hugging Face 申請，但須寄信並經人工審核，v1.2 使用協議目前僅限學術與研究用途、禁止商用（另受 Llama 3.1 社群授權約束），開放程度低於一般受限授權的開放權重模型，openness 取 0.4。"
+versions:
+  - id: "foxbrain-v1-2"
+    name: "FoxBrain v1.2（Llama_3.1-FoxBrain-70B-V1.2）"
+    released: "2025-07-31"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "FoxBrain 使用與授權協議（目前僅限學術研究、禁止商用）＋Llama 3.1 Community License"
+    architecture: "dense"
+    params:
+      totalB: 70.6
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 131072
+    reasoning: "hybrid"
+    availability:
+      - "self-host"
+    notes: "加入 Budget_Thinking（預設，依問題難度分配 1 到 9 個推理步驟並附自評分數）與 Extend_Thinking（以 think 標籤長考）兩種模式，自訂系統提示會覆蓋思考模式。官方建議 2 到 8 張 H100（4 張最佳），範例服務上下文為 32,768 tokens；128K 上下文取自 2025-03-10 新聞稿。參數量 705.5 億為 Hugging Face 權重檔統計。2025-07-31 上傳 Hugging Face；下載前須先寄信申請並經人工審核，使用協議載明目前只授權學術與研究機構、不授權商用，商用版本將來另透過 AWS 等授權管道提供。"
+  - id: "foxbrain-v1-0"
+    name: "FoxBrain v1.0（Llama_3.1-FoxBrain-70B）"
+    released: "2025-03-10"
+    status: "preview"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "Llama 3.1 Community License"
+    architecture: "dense"
+    params:
+      totalB: 70
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 131072
+    reasoning: "none"
+    availability:
+      - "self-host"
+    notes: "2025-03-10 由鴻海研究院發表：以 Llama 3.1 70B 為基礎，經續訓、監督式微調、RLAIF 與自研的 Adaptive Reasoning Reflection 訓練；續訓資料為自建 24 類主題資料增強所生成的 980 億 tokens 中文資料。官方稱具推理能力，但沒有獨立的思考模式。權重於 2025-05-19 上傳 Hugging Face，模型卡標示為預覽版、僅開放合作夥伴測試；之後由 v1.2 接替。"
+flagshipVersion: "foxbrain-v1-2"
+relatedLearn:
+  - "pretraining-to-chat"
+  - "reasoning-models"
+  - "open-vs-closed-models"
+  - "training-vs-inference-economics"
+  - "model-evaluation"
+glossary:
+  - "pretraining"
+  - "reasoning-model"
+  - "chain-of-thought"
+  - "open-weights"
+  - "context-window"
+  - "benchmark"
+sources:
+  - key: "honhai-foxbrain"
+    title: "鴻海研究院推出第一版具有推理能力繁體中文大型語言模型"
+    publisher: "鴻海科技集團"
+    url: "https://www.honhai.com/zh-tw/press-center/press-releases/latest-news/1548"
+    type: "press-release"
+    lang: "zh-TW"
+    published: "2025-03-10"
+    accessed: "2026-10-06"
+  - key: "hf-foxbrain-v12"
+    title: "FoxconnAI/Llama_3.1-FoxBrain-70B-V1.2"
+    publisher: "鴻海研究院（Hugging Face）"
+    url: "https://huggingface.co/FoxconnAI/Llama_3.1-FoxBrain-70B-V1.2"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "Hugging Face API 顯示須人工審核下載、累計下載 71 次（2026-10-17 複查）；存取條件載明目前僅授權學術與研究機構、不授權商用"
+  - key: "hf-foxbrain-v10"
+    title: "FoxconnAI/Llama_3.1-FoxBrain-70B"
+    publisher: "鴻海研究院（Hugging Face）"
+    url: "https://huggingface.co/FoxconnAI/Llama_3.1-FoxBrain-70B"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "Hugging Face API 顯示須人工審核下載、累計下載 226 次（2026-10-17 複查）"
+  - key: "manufacturingdive-foxbrain"
+    title: "Foxconn launches own AI model"
+    publisher: "Manufacturing Dive"
+    url: "https://www.manufacturingdive.com/news/foxconn-apple-deepseek-llm-ai-model-foxbrain/742231/"
+    type: "news"
+    lang: "en"
+    published: "2025-03-12"
+    accessed: "2026-10-06"
+  - key: "aa-llama31-70b"
+    title: "Llama 3.1 Instruct 70B Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/llama-3-1-instruct-70b"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "FoxBrain 基礎模型的參考分數（Intelligence Index v4.3.2，估計值）"
+  - key: "arena-text"
+    title: "Text Arena Leaderboard (Overall)"
+    publisher: "LMArena"
+    url: "https://arena.ai/leaderboard/text"
+    type: "leaderboard"
+    lang: "en"
+    published: "2026-10-02"
+    accessed: "2026-10-06"
+    note: "lmarena.ai 已轉址至 arena.ai；榜上未列出 FoxBrain，僅有基礎模型 Llama 3.1 70B"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-13"
+  checkedBy: "models-13-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+FoxBrain 是 <CompanyChip id="foxconn">鴻海</CompanyChip>旗下鴻海研究院人工智慧研究所開發的繁體中文大型語言模型，2025-03-10 發表時，鴻海稱這是研究院推出的首款繁體中文大型語言模型，並以推理能力為主打<Cite k="honhai-foxbrain" />。它以 <ModelChip id="meta-muse-llama">Meta Llama</ModelChip> 3.1 70B 為基礎，由 <CompanyChip id="nvidia">輝達</CompanyChip>提供 Taipei-1 超級電腦與技術諮詢，使用 NeMo 框架完成訓練<Cite k="honhai-foxbrain" />。
+
+鴻海表示，FoxBrain 原本為集團內部應用設計，涵蓋資料分析、決策輔助、文書協作、數學、推理解題與程式生成，未來會導入智慧製造、智慧電動車與智慧城市三大平台<Cite k="honhai-foxbrain" />。目前公開的最新版本是 2025-07-31 上傳的 v1.2<Cite k="hf-foxbrain-v12" />。
+
+## 特性分析
+
+**用有限算力做續訓。** 訓練使用 120 張 NVIDIA H100、透過 Quantum-2 InfiniBand 網路串接，總計 2,688 個 GPU 天，約四週完成。團隊建立 24 類主題的資料增強與品質評估方法，生成 980 億 tokens 中文<Term id="pretraining">預訓練</Term>資料，再經監督式微調、RLAIF 與自研的 Adaptive Reasoning Reflection 訓練<Cite k="honhai-foxbrain" />。
+
+**v1.2 的兩種思考模式。** Budget_Thinking 是預設模式，會依問題難度分配 1 到 9 個推理步驟，並附上自我反思與品質分數；Extend_Thinking 則用 think 標籤進行較長的<Term id="chain-of-thought">思維鏈</Term>推理，官方提醒須搭配特定取樣參數<Cite k="hf-foxbrain-v12" />。兩者都屬於<Term id="reasoning-model">推理模型</Term>的做法，但切換方式是鴻海自訂的對話範本。
+
+**部署門檻不低。** 官方建議以 vLLM 在 2 到 8 張 H100 上執行，最佳為 4 張；範例設定的<Term id="context-window">上下文</Term>長度為 32K tokens<Cite k="hf-foxbrain-v12" />，新聞稿則稱可處理 128K<Cite k="honhai-foxbrain" />。
+
+**開放程度有限。** 權重放在 Hugging Face，模型卡標示採 Llama 3.1 社群授權，但下載前必須先寄信申請、再經人工審核；v1.2 的使用協議還載明，目前只授權學術與研究機構使用、不授權商用，商用版本將來另透過 AWS 等管道提供<Cite k="hf-foxbrain-v12" />。截至 2026 年 10 月，v1.0 累計下載 226 次<Cite k="hf-foxbrain-v10" />、v1.2 僅 71 次<Cite k="hf-foxbrain-v12" />，和一般<Term id="open-weights">開放權重</Term>模型動輒數萬次相比，外部使用相當少。
+
+## 適合與不適合的用途
+
+適合：
+
+- **集團內部的知識工作**：資料分析、文件協作與決策輔助是 FoxBrain 的原始設計目標<Cite k="honhai-foxbrain" />。
+- **需要逐步推理的工業問答**：官方建議用 Budget_Thinking 處理製程最佳化、品管檢驗與故障排除，用 Extend_Thinking 處理根因分析與研發問題<Cite k="hf-foxbrain-v12" />。
+- **研究企業級繁中續訓**：新聞稿完整揭露 GPU 數量、天數與資料量，是觀察台灣企業自行開發語言模型投入規模的少數公開案例。
+
+不適合：
+
+- **商業產品或一般開發者的現成選擇**：下載要寄信申請與審核，目前不授權商用，也沒有 API 或雲端託管服務<Cite k="hf-foxbrain-v12" />。
+- **追求前沿能力**：發表時官方就承認數學推理仍與 DeepSeek 的蒸餾模型有差距<Cite k="honhai-foxbrain" />；基礎模型 Llama 3.1 70B 在 AA 綜合智慧指數只有約 7 分（估計值）<Cite k="aa-llama31-70b" />。
+- **圖片、語音或多模態任務**：只支援文字。
+
+## 版本演進
+
+| 日期 | 版本 | 重點 |
+|---|---|---|
+| 2025-03-10 | FoxBrain 發表 | Llama 3.1 70B 續訓，120 張 H100 約四週完成 |
+| 2025-05-19 | v1.0 上傳 Hugging Face | 預覽版，僅開放合作夥伴測試 |
+| 2025 年 | v1.1 | 官方版本紀錄稱強化推理與效率，未單獨公開 |
+| 2025-07-31 | v1.2 | 加入 Budget_Thinking 與 Extend_Thinking 兩種思考模式 |
+
+鴻海發表時表示後續會對外開源分享<Cite k="honhai-foxbrain" />，但外界報導指出當時並未給出時程<Cite k="manufacturingdive-foxbrain" />。v1.0 模型卡曾預告 2025 年 6 月底至 7 月初正式公開、開放一般使用<Cite k="hf-foxbrain-v10" />；實際釋出的 v1.2 仍須申請審核，且目前僅授權學術與研究用途。v1.2 模型卡的路線圖列出下一步是強化工業知識的 2.0 版<Cite k="hf-foxbrain-v12" />，但截至 2026-10-06，Hugging Face 上沒有比 v1.2 更新的版本。
+
+## 評測解讀
+
+<Callout type="warn" title="缺乏可查證的數字">FoxBrain 的 TMMLU+ 與 MT-Bench 結果只以圖片放在需審核的模型卡中，沒有公開數字表；Artificial Analysis 與 Arena 都沒有收錄。以下判斷以官方文字描述為主。</Callout>
+
+- **官方說法**：在 TMMLU+ 多數領域優於同規模的 Llama-3-Taiwan-70B，數學領域全面超越基礎模型 Llama 3.1 70B，但仍略遜 DeepSeek 的蒸餾模型<Cite k="honhai-foxbrain" />。這些都是自評，比較對象也多是 2024 年至 2025 年初的模型。
+- **自訂任務的分數**：v1.0 模型卡以 100 篇繁中新聞改寫任務比較，FoxBrain 綜合分 68.50，高於 Claude 的 62.26 與 ChatGPT 的 61.19<Cite k="hf-foxbrain-v10" />；但沒有標明 Claude 與 ChatGPT 的版本，評分公式也是自訂的，只能當作參考。
+- **v1.2 只給相對提升**：模型卡稱 Budget_Thinking 讓多步驟推理提升 15%、Extend_Thinking 讓複雜分析任務提升 22%，但沒有說明比較基準與測試集<Cite k="hf-foxbrain-v12" />。
+- **用基礎模型推估水準**：Arena 文字競技場上，Llama 3.1 70B 為 1293 分、排第 286 名<Cite k="arena-text" />。FoxBrain 經過繁中續訓與推理訓練，中文表現可能更好，但在缺乏第三方測試的情況下，合理推估其通用能力仍在 2024 年 70B 開放模型的水準附近。

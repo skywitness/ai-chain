@@ -1,0 +1,562 @@
+---
+title: "百度文心 ERNIE 系列"
+family: "ERNIE"
+kind: "llm"
+lab: "baidu"
+labName: "百度（Baidu）"
+origin: "CN"
+summary: "百度的文心（ERNIE）大型語言模型系列。2025 年 6 月開源 ERNIE 4.5 家族後，旗艦轉回封閉：2025 年 11 月推出 2.4 兆參數的原生全模態 ERNIE 5.0，2026-05-09 推出從 5.0 抽出子網路、預訓練成本約同級 6% 的 ERNIE 5.1。中文寫作與知識問答是強項，但上下文只有 128K，且缺少第三方綜合評測；千帆平台已公告 ERNIE 5.0 於 2026-10-29 退役。"
+strengths:
+  - "ERNIE 5.1 官方 GPQA 91.0%、MMLU-Pro 84.3%；2026-05-09 在 LMArena 搜尋競技場以 1,223 分排全球第 4"
+  - "中文知識與創作見長：ERNIE 5.0 在 ChineseSimpleQA 得 86.03%，ERNIE 5.1 官方稱創意寫作接近 Gemini 3.1 Pro"
+  - "訓練效率高：ERNIE 5.1 從 5.0 的彈性超網路抽出，總參數約三分之一，預訓練成本約同級模型 6%"
+  - "ERNIE 5.0 是少見的原生全模態架構，文字、圖片、影片、音訊共用同一個模型"
+  - "API 價格低：ERNIE 5.1 每百萬 tokens 輸入 4 元、輸出 18 元人民幣（約 0.60／2.69 美元）"
+weaknesses:
+  - "ERNIE 5.x 為封閉權重，ERNIE 4.5 之後沒有新的開放權重語言模型"
+  - "Artificial Analysis 尚未收錄 ERNIE 5.1，缺少獨立的綜合能力評測；ERNIE 5.0 預覽版的估計指數只有 14 分"
+  - "上下文 128K、最大輸出 64K，明顯短於同期 100 萬 tokens 的中國競品"
+  - "官方未公布 ERNIE 5.1 的程式或 Agent 終端機評測（如 SWE-bench、Terminal-Bench）"
+  - "產品汰換快：千帆公告 ERNIE 5.0 與 4.5 Turbo 於 2026-10-29 退役，推薦替換模型是 DeepSeek-V4.1-Flash"
+bestFor:
+  - "中文內容創作、知識問答與搜尋增強應用"
+  - "已在百度智慧雲千帆平台上開發的企業應用"
+  - "需要低成本中文旗艦模型、又不需要超長上下文的服務"
+positioning:
+  capability: 26
+  costIndex: 40.9
+  openness: 0
+  method: "editorial"
+  asOf: "2026-10-06"
+  note: "旗艦 ERNIE 5.1 尚無 Artificial Analysis 綜合智慧指數，capability 為編輯估計：其 LMArena 文字分數（1,468）與 GLM-5.1（1,465）相近，官方 τ³-bench 也接近（67.9% 對 70.6%），GPQA 則較高，故取 GLM-5.1 的 AA 指數 26 作參照；costIndex 以千帆人民幣定價（輸入 4 元、輸出 18 元，不超過 32k 輸入）依 2026-10-06 匯率 6.7046 換算為 0.597／2.685 美元，3:1 混合約 1.12 美元，依對數換算（0.05 美元 = 0、100 美元 = 100）得 40.9；ERNIE 5.1 為封閉權重，openness = 0。"
+versions:
+  - id: "ernie-5-1"
+    name: "ERNIE 5.1（文心 5.1）"
+    released: "2026-05-09"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 131072
+    maxOutputTokens: 65536
+    reasoning: "always"
+    availability:
+      - "api"
+      - "chat-app"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.597
+        outputPerMTok: 2.685
+        currency: "USD"
+        tierNote: "官方以人民幣計價：輸入不超過 32k 時每百萬 tokens 輸入 4 元、輸出 18 元（32k 到 128k 為 6 元、22 元）；依 2026-10-06 歐洲央行參考匯率（1 美元兌 6.7046 人民幣）換算"
+        source:
+          title: "價格（千帆 AI 應用開發者中心）"
+          publisher: "百度智慧雲"
+          url: "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a"
+          type: "docs"
+          lang: "zh-CN"
+          accessed: "2026-10-06"
+          note: "頁面更新時間 2026-07-09"
+    benchmarks:
+      - benchmark: "gpqa-diamond"
+        score: 91
+        setting: "官方圖表標示 GPQA（pass@1）"
+        reportedBy: "lab"
+        date: "2026-05-09"
+        source:
+          title: "ERNIE 5.1 Officially Released! Topping Multiple Leaderboards — A Model That Writes Better and Understands You More"
+          publisher: "Baidu ERNIE Blog"
+          url: "https://ernie.baidu.com/blog/posts/ernie-5.1-0508-release/"
+          type: "company-site"
+          lang: "en"
+          published: "2026-05-09"
+          accessed: "2026-10-06"
+      - benchmark: "mmlu-pro"
+        score: 84.3
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-05-09"
+        source:
+          title: "ERNIE 5.1 Officially Released! Topping Multiple Leaderboards — A Model That Writes Better and Understands You More"
+          publisher: "Baidu ERNIE Blog"
+          url: "https://ernie.baidu.com/blog/posts/ernie-5.1-0508-release/"
+          type: "company-site"
+          lang: "en"
+          published: "2026-05-09"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1467.6
+        setting: "顯示名稱 ernie-5.1，第 48 名，39,396 票"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "由 ERNIE 5.0 的彈性超網路抽出最佳子網路，總參數約為 5.0 的三分之一、啟用參數約二分之一，官方稱預訓練成本約為同級模型的 6%；確切參數未公布。千帆平台將其列為深度思考模型，支援 thinking_budget。2026-04-30 的 Preview 版曾在 LMArena 文字榜排全球第 13 名。"
+  - id: "ernie-5-0"
+    name: "ERNIE 5.0（文心 5.0）"
+    released: "2025-11-13"
+    status: "deprecated"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "moe"
+    params:
+      totalB: 2400
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+      - "video"
+      - "audio"
+    modalitiesOut:
+      - "text"
+    contextTokens: 131072
+    maxOutputTokens: 65536
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "chat-app"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.895
+        outputPerMTok: 3.58
+        currency: "USD"
+        tierNote: "官方以人民幣計價：輸入不超過 32k 時每百萬 tokens 輸入 6 元、輸出 24 元；依 2026-10-06 歐洲央行參考匯率（1 美元兌 6.7046 人民幣）換算"
+        source:
+          title: "價格（千帆 AI 應用開發者中心）"
+          publisher: "百度智慧雲"
+          url: "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a"
+          type: "docs"
+          lang: "zh-CN"
+          accessed: "2026-10-06"
+          note: "頁面更新時間 2026-07-09"
+    benchmarks:
+      - benchmark: "mmlu-pro"
+        score: 83.8
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-02-06"
+        source:
+          title: "ERNIE 5.0: A 2.4 Trillion-Parameter Unified Multimodal Foundation Model"
+          publisher: "Baidu ERNIE Blog"
+          url: "https://ernie.baidu.com/blog/posts/ernie5.0/"
+          type: "company-site"
+          lang: "en"
+          published: "2026-02-06"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 86.36
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-02-06"
+        source:
+          title: "ERNIE 5.0: A 2.4 Trillion-Parameter Unified Multimodal Foundation Model"
+          publisher: "Baidu ERNIE Blog"
+          url: "https://ernie.baidu.com/blog/posts/ernie5.0/"
+          type: "company-site"
+          lang: "en"
+          published: "2026-02-06"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 25.81
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-02-06"
+        source:
+          title: "ERNIE 5.0: A 2.4 Trillion-Parameter Unified Multimodal Foundation Model"
+          publisher: "Baidu ERNIE Blog"
+          url: "https://ernie.baidu.com/blog/posts/ernie5.0/"
+          type: "company-site"
+          lang: "en"
+          published: "2026-02-06"
+          accessed: "2026-10-06"
+      - benchmark: "aime-2025"
+        score: 89.06
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-02-06"
+        source:
+          title: "ERNIE 5.0: A 2.4 Trillion-Parameter Unified Multimodal Foundation Model"
+          publisher: "Baidu ERNIE Blog"
+          url: "https://ernie.baidu.com/blog/posts/ernie5.0/"
+          type: "company-site"
+          lang: "en"
+          published: "2026-02-06"
+          accessed: "2026-10-06"
+      - benchmark: "livecodebench"
+        score: 76.21
+        setting: "官方，LiveCodeBench v6"
+        reportedBy: "lab"
+        date: "2026-02-06"
+        source:
+          title: "ERNIE 5.0: A 2.4 Trillion-Parameter Unified Multimodal Foundation Model"
+          publisher: "Baidu ERNIE Blog"
+          url: "https://ernie.baidu.com/blog/posts/ernie5.0/"
+          type: "company-site"
+          lang: "en"
+          published: "2026-02-06"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 78.79
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-02-06"
+        source:
+          title: "ERNIE 5.0: A 2.4 Trillion-Parameter Unified Multimodal Foundation Model"
+          publisher: "Baidu ERNIE Blog"
+          url: "https://ernie.baidu.com/blog/posts/ernie5.0/"
+          type: "company-site"
+          lang: "en"
+          published: "2026-02-06"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 14.3
+        setting: "v4.3.2，ERNIE 5.0 Thinking Preview（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "ERNIE 5.0 Thinking Preview Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/ernie-5-0-thinking-preview"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1446.4
+        setting: "顯示名稱 ernie-5.0-0110，第 85 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "2.4 兆參數的原生全模態模型，把文字、圖片、影片、音訊放進同一個自迴歸架構，每個 token 啟用不到 3% 參數。2025-11-13 以 Thinking Preview 上線千帆，2026-01 的 0110 版在 LMArena 去掉 Preview 標籤。千帆已公告 ERNIE-5.0 系列於 2026-10-29 退役，推薦替換模型為 DeepSeek-V4.1-Flash。"
+  - id: "ernie-x1-1"
+    name: "ERNIE X1.1（文心 X1.1）"
+    released: "2025-09-09"
+    status: "retired"
+    tier: "reasoning"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 65536
+    maxOutputTokens: 65536
+    reasoning: "always"
+    availability:
+      - "api"
+    notes: "深度思考模型，上下文擴大到 64K tokens。千帆於 2026-09-29 退役，推薦改用 ERNIE-5.1。"
+  - id: "ernie-4-5-open"
+    name: "ERNIE 4.5 開源系列（300B-A47B 等 10 款）"
+    released: "2025-06-30"
+    status: "ga"
+    tier: "mid"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    params:
+      totalB: 300
+      activeB: 47
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 131072
+    reasoning: "none"
+    availability:
+      - "self-host"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 7.5
+        setting: "v4.3.2，ERNIE 4.5 300B A47B（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "ERNIE 4.5 300B A47B Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/ernie-4-5-300b-a47b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "共 10 款，包含 3,000 億（啟用 470 億）文字模型、4,240 億多模態模型、210 億與 280 億的小型 MoE，以及 3 億參數 dense 模型；2025-09 與 2025-11 另開源 21B-A3B-Thinking 與 VL-28B-A3B-Thinking 推理版。千帆託管的 21B、28B 等開源版 API 已於 2026-06-09 下線，權重仍可在 Hugging Face 下載。"
+  - id: "ernie-4-5-turbo"
+    name: "ERNIE 4.5 Turbo（文心 4.5 Turbo）"
+    released: "2025-04-24"
+    status: "deprecated"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 131072
+    maxOutputTokens: 12288
+    reasoning: "none"
+    availability:
+      - "api"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.119
+        outputPerMTok: 0.477
+        cachedInputPerMTok: 0.03
+        currency: "USD"
+        tierNote: "官方以人民幣計價：每百萬 tokens 輸入 0.8 元、快取命中 0.2 元、輸出 3.2 元；依 2026-10-06 歐洲央行參考匯率（1 美元兌 6.7046 人民幣）換算"
+        source:
+          title: "價格（千帆 AI 應用開發者中心）"
+          publisher: "百度智慧雲"
+          url: "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a"
+          type: "docs"
+          lang: "zh-CN"
+          accessed: "2026-10-06"
+          note: "頁面更新時間 2026-07-09"
+    notes: "128K 版本；另有圖片理解的 ERNIE 4.5 Turbo VL。千帆已公告 2026-10-29 退役，推薦替換模型為 DeepSeek-V4.1-Flash。"
+  - id: "ernie-x1-turbo"
+    name: "ERNIE X1 Turbo（文心 X1 Turbo）"
+    released: "2025-04-24"
+    status: "retired"
+    tier: "reasoning"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 32768
+    reasoning: "always"
+    availability:
+      - "api"
+    notes: "與 ERNIE 4.5 Turbo 同時推出的深度思考模型；千帆於 2026-06-30 退役。"
+flagshipVersion: "ernie-5-1"
+relatedLearn:
+  - "multimodal-models"
+  - "mixture-of-experts"
+  - "post-training-deep"
+  - "open-vs-closed-models"
+  - "model-evaluation"
+glossary:
+  - "multimodal"
+  - "moe"
+  - "active-parameters"
+  - "distillation"
+  - "reasoning-model"
+  - "context-window"
+  - "open-weights"
+  - "elo-rating"
+  - "benchmark"
+sources:
+  - key: "ernie-51-blog"
+    title: "ERNIE 5.1 Officially Released! Topping Multiple Leaderboards — A Model That Writes Better and Understands You More"
+    publisher: "Baidu ERNIE Blog"
+    url: "https://ernie.baidu.com/blog/posts/ernie-5.1-0508-release/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-05-09"
+    accessed: "2026-10-06"
+  - key: "ernie-51-preview"
+    title: "ERNIE-5.1-Preview Tops LMArena Text Leaderboard as No.1 Chinese Model!"
+    publisher: "Baidu ERNIE Blog"
+    url: "https://ernie.baidu.com/blog/posts/ernie-5.1-preview-0430-release-on-lmarena/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-04-30"
+    accessed: "2026-10-06"
+  - key: "ernie-50-blog"
+    title: "ERNIE 5.0: A 2.4 Trillion-Parameter Unified Multimodal Foundation Model"
+    publisher: "Baidu ERNIE Blog"
+    url: "https://ernie.baidu.com/blog/posts/ernie5.0/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-02-06"
+    accessed: "2026-10-06"
+  - key: "ernie-50-lmarena"
+    title: "ERNIE-5.0 Tops LMArena Text Leaderboard as No.1 Chinese Model!"
+    publisher: "Baidu ERNIE Blog"
+    url: "https://ernie.baidu.com/blog/posts/ernie-5.0-0110-release-on-lmarena/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-01-15"
+    accessed: "2026-10-06"
+  - key: "ernie-45-blog"
+    title: "Announcing the Open Source Release of the ERNIE 4.5 Model Family"
+    publisher: "Baidu ERNIE Blog"
+    url: "https://ernie.baidu.com/blog/posts/ernie4.5/"
+    type: "company-site"
+    lang: "en"
+    published: "2025-06-30"
+    accessed: "2026-10-06"
+  - key: "hf-ernie45"
+    title: "baidu/ERNIE-4.5-300B-A47B-PT model card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/baidu/ERNIE-4.5-300B-A47B-PT"
+    type: "docs"
+    lang: "en"
+    published: "2025-06-30"
+    accessed: "2026-10-06"
+  - key: "qianfan-price"
+    title: "價格（千帆 AI 應用開發者中心）"
+    publisher: "百度智慧雲"
+    url: "https://cloud.baidu.com/doc/qianfan-docs/s/Jm8r1826a"
+    type: "docs"
+    lang: "zh-CN"
+    accessed: "2026-10-06"
+    note: "頁面更新時間 2026-07-09"
+  - key: "qianfan-models"
+    title: "模型列表（千帆 AI 應用開發者中心）"
+    publisher: "百度智慧雲"
+    url: "https://cloud.baidu.com/doc/qianfan-docs/s/7m95lyy43"
+    type: "docs"
+    lang: "zh-CN"
+    accessed: "2026-10-06"
+    note: "頁面更新時間 2026-07-13"
+  - key: "qianfan-thinking"
+    title: "深度思考（千帆 AI 應用開發者中心）"
+    publisher: "百度智慧雲"
+    url: "https://cloud.baidu.com/doc/qianfan-docs/s/Wm95lyynv"
+    type: "docs"
+    lang: "zh-CN"
+    accessed: "2026-10-06"
+  - key: "qianfan-retire"
+    title: "模型版本升級及退役機制"
+    publisher: "百度智慧雲"
+    url: "https://cloud.baidu.com/doc/qianfan/s/zmh4stou3"
+    type: "docs"
+    lang: "zh-CN"
+    accessed: "2026-10-06"
+    note: "頁面更新時間 2026-09-24"
+  - key: "qianfan-log"
+    title: "模型更新記錄"
+    publisher: "百度智慧雲"
+    url: "https://cloud.baidu.com/doc/qianfan/s/Kmh4stnjp"
+    type: "docs"
+    lang: "zh-CN"
+    accessed: "2026-10-06"
+  - key: "fx-usdcny"
+    title: "USD to CNY reference rate, 2026-10-06"
+    publisher: "Frankfurter (European Central Bank reference rates)"
+    url: "https://api.frankfurter.app/2026-10-06?from=USD&to=CNY"
+    type: "dataset"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "1 USD = 6.7046 CNY"
+  - key: "aa-ernie50"
+    title: "ERNIE 5.0 Thinking Preview Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/ernie-5-0-thinking-preview"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-ernie45"
+    title: "ERNIE 4.5 300B A47B Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/ernie-4-5-300b-a47b"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-leaderboard"
+    title: "LLM Leaderboard: Comparison of AI Models"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "lmarena-text"
+    title: "Text Arena Leaderboard"
+    publisher: "LMArena"
+    url: "https://lmarena.ai/leaderboard/text"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "Leaderboard last updated 2026-10-02"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-11"
+  checkedBy: "models-11-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+文心（ERNIE）是<CompanyChip id="baidu">百度（Baidu）</CompanyChip>的基礎模型系列，透過百度智慧雲千帆平台提供 API，一般使用者也可在 ernie.baidu.com 直接對話<Cite k="ernie-51-blog" />。近 18 個月的路線可以分成三段：
+
+1. **2025-04：ERNIE 4.5 Turbo 與推理模型 X1 Turbo**，主打降價與速度<Cite k="qianfan-log" />。
+2. **2025-06-30：開源 ERNIE 4.5 家族 10 款**，最大為 4,240 億參數的多模態模型，以 Apache 2.0 授權釋出<Cite k="ernie-45-blog" />。
+3. **2025-11 起：旗艦轉回封閉**。ERNIE 5.0 於 2025-11-13 以預覽版上線千帆<Cite k="qianfan-log" />，是 2.4 兆參數的原生全<Term id="multimodal">多模態</Term>模型<Cite k="ernie-50-blog" />；2026-05-09 推出目前的旗艦 ERNIE 5.1<Cite k="ernie-51-blog" />。
+
+截至 2026-10-06，百度部落格上沒有比 ERNIE 5.1 更新的語言模型。
+
+## 特性分析
+
+**一個模型處理所有模態。** 許多多模態模型採「後期融合」，也就是在預訓練好的語言模型外接視覺或語音模組；ERNIE 5.0 則從頭把文字、圖片、影片、音訊放進同一個自迴歸架構，並採用超稀疏<Term id="moe">混合專家（MoE）</Term>，每個 token 啟用的參數不到 3%<Cite k="ernie-50-blog" />。
+
+**用「彈性訓練」降低成本。** ERNIE 5.0 在一次預訓練中同時最佳化不同深度、專家數量與稀疏度的子模型。ERNIE 5.1 就是從這個超網路中抽出的子網路：總參數約為 5.0 的三分之一、<Term id="active-parameters">啟用參數</Term>約一半，官方稱預訓練成本約為同級模型的 6%<Cite k="ernie-51-blog" />。後訓練則先分別訓練程式、推理、Agent 等專家模型，再以「多教師同策略（on-policy）<Term id="distillation">蒸餾</Term>」把它們的能力整合進單一模型，最後針對一般對話與創作再做一輪線上強化學習<Cite k="ernie-51-blog" />。
+
+**中文與創作見長。** ERNIE 5.0 官方表格中，中文事實問答 ChineseSimpleQA 為 86.03%，高於同表的 Gemini 3 Pro（84.08%）<Cite k="ernie-50-blog" />；百度也稱 ERNIE 5.1 的創意寫作在內部評測接近 Gemini 3.1 Pro<Cite k="ernie-51-blog" />。
+
+**規格與價格。** ERNIE 5.1 在千帆的<Term id="context-window">上下文</Term>為 128K、最大輸出 64K tokens，屬於先輸出思維鏈再回答的<Term id="reasoning-model">推理模型</Term>，可用 thinking_budget 參數限制思考長度<Cite k="qianfan-models" /><Cite k="qianfan-thinking" />。輸入不超過 32k 時，每百萬 tokens 輸入 4 元、輸出 18 元人民幣<Cite k="qianfan-price" />，依 2026-10-06 匯率約為 0.60 與 2.69 美元<Cite k="fx-usdcny" />。
+
+## 適合與不適合的用途
+
+適合：
+
+- **中文內容創作與知識問答**：寫作、改寫、角色扮演等場景，官方已將 ERNIE 5.1 導入多個創作平台<Cite k="ernie-51-blog" />。
+- **搜尋增強應用**：2026-05-09，ERNIE 5.1 在 LMArena 搜尋競技場以 1,223 分排全球第 4<Cite k="ernie-51-blog" />。
+- **已在百度智慧雲上開發的企業**：在同一個千帆平台即可改用 ERNIE 5.1，官方退役公告也以它作為 X1.1 的替代<Cite k="qianfan-retire" />。
+
+不適合：
+
+- **需要自建或微調旗艦模型**：ERNIE 5.x 沒有開放權重；可下載的仍是 2025 年的 ERNIE 4.5 家族<Cite k="hf-ernie45" />。
+- **超長文件或整個程式庫**：128K 上下文明顯短於同期 100 萬 tokens 的競品。
+- **需要長期固定模型的系統**：千帆已公告 ERNIE 5.0 系列與 ERNIE 4.5 Turbo 於 2026-10-29 退役，推薦替換模型是 DeepSeek-V4.1-Flash，而不是自家模型<Cite k="qianfan-retire" />。
+
+## 版本演進
+
+| 日期 | 版本 | 狀態（截至 2026-10-06） |
+|---|---|---|
+| 2025-04-24 | ERNIE 4.5 Turbo、X1 Turbo | X1 Turbo 已於 2026-06-30 退役；4.5 Turbo 預定 2026-10-29 退役 |
+| 2025-06-30 | ERNIE 4.5 開源家族（10 款） | 權重仍可下載；千帆託管版於 2026-06-09 下線 |
+| 2025-09-09 | ERNIE X1.1 | 2026-09-29 退役，建議改用 ERNIE 5.1 |
+| 2025-11-13 | ERNIE 5.0（Thinking Preview） | 2026-01 的 0110 版在 LMArena 去掉 Preview 標籤；預定 2026-10-29 退役 |
+| 2026-05-09 | ERNIE 5.1 | 現行旗艦 |
+
+退役日期取自千帆的退役公告<Cite k="qianfan-retire" />，ERNIE 5.0 去掉 Preview 標籤的資訊取自百度部落格<Cite k="ernie-50-lmarena" />。從這張表可以看出，百度在 2026 年大幅收斂 ERNIE 產品線：依公告，ERNIE 5.0 正式版與 Thinking 版、ERNIE 4.5 Turbo 各版本，以及更早的 ERNIE 3.5、4.0 都將在 10 月 29 日退役，之後千帆上的文心旗艦語言模型實際上只剩 ERNIE 5.1（公告未列入限流較嚴的實驗版 ERNIE-5.0-Thinking-Exp）<Cite k="qianfan-retire" /><Cite k="qianfan-models" />。
+
+## 評測解讀
+
+<Callout type="warn" title="缺少獨立的綜合評測">Artificial Analysis 尚未收錄 ERNIE 5.1，以下官方數字多來自百度自己的圖表與部落格；LMArena 文字榜更新於 2026-10-02。</Callout>
+
+| 評測 | ERNIE 5.1 | ERNIE 5.0 |
+|---|---|---|
+| GPQA | 91.0%（官方，pass@1） | 86.36%（官方，Diamond） |
+| MMLU-Pro | 84.3%（官方） | 83.80%（官方） |
+| HLE | 未公布 | 25.81%（官方） |
+| LiveCodeBench v6 | 未公布 | 76.21%（官方） |
+| LMArena 文字競技場 | 1,468（第 48 名） | 1,446（第 85 名，0110 版） |
+| AA 綜合智慧指數 v4.3.2 | 未收錄 | 14（Thinking Preview，估計值） |
+
+- **知識題進步、前沿差距仍在**：ERNIE 5.1 的 GPQA 由 86.36% 升到 91.0%，但同一張圖裡 Gemini 3.1 Pro 為 94.1%，MMLU-Pro 也低於 DeepSeek-V4-Pro 的 87.5%<Cite k="ernie-51-blog" />。
+- **競技場名次會隨時間下滑**：ERNIE-5.0-0110 在 2026-01-15 以 1,460 分排全球第 8<Cite k="ernie-50-lmarena" />，到 2026-10-02 變成 1,446 分、第 85 名<Cite k="lmarena-text" />。<Term id="elo-rating">Elo 分數</Term>是相對值，更強的新模型陸續加入後，舊模型的名次就會往下掉，分數也會隨重新計算而變動，引用時一定要註明日期。
+- **中國模型中的位置**：同一份 LMArena 文字榜上，ERNIE 5.1 排在 Kimi K3、Qwen3.8 Max、MiMo-V2.6-Pro、GLM-5.3 等 8 個中國模型之後<Cite k="lmarena-text" />。
+- **程式能力難以判斷**：百度公布了 τ³-bench（67.9%）、SpreadsheetBench-Verified（72.5%）等 Agent 評測<Cite k="ernie-51-blog" />，但沒有公布 SWE-bench 或 Terminal-Bench 這類程式與終端機評測，選用前最好用自己的任務實測。

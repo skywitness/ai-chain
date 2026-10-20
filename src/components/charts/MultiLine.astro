@@ -1,0 +1,227 @@
+---
+/**
+ * <MultiLine title="四大雲端業者資本支出" unit="億美元" series={[{ name: 'Microsoft', points: [{ x: '2025 Q1', y: 214 }] }]} />
+ *
+ * Generic multi-series line chart (capex, pricing history…). x can be categories
+ * (「2025 Q1」「2025-03」「FY2026-Q2」 are split into label + year automatically) or ISO dates
+ * (time axis). Colours follow the fixed categorical order of the series as given (≤ 8).
+ */
+import './charts.css';
+import { scaleTime } from 'd3-scale';
+import ChartFrame from './ChartFrame.astro';
+import LinesPlot, { type LineSeriesSpec, type LineXPoint } from './LinesPlot.astro';
+import { isNum, slot, tip } from './chart-utils';
+import type { ChartSourceLink, LegendItem, TableSpec } from './types';
+import { formatDate, formatNumber, joinZh } from '../../lib/format';
+
+export interface MultiLinePoint {
+  x: string | number;
+  y: number | null;
+  estimate?: boolean | undefined;
+}
+export interface MultiLineSeries {
+  name: string;
+  points: MultiLinePoint[];
+  /** CSS colour override (default: categorical slot in series order) */
+  color?: string | undefined;
+}
+
+interface Props {
+  title: string;
+  series: MultiLineSeries[];
+  subtitle?: string | undefined;
+  /** unit line, e.g. 「億美元」 */
+  unit?: string | undefined;
+  asOf?: string | undefined;
+  sources?: ChartSourceLink[] | undefined;
+  notes?: Array<string | null | undefined> | undefined;
+  badge?: string | undefined;
+  xType?: 'auto' | 'category' | 'time' | undefined;
+  /** explicit category order */
+  categories?: string[] | undefined;
+  format?: 'number' | 'percent' | undefined;
+  digits?: number | undefined;
+  /** appended to values in tooltips, e.g. 「 億美元」 */
+  valueSuffix?: string | undefined;
+  includeZero?: boolean | undefined;
+  height?: number | undefined;
+  endLabels?: boolean | undefined;
+  area?: boolean | undefined;
+  /** header of the x column in the data table */
+  xTitle?: string | undefined;
+  bare?: boolean | undefined;
+  titleHidden?: boolean | undefined;
+  as?: 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | undefined;
+  class?: string | undefined;
+}
+
+const {
+  title,
+  series: inSeries = [],
+  subtitle,
+  unit,
+  asOf,
+  sources = [],
+  notes = [],
+  badge,
+  xType = 'auto',
+  format = 'number',
+  includeZero = true,
+  height = 220,
+  area,
+  xTitle = '期間',
+  bare,
+  titleHidden,
+  as,
+  class: className,
+} = Astro.props;
+const series = inSeries.slice(0, 8);
+const percent = format === 'percent';
+const digits = Astro.props.digits;
+const suffix = Astro.props.valueSuffix ?? '';
+const fmtNum = (v: number) => (percent ? `${formatNumber(v, { digits: digits ?? 1 })}%` : formatNumber(v, { digits: digits ?? (Math.abs(v) < 10 ? 1 : 0) }));
+const fmtVal = (v: number) => `${fmtNum(v)}${percent ? '' : suffix}`;
+
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+const allX = series.flatMap((s) => s.points.map((p) => String(p.x)));
+const isTime = xType === 'time' || (xType === 'auto' && allX.length > 0 && allX.every((x) => ISO.test(x)));
+
+// ── category parsing ──
+const RE_Q = /^(?:FY)?(\d{4})[\s-]*Q([1-4])$/i;
+const RE_FYQ = /^FY(\d{4})-Q([1-4])$/;
+const RE_M = /^(\d{4})-(0[1-9]|1[0-2])$/;
+const RE_Y = /^(?:FY)?(\d{4})$/;
+function split(x: string): { label: string; group?: string; sort: number | null; display: string } {
+  let m: RegExpExecArray | null;
+  if ((m = RE_FYQ.exec(x))) return { label: `Q${m[2]}`, group: `FY${m[1]!.slice(2)}`, sort: Number(m[1]) * 10 + Number(m[2]), display: `FY${m[1]!.slice(2)} Q${m[2]}` };
+  if ((m = RE_Q.exec(x))) return { label: `Q${m[2]}`, group: m[1]!, sort: Number(m[1]) * 10 + Number(m[2]), display: `${m[1]} Q${m[2]}` };
+  if ((m = RE_M.exec(x))) return { label: String(Number(m[2])), group: m[1]!, sort: Number(m[1]) * 100 + Number(m[2]), display: `${m[1]}/${Number(m[2])}` };
+  if ((m = RE_Y.exec(x))) return { label: x, sort: Number(m[1]), display: x };
+  return { label: x, sort: null, display: x };
+}
+
+let xs: LineXPoint[] = [];
+let keys: string[] = [];
+let xTicks: Array<{ pos: number; label: string; minor?: boolean }> | undefined;
+let display: (k: string) => string = (k) => k;
+
+if (isTime) {
+  keys = [...new Set(allX)].sort();
+  const dates = keys.map((k) => new Date(`${k}T00:00:00Z`));
+  const t0 = dates[0]!;
+  const t1 = dates.at(-1)!;
+  const sc = scaleTime().domain([t0, t1]).range([0.04, 0.96]);
+  if (+t0 === +t1) sc.range([0.5, 0.5]);
+  const spanDays = (+t1 - +t0) / 86_400_000;
+  const ticks = sc.ticks(spanDays > 900 ? 5 : 6);
+  xTicks = ticks.map((d, i) => ({
+    pos: sc(d),
+    label: spanDays > 900 && d.getUTCMonth() === 0 ? String(d.getUTCFullYear()) : `${d.getUTCFullYear()}/${d.getUTCMonth() + 1}`,
+    minor: i % 2 === 1,
+  }));
+  display = (k) => formatDate(k, 'iso');
+  xs = dates.map((d) => ({ pos: sc(d) }));
+} else {
+  const cats = Astro.props.categories ?? [...new Set(allX)];
+  const parsed = cats.map((c) => ({ c, ...split(c) }));
+  if (!Astro.props.categories && parsed.every((p) => p.sort != null)) parsed.sort((a, b) => a.sort! - b.sort!);
+  keys = parsed.map((p) => p.c);
+  const n = keys.length;
+  const grouped = parsed.some((p) => p.group);
+  const step = Math.max(1, Math.ceil(n / 8));
+  display = (k) => parsed.find((p) => p.c === k)?.display ?? k;
+  xs = parsed.map((p, i) => {
+    const isQ = /^Q[1-4]$/.test(p.label);
+    const monthNum = RE_M.test(p.c) ? Number(p.label) : null;
+    return {
+      pos: (i + 0.5) / n,
+      label: p.label,
+      group: p.group,
+      minor: grouped
+        ? isQ
+          ? n > 8 && (p.label === 'Q2' || p.label === 'Q4')
+          : monthNum != null && ![1, 4, 7, 10].includes(monthNum)
+        : (n - 1 - i) % step !== 0,
+      minor2: grouped ? true : n > 6 && (n - 1 - i) % (step * 2) !== 0,
+    };
+  });
+}
+
+const valueAt = (s: MultiLineSeries, k: string) => s.points.find((p) => String(p.x) === k);
+const specs: LineSeriesSpec[] = series.map((s, i) => {
+  const vals = keys.map((k) => valueAt(s, k)?.y ?? null);
+  const lastV = [...vals].reverse().find(isNum);
+  return {
+    name: s.name,
+    color: s.color ?? slot(i),
+    values: vals,
+    estimate: keys.map((k) => !!valueAt(s, k)?.estimate),
+    endValue: lastV != null ? fmtNum(lastV) : undefined,
+    area: area ?? series.length === 1,
+  };
+});
+xs = xs.map((x, i) => ({
+  ...x,
+  tip: tip(
+    display(keys[i]!),
+    series.map((s) => {
+      const p = valueAt(s, keys[i]!);
+      return [s.name, p && isNum(p.y) ? `${fmtVal(p.y)}${p.estimate ? '（估計）' : ''}` : ''] as const;
+    }),
+  ),
+}));
+
+const legend: LegendItem[] =
+  series.length > 1 || series.some((s) => s.points.some((p) => p.estimate))
+    ? [
+        ...series.map((s, i) => ({ label: s.name, kind: 'line' as const, color: s.color ?? slot(i) })),
+        ...(series.some((s) => s.points.some((p) => p.estimate)) ? [{ label: '估計值（虛線）', kind: 'dash' as const, color: 'var(--c-fg-muted)' }] : []),
+      ]
+    : [];
+const endLabels = Astro.props.endLabels ?? (series.length > 1 && series.length <= 4);
+
+const lastKey = keys.at(-1);
+const aria = keys.length
+  ? `${title}折線圖，${series.length > 1 ? `${series.length} 條線（${joinZh(series.map((s) => s.name))}），` : ''}${display(keys[0]!)} 至 ${display(lastKey!)}。` +
+    series
+      .slice(0, 4)
+      .map((s, i) => {
+        const v = specs[i]!.values.filter(isNum).at(-1);
+        return v != null ? `${s.name}最新為 ${fmtVal(v)}` : '';
+      })
+      .filter(Boolean)
+      .join('；') +
+    '。'
+  : '';
+
+const table: TableSpec = {
+  columns: [{ key: 'x', label: xTitle }, ...series.map((s, i) => ({ key: `s${i}`, label: s.name, numeric: true }))],
+  rows: [...keys].reverse().map((k) => {
+    const row: Record<string, string> = { x: display(k) };
+    series.forEach((s, i) => {
+      const p = valueAt(s, k);
+      row[`s${i}`] = p && isNum(p.y) ? `${fmtVal(p.y)}${p.estimate ? '（估計）' : ''}` : '';
+    });
+    return row;
+  }),
+};
+---
+
+<ChartFrame
+  title={title}
+  titleHidden={titleHidden}
+  as={as}
+  subtitle={subtitle}
+  badge={badge}
+  asOf={asOf}
+  unit={unit}
+  legend={legend}
+  notes={notes}
+  sources={sources}
+  table={table}
+  empty={keys.length === 0 || series.length === 0}
+  bare={bare}
+  class={className}
+>
+  <LinesPlot xs={xs} series={specs} ariaLabel={aria} height={height} percent={percent} includeZero={includeZero} endLabels={endLabels} xTicks={xTicks} />
+</ChartFrame>

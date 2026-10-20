@@ -1,0 +1,633 @@
+---
+title: "阿里巴巴通義千問 Qwen 系列"
+family: "Qwen（通義千問）"
+kind: llm
+lab: alibaba
+labName: "阿里雲 Qwen 團隊"
+origin: CN
+summary: "阿里巴巴旗下 Qwen 團隊開發的大型語言模型家族，走「開放權重＋雲端 API」雙軌：從 0.8B 到 2.4 兆參數的模型多數可下載，旗艦 Max 與主力 Plus、Flash 則在阿里雲百煉（Model Studio）提供。2026 年 8 月推出 Qwen3.8 世代，首度把 Max 級旗艦以 Qwen3.8-2.4T-A95B 之名開放權重（附營收門檻授權）；雲端版 Qwen3.8-Max（0902）在 2026-10-06 的 Artificial Analysis 智慧指數為 45.4 分。"
+strengths:
+  - "開放權重產品線最完整的家族之一：Qwen3.5 從 0.8B 到 397B、Qwen3.8 從 27B 到 2.4 兆參數，中小型模型多採 Apache 2.0，是社群微調與在地部署最常用的基礎模型之一。"
+  - "旗艦接近前沿：Qwen3.8-Max（0902）在 AA 智慧指數 v4.3.2 為 45.4 分、Arena 文字榜 1,482 分（2026-10-02，第 23 名）；AA 自行重測的 GPQA Diamond 92.8%、HLE 43.1%，與原廠自報數字相近。"
+  - "價格層級細：國際區標準價每百萬 tokens，Qwen3.8-Max 輸入 2、輸出 6 美元，Qwen3.8-Flash 僅 0.15／0.47 美元；Qwen3.8-27B 在 AA 的 4B–40B 開放權重模型中智慧指數排第 1。"
+  - "原生多模態與長上下文：Qwen3.5 起主線模型皆為原生視覺語言模型，雲端版預設 100 萬 tokens 上下文；Qwen3.8-Flash 並相容 OpenAI 與 Anthropic API 格式，可接入 Claude Code、Codex 等工具。"
+weaknesses:
+  - "授權分層：Qwen3.8-2.4T-A95B 採 Qwen3.8-Max License，從事模型即服務且連續 12 個月營收逾 5,000 萬美元者須另取授權；Flash-Next 採 Qwen Community License 1.0；2026 年 4 月起新一代 Plus、Max 多先以封閉 API 推出。"
+  - "開放權重版功能較少：2.4T 版只支援文字且一律開啟思考模式，影像輸入與非思考模式僅雲端 Max 提供；自行部署 2.4 兆參數模型需要大型 GPU 叢集。"
+  - "速度偏慢、輸出冗長：AA 測得 Qwen3.8-Max（0902）每秒約 38 tokens，跑完智慧指數共產生約 1.9 億 tokens，遠高於中位數 8,100 萬。"
+  - "亮眼分數多為原廠自評，且大量使用自建評測（QwenSWEBench 等）與自行修正後的題庫，難與其他實驗室公告直接比較。"
+bestFor:
+  - "需要自行部署、微調或資料不出境的企業與研究單位（Qwen3.8-27B、Qwen3.6-35B-A3B 等）"
+  - "中文與多語應用、跨境電商與客服"
+  - "搭配 Claude Code、OpenCode 等 Agent 工具執行程式開發與辦公自動化"
+  - "大量、成本敏感的 API 呼叫（Flash 等級）"
+positioning:
+  capability: 45
+  costIndex: 54
+  openness: 0.5
+  method: computed
+  asOf: "2026-10-06"
+  note: "以旗艦 Qwen3.8-Max（0902）計算。capability 取 Artificial Analysis 智慧指數 v4.3.2 的 45.4 分（推理模式，2026-10-06）。costIndex 以阿里雲國際區官方標準價（輸入 2、輸出 6 美元／百萬 tokens）按 3:1 混合為 3 美元，再依 0.05 美元 → 0、100 美元 → 100 的對數尺度換算得 53.9，取 54。openness 取 0.5：同一模型的權重以 Qwen3.8-2.4T-A95B 公開，但授權附營收門檻；家族中的 Qwen3.8-27B 等採 Apache 2.0（相當於 0.8），雲端 Plus、Flash 則為封閉。"
+versions:
+  - id: qwen2-5-max
+    name: "Qwen2.5-Max"
+    released: "2025-01-29"
+    status: retired
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    reasoning: none
+    availability: [api, chat-app]
+    benchmarks:
+      - benchmark: lmarena-text
+        score: 1374
+        setting: "qwen2.5-max；±4；第 192 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "Qwen2.5 世代的封閉旗艦，2025-01-29 推出。阿里雲百煉定價頁註明 Qwen2.5 系列已停用、無法再呼叫，需改用新一代模型。"
+  - id: qwen3
+    name: "Qwen3（235B-A22B 等開放權重模型）"
+    released: "2025-04-28"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: moe
+    params: { totalB: 235, activeB: 22, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    reasoning: hybrid
+    availability: [self-host]
+    notes: "包含 0.6B 至 32B 稠密模型與 30B-A3B、235B-A22B 兩個 MoE，全部 Apache 2.0，同一模型可切換思考與非思考模式；據 TechCrunch 報導以約 36 兆 tokens、119 種語言與方言訓練。2025-07 推出 2507 更新版，改為 Instruct 與 Thinking 兩個獨立模型。"
+  - id: qwen3-coder
+    name: "Qwen3-Coder（480B-A35B）"
+    released: "2025-07-22"
+    status: ga
+    tier: specialized
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: moe
+    params: { totalB: 480, activeB: 35, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    reasoning: none
+    availability: [api, self-host]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1
+        outputPerMTok: 5
+        currency: USD
+        tierNote: "雲端版 qwen3-coder-plus，國際區、單次輸入 32K tokens 以內；32K–128K 為 1.8／9 美元，128K–256K 為 3／15 美元，256K–1M 為 6／60 美元。"
+        source: { title: "Alibaba Cloud Model Studio model pricing", publisher: "Alibaba Cloud", url: "https://www.alibabacloud.com/help/en/model-studio/model-pricing", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-10-06 更新" }
+    notes: "以程式 Agent 為目標的 MoE 模型，同月另開放 30B-A3B 小型版；雲端版 qwen3-coder-plus 目前指向 2025-09-23 快照。2026-02 推出後繼的 Qwen3-Coder-Next。"
+  - id: qwen3-max
+    name: "Qwen3-Max"
+    released: "2025-09-24"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    reasoning: hybrid
+    availability: [api, chat-app]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1.2
+        outputPerMTok: 6
+        currency: USD
+        tierNote: "國際區、單次輸入 32K tokens 以內；32K–128K 為 2.4／12 美元，128K–256K 為 3／15 美元。qwen3-max 目前指向 2026-01-23 快照。"
+        source: { title: "Alibaba Cloud Model Studio model pricing", publisher: "Alibaba Cloud", url: "https://www.alibabacloud.com/help/en/model-studio/model-pricing", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-10-06 更新" }
+    benchmarks:
+      - benchmark: lmarena-text
+        score: 1423
+        setting: "qwen3-max-2025-09-23；±7；第 124 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "2025-09-05 推出預覽版，2025-09-24 正式上線。維基百科引述媒體報導，參數超過 1 兆、以約 36 兆 tokens 訓練。2026-01-23 快照整合思考與非思考模式，思考模式可搭配網頁搜尋與程式碼直譯器。"
+  - id: qwen3-5
+    name: "Qwen3.5（397B-A17B／Qwen3.5-Plus）"
+    released: "2026-02-16"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: moe
+    params: { totalB: 397, activeB: 17, disclosed: true }
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    reasoning: hybrid
+    availability: [api, self-host]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.4
+        outputPerMTok: 2.4
+        currency: USD
+        tierNote: "雲端對應版 qwen3.5-plus，國際區、單次輸入 256K tokens 以內（思考與非思考同價）；256K–1M 為 0.5／3 美元。"
+        source: { title: "Alibaba Cloud Model Studio model pricing", publisher: "Alibaba Cloud", url: "https://www.alibabacloud.com/help/en/model-studio/model-pricing", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-10-06 更新" }
+    benchmarks:
+      - benchmark: gpqa-diamond
+        score: 88.4
+        reportedBy: lab
+        date: "2026-02-16"
+        source: { title: "Qwen/Qwen3.5-397B-A17B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.5-397B-A17B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: swe-bench-verified
+        score: 76.4
+        reportedBy: lab
+        date: "2026-02-16"
+        source: { title: "Qwen/Qwen3.5-397B-A17B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.5-397B-A17B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: tau2-bench
+        score: 86.7
+        setting: "airline 領域套用 Claude Opus 4.5 系統卡所提修正"
+        reportedBy: lab
+        date: "2026-02-16"
+        source: { title: "Qwen/Qwen3.5-397B-A17B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.5-397B-A17B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: mmmu
+        score: 85.0
+        reportedBy: lab
+        date: "2026-02-16"
+        source: { title: "Qwen/Qwen3.5-397B-A17B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.5-397B-A17B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: aa-intelligence-index
+        score: 18
+        setting: "Qwen3.5 397B A17B（推理模式）；AA 智慧指數 v4.3.2"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "LLM Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/leaderboards/models", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "原生視覺語言模型，混合線性注意力（Gated DeltaNet）與稀疏 MoE；原生上下文 262,144 tokens，可延伸至約 101 萬。雲端版 Qwen3.5-Plus 預設 100 萬 tokens 並內建工具。2026 年 2 月底至 3 月初陸續開放 122B-A10B、35B-A3B、27B 與 0.8B–9B 等較小模型。"
+  - id: qwen3-6-plus
+    name: "Qwen3.6-Plus"
+    released: "2026-04-02"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image]
+    modalitiesOut: [text]
+    contextTokens: 1000000
+    reasoning: hybrid
+    availability: [api, chat-app]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.5
+        outputPerMTok: 3
+        currency: USD
+        tierNote: "國際區、單次輸入 256K tokens 以內；256K–1M 為 2／6 美元。"
+        source: { title: "Alibaba Cloud Model Studio model pricing", publisher: "Alibaba Cloud", url: "https://www.alibabacloud.com/help/en/model-studio/model-pricing", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-10-06 更新" }
+    benchmarks:
+      - benchmark: lmarena-text
+        score: 1443
+        setting: "±4；第 88 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "Qwen3.6 世代的原生視覺語言 Plus 模型，強化 Agent 程式開發與前端程式能力。與 Qwen3.5-Plus 不同，這一代 Plus 沒有對應的開放權重版本，媒體形容中國 AI 大廠轉向專有模型以帶動營收。"
+  - id: qwen3-6-27b
+    name: "Qwen3.6-27B／35B-A3B"
+    released: "2026-04-22"
+    status: ga
+    tier: small
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 27, disclosed: true }
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    reasoning: hybrid
+    availability: [api, self-host]
+    benchmarks:
+      - benchmark: swe-bench-verified
+        score: 77.2
+        setting: "自家 Agent 框架（bash 與檔案編輯工具），200K 上下文"
+        reportedBy: lab
+        date: "2026-04-22"
+        source: { title: "Qwen/Qwen3.6-27B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.6-27B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: terminal-bench
+        score: 59.3
+        setting: "Terminal-Bench 2.0，Terminus-2 框架，5 次平均"
+        reportedBy: lab
+        date: "2026-04-22"
+        source: { title: "Qwen/Qwen3.6-27B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.6-27B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: gpqa-diamond
+        score: 87.8
+        reportedBy: lab
+        date: "2026-04-22"
+        source: { title: "Qwen/Qwen3.6-27B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.6-27B", type: docs, lang: en, accessed: "2026-10-06" }
+    notes: "27B 稠密原生視覺語言模型，2026-04-22 開放；同系列的 35B-A3B（MoE，啟用 30 億參數）已先於 2026 年 4 月中旬開放，兩者皆 Apache 2.0。原廠表格中 27B 版的 Terminal-Bench 2.0 與 Claude 4.5 Opus 同為 59.3%。"
+  - id: qwen3-7-max
+    name: "Qwen3.7-Max"
+    released: "2026-05-20"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image]
+    modalitiesOut: [text]
+    contextTokens: 1000000
+    reasoning: hybrid
+    availability: [api, chat-app]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 2.5
+        outputPerMTok: 7.5
+        currency: USD
+        tierNote: "國際區、1M tokens 以內單一價格；思考與非思考同價。"
+        source: { title: "Alibaba Cloud Model Studio model pricing", publisher: "Alibaba Cloud", url: "https://www.alibabacloud.com/help/en/model-studio/model-pricing", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-10-06 更新" }
+    benchmarks:
+      - benchmark: swe-bench-pro
+        score: 60.6
+        setting: "Claude Code 框架、256K 上下文、修正問題題目後重測（引自 Qwen3.8 模型卡對照欄）"
+        reportedBy: lab
+        date: "2026-08-12"
+        source: { title: "Qwen/Qwen3.8-2.4T-A95B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1475
+        setting: "qwen3.7-max-preview；±10；第 35 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "2026-05-20 推出預覽（僅思考模式），2026-05-21 起 qwen3.7-max 指向 2026-05-20 快照，初期只開放純文字；2026-06-08 快照加入視覺理解。全系列封閉。"
+  - id: qwen3-7-plus
+    name: "Qwen3.7-Plus"
+    released: "2026-06-01"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    architecture: moe
+    params: { totalB: 397, activeB: 17, disclosed: true }
+    modalitiesIn: [text, image]
+    modalitiesOut: [text]
+    contextTokens: 1000000
+    reasoning: hybrid
+    availability: [api, chat-app]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.4
+        outputPerMTok: 1.6
+        currency: USD
+        tierNote: "國際區定價、單次輸入 256K tokens 以內（思考與非思考同價）；256K–1M 為 1.2／4.8 美元。2026-10-06 另有限時八折。"
+        source: { title: "Alibaba Cloud Model Studio model pricing", publisher: "Alibaba Cloud", url: "https://www.alibabacloud.com/help/en/model-studio/model-pricing", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-10-06 更新" }
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 25
+        setting: "AA 智慧指數 v4.3.2"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "LLM Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/leaderboards/models", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1456
+        setting: "±4；第 68 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "百煉 2026-06-01 上線（快照 2026-05-26），主打多模態互動式 Agent：看懂真實場景、讀取螢幕並操作 GUI、依視覺參考寫程式。Qwen3.8-Flash-Next 模型卡的對照表列出其規模為總參數 3,970 億、啟用 170 億，與開放權重的 Qwen3.5-397B-A17B 相同。"
+  - id: qwen3-8-max
+    name: "Qwen3.8-Max"
+    released: "2026-08-02"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: moe
+    params: { totalB: 2400, activeB: 95, disclosed: true }
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    contextTokens: 1000000
+    reasoning: hybrid
+    availability: [api, chat-app]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 2
+        outputPerMTok: 6
+        currency: USD
+        tierNote: "國際區（新加坡）、1M tokens 以內單一價格，思考與非思考同價；qwen3.8-max-0902 快照同價。快取命中另計。"
+        source: { title: "Alibaba Cloud Model Studio model pricing", publisher: "Alibaba Cloud", url: "https://www.alibabacloud.com/help/en/model-studio/model-pricing", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-10-06 更新" }
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 45.4
+        setting: "Qwen3.8 Max（0902），推理模式；AA 智慧指數 v4.3.2"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Qwen3.8 Max (0902) - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/qwen3-8-max", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1482
+        setting: "±5；第 23 名（排名區間 12–43，共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: gpqa-diamond
+        score: 92.6
+        reportedBy: lab
+        date: "2026-08-12"
+        source: { title: "Qwen/Qwen3.8-2.4T-A95B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: gpqa-diamond
+        score: 92.8
+        setting: "0902 快照，AA 自行測試"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Qwen3.8 Max (0902) - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/qwen3-8-max", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: hle
+        score: 43.6
+        setting: "不使用工具"
+        reportedBy: lab
+        date: "2026-08-12"
+        source: { title: "Qwen/Qwen3.8-2.4T-A95B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: hle
+        score: 43.1
+        setting: "0902 快照，AA 自行測試"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Qwen3.8 Max (0902) - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/qwen3-8-max", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: swe-bench-pro
+        score: 67.7
+        setting: "Claude Code 框架、256K 上下文；原廠修正問題題目後重測所有對手"
+        reportedBy: lab
+        date: "2026-08-12"
+        source: { title: "Qwen/Qwen3.8-2.4T-A95B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: terminal-bench
+        score: 86.6
+        setting: "Terminal-Bench 2.1，Claude Code 框架，10 次平均"
+        reportedBy: lab
+        date: "2026-08-12"
+        source: { title: "Qwen/Qwen3.8-2.4T-A95B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B", type: docs, lang: en, accessed: "2026-10-06" }
+    notes: "2026-07-19 預覽，百煉 2026-08-02 上線，2026-09-02 推出升級快照 qwen3.8-max-0902（強化程式與多工具協作、視覺理解）。官方描述為 2.4 兆參數 MoE、預設 100 萬 tokens 上下文，相較開放權重版多了影像輸入、非思考模式與官方內建工具。"
+  - id: qwen3-8-2-4t-a95b
+    name: "Qwen3.8-2.4T-A95B（開放權重版）"
+    released: "2026-08-12"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Qwen3.8-Max License"
+    architecture: moe
+    params: { totalB: 2400, activeB: 95, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    reasoning: always
+    availability: [api, self-host]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 2
+        outputPerMTok: 6
+        currency: USD
+        tierNote: "百煉國際區 qwen3.8-2.4t-a95b，1M tokens 以內單一價格。"
+        source: { title: "Alibaba Cloud Model Studio model pricing", publisher: "Alibaba Cloud", url: "https://www.alibabacloud.com/help/en/model-studio/model-pricing", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-10-06 更新" }
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 39.9
+        setting: "AA 智慧指數 v4.3.2；在大型（150B 以上）開放權重模型中排第 5"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Qwen3.8 2.4T A95B - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/qwen3-8-2-4t-a95b", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: gpqa-diamond
+        score: 93.5
+        setting: "AA 自行測試"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Qwen3.8 2.4T A95B - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/qwen3-8-2-4t-a95b", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "92 層、512 個專家（每次啟用 10 個路由專家加 1 個共享專家），以 3 層 Gated DeltaNet 線性注意力搭配 1 層 Gated Attention 交錯；原生上下文 262,144 tokens，可延伸至約 101 萬。只支援文字且必須開啟思考，推理深度可用 reasoning_effort 調整。授權允許免費使用與修改，但月活躍用戶逾 1 億或月營收逾 2,000 萬美元的產品須標示模型名稱，從事模型即服務且 12 個月營收逾 5,000 萬美元者須另取授權。"
+  - id: qwen3-8-27b
+    name: "Qwen3.8-27B"
+    released: "2026-08-14"
+    status: ga
+    tier: small
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 27, disclosed: true }
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    reasoning: hybrid
+    availability: [api, self-host]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.5
+        outputPerMTok: 3
+        currency: USD
+        tierNote: "百煉國際區 qwen3.8-27b，1M tokens 以內單一價格。"
+        source: { title: "Alibaba Cloud Model Studio model pricing", publisher: "Alibaba Cloud", url: "https://www.alibabacloud.com/help/en/model-studio/model-pricing", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-10-06 更新" }
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 33.7
+        setting: "xhigh 推理強度；AA 智慧指數 v4.3.2；4B–40B 開放權重模型第 1 名"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Qwen3.8 27B (Xhigh) - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/qwen3-8-27b", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: swe-bench-pro
+        score: 61.7
+        setting: "Claude Code 框架、256K 上下文；原廠修正問題題目後重測"
+        reportedBy: lab
+        date: "2026-08-14"
+        source: { title: "Qwen/Qwen3.8-27B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.8-27B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: livecodebench
+        score: 90.3
+        setting: "LiveCodeBench v6"
+        reportedBy: lab
+        date: "2026-08-14"
+        source: { title: "Qwen/Qwen3.8-27B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.8-27B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: osworld
+        score: 84.3
+        setting: "OSWorld-Verified"
+        reportedBy: lab
+        date: "2026-08-14"
+        source: { title: "Qwen/Qwen3.8-27B model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.8-27B", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1438
+        setting: "±5；第 99 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "64 層稠密原生視覺語言模型，可理解圖片與長達數小時的影片，保留非思考模式；相較 Qwen3.6-27B 主要強化程式與辦公情境。原生上下文 262,144 tokens，可延伸至 100 萬。百煉 API 於 2026-08-17 上線。"
+  - id: qwen3-8-flash
+    name: "Qwen3.8-Flash／Flash-Next"
+    released: "2026-08-26"
+    status: ga
+    tier: mid
+    weights: open-weights
+    license: "Qwen Community License 1.0"
+    architecture: moe
+    params: { totalB: 125, activeB: 6, disclosed: true }
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    reasoning: hybrid
+    availability: [api, self-host]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.15
+        outputPerMTok: 0.47
+        currency: USD
+        tierNote: "雲端版 qwen3.8-flash，國際區、1M tokens 以內單一價格。"
+        source: { title: "Alibaba Cloud Model Studio model pricing", publisher: "Alibaba Cloud", url: "https://www.alibabacloud.com/help/en/model-studio/model-pricing", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-10-06 更新" }
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 39.8
+        setting: "Qwen3.8-Flash-Next；AA 智慧指數 v4.3.2"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Qwen3.8-Flash-Next - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/qwen3-8-flash-next", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: swe-bench-pro
+        score: 62.5
+        setting: "Claude Code 框架、256K 上下文；原廠修正問題題目後重測"
+        reportedBy: lab
+        date: "2026-08-26"
+        source: { title: "Qwen/Qwen3.8-Flash-Next model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.8-Flash-Next", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: gpqa-diamond
+        score: 91.7
+        reportedBy: lab
+        date: "2026-08-26"
+        source: { title: "Qwen/Qwen3.8-Flash-Next model card", publisher: "Hugging Face (Qwen)", url: "https://huggingface.co/Qwen/Qwen3.8-Flash-Next", type: docs, lang: en, accessed: "2026-10-06" }
+    notes: "開放權重的 Qwen3.8-Flash-Next 被官方稱為未來 Qwen4 架構的實驗預覽：加入 Gated Residual 與 N-gram 嵌入，主體 1,250 億參數、每 token 啟用 60 億，另有 510 億 N-gram 嵌入參數與 40 億 MTP 參數（AA 合計列為 1,800 億）。雲端 Qwen3.8-Flash 以其為基礎，預設 100 萬 tokens 上下文，並相容 OpenAI 與 Anthropic API 格式。"
+flagshipVersion: qwen3-8-max
+relatedLearn: [what-is-llm, open-vs-closed-models, mixture-of-experts, reasoning-models, multimodal-models, model-evaluation]
+glossary: [llm, moe, active-parameters, open-weights, context-window, benchmark, agent, elo-rating]
+sources:
+  - key: wiki-qwen
+    title: "Qwen"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Qwen"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "版本時間軸與授權整理，引用 Reuters、CNBC、Bloomberg、SCMP 等報導"
+  - key: hf-q38
+    title: "Qwen/Qwen3.8-2.4T-A95B"
+    publisher: "Hugging Face (Qwen)"
+    url: "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B"
+    type: docs
+    lang: en
+    published: "2026-08-12"
+    accessed: "2026-10-06"
+  - key: q38-license
+    title: "LICENSE · Qwen/Qwen3.8-2.4T-A95B (Qwen3.8-Max License)"
+    publisher: "Hugging Face (Qwen)"
+    url: "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/blob/main/LICENSE"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: hf-q38-27b
+    title: "Qwen/Qwen3.8-27B"
+    publisher: "Hugging Face (Qwen)"
+    url: "https://huggingface.co/Qwen/Qwen3.8-27B"
+    type: docs
+    lang: en
+    published: "2026-08-14"
+    accessed: "2026-10-06"
+  - key: hf-q38-flash
+    title: "Qwen/Qwen3.8-Flash-Next"
+    publisher: "Hugging Face (Qwen)"
+    url: "https://huggingface.co/Qwen/Qwen3.8-Flash-Next"
+    type: docs
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-06"
+  - key: hf-q35
+    title: "Qwen/Qwen3.5-397B-A17B"
+    publisher: "Hugging Face (Qwen)"
+    url: "https://huggingface.co/Qwen/Qwen3.5-397B-A17B"
+    type: docs
+    lang: en
+    published: "2026-02-16"
+    accessed: "2026-10-06"
+  - key: ali-pricing
+    title: "Alibaba Cloud Model Studio model pricing"
+    publisher: "Alibaba Cloud"
+    url: "https://www.alibabacloud.com/help/en/model-studio/model-pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "頁面標示 2026-10-06 更新；本文採國際區（新加坡）標準價"
+  - key: ms-lifecycle
+    title: "Alibaba Cloud Model Studio: Model lifecycle and updates"
+    publisher: "Alibaba Cloud"
+    url: "https://www.alibabacloud.com/help/en/model-studio/newly-released-models"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: aa-q38max
+    title: "Qwen3.8 Max (0902) - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/qwen3-8-max"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+  - key: aa-q38-27b
+    title: "Qwen3.8 27B (Xhigh) - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/qwen3-8-27b"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+  - key: aa-lb
+    title: "LLM Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+  - key: arena-text
+    title: "Text Arena Leaderboard"
+    publisher: "Arena (LMArena)"
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "lmarena.ai 轉址至 arena.ai；榜單標示 2026-10-02 更新，413 個模型、8,626,731 票"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: models-10
+  checkedBy: "models-10-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+Qwen（中文名「通義千問」）是 <CompanyChip id="alibaba">阿里巴巴</CompanyChip>旗下阿里雲 Qwen 團隊開發的<Term id="llm">大型語言模型</Term>家族。2023 年 4 月開放測試、同年 12 月釋出 72B 權重，此後一路走「開放權重＋雲端 API」雙軌：大量中小型模型可在 Hugging Face 下載，旗艦 Max 與主力 Plus、Flash 則透過阿里雲百煉（Model Studio）提供<Cite k="wiki-qwen" />。
+
+最新一代是 2026 年 8 月的 Qwen3.8。雲端旗艦 Qwen3.8-Max 於 2026-08-02 在百煉上線，9 月 2 日再推出升級快照 0902<Cite k="ms-lifecycle" />；8 月 12 日起，同一模型以 Qwen3.8-2.4T-A95B 之名開放<Term id="open-weights">權重</Term>，總參數 2.4 兆、每個 token 啟用約 950 億，是 Qwen 第一次把 Max 級模型公開下載<Cite k="hf-q38" />。同月還推出 Apache 2.0 授權的 Qwen3.8-27B，以及官方稱為下一代 Qwen4 架構實驗預覽的 Qwen3.8-Flash-Next<Cite k="hf-q38-27b" /><Cite k="hf-q38-flash" />。
+
+## 特性分析
+
+- **混合式架構追求效率**：大型 Qwen 模型多採<Term id="moe">混合專家（MoE）</Term>；自 Qwen3.5 起，主線模型再以 3 層線性注意力（Gated DeltaNet）搭配 1 層一般注意力交錯，降低長上下文成本<Cite k="hf-q35" />。Qwen3.8-2.4T-A95B 有 512 個專家，每次啟用 10 個路由專家加 1 個共享專家；原生<Term id="context-window">上下文</Term> 262,144 tokens，可延伸至約 101 萬<Cite k="hf-q38" />。Flash-Next 則把一般注意力換成以小區塊為單位挑選內容的 Qwen Sparse Attention，並加入 N-gram 嵌入與 Gated Residual，主體 1,250 億參數、<Term id="active-parameters">啟用參數</Term>只有 60 億<Cite k="hf-q38-flash" />。
+- **思考深度可調**：Qwen3.8 支援以 reasoning_effort（xhigh、medium、low）調整推理深度。雲端 Max 同時提供思考與非思考模式；開放權重的 2.4T 版只吃文字，而且一律先思考再回答<Cite k="hf-q38" />。
+- **原生多模態**：Qwen3.5 之後的主線模型都是原生視覺語言模型，Qwen3.8-27B 可理解圖片與長達數小時的影片<Cite k="hf-q38-27b" />；2026-09-17 另推出可輸入文字、圖片、音訊與影片的 Qwen3.8-Omni-Flash<Cite k="ms-lifecycle" />。
+- **價格帶寬**：國際區標準價每百萬 tokens，Qwen3.8-Max 輸入 2、輸出 6 美元；Qwen3.8-27B 為 0.5／3 美元；Qwen3.8-Flash 只要 0.15／0.47 美元<Cite k="ali-pricing" />。Qwen3.8-Flash 同時相容 OpenAI 與 Anthropic 的 API 格式，可直接接入 Claude Code、Codex 等工具<Cite k="ms-lifecycle" />。
+
+## 適合與不適合的用途
+
+**適合**：需要自行部署或微調的團隊——Qwen3.8-27B 採 Apache 2.0、可商用，AA 把它列為 4B–40B 開放權重模型中智慧指數最高者<Cite k="aa-q38-27b" />；中文與多語應用；搭配 Claude Code、OpenCode 等 <Term id="agent">Agent</Term> 工具做程式開發與辦公文件處理；大量、成本敏感的呼叫則可選 Flash 等級。
+
+**不適合**：想用最大模型權重自建對外服務的大型業者要先看授權。Qwen3.8-Max License 規定，從事模型即服務或 AI 工作助理業務、且連續 12 個月營收超過 5,000 萬美元者，商用前須另取授權；月活躍用戶逾 1 億或月營收逾 2,000 萬美元的產品也必須標示模型名稱<Cite k="q38-license" />。自架 2.4 兆參數模型需要大型 GPU 叢集，多數企業仍以 API 為主。對延遲敏感的即時互動也要留意：AA 測得 Qwen3.8-Max（0902）輸出速度約每秒 38 tokens，屬偏慢，且回答前的思考相當冗長<Cite k="aa-q38max" />。
+
+## 版本演進
+
+| 版本 | 時間 | 重點 |
+|---|---|---|
+| Qwen2.5-Max | 2025-01 | 封閉旗艦；Qwen2.5 系列已自 API 下架 |
+| Qwen3 | 2025-04-28 | 0.6B–235B 全家族 Apache 2.0，同一模型可切換思考與非思考 |
+| Qwen3-Coder | 2025-07-22 | 480B-A35B 程式 Agent 模型 |
+| Qwen3-Max | 2025-09-24 | 封閉旗艦，媒體報導參數逾 1 兆 |
+| Qwen3.5 | 2026-02-16 | 原生多模態、線性注意力混合架構，397B-A17B 開放 |
+| Qwen3.6 | 2026-04 | Plus 轉為只有雲端版；27B、35B-A3B 仍開放 |
+| Qwen3.7-Max／Plus | 2026-05～06 | 皆封閉，Max 於 6 月加入視覺 |
+| Qwen3.8 | 2026-08 | Max 級權重開放（2.4T-A95B）、27B、Flash-Next |
+
+演進有兩條主線。一是開放策略從「幾乎全部開放」轉為「分層開放」：2026 年 4 月起 Plus 與 Max 先以封閉 API 推出，媒體形容中國 AI 大廠轉向專有模型以帶動營收<Cite k="wiki-qwen" />；Qwen3.8 雖又開放 Max 級權重，授權卻加上營收門檻。二是架構從一般 Transformer MoE 走向線性注意力與稀疏專家的混合設計，目標是讓百萬 tokens 級的上下文也負擔得起<Cite k="hf-q35" />。
+
+## 評測解讀
+
+截至 2026-10-06，Artificial Analysis（AA）智慧指數 v4.3.2 中，Qwen3.8-Max（0902）得 45.4 分，遠高於同級中位數 26 分<Cite k="aa-q38max" />；開放權重的 2.4T 版與 Flash-Next 都約 40 分，低於小米 <ModelChip id="xiaomi-mimo">MiMo-V2.6-Pro</ModelChip> 的 46 分，與榜首約 58 分的封閉模型仍有差距<Cite k="aa-lb" />。Arena 文字榜（2026-10-02 更新）上，qwen3.8-max 為 1,482 ±5 分、第 23 名<Cite k="arena-text" />。
+
+原廠模型卡自報 Qwen3.8-Max 的 GPQA Diamond 92.6%、HLE 43.6%（不用工具）；AA 自行重測得到 92.8% 與 43.1%，兩者相當接近，可信度較高<Cite k="hf-q38" /><Cite k="aa-q38max" />。程式類分數則要小心：Qwen 的 SWE-bench Pro 以 Claude Code 為測試框架，並「修正有問題的題目」後重測所有對手；Terminal-Bench 2.1 自家取 10 次平均，對手則採各框架公開的最佳成績；表中還有 QwenSWEBench 等自建<Term id="benchmark">評測</Term>。框架、題庫版本與取樣次數不同，就不宜與其他實驗室公告的數字直接比較。人類偏好榜採 <Term id="elo-rating">Elo 分數</Term>，新模型票數少、誤差較大，且榜單每週變動，引用時務必附上日期。

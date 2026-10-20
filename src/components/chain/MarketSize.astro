@@ -1,0 +1,180 @@
+---
+/**
+ * 市場規模 for a segment page: one bar chart per coherent series (≤ 2), with actual values solid and
+ * estimates / forecasts hatched and labelled 「估計」「預測」 under the year, then every row with its
+ * definition (口徑) and source. Rows that do not form a series of ≥ 2 years appear only in the list.
+ *   <MarketSize rows={view.marketSize} segmentTitle={view.title} asOf={view.lastVerified} />
+ */
+import BarChart from '../charts/BarChart.astro';
+import Badge from '../ui/Badge.astro';
+import Icon from '../ui/Icon.astro';
+import { formatNumber } from '../../lib/format';
+import { groupMarketSize, MARKET_STATUS, marketUnitLabel, marketValueYi, type MarketRow } from './chain-data';
+
+interface Props {
+  rows: readonly MarketRow[];
+  segmentTitle: string;
+  asOf?: string | undefined;
+}
+const { rows, segmentTitle, asOf } = Astro.props;
+const groups = groupMarketSize(rows);
+const charts = groups.filter((g) => g.rows.length >= 2).slice(0, 2);
+const clip = (s: string, n: number) => ([...s].length > n ? `${[...s].slice(0, n - 1).join('')}…` : s);
+const label = (r: MarketRow) => (r.status === 'actual' ? String(r.year) : `${r.year} ${MARKET_STATUS[r.status]}`);
+const valueText = (r: MarketRow) => {
+  const v = marketValueYi(r);
+  return `${formatNumber(v, { digits: v >= 100 ? 0 : 1 })} ${marketUnitLabel(r.currency)}`;
+};
+const sorted = [...rows].sort((a, b) => a.year - b.year);
+const tone = (s: string) => (s === 'actual' ? 'neutral' : 'estimate') as 'neutral' | 'estimate';
+---
+
+{
+  rows.length > 0 && (
+    <div class:list={['ms', { 'ms--side': charts.length === 1 }]}>
+      {charts.length > 0 && (
+        <div class:list={['ms__charts', { 'ms__charts--two': charts.length > 1 }]}>
+          {charts.map((g) => {
+            const last = g.rows.at(-1)!;
+            const defs = new Set(g.rows.map((r) => r.definition));
+            const seen = new Set<string>();
+            const srcs = g.rows
+              .map((r) => r.source)
+              .filter((s) => (seen.has(s.url) ? false : (seen.add(s.url), true)))
+              .map((s) => ({ title: s.title, publisher: s.publisher, url: s.url }));
+            const title = [...g.title].length < 6 ? `${segmentTitle}：${g.title}` : g.title;
+            return (
+              <BarChart
+                title={title}
+                subtitle={clip(last.definition, 90)}
+                unit={marketUnitLabel(g.currency)}
+                data={g.rows.map((r) => ({ label: label(r), value: marketValueYi(r), estimate: r.status !== 'actual', note: MARKET_STATUS[r.status] }))}
+                source={srcs}
+                asOf={asOf}
+                keepOrder
+                note={defs.size > 1 ? '各年度的統計口徑略有差異，詳見下方「口徑與來源」。斜線長條為估計或預測值。' : '斜線長條為估計或預測值，不是已發生的實際數字。'}
+              />
+            );
+          })}
+        </div>
+      )}
+      <details class="ms__details" open={charts.length <= 1 ? true : undefined}>
+        <summary class="ms__summary">
+          <Icon name="source" />
+          口徑與來源（{rows.length} 筆）
+          <Icon name="chevron-down" class="ms__chev" />
+        </summary>
+        <ol class="ms__list" role="list">
+          {sorted.map((r) => (
+            <li class="ms__row">
+              <p class="ms__head">
+                <span class="ms__year">{r.year}</span>
+                <span class="ms__value">{valueText(r)}</span>
+                <Badge tone={tone(r.status)}>{MARKET_STATUS[r.status]}</Badge>
+              </p>
+              <p class="ms__def">{r.definition}</p>
+              <p class="ms__src">
+                {r.source.publisher}：
+                <a href={r.source.url} rel="noopener noreferrer">
+                  {r.source.title}
+                </a>
+                {r.source.published && <span class="ms__date">（{r.source.published}）</span>}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </details>
+    </div>
+  )
+}
+
+<style>
+  .ms {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 960px) {
+    .ms--side {
+      grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+      align-items: start;
+    }
+    /* The 口徑 list is usually taller than the chart: keep the chart in view beside it. */
+    .ms--side > .ms__charts {
+      position: sticky;
+      top: calc(var(--header-h) + var(--space-4));
+    }
+  }
+  .ms__charts {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 900px) {
+    .ms__charts--two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .ms__details {
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .ms__summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap);
+    padding: var(--space-2) var(--space-4);
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-s);
+    cursor: pointer;
+    list-style: none;
+  }
+  .ms__summary::-webkit-details-marker {
+    display: none;
+  }
+  .ms__summary :global(.ms__chev) {
+    margin-inline-start: auto;
+    transition: transform var(--dur-2) ease;
+  }
+  .ms__details[open] :global(.ms__chev) {
+    transform: rotate(180deg);
+  }
+  .ms__list {
+    list-style: none;
+    margin: 0;
+    padding: 0 var(--space-4) var(--space-3);
+  }
+  .ms__row {
+    display: grid;
+    gap: var(--space-1);
+    padding-block: var(--space-3);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .ms__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+  .ms__year {
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+  }
+  .ms__value {
+    font-weight: var(--fw-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+  .ms__def {
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    line-height: 1.7;
+  }
+  .ms__src {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    overflow-wrap: anywhere;
+  }
+  .ms__date {
+    font-variant-numeric: tabular-nums;
+  }
+</style>

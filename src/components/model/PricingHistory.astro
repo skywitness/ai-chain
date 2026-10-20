@@ -1,0 +1,265 @@
+---
+/**
+ * API pricing of a model family: a MultiLine (when there are at least two pricing points that can
+ * form a line) plus the full pricing table with dates, notes and sources.
+ *
+ * Line chart modes (always two lines, 輸入 and 輸出, so every series shares the same x values):
+ *  - history: some version has prices on ≥ 2 different dates → that version's price over time;
+ *  - by release: otherwise the generations of one product line (the flagship's, e.g. Claude Opus
+ *    4 → 5.5), each point = a version's current official price placed at its release date;
+ *    falls back to one tier when no product line has two priced releases.
+ *
+ *   <PricingHistory versions={family.versions} familyTitle="GPT 系列" />
+ */
+import MultiLine, { type MultiLineSeries } from '../charts/MultiLine.astro';
+import DataTable from '../charts/DataTable.astro';
+import Icon from '../ui/Icon.astro';
+import { TIER_LABELS, formatUsd, uniqueSources, zh, type ModelVersion } from './model-data';
+
+interface Props {
+  versions: ModelVersion[];
+  familyTitle: string;
+  kind?: string | undefined;
+  /** id of the family's flagship version: its product line is charted first */
+  flagship?: string | undefined;
+}
+const { versions, familyTitle, kind = 'llm', flagship } = Astro.props;
+const priced = versions.filter((v) => v.pricing.length > 0);
+const allPoints = priced.flatMap((v) => v.pricing.map((p) => ({ v, p })));
+
+// ── chart ──
+// MultiLine draws a segment only between neighbouring x values where the series has data, so every
+// series must share the same x values: we always plot ONE subject with two series (輸入／輸出).
+const TIER_ORDER = ['flagship', 'mid', 'small', 'reasoning', 'specialized'];
+const historyVersions = priced
+  .filter((v) => new Set(v.pricing.map((p) => p.asOf)).size >= 2)
+  .sort((a, b) => Number(b.tier === 'flagship') - Number(a.tier === 'flagship') || new Set(b.pricing.map((p) => p.asOf)).size - new Set(a.pricing.map((p) => p.asOf)).size);
+let series: MultiLineSeries[] = [];
+let mode: 'history' | 'release' | null = null;
+let subject = '';
+let lineNote = '';
+const pair = (pts: Array<[string, { inputPerMTok: number; outputPerMTok: number }]>): MultiLineSeries[] => [
+  { name: '輸出', points: pts.map(([x, p]) => ({ x, y: p.outputPerMTok })) },
+  { name: '輸入', points: pts.map(([x, p]) => ({ x, y: p.inputPerMTok })) },
+];
+/** The version's current standard price (latest date; the first listed on that date). */
+const current = (v: ModelVersion) => {
+  let best = v.pricing[0]!;
+  for (const p of v.pricing) if (p.asOf > best.asOf) best = p;
+  return best;
+};
+/** 「Claude Opus 4.8」→「claude opus」, 「Qwen3.8-Max」→「qwen max」: the product line of a version. */
+const stemOf = (name: string) =>
+  name
+    .replace(/[（(][^）)]*[）)]/g, ' ')
+    .replace(/\d+(?:\.\d+)*/g, ' ')
+    .replace(/[\s\-_/]+/g, ' ')
+    .trim()
+    .toLowerCase();
+/** One point per release day (the later-listed version wins), oldest first. */
+const byRelease = (list: ModelVersion[]) => {
+  const m = new Map<string, ModelVersion>();
+  for (const v of [...list].sort((a, b) => a.released.localeCompare(b.released))) m.set(v.released, v);
+  return [...m.values()];
+};
+/** One version's price over time (one point per pricing date). */
+const historyOf = (v: ModelVersion): MultiLineSeries[] => {
+  const byDate = new Map<string, ModelVersion['pricing'][number]>();
+  for (const p of [...v.pricing].sort((a, b) => a.asOf.localeCompare(b.asOf))) if (!byDate.has(p.asOf)) byDate.set(p.asOf, p);
+  return pair([...byDate.entries()]);
+};
+// Generations of ONE product line (e.g. Claude Opus 4 → 4.5 → 5.5): the flagship's own line when
+// it has at least two priced releases, otherwise the line with the most priced releases. Mixing
+// lines (Opus and the pricier Fable tier) would draw a misleading zigzag.
+const lines = new Map<string, ModelVersion[]>();
+for (const v of priced) {
+  const k = stemOf(v.name);
+  if (k) lines.set(k, [...(lines.get(k) ?? []), v]);
+}
+const ranked = [...lines.values()]
+  .map((list) => byRelease(list))
+  .filter((list) => list.length >= 2)
+  .sort(
+    (a, b) =>
+      Number(b.some((v) => v.id === flagship)) - Number(a.some((v) => v.id === flagship)) ||
+      b.length - a.length ||
+      b.filter((v) => v.tier === 'flagship').length - a.filter((v) => v.tier === 'flagship').length ||
+      b.at(-1)!.released.localeCompare(a.at(-1)!.released),
+  );
+const flagHistory = historyVersions.find((v) => v.id === flagship);
+const anyHistory = flagHistory ?? (ranked[0] ? undefined : historyVersions[0]);
+if (anyHistory) {
+  mode = 'history';
+  subject = anyHistory.name;
+  series = historyOf(anyHistory);
+} else if (ranked[0]) {
+  const line = ranked[0];
+  mode = 'release';
+  subject = zh(line[0]!.name, ' 到 ', line.at(-1)!.name);
+  series = pair(line.map((v) => [v.released, current(v)]));
+  lineNote = `只畫同一產品線的 ${line.length} 個版本（${line.map((v) => v.name).join('、')}）；其他版本的完整價格見下表。`;
+} else {
+  // no product line with two releases: one tier (flagship first), one point per version
+  const counts = TIER_ORDER.map((t) => ({ t, n: priced.filter((v) => v.tier === t).length }));
+  const tier = (counts.find((c) => c.t === 'flagship' && c.n >= 2) ?? [...counts].sort((a, b) => b.n - a.n)[0])?.t;
+  const line = byRelease(priced.filter((v) => v.tier === tier));
+  if (line.length >= 2) {
+    mode = 'release';
+    subject = zh(line[0]!.name, ' 到 ', line.at(-1)!.name);
+    series = pair(line.map((v) => [v.released, current(v)]));
+    lineNote = `只畫${TIER_LABELS[tier ?? ''] ?? ''}級距的 ${line.length} 個版本；其他級距與各版本的完整價格見下表。`;
+  }
+}
+const showChart = mode !== null && allPoints.length >= 2;
+const sources = uniqueSources(allPoints.map((x) => x.p.source)).slice(0, 4).map((s) => ({ title: s.title, url: s.url, publisher: s.publisher }));
+const latest = allPoints.map((x) => x.p.asOf).sort().at(-1);
+
+// ── table ──
+const rows = [...priced]
+  .sort((a, b) => b.released.localeCompare(a.released))
+  .flatMap((v) =>
+    v.pricing.map((p) => ({
+      v: v.name,
+      t: TIER_LABELS[v.tier] ?? v.tier,
+      i: formatUsd(p.inputPerMTok),
+      c: p.cachedInputPerMTok !== undefined ? formatUsd(p.cachedInputPerMTok) : '—',
+      o: formatUsd(p.outputPerMTok),
+      d: p.asOf,
+      n: p.tierNote ?? '',
+      s: p.source.publisher,
+    })),
+  );
+const columns = [
+  { key: 'v', label: '版本' },
+  { key: 't', label: '級距' },
+  { key: 'i', label: '輸入', numeric: true },
+  { key: 'c', label: '快取輸入', numeric: true },
+  { key: 'o', label: '輸出', numeric: true },
+  { key: 'd', label: '定價日' },
+  { key: 'n', label: '說明' },
+  { key: 's', label: '來源' },
+];
+const noApiText =
+  kind === 'video'
+    ? '這個系列沒有按 tokens 計價的公開價格（影片模型多以每秒影片或訂閱方案計價）。'
+    : kind === 'world' || kind === 'robotics'
+      ? '這個系列目前沒有公開的按量 API 價格（多以研究預覽、訂閱或合作方案提供）。'
+      : '這個系列沒有官方的按量 API 價格（例如以開放權重自行部署，或只透過訂閱方案提供）。';
+---
+
+{
+  priced.length === 0 ? (
+    <p class="ph-empty">
+      <Icon name="info" />
+      <span>{noApiText}</span>
+    </p>
+  ) : (
+    <div class="ph">
+      {showChart && (
+        <MultiLine
+          title={mode === 'history' ? zh(subject, '的價格變化') : zh(subject, '：歷代 API 價格')}
+          subtitle={
+            mode === 'history'
+              ? '同一版本在不同日期的官方標準價格'
+              : '每個點是一個版本，依發表日排列；數值為該版本目前的官方標準價格'
+          }
+          unit="美元／每百萬 tokens"
+          series={series}
+          xType="time"
+          digits={2}
+          valueSuffix=" 美元"
+          asOf={latest}
+          sources={sources}
+          xTitle={mode === 'history' ? '定價日' : '發表日'}
+          notes={[
+            mode === 'release' ? lineNote : null,
+            '推理模型的「思考」過程也以輸出 tokens 計費，實際花費常高於表面單價。',
+          ]}
+          as="h3"
+        />
+      )}
+      <details class="ph-table" open={!showChart || rows.length <= 6}>
+        <summary>
+          {showChart ? `完整價格表（${rows.length} 筆）` : `價格表（${rows.length} 筆）`}
+        </summary>
+        <div class="scroll-x">
+          <DataTable columns={columns} rows={rows} caption={zh(familyTitle, ' API 價格（美元／每百萬 tokens）').replace('  ', ' ')} showCaption={false} />
+        </div>
+        <p class="ph-note">單位：美元／每百萬 tokens；不含批次、彈性處理等折扣方案。</p>
+      </details>
+    </div>
+  )
+}
+
+<style>
+  @layer components {
+    .ph {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-4);
+    }
+    .ph-table {
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      padding: var(--space-2) var(--space-4);
+    }
+    .ph-table > summary {
+      display: flex;
+      align-items: center;
+      min-block-size: 2.75rem;
+      font-weight: var(--fw-semibold);
+      gap: 0.6em;
+      font-size: var(--fs-s);
+      color: var(--c-link);
+      cursor: pointer;
+      list-style: none;
+    }
+    .ph-table > summary::-webkit-details-marker {
+      display: none;
+    }
+    /* `display: flex` drops the native marker: draw a chevron instead */
+    .ph-table > summary::before {
+      content: '';
+      flex: none;
+      inline-size: 0.45em;
+      block-size: 0.45em;
+      border-inline-end: 2px solid currentColor;
+      border-block-end: 2px solid currentColor;
+      transform: rotate(-45deg);
+      transition: transform var(--dur-2) ease;
+    }
+    .ph-table[open] > summary::before {
+      transform: rotate(45deg) translate(-0.1em, -0.1em);
+    }
+    .ph-table > summary:hover {
+      color: var(--c-link-hover);
+    }
+    .ph-table[open] > summary {
+      margin-block-end: var(--space-2);
+    }
+    .ph-table :global(td),
+    .ph-table :global(th) {
+      font-size: var(--fs-s);
+    }
+    .ph-note {
+      margin-block: var(--space-2);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .ph-empty {
+      display: flex;
+      gap: 0.5em;
+      align-items: baseline;
+      padding: var(--space-4) var(--space-5);
+      border: 1px dashed var(--c-border-strong);
+      border-radius: var(--radius-l);
+      color: var(--c-fg-muted);
+      font-size: var(--fs-s);
+    }
+    .ph-empty :global(svg) {
+      flex: none;
+      transform: translateY(0.12em);
+    }
+  }
+</style>

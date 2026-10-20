@@ -1,0 +1,671 @@
+---
+/**
+ * The accessible 2D learning path on /learn/: a track filter and three level columns
+ * (入門／進階／深入) of article cards with prerequisite chips.
+ *
+ * Without JavaScript every card is visible and the filter still works in browsers with CSS :has().
+ * The script adds: the live result count, ?track= in the URL, empty-column notes, ✓ read marks and
+ * per-level progress (localStorage via src/client/progress.ts), and prerequisite tracing — hovering
+ * or focusing a card highlights its prerequisites and follow-ups and, on wide screens, draws the links.
+ *
+ *   <LearnBoard items={items} />
+ */
+import Icon from '../ui/Icon.astro';
+import LearnCard from './LearnCard.astro';
+import { LEVELS, TRACK_LABELS } from '../../lib/collections';
+import { LEVEL_BLURBS, TRACK_COLORS, TRACK_IDS, type LearnItem } from './learn-data';
+
+interface Props {
+  items: readonly LearnItem[];
+  id?: string | undefined;
+}
+const { items, id = 'all-articles' } = Astro.props;
+const byslug = new Map(items.map((i) => [i.slug, i]));
+const total = items.length;
+const tracks = TRACK_IDS.map((t) => ({ id: t, label: TRACK_LABELS[t], n: items.filter((i) => i.track === t).length })).filter(
+  (t) => t.n > 0,
+);
+const columns = LEVELS.map((l) => ({ ...l, items: items.filter((i) => i.level === l.level) }));
+---
+
+<section class="lb" id={id} aria-labelledby={`${id}-title`} data-lb data-total={total}>
+  <header class="lb__head">
+    <div class="lb__intro">
+      <h2 class="lb__title" id={`${id}-title`}>全部文章</h2>
+      <p class="lb__lede">
+        編號由小到大就是建議的閱讀順序（百位數代表難度）；卡片下方的「先讀」是建議先讀的文章。
+      </p>
+    </div>
+    <div class="lb__progress" data-lb-progress hidden>
+      <div class="lb__progress-row">
+        <p class="lb__progress-text">
+          你的進度：已讀 <strong data-lb-read>0</strong>／{total} 篇
+        </p>
+        <button type="button" class="lb__reset" data-lb-reset>清除已讀紀錄</button>
+      </div>
+      <div class="lb__bar" aria-hidden="true"><span data-lb-bar></span></div>
+      <p class="lb__note">已讀紀錄只存在這個瀏覽器裡，不會上傳。</p>
+    </div>
+  </header>
+
+  <form class="lb__filters" data-lb-form action="" method="get" aria-label="依主題篩選文章">
+    <fieldset class="lb__fieldset">
+      <legend class="lb__legend">依主題篩選</legend>
+      <div class="lb__chips">
+        <label class="lb__chip">
+          <input type="radio" name="track" value="" checked />
+          <span>全部 <span class="lb__chip-n">{total}</span></span>
+        </label>
+        {
+          tracks.map((t) => (
+            <label class="lb__chip" style={`--chip-c: ${TRACK_COLORS[t.id]}`}>
+              <input type="radio" name="track" value={t.id} />
+              <span>
+                <span class="lb__chip-dot" aria-hidden="true" />
+                {t.label} <span class="lb__chip-n">{t.n}</span>
+              </span>
+            </label>
+          ))
+        }
+      </div>
+    </fieldset>
+    <p class="lb__count" data-lb-count aria-live="polite">共 {total} 篇文章</p>
+  </form>
+
+  <p class="lb__hint" data-lb-hint hidden>
+    <Icon name="info" />
+    滑過或用 Tab 聚焦卡片：實線框是它的先修文章，虛線框是讀完後可以接著讀的文章。
+  </p>
+
+  <div class="lb__cols" data-lb-cols>
+    <svg class="lb__links" data-lb-links aria-hidden="true" focusable="false"></svg>
+    {
+      columns.map((c) => (
+        <section class="lb__col" style={`--col-c: ${c.color}`} aria-labelledby={`${id}-lv${c.level}`} data-lb-col={c.level}>
+          <header class="lb__col-head">
+            <h3 class="lb__col-title" id={`${id}-lv${c.level}`}>
+              <span class="lb__col-badge">{c.label}</span>
+              <span class="lb__col-n">{c.items.length} 篇</span>
+            </h3>
+            <p class="lb__col-blurb">{LEVEL_BLURBS[c.level]}</p>
+            <p class="lb__col-progress" data-lb-colprog hidden>
+              已讀 <span data-lb-colread>0</span>／{c.items.length}
+            </p>
+          </header>
+          <ol class="lb__list" role="list">
+            {c.items.map((it) => (
+              <LearnCard item={it} byslug={byslug} headingLevel={4} />
+            ))}
+          </ol>
+          <p class="lb__empty" data-lb-empty hidden>
+            這個難度沒有此主題的文章。
+          </p>
+        </section>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  import { clearRead, onProgressChange, readSlugs, storageAvailable } from '../../client/progress';
+
+  const board = document.querySelector<HTMLElement>('[data-lb]');
+  if (board) initBoard(board);
+
+  function initBoard(root: HTMLElement) {
+    root.classList.add('lb--js');
+    const form = root.querySelector<HTMLFormElement>('[data-lb-form]');
+    const count = root.querySelector<HTMLElement>('[data-lb-count]');
+    const cards = [...root.querySelectorAll<HTMLElement>('.lc')];
+    const cols = [...root.querySelectorAll<HTMLElement>('[data-lb-col]')];
+    const total = cards.length;
+    const bySlug = new Map(cards.map((c) => [c.dataset['slug'] ?? '', c]));
+    const trackNames = new Map<string, string>();
+    form?.querySelectorAll<HTMLInputElement>('input[name="track"]').forEach((input) => {
+      trackNames.set(input.value, input.parentElement?.textContent?.replace(/\d+\s*$/, '').trim() ?? '');
+    });
+
+    // ── Track filter ─────────────────────────────────────────────
+    const apply = (track: string, push: boolean) => {
+      let shown = 0;
+      for (const c of cards) {
+        const on = !track || c.dataset['track'] === track;
+        c.hidden = !on;
+        if (on) shown++;
+      }
+      for (const col of cols) {
+        const any = col.querySelector('.lc:not([hidden])');
+        const empty = col.querySelector<HTMLElement>('[data-lb-empty]');
+        if (empty) empty.hidden = !!any;
+      }
+      if (count) {
+        count.textContent = track ? `「${trackNames.get(track) ?? ''}」：顯示 ${shown}／${total} 篇` : `共 ${total} 篇文章`;
+      }
+      if (push) {
+        try {
+          const url = new URL(location.href);
+          if (track) url.searchParams.set('track', track);
+          else url.searchParams.delete('track');
+          history.replaceState(history.state, '', url);
+        } catch {
+          /* ignore */
+        }
+      }
+      clearTrace();
+    };
+
+    // ── Read marks ──────────────────────────────────────────────
+    const progress = root.querySelector<HTMLElement>('[data-lb-progress]');
+    const readEl = root.querySelector<HTMLElement>('[data-lb-read]');
+    const bar = root.querySelector<HTMLElement>('[data-lb-bar]');
+    const canStore = storageAvailable();
+    const paint = (read: Set<string>) => {
+      let n = 0;
+      for (const c of cards) {
+        const on = read.has(c.dataset['slug'] ?? '');
+        if (on) n++;
+        c.toggleAttribute('data-read', on);
+        const mark = c.querySelector<HTMLElement>('[data-read-mark]');
+        if (mark) mark.hidden = !on;
+        const sr = c.querySelector<HTMLElement>('[data-read-sr]');
+        if (sr) sr.hidden = !on;
+      }
+      for (const col of cols) {
+        const colCards = [...col.querySelectorAll<HTMLElement>('.lc')];
+        const r = colCards.filter((c) => c.hasAttribute('data-read')).length;
+        const out = col.querySelector<HTMLElement>('[data-lb-colread]');
+        const wrap = col.querySelector<HTMLElement>('[data-lb-colprog]');
+        if (out) out.textContent = String(r);
+        if (wrap) wrap.hidden = !canStore || r === 0;
+      }
+      if (readEl) readEl.textContent = String(n);
+      if (bar) bar.style.inlineSize = `${total ? (n / total) * 100 : 0}%`;
+      if (progress) progress.hidden = !canStore || n === 0;
+    };
+    paint(readSlugs());
+    onProgressChange(paint);
+    root.querySelector('[data-lb-reset]')?.addEventListener('click', () => {
+      if (window.confirm('要清除這個瀏覽器裡的全部已讀紀錄嗎？')) clearRead();
+    });
+
+    // ── Prerequisite tracing ────────────────────────────────────
+    const hint = root.querySelector<HTMLElement>('[data-lb-hint]');
+    if (hint) hint.hidden = false;
+    const svg = root.querySelector<SVGSVGElement>('[data-lb-links]');
+    const colsBox = root.querySelector<HTMLElement>('[data-lb-cols]');
+    const wide = window.matchMedia('(min-width: 1024px)');
+    const dependents = new Map<string, string[]>();
+    for (const c of cards) {
+      for (const p of (c.dataset['prereqs'] ?? '').split(' ').filter(Boolean)) {
+        const list = dependents.get(p) ?? [];
+        list.push(c.dataset['slug'] ?? '');
+        dependents.set(p, list);
+      }
+    }
+    let active: HTMLElement | null = null;
+
+    function clearTrace() {
+      active = null;
+      root.removeAttribute('data-tracing');
+      for (const c of cards) c.removeAttribute('data-trace');
+      if (svg) svg.replaceChildren();
+    }
+
+    function trace(card: HTMLElement) {
+      if (active === card) return;
+      clearTrace();
+      active = card;
+      const slug = card.dataset['slug'] ?? '';
+      const pre = (card.dataset['prereqs'] ?? '').split(' ').filter(Boolean);
+      const post = dependents.get(slug) ?? [];
+      root.setAttribute('data-tracing', '');
+      card.setAttribute('data-trace', 'self');
+      for (const s of pre) bySlug.get(s)?.setAttribute('data-trace', 'pre');
+      for (const s of post) {
+        const el = bySlug.get(s);
+        if (el && !el.hasAttribute('data-trace')) el.setAttribute('data-trace', 'post');
+      }
+      if (svg && colsBox && wide.matches) draw(card, pre, post);
+    }
+
+    const NS = 'http://www.w3.org/2000/svg';
+    function draw(card: HTMLElement, pre: string[], post: string[]) {
+      if (!svg || !colsBox) return;
+      const box = colsBox.getBoundingClientRect();
+      svg.setAttribute('viewBox', `0 0 ${box.width} ${box.height}`);
+      svg.setAttribute('width', String(box.width));
+      svg.setAttribute('height', String(box.height));
+      const link = (from: HTMLElement, to: HTMLElement, kind: 'pre' | 'post') => {
+        if (from.hidden || to.hidden) return;
+        const a = from.getBoundingClientRect();
+        const b = to.getBoundingClientRect();
+        let d: string;
+        if (Math.abs(a.left - b.left) < 8) {
+          // same column: a loop on the left edge
+          const x = a.left - box.left;
+          const y1 = a.top - box.top + a.height / 2;
+          const y2 = b.top - box.top + b.height / 2;
+          const bulge = Math.min(36, 14 + Math.abs(y2 - y1) / 12);
+          d = `M ${x} ${y1} C ${x - bulge} ${y1}, ${x - bulge} ${y2}, ${x} ${y2}`;
+        } else {
+          const leftToRight = a.left < b.left;
+          const x1 = (leftToRight ? a.right : a.left) - box.left;
+          const x2 = (leftToRight ? b.left : b.right) - box.left;
+          const y1 = a.top - box.top + a.height / 2;
+          const y2 = b.top - box.top + b.height / 2;
+          const mx = (x1 + x2) / 2;
+          d = `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+        }
+        const path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', d);
+        path.setAttribute('class', `lb__link lb__link--${kind}`);
+        svg.appendChild(path);
+        for (const [x, y] of [d.match(/^M ([\d.-]+) ([\d.-]+)/), d.match(/([\d.-]+) ([\d.-]+)$/)].map((m) => [Number(m?.[1]), Number(m?.[2])])) {
+          const dot = document.createElementNS(NS, 'circle');
+          dot.setAttribute('cx', String(x));
+          dot.setAttribute('cy', String(y));
+          dot.setAttribute('r', '3.5');
+          dot.setAttribute('class', `lb__node lb__node--${kind}`);
+          svg.appendChild(dot);
+        }
+      };
+      for (const s of pre) {
+        const el = bySlug.get(s);
+        if (el) link(el, card, 'pre');
+      }
+      for (const s of post) {
+        const el = bySlug.get(s);
+        if (el) link(card, el, 'post');
+      }
+    }
+
+    const cardOf = (t: EventTarget | null) => (t instanceof Element ? t.closest<HTMLElement>('.lc') : null);
+    colsBox?.addEventListener('pointerover', (e) => {
+      if ((e as PointerEvent).pointerType === 'touch') return;
+      const c = cardOf(e.target);
+      if (c) trace(c);
+    });
+    colsBox?.addEventListener('pointerleave', () => clearTrace());
+    colsBox?.addEventListener('focusin', (e) => {
+      const c = cardOf(e.target);
+      if (c) trace(c);
+    });
+    colsBox?.addEventListener('focusout', (e) => {
+      if (!colsBox.contains((e as FocusEvent).relatedTarget as Node | null)) clearTrace();
+    });
+    window.addEventListener('resize', () => clearTrace());
+
+    // Filter state from ?track= (set up last: apply() uses the tracing helpers above).
+    if (form) {
+      form.addEventListener('submit', (e) => e.preventDefault());
+      form.addEventListener('change', (e) => {
+        const t = e.target as HTMLInputElement;
+        if (t?.name === 'track') apply(t.value, true);
+      });
+      let initial = '';
+      try {
+        initial = new URL(location.href).searchParams.get('track') ?? '';
+      } catch {
+        /* ignore */
+      }
+      const radio = initial ? form.querySelector<HTMLInputElement>(`input[name="track"][value="${CSS.escape(initial)}"]`) : null;
+      if (radio) {
+        radio.checked = true;
+        apply(initial, false);
+      } else {
+        const checked = form.querySelector<HTMLInputElement>('input[name="track"]:checked');
+        apply(checked?.value ?? '', false);
+      }
+    }
+  }
+</script>
+
+<style>
+  @layer components {
+    .lb {
+      display: grid;
+      gap: var(--space-5);
+    }
+    .lb__head {
+      display: grid;
+      gap: var(--space-4);
+      align-items: end;
+    }
+    @media (min-width: 900px) {
+      .lb__head {
+        grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+        gap: var(--space-7);
+      }
+    }
+    .lb__intro {
+      display: grid;
+      gap: var(--space-2);
+    }
+    .lb__title {
+      font-size: var(--fs-2xl);
+      line-height: 1.3;
+      margin: 0;
+    }
+    .lb__lede {
+      color: var(--c-fg-muted);
+      max-width: 44em;
+      line-height: 1.7;
+    }
+    .lb__progress {
+      display: grid;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+    }
+    .lb__progress[hidden] {
+      display: none;
+    }
+    .lb__progress-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+    }
+    .lb__progress-text {
+      font-size: var(--fs-s);
+      font-variant-numeric: tabular-nums;
+    }
+    .lb__progress-text strong {
+      color: var(--c-pos);
+      font-size: var(--fs-l);
+    }
+    .lb__reset {
+      min-height: 2rem;
+      padding: 0 var(--space-3);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-pill);
+      background: transparent;
+      color: var(--c-fg-muted);
+      font: inherit;
+      font-size: var(--fs-xs);
+      cursor: pointer;
+    }
+    .lb__reset:hover {
+      border-color: var(--c-border-strong);
+      color: var(--c-fg);
+    }
+    .lb__bar {
+      block-size: 6px;
+      border-radius: var(--radius-pill);
+      background: var(--c-bg-sunken);
+      overflow: hidden;
+    }
+    .lb__bar span {
+      display: block;
+      block-size: 100%;
+      inline-size: 0;
+      border-radius: inherit;
+      background: var(--c-pos);
+      transition: inline-size var(--dur-3) var(--ease-out);
+    }
+    .lb__note {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+
+    /* filter */
+    .lb__filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3) var(--space-5);
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-sunken);
+    }
+    @media (min-width: 1024px) and (min-height: 640px) {
+      .lb__filters {
+        position: sticky;
+        inset-block-start: calc(var(--header-h) + var(--space-2));
+        z-index: var(--z-sticky);
+        box-shadow: var(--shadow-1);
+      }
+    }
+    .lb__fieldset {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-2) var(--space-3);
+      margin: 0;
+      padding: 0;
+      border: 0;
+      min-width: 0;
+    }
+    .lb__legend {
+      float: left;
+      padding: 0;
+      margin-inline-end: var(--space-2);
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-muted);
+    }
+    .lb__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+    .lb__chip {
+      --chip-c: var(--c-accent);
+      position: relative;
+      display: inline-flex;
+    }
+    .lb__chip input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+    .lb__chip > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45em;
+      min-height: var(--tap);
+      padding: 0 0.95em;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-pill);
+      background: var(--c-bg-elev);
+      color: var(--c-fg-muted);
+      font-size: var(--fs-s);
+      line-height: 1.3;
+      white-space: nowrap;
+      transition:
+        border-color var(--dur-1) ease,
+        background-color var(--dur-1) ease;
+    }
+    .lb__chip:hover > span {
+      border-color: var(--c-border-strong);
+      color: var(--c-fg);
+    }
+    .lb__chip input:checked + span {
+      border-color: var(--chip-c);
+      background: color-mix(in srgb, var(--chip-c) 12%, var(--c-bg-elev));
+      color: var(--c-fg);
+      font-weight: var(--fw-semibold);
+    }
+    .lb__chip input:focus-visible + span {
+      outline: 2px solid var(--c-focus);
+      outline-offset: 2px;
+    }
+    .lb__chip-dot {
+      inline-size: 0.6em;
+      block-size: 0.6em;
+      border-radius: 2px;
+      background: var(--chip-c);
+    }
+    .lb__chip-n {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      font-variant-numeric: tabular-nums;
+      font-weight: var(--fw-regular);
+    }
+    .lb__count {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .lb__hint {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5em;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      line-height: 1.6;
+      margin-block-start: calc(-1 * var(--space-2));
+    }
+    .lb__hint :global(.icon) {
+      flex: none;
+      margin-block-start: 0.25em;
+    }
+    .lb__hint[hidden] {
+      display: none;
+    }
+    @media (hover: none) {
+      .lb__hint {
+        display: none;
+      }
+    }
+
+    /* columns */
+    .lb__cols {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-7);
+    }
+    @media (min-width: 1024px) {
+      .lb__cols {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: auto auto 1fr;
+        gap: 0 var(--space-6);
+        align-items: start;
+      }
+      /* the three column heads share rows, so their rules line up */
+      .lb__col {
+        grid-row: span 3;
+        grid-template-rows: subgrid;
+        row-gap: var(--space-4);
+      }
+    }
+    .lb__links {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 2;
+    }
+    .lb__links :global(.lb__link) {
+      fill: none;
+      stroke: var(--c-accent);
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      opacity: 0.85;
+    }
+    .lb__links :global(.lb__link--post) {
+      stroke-dasharray: 5 5;
+    }
+    .lb__links :global(.lb__node) {
+      fill: var(--c-bg-elev);
+      stroke: var(--c-accent);
+      stroke-width: 1.75;
+    }
+    .lb__col {
+      display: grid;
+      gap: var(--space-4);
+      align-content: start;
+      min-width: 0;
+    }
+    .lb__col-head {
+      display: grid;
+      gap: var(--space-1);
+      padding-block-end: var(--space-3);
+      border-block-end: 2px solid var(--col-c);
+    }
+    .lb__col-head {
+      align-content: start;
+      align-self: stretch;
+    }
+    .lb__col-title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin: 0;
+      font-size: var(--fs-xl);
+      line-height: 1.3;
+    }
+    .lb__col-badge {
+      color: var(--col-c);
+    }
+    .lb__col-n {
+      font-size: var(--fs-s);
+      font-weight: var(--fw-regular);
+      color: var(--c-fg-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+    .lb__col-blurb {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      line-height: 1.65;
+    }
+    .lb__col-progress {
+      font-size: var(--fs-xs);
+      color: var(--c-pos);
+      font-weight: var(--fw-semibold);
+      font-variant-numeric: tabular-nums;
+    }
+    .lb__col-progress[hidden] {
+      display: none;
+    }
+    .lb__list {
+      display: grid;
+      align-content: start;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+      gap: var(--space-3);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    @media (min-width: 1024px) {
+      .lb__list {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    .lb__list > :global(.lc[hidden]) {
+      display: none;
+    }
+    .lb__empty {
+      padding: var(--space-4);
+      border: 1px dashed var(--c-border);
+      border-radius: var(--radius-m);
+      color: var(--c-fg-subtle);
+      font-size: var(--fs-s);
+      text-align: center;
+    }
+    .lb__empty[hidden] {
+      display: none;
+    }
+
+    /* No-JS filtering where :has() is supported (the script takes over and adds .lb--js). */
+    .lb:not(.lb--js):has(input[value='foundations']:checked) :global(.lc:not([data-track='foundations'])),
+    .lb:not(.lb--js):has(input[value='models']:checked) :global(.lc:not([data-track='models'])),
+    .lb:not(.lb--js):has(input[value='hardware']:checked) :global(.lc:not([data-track='hardware'])),
+    .lb:not(.lb--js):has(input[value='infra-business']:checked) :global(.lc:not([data-track='infra-business'])),
+    .lb:not(.lb--js):has(input[value='society']:checked) :global(.lc:not([data-track='society'])) {
+      display: none;
+    }
+    .lb:not(.lb--js) .lb__count {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,53 @@
+---
+/**
+ * Stand-in for <Scene3D> used by mdx-components.ts until src/components/scene/Scene3D.astro exists.
+ * Accepts the same props and renders a static figure with the caption.
+ */
+interface Props {
+  id: string;
+  variant?: string | undefined;
+  caption?: string | undefined;
+  height?: string | undefined;
+  autoload?: string | undefined;
+  data?: unknown | undefined;
+}
+const { id, variant, caption } = Astro.props;
+---
+
+<figure class="scene-ph" data-scene-id={id} data-variant={variant}>
+  <div class="scene-ph__stage" aria-hidden="true">
+    <svg viewBox="0 0 120 80" width="120" height="80">
+      {[0, 1, 2, 3, 4].map((i) => <path d={`M20 ${62 - i * 9}L60 ${50 - i * 9}L100 ${62 - i * 9}L60 ${74 - i * 9}Z`} style={`fill: var(--layer-${['foundation', 'silicon', 'systems', 'cloud-models', 'applications'][i]}); opacity: .85`} />)}
+    </svg>
+    <span>3D 場景準備中</span>
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  @layer components {
+    .scene-ph {
+      margin: 1.8em 0;
+    }
+    .scene-ph__stage {
+      display: grid;
+      place-items: center;
+      gap: var(--space-2);
+      aspect-ratio: 16 / 9;
+      max-height: 60svh;
+      border-radius: var(--radius-l);
+      border: 1px solid var(--c-border);
+      background:
+        radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--scene-highlight) 10%, transparent), transparent 60%),
+        var(--scene-bg);
+      color: var(--c-fg-subtle);
+      font-size: var(--fs-s);
+      align-content: center;
+    }
+    .scene-ph figcaption {
+      margin-block-start: var(--space-2);
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+  }
+</style>

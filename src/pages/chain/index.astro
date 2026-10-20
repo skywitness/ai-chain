@@ -1,0 +1,353 @@
+---
+/**
+ * /chain/ — 產業鏈總覽：五層十四環節.
+ * Panorama (explore) + synced side panel → five layer explainers → 14-segment table → profit pools
+ * (MarginLadder: median latest gross margin of tier-1 listed companies per segment) → money flow.
+ * Intro text comes from the `pages` entry "chain" when it exists.
+ */
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Button from '../../components/ui/Button.astro';
+import MarginLadder from '../../components/charts/MarginLadder.astro';
+import FlowSteps from '../../components/content/FlowSteps.astro';
+import SourcesList from '../../components/content/SourcesList.astro';
+import { mdxComponents } from '../../components/content/mdx-components';
+import { registerSources } from '../../components/content/page-state';
+import BodyScene from '../../components/chain/BodyScene.astro';
+import SectionHead from '../../components/chain/SectionHead.astro';
+import ChainExplorer, { type ExplorerCard } from '../../components/chain/ChainExplorer.astro';
+import LayerExplainers from '../../components/chain/LayerExplainers.astro';
+import SegmentTable, { type SegmentTableRow } from '../../components/chain/SegmentTable.astro';
+import ChainAtAGlance, { type GlanceRow } from '../../components/chain/ChainAtAGlance.astro';
+import { CONCENTRATION, firstSentence, getAllSegmentViews, taiwanCompaniesIn } from '../../components/chain/chain-data';
+import { getCurriculumArticle, getRoster, safeEntry, segmentMeta } from '../../lib/collections';
+import { marginByGroup } from '../../lib/financial-metrics';
+import { learnHref, sectionHref, segmentHref } from '../../lib/paths';
+import { DATA_DATE } from '../../lib/seo';
+import { buildSegmentsSceneData, getFinancialsMap } from '../../lib/scene-data/segments';
+import type { SourceT } from '../../schemas/common';
+
+const [views, sceneData, fins] = await Promise.all([getAllSegmentViews(), buildSegmentsSceneData(4), getFinancialsMap()]);
+const roster = getRoster();
+
+// Intro page (optional)
+const page = await safeEntry('pages', 'chain');
+let Intro: Awaited<ReturnType<typeof render>>['Content'] | undefined;
+if (page) {
+  try {
+    Intro = (await render(page)).Content;
+  } catch {
+    Intro = undefined;
+  }
+}
+const pageData = page?.data as { title: string; description: string; updated: string; sources: SourceT[] } | undefined;
+
+// Counts
+const counts: Record<string, { all: number; tw: number }> = {};
+for (const c of roster) {
+  const k = (counts[c.segment] ??= { all: 0, tw: 0 });
+  k.all++;
+  if (c.region === 'TW') k.tw++;
+}
+
+const cards: ExplorerCard[] = views.map((v) => {
+  const d = sceneData.find((s) => s.id === v.id);
+  return {
+    id: v.id,
+    order: v.order,
+    title: v.title,
+    layerTitle: v.layer.title,
+    color: v.meta.color,
+    tagline: v.tagline,
+    concentration: v.concentration ? CONCENTRATION[v.concentration]?.label : undefined,
+    bottleneck: v.bottleneck?.level,
+    companies: (d?.companies ?? []).slice(0, 4),
+    companyCount: counts[v.id]?.all ?? 0,
+    // same basis as companyCount (primary segment), so 「38 家（台灣 5 家）」 adds up
+    taiwanCount: counts[v.id]?.tw ?? 0,
+  };
+});
+
+const tableRows: SegmentTableRow[] = views.map((v) => {
+  const d = sceneData.find((s) => s.id === v.id);
+  return {
+    id: v.id,
+    order: v.order,
+    title: v.title,
+    color: v.meta.color,
+    layerTitle: v.layer.title,
+    tagline: v.tagline,
+    concentration: v.concentration ? CONCENTRATION[v.concentration]?.label : undefined,
+    bottleneck: v.bottleneck?.level,
+    companies: (d?.companies ?? []).slice(0, 3),
+    taiwan: firstSentence(v.taiwanRole, 76),
+    taiwanCount: taiwanCompaniesIn(v.id).length,
+  };
+});
+
+const mapArticle = getCurriculumArticle('ai-supply-chain-map');
+const glanceRows: GlanceRow[] = views.map((v) => ({
+  id: v.id,
+  title: v.title,
+  short: v.meta.short,
+  color: v.meta.color,
+  bottleneck: v.bottleneck?.level,
+  concentration: v.concentration,
+}));
+// The intro MDX already carries a money-flow FlowSteps: then the page's own diagram is not repeated.
+const introHasFlow = !!Intro && /<FlowSteps\b/.test(page?.body ?? '');
+
+// Profit pools: median latest gross margin of tier-1 listed companies, per primary segment
+const marginEntries = roster
+  .filter((c) => c.tier === 1 && c.ownership === 'listed' && c.status === 'active' && fins.has(c.id))
+  .map((c) => ({ id: c.id, group: c.segment, financials: fins.get(c.id)! }));
+const marginStats = marginByGroup(marginEntries, 'gross-margin');
+const ladderRows = marginStats.map((m) => {
+  const s = segmentMeta(m.key);
+  return {
+    label: s?.short ?? m.key,
+    segment: m.key,
+    href: segmentHref(m.key),
+    value: m.median,
+    n: m.n,
+    min: m.n > 1 ? m.min : undefined,
+    max: m.n > 1 ? m.max : undefined,
+  };
+});
+const marginCompanies = marginStats.reduce((a, m) => a + m.n, 0);
+const marginAsOf = marginEntries.map((e) => e.financials.lastVerified).sort().at(-1) ?? DATA_DATE;
+
+const lastVerified = views.map((v) => v.lastVerified).filter((d): d is string => !!d).sort().at(-1) ?? DATA_DATE;
+const sources = pageData?.sources ?? [];
+// The intro MDX renders before BaseLayout's frontmatter (head propagation): register here so <Cite>
+// numbers follow the sources list.
+registerSources(Astro, sources);
+const description =
+  pageData?.description ??
+  'AI 產業鏈由下而上分成五層十四個環節：能源、半導體、系統與資料中心、雲端與模型、應用。看懂各環節的角色、瓶頸、代表公司、毛利與台灣的位置。';
+---
+
+<BaseLayout
+  title="產業鏈總覽：五層十四環節"
+  description={description}
+  breadcrumbs={[{ label: '產業鏈' }]}
+  sources={sources}
+  section="chain"
+>
+  <span hidden data-pagefind-filter="類型:產業鏈"></span>
+  <header class="container page-head chain-head">
+    <p class="page-head__kicker">產業鏈總覽</p>
+    <h1 data-pagefind-weight="10">AI 產業鏈：五層十四環節</h1>
+    <p class="page-head__lede">
+      一個 AI 回答的背後，是一座由下往上的依存塔：電力餵給晶圓廠與機房，晶片組成伺服器與叢集，雲端把算力租給模型實驗室，模型再變成應用與 Agent。
+    </p>
+    <div class="chain-head__meta">
+      <DataAsOf date={lastVerified} />
+      <span class="chain-head__count">收錄 {roster.length} 家公司</span>
+    </div>
+  </header>
+
+  <section class="container chain-section chain-section--first" aria-labelledby="explore">
+    <SectionHead
+      id="explore"
+      kicker="互動全景"
+      title="由下往上，逐層探索"
+      lede="滑過或點選場景中的環節，右側會顯示它的角色、瓶頸與代表公司；也可以用右側的環節按鈕或場景下方的「導覽」逐步看。"
+    />
+    <ChainExplorer data={sceneData} cards={cards} caption={`AI 產業鏈五層十四環節（代表公司為各環節的一線業者，資料截至 ${lastVerified}）`} />
+  </section>
+
+  <section class="container chain-section chain-intro" aria-label="導讀">
+    <div class="chain-intro__main">
+      {
+        Intro ? (
+          <div class="prose chain-intro__prose">
+            <Intro components={{ ...mdxComponents, Scene3D: BodyScene }} />
+          </div>
+        ) : (
+          <>
+            <SectionHead id="intro-title" kicker="導讀" title="怎麼讀這條產業鏈" />
+            <p class="chain-pending">
+              導讀文章整理中。先從上方的互動全景開始：每一層、每一環都可以點選，右側會顯示角色、瓶頸與代表公司。
+            </p>
+          </>
+        )
+      }
+    </div>
+    <aside class="chain-intro__aside" aria-label="一眼看懂">
+      <div class="chain-intro__sticky">
+        <ChainAtAGlance rows={glanceRows} />
+      </div>
+    </aside>
+  </section>
+
+  <section class="container chain-section" aria-labelledby="layers">
+    <SectionHead
+      id="layers"
+      kicker="五層結構"
+      title="五層各做什麼"
+      lede="每一層都依賴下面那一層：沒有電就沒有晶片，沒有晶片就沒有算力，沒有算力就沒有模型與應用。"
+    />
+    <LayerExplainers counts={counts} />
+  </section>
+
+  <section class="container chain-section" aria-labelledby="segments">
+    <SectionHead
+      id="segments"
+      kicker="十四環節一覽"
+      title="每一環的結構、瓶頸與台灣角色"
+      lede="「市場結構」看少數業者是否主導；「瓶頸程度」1–5 表示供給吃緊、最可能卡住 AI 擴張的程度，由本站依各環節資料整理。"
+    />
+    <SegmentTable rows={tableRows} />
+  </section>
+
+  <section class="container chain-section" aria-labelledby="profit-pools">
+    <SectionHead
+      id="profit-pools"
+      kicker="誰賺得最多"
+      title="利潤池：各環節的毛利率"
+      lede="毛利率愈高，代表技術門檻或議價能力愈強。下圖取各環節一線上市公司最新一季已公布的毛利率，再取中位數；細線是同環節公司的最低到最高。"
+    />
+    {
+      ladderRows.length > 0 ? (
+        <MarginLadder
+          title="一線上市公司毛利率中位數（依環節）"
+          subtitle={`共 ${marginCompanies} 家一線上市公司，依主要環節分組`}
+          rows={ladderRows}
+          asOf={marginAsOf}
+          sources={[{ title: '各公司財報與法說資料（出處見各公司頁）', url: sectionHref('companies'), publisher: '本站整理' }]}
+          notes={[
+            '毛利率為最新一季已公布的實際值（依各公司財報口徑），不含估計。',
+            '同一環節的公司商業模式可能差異很大（例如設計工具與晶片代工），中位數僅供比較利潤結構，不構成投資建議。',
+          ]}
+        />
+      ) : (
+        <p class="chain-pending">各公司財務資料整理中，完成後這裡會顯示各環節的毛利率比較。</p>
+      )
+    }
+  </section>
+
+  {
+    !introHasFlow && (
+      <section class="container chain-section" aria-labelledby="money-flow">
+        <SectionHead
+          id="money-flow"
+          kicker="錢怎麼流動"
+          title="從使用者付費，一路流到晶片與電力"
+          lede="價值由下往上堆疊，錢則由上往下流：終端使用者與企業付給應用，應用付給模型與雲端，雲端再買伺服器、晶片、機房與電力。"
+        />
+        <FlowSteps
+          title="AI 產業鏈的資金流向（由上而下）"
+          steps={[
+            { title: '使用者與企業', detail: '訂閱、API 用量與企業授權' },
+            { title: '應用與 Agent', detail: '把模型包裝成產品' },
+            { title: '模型與雲端', detail: '按 Token 或算力時數收費' },
+            { title: '伺服器與資料中心', detail: '雲端業者的資本支出' },
+            { title: '晶片、記憶體與代工', detail: 'GPU、ASIC、HBM 與先進製程' },
+            { title: '設備、材料與電力', detail: '晶圓廠與機房的長期投資' },
+          ]}
+          caption="簡化示意：實際上許多公司同時橫跨多個環節，例如雲端業者也自研晶片與模型。"
+        />
+      </section>
+    )
+  }
+
+  <section class="container chain-section" aria-labelledby="next-steps">
+    <SectionHead id="next-steps" kicker="繼續探索" title="下一步看什麼" />
+    <div class="chain-cta chain-cta--first">
+      <Button href={mapArticle ? learnHref(mapArticle.slug) : sectionHref('learn')} variant="primary" icon="book">
+        {mapArticle ? `${mapArticle.title}（入門文章）` : '從學習路徑開始'}
+      </Button>
+      <Button href={sectionHref('companies')} icon="arrow-right" iconPosition="end">查看公司資料庫</Button>
+      <Button href={sectionHref('taiwan')} icon="arrow-right" iconPosition="end">台灣 AI 供應鏈</Button>
+    </div>
+  </section>
+
+  {
+    sources.length > 0 && (
+      <div class="container chain-sources">
+        <SourcesList sources={sources} />
+      </div>
+    )
+  }
+</BaseLayout>
+
+<style>
+  /* Short CJK titles break only at punctuation and spaces (overflow-wrap still rescues long runs). */
+  .chain-head h1,
+  .chain-section :global(:is(h2, h3, h4)) {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .chain-head {
+    padding-block-end: var(--space-4);
+  }
+  .chain-head h1 {
+    font-size: var(--fs-3xl);
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+  .chain-head__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-5);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .chain-head__count {
+    font-variant-numeric: tabular-nums;
+  }
+  .chain-intro {
+    display: grid;
+    gap: var(--space-6);
+  }
+  .chain-intro__main {
+    min-width: 0;
+    max-width: 48rem;
+  }
+  .chain-intro__prose > :global(h2:first-child) {
+    margin-block-start: 0;
+  }
+  /* The intro's money-flow diagram reads top → bottom (錢由上往下流) and sits in a narrow column next
+     to the sticky card: opt out of FlowSteps' container query so it always uses its vertical layout. */
+  .chain-intro__prose :global(.flow) {
+    container-type: normal;
+  }
+  @media (min-width: 1100px) {
+    .chain-intro {
+      grid-template-columns: minmax(0, 48rem) minmax(18rem, 22rem);
+      justify-content: space-between;
+      column-gap: var(--space-8);
+    }
+    .chain-intro__sticky {
+      position: sticky;
+      top: calc(var(--header-h) + var(--space-5));
+    }
+  }
+  .chain-section {
+    padding-block-start: var(--space-8);
+  }
+  .chain-section--first {
+    padding-block-start: var(--space-5);
+  }
+  .chain-pending {
+    padding: var(--space-5);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    color: var(--c-fg-muted);
+  }
+  .chain-cta--first {
+    margin-block-start: 0 !important;
+  }
+  .chain-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-block-start: var(--space-6);
+  }
+  .chain-sources > :global(.sources) {
+    max-width: 52rem;
+  }
+</style>

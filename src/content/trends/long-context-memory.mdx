@@ -1,0 +1,310 @@
+---
+title: "長上下文與模型記憶"
+description: "前沿模型的上下文視窗從 2023 年的 20 萬 Token 走到 2026 年普遍約 100 萬，Anthropic 也取消了長上下文加價；ChatGPT、Claude 等加入跨對話記憶。但讀得越長越容易出錯，KV Cache 也推動新的記憶體與儲存層。"
+category: software
+horizon: near
+horizonYears: [2024, 2028]
+confidence: high
+confidenceRationale: "Anthropic、OpenAI、Google、DeepSeek 的旗艦模型都已提供約 100 萬 Token 的上下文視窗，Anthropic 也把 100 萬 Token 改以標準價計費，方向已由官方文件證實（OpenAI、Google 部分模型對超長提示仍加價）；不確定的是模型能否真正用好這麼長的內容，多項研究顯示表現會隨輸入變長而下降，跨對話記憶在隱私與可靠性上的接受度也還在觀察。"
+impact: medium
+milestones:
+  - { date: "2024-02", label: "Gemini 1.5 Pro 預覽 100 萬 Token 上下文，研究測試達 1,000 萬", status: done }
+  - { date: "2024-06", label: "Gemini 1.5 Pro 的 200 萬 Token 上下文開放所有開發者，同時推出上下文快取", status: done }
+  - { date: "2025-02", label: "NoLiMa 研究：13 個長上下文模型中有 11 個在 3.2 萬 Token 時跌到短文本表現的一半以下", status: done }
+  - { date: "2025-04", label: "OpenAI GPT-4.1 支援約 105 萬 Token；Llama 4 Scout 標示 1,000 萬 Token 上下文", status: done }
+  - { date: "2025-04", label: "ChatGPT 的記憶功能開始參考使用者所有過往對話", status: done }
+  - { date: "2025-07", label: "Chroma 測試 18 個模型，提出「上下文腐化」：輸入越長表現越不穩定", status: done }
+  - { date: "2025-08", label: "Claude Sonnet 4 開放 100 萬 Token 測試版，超過 20 萬 Token 的請求加價", status: done }
+  - { date: "2025-09", label: "Claude 推出跨對話記憶，並為開發者提供上下文編輯與記憶工具", status: done }
+  - { date: "2026-01", label: "輝達發表以 BlueField-4 為基礎、專門存放 KV Cache 的推論脈絡記憶體儲存平台", status: done }
+  - { date: "2026-04", label: "DeepSeek-V4 支援 100 萬 Token，KV Cache 只需 V3.2 的 10%", status: done }
+  - { date: "2026-09", label: "OpenAI GPT-6 系列上下文 105 萬 Token，但超過 27.2 萬 Token 的請求仍加價", status: done }
+  - { date: "2026-12", label: "BlueField-4 儲存平台預計 2026 年下半年問世（官方未給月份）", status: expected }
+  - { date: "2030", label: "「無限」長度上下文：Meta 提出的長期目標，未給時程（年份為本站示意）", status: speculative }
+signals:
+  - text: "OpenAI API 文件列出 GPT-6 Astra、GPT-6.1 Sol、GPT-6 Luna 的上下文視窗都是 105 萬 Token，最大輸出 12.8 萬 Token；超過 27.2 萬 Token 的請求，輸入單價加倍、輸出單價為 1.5 倍。"
+    date: "2026-09-03"
+    source: { title: "GPT-6 Astra Model", publisher: OpenAI API Docs, url: "https://developers.openai.com/api/docs/models/gpt-6-astra", type: docs, lang: en, accessed: "2026-10-16", note: "日期為 GPT-6 Astra 發表日；文件頁本身未標日期。GPT-6.1 Sol、GPT-6 Luna 的模型頁列有相同的長提示加價規則" }
+  - text: "DeepSeek-V4 支援 100 萬 Token；在 100 萬 Token 長度下，V4-Pro 每個 Token 的推論運算量只需 V3.2 的 27%，KV Cache 只需 10%。"
+    date: "2026-04-24"
+    source: { title: "DeepSeek-V4-Pro model card", publisher: "DeepSeek（Hugging Face）", url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro", type: docs, lang: en, published: "2026-04-24", accessed: "2026-10-16" }
+  - text: "輝達發表推論脈絡記憶體儲存平台，指出 KV Cache 無法長期存放在 GPU 上；宣稱每秒 Token 數與能源效率最高可達傳統儲存的 5 倍，相關平台預計 2026 年下半年推出。"
+    date: "2026-01-05"
+    source: { title: "NVIDIA BlueField-4 Powers New Class of AI-Native Storage Infrastructure for the Next Frontier of AI", publisher: NVIDIA, url: "https://nvidianews.nvidia.com/news/nvidia-bluefield-4-powers-new-class-of-ai-native-storage-infrastructure-for-the-next-frontier-of-ai", type: press-release, lang: en, published: "2026-01-05", accessed: "2026-10-16" }
+  - text: "Anthropic 的上下文編輯在 100 輪網頁搜尋測試中減少 84% 的 Token 用量；搭配記憶工具，內部 Agent 搜尋評測表現提升 39%。"
+    date: "2025-09-29"
+    source: { title: "Managing context on the Claude Developer Platform", publisher: Anthropic, url: "https://claude.com/blog/context-management", type: company-site, lang: en, published: "2025-09-29", accessed: "2026-10-16" }
+  - text: "Claude 的跨對話記憶從 Team 與 Enterprise 方案擴大到 Pro 與 Max 個人方案，並提供不寫入記憶的無痕對話。"
+    date: "2025-10-23"
+    source: { title: "Bringing memory to Claude", publisher: Anthropic, url: "https://claude.com/blog/memory", type: company-site, lang: en, published: "2025-09-11", accessed: "2026-10-16", note: "原文 2025-09-11 發表，2025-10-23 更新" }
+counterpoints:
+  - "上下文腐化：Chroma 測試 18 個主流模型，發現即使是簡單任務，輸入越長表現越不穩定；在 LongMemEval 對話問答中，只給相關片段的短提示（約 300 Token）明顯優於整段約 11.3 萬 Token 的完整提示。"
+  - "標示長度不等於有效長度：NoLiMa 研究測試 13 個宣稱支援至少 12.8 萬 Token 的模型，題目改成需要語意聯想而非字面比對後，有 11 個在 3.2 萬 Token 時就跌到短文本表現的一半以下，GPT-4o 從約 99% 降到約 70%。"
+  - "成本與硬體負擔：KV Cache 隨上下文長度增加，輝達表示它無法長期存放在 GPU 上，需要新的儲存層；不少模型仍對長提示加價，例如 OpenAI GPT-6 系列超過 27.2 萬 Token 的請求輸入單價加倍，Gemini 3.1 Pro 預覽版超過 20 萬 Token 的輸入價格從每百萬 2 美元變為 4 美元。"
+  - "長不一定好：Anthropic 自己的內部評測顯示，主動清掉過時的工具結果反而讓 Agent 表現提升；檢索增強生成（RAG）與上下文工程仍是必要工具，而不是被長上下文取代。"
+  - "記憶的隱私與控制：跨對話記憶多採選擇性開啟，並提供無痕對話與企業管理員關閉選項，顯示使用者與企業對記憶內容仍有疑慮。"
+relatedSegments: [foundation-models, memory-storage, ai-accelerators, cloud-neocloud, devtools-data-mlops]
+relatedCompanies: [anthropic, openai, alphabet, meta, deepseek, nvidia, vast-data, pure-storage, ddn, weka]
+relatedModels: [anthropic-claude, openai-gpt, google-gemini, deepseek, meta-muse-llama]
+relatedLearn: [tokens-and-embeddings, transformer-and-attention, inference-optimization, memory-and-hbm, rag-and-vector-search, agents-and-mcp]
+glossary: [context-window, token, kv-cache, attention, sparse-attention, rag, prompt-caching, hbm, agent, token-pricing]
+sources:
+  - key: claude-21
+    title: "Introducing Claude 2.1"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/claude-2-1"
+    type: press-release
+    lang: en
+    published: "2023-11-21"
+    accessed: "2026-10-16"
+    note: "20 萬 Token，約 15 萬個英文字或逾 500 頁"
+  - key: gemini-15
+    title: "Our next-generation model: Gemini 1.5"
+    publisher: Google
+    url: "https://blog.google/technology/ai/google-gemini-next-generation-model-february-2024/"
+    type: company-site
+    lang: en
+    published: "2024-02-15"
+    accessed: "2026-10-16"
+    note: "標準 12.8 萬 Token，限量預覽 100 萬，研究測試達 1,000 萬；Gemini 1.0 為 3.2 萬；大海撈針測試在 100 萬 Token 內找到目標的比例為 99%；100 萬 Token 約等於 1 小時影片、11 小時音訊、逾 3 萬行程式碼或逾 70 萬個英文字"
+  - key: gemini-2m
+    title: "Gemini 1.5 Pro 2M context window, code execution capabilities, and Gemma 2 are available today"
+    publisher: Google for Developers
+    url: "https://developers.googleblog.com/en/new-features-for-the-gemini-api-and-google-ai-studio/"
+    type: company-site
+    lang: en
+    published: "2024-06-27"
+    accessed: "2026-10-16"
+    note: "200 萬 Token 上下文開放所有開發者；同時在 Gemini API 推出上下文快取以降低重複輸入的成本"
+  - key: llama4
+    title: "The Llama 4 herd: The beginning of a new era of natively multimodal AI innovation"
+    publisher: Meta AI
+    url: "https://ai.meta.com/blog/llama-4-multimodal-intelligence/"
+    type: company-site
+    lang: en
+    published: "2025-04-05"
+    accessed: "2026-10-16"
+    note: "Llama 4 Scout：1,000 萬 Token 上下文、170 億啟用參數、1,090 億總參數；預訓練與後訓練使用 25.6 萬 Token 長度；iRoPE 架構，長期目標是支援「無限」上下文"
+  - key: claude-1m
+    title: "Claude Sonnet 4 now supports 1M tokens of context"
+    publisher: Anthropic
+    url: "https://claude.com/blog/1m-context"
+    type: press-release
+    lang: en
+    published: "2025-08-12"
+    accessed: "2026-10-16"
+    note: "上下文擴大 5 倍至 100 萬 Token（公開測試版）；20 萬 Token 以內每百萬輸入 3 美元、輸出 15 美元，超過則為 6 美元與 22.50 美元；可容納逾 7.5 萬行程式碼"
+  - key: claude-pricing
+    title: "Pricing"
+    publisher: Anthropic（Claude Docs）
+    url: "https://platform.claude.com/docs/en/about-claude/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "Claude 4.6 以後的模型（Haiku 5.5 除外）與 Mythos Preview 的 100 萬 Token 上下文以標準價計費，9,000 Token 與 90 萬 Token 的請求每 Token 單價相同"
+  - key: claude-models
+    title: "Models overview"
+    publisher: Anthropic（Claude Docs）
+    url: "https://platform.claude.com/docs/en/about-claude/models/overview"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "Claude Fable 5.1、Opus 5.5、Sonnet 5.5 的上下文視窗皆為 100 萬 Token，最大輸出 12.8 萬 Token；Claude Opus 4.7 起的分詞器下，100 萬 Token 約為 55.5 萬個英文字（先前約 75 萬字）"
+  - key: openai-models
+    title: "Models"
+    publisher: OpenAI API Docs
+    url: "https://developers.openai.com/api/docs/models"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "GPT-6 Astra、GPT-6.1 Sol、GPT-6 Luna：上下文 105 萬 Token、最大輸出 12.8 萬 Token"
+  - key: openai-gpt6-astra
+    title: "GPT-6 Astra Model"
+    publisher: OpenAI API Docs
+    url: "https://developers.openai.com/api/docs/models/gpt-6-astra"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "上下文 1,050,000 Token；超過 27.2 萬 Token 輸入的請求，整個請求以 2 倍輸入與快取單價、1.5 倍輸出單價計費；GPT-6.1 Sol、GPT-6 Luna 模型頁列有相同規則"
+  - key: openai-gpt41
+    title: "GPT-4.1 Model"
+    publisher: OpenAI API Docs
+    url: "https://developers.openai.com/api/docs/models/gpt-4.1"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "上下文 1,047,576 Token、最大輸出 32,768 Token；快照版本 gpt-4.1-2025-04-14"
+  - key: gemini-pricing
+    title: "Gemini Developer API pricing"
+    publisher: Google AI for Developers
+    url: "https://ai.google.dev/gemini-api/docs/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "Gemini 3.1 Pro 預覽版：20 萬 Token 以內每百萬輸入 2 美元、輸出 12 美元，超過則為 4 與 18 美元；Gemini 2.5 Pro 為 1.25／10 美元，超過 20 萬 Token 則為 2.50／15 美元"
+  - key: gemini-31-pro
+    title: "Gemini 3.1 Pro Preview"
+    publisher: Google AI for Developers
+    url: "https://ai.google.dev/gemini-api/docs/models/gemini-3.1-pro-preview"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "輸入上限 1,048,576 Token、輸出上限 65,536 Token；頁面標示最新更新為 2026 年 2 月"
+  - key: argon-blog
+    title: "Gemini 4 Argon: our next era of frontier intelligence"
+    publisher: Google
+    url: "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/"
+    type: press-release
+    lang: en
+    published: "2026-09-30"
+    accessed: "2026-10-16"
+    note: "輸出上限從 6.4 萬 Token 提高到 100 萬 Token；先透過 Fairwind 計畫提供給受信任的資安防禦者，之後才開放付費 API 客戶與 Google AI Ultra 訂閱者"
+  - key: deepseek-v4
+    title: "DeepSeek-V4-Pro model card"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-16"
+    note: "V4-Pro（1.6 兆總參數、490 億啟用）與 V4-Flash 皆支援 100 萬 Token；混合壓縮稀疏注意力（CSA）與高度壓縮注意力（HCA）；100 萬 Token 時推論運算量為 V3.2 的 27%、KV Cache 為 10%"
+  - key: chroma-rot
+    title: "Context Rot: How Increasing Input Tokens Impacts LLM Performance"
+    publisher: Chroma
+    url: "https://www.trychroma.com/research/context-rot"
+    type: paper
+    lang: en
+    published: "2025-07-14"
+    accessed: "2026-10-16"
+    note: "測試 18 個模型；LongMemEval 306 題，完整提示平均約 11.3 萬 Token、聚焦提示約 300 Token"
+  - key: nolima
+    title: "NoLiMa: Long-Context Evaluation Beyond Literal Matching"
+    publisher: "arXiv（Modarressi et al.）"
+    url: "https://arxiv.org/abs/2502.05167"
+    type: paper
+    lang: en
+    published: "2025-02-07"
+    accessed: "2026-10-16"
+    note: "13 個宣稱支援至少 12.8 萬 Token 的模型，3.2 萬 Token 時有 11 個跌到短文本基準的 50% 以下；GPT-4o 從約 99% 降到約 70%"
+  - key: claude-context-mgmt
+    title: "Managing context on the Claude Developer Platform"
+    publisher: Anthropic
+    url: "https://claude.com/blog/context-management"
+    type: company-site
+    lang: en
+    published: "2025-09-29"
+    accessed: "2026-10-16"
+    note: "上下文編輯：接近上限時自動清除過時的工具呼叫與結果；記憶工具：以檔案形式把資訊存在上下文之外。內部 Agent 搜尋評測：兩者合用提升 39%、只用上下文編輯提升 29%；100 輪網頁搜尋測試減少 84% Token"
+  - key: claude-memory
+    title: "Bringing memory to Claude"
+    publisher: Anthropic
+    url: "https://claude.com/blog/memory"
+    type: company-site
+    lang: en
+    published: "2025-09-11"
+    accessed: "2026-10-16"
+    note: "2025-09-11 起 Team 與 Enterprise；2025-10-23 擴大到 Pro 與 Max；可選擇開啟，提供無痕對話，企業管理員可關閉"
+  - key: verge-chatgpt-memory
+    title: "ChatGPT will now remember your old conversations"
+    publisher: The Verge
+    url: "https://www.theverge.com/news/646968/openai-chatgpt-long-term-memory-upgrade"
+    type: news
+    lang: en
+    published: "2025-04-11"
+    accessed: "2026-10-16"
+    note: "以 curl 讀取原文；長期記憶可參考使用者所有過往對話（reference chat history）。OpenAI 官網讀取遭拒（403）"
+  - key: nvidia-icms
+    title: "NVIDIA BlueField-4 Powers New Class of AI-Native Storage Infrastructure for the Next Frontier of AI"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-bluefield-4-powers-new-class-of-ai-native-storage-infrastructure-for-the-next-frontier-of-ai"
+    type: press-release
+    lang: en
+    published: "2026-01-05"
+    accessed: "2026-10-16"
+    note: "最高 5 倍每秒 Token 數與 5 倍能源效率（相對傳統儲存）；首批合作夥伴包括 AIC、Cloudian、DDN、Dell、HPE、Hitachi Vantara、IBM、Nutanix、Pure Storage、Supermicro、VAST Data、WEKA；預計 2026 年下半年推出"
+published: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: trends-08
+  checkedBy: "trends-08-check"
+  checkedOn: "2026-10-06"
+  notes: "資料基準日 2026-10-06，來源實際讀取日為 2026-10-16。各家文件頁（Claude、OpenAI、Gemini 的模型與定價頁）沒有標示日期，讀取的是 2026-10-16 的版本；內文只引用 2026-10-06 以前已發表的模型。ChatGPT 記憶功能的時間取自 The Verge 報導，OpenAI 官網讀取遭拒。查核（trends-08-check）：Gemini API 更新紀錄顯示 Gemini 4 Argon 於 2026-10-13 才在 API 正式開放，晚於基準日，因此改以 2026-09-30 的 Google 發表文說明其 100 萬 Token 輸出上限，Google 約 100 萬 Token 的上下文改引 Gemini 3.1 Pro 預覽版（2026 年 2 月）；補充 OpenAI GPT-4.1（2025 年 4 月）已達約 105 萬 Token，以及 GPT-6 系列超過 27.2 萬 Token 仍加價，修正「長上下文加價普遍取消」的印象；長提示加價範例由 Gemini 2.5 Pro 改為較新的 Gemini 3.1 Pro。"
+---
+
+## 趨勢摘要
+
+一句話：<Term id="context-window">上下文視窗</Term>是模型一次能「看」進去的內容長度，以 <Term id="token">Token</Term> 計算；模型記憶則是讓 AI 跨越不同對話，記得使用者與工作進度。兩者合起來，決定 AI 能不能讀完一整個程式碼庫、一疊合約，或接續昨天沒做完的任務。
+
+**已發生的事實**：2023 年 11 月，Claude 2.1 的 20 萬 Token 還被稱為業界領先<Cite k="claude-21" />；到 2026 年，Anthropic、OpenAI、Google、DeepSeek 的旗艦模型都提供約 100 萬 Token<Cite k="claude-models" /><Cite k="openai-models" /><Cite k="gemini-31-pro" /><Cite k="deepseek-v4" />，Anthropic 也把整個 100 萬 Token 改以標準價計費<Cite k="claude-pricing" />。
+
+**仍屬預測的部分**：模型能否真正「用好」這麼長的內容仍有爭議；Meta 提出的「無限」上下文只是長期目標，沒有時程<Cite k="llama4" />。
+
+## 為什麼重要
+
+上下文變長，改變的是 AI 的工作方式。Google 在 2024 年 2 月說明，100 萬 Token 約等於 1 小時影片、11 小時音訊或逾 3 萬行程式碼<Cite k="gemini-15" />；Anthropic 在 2025 年 8 月推出 100 萬 Token 測試版時，也強調能一次放進逾 7.5 萬行程式碼<Cite k="claude-1m" />。這讓程式 <Term id="agent">Agent</Term> 可以先讀懂整個專案再動手。
+
+<BarChart title="代表性模型的上下文視窗上限" unit="萬個 Token" data={[{ label: "Claude 2.1（2023-11）", value: 20 }, { label: "Gemini 1.5 Pro 預覽（2024-02）", value: 100 }, { label: "Gemini 1.5 Pro（2024-06）", value: 200 }, { label: "GPT-4.1（2025-04）", value: 104.8 }, { label: "Claude Sonnet 4 測試版（2025-08）", value: 100 }, { label: "DeepSeek-V4（2026-04）", value: 100 }, { label: "GPT-6 系列（2026-09）", value: 105 }]} source={["claude-21", "gemini-15", "gemini-2m", "openai-gpt41", "claude-1m", "deepseek-v4", "openai-models"]} keepOrder note="各家宣稱的最大值，不代表能有效利用的長度。Llama 4 Scout 標示 1,000 萬 Token，為開放權重模型的特例，未列入圖中。" />
+
+從圖中可以看到，旗艦模型在 2024 年就摸到 100 萬到 200 萬 Token，之後的進步重點轉向「便宜」與「好用」。2025 年 8 月，Claude 超過 20 萬 Token 的輸入要付兩倍價格<Cite k="claude-1m" />；現在 Claude 4.6 以後的模型，處理 90 萬 Token 與 9,000 Token 的每 Token 單價相同<Cite k="claude-pricing" />。不過並非各家都跟進：OpenAI 的 GPT-6 系列超過 27.2 萬 Token 的請求，輸入單價仍要加倍<Cite k="openai-gpt6-astra" />。
+
+<Callout type="analogy" title="生活化比喻">
+上下文視窗像辦公桌的桌面，記憶則像抽屜與筆記本。桌面越大，能同時攤開的文件越多；但文件堆太多，人也會看漏重點。真正好用的助理，要懂得把暫時用不到的東西收進抽屜，需要時再拿出來。
+</Callout>
+
+## 關鍵驅動力
+
+**一、注意力機制的效率改良。** 標準<Term id="attention">注意力</Term>的運算量會隨長度快速增加，各家因此改用<Term id="sparse-attention">稀疏注意力</Term>等設計。DeepSeek-V4 以壓縮稀疏注意力等混合架構，在 100 萬 Token 時每個 Token 的推論運算量只需 V3.2 的 27%，<Term id="kv-cache">KV Cache</Term> 只需 10%<Cite k="deepseek-v4" />。
+
+**二、快取與計價調整。** Google 在 2024 年 6 月開放 200 萬 Token 時，同步推出上下文快取，降低重複輸入的成本<Cite k="gemini-2m" />；<Term id="prompt-caching">提示快取</Term>加上取消長上下文加價，讓<Term id="token-pricing">Token 計價</Term>下的長文件應用更省錢<Cite k="claude-pricing" />。
+
+**三、產品加入跨對話記憶。** ChatGPT 在 2024 年已推出只保留少量資訊的記憶功能，2025 年 4 月進一步參考使用者所有過往對話<Cite k="verge-chatgpt-memory" />；Claude 在 2025 年 9 月替 Team 與 Enterprise 方案加入記憶，10 月擴大到 Pro 與 Max 個人方案<Cite k="claude-memory" />。開發者端，Anthropic 在 2025 年 9 月底推出上下文編輯與記憶工具，讓 Agent 把資訊存在上下文之外<Cite k="claude-context-mgmt" />。
+
+**四、輸出也在變長。** Google 在 2026 年 9 月 30 日發表的 Gemini 4 Argon，把輸出上限從 6.4 萬 Token 提高到 100 萬 Token，先提供給受信任的資安防禦者使用<Cite k="argon-blog" />；Claude 與 GPT-6 系列的最大輸出則是 12.8 萬 Token<Cite k="claude-models" /><Cite k="openai-models" />。長輸出讓模型能一次產生整份報告或大型程式修改，但也讓解碼時間與成本更難預估。
+
+**五、硬體開始為「脈絡」設計儲存層。** 輝達在 2026 年 1 月發表以 BlueField-4 為基礎的推論脈絡記憶體儲存平台，理由是 KV Cache 無法長期放在 GPU 上，多輪對話的 Agent 需要專用的脈絡儲存<Cite k="nvidia-icms" />。
+
+<DeepDive title="深入一點：為什麼長上下文吃記憶體">
+模型產生每個新 Token 時，都要回頭參考前面所有 Token 的「鍵」與「值」向量。為了不每次重算，推論系統把它們存成 KV Cache，大小大致與上下文長度成正比。一段 100 萬 Token 的對話，KV Cache 可能占掉大量 GPU 上的 <Term id="hbm">HBM</Term>，限制同時服務的使用者數。
+
+業界的對策分三層：一是從模型下手，壓縮或稀疏化注意力，例如 DeepSeek-V4 在 100 萬 Token 時把 KV Cache 降到 V3.2 的 10%<Cite k="deepseek-v4" />；二是快取重用，讓相同的前綴不必重算<Cite k="gemini-2m" />；三是把 KV Cache 搬到 HBM 之外的儲存層，例如輝達與 DDN、Pure Storage、VAST Data、WEKA 等合作夥伴的脈絡記憶體儲存平台<Cite k="nvidia-icms" />。
+</DeepDive>
+
+## 時間表與里程碑
+
+| 時間 | 事件 | 性質 |
+|---|---|---|
+| 2024 年 2–6 月 | Gemini 1.5 Pro：100 萬 Token 預覽，後開放 200 萬<Cite k="gemini-15" /><Cite k="gemini-2m" /> | 已發生 |
+| 2025 年 4 月 | GPT-4.1 約 105 萬 Token<Cite k="openai-gpt41" />；Llama 4 Scout 標示 1,000 萬 Token<Cite k="llama4" /> | 已發生 |
+| 2025 年 8–10 月 | Claude 100 萬 Token 測試版、記憶功能與記憶工具<Cite k="claude-1m" /><Cite k="claude-memory" /> | 已發生 |
+| 2026 年 1 月 | 輝達脈絡記憶體儲存平台<Cite k="nvidia-icms" /> | 已發生 |
+| 2026 年 4–9 月 | DeepSeek-V4、GPT-6 系列等旗艦模型約 100 萬 Token<Cite k="deepseek-v4" /><Cite k="openai-models" /> | 已發生 |
+| 2026 年下半年 | BlueField-4 儲存平台問世<Cite k="nvidia-icms" /> | 公司預期 |
+| 未定 | 「無限」上下文<Cite k="llama4" /> | 長期目標 |
+
+## 受影響的環節與公司
+
+<Scene3D id="hbm" variant="hierarchy" caption="記憶體階層：容量越大、延遲越高，KV Cache 正在往下層延伸" />
+
+- <SegmentChip id="foundation-models" />：<CompanyChip id="anthropic">Anthropic</CompanyChip>、<CompanyChip id="openai">OpenAI</CompanyChip>、<CompanyChip id="alphabet">Google</CompanyChip>、<CompanyChip id="deepseek">深度求索（DeepSeek）</CompanyChip>、<CompanyChip id="meta">Meta</CompanyChip>比拚的已不只是長度，而是長內容的準確度與價格。代表系列：<ModelChip id="anthropic-claude" />、<ModelChip id="openai-gpt" />、<ModelChip id="google-gemini" />、<ModelChip id="deepseek" />。
+- <SegmentChip id="memory-storage" />：KV Cache 推升 HBM 與高速儲存需求，<CompanyChip id="vast-data">VAST Data</CompanyChip>、<CompanyChip id="pure-storage">Pure Storage</CompanyChip>、<CompanyChip id="ddn">DDN</CompanyChip>、<CompanyChip id="weka">WEKA</CompanyChip>都是輝達脈絡儲存平台的首批夥伴<Cite k="nvidia-icms" />；相關背景見<TrendLink id="memory-supercycle">記憶體超級循環</TrendLink>。
+- <SegmentChip id="ai-accelerators" />：<CompanyChip id="nvidia">輝達</CompanyChip>把 BlueField-4 資料處理器延伸到儲存端<Cite k="nvidia-icms" />。
+- <SegmentChip id="devtools-data-mlops" />：<Term id="rag">RAG</Term>、向量資料庫與上下文工程工具，從「補足短上下文」轉為「替長上下文挑重點」。
+
+## 反方觀點與風險
+
+- **上下文腐化**：Chroma 測試 18 個模型，輸入越長表現越不穩定；只給相關片段的短提示，明顯優於整段約 11.3 萬 Token 的完整對話紀錄<Cite k="chroma-rot" />。
+- **標示長度不等於有效長度**：NoLiMa 的 13 個長上下文模型中，有 11 個在 3.2 萬 Token 時就跌到短文本表現的一半以下，GPT-4o 從約 99% 降到約 70%<Cite k="nolima" />。Llama 4 Scout 標示 1,000 萬 Token，但預訓練與後訓練使用的長度是 25.6 萬 Token，更長的部分仰賴模型的長度泛化能力<Cite k="llama4" />。
+- **成本仍在**：KV Cache 需要額外的記憶體與儲存<Cite k="nvidia-icms" />，不少模型仍對長提示加價，例如 OpenAI GPT-6 系列超過 27.2 萬 Token<Cite k="openai-gpt6-astra" />、Gemini 3.1 Pro 預覽版超過 20 萬 Token 的輸入單價都會加倍<Cite k="gemini-pricing" />。
+- **長不一定好**：Anthropic 的內部 Agent 搜尋評測中，主動清掉過時的工具結果，反而讓表現提升 29%<Cite k="claude-context-mgmt" />。
+- **記憶的隱私疑慮**：記憶功能多採選擇性開啟，並提供無痕對話與企業管理員關閉選項<Cite k="claude-memory" />。
+
+## 觀察指標
+
+- 長上下文評測（例如 NoLiMa 類型的語意檢索）分數是否追上宣稱長度<Cite k="nolima" />。
+- OpenAI、Google 等業者是否跟進取消長提示加價<Cite k="openai-gpt6-astra" /><Cite k="gemini-pricing" />。
+- BlueField-4 脈絡儲存平台的出貨時程與雲端採用<Cite k="nvidia-icms" />。
+- 每 100 萬 Token 所需的 KV Cache 與推論運算量是否持續下降<Cite k="deepseek-v4" />。
+- 跨對話記憶在企業方案的預設設定與相關隱私規範。
+
+延伸閱讀：<LearnLink id="transformer-and-attention">Transformer 與注意力機制</LearnLink>、<LearnLink id="memory-and-hbm">記憶體與 HBM</LearnLink>、<LearnLink id="rag-and-vector-search">RAG 與向量搜尋</LearnLink>。

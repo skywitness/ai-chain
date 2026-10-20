@@ -1,0 +1,229 @@
+---
+/**
+ * Compact list of model families (one row each: name, lab, flagship and one key figure), used
+ * where the full ModelFamilyCard would repeat cards already shown elsewhere on the page — e.g. the
+ * 多模態與機器人 section of /models/, next to its benchmark chart.
+ *
+ *   <ModelMiniList families={imageFamilies} />
+ *
+ * Families without a content entry keep their row with a calm 「內容整理中」 note.
+ */
+import Icon from '../ui/Icon.astro';
+import { formatDate } from '../../lib/format';
+import {
+  ORIGIN_LABELS,
+  STATUS_LABELS,
+  benchmarkInfo,
+  benchmarkMap,
+  formatPricePair,
+  formatScore,
+  kindColor,
+  pickBenchmark,
+  type FamilyView,
+} from './model-data';
+
+interface Props {
+  families: FamilyView[];
+  /** benchmark ids to try for the key figure (first hit wins) */
+  benchmarks?: readonly string[] | undefined;
+  class?: string | undefined;
+}
+const { families, benchmarks = [], class: className } = Astro.props;
+const bmap = benchmarkMap();
+const OPEN_SHORT: Record<string, string> = { closed: '封閉', restricted: '有條件開放', open: '開放權重', source: '完全開源' };
+
+const rows = families.map((f) => {
+  const fv = f.flagship;
+  let key: { label: string; value: string; note?: string } | undefined;
+  for (const id of benchmarks) {
+    const b = pickBenchmark(fv, id);
+    if (b) {
+      const info = benchmarkInfo(id, bmap);
+      key = { label: info.zh.replace(/（.*?）/g, ''), value: formatScore(b.score, info), note: b.date };
+      break;
+    }
+  }
+  if (!key && f.price) key = { label: '價格（入／出）', value: formatPricePair(f.price), note: '每百萬 tokens' };
+  if (!key && fv) key = { label: '狀態', value: STATUS_LABELS[fv.status] ?? fv.status, note: `${fv.released} 發表` };
+  return { f, fv, key };
+});
+---
+
+<ul class:list={['mml', className]} role="list">
+  {
+    rows.map(({ f, fv, key }) => (
+      <li class:list={['mml__row', { 'is-pending': !f.data }]} style={`--kind-c: ${kindColor(f.kind)}`}>
+        <div class="mml__main">
+          <a class="mml__name" href={f.href}>
+            {f.title}
+          </a>
+          <p class="mml__meta">
+            {f.labName}・{ORIGIN_LABELS[f.origin] ?? f.origin}
+            {f.data && f.opennessClass !== 'unknown' && <span class:list={['mml__open', `is-${f.opennessClass}`]}>{OPEN_SHORT[f.opennessClass]}</span>}
+          </p>
+          {fv ? (
+            <p class="mml__flag">
+              <span class="mml__flag-label">旗艦</span>
+              {fv.name}
+              <span class="mml__date">{formatDate(fv.released, 'ym-short')}</span>
+            </p>
+          ) : (
+            <p class="mml__pending">
+              <Icon name="clock" />
+              內容整理中
+            </p>
+          )}
+        </div>
+        {key && (
+          <p class="mml__key">
+            <span class="mml__key-label">{key.label}</span>
+            <strong>{key.value}</strong>
+            {key.note && <small>{key.note}</small>}
+          </p>
+        )}
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  @layer components {
+    .mml {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      margin: 0;
+      padding: 0;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      overflow: hidden;
+    }
+    .mml__row {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+      gap: var(--space-2) var(--space-4);
+      padding: var(--space-3) var(--space-4) var(--space-3) calc(var(--space-4) + 4px);
+      list-style: none;
+    }
+    .mml__row + .mml__row {
+      border-block-start: 1px solid var(--c-border);
+    }
+    .mml__row::before {
+      content: '';
+      position: absolute;
+      inset-block: var(--space-3);
+      inset-inline-start: 0;
+      inline-size: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--kind-c);
+    }
+    .mml__row:hover {
+      background: color-mix(in srgb, var(--kind-c) 5%, var(--c-bg-elev));
+    }
+    .mml__row.is-pending::before {
+      opacity: 0.4;
+    }
+    .mml__main {
+      display: grid;
+      gap: 0.15rem;
+      min-width: 0;
+    }
+    .mml__name {
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+      text-decoration: none;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .mml__name::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+    .mml__name:hover {
+      color: var(--c-link-hover);
+    }
+    .mml__row:has(.mml__name:focus-visible) {
+      outline: 2px solid var(--c-focus);
+      outline-offset: -2px;
+    }
+    .mml__name:focus-visible {
+      outline: none;
+    }
+    .mml__meta,
+    .mml__flag,
+    .mml__pending {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.15em 0.5em;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-muted);
+      line-height: 1.6;
+    }
+    .mml__flag {
+      color: var(--c-fg);
+      font-size: var(--fs-s);
+    }
+    .mml__flag-label {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      color: color-mix(in srgb, var(--kind-c) 50%, var(--c-fg));
+    }
+    .mml__date {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+    .mml__open {
+      padding: 0 0.45em;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-s);
+      color: var(--c-fg-subtle);
+      white-space: nowrap;
+    }
+    .mml__open.is-open,
+    .mml__open.is-restricted,
+    .mml__open.is-source {
+      color: var(--c-pos);
+      border-color: color-mix(in srgb, var(--c-pos) 35%, transparent);
+    }
+    .mml__pending {
+      align-items: center;
+      color: var(--c-fg-subtle);
+    }
+    .mml__key {
+      display: grid;
+      justify-items: end;
+      text-align: end;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.35;
+    }
+    .mml__key-label {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .mml__key strong {
+      font-size: var(--fs-m);
+    }
+    .mml__key small {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    @media (max-width: 479px) {
+      .mml__row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .mml__key {
+        justify-items: start;
+        text-align: start;
+        grid-auto-flow: column;
+        justify-content: start;
+        align-items: baseline;
+        gap: 0.5em;
+      }
+    }
+  }
+</style>

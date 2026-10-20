@@ -1,0 +1,58 @@
+---
+title: "如何解讀模型比較與評測"
+description: "看模型評測分數前要先確認的五件事：測什麼、誰測的、何時測的、人類偏好還是標準答案，以及實際使用成本；並說明本站模型星系三個座標的意義。"
+updated: "2026-10-06"
+sources:
+  - key: aa-method
+    title: "Artificial Analysis Intelligence Benchmarking Methodology"
+    publisher: Artificial Analysis
+    url: "https://artificialanalysis.ai/methodology/intelligence-benchmarking"
+    type: docs
+    lang: en
+    accessed: "2026-10-09"
+    note: "頁面標示 Intelligence Index v4.3.2，納入 10 項評測，依 Agent（30%）、程式（20%）、科學推理（20%）與一般（30%）四類加權，以英文文字評測為主"
+  - key: arena-how
+    title: "How Arena Works"
+    publisher: "Arena（原 LMArena）"
+    url: "https://arena.ai/how-it-works"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-09"
+    note: "原網址 lmarena.ai/how-it-works 目前轉址至此；對戰模式中使用者比較兩個匿名模型的回答並投票，投票後才揭曉模型名稱"
+  - key: arena-style
+    title: "Does style matter? Disentangling style and substance in Chatbot Arena"
+    publisher: LMSYS Org
+    url: "https://lmsys.org/blog/2024-08-28-style-control/"
+    type: other
+    lang: en
+    published: "2024-08-28"
+    accessed: "2026-10-06"
+    note: "Chatbot Arena 團隊分析回答長度與 Markdown 排版對投票的影響，並推出風格控制（style control）排名"
+  - key: openai-reasoning
+    title: "Reasoning models"
+    publisher: OpenAI
+    url: "https://developers.openai.com/api/docs/guides/reasoning"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "說明推理 Token 會占用上下文視窗，並以輸出 Token 計費"
+editorial:
+  status: fact-checked
+  author: pages
+  checkedBy: "pages-check"
+  checkedOn: "2026-10-06"
+---
+
+評測分數是模型能力在某一天、某一種設定下的快照，不是絕對排名。本站的模型頁會把每個分數連同測試日期、設定與出處一起列出。比較之前，建議先確認五件事：
+
+1. **測的是什麼？** 綜合指數把多項測驗合併成一個分數，例如 Artificial Analysis 智慧指數 v4.3.2 納入 10 項評測，分成 Agent、程式、科學推理與一般能力四類加權，而且以英文文字題為主<Cite k="aa-method" />。單項評測只測一種能力，例如研究所程度的科學問答，或修復真實程式錯誤。分數高的模型不一定在你的任務、你的語言上表現最好。
+2. **誰測的？** 實驗室自評通常使用對自己最有利的設定；第三方機構與排行榜用一致的方法重測，比較適合跨模型比較。本站分別標示「實驗室自評」「第三方」與「排行榜」。
+3. **何時測的？** 模型每隔幾個月就推出新版本，評測本身也會改版。兩個分數的日期相差超過 90 天時，頁面會加上提醒。舊評測若已接近滿分，或題目可能混進訓練資料，參考價值也會下降。
+4. **標準答案還是人類偏好？** 多數評測比對標準答案；競技場類排行榜則是讓使用者同時看兩個匿名模型的回答，再投票選出較好的一個<Cite k="arena-how" />。這反映的是使用者偏好，回答的長度與排版風格也可能影響投票，因此競技場另外提供控制風格因素後的排名<Cite k="arena-style" />。
+5. **實際要花多少錢？** API 價格以每百萬 Token 計，輸入與輸出分開計價。推理模型在回答前會先產生大量「思考」Token，這些 Token 通常也按輸出價格計費<Cite k="openai-reasoning" />，所以完成同一件事實際用掉的 Token 可能遠多於最後看到的答案；只看每百萬 Token 的牌價，容易低估實際成本。
+
+<Callout type="tip" title="模型星系的三個座標">
+綜合能力、成本指數與開放程度，是本站為了幫助理解而整理的定位，不是排行榜。成本指數以輸入與輸出 3 比 1 混合的牌價取對數換算；開放程度從完全封閉、開放權重到連訓練資料都公開分成數級。每個系列頁都會寫明座標的依據與日期。
+</Callout>
+
+想進一步了解評測方法與陷阱，可以讀 <LearnLink id="model-evaluation">模型評測：Benchmark、競技場與 Agent 評測</LearnLink>；想知道開放權重與封閉模型的差別，請見 <LearnLink id="open-vs-closed-models">開放權重 vs 封閉模型</LearnLink>。

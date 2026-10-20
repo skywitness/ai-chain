@@ -1,0 +1,416 @@
+---
+/**
+ * Client-side filter for /glossary/: text, category and level. Without JS the form stays hidden
+ * (`js-only`) and every term is visible. URL params ?q=&cat=&level= are kept in sync.
+ *
+ *   <GlossaryFilter categories={[{ id: 'memory', zh: '記憶體與儲存', count: 20 }]} total={299} />
+ *
+ * Works on any container that holds [data-term-block] articles (data-id, data-cat, data-level; the
+ * search text comes from data-id plus the text of [data-s] elements)
+ * inside [data-term-group] sections, and [data-cat-count="<id>"] counters.
+ * Each block's 「完整解釋」 <details data-term-more> is opened for deep links (#hbm), in-page term links
+ * and text searches that narrow to three terms or fewer; an optional [data-gl-expand] button anywhere
+ * on the page toggles all of them.
+ */
+import Icon from '../ui/Icon.astro';
+import { LEVELS } from '../../lib/collections';
+
+interface Props {
+  categories: ReadonlyArray<{ id: string; zh: string; count: number }>;
+  total: number;
+  class?: string | undefined;
+}
+const { categories, total, class: className } = Astro.props;
+---
+
+<form class:list={['gl-filter', 'js-only', className]} role="search" aria-label="篩選名詞" data-gl-filter>
+  <div class="gl-filter__field gl-filter__field--q">
+    <label for="gl-q" class="gl-filter__label">搜尋名詞</label>
+    <div class="gl-filter__search">
+      <Icon name="search" size="18px" class="gl-filter__icon" />
+      <input
+        id="gl-q"
+        name="q"
+        type="search"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="例如：HBM、先進封裝"
+        data-gl-q
+      />
+    </div>
+  </div>
+
+  <div class="gl-filter__field">
+    <label for="gl-cat" class="gl-filter__label">分類</label>
+    <div class="gl-filter__select">
+      <select id="gl-cat" name="cat" data-gl-cat>
+        <option value="">全部分類（{total}）</option>
+        {categories.map((c) => <option value={c.id}>{c.zh}（{c.count}）</option>)}
+      </select>
+      <Icon name="chevron-down" size="16px" class="gl-filter__chev" />
+    </div>
+  </div>
+
+  <fieldset class="gl-filter__field gl-filter__levels">
+    <legend class="gl-filter__label">難度</legend>
+    <div class="gl-seg" role="presentation">
+      <label class="gl-seg__opt">
+        <input type="radio" name="level" value="" checked data-gl-level />
+        <span>全部</span>
+      </label>
+      {
+        LEVELS.map((l) => (
+          <label class="gl-seg__opt" style={`--lv: ${l.color}`}>
+            <input type="radio" name="level" value={String(l.level)} data-gl-level />
+            <span>
+              <span class="gl-seg__dot" aria-hidden="true" />
+              {l.label}
+            </span>
+          </label>
+        ))
+      }
+    </div>
+  </fieldset>
+
+  <div class="gl-filter__foot">
+    <p class="gl-filter__count" aria-live="polite" data-gl-count>
+      共 {total} 個名詞
+    </p>
+    <button type="reset" class="gl-filter__reset" data-gl-reset hidden>清除篩選</button>
+  </div>
+</form>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-gl-filter]');
+  if (form) {
+    const q = form.querySelector<HTMLInputElement>('[data-gl-q]')!;
+    const cat = form.querySelector<HTMLSelectElement>('[data-gl-cat]')!;
+    const levels = [...form.querySelectorAll<HTMLInputElement>('[data-gl-level]')];
+    const count = form.querySelector<HTMLElement>('[data-gl-count]')!;
+    const reset = form.querySelector<HTMLButtonElement>('[data-gl-reset]')!;
+    const blocks = [...document.querySelectorAll<HTMLElement>('[data-term-block]')];
+    const groups = [...document.querySelectorAll<HTMLElement>('[data-term-group]')];
+    const empty = document.querySelector<HTMLElement>('[data-gl-empty]');
+    const catCounts = [...document.querySelectorAll<HTMLElement>('[data-cat-count]')];
+    const expand = document.querySelector<HTMLButtonElement>('[data-gl-expand]');
+    const mores = [...document.querySelectorAll<HTMLDetailsElement>('[data-term-more]')];
+    /** Open the 「完整解釋」 disclosure of the term block that holds `el` */
+    const openTerm = (el: Element | null | undefined) => {
+      const d = el?.closest('[data-term-block]')?.querySelector<HTMLDetailsElement>('[data-term-more]');
+      if (d) d.open = true;
+    };
+    const total = blocks.length;
+    const norm = (s: string) => s.normalize('NFKC').toLowerCase().trim();
+    // Search text per block: id + title, zh/en names, short and aliases ([data-s] elements)
+    const hays = new Map<HTMLElement, string>(
+      blocks.map((b) => [
+        b,
+        norm([b.dataset['id'] ?? '', ...[...b.querySelectorAll('[data-s]')].map((e) => e.textContent ?? '')].join(' ')),
+      ]),
+    );
+
+    const level = () => levels.find((l) => l.checked)?.value ?? '';
+
+    const apply = (sync = true) => {
+      const words = norm(q.value).split(/\s+/).filter(Boolean);
+      const c = cat.value;
+      const lv = level();
+      const perCat = new Map<string, number>();
+      let shown = 0;
+      for (const b of blocks) {
+        const hay = hays.get(b) ?? '';
+        const textOk = words.every((w) => hay.includes(w));
+        const lvOk = !lv || b.dataset['level'] === lv;
+        const catOk = !c || b.dataset['cat'] === c;
+        // per-category counts ignore the category choice so the nav shows where matches are
+        if (textOk && lvOk) perCat.set(b.dataset['cat'] ?? '', (perCat.get(b.dataset['cat'] ?? '') ?? 0) + 1);
+        const ok = textOk && lvOk && catOk;
+        b.hidden = !ok;
+        if (ok) shown++;
+      }
+      for (const g of groups) {
+        const any = g.querySelector('[data-term-block]:not([hidden])');
+        g.hidden = !any;
+      }
+      for (const el of catCounts) {
+        const n = perCat.get(el.dataset['catCount'] ?? '') ?? 0;
+        el.textContent = String(n);
+        el.closest<HTMLElement>('[data-cat-link]')?.toggleAttribute('data-empty', n === 0);
+      }
+      const filtered = words.length > 0 || !!c || !!lv;
+      count.textContent = filtered ? `顯示 ${shown}／${total} 個名詞` : `共 ${total} 個名詞`;
+      reset.hidden = !filtered;
+      if (empty) empty.hidden = shown > 0;
+      // A text search that narrows to a few terms shows their full explanation right away
+      if (words.length > 0 && shown > 0 && shown <= 3) {
+        for (const b of blocks) if (!b.hidden) openTerm(b);
+      }
+      if (sync) {
+        try {
+          const url = new URL(window.location.href);
+          const set = (k: string, v: string) => (v ? url.searchParams.set(k, v) : url.searchParams.delete(k));
+          set('q', q.value.trim());
+          set('cat', c);
+          set('level', lv);
+          history.replaceState(history.state, '', url);
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+
+    const clear = () => {
+      q.value = '';
+      cat.value = '';
+      levels.forEach((l) => (l.checked = l.value === ''));
+      apply();
+    };
+
+    // Restore from the URL
+    try {
+      const p = new URL(window.location.href).searchParams;
+      q.value = p.get('q') ?? '';
+      const c = p.get('cat') ?? '';
+      if ([...cat.options].some((o) => o.value === c)) cat.value = c;
+      const lv = p.get('level') ?? '';
+      levels.forEach((l) => (l.checked = l.value === lv));
+      if (!levels.some((l) => l.checked)) levels[0]!.checked = true;
+    } catch {
+      /* ignore */
+    }
+
+    // A deep link (#hbm) must never land on a hidden term. On first load the jump is instant: the
+    // page is very long, and the site-wide smooth scrolling would otherwise animate through it.
+    const reveal = (initial = false) => {
+      let id = '';
+      try {
+        id = decodeURIComponent(window.location.hash.slice(1));
+      } catch {
+        return;
+      }
+      if (!id) return;
+      const target = document.getElementById(id);
+      if (!target) return;
+      const hidden = !!target.closest<HTMLElement>('[data-term-block]')?.hidden;
+      if (hidden) clear();
+      openTerm(target);
+      if (initial || hidden) target.scrollIntoView({ behavior: 'instant', block: 'start' });
+    };
+
+    let t = 0;
+    q.addEventListener('input', () => {
+      window.clearTimeout(t);
+      t = window.setTimeout(() => apply(), 120);
+    });
+    cat.addEventListener('change', () => apply());
+    levels.forEach((l) => l.addEventListener('change', () => apply()));
+    form.addEventListener('submit', (e) => e.preventDefault());
+    form.addEventListener('reset', (e) => {
+      e.preventDefault();
+      clear();
+      q.focus();
+    });
+    document.querySelectorAll<HTMLButtonElement>('[data-gl-clear]').forEach((b) =>
+      b.addEventListener('click', () => {
+        clear();
+        q.focus();
+      }),
+    );
+    // In-page links (related terms, category list, permalinks): clear the filters when the target is
+    // filtered out, open its 「完整解釋」, and make long jumps instant, since the site-wide smooth
+    // scrolling would otherwise animate through thousands of pixels of terms.
+    document.addEventListener('click', (e) => {
+      const a = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>('a[href^="#"]') : null;
+      if (!a) return;
+      let target: HTMLElement | null = null;
+      try {
+        target = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+      } catch {
+        return;
+      }
+      if (!target) return;
+      if (target.closest<HTMLElement>('[data-term-block]')?.hidden) clear();
+      openTerm(target);
+      if (Math.abs(target.getBoundingClientRect().top) > window.innerHeight * 2) {
+        const html = document.documentElement;
+        html.style.scrollBehavior = 'auto';
+        window.setTimeout(() => html.style.removeProperty('scroll-behavior'), 50);
+      }
+    });
+    // 展開／收合全部解釋
+    const syncExpand = () => {
+      if (expand) expand.textContent = mores.length > 0 && mores.every((d) => d.open) ? '收合全部解釋' : '展開全部解釋';
+    };
+    expand?.addEventListener('click', () => {
+      const open = !mores.every((d) => d.open);
+      mores.forEach((d) => (d.open = open));
+      syncExpand();
+    });
+    document.addEventListener('toggle', syncExpand, true);
+    window.addEventListener('hashchange', () => reveal());
+
+    apply(false);
+    reveal(true);
+  }
+</script>
+
+<style>
+  @layer components {
+    .gl-filter {
+      display: grid;
+      gap: var(--space-4);
+      padding: var(--space-5);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      box-shadow: var(--shadow-1);
+    }
+    .gl-filter__field {
+      display: grid;
+      gap: var(--space-2);
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+    .gl-filter__label {
+      padding: 0;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--c-fg-muted);
+    }
+    .gl-filter__search,
+    .gl-filter__select {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .gl-filter__search :global(.gl-filter__icon) {
+      position: absolute;
+      inset-inline-start: 0.8rem;
+      color: var(--c-fg-subtle);
+      pointer-events: none;
+    }
+    .gl-filter__select :global(.gl-filter__chev) {
+      position: absolute;
+      inset-inline-end: 0.8rem;
+      color: var(--c-fg-subtle);
+      pointer-events: none;
+    }
+    .gl-filter input[type='search'],
+    .gl-filter select {
+      inline-size: 100%;
+      min-height: var(--tap);
+      border: 1px solid var(--c-border-strong);
+      border-radius: var(--radius-m);
+      background: var(--c-bg);
+      color: var(--c-fg);
+      font: inherit;
+      font-size: var(--fs-m);
+    }
+    .gl-filter input[type='search'] {
+      padding: 0.4em 0.8em 0.4em 2.5rem;
+    }
+    .gl-filter select {
+      appearance: none;
+      padding: 0.4em 2.4rem 0.4em 0.8em;
+      font-size: var(--fs-s);
+      cursor: pointer;
+    }
+    .gl-filter input[type='search']::placeholder {
+      color: var(--c-fg-subtle);
+      opacity: 1;
+    }
+    .gl-filter input:focus-visible,
+    .gl-filter select:focus-visible {
+      outline: 2px solid var(--c-focus);
+      outline-offset: 1px;
+      border-color: var(--c-focus);
+    }
+
+    .gl-seg {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 3px;
+      padding: 3px;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-sunken);
+    }
+    .gl-seg__opt {
+      position: relative;
+      display: block;
+    }
+    .gl-seg__opt input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+    .gl-seg__opt > span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35em;
+      min-height: 2.5rem;
+      padding-inline: 0.3em;
+      border-radius: calc(var(--radius-m) - 2px);
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      white-space: nowrap;
+      transition:
+        background-color var(--dur-1) ease,
+        color var(--dur-1) ease;
+    }
+    .gl-seg__dot {
+      inline-size: 0.5em;
+      block-size: 0.5em;
+      border-radius: 50%;
+      background: var(--lv);
+    }
+    .gl-seg__opt:hover > span {
+      color: var(--c-fg);
+    }
+    .gl-seg__opt input:checked + span {
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      font-weight: var(--fw-semibold);
+      box-shadow: var(--shadow-1);
+    }
+    .gl-seg__opt input:focus-visible + span {
+      outline: 2px solid var(--c-focus);
+      outline-offset: 1px;
+    }
+
+    .gl-filter__foot {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      padding-block-start: var(--space-3);
+      border-block-start: 1px solid var(--c-border);
+    }
+    .gl-filter__count {
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+      font-variant-numeric: tabular-nums;
+    }
+    .gl-filter__reset {
+      min-height: 2.25rem;
+      padding: 0 0.85em;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-pill);
+      background: transparent;
+      color: var(--c-link);
+      font-size: var(--fs-s);
+    }
+    .gl-filter__reset:hover {
+      border-color: var(--c-border-strong);
+      background: var(--c-hover);
+    }
+  }
+</style>

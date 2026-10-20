@@ -1,0 +1,317 @@
+---
+title: "Google Veo／Gemini Omni 影片"
+family: "Veo / Gemini Omni"
+kind: video
+lab: alphabet
+labName: "Google DeepMind"
+labUnit: google-deepmind
+origin: US
+summary: "Google DeepMind 的影片生成模型家族。Veo 系列（Veo 2、Veo 3、Veo 3.1）生成數秒長的短片，Veo 3 起以潛在擴散技術同時生成畫面與原生音訊；2026-05-19 發表的 Gemini Omni Flash 把 Gemini 的多模態理解與影片生成結合，可接受文字、圖片、音訊與影片混合參考，並以對話逐步編輯影片。2026-08-27 起 Gemini Omni 1.1 Flash 在 Gemini API 正式上線，成為 Google 建議的預設影片生成模型。"
+strengths:
+  - "畫面與對白、音效、環境音一次生成：Veo 3（2025-05）起支援原生音訊，Omni Flash 延續此能力。"
+  - "Omni Flash 可多輪對話編輯影片（換物件、換場景、改鏡頭角度），並能混合文字、圖片、音訊與影片作為參考；2026-10-06 讀取的 Arena 文生影片榜上，Omni 1.1 Flash 排名第一（與第 2–4 名的信賴區間重疊）。"
+  - "控制工具齊全：Veo 3.1 支援最多 3 張參考圖、首尾影格、場景延伸，輸出最高 4K；Omni 1.1 Flash 支援延伸、首尾影格插補與 360p 至 4K 解析度。"
+  - "價格層級完整：Veo 3.1 Lite 720p 每秒 0.05 美元起，Omni Flash 以 720p 換算約每秒 0.10 美元。"
+  - "與 Gemini App、Google Flow、YouTube Shorts、Gemini API 與 Google Cloud 企業平台整合，輸出均嵌入 SynthID 浮水印。"
+weaknesses:
+  - "單段影片短：Veo 3.1 為 4／6／8 秒，Omni Flash 為 3–10 秒；Omni 1.1 每次可延伸 10 秒、累計最長 40 秒，更長的內容仍需剪接。"
+  - "在 Artificial Analysis 文生影片榜（含音訊，2026-10-06）上，Omni 1.1 Flash 排第 8、Veo 3.1 排第 18，落後 Wan 3.0、Seedance 2.5、MiniMax H3 等模型。"
+  - "版本汰換快：Gemini API 上的 Veo 2、Veo 3 已於 2026-06-30 停止服務，Veo 3.1 預覽版排定 2026-10-22 停止，整合者需頻繁遷移。"
+  - "封閉權重、無法自行部署或微調；Omni Flash 的 1080p 與 4K 以放大方式產生，改變人物說話內容的編輯功能目前受限。"
+bestFor:
+  - "社群短影音、廣告素材的快速生成與多輪修改"
+  - "分鏡、前期視覺化（previs）與概念片"
+  - "需要對白與音效同步的短片"
+  - "已使用 Gemini API 或 Google Cloud 的企業影片生成管線"
+positioning:
+  capability: 86
+  costIndex: 62
+  openness: 0
+  method: computed
+  asOf: "2026-10-06"
+  note: "capability 以旗艦 Gemini Omni 1.1 Flash 在 AA-Video-T2V v2.0（含音訊）榜的 Elo 1,113 做最小—最大正規化：(1113−838)÷(1156−838)×100≈86（榜上最低 838、最高 1,156，2026-10-06 讀取）；同日讀取的 Arena 文生影片榜則居第 1。costIndex 以 Omni 1.1 Flash 官方定價（輸入每百萬 tokens 1.50 美元、影片輸出 17.50 美元）按輸入：輸出 3：1 計算混合價 5.50 美元，再以 $0.05→0、$100→100 對數換算約 62；影片生成以輸出 tokens 為主，若只看輸出價約為 77。Veo 系列以每秒計價，不納入計算。全系列封閉權重，openness 為 0。"
+versions:
+  - id: veo-2
+    name: "Veo 2"
+    released: "2025-04-09"
+    status: retired
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image]
+    modalitiesOut: [video]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "2024 年 12 月發表，支援 4K 並改善物理理解，但沒有音訊；2025-04-09 以 veo-2.0-generate-001 在 Gemini API 正式上線（GA），同月登上 Gemini App。Gemini API 版本已於 2026-06-30 停止服務。"
+  - id: veo-3
+    name: "Veo 3／Veo 3 Fast"
+    released: "2025-05-20"
+    status: retired
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: diffusion
+    modalitiesIn: [text, image]
+    modalitiesOut: [video, audio]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "2025-05-20 於 Google I/O 發表，首度原生生成對白、音效與環境音。Gemini API 預覽 2025-07-17，Veo 3 Fast 與圖生影片 2025-07-31 上線，2025-09-09 GA。模型卡說明採用潛在擴散（latent diffusion），同時對音訊與時空影片潛在表示進行擴散。Gemini API 的 veo-3.0 系列已於 2026-06-30 停止服務。"
+  - id: veo-3-1
+    name: "Veo 3.1／Veo 3.1 Fast"
+    released: "2025-10-15"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: diffusion
+    modalitiesIn: [text, image]
+    modalitiesOut: [video, audio]
+    reasoning: none
+    availability: [api, chat-app, cloud-marketplace]
+    notes: "2025-10-15 在 Gemini API 以預覽推出，新增影片延伸、最多 3 張參考圖、首尾影格控制，片長 4／6／8 秒；2025-11-17 在 Google Cloud 的 Gemini Enterprise Agent Platform GA；2026-01-13 加入 4K 輸出。依每秒計價（不適用每百萬 tokens 欄位）：標準版 720p／1080p 每秒 0.40 美元、4K 每秒 0.60 美元；Fast 版 720p 每秒 0.10 美元、1080p 每秒 0.12 美元、4K 每秒 0.30 美元。Gemini API 預覽版排定 2026-10-22 停止，官方建議改用 gemini-omni-1.1-flash；企業平台 GA 版支援終止日為 2026-11-17 或之後。"
+    benchmarks:
+      - benchmark: aa-text-to-video-elo
+        score: 962
+        setting: "Veo 3.1 標準版；AA-Video-T2V v2.0，含音訊，Overall；Elo 以 Kling 3.0 1080p (Pro) 固定為 1000；第 18 名（共 28 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-06"
+        source: { title: "AA-Video-T2V v2.0 Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/video/leaderboard/text-to-video", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: aa-text-to-video-elo
+        score: 961
+        setting: "Veo 3.1 Fast；AA-Video-T2V v2.0，含音訊，Overall；第 19 名（共 28 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-06"
+        source: { title: "AA-Video-T2V v2.0 Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/video/leaderboard/text-to-video", type: leaderboard, lang: en, accessed: "2026-10-06" }
+  - id: veo-3-1-lite
+    name: "Veo 3.1 Lite"
+    released: "2026-03-31"
+    status: preview
+    tier: small
+    weights: closed
+    license: proprietary
+    architecture: diffusion
+    modalitiesIn: [text, image]
+    modalitiesOut: [video, audio]
+    reasoning: none
+    availability: [api, cloud-marketplace]
+    notes: "Veo 家族成本最低的版本，依每秒計價：720p 每秒 0.05 美元、1080p 每秒 0.08 美元，不支援 4K。Gemini API 預覽版排定 2026-10-22 停止（建議改用 gemini-omni-1.1-flash）；Gemini Enterprise Agent Platform 版本仍為預覽（2026-04-02 上線）。"
+    benchmarks:
+      - benchmark: aa-text-to-video-elo
+        score: 948
+        setting: "AA-Video-T2V v2.0，含音訊，Overall；第 21 名（共 28 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-06"
+        source: { title: "AA-Video-T2V v2.0 Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/video/leaderboard/text-to-video", type: leaderboard, lang: en, accessed: "2026-10-06" }
+  - id: gemini-omni-flash-preview
+    name: "Gemini Omni Flash（預覽版）"
+    released: "2026-05-19"
+    status: deprecated
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, audio, video]
+    modalitiesOut: [video, audio]
+    reasoning: none
+    availability: [api, chat-app, cloud-marketplace]
+    notes: "2026-05-19 於 Google I/O 2026 發表，首日上線 Gemini App、Google Flow 與 YouTube Shorts；2026-06-30 以 gemini-omni-flash-preview 在 Gemini API 公開預覽，可生成 3–10 秒 720p 影片並多輪對話編輯。定價與 GA 版相同。預覽端點自 2026-09-30 進入淘汰，排定 2026-10-22 停止服務，由 gemini-omni-1.1-flash 取代。模型卡說明為 Transformer 架構，原生支援文字、視覺、影片與音訊輸入。"
+  - id: gemini-omni-1-1-flash
+    name: "Gemini Omni 1.1 Flash"
+    released: "2026-08-27"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, audio, video]
+    modalitiesOut: [video, audio]
+    contextTokens: 1048576
+    reasoning: none
+    availability: [api, chat-app, cloud-marketplace]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1.5
+        outputPerMTok: 17.5
+        currency: USD
+        tierNote: "Standard 付費層；輸出價為影片輸出（文字輸出每百萬 tokens 9 美元）。官方以 720p 每秒 5,792 個輸出 tokens 計，約每秒 0.10 美元；無免費層。"
+        source: { title: "Gemini Developer API pricing", publisher: "Google AI for Developers", url: "https://ai.google.dev/gemini-api/docs/pricing", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-10-06 更新" }
+    benchmarks:
+      - benchmark: aa-text-to-video-elo
+        score: 1113
+        setting: "AA-Video-T2V v2.0，含音訊，Overall；Elo 以 Kling 3.0 1080p (Pro) 固定為 1000；第 8 名（共 28 個模型），第一名 Wan 3.0 為 1,156"
+        reportedBy: leaderboard
+        date: "2026-10-06"
+        source: { title: "AA-Video-T2V v2.0 Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/video/leaderboard/text-to-video", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "Gemini API GA 版本：輸出 3–10 秒、24 fps，可選 360p、720p（預設）、1080p 與 4K（後兩者以放大產生）；新增影片延伸（每次 10 秒、累計最長 40 秒）與首尾影格插補，輸入上下文 1,048,576 tokens。Google 表示 360p 預覽比 720p 快最多 60%、成本約三分之一。同日也上線 Gemini Enterprise Agent Platform 與 Google Flow。模型卡指出，多次編輯間維持完整一致、複雜動作與精確文字仍具挑戰。"
+flagshipVersion: gemini-omni-1-1-flash
+relatedLearn: [multimodal-models, model-evaluation, open-vs-closed-models]
+glossary: [diffusion-model, multimodal, token, elo-rating]
+sources:
+  - key: veo-page
+    title: "Veo 3.1 — Google DeepMind"
+    publisher: "Google DeepMind"
+    url: "https://deepmind.google/models/veo/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: veo3-card
+    title: "Veo 3 Model Card"
+    publisher: "Google DeepMind"
+    url: "https://storage.googleapis.com/deepmind-media/Model-Cards/Veo-3-Model-Card.pdf"
+    type: docs
+    lang: en
+    published: "2025-05-23"
+    accessed: "2026-10-06"
+    note: "2026-01-13 更新，涵蓋 Veo 3 及後續版本"
+  - key: omni-blog
+    title: "Introducing Gemini Omni"
+    publisher: "Google"
+    url: "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-omni/"
+    type: press-release
+    lang: en
+    published: "2026-05-19"
+    accessed: "2026-10-06"
+  - key: omni-card
+    title: "Gemini Omni Flash model card"
+    publisher: "Google DeepMind"
+    url: "https://deepmind.google/models/model-cards/gemini-omni-flash/"
+    type: docs
+    lang: en
+    published: "2026-08-27"
+    accessed: "2026-10-06"
+  - key: omni11-blog
+    title: "Build with Gemini Omni 1.1 Flash"
+    publisher: "Google"
+    url: "https://blog.google/innovation-and-ai/technology/developers-tools/build-with-gemini-omni-1-1-flash/"
+    type: press-release
+    lang: en
+    published: "2026-08-27"
+    accessed: "2026-10-06"
+  - key: omni-model-page
+    title: "Gemini Omni Flash — Gemini API models"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemini-api/docs/models/gemini-omni-flash"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: video-docs
+    title: "Video generation in the Gemini API"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemini-api/docs/video"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: gemini-pricing
+    title: "Gemini Developer API pricing"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemini-api/docs/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "頁面標示 2026-10-06 更新"
+  - key: gemini-changelog
+    title: "Gemini API release notes"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemini-api/docs/changelog"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: gemini-deprecations
+    title: "Gemini deprecations"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemini-api/docs/deprecations"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: agent-platform-veo
+    title: "Veo 3.1 — Gemini Enterprise Agent Platform"
+    publisher: "Google Cloud"
+    url: "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/veo/3-1-generate"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: wiki-veo
+    title: "Veo (text-to-video model)"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Veo_(text-to-video_model)"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "Veo 2（2024-12）與 Veo 3（2025-05-20）發表時間，引用 CNBC、The Verge 等報導"
+  - key: aa-t2v
+    title: "AA-Video-T2V v2.0 Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/video/leaderboard/text-to-video"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "2026-10-06 讀取時為 v2.0 版（28 個模型）；榜單之後改版為 v2.1，分數與名次會隨新投票變動"
+  - key: aa-i2v
+    title: "AA Image to Video Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/video/leaderboard/image-to-video"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+  - key: aa-edit
+    title: "AA Video Editing Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/video/leaderboard/video-editing"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+  - key: arena-t2v
+    title: "Text-to-Video Arena: Best AI Video Generators"
+    publisher: "Arena (LMArena)"
+    url: "https://arena.ai/leaderboard/text-to-video"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "lmarena.ai 轉址至 arena.ai；2026-10-06 讀取時文生影片榜共 48 個模型"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: models-04
+  checkedBy: "models-04-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+Veo 是 <CompanyChip id="alphabet">Alphabet</CompanyChip> 旗下 Google DeepMind 的影片生成模型系列。2024 年 5 月首度亮相，同年 12 月推出 Veo 2；2025-05-20 的 Veo 3 首度在同一次生成中產出畫面與對白、音效、環境音，DeepMind 執行長 Demis Hassabis 形容這是 AI 影片告別「默片時代」<Cite k="wiki-veo" />。依模型卡，Veo 3 採用<Term id="diffusion-model">擴散模型</Term>中的潛在擴散技術，同時對音訊與時空影片的潛在表示去噪<Cite k="veo3-card" />。
+
+2026 年起，系列重心轉向 Gemini Omni。2026-05-19 的 Google I/O 發表 Gemini Omni Flash，定位是「從任何輸入生成任何內容，從影片開始」：可同時接受文字、圖片、音訊與影片作為參考，並以對話方式逐步修改影片。Google 把它定位為繼圖像模型 Nano Banana 之後，把 Gemini 的理解與推理帶進影片生成與編輯的下一步<Cite k="omni-blog" />。Gemini API 文件目前把 Omni Flash 列為預設的影片生成模型，Veo 3.1 則保留給場景延伸、尾影格控制或既有工作流程<Cite k="video-docs" />。
+
+## 特性分析
+
+- **音畫同步**：Veo 3 之後的版本都能原生生成對白與音效；DeepMind 也在模型頁坦承，短句對白的自然度與同步仍在改進<Cite k="veo-page" />。
+- **控制工具多**：Veo 3.1 支援最多 3 張參考圖、首尾影格、場景延伸，片長 4、6 或 8 秒，2026-01-13 起可輸出 4K<Cite k="gemini-changelog" />。
+- **對話式編輯**：Omni Flash 是原生<Term id="multimodal">多模態</Term>的 Transformer 模型，能把 Gemini 的世界知識帶進影片，多輪替換物件、換場景或改鏡頭角度<Cite k="omni-card" />。GA 版 gemini-omni-1.1-flash 輸出 3–10 秒、24 fps，1080p 與 4K 以放大方式產生<Cite k="omni-model-page" />；新增的場景延伸每次 10 秒、累計最長 40 秒，並可用 360p 低成本預覽<Cite k="omni11-blog" />。
+- **兩種計價**：Veo 依秒計價，Veo 3.1 標準版 720p／1080p 每秒 0.40 美元、Fast 版 720p 每秒 0.10 美元、Lite 版 720p 每秒 0.05 美元；Omni Flash 改以 <Term id="token">Token</Term> 計價，輸入每百萬 tokens 1.50 美元、影片輸出 17.50 美元，以 720p 每秒 5,792 tokens 換算約每秒 0.10 美元<Cite k="gemini-pricing" />。
+- **內容標記**：Omni 生成的影片都嵌入 SynthID 數位浮水印，可在 Gemini App 與 Google 搜尋中驗證<Cite k="omni-blog" />。
+
+## 適合與不適合的用途
+
+**適合**：社群短影音、廣告素材與分鏡預覽（previs）這類需要快速出片、反覆修改的工作；需要對白與音效同步的短片；已使用 Gemini App、Google Flow、YouTube Shorts 或 Gemini API 的團隊，可以直接整合。企業若需要資料落地、客戶自管金鑰等控管，可改走 Google Cloud 的 Gemini Enterprise Agent Platform：Veo 3.1 已在該平台 GA<Cite k="agent-platform-veo" />，Omni 1.1 Flash 也可透過該平台的 API 使用<Cite k="omni11-blog" />。
+
+**不適合**：需要一鏡到底的長片——單段只有 3–10 秒，Omni 1.1 延伸後累計也只到 40 秒<Cite k="omni11-blog" />，更長的內容得靠剪接拼接；需要自行部署或微調的場景——全系列為封閉權重；對畫面文字或複雜動作要求極高的鏡頭，模型卡仍列為已知限制<Cite k="omni-card" />。Google 的模型汰換也很快：Gemini API 上的 Veo 2 與 Veo 3 已在 2026-06-30 停止服務，Veo 3.1 預覽版與 Omni Flash 預覽版都排定 2026-10-22 停止，整合時要預留遷移成本<Cite k="gemini-deprecations" />。
+
+## 版本演進
+
+| 版本 | 時間 | 重點 |
+|---|---|---|
+| Veo 2 | 2024-12 發表；2025-04-09 API GA | 支援 4K、物理理解提升，沒有音訊 |
+| Veo 3／3 Fast | 2025-05-20 | 原生音訊；2025-09-09 API GA |
+| Veo 3.1／3.1 Fast | 2025-10-15 | 參考圖、首尾影格、場景延伸；企業平台 2025-11-17 GA |
+| Veo 3.1 Lite | 2026-03-31 | 成本最低，最高 1080p |
+| Gemini Omni Flash | 2026-05-19 | 任意輸入、對話式編輯；API 預覽 2026-06-30 |
+| Gemini Omni 1.1 Flash | 2026-08-27 | API GA，加入延伸、首尾影格插補與解析度選項 |
+
+從 Veo 到 Omni，Google 的路線是把影片生成從獨立的擴散模型，轉為建立在 Gemini 多模態理解之上的「生成加編輯」模型，與 <ModelChip id="google-nano-banana" /> 在圖像領域的做法一致；Google 也表示 Omni 系列日後將支援圖像與音訊輸出<Cite k="omni-blog" />。
+
+## 評測解讀
+
+影片模型沒有像語言模型那樣有標準答案的題庫，主流做法是讓人類盲測兩兩比較，再換算成 <Term id="elo-rating">Elo 分數</Term>。截至 2026-10-06，Artificial Analysis 的文生影片榜（AA-Video-T2V v2.0，含音訊）上，Gemini Omni 1.1 Flash 為 1,113 分、排第 8，Veo 3.1 為 962 分、排第 18；前段班是阿里巴巴 <ModelChip id="alibaba-wan">Wan 3.0</ModelChip>（1,156 分）、以 MiniMax H3 為基礎的 Utopai X、字節跳動 <ModelChip id="bytedance-seedance">Seedance 2.5</ModelChip> 與 MiniMax H3<Cite k="aa-t2v" />。但在同日讀取的 Arena（lmarena.ai）文生影片榜上，Omni 1.1 Flash 以 1,516 分居首（前 4 名的信賴區間重疊），Veo 3.1 則在第 12 名附近<Cite k="arena-t2v" />。AA 的圖生影片榜（Omni Flash 預覽版）與影片編輯榜（Omni 1.1 Flash）上，Omni 都排第 3，但與相鄰名次的分數差距在誤差範圍內<Cite k="aa-i2v" /><Cite k="aa-edit" />。若把成本一起看，AA 以官方 API 生成 1 分鐘 1080p 影片估算，Omni 1.1 Flash 約 9.12 美元、Veo 3.1 標準版約 24 美元、Wan 3.0 約 12 美元：Omni 比 Veo 3.1 標準版分數更高、單價也更低，但 Veo 3.1 Fast（約 7.20 美元）與 Lite（約 4.80 美元）仍較便宜<Cite k="aa-t2v" />。
+
+兩個榜單結論不同，原因包括：投票者不同（AA 為招募評審、Arena 為公開使用者）、題目組成與解析度設定不同，以及新模型票數較少——Omni 1.1 Flash 在 Arena 只有約 1,800 票，誤差 ±15 分。DeepMind 模型頁引用的 MovieGenBench 人評結果屬於原廠評測，比較對象與設定由原廠選定，宜視為參考<Cite k="veo-page" />。影片榜單幾乎每月都有新模型加入，引用排名時務必註明日期。

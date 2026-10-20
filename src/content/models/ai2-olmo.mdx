@@ -1,0 +1,303 @@
+---
+title: "Ai2 OLMo 完全開源系列"
+family: "OLMo"
+kind: llm
+lab: ai2
+labName: "Ai2（艾倫人工智慧研究所）"
+origin: US
+summary: "非營利研究機構 Ai2 的完全開源語言模型。與一般「開放權重」不同，OLMo 連預訓練資料（Dolma 3）、後訓練資料、訓練程式、中間 checkpoint 與評測工具都公開，任何人都能重現與追溯。目前主力是 2025 年 11 月的 Olmo 3（7B、32B）與 12 月的 Olmo 3.1（32B），能力落後同尺寸頂尖開放權重模型一截，但透明度最高，是學術研究與教學的基準模型。"
+strengths:
+  - "完全開源：權重、預訓練與後訓練資料、訓練程式、中間 checkpoint 全部公開，可完整重現"
+  - "OlmoTrace 能把模型輸出即時追溯回訓練資料，方便研究記憶化、版權與幻覺問題"
+  - "提供 Base、Think、Instruct、RL Zero 完整「模型流程」，適合作為強化學習與後訓練研究的起點"
+  - "Apache 2.0 授權，可商用、可再訓練；Olmo Hybrid 等實驗架構也一併開源"
+weaknesses:
+  - "能力落後：Olmo 3.1 32B Think 的 Artificial Analysis 智慧指數約 7（AA 標示為估計值），在 LMArena 文字榜排第 297 名"
+  - "上下文約 65K tokens，只處理文字，官方標示語言為英文"
+  - "知識截止於 2024 年 12 月，比同期商用模型舊"
+  - "Ai2 不經營付費 API，正式部署需要自行架設或透過推論合作夥伴"
+bestFor:
+  - "學術研究：資料歸因、記憶化、評測汙染與可解釋性"
+  - "強化學習與後訓練方法實驗（可用 RL Zero 與中間 checkpoint 對照）"
+  - "需要完整說明訓練資料來源的受監管場景原型驗證"
+  - "教學：示範大型語言模型從資料到模型的完整流程"
+positioning:
+  capability: 7
+  costIndex: 20
+  openness: 1
+  method: computed
+  asOf: "2026-10-06"
+  note: "capability 取旗艦 Olmo 3.1 32B Think 的 Artificial Analysis Intelligence Index v4.3.2 原始分數 7（AA 標示為估計值）。Ai2 沒有官方付費 API，costIndex 改用 LMArena 文字榜（2026-10-06 頁面）列出的第三方託管價格（輸入 0.15、輸出 0.50 美元／百萬 tokens），按 3:1 混合為 0.24 美元，再依 0.05 美元 → 0、100 美元 → 100 的對數尺度換算；自行架設則只有算力成本。openness 1：權重、資料、程式與訓練細節全部公開。"
+versions:
+  - id: olmo-hybrid-7b
+    name: "Olmo Hybrid 7B"
+    released: "2026-03-05"
+    status: ga
+    tier: small
+    weights: open-source
+    license: "Apache-2.0"
+    architecture: hybrid
+    params: { totalB: 7, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 65536
+    reasoning: none
+    availability: [self-host]
+    notes: "75% 的層改用 gated DeltaNet 線性 RNN，每 3 層 DeltaNet 接 1 層注意力。Ai2 稱預訓練過程的資料效率約為 Olmo 3 的 2 倍，長上下文推論的吞吐量與記憶體效率提升約 75%。目前釋出 Base 與 SFT、DPO 階段 checkpoint，屬研究性質。"
+  - id: olmo-3-1-32b-think
+    name: "Olmo 3.1 32B Think"
+    released: "2025-12-12"
+    status: ga
+    tier: flagship
+    weights: open-source
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 32, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 65536
+    knowledgeCutoff: "2024-12"
+    reasoning: always
+    availability: [self-host, api, chat-app]
+    benchmarks:
+      - benchmark: aime-2025
+        score: 78.1
+        setting: "Ai2 自評"
+        reportedBy: lab
+        date: "2025-12-12"
+        source: { title: "Model Card for Olmo 3.1 32B Think", publisher: "Ai2（Hugging Face）", url: "https://huggingface.co/allenai/Olmo-3.1-32B-Think", type: docs, lang: en, published: "2025-12-12", accessed: "2026-10-06" }
+      - benchmark: livecodebench
+        score: 83.3
+        setting: "LiveCodeBench v3，Ai2 自評"
+        reportedBy: lab
+        date: "2025-12-12"
+        source: { title: "Model Card for Olmo 3.1 32B Think", publisher: "Ai2（Hugging Face）", url: "https://huggingface.co/allenai/Olmo-3.1-32B-Think", type: docs, lang: en, published: "2025-12-12", accessed: "2026-10-06" }
+      - benchmark: aa-intelligence-index
+        score: 7
+        setting: "v4.3.2；AA 標示為估計值"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Olmo 3.1 32B Think - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/olmo-3-1-32b-think", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1286
+        setting: "文字競技場總榜，±7，8,278 票，第 297 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "延續 Olmo 3 32B Think 的強化學習，在 224 張 GPU 上多訓練 21 天。Ai2 稱 AIME 進步 5 分以上、IFEval 進步 4 分以上、IFBench 進步 20 分以上。可在 Ai2 Playground 試用，或透過推論合作夥伴的 API 使用。"
+  - id: olmo-3-1-32b-instruct
+    name: "Olmo 3.1 32B Instruct"
+    released: "2025-12-12"
+    status: ga
+    tier: mid
+    weights: open-source
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 32, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 65536
+    reasoning: none
+    availability: [self-host, api, chat-app]
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 6
+        setting: "v4.3.2；AA 標示為估計值"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Olmo 3.1 32B Instruct - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/olmo-3-1-32b-instruct", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1329
+        setting: "文字競技場總榜，±6，11,801 票，第 243 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "把 Olmo 3 Instruct 7B 的配方套用到 32B，用於對話、工具使用與多輪任務；Ai2 稱是其評測中最強的完全開源 32B 指令模型。"
+  - id: olmo-3-32b-think
+    name: "Olmo 3 32B Think"
+    released: "2025-11-20"
+    status: ga
+    tier: reasoning
+    weights: open-source
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 32, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 65536
+    knowledgeCutoff: "2024-12"
+    reasoning: always
+    availability: [self-host, chat-app]
+    benchmarks:
+      - benchmark: aime-2025
+        score: 72.5
+        setting: "Ai2 自評"
+        reportedBy: lab
+        date: "2025-11-20"
+        source: { title: "Model Card for Olmo 3.1 32B Think（含 Olmo 3 Think 32B 對照）", publisher: "Ai2（Hugging Face）", url: "https://huggingface.co/allenai/Olmo-3.1-32B-Think", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1306
+        setting: "文字競技場總榜，±8，5,811 票"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "Olmo 3 首發的推理旗艦，經思考 SFT、DPO 與 RLVR 三階段後訓練；同時釋出 7B Think、7B Instruct 與 RL Zero 版本。Ai2 稱其訓練 tokens 約為 Qwen 3 32B 的六分之一。已由 Olmo 3.1 32B Think 接替。"
+  - id: olmo-3-7b-think
+    name: "Olmo 3 7B Think"
+    released: "2025-11-20"
+    status: ga
+    tier: small
+    weights: open-source
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 7, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 65536
+    reasoning: always
+    availability: [self-host, on-device]
+    notes: "7B 推理版，Ai2 稱它讓可檢視的推理過程能在較一般的硬體上執行；同代另有 7B Instruct（不輸出思考過程）。"
+  - id: olmo-2-32b
+    name: "OLMo 2 32B"
+    released: "2025-03-13"
+    status: ga
+    tier: mid
+    weights: open-source
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 32, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    reasoning: none
+    availability: [self-host]
+    benchmarks:
+      - benchmark: lmarena-text
+        score: 1252
+        setting: "文字競技場總榜（OLMo-2-0325-32B-Instruct），±11，3,334 票"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "訓練至 6 兆 tokens、以 Tulu 3.1 後訓練。Ai2 稱是第一個在多項學術評測上超越 GPT-3.5 Turbo 與 GPT-4o mini 的完全開源模型。已由 Olmo 3 取代。"
+flagshipVersion: olmo-3-1-32b-think
+relatedLearn: [open-vs-closed-models, pretraining-to-chat, post-training-deep, reasoning-models, model-evaluation]
+glossary: [open-weights, training-data, pretraining, post-training, rlvr, dpo, reasoning-model, ssm, moe, benchmark-contamination]
+sources:
+  - key: ai2-olmo-page
+    title: "Olmo"
+    publisher: Ai2
+    url: "https://allenai.org/olmo"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: ai2-olmo3
+    title: "Olmo 3: Charting a path through the model flow to lead open-source AI（含 Olmo 3.1 更新）"
+    publisher: Ai2
+    url: "https://allenai.org/blog/olmo3"
+    type: company-site
+    lang: en
+    published: "2025-11-20"
+    accessed: "2026-10-06"
+  - key: hf-olmo31-think
+    title: "Model Card for Olmo 3.1 32B Think"
+    publisher: "Ai2（Hugging Face）"
+    url: "https://huggingface.co/allenai/Olmo-3.1-32B-Think"
+    type: docs
+    lang: en
+    published: "2025-12-12"
+    accessed: "2026-10-06"
+  - key: ai2-olmo-hybrid
+    title: "Introducing Olmo Hybrid: Combining transformers and linear RNNs for superior scaling"
+    publisher: Ai2
+    url: "https://allenai.org/blog/olmohybrid"
+    type: company-site
+    lang: en
+    published: "2026-03-05"
+    accessed: "2026-10-06"
+  - key: hf-olmo-hybrid
+    title: "Model Card for Olmo Hybrid (7B)"
+    publisher: "Ai2（Hugging Face）"
+    url: "https://huggingface.co/allenai/Olmo-Hybrid-7B"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: ai2-olmo2-32b
+    title: "OLMo 2 32B: First fully open model to outperform GPT 3.5 and GPT 4o mini"
+    publisher: Ai2
+    url: "https://allenai.org/blog/olmo2-32B"
+    type: company-site
+    lang: en
+    published: "2025-03-13"
+    accessed: "2026-10-06"
+  - key: ai2-olmocore3
+    title: "Introducing Olmo-core 3: Open, scalable training infrastructure for large MoEs"
+    publisher: Ai2
+    url: "https://allenai.org/blog/olmocore3"
+    type: company-site
+    lang: en
+    published: "2026-10-01"
+    accessed: "2026-10-06"
+  - key: aa-olmo31
+    title: "Olmo 3.1 32B Think - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/olmo-3-1-32b-think"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+  - key: openrouter-olmo31
+    title: "AllenAI: Olmo 3.1 32B Think"
+    publisher: OpenRouter
+    url: "https://openrouter.ai/allenai/olmo-3.1-32b-think"
+    type: other
+    lang: en
+    accessed: "2026-10-17"
+  - key: lmarena-text
+    title: "Text Arena Leaderboard"
+    publisher: LMArena
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial: { status: fact-checked, author: models-07, checkedBy: "models-07-check", checkedOn: "2026-10-06" }
+---
+
+## 系列概覽
+
+OLMo（Open Language Model）是西雅圖非營利研究機構 <CompanyChip id="ai2">Ai2</CompanyChip> 的語言模型系列。多數「開放」模型只公開權重，OLMo 則把整條「模型流程」都攤開：預訓練資料、中期訓練與長上下文資料、後訓練資料、訓練程式、中間 checkpoint 和評測工具全部可下載<Cite k="ai2-olmo-page" />。
+
+<Callout type="analogy" title="生活化比喻">一般<Term id="open-weights">開放權重</Term>模型像是送你一道做好的菜；OLMo 則連食譜、食材採購清單、每個烹調步驟的照片都給你，你可以照做一遍，也可以換掉其中一種食材看看味道怎麼變。</Callout>
+
+目前主力是 2025 年 11 月 20 日發布的 Olmo 3（7B、32B），以及 12 月 12 日更新的 Olmo 3.1 32B Think 與 32B Instruct<Cite k="ai2-olmo3" />。
+
+## 特性分析
+
+- **資料完全公開**：Olmo 3 的<Term id="pretraining">預訓練</Term>資料來自約 9.3 兆 tokens 的 Dolma 3 語料庫，實際使用約 5.9 兆 tokens 的 Dolma 3 Mix，並加強了去重與去汙染<Cite k="ai2-olmo3" />。這讓研究者能檢查<Term id="training-data">訓練資料</Term>裡到底有什麼。
+- **可追溯**：OlmoTrace 能把模型的回答即時對應回訓練資料中的原文片段，是研究記憶化與幻覺的獨特工具<Cite k="ai2-olmo3" />。
+- **完整後訓練路徑**：Think 版依序經過思考 SFT、<Term id="dpo">DPO</Term> 與 <Term id="rlvr">RLVR</Term>，另有直接從 Base 做強化學習的 RL Zero 版，方便對照不同<Term id="post-training">後訓練</Term>方法的效果<Cite k="ai2-olmo3" />。
+- **三段式訓練流程**：預訓練先做大範圍學習，接著以 Dolma 3 Dolmino 做中期訓練（從約 2.2 兆 tokens 的數學、科學、程式與閱讀理解資料中取樣 1,000 億 tokens），最後再延伸長上下文；後訓練資料集 Dolci 則分別提供 SFT、DPO 與 RLVR 三個階段的資料。各階段的 checkpoint 都會釋出，研究者可以從任何一站接手改造<Cite k="ai2-olmo3" />。
+- **算力規模**：Olmo 3 預訓練最多使用 1,024 張 <CompanyChip id="nvidia">輝達</CompanyChip> H100，中期訓練用 128 張、後訓練用 256 張<Cite k="ai2-olmo3" />。這個規模比商業前沿實驗室小，是理解 OLMo 能力落差時的背景之一。
+- **工具也開源**：資料清理、去重與去汙染工具，以及評測工具 OLMES 都公開，外界可以用相同方法重跑訓練曲線與評測<Cite k="ai2-olmo3" />。
+- **規格偏保守**：只處理英文文字，上下文約 65K tokens，知識截止於 2024 年 12 月<Cite k="hf-olmo31-think" />。
+
+## 適合與不適合的用途
+
+**適合**：大學與研究單位的實驗基準、強化學習與資料歸因研究、教學示範，以及需要完整交代訓練資料來源的受監管場景原型。想先試用的人，可以在 Ai2 Playground 直接對話；Ai2 發布時也透過 OpenRouter 等推論合作夥伴提供 API<Cite k="ai2-olmo3" />。不過第三方託管會隨時調整，2026-10-17 查核時 OpenRouter 上的 Olmo 3.1 已沒有可用的供應商<Cite k="openrouter-olmo31" />，使用前應先確認。
+
+**不適合**：追求最高能力的正式產品、中文（含繁體中文）任務、多模態輸入、超長文件。Ai2 本身不賣 API，若要上線服務，需要自行架設或使用推論合作夥伴，維運責任在使用者身上。
+
+## 版本演進
+
+| 版本 | 發布 | 重點 |
+|---|---|---|
+| OLMo 2 32B | 2025-03 | 首個在多項學術評測超越 GPT-3.5 Turbo 與 GPT-4o mini 的完全開源模型 |
+| Olmo 3（7B、32B） | 2025-11 | Base、Think、Instruct、RL Zero 全流程開源 |
+| Olmo 3.1 32B | 2025-12 | Think 版延長強化學習 21 天；新增 32B Instruct |
+| Olmo Hybrid 7B | 2026-03 | 75% 的層改用線性 RNN（gated DeltaNet） |
+
+OLMo 2 32B 以約 6 兆 tokens 訓練<Cite k="ai2-olmo2-32b" />。Olmo 3.1 除了兩個 32B 模型，也以更長、更穩定的訓練更新了 RL Zero 7B 的程式與數學版本，作為強化學習研究的對照基準<Cite k="ai2-olmo3" />。Olmo Hybrid 是架構實驗：混合式模型把注意力與類似 <Term id="ssm">SSM</Term> 的線性遞迴層結合，Ai2 稱資料效率約為 Olmo 3 的 2 倍<Cite k="hf-olmo-hybrid" /><Cite k="ai2-olmo-hybrid" />。2026-10-01，Ai2 釋出可把 <Term id="moe">MoE</Term> 訓練擴展到兆級參數的 Olmo-core 3，並表示這是下一代 Olmo 的核心系統之一<Cite k="ai2-olmocore3" />；截至 2026-10-06，下一代 Olmo 的規格與時程尚未公布。
+
+## 評測解讀
+
+Ai2 自評的 Olmo 3.1 32B Think 在 AIME 2025 為 78.1%、LiveCodeBench v3 為 83.3%；同一張表中 Qwen 3 32B 分別為 70.9% 與 90.2%，也就是數學較高、程式較低，與同尺寸開放權重模型互有勝負<Cite k="hf-olmo31-think" />。但第三方綜合評測呈現的差距更大：Artificial Analysis 在 2026-10-06 給它的智慧指數為 7（標示為估計值），在 4B–40B 開放權重模型中低於中位數<Cite k="aa-olmo31" />；LMArena 文字榜（2026-10-02）上，Olmo 3.1 32B Instruct 為 1329 分、Think 為 1286 分，反而是不輸出思考過程的 Instruct 版較受人類評審青睞<Cite k="lmarena-text" />。
+
+解讀時要注意三點：一、自評多為數學與程式題，AA 的指數則偏重 Agent 與知識型任務，兩者測的不是同一件事；二、競技場反映的是對話偏好，長篇思考過程未必加分；三、OLMo 公開了訓練資料，反而讓外界能實際檢查<Term id="benchmark-contamination">評測汙染</Term>，這是其他模型做不到的。對 OLMo 而言，分數不是唯一價值，可重現性才是它在產業鏈中的核心角色。

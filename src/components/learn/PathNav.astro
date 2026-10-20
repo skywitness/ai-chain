@@ -1,0 +1,141 @@
+---
+/**
+ * 「在建議路線中」: for each suggested route (curriculum.yaml `paths`) that contains this article,
+ * its position and the previous/next step in that route. Renders nothing when no route lists it.
+ *
+ *   <PathNav slug="why-gpus" paths={getSuggestedPaths(items)} />
+ */
+import Icon from '../ui/Icon.astro';
+import { learnHref } from '../../lib/paths';
+import type { SuggestedPath } from './learn-data';
+
+interface Props {
+  slug: string;
+  paths: readonly SuggestedPath[];
+}
+const { slug, paths } = Astro.props;
+const rows = paths
+  .map((p) => {
+    const i = p.items.findIndex((it) => it.slug === slug);
+    return i < 0 ? null : { path: p, pos: i + 1, prev: p.items[i - 1], next: p.items[i + 1] };
+  })
+  .filter((r): r is NonNullable<typeof r> => !!r);
+---
+
+{
+  rows.length > 0 && (
+    <div class="pn">
+      <p class="pn__title">在建議路線中</p>
+      <ul class="pn__list" role="list">
+        {rows.map((r) => (
+          <li class="pn__row">
+            <span class="pn__name">
+              {r.path.title}
+              <span class="pn__pos">
+                第 {r.pos}／{r.path.items.length} 篇
+              </span>
+            </span>
+            <span class="pn__links">
+              {r.prev && (
+                <a href={learnHref(r.prev.slug)} title={r.prev.title}>
+                  <Icon name="arrow-left" />
+                  <span class="sr-only">{`${r.path.title}的上一篇：`}</span>
+                  {r.prev.shortTitle}
+                </a>
+              )}
+              {r.next ? (
+                <a href={learnHref(r.next.slug)} class="pn__next" title={r.next.title}>
+                  <span class="sr-only">{`${r.path.title}的下一篇：`}</span>
+                  {r.next.shortTitle}
+                  <Icon name="arrow-right" />
+                </a>
+              ) : (
+                <span class="pn__done">這條路線的最後一篇</span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+<style>
+  @layer components {
+    .pn {
+      display: grid;
+      gap: var(--space-2);
+      margin-block-start: var(--space-5);
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-sunken);
+    }
+    .pn__title {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-subtle);
+      letter-spacing: 0.03em;
+    }
+    .pn__list {
+      display: grid;
+      gap: var(--space-2);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .pn__row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-1) var(--space-4);
+      margin: 0;
+    }
+    .pn__name {
+      display: inline-flex;
+      align-items: baseline;
+      gap: var(--space-2);
+      font-weight: var(--fw-bold);
+      font-size: var(--fs-s);
+    }
+    .pn__pos {
+      font-weight: var(--fw-regular);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+    .pn__links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1) var(--space-4);
+      font-size: var(--fs-s);
+      min-width: 0;
+    }
+    .pn__links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35em;
+      min-height: 2.25rem;
+      color: var(--c-link);
+      text-decoration: none;
+    }
+    .pn__links a:hover {
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+    .pn__links a:not(.pn__next) {
+      color: var(--c-fg-muted);
+    }
+    .pn__next {
+      font-weight: var(--fw-semibold);
+    }
+    .pn__done {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.25rem;
+      color: var(--c-fg-subtle);
+      font-size: var(--fs-xs);
+    }
+  }
+</style>

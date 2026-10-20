@@ -1,0 +1,14 @@
+# Proposal from agent: glossary-index (2026-10-07)
+# Not a schema or dependency change: a one-line fix to a shared lint script, so the integrator can decide.
+proposals:
+  - id: check-zh-algorithm-false-positive
+    target: scripts/check-zh.ts
+    kind: lint-fix
+    problem: >
+      WARN_TERMS contains [/算法/g, '演算法']. The pattern also matches the correct Taiwan word
+      「演算法」, so every content file that writes 演算法 (演算法偏誤, 推薦演算法, 注意力加速演算法 …)
+      gets a spurious "consider 演算法" warning. Running the linter on src/data/glossary-index/*.yaml
+      gives 2 warnings, both of which are this false positive.
+    change: "Replace [/算法/g, '演算法'] with [/(?<!演)算法/g, '演算法'] in WARN_TERMS."
+    impact: Removes false positives only. Mainland-style 「算法」 written alone is still flagged.
+    workaround: None needed; it is a warning, not an error (exit code stays 0).

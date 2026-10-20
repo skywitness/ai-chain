@@ -1,0 +1,255 @@
+---
+/**
+ * Process diagram as an ordered list: horizontal with arrows when there is room, vertical otherwise.
+ * "Room" depends on the number of steps: each step needs about 9rem when it has a detail line (6.5rem
+ * for short titles only, more for long titles), so the switch to the horizontal layout happens at a
+ * container width of 36, 44, 52 or 62rem; a diagram that would need more stays vertical at every width.
+ *   <FlowSteps title="晶片怎麼做出來" steps={["設計", "光罩", "晶圓製造", "封裝", "測試"]} />
+ *   steps may also be objects: { title: "晶圓製造", detail: "微影、蝕刻、沉積反覆數百次" }
+ */
+type Step = string | { title: string; detail?: string | undefined };
+interface Props {
+  steps: readonly Step[];
+  title?: string | undefined;
+  /** Caption / source line under the diagram */
+  caption?: string | undefined;
+  class?: string | undefined;
+}
+const { steps, title, caption, class: className } = Astro.props;
+const items = steps.map((s) => (typeof s === 'string' ? { title: s, detail: undefined } : s));
+// Narrowest container (rem) that fits every step side by side: n × step width + (n − 1) × gap (1.5rem).
+// A step is at least 9rem with a detail line (6.5rem for a bare title), and wide enough for a title of
+// up to 8 characters on one line (≈ 1.0625rem each plus padding).
+const longest = Math.max(0, ...items.map((s) => [...s.title].length));
+const stepRem = Math.max(items.some((s) => s.detail) ? 9 : 6.5, Math.min(longest, 8) * 1.0625 + 1.75);
+const needRem = items.length * stepRem + (items.length - 1) * 1.5;
+const breakpoint = [36, 44, 52, 62].find((w) => w >= needRem);
+---
+
+<figure class:list={['flow', breakpoint ? `flow--h${breakpoint}` : 'flow--v', !items.some((s) => s.detail) && 'flow--bare', className]} data-steps={items.length}>
+  {title && <figcaption class="flow__title">{title}</figcaption>}
+  <ol class="flow__list" role="list">
+    {
+      items.map((s, i) => (
+        <li class="flow__step">
+          <span class="flow__num" aria-hidden="true">
+            {String(i + 1).padStart(2, '0')}
+          </span>
+          <span class="flow__text">
+            <span class="sr-only">第 {i + 1} 步：</span>
+            <span class="flow__name">{s.title}</span>
+            {s.detail && <span class="flow__detail">{s.detail}</span>}
+          </span>
+        </li>
+      ))
+    }
+  </ol>
+  {caption && <p class="flow__caption">{caption}</p>}
+</figure>
+
+<style>
+  @layer components {
+    .flow {
+      container-type: inline-size;
+      margin-block: 1.8em;
+      margin-inline: 0;
+    }
+    .flow__title {
+      margin-block-end: var(--space-3);
+      font-size: var(--fs-s);
+      font-weight: var(--fw-bold);
+      color: var(--c-fg);
+    }
+    .flow__list {
+      display: grid;
+      gap: var(--space-2);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: flow;
+    }
+    .flow__step {
+      position: relative;
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-start;
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+      margin: 0 !important;
+    }
+    /* vertical connectors */
+    .flow__step + .flow__step::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: calc(var(--space-4) + 0.75em);
+      inset-block-start: calc(-1 * var(--space-2) - 1px);
+      block-size: var(--space-2);
+      inline-size: 2px;
+      background: var(--c-border-strong);
+    }
+    .flow__num {
+      flex: none;
+      display: inline-grid;
+      place-items: center;
+      inline-size: 1.75em;
+      block-size: 1.75em;
+      border-radius: 50%;
+      background: var(--c-accent-soft);
+      color: var(--c-accent);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-bold);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+    .flow__text {
+      display: grid;
+      gap: 0.15em;
+      min-width: 0;
+    }
+    .flow__name {
+      font-weight: var(--fw-semibold);
+      line-height: 1.5;
+    }
+    .flow__detail {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      line-height: 1.6;
+    }
+    /* Always-vertical flows whose steps are bare titles: a numbered rail instead of a stack of near-empty
+       cards (six bordered boxes of one short line each read as a form, not a sequence). */
+    .flow--v.flow--bare .flow__list {
+      gap: var(--space-2);
+    }
+    .flow--v.flow--bare .flow__step {
+      align-items: center;
+      padding: 0;
+      border: 0;
+      background: none;
+    }
+    .flow--v.flow--bare .flow__step + .flow__step::before {
+      /* centre of the 2em number circle, which is set in --fs-xs */
+      inset-inline-start: calc(var(--fs-xs) - 1px);
+      inset-block-start: calc(-1 * var(--space-2));
+      block-size: var(--space-2);
+    }
+    .flow--v.flow--bare .flow__num {
+      inline-size: 2em;
+      block-size: 2em;
+      border: 1.5px solid color-mix(in srgb, var(--c-accent) 35%, transparent);
+    }
+    .flow__caption {
+      margin-block-start: var(--space-2);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+
+    /* Horizontal layout: one identical block per breakpoint class (container queries cannot read a
+       custom property, so the step-count-dependent width is picked at build time). */
+    @container (min-width: 36rem) {
+      .flow--h36 .flow__list {
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        gap: var(--space-5);
+      }
+      .flow--h36 .flow__step {
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-3);
+      }
+      .flow--h36 .flow__step + .flow__step::before {
+        inset-inline-start: calc(-1 * var(--space-5) + 4px);
+        inset-block-start: calc(var(--space-3) + 0.875em - 1px);
+        inline-size: calc(var(--space-5) - 8px);
+        block-size: 2px;
+      }
+      .flow--h36 .flow__step + .flow__step::after {
+        content: '';
+        position: absolute;
+        inset-inline-start: -10px;
+        inset-block-start: calc(var(--space-3) + 0.875em - 4px);
+        border-block: 4px solid transparent;
+        border-inline-start: 5px solid var(--c-border-strong);
+      }
+    }
+    @container (min-width: 44rem) {
+      .flow--h44 .flow__list {
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        gap: var(--space-5);
+      }
+      .flow--h44 .flow__step {
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-3);
+      }
+      .flow--h44 .flow__step + .flow__step::before {
+        inset-inline-start: calc(-1 * var(--space-5) + 4px);
+        inset-block-start: calc(var(--space-3) + 0.875em - 1px);
+        inline-size: calc(var(--space-5) - 8px);
+        block-size: 2px;
+      }
+      .flow--h44 .flow__step + .flow__step::after {
+        content: '';
+        position: absolute;
+        inset-inline-start: -10px;
+        inset-block-start: calc(var(--space-3) + 0.875em - 4px);
+        border-block: 4px solid transparent;
+        border-inline-start: 5px solid var(--c-border-strong);
+      }
+    }
+    @container (min-width: 52rem) {
+      .flow--h52 .flow__list {
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        gap: var(--space-5);
+      }
+      .flow--h52 .flow__step {
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-3);
+      }
+      .flow--h52 .flow__step + .flow__step::before {
+        inset-inline-start: calc(-1 * var(--space-5) + 4px);
+        inset-block-start: calc(var(--space-3) + 0.875em - 1px);
+        inline-size: calc(var(--space-5) - 8px);
+        block-size: 2px;
+      }
+      .flow--h52 .flow__step + .flow__step::after {
+        content: '';
+        position: absolute;
+        inset-inline-start: -10px;
+        inset-block-start: calc(var(--space-3) + 0.875em - 4px);
+        border-block: 4px solid transparent;
+        border-inline-start: 5px solid var(--c-border-strong);
+      }
+    }
+    @container (min-width: 62rem) {
+      .flow--h62 .flow__list {
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        gap: var(--space-5);
+      }
+      .flow--h62 .flow__step {
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-3);
+      }
+      .flow--h62 .flow__step + .flow__step::before {
+        inset-inline-start: calc(-1 * var(--space-5) + 4px);
+        inset-block-start: calc(var(--space-3) + 0.875em - 1px);
+        inline-size: calc(var(--space-5) - 8px);
+        block-size: 2px;
+      }
+      .flow--h62 .flow__step + .flow__step::after {
+        content: '';
+        position: absolute;
+        inset-inline-start: -10px;
+        inset-block-start: calc(var(--space-3) + 0.875em - 4px);
+        border-block: 4px solid transparent;
+        border-inline-start: 5px solid var(--c-border-strong);
+      }
+    }
+  }
+</style>

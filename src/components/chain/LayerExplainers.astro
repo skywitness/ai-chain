@@ -1,0 +1,186 @@
+---
+/**
+ * The five layers explained (bottom → top): what the layer does, how value flows through it, its
+ * segments (links) and how many roster companies (and Taiwanese ones) it holds.
+ *   <LayerExplainers counts={{ 'foundry-packaging': { all: 38, tw: 15 } }} />
+ */
+import { segmentHref } from '../../lib/paths';
+import { LAYER_COPY, layersWithSegments } from './chain-data';
+
+interface Props {
+  counts: Record<string, { all: number; tw: number }>;
+  headingLevel?: 3 | 4 | undefined;
+}
+const { counts, headingLevel = 3 } = Astro.props;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+const layers = layersWithSegments();
+---
+
+<ol class="lx" role="list">
+  {
+    layers.map((l) => {
+      const copy = LAYER_COPY[l.id];
+      const all = l.segs.reduce((a, s) => a + (counts[s.id]?.all ?? 0), 0);
+      const tw = l.segs.reduce((a, s) => a + (counts[s.id]?.tw ?? 0), 0);
+      return (
+        <li class="lx__item" style={`--lc: ${l.color}`}>
+          <div class="lx__rail" aria-hidden="true">
+            <span class="lx__num">{l.order}</span>
+          </div>
+          <div class="lx__body">
+            <p class="lx__kicker">
+              第 {l.order} 層 · <span lang="en">{l.titleEn}</span>
+            </p>
+            <H class="lx__title">{l.title}</H>
+            <p class="lx__lead">{copy.lead}</p>
+            <p class="lx__text">{copy.body}</p>
+            <p class="lx__flow">
+              <span class="lx__flow-label">價值流</span>
+              {copy.flow}
+            </p>
+            <ul class="lx__segs" role="list" aria-label={`${l.title}的環節`}>
+              {l.segs.map((s) => (
+                <li>
+                  <a href={segmentHref(s.id)} style={`--sc: ${s.color}`}>
+                    <span class="lx__dot" aria-hidden="true" />
+                    {s.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <p class="lx__stats">
+              收錄 <strong>{all}</strong> 家公司{tw > 0 && <>，其中台灣 <strong>{tw}</strong> 家</>}
+            </p>
+          </div>
+        </li>
+      );
+    })
+  }
+</ol>
+
+<style>
+  .lx {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: var(--space-4);
+  }
+  @media (min-width: 1200px) {
+    .lx {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+  }
+  .lx__item {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    overflow: hidden;
+  }
+  .lx__rail {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: color-mix(in srgb, var(--lc) 14%, var(--c-bg-elev));
+    border-block-end: 1px solid color-mix(in srgb, var(--lc) 30%, var(--c-border));
+  }
+  .lx__num {
+    display: grid;
+    place-items: center;
+    inline-size: 1.9rem;
+    block-size: 1.9rem;
+    border-radius: 50%;
+    background: var(--lc);
+    color: var(--c-bg);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+  }
+  .lx__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+  }
+  .lx__kicker {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    letter-spacing: 0.03em;
+  }
+  .lx__title {
+    font-size: var(--fs-l);
+    line-height: 1.35;
+  }
+  .lx__lead {
+    font-weight: var(--fw-semibold);
+    color: color-mix(in srgb, var(--lc) 70%, var(--c-fg));
+  }
+  .lx__text {
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .lx__flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+  }
+  .lx__flow-label {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    padding: 1px 6px;
+    border-radius: var(--radius-s);
+    background: var(--c-bg-sunken);
+    color: var(--c-fg-muted);
+  }
+  .lx__segs {
+    list-style: none;
+    margin: var(--space-1) 0 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+  }
+  /* Segment links read as links (subtle underline, like the table's company names). */
+  .lx__segs a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: 36px;
+    font-size: var(--fs-s);
+    color: var(--c-fg);
+    line-height: 1.4;
+    text-decoration: underline;
+    text-decoration-color: var(--c-border-strong);
+    text-underline-offset: 0.25em;
+  }
+  .lx__segs a:hover {
+    color: var(--c-link);
+    text-decoration-color: currentColor;
+  }
+  .lx__dot {
+    flex: none;
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+    border-radius: 2px;
+    background: var(--sc);
+  }
+  .lx__stats {
+    margin-block-start: auto;
+    padding-block-start: var(--space-3);
+    border-block-start: 1px dashed var(--c-border);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .lx__stats strong {
+    color: var(--c-fg);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

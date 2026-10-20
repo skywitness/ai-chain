@@ -1,0 +1,32 @@
+---
+/**
+ * Link to a learning article.  <LearnLink id="what-is-llm">大型語言模型</LearnLink>
+ * Without children the curriculum title is used. Unknown slugs render as plain text.
+ */
+import { getCurriculumArticle, levelMeta } from '../../lib/collections';
+import { learnHref } from '../../lib/paths';
+
+interface Props {
+  id: string;
+  /** In-page fragment on the target article, without '#' */
+  hash?: string | undefined;
+}
+const { id, hash } = Astro.props;
+const a = getCurriculumArticle(id);
+if (!a && import.meta.env.DEV) console.warn(`[LearnLink] unknown learn slug "${id}" on ${Astro.url.pathname}`);
+const href = a ? `${learnHref(id)}${hash ? `#${hash}` : ''}` : undefined;
+const title = a ? `學習路徑（${levelMeta(a.level).label}）：${a.title}` : undefined;
+const hasSlot = Astro.slots.has('default');
+---
+
+{
+  href ? (
+    <a class="learn-link" href={href} title={title} data-level={a?.level}>
+      {hasSlot ? <slot /> : a?.title}
+    </a>
+  ) : hasSlot ? (
+    <slot />
+  ) : (
+    <span>{id}</span>
+  )
+}

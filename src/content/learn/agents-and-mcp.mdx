@@ -1,0 +1,403 @@
+---
+title: "AI Agent 與 MCP：讓模型使用工具"
+subtitle: "從工具呼叫、Agent 迴圈到開放協定：語言模型如何從「會說」變成「會做」"
+description: "AI Agent 讓語言模型在「規劃、行動、觀察」的迴圈中使用工具完成任務。本文拆解工具呼叫的分工、上下文管理與多 Agent 架構，介紹 MCP 與 A2A 兩大開放協定，以及 Token 成本與提示注入等安全風險。"
+level: 2
+order: 207
+track: models
+prerequisites: [pretraining-to-chat, rag-and-vector-search]
+next: [model-evaluation, inference-optimization, physical-ai-deep]
+relatedSegments: [apps-agents, devtools-data-mlops, foundation-models, cloud-neocloud, ai-accelerators]
+relatedCompanies: [anthropic, openai, alphabet, microsoft, amazon, cloudflare, anysphere, langchain, openrouter, servicenow, salesforce, atlassian, sap, nvidia]
+relatedModels: [anthropic-claude, openai-gpt, google-gemini]
+relatedTrends: [agentic-ai-standards, ai-coding, inference-demand, long-context-memory, ai-monetization]
+glossary:
+  - agent
+  - llm
+  - mcp
+  - function-calling
+  - api
+  - context-window
+  - token
+  - computer-use
+  - rag
+  - reasoning-model
+  - transformer
+  - inference
+  - a2a
+  - prompt-caching
+  - prompt-injection
+scenes:
+  - { id: agent-loop, variant: loop }
+keyTakeaways:
+  - "Agent 是在迴圈中使用工具的語言模型：規劃、呼叫工具、觀察結果，再決定下一步，直到完成任務。"
+  - "工具呼叫是一種分工：模型只輸出結構化的呼叫請求，由外部程式執行，因此權限可以在模型之外把關。"
+  - "Anthropic 統計 Agent 的 Token 用量約是聊天的 4 倍、多 Agent 約 15 倍；上下文管理與提示快取是控制成本的關鍵。"
+  - "MCP 把 M×N 套客製整合變成 M+N 套：工具包成伺服器一次，就能接上所有支援 MCP 的 AI 應用。"
+  - "MCP 已捐給 Linux 基金會旗下的 AAIF；2026 年 7 月新版規格改為無狀態，官方 SDK 月下載近 5 億次。"
+  - "同時能讀私密資料、接觸不可信內容又能對外傳訊的 Agent 最危險，須靠最小權限與人工確認把關。"
+estimatedMinutes: 16
+sources:
+  - key: react
+    title: "ReAct: Synergizing Reasoning and Acting in Language Models"
+    publisher: "arXiv（Yao et al., Princeton University、Google Research；ICLR 2023）"
+    url: "https://arxiv.org/abs/2210.03629"
+    type: paper
+    lang: en
+    published: "2022-10-06"
+    accessed: "2026-10-15"
+    note: "讓模型交錯產生推理軌跡與行動；只用 1 到 2 個情境內示範，在 ALFWorld 與 WebShop 的任務成功率分別比模仿學習與強化學習方法高出 34 與 10 個百分點（絕對值）；在 HotpotQA 與 FEVER 上透過簡單的維基百科 API 減少幻覺與錯誤傳遞。"
+  - key: anthropic-agents
+    title: "Building effective agents"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/engineering/building-effective-agents"
+    type: company-site
+    lang: en
+    published: "2024-12-19"
+    accessed: "2026-10-15"
+    note: "工作流程是以預先定義的程式路徑串接模型與工具；Agent 則由模型動態主導流程與工具使用。基本元件為加上檢索、工具與記憶的「增強型 LLM」；工作流程模式包括提示串接、分流、平行化、協調者與工作者、評估者與最佳化者。Agent 通常就是在迴圈中、根據環境回饋使用工具的 LLM，需設停止條件（如最大迭代次數）與人工檢查點；建議先找最簡單的解法，Agent 系統常以延遲與成本換取表現。SWE-bench 例子：模型離開根目錄後常弄錯相對路徑，改成要求絕對路徑後即可正確使用。"
+  - key: openai-fc
+    title: "Function calling"
+    publisher: OpenAI API Docs
+    url: "https://developers.openai.com/api/docs/guides/function-calling"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "工具呼叫流程五步：附工具送出請求、收到模型的工具呼叫、應用程式執行、把工具輸出送回模型、取得最終回覆或再次呼叫。函式定義會注入系統訊息，占用上下文長度並以輸入 Token 計費；strict 模式以結構化輸出確保呼叫符合 Schema。"
+  - key: claude-tools
+    title: "Tool use with Claude"
+    publisher: Claude Platform Docs（Anthropic）
+    url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "用戶端工具由開發者的應用程式執行：Claude 回傳 stop_reason 為 tool_use 的 tool_use 區塊，程式執行後以 tool_result 回傳；伺服器端工具（如 web_search、code_execution）在 Anthropic 的基礎設施上執行。使用工具時 API 會自動加入一段工具系統提示，Claude Opus 5.5 為 286 個 Token（tool_choice 為 auto 或 none），另加工具名稱、說明與 Schema 的 Token。查核者 2026-10-15 重新核對 Tool use system prompt tokens 表格。"
+  - key: claude-pricing
+    title: "Pricing"
+    publisher: Claude Platform Docs（Anthropic）
+    url: "https://platform.claude.com/docs/en/about-claude/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "Claude Opus 5.5：基本輸入每百萬 Token 4 美元、5 分鐘快取寫入 5 美元、1 小時快取寫入 8 美元、快取命中 0.20 美元（基本輸入價的 0.05 倍）、輸出 20 美元。"
+  - key: mcp-launch
+    title: "Introducing the Model Context Protocol"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/model-context-protocol"
+    type: press-release
+    lang: en
+    published: "2024-11-25"
+    accessed: "2026-10-15"
+    note: "開源 MCP，作為連接 AI 系統與資料來源的通用開放標準；指出每個新資料來源都需要各自的客製實作，難以擴大。首發內容：規格與 SDK、Claude Desktop 的本機 MCP 伺服器支援、開源伺服器儲存庫（Google Drive、Slack、GitHub、Git、Postgres、Puppeteer 等）。"
+  - key: mcp-spec
+    title: "Specification (Protocol Revision 2026-07-28)"
+    publisher: Model Context Protocol
+    url: "https://modelcontextprotocol.io/specification/2026-07-28"
+    type: standard
+    lang: en
+    accessed: "2026-10-15"
+    note: "以 JSON-RPC 2.0 訊息在 Host、Client、Server 之間溝通；設計參考 Language Server Protocol。基礎協定為無狀態、自足的請求。安全原則：使用者須明確同意並保有控制權；Host 在呼叫任何工具前必須取得使用者明確同意；工具代表任意程式碼執行，須謹慎對待。"
+  - key: mcp-arch
+    title: "Architecture (Protocol Revision 2026-07-28)"
+    publisher: Model Context Protocol
+    url: "https://modelcontextprotocol.io/specification/2026-07-28/architecture"
+    type: standard
+    lang: en
+    accessed: "2026-10-15"
+    note: "Host 建立並管理多個 Client，負責連線權限、安全政策與使用者授權；每個 Client 只與一個 Server 一對一連線；Server 可以是本機程序或遠端服務。設計原則：伺服器要容易建置、可自由組合，且不能讀取整段對話或「看進」其他伺服器，完整對話紀錄留在 Host。"
+  - key: mcp-server
+    title: "Server Features: Overview (Protocol Revision 2026-07-28)"
+    publisher: Model Context Protocol
+    url: "https://modelcontextprotocol.io/specification/2026-07-28/server"
+    type: standard
+    lang: en
+    accessed: "2026-10-15"
+    note: "三種伺服器原語與控制方：Prompts 由使用者控制（斜線指令、選單）；Resources 由應用程式控制（檔案內容、Git 歷史）；Tools 由模型控制（API POST 請求、寫入檔案）。"
+  - key: mcp-tools
+    title: "Tools (Protocol Revision 2026-07-28)"
+    publisher: Model Context Protocol
+    url: "https://modelcontextprotocol.io/specification/2026-07-28/server/tools"
+    type: standard
+    lang: en
+    accessed: "2026-10-15"
+    note: "工具由模型控制；為了信任與安全，應該始終有人類在迴路中並能拒絕工具呼叫。tools/list 與 tools/call 的 JSON-RPC 範例（get_weather）；結果的 content 與 isError 欄位。錯誤分兩類：協定錯誤（如未知工具）模型較難自行修正；工具執行錯誤（如日期必須是未來）應回傳給模型以便自我修正。工具註記除非來自可信伺服器，否則視為不可信。用戶端應在敏感操作前請使用者確認、呼叫前向使用者顯示工具輸入、設定逾時並記錄工具使用以供稽核。伺服器應以固定順序回傳工具清單，以利快取與提示快取命中。"
+  - key: mcp-changelog
+    title: "Key Changes (Protocol Revision 2026-07-28)"
+    publisher: Model Context Protocol
+    url: "https://modelcontextprotocol.io/specification/2026-07-28/changelog"
+    type: standard
+    lang: en
+    accessed: "2026-10-15"
+    note: "相對於 2025-11-25 版：移除協定層級的工作階段（session）與 Mcp-Session-Id 標頭；移除 initialize 握手，每個請求在 _meta 自帶協定版本與用戶端能力；新增 server/discover；Tasks 移出核心改為官方擴充；Roots、Sampling 與 Logging 列為不建議使用（新的功能生命週期政策規定至少 12 個月的淘汰過渡期）；伺服器應以固定順序回傳 tools/list，以利用戶端快取並提高提示快取命中率。"
+  - key: mcp-2026
+    title: "The 2026-07-28 Specification"
+    publisher: Model Context Protocol Blog
+    url: "https://blog.modelcontextprotocol.io/posts/2026-07-28/"
+    type: company-site
+    lang: en
+    published: "2026-07-28"
+    accessed: "2026-10-15"
+    note: "一級 SDK 合計每月下載「將近 5 億次」（close to half-a-billion），TypeScript 與 Python SDK 累計下載各超過 10 億次。無狀態核心讓任何請求都能送到一般輪詢式負載平衡器後的任一伺服器執行個體，不需共享儲存；Cloudflare 表示 MCP 伺服器可直接在 Workers 上執行。需要跨呼叫保存狀態時，改由工具發出明確的代號（handle），讓模型在後續呼叫中當參數傳回。新版正式建立擴充框架：Tasks 移出實驗性核心，與 MCP Apps、企業管理授權（EMA）等並列為擴充功能。"
+  - key: aaif
+    title: "Donating the Model Context Protocol and establishing the Agentic AI Foundation"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation"
+    type: press-release
+    lang: en
+    published: "2025-12-09"
+    accessed: "2026-10-15"
+    note: "公開運作的 MCP 伺服器逾 1 萬個；Python 與 TypeScript SDK 每月下載逾 9,700 萬次；ChatGPT、Cursor、Gemini、Microsoft Copilot、Visual Studio Code 等產品已採用；AWS、Cloudflare、Google Cloud 與 Microsoft Azure 提供部署支援。AAIF 為 Linux 基金會旗下的定向基金，由 Anthropic、Block 與 OpenAI 共同創立，Google、Microsoft、AWS、Cloudflare 與 Bloomberg 支持；首批專案為 MCP、Block 的 goose 與 OpenAI 的 AGENTS.md。"
+  - key: agents-md
+    title: "AGENTS.md"
+    publisher: Agentic AI Foundation
+    url: "https://agents.md/"
+    type: standard
+    lang: en
+    accessed: "2026-10-15"
+    note: "引導程式 Agent 的簡單開放格式；逾 6 萬個開源專案採用；由 Linux 基金會旗下的 Agentic AI Foundation 管理。"
+  - key: a2a-launch
+    title: "Announcing the Agent2Agent Protocol (A2A)"
+    publisher: Google Developers Blog
+    url: "https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability/"
+    type: company-site
+    lang: en
+    published: "2025-04-09"
+    accessed: "2026-10-15"
+    note: "首發有 50 多家技術夥伴（包括 Atlassian、Box、Salesforce 等）；定位為與 Anthropic 的 MCP 互補的開放協定；Agent 以 JSON 格式的 Agent Card 公告自身能力。"
+  - key: a2a-aaif
+    title: "A New Chapter for A2A: Joining the Agentic AI Foundation"
+    publisher: A2A Protocol
+    url: "https://a2a-protocol.org/latest/blog/2026/08/27/a-new-chapter-for-a2a-joining-the-agentic-ai-foundation/"
+    type: company-site
+    lang: en
+    published: "2026-08-27"
+    accessed: "2026-10-15"
+    note: "A2A 在推出穩定的 1.0 規格後，以成長階段專案加入 AAIF；獲逾 150 個組織支持；Google Cloud、AWS Bedrock AgentCore Runtime 與 Microsoft Azure AI Foundry 原生支援；ServiceNow、Salesforce、Atlassian、SAP 用它串接工作流程；LangGraph、CrewAI 等框架支援。MCP 是連接內部工具與資料庫的垂直層，A2A 是 Agent 對等協作的水平層。"
+  - key: multi-agent
+    title: "How we built our multi-agent research system"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/engineering/multi-agent-research-system"
+    type: company-site
+    lang: en
+    published: "2025-06-13"
+    accessed: "2026-10-15"
+    note: "協調者與工作者架構：主 Agent 規劃並平行派出子 Agent。內部研究評測中，以 Claude Opus 4 為主、Sonnet 4 為子 Agent 的多 Agent 系統比單一 Agent 的 Claude Opus 4 高 90.2%；Agent 的 Token 用量約為聊天的 4 倍、多 Agent 系統約 15 倍；BrowseComp 中 Token 用量本身可解釋 80% 的表現差異，三個因素合計解釋 95%；平行化讓複雜查詢的研究時間最多縮短 90%。"
+  - key: context-eng
+    title: "Effective context engineering for AI agents"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+    type: company-site
+    lang: en
+    published: "2025-09-29"
+    accessed: "2026-10-15"
+    note: "上下文工程是提示工程的延伸，指在推論時挑選與維護最佳 Token 組合的策略。上下文腐化：Token 越多，模型從上下文找回資訊的準確度越低；Transformer 中 n 個 Token 有 n² 組兩兩關係。長任務技巧：壓縮（摘要後重啟，清除舊工具結果最輕量）、結構化筆記（上下文之外的記憶）、子 Agent（可能用掉數萬 Token，回傳的摘要常為 1,000 到 2,000 個 Token）。"
+  - key: code-exec
+    title: "Code execution with MCP: Building more efficient agents"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/engineering/code-execution-with-mcp"
+    type: company-site
+    lang: en
+    published: "2025-11-04"
+    accessed: "2026-10-15"
+    note: "多數用戶端一開始就把所有工具定義載入上下文；開發者常讓 Agent 連接數十個 MCP 伺服器上的數百或數千個工具，可能在讀到請求前就處理數十萬個 Token。2 小時銷售會議逐字稿會流經模型兩次，可能多處理 5 萬個 Token。把 MCP 伺服器呈現為程式 API、讓 Agent 瀏覽檔案樹只載入需要的工具定義後，範例中的 Token 用量從 15 萬降到 2,000，節省 98.7%；另一例中 1 萬列的試算表先在執行環境中篩選，模型只需看 5 列。"
+  - key: trifecta
+    title: "The lethal trifecta for AI agents: private data, untrusted content, and external communication"
+    publisher: "Simon Willison's Weblog"
+    url: "https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/"
+    type: other
+    lang: en
+    published: "2025-06-16"
+    accessed: "2026-10-15"
+    note: "Agent 若同時具備存取私人資料、接觸不可信內容、能對外通訊三項能力，攻擊者就能輕易誘使它竊取資料；MCP 讓使用者混搭不同來源的工具，可能在不知情下湊齊三要素；宣稱能攔下 95% 攻擊的防護，在網頁應用資安標準下是不及格。"
+  - key: openrouter
+    title: "State of AI: An Empirical 100 Trillion Token Study with OpenRouter"
+    publisher: "OpenRouter、a16z"
+    url: "https://openrouter.ai/state-of-ai"
+    type: analyst
+    lang: en
+    accessed: "2026-10-15"
+    note: "2025 年 12 月發表；分析 OpenRouter 平台逾 100 兆個 Token 的匿名請求中繼資料（模型層級分析期間 2024-11-03 至 2025-11-30）。平均提示長度從約 1,500 個 Token 增至 6,000 個以上，輸出從約 150 增至 400 個 Token；程式相關請求常超過 2 萬個輸入 Token；程式類占總 Token 量從 2025 年初約 11% 升至近期超過 50%。報告註明企業內部使用、本地部署與封閉的內部系統不在資料範圍內。"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: learn-09
+  checkedBy: "learn-09-check"
+  checkedOn: "2026-10-06"
+  notes: "內容以 2026-10-06 為資料基準日；各來源的 accessed 為實際讀取日 2026-10-15。MCP 規格以 2026-07-28 版為準。SDK 下載量的兩個時間點統計範圍不同（Python 與 TypeScript 合計 vs 全部一級 SDK），圖中已註明；2026 年 7 月的「將近 5 億次」以 500 百萬次標示為估計。Token 帳本與快取費用為依官方價格的試算（查核者重算：累計輸入 1,020,000 Token、約 4.08 美元；快取寫入 63,000 Token、命中 957,000 Token，合計約 0.51 美元）。2026-10-15 查核：22 個來源全數重新讀取；修正 MCP Apps 並非本版才改為擴充、98.7% 範例所指的做法、協定錯誤的修正難度措辭、Token 倍數圖標題的過度推論與 OpenRouter 資料範圍說明。"
+---
+
+## 一句話解釋
+
+<Term id="agent">AI Agent</Term> 是把<Term id="llm">大型語言模型</Term>放進一個「規劃、行動、觀察」的迴圈：模型自己決定下一步要用哪個工具、帶什麼參數，看了結果再決定下一步，直到完成任務。<Term id="mcp">MCP</Term>（Model Context Protocol，模型上下文協定）則是一套開放標準，讓搜尋、資料庫、檔案與各種企業系統只要包裝一次，就能接上所有支援 MCP 的 AI 應用。
+
+## 生活化比喻
+
+<Callout type="analogy" title="一位只能坐在座位上的天才實習生">
+
+想像公司來了一位博學的實習生，但規定他只能坐在座位上，不能自己起身拿東西。他能做的，是在便條紙上寫「請幫我查客戶 A 上個月的訂單」，交給助理去辦；助理把結果拿回來，他讀完再寫下一張便條。
+
+- **便條紙的固定格式**就是工具呼叫：寫清楚要用哪個工具、每一欄填什麼。
+- **一張接一張地寫、讀、再寫**，直到把報告完成，就是 Agent 迴圈。
+- **各部門的系統**原本插頭不同、操作手冊也不同，每接一套就要重新教一次。MCP 像是把全公司的設備換成同一種插座、同一種格式的說明書：新系統只要做成這種插座，每位實習生立刻都會用。
+- **助理有權拒絕**：便條上寫「把公司帳戶的錢轉出去」，助理會先打電話問主管。這就是 Agent 的權限控管。
+
+</Callout>
+
+## 原理
+
+### 第一步：模型怎麼「使用」工具？
+
+語言模型本身只會輸出文字，不會真的上網或查資料庫。所謂「使用工具」，其實是一場分工，稱為 <Term id="function-calling">Function Calling</Term>（工具呼叫）：開發者先把可用的工具寫成說明書，包括名稱、用途，以及用 JSON Schema 定義的參數格式；模型判斷需要時，輸出一段格式固定的呼叫請求；真正執行的是外圍的應用程式。OpenAI 的開發文件把這個流程拆成五步<Cite k="openai-fc" />：
+
+<FlowSteps
+  title="一次工具呼叫的來回"
+  steps={[
+    { title: "附上工具清單", detail: "把問題連同工具說明書一起送給模型" },
+    { title: "模型提出呼叫", detail: "輸出工具名稱與參數，而不是直接回答" },
+    { title: "程式執行", detail: "應用程式依參數查資料或執行動作" },
+    { title: "回傳結果", detail: "把工具的輸出再送回模型" },
+    { title: "作答或再呼叫", detail: "資訊夠了就回答，不夠就呼叫下一個工具" }]}
+/>
+
+這個分工有兩個重要含意。第一，**模型只負責「決定」，程式負責「執行」**，所以權限可以在模型之外把關：程式可以拒絕某個呼叫，或先請人確認。Anthropic 的 <Term id="api">API</Term> 也是如此：模型回傳 tool_use 區塊，開發者的程式執行後，再以 tool_result 區塊送回<Cite k="claude-tools" />。第二，**工具說明書本身也要花錢**。工具定義會被放進系統訊息，占用<Term id="context-window">上下文視窗</Term>，並以輸入 <Term id="token">Token</Term> 計費<Cite k="openai-fc" />；以 Claude Opus 5.5 為例，只要提供工具（且採預設的自動選擇模式），API 就會先加入 286 個 Token 的工具系統提示，還不含各工具自己的說明<Cite k="claude-tools" />。
+
+工具的種類很廣：搜尋、執行程式、查資料庫，連沒有 API 的舊系統，也能透過 <Term id="computer-use">Computer Use</Term> 看螢幕截圖、操作滑鼠鍵盤來使用。<LearnLink id="rag-and-vector-search">RAG</LearnLink> 的檢索步驟同樣可以做成工具，由模型自己決定要不要查、查什麼，這就是 <Term id="rag">RAG</Term> 的 Agent 化。
+
+### 第二步：把工具呼叫放進迴圈，就成了 Agent
+
+只呼叫一次工具，還只是「會查資料的聊天機器人」。把「想一想、做一步、看結果」反覆執行，才是 Agent。2022 年的 ReAct 論文讓模型交錯寫出推理與行動，每次行動後讀取環境回饋，再推理下一步；只給 1 到 2 個示範例子，ReAct 在文字版家務遊戲 ALFWorld 與模擬購物網站 WebShop 的任務成功率，就比模仿學習與強化學習方法分別高出 34 與 10 個百分點<Cite k="react" />。
+
+<Scene3D id="agent-loop" variant="loop" caption="Agent 運作迴圈：中央的語言模型依序規劃、透過 MCP 用戶端呼叫外圍的工具伺服器、觀察結果並更新記憶；上方長條是逐漸填滿的上下文視窗，外圈防護欄負責權限檢查。可切換導覽步驟逐一觀察，工具名稱與順序皆為示意。" />
+
+Anthropic 在 2024 年 12 月的工程文章中，把這類系統分成兩種<Cite k="anthropic-agents" />：
+
+<Compare
+  title="工作流程與 Agent"
+  left={{ title: "工作流程（Workflow）", items: ["由工程師預先寫好路徑，模型在固定步驟中被呼叫", "常見模式：串接、分流、平行處理、主管分派、生成後評審", "可預測、好除錯，成本容易估算", "適合步驟明確、重複性高的任務"] }}
+  right={{ title: "Agent", items: ["由模型自己決定流程與要用的工具", "每一步依環境回饋調整，例如工具結果、測試是否通過", "彈性高，但延遲與成本也較高", "需要停止條件（如步數上限）與人工檢查點"] }}
+  caption="Anthropic 的建議：先找最簡單可行的做法，只有在能明確提升成效時才增加複雜度。"
+/>
+
+Anthropic 對 Agent 的描述很樸素：在迴圈中、根據環境回饋使用工具的語言模型<Cite k="anthropic-agents" />。這也說明 Agent 為何在寫程式上特別成功：程式能不能編譯、測試有沒有通過，都是明確的回饋。文章也提醒，工具要像給人用的介面一樣用心設計；例如在 SWE-bench 程式任務中，模型離開根目錄後常把相對路徑弄錯，把工具改成只接受絕對路徑，問題就消失了<Cite k="anthropic-agents" />。模型「想清楚再行動」的能力，則與<Term id="reasoning-model">推理模型</Term>的進步密切相關，見<LearnLink id="reasoning-models">推理模型</LearnLink>。
+
+### 上下文是 Agent 的工作記憶
+
+Agent 每做一步，工具呼叫與結果都會附加到對話紀錄，下一輪再整份送進模型。上下文視窗因此很快被填滿，而且越長越難用：Anthropic 引述「大海撈針」類評測的研究指出，Token 數越多，模型從上下文中找回資訊的準確度越低，稱為「上下文腐化」（context rot）；原因之一是 <Term id="transformer">Transformer</Term> 中每個 Token 都要和其他 Token 建立關聯，n 個 Token 就有 n² 組關係<Cite k="context-eng" />。
+
+所以「上下文工程」成了 Agent 設計的核心，常見三招<Cite k="context-eng" />：
+
+- **壓縮**：快滿時把對話摘要成重點，用摘要重新開始；清掉舊的工具結果是最輕量的做法。
+- **外部筆記**：讓 Agent 把進度寫到上下文以外的檔案，需要時再讀回來，等於長期記憶。
+- **子 Agent**：把子任務交給另一個上下文乾淨的 Agent；它可能用掉數萬個 Token 探索，最後只回傳 1,000 到 2,000 個 Token 的摘要。
+
+第三招就是「多 Agent」系統。Anthropic 的研究功能由一個主 Agent 規劃，再平行派出多個子 Agent 各查一個面向。內部評測中，這套系統比單一 Agent 的 Claude Opus 4 表現高出 90.2%，複雜查詢的研究時間最多縮短 90%；代價是 Token 用量大增<Cite k="multi-agent" />：
+
+<BarChart
+  title="Agent 比一般聊天多用多少 Token？"
+  unit="倍（以一般聊天為 1）"
+  data={[
+    { label: "一般聊天", value: 1 },
+    { label: "單一 Agent", value: 4 },
+    { label: "多 Agent 系統", value: 15 }]}
+  source="multi-agent"
+  note="Anthropic 2025 年 6 月依自家使用資料公布的約略倍數。在 BrowseComp 網路搜尋評測中，光是 Token 用量就能解釋 80% 的表現差異。"
+  keepOrder
+/>
+
+換句話說，Agent 的能力有很大一部分是「用 Token 換來的」<Cite k="multi-agent" />，這正是 Agent 普及會推升<Term id="inference">推論</Term>算力需求的原因。
+
+### MCP：替所有工具做一個通用插座
+
+工具呼叫解決了「模型怎麼用工具」，卻沒有解決「工具怎麼接上模型」。2024 年 11 月 25 日，Anthropic 開源 MCP 時點出問題：每接一個新的資料來源，都要寫一套客製整合，系統很難擴大<Cite k="mcp-launch" />。假設有 M 個 AI 應用、N 個工具，彼此兩兩對接：
+
+<MathTeX tex={"\\underbrace{M\\times N}_{\\text{各自對接}}\\;\\longrightarrow\\;\\underbrace{M+N}_{\\text{共用標準}}"} display label="沒有共同標準時要做 M 乘以 N 套整合，有了共同標準只需 M 加 N 套" />
+
+例如 10 個 AI 應用、100 個工具，兩兩對接要 1,000 套整合；有了共同標準，每個應用實作一次用戶端、每個工具實作一次伺服器，只要 110 套。MCP 的設計也參考了讓各種程式編輯器共用語言支援的 Language Server Protocol<Cite k="mcp-spec" />。
+
+MCP 的架構有三個角色<Cite k="mcp-arch" />：
+
+- **Host（主程式）**：使用者面對的 AI 應用，例如聊天 App 或程式編輯器，負責管理連線、權限與使用者同意。
+- **Client（用戶端）**：Host 內部的連接器，每個用戶端只對應一個伺服器。
+- **Server（伺服器）**：把某種能力包成標準介面，可以是本機程式，也可以是遠端服務。
+
+雙方以 JSON-RPC 2.0 格式交換訊息<Cite k="mcp-spec" />。伺服器能提供三種「原語」，差別在於由誰控制<Cite k="mcp-server" />：
+
+| 原語 | 由誰控制 | 用途 | 例子 |
+|---|---|---|---|
+| Tools（工具） | 模型 | 讓模型執行動作或查詢 | 送出 API 請求、寫入檔案 |
+| Resources（資源） | 應用程式 | 提供給模型參考的資料 | 檔案內容、Git 紀錄 |
+| Prompts（提示範本） | 使用者 | 預先寫好的指令範本 | 斜線指令、選單項目 |
+
+其中有一條設計原則特別重要：伺服器不能讀取整段對話，也不能「看進」其他伺服器，完整的對話紀錄只留在 Host 手上<Cite k="mcp-arch" />。第三方工具因此只拿得到完成任務所需的資訊。
+
+**從 2024 到 2026：MCP 怎麼長大？** 推出約一年後，公開運作的 MCP 伺服器已超過 1 萬個，ChatGPT、Cursor、Gemini、Microsoft Copilot、Visual Studio Code 等產品都已支援，AWS、Cloudflare、Google Cloud 與 Microsoft Azure 也提供部署服務。2025 年 12 月，Anthropic 把 MCP 捐給 Linux 基金會旗下新成立的 Agentic AI Foundation（AAIF），由 Anthropic、Block 與 OpenAI 共同創立；首批專案還有 Block 的 goose 與 OpenAI 的 AGENTS.md<Cite k="aaif" />。AGENTS.md 是寫給程式 Agent 看的專案說明檔格式，已有超過 6 萬個開源專案採用<Cite k="agents-md" />。
+
+<BarChart
+  title="MCP 官方 SDK 每月下載量"
+  unit="百萬次"
+  data={[
+    { label: "2025 年 12 月", value: 97 },
+    { label: "2026 年 7 月", value: 500, estimate: true }]}
+  source={["aaif", "mcp-2026"]}
+  note="2025 年 12 月為 Python 與 TypeScript SDK 合計「逾 9,700 萬次」；2026 年 7 月為所有一級 SDK 合計「將近 5 億次」，以 500 標示。兩者統計範圍不同，只適合看量級。"
+  keepOrder
+/>
+
+**2026-07-28 版規格：改成「無狀態」。** MCP 仍在快速演進。2026 年 7 月 28 日定案的新版拿掉了協定層級的工作階段（session）與初始握手，每個請求都自帶協定版本與用戶端能力<Cite k="mcp-changelog" />。好處是任何一台伺服器都能處理任何一個請求，放在最簡單的負載平衡器後面就能擴充，不需要共享儲存，也更容易部署在無伺服器（serverless）平台上；需要跨呼叫保存狀態的工具，改由伺服器發一個「代號」，讓模型在後續呼叫中當成參數帶回來<Cite k="mcp-2026" />。新版也正式建立擴充框架：負責長時間任務的 Tasks 移出核心，和能在對話中顯示互動介面的 MCP Apps 等一樣，成為選用的擴充功能<Cite k="mcp-2026" />。
+
+### A2A：Agent 與 Agent 之間的協定
+
+MCP 處理的是「一個 Agent 接上工具」；當不同公司開發的 Agent 需要互相分工，就需要另一套語言。Google 在 2025 年 4 月 9 日發表 <Term id="a2a">A2A</Term>（Agent2Agent）協定，首發有 50 多家技術夥伴，定位為與 MCP 互補：每個 Agent 用一份 JSON 格式的「Agent Card」公開自己的能力，其他 Agent 讀了就知道該把哪項工作交給誰<Cite k="a2a-launch" />。A2A 在推出穩定的 1.0 版規格之後，於 2026 年 8 月以「成長階段」專案加入 AAIF，官方表示已有超過 150 個組織支持<Cite k="a2a-aaif" />。
+
+<Compare
+  title="MCP 與 A2A 的分工"
+  left={{ title: "MCP（垂直整合）", items: ["連接 Agent 與工具、資料", "一端是 AI 應用，一端是工具伺服器", "例：讓 Agent 查資料庫、讀檔案、操作瀏覽器"] }}
+  right={{ title: "A2A（水平協作）", items: ["連接 Agent 與 Agent", "雙方都是能自主工作的 Agent", "例：採購 Agent 把詢價工作交給供應商的 Agent"] }}
+  caption="A2A 官方把 MCP 形容為連接內部工具的垂直層，A2A 為 Agent 之間對等協作的水平層；兩者現在都是 AAIF 的專案。"
+/>
+
+### 工具越多越好嗎？Token 的帳要算清楚
+
+接上的伺服器一多，問題就來了。Anthropic 在 2025 年 11 月指出，多數用戶端會在一開始就把所有工具定義載入上下文；開發者常讓 Agent 同時連接數十個 MCP 伺服器、數百甚至上千個工具，模型還沒讀到問題，就可能先處理數十萬個 Token。中間結果也一樣：要把一份 2 小時的會議逐字稿從雲端硬碟搬到客戶管理系統，逐字稿會流經模型兩次，可能多處理 5 萬個 Token<Cite k="code-exec" />。
+
+解法之一是讓 Agent 寫程式來呼叫工具：把各個 MCP 伺服器包裝成程式庫，Agent 需要時才去讀取對應工具的說明，大量資料則留在程式執行環境裡處理，模型只看結果。在 Anthropic 的範例中，光是改成只載入需要的工具定義，Token 用量就從 15 萬降到 2,000，省下 98.7%；讀取一份 1 萬列的試算表時，也可以先在程式裡篩選，模型只需看 5 列<Cite k="code-exec" />。新版 MCP 規格也建議伺服器以固定順序列出工具，讓用戶端能快取工具清單，並提高<Term id="prompt-caching">提示快取</Term>的命中率<Cite k="mcp-changelog" />。
+
+### 安全：會動手的 AI，風險也不同
+
+聊天機器人出錯，頂多是答錯；Agent 出錯，可能是寄錯信、刪錯檔、洩漏資料。MCP 規格明白寫著：工具等於可以執行任意程式碼，必須謹慎對待，Host 在呼叫任何工具前都必須取得使用者明確同意<Cite k="mcp-spec" />；而且應該始終有人類在迴路中，能夠拒絕工具呼叫。伺服器附在工具上、描述其行為的註記（annotations），除非來自可信任的伺服器，否則一律視為不可信<Cite k="mcp-tools" />。
+
+最大的威脅是<Term id="prompt-injection">提示注入</Term>：Agent 讀到的網頁、郵件或文件藏有惡意指令，模型誤以為是使用者的命令。軟體工程師 Simon Willison 在 2025 年 6 月提出「致命三要素」：一個 Agent 只要同時能存取私人資料、會接觸不可信的內容、又能對外傳送資訊，攻擊者就很容易誘騙它把私人資料送出去<Cite k="trifecta" />。MCP 讓使用者能自由混搭各家工具，反而可能在不知不覺中湊齊這三項；他也提醒，宣稱能攔下 95% 攻擊的防護產品，以資安標準來看仍是不及格<Cite k="trifecta" />。
+
+因此實務上的防線是多層的：只開放任務需要的工具（最小權限）、把工具回傳的內容當成不可信的資料、付款或刪除等高風險動作一律先請人確認。MCP 規格也建議用戶端在呼叫前把工具的輸入顯示給使用者、設定逾時，並記錄每次工具使用以供稽核<Cite k="mcp-tools" />。
+
+<DeepDive title="深入一點：一次 MCP 呼叫長什麼樣？Agent 的 Token 帳本怎麼算？">
+
+**MCP 的兩則訊息。** 用戶端先用 tools/list 詢問伺服器有哪些工具，伺服器回傳每個工具的名稱、說明與參數格式；模型決定使用後，用戶端再送出 tools/call。以下是規格中的天氣查詢範例，省略了每個請求都必須附帶的版本與能力欄位<Cite k="mcp-tools" />：
+
+```json
+{ "jsonrpc": "2.0", "id": 2, "method": "tools/call",
+  "params": { "name": "get_weather", "arguments": { "location": "New York" } } }
+```
+
+伺服器的回應中，content 欄位放著給模型讀的結果，isError 標示是否出錯。規格區分兩種錯誤：「工具名稱不存在」這類協定錯誤，模型比較難自行修正；「日期必須是未來」這類執行錯誤，則應回傳給模型，讓它調整參數再試一次<Cite k="mcp-tools" />。這正是 Agent 能自我修正的基礎。
+
+**為什麼 Agent 這麼吃 Token？** 模型本身不記得上一輪，每一輪都要把整段紀錄重新送進去。假設系統提示加上工具說明共 s 個 Token，每一輪新增的呼叫與結果共 c 個 Token，跑 n 輪下來，累計送進模型的輸入 Token 數是：
+
+<MathTeX tex={"T_{\\text{輸入}}=n\\,s+c\\,\\frac{n(n-1)}{2}"} display label="累計輸入 Token 數等於輪數乘以固定開銷，加上每輪新增量乘以 n 乘 n 減 1 再除以 2" />
+
+第二項隨輪數的平方成長。試算：s = 5,000、c = 2,000、n = 30，累計輸入約 102 萬個 Token（固定開銷 15 萬，加上累積紀錄 87 萬）。以 Claude Opus 5.5 每百萬輸入 Token 4 美元計算，約 4.1 美元<Cite k="claude-pricing" />。
+
+不過每一輪的開頭幾乎都和上一輪相同，正適合提示快取：Opus 5.5 的快取命中只收基本輸入價的 0.05 倍，也就是每百萬 Token 0.20 美元；寫入 5 分鐘快取則是每百萬 5 美元<Cite k="claude-pricing" />。若每輪只有新增的部分要寫入快取、其餘都命中，同一個任務的輸入費用約可降到 0.5 美元（試算，未含輸出 Token）。這也是規格建議工具清單維持固定順序的原因：順序一變，快取就失效。
+
+**真實世界的提示越來越長。** OpenRouter 與 a16z 分析該平台逾 100 兆個 Token 的使用紀錄發現，平均提示長度從約 1,500 個 Token 增加到 6,000 個以上，程式相關請求常超過 2 萬個輸入 Token；程式類用量占比則從 2025 年初的約 11% 升到超過 50%<Cite k="openrouter" />。這與 Agent 反覆累積上下文的特性一致；不過這是單一平台的資料，企業內部與本地部署的用量不在統計範圍內<Cite k="openrouter" />。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+- **模型實驗室把「會用工具」當成核心競爭力** → <SegmentChip id="foundation-models" />：<CompanyChip id="anthropic" /> 發起 MCP，<CompanyChip id="openai" /> 貢獻 AGENTS.md 並共同創立 AAIF<Cite k="aaif" />，<CompanyChip id="alphabet" /> 旗下的 Google 發起 A2A<Cite k="a2a-launch" />。模型在長任務與工具呼叫上越可靠，就越有機會爭取 Agent 帶來的 API 用量。
+- **開發工具與框架** → <SegmentChip id="devtools-data-mlops" />：<CompanyChip id="anysphere" />（Cursor）等程式開發工具已支援 MCP<Cite k="aaif" />，<CompanyChip id="langchain" /> 的 LangGraph 等 Agent 框架支援 A2A<Cite k="a2a-aaif" />；<CompanyChip id="openrouter" /> 這類模型路由平台的資料則顯示，到 2025 年底程式類用量已超過該平台 Token 量的一半<Cite k="openrouter" />。
+- **企業軟體把 Agent 串起來** → <SegmentChip id="apps-agents" />：<CompanyChip id="servicenow" />、<CompanyChip id="salesforce" />、<CompanyChip id="atlassian" /> 與 <CompanyChip id="sap" /> 都用 A2A 串接工作流程<Cite k="a2a-aaif" />。
+- **雲端提供 Agent 的「水電」** → <SegmentChip id="cloud-neocloud" />：<CompanyChip id="amazon" /> 的 AWS、<CompanyChip id="cloudflare" />、Google Cloud 與 <CompanyChip id="microsoft" /> 的 Azure 都提供 MCP 伺服器的部署服務<Cite k="aaif" />；AWS Bedrock AgentCore 與 Azure AI Foundry 也原生支援 A2A<Cite k="a2a-aaif" />。無狀態的新版 MCP，更適合在 Cloudflare Workers 這類無伺服器平台上執行<Cite k="mcp-2026" />。
+- **最終變成推論算力需求** → <SegmentChip id="ai-accelerators" />：單一 Agent 的 Token 用量約是聊天的 4 倍、多 Agent 系統約 15 倍<Cite k="multi-agent" />，這些 Token 都要在資料中心的加速器上算出來，例如 <CompanyChip id="nvidia" /> 的 GPU。延伸閱讀：<TrendLink id="agentic-ai-standards">Agent 生態與標準化</TrendLink>、<TrendLink id="ai-coding">AI 寫程式</TrendLink>、<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>、<TrendLink id="long-context-memory">長上下文與模型記憶</TrendLink>與<TrendLink id="ai-monetization">AI 營收化</TrendLink>。

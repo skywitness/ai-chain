@@ -1,0 +1,304 @@
+/*
+ * Reset + element defaults. Owner: design-system agent.
+ * Everything lives in cascade layers, so any unlayered (e.g. scoped page) style wins without !important.
+ */
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  * {
+    margin: 0;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    hanging-punctuation: allow-end;
+  }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  img,
+  picture,
+  video,
+  canvas,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+  img,
+  video {
+    height: auto;
+  }
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+  }
+  button {
+    cursor: pointer;
+  }
+  :where(button, [role='button']):disabled {
+    cursor: not-allowed;
+  }
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    overflow-wrap: break-word;
+  }
+  table {
+    border-collapse: collapse;
+  }
+  :where(ul, ol)[role='list'] {
+    list-style: none;
+    padding: 0;
+  }
+  [hidden]:not([hidden='until-found']) {
+    display: none !important;
+  }
+}
+
+@layer base {
+  html {
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font-family: var(--font-sans);
+    font-size: 100%;
+    line-height: var(--lh-body);
+    scroll-padding-top: calc(var(--header-h) + var(--space-4));
+    accent-color: var(--c-accent);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font-size: var(--fs-m);
+    line-height: var(--lh-body);
+    line-break: strict;
+    word-break: normal;
+    overflow-wrap: break-word;
+    font-kerning: normal;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* never let a stray wide element create horizontal page scroll */
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: var(--c-selection);
+    color: var(--c-fg);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--c-fg);
+    font-weight: var(--fw-bold);
+    line-height: var(--lh-tight);
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+  }
+  h1 {
+    font-size: var(--fs-3xl);
+    letter-spacing: 0.005em;
+  }
+  h2 {
+    font-size: var(--fs-2xl);
+  }
+  h3 {
+    font-size: var(--fs-xl);
+  }
+  h4 {
+    font-size: var(--fs-l);
+  }
+  h5,
+  h6 {
+    font-size: var(--fs-m);
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: var(--c-link);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+    text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+    transition: color var(--dur-1) ease, text-decoration-color var(--dur-1) ease;
+  }
+  a:hover {
+    color: var(--c-link-hover);
+    text-decoration-color: currentColor;
+  }
+
+  :focus {
+    outline: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+  kbd {
+    display: inline-block;
+    padding: 0 0.4em;
+    border: 1px solid var(--c-border-strong);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-s);
+    background: var(--c-bg-elev);
+    color: var(--c-fg-muted);
+    font-size: 0.8em;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--c-border);
+    margin-block: var(--space-6);
+  }
+
+  abbr[title] {
+    text-decoration: underline dotted;
+    cursor: help;
+  }
+
+  sup,
+  sub {
+    line-height: 0;
+  }
+
+  mark {
+    background: var(--c-mark);
+    color: inherit;
+    padding: 0 0.15em;
+    border-radius: 2px;
+  }
+
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  svg {
+    fill: currentColor;
+  }
+  svg:where([fill='none']) {
+    fill: none;
+  }
+
+  /* Math rendered at build time by temml (MathML Core) */
+  math {
+    font-family: var(--font-math);
+    font-style: normal;
+    font-weight: normal;
+    line-height: normal;
+    letter-spacing: normal;
+    direction: ltr;
+  }
+  math.tml-display {
+    display: block math;
+    width: 100%;
+  }
+
+  /* Native popovers default to the UA's centred box; component styles refine them */
+  [popover] {
+    color: var(--c-fg);
+    background: var(--c-bg-elev);
+    border: 1px solid var(--c-border);
+  }
+
+  dialog {
+    color: var(--c-fg);
+    background: var(--c-bg-elev);
+  }
+  dialog::backdrop {
+    background: var(--c-overlay);
+  }
+
+  /* Pagefind Component UI: map its variables onto the site tokens (element-level, so it beats :root) */
+  pagefind-modal,
+  pagefind-searchbox {
+    --pf-text: var(--c-fg);
+    --pf-text-secondary: var(--c-fg-muted);
+    --pf-text-muted: var(--c-fg-subtle);
+    --pf-background: var(--c-bg-elev);
+    --pf-border: var(--c-border);
+    --pf-border-focus: var(--c-focus);
+    --pf-outline-focus: var(--c-focus);
+    --pf-hover: var(--c-hover);
+    /* --pf-mark is the TEXT colour of matched words (bold, transparent background), not a fill:
+       --c-mark (a pale highlight fill) made matches nearly invisible in both themes. */
+    --pf-mark: var(--c-fg);
+    --pf-font: var(--font-sans);
+    --pf-border-radius: var(--radius-m);
+    --pf-modal-backdrop: var(--c-overlay);
+    --pf-modal-max-width: 44rem;
+  }
+}
+
+/* Cross-document view transitions (real page loads; no client router) */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 180ms;
+    animation-timing-function: var(--ease-out);
+  }
+  ::view-transition-group(site-header) {
+    animation-duration: 0s;
+  }
+}
+
+/* Global motion kill-switch */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  :root {
+    --c-bg: white;
+    --c-bg-elev: white;
+    --c-bg-sunken: white;
+    --c-fg: black;
+  }
+  body {
+    background: white;
+  }
+}

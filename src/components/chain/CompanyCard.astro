@@ -1,0 +1,213 @@
+---
+/**
+ * Tier-1 company card for segment pages: names, ticker, region, the roster role line, an
+ * 8-quarter revenue sparkline and TTM revenue (native currency, USD conversion, YoY).
+ *   <CompanyCard item={ranked} financials={fin} />
+ */
+import Sparkline from '../charts/Sparkline.astro';
+import Badge from '../ui/Badge.astro';
+import { companyHref } from '../../lib/paths';
+import { formatSignedPercent } from '../../lib/format';
+import type { FinancialsData } from '../../lib/financial-metrics';
+import type { RankedCompany } from '../../lib/scene-data/segments';
+import { OWNERSHIP_LABELS, STATUS_LABELS, primaryTicker, regionLabel, ttmText } from './chain-data';
+
+interface Props {
+  item: RankedCompany;
+  financials?: FinancialsData | undefined;
+  headingLevel?: 3 | 4 | undefined;
+}
+const { item, financials, headingLevel = 3 } = Astro.props;
+const c = item.company;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+const ticker = primaryTicker(c);
+const t = ttmText(item);
+const estimateOnly =
+  !!financials &&
+  financials.series.filter((s) => s.metric === 'revenue').every((s) => s.points.every((p) => p.status === 'estimate'));
+const hasSpark =
+  !!financials && financials.series.some((s) => s.metric === 'revenue' && s.periodType !== 'month' && s.points.length > 1);
+const yoy = t?.yoy ?? null;
+---
+
+<article class="cc" style={`--cc-c: var(--seg-${c.segment})`}>
+  <div class="cc__head">
+    <H class="cc__name">
+      <a href={companyHref(c.id)} class="cc__link">{c.nameZh}</a>
+    </H>
+    {c.name !== c.nameZh && <p class="cc__en" lang="en">{c.name}</p>}
+  </div>
+  <p class="cc__tags">
+    {ticker ? <span class="cc__ticker">{ticker}</span> : <span class="cc__ticker cc__ticker--none">{OWNERSHIP_LABELS[c.ownership] ?? '未上市'}</span>}
+    <span class="cc__region">{regionLabel(c.region)}</span>
+    {c.status !== 'active' && <Badge tone="warn">{STATUS_LABELS[c.status] ?? '非營運中'}</Badge>}
+  </p>
+  <p class="cc__role">{c.role}</p>
+  <div class="cc__fin">
+    {
+      t ? (
+        <>
+          <div class="cc__ttm">
+            <span class="cc__ttm-label">{t.label}營收</span>
+            <span class="cc__ttm-value">{t.native}</span>
+            <span class="cc__ttm-sub">
+              {t.usd && <span>{t.usd}</span>}
+              {yoy != null && (
+                <span class:list={['cc__yoy', yoy >= 0 ? 'pos' : 'neg']}>
+                  年增 {formatSignedPercent(yoy)}
+                </span>
+              )}
+            </span>
+          </div>
+          {hasSpark && <Sparkline financials={financials} n={8} width={104} height={34} kind="bars" color={`var(--seg-${c.segment})`} class="cc__spark" />}
+        </>
+      ) : hasSpark ? (
+        <>
+          <div class="cc__ttm">
+            <span class="cc__ttm-label">營收走勢</span>
+            <span class="cc__ttm-note">{estimateOnly ? '僅有估計值（虛線）' : '近四季資料不足，暫不計算'}</span>
+          </div>
+          <Sparkline financials={financials} n={8} width={104} height={34} color={`var(--seg-${c.segment})`} class="cc__spark" />
+        </>
+      ) : (
+        <div class="cc__ttm">
+          <span class="cc__ttm-label">營收</span>
+          <span class="cc__ttm-note">{c.ownership === 'listed' ? '財報資料整理中' : '未上市，未公開完整財報'}</span>
+        </div>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  .cc {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-4) var(--space-4) var(--space-3);
+    border: 1px solid var(--c-border);
+    border-block-start: 3px solid var(--cc-c);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: var(--shadow-1);
+    transition:
+      border-color var(--dur-2) ease,
+      box-shadow var(--dur-2) ease;
+  }
+  .cc:hover {
+    box-shadow: var(--shadow-2);
+    border-inline-color: var(--c-border-strong);
+    border-block-end-color: var(--c-border-strong);
+  }
+  .cc:has(.cc__link:focus-visible) {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  .cc__head {
+    display: grid;
+    gap: 1px;
+  }
+  .cc__name {
+    font-size: var(--fs-l);
+    line-height: 1.35;
+  }
+  .cc__link {
+    color: var(--c-fg);
+    text-decoration: none;
+  }
+  .cc__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .cc__link:focus-visible {
+    outline: none;
+  }
+  .cc__en {
+    font-size: var(--fs-s);
+    color: var(--c-fg-subtle);
+    line-height: 1.4;
+  }
+  .cc__tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-xs);
+  }
+  .cc__ticker {
+    font-family: var(--font-mono);
+    font-weight: var(--fw-semibold);
+    padding: 2px 6px;
+    border-radius: var(--radius-s);
+    background: var(--c-bg-sunken);
+    color: var(--c-fg-muted);
+    letter-spacing: 0.02em;
+  }
+  .cc__ticker--none {
+    font-family: var(--font-sans);
+  }
+  .cc__region {
+    color: var(--c-fg-muted);
+  }
+  .cc__region::before {
+    content: '·';
+    margin-inline-end: var(--space-2);
+    color: var(--c-fg-subtle);
+  }
+  .cc__role {
+    font-size: var(--fs-s);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .cc__fin {
+    margin-block-start: auto;
+    padding-block-start: var(--space-3);
+    border-block-start: 1px dashed var(--c-border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .cc__ttm {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+  }
+  .cc__ttm-label {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .cc__ttm-value {
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.35;
+  }
+  .cc__ttm-sub {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-2);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .cc__yoy.pos {
+    color: var(--c-pos);
+  }
+  .cc__yoy.neg {
+    color: var(--c-neg);
+  }
+  .cc__ttm-note {
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .cc__fin :global(.cc__spark) {
+    flex: none;
+  }
+</style>

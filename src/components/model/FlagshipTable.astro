@@ -1,0 +1,367 @@
+---
+/**
+ * Flagship comparison table for the language-model families on /models/: one row per family
+ * (its flagship version), sorted by the editors' capability score. Every price and score shows its
+ * own date, and a note flags score columns whose dates are more than 90 days apart.
+ *
+ *   <FlagshipTable families={llmFamilies} benchmarks={['aa-intelligence-index', 'gpqa-diamond', 'hle']} />
+ */
+import Icon from '../ui/Icon.astro';
+import { formatDate } from '../../lib/format';
+import { modelsCompareHref } from '../../lib/paths';
+import {
+  ORIGIN_LABELS,
+  REASONING_LABELS,
+  REPORTER_LABELS,
+  WEIGHTS_LABELS,
+  benchmarkInfo,
+  benchmarkMap,
+  dateSpread,
+  formatScore,
+  formatTokens,
+  formatUsd,
+  pickBenchmark,
+  type FamilyView,
+} from './model-data';
+
+interface Props {
+  families: FamilyView[];
+  benchmarks: string[];
+  caption?: string | undefined;
+}
+const { families, benchmarks, caption = '旗艦語言模型比較表' } = Astro.props;
+const bmap = benchmarkMap();
+const rows = families
+  .filter((f) => f.data && f.flagship)
+  .sort((a, b) => (b.data!.positioning.capability ?? 0) - (a.data!.positioning.capability ?? 0));
+const cols = benchmarks.map((id) => {
+  const info = benchmarkInfo(id, bmap);
+  const dates = rows.map((f) => pickBenchmark(f.flagship, id)?.date);
+  return { id, info, spread: dateSpread(dates) };
+});
+const wideSpread = cols.filter((c) => c.spread > 90);
+/** 「SpaceXAI（原 xAI，SpaceX 旗下）」→「SpaceXAI」: the table has no room for parentheticals. */
+const shortLab = (name: string) => name.replace(/\s*[（(][^）)]*[）)]/g, '').trim() || name;
+/** Licence names can carry long remarks in parentheses; the full text is on the family page. */
+const licenseText = (l: string) => (l === 'proprietary' ? '專有授權' : l.replace(/\s*[（(][^）)]*[）)]/g, '').trim() || l);
+const flagshipIds = rows.slice(0, 4).map((f) => f.flagship!.id);
+/** Compact reporter tags for the narrow score cells (the note under the table spells them out). */
+const REPORTER_SHORT: Record<string, string> = { lab: '自評', 'third-party': '第三方', leaderboard: '排行榜' };
+---
+
+{
+  rows.length === 0 ? (
+    <p class="ft-empty">旗艦模型資料整理中，完成後會在這裡並排比較規格、價格與評測。</p>
+  ) : (
+    <div class="ft">
+      <p class="ft__hint" aria-hidden="true">
+        表格可左右滑動，查看價格與評測分數 <Icon name="arrow-right" />
+      </p>
+      <div class="ft__scroll scroll-x" role="region" aria-label={`${caption}（可左右捲動）`} data-pagefind-ignore>
+        <table class="ft__table">
+          <caption class="sr-only">{caption}：每列為一個模型系列的旗艦版本，價格與分數皆附日期。</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="ft__sticky">旗艦版本<span class="ft__unit">實驗室・來源地</span></th>
+              <th scope="col">發表日</th>
+              <th scope="col">權重／授權</th>
+              <th scope="col" class="num">上下文</th>
+              <th scope="col" class="num">
+                API 價格
+                <span class="ft__unit">輸入／輸出</span>
+                <span class="ft__unit">每百萬 tokens</span>
+              </th>
+              <th scope="col">推理</th>
+              {cols.map((c) => (
+                <th scope="col" class="num ft__bh">
+                  <abbr title={`${c.info.name}：${c.info.measures}`}>{c.info.zh}</abbr>
+                  <span class="ft__unit">{c.info.scale}</span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((f) => {
+              const v = f.flagship!;
+              const p = f.price;
+              return (
+                <tr>
+                  <th scope="row" class="ft__sticky">
+                    <a href={f.href} class="ft__name">
+                      {v.name}
+                    </a>
+                    <span class="ft__sub ft__lab">
+                      {shortLab(f.labName)}・{ORIGIN_LABELS[f.origin] ?? f.origin}
+                    </span>
+                  </th>
+                  <td class="nw ft__date">{formatDate(v.released, 'iso')}</td>
+                  <td class="ft__lic">
+                    <span class:list={['ft__w', `is-${v.weights}`]}>{WEIGHTS_LABELS[v.weights] ?? v.weights}</span>
+                    <span class="ft__sub ft__wrap">{licenseText(v.license)}</span>
+                  </td>
+                  <td class="num">{formatTokens(v.contextTokens)}</td>
+                  <td class="num">
+                    {p ? (
+                      <>
+                        {formatUsd(p.inputPerMTok)}／{formatUsd(p.outputPerMTok)}
+                        <span class="ft__sub">{p.asOf}</span>
+                      </>
+                    ) : (
+                      <span class="ft__na">無官方 API 定價</span>
+                    )}
+                  </td>
+                  <td class="nw">{REASONING_LABELS[v.reasoning] ?? v.reasoning}</td>
+                  {cols.map((c) => {
+                    const b = pickBenchmark(v, c.id);
+                    return (
+                      <td class="num">
+                        {b ? (
+                          <>
+                            <span class:list={['ft__score', { 'is-lab': b.reportedBy === 'lab' }]}>{formatScore(b.score, c.info)}</span>
+                            <span class="ft__sub">
+                              {b.date}
+                              <span class:list={['ft__rep', { 'is-lab': b.reportedBy === 'lab' }]}>{REPORTER_SHORT[b.reportedBy] ?? REPORTER_LABELS[b.reportedBy] ?? b.reportedBy}</span>
+                            </span>
+                          </>
+                        ) : (
+                          <span class="ft__na" aria-label="無資料">—</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div class="ft__notes">
+        <p>
+          <Icon name="info" />
+          排序依編輯整理的綜合能力座標（多數取自 Artificial Analysis 綜合智慧指數）。分數優先採用第三方或排行榜的獨立量測，灰色數字為實驗室自評，兩者的測試設定不一定相同。價格為官方標準價，不含批次、快取等折扣；「—」表示尚無可引用的分數。
+        </p>
+        {wideSpread.length > 0 && (
+          <p class="ft__warn">
+            <Icon name="warn" />
+            {wideSpread.map((c) => `${c.info.zh}各列日期相差 ${c.spread} 天`).join('；')}
+            。發表時間不同的版本，分數不宜直接比較。
+          </p>
+        )}
+        <p>
+          <a href={modelsCompareHref(flagshipIds)} class="ft__cta">
+            挑選版本並排比較規格、價格與評測
+            <Icon name="arrow-right" />
+          </a>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+<style>
+  @layer components {
+    .ft {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-3);
+    }
+    .ft__scroll {
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+    }
+    .ft__table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: var(--fs-s);
+      line-height: 1.5;
+      min-width: 56rem;
+    }
+    .ft__table th,
+    .ft__table td {
+      padding: var(--space-2) var(--space-3);
+      text-align: start;
+      vertical-align: top;
+      border-block-end: 1px solid var(--c-border);
+    }
+    .ft__table tbody tr:last-child > * {
+      border-block-end: 0;
+    }
+    .ft__table thead th {
+      position: sticky;
+      inset-block-start: 0;
+      background: var(--c-bg-sunken);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-muted);
+      vertical-align: bottom;
+      white-space: nowrap;
+    }
+    .ft__table thead abbr {
+      text-decoration: none;
+    }
+    /* benchmark headers may wrap (「Terminal-Bench 終端機任務」), keeping the score columns narrow */
+    .ft__table thead th.ft__bh {
+      white-space: normal;
+      word-break: keep-all;
+      min-width: 6.5em;
+      max-width: 8.5em;
+    }
+    .ft__table .num {
+      text-align: end;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .ft__table td {
+      min-width: 5.5em;
+    }
+    .ft__table td.ft__lic {
+      min-width: 8em;
+      max-width: 13em;
+    }
+    .ft__date {
+      color: var(--c-fg-muted);
+    }
+    .ft__table td.nw {
+      white-space: nowrap;
+    }
+    .ft__sticky {
+      position: sticky;
+      inset-inline-start: 0;
+      z-index: 1;
+      background: var(--c-bg-elev);
+      min-width: 12rem;
+      max-width: 16rem;
+      box-shadow: 1px 0 0 var(--c-border);
+    }
+    @media (max-width: 639px) {
+      .ft__sticky {
+        min-width: 8.5rem;
+        max-width: 9.5rem;
+      }
+      .ft__table th.ft__sticky {
+        white-space: normal;
+      }
+    }
+    .ft__table thead .ft__sticky {
+      z-index: 2;
+      background: var(--c-bg-sunken);
+    }
+    .ft__hint {
+      display: flex;
+      align-items: center;
+      gap: 0.35em;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      margin-block-end: calc(-1 * var(--space-1));
+    }
+    /* Wide screens: the table fits, so the header can stick under the site header while the
+       30 rows scroll (inside a scroll container it would stick to nothing). */
+    @media (min-width: 1000px) {
+      .ft__hint {
+        display: none;
+      }
+      .ft__scroll {
+        overflow: visible;
+      }
+      .ft__table thead th {
+        inset-block-start: var(--header-h);
+        z-index: 2;
+      }
+      .ft__table thead th:first-child {
+        border-start-start-radius: calc(var(--radius-l) - 1px);
+      }
+      .ft__table thead th:last-child {
+        border-start-end-radius: calc(var(--radius-l) - 1px);
+      }
+    }
+    .ft__table tbody tr:hover > * {
+      background: color-mix(in srgb, var(--c-accent) 4%, var(--c-bg-elev));
+    }
+    .ft__table tbody th {
+      font-weight: var(--fw-regular);
+    }
+    .ft__name {
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+      text-decoration: none;
+    }
+    .ft__name:hover {
+      color: var(--c-link-hover);
+      text-decoration: underline;
+    }
+    .ft__unit {
+      display: block;
+      font-weight: var(--fw-regular);
+      color: var(--c-fg-subtle);
+      font-size: 0.92em;
+    }
+    .ft__sub {
+      display: block;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      white-space: nowrap;
+    }
+    .ft__table tbody th .ft__sub,
+    .ft__table .ft__sub.ft__wrap {
+      white-space: normal;
+    }
+    .ft__score {
+      font-weight: var(--fw-semibold);
+      font-size: var(--fs-m);
+    }
+    .ft__score.is-lab {
+      font-weight: var(--fw-regular);
+      color: var(--c-fg-muted);
+    }
+    .ft__rep::before {
+      content: '・';
+    }
+    .ft__rep.is-lab {
+      color: var(--c-warn);
+    }
+    .ft__w {
+      font-weight: var(--fw-semibold);
+    }
+    .ft__w.is-open-weights,
+    .ft__w.is-open-source {
+      color: var(--c-pos);
+    }
+    .ft__na {
+      color: var(--c-fg-subtle);
+    }
+    .ft__notes {
+      display: grid;
+      gap: var(--space-2);
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+    .ft__notes p {
+      display: flex;
+      gap: 0.5em;
+      align-items: baseline;
+    }
+    .ft__notes :global(svg) {
+      flex: none;
+      transform: translateY(0.12em);
+    }
+    .ft__warn {
+      color: var(--c-warn);
+    }
+    .ft__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+      font-weight: var(--fw-semibold);
+      min-block-size: 2.75rem;
+    }
+    .ft-empty {
+      padding: var(--space-6);
+      border: 1px dashed var(--c-border-strong);
+      border-radius: var(--radius-l);
+      color: var(--c-fg-muted);
+      text-align: center;
+    }
+  }
+</style>

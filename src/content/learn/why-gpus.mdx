@@ -1,0 +1,382 @@
+---
+title: "為什麼 AI 需要 GPU？"
+subtitle: "上萬個核心同時算、HBM 餵資料、NVLink 串成機櫃：GPU 成為 AI 引擎的原因"
+description: "AI 的核心運算是海量、簡單又彼此獨立的乘加，正好適合有上萬個核心的 GPU 平行處理。本文用改考卷的比喻說明 CPU 與 GPU 的差別、Tensor Core、HBM 與 NVLink，以及 GPU 如何帶動整條 AI 供應鏈。"
+level: 1
+order: 106
+track: hardware
+prerequisites: [neural-networks-101]
+next: [data-centers-101, gpu-architecture, how-chips-are-made]
+relatedSegments: [ai-accelerators, foundry-packaging, memory-storage, servers-systems, networking-optics, datacenter-infra]
+relatedCompanies: [nvidia, amd, alphabet, broadcom, openai, tsmc, sk-hynix, samsung-electronics, micron, foxconn, quanta, wiwynn, meta]
+relatedModels: [meta-muse-llama]
+relatedTrends: [gpu-roadmap-rubin-feynman, custom-asic-rise, memory-supercycle, rack-scale-systems]
+glossary:
+  - matrix-multiplication
+  - gpu
+  - hbm
+  - llm
+  - token
+  - training
+  - parallel-computing
+  - cpu
+  - tensor-core
+  - flops
+  - fp8
+  - fp4
+  - memory-wall
+  - nvlink
+  - nvl72
+  - cuda
+  - ai-accelerator
+  - asic
+  - tpu
+  - gigawatt
+  - decode
+  - batching
+  - kv-cache
+  - quantization
+scenes:
+  - id: gpu-scale
+    variant: chip
+keyTakeaways:
+  - "AI 運算主要是海量、簡單又彼此獨立的乘加（矩陣乘法），最適合平行處理。"
+  - "CPU 是少數全能高手，GPU 是千軍萬馬：H100 有 16,896 個 CUDA 核心與 528 個 Tensor Core。"
+  - "Tensor Core 專做矩陣乘法；從 V100 到 Rubin，單顆 GPU 的 16 位元算力約成長 32 倍。"
+  - "算得快還要餵得快：HBM 負責高速供應資料，NVLink 把 72 顆 GPU 串成一座機櫃。"
+  - "CUDA 軟體生態是輝達最難被取代的優勢；Google TPU 等客製 ASIC 與超微 GPU 是主要挑戰者。"
+  - "輝達資料中心營收從 FY2023 的 150 億美元增至 FY2026 的 1,937 億美元，帶動整條供應鏈。"
+estimatedMinutes: 12
+sources:
+  - key: eleuther
+    title: "Transformer Math 101"
+    publisher: EleutherAI
+    url: "https://blog.eleuther.ai/transformer-math/"
+    type: other
+    lang: en
+    published: "2023-04-18"
+    accessed: "2026-10-06"
+    note: "前向傳播約 2 × 參數量 × token 數次浮點運算；16 位元格式每個參數占 2 位元組。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: Meta AI（arXiv）
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-06"
+    note: "模型分為 8B、70B、405B 三種；405B 旗艦模型預訓練運算量 3.8 × 10^25 FLOPs；最多以 1.6 萬顆 H100（每顆 700W、80GB HBM3）訓練。"
+  - key: 3b1b-llm
+    title: "Large Language Models explained briefly"
+    publisher: 3Blue1Brown
+    url: "https://www.3blue1brown.com/lessons/mini-llm"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "假設每秒能做 10 億次加法與乘法，完成訓練最大型語言模型所需的運算也要超過 1 億年。"
+  - key: nvidia-cpu-gpu
+    title: "What's the Difference Between a CPU and a GPU?"
+    publisher: NVIDIA Blog
+    url: "https://blogs.nvidia.com/blog/whats-the-difference-between-a-cpu-and-a-gpu/"
+    type: other
+    lang: en
+    published: "2009-12-16"
+    accessed: "2026-10-06"
+    note: "CPU 由少數核心加大量快取組成，一次處理少數執行緒；GPU 由數百個核心組成，可同時處理數千個執行緒；CUDA 於 2007 年首度釋出；Tensor Core 以單一運算完成混合精度矩陣乘加。原文發表於 2009 年 12 月，其後更新。"
+  - key: amd-epyc
+    title: "AMD EPYC 9005 Series Server Processors"
+    publisher: AMD
+    url: "https://www.amd.com/en/products/processors/server/epyc/9005-series.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "EPYC 9005 系列最多 192 個 Zen 5／Zen 5c 核心，頂規型號為 EPYC 9965。"
+  - key: nvidia-hopper
+    title: "NVIDIA Hopper Architecture In-Depth"
+    publisher: NVIDIA Technical Blog
+    url: "https://developer.nvidia.com/blog/nvidia-hopper-architecture-in-depth/"
+    type: docs
+    lang: en
+    published: "2022-03-22"
+    accessed: "2026-10-06"
+    note: "H100 SXM5：132 個 SM、16,896 個 FP32 CUDA 核心、528 個第四代 Tensor Core、80 GB HBM3；GH100 以為輝達客製的台積電 4N 製程生產，800 億個電晶體。"
+  - key: nvidia-h100
+    title: "NVIDIA H100 Tensor Core GPU"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/h100/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "H100 SXM：BF16／FP16 Tensor Core 1,979 TFLOPS（含稀疏加速，稠密約為一半）、80GB、記憶體頻寬 3.35TB/s、TDP 最高 700W。"
+  - key: nvidia-v100
+    title: "NVIDIA V100 Tensor Core GPU Datasheet"
+    publisher: NVIDIA
+    url: "https://images.nvidia.com/content/technologies/volta/pdf/volta-v100-datasheet-update-us-1165301-r5.pdf"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "V100 SXM2：640 個 Tensor Core、5,120 個 CUDA 核心、Tensor 運算 125 TFLOPS、記憶體頻寬 900 GB/s。"
+  - key: nvidia-a100
+    title: "NVIDIA A100 Tensor Core GPU"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/a100/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "BF16／FP16 Tensor Core 312 TFLOPS（含稀疏加速 624 TFLOPS）。"
+  - key: nvidia-gb300
+    title: "NVIDIA GB300 NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/gb300-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "72 顆 Blackwell Ultra GPU、36 顆 Grace CPU；FP16／BF16 Tensor Core 360 PFLOPS（含稀疏加速）；換算每顆 GPU 稠密約 2.5 PFLOPS。"
+  - key: nvidia-vera-rubin
+    title: "NVIDIA Vera Rubin NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "整櫃 72 顆 Rubin GPU、36 顆 Vera CPU；每顆 Rubin GPU：FP16／BF16 稠密 4 PFLOPS、FP8 稠密 17.5 PFLOPS、NVFP4 推論 50 PFLOPS（稀疏規格）、288 GB HBM4、頻寬 19.2 TB/s。"
+  - key: nvidia-rubin
+    title: "NVIDIA Kicks Off the Next Generation of AI With Rubin — Six New Chips, One Incredible AI Supercomputer"
+    publisher: NVIDIA Newsroom
+    url: "https://nvidianews.nvidia.com/news/rubin-platform-ai-supercomputer"
+    type: press-release
+    lang: en
+    published: "2026-01-05"
+    accessed: "2026-10-06"
+    note: "Rubin GPU 提供 50 PFLOPS 的 NVFP4 推論運算；Vera Rubin NVL72 規格頁將此數值標為稀疏規格（sparse specification）。"
+  - key: nvidia-blackwell
+    title: "NVIDIA Blackwell Architecture"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "Blackwell GPU 有 2,080 億個電晶體，以客製化的台積電 4NP 製程生產；兩顆達光罩尺寸上限的晶粒以 10 TB/s 晶片間互連組成單一 GPU。"
+  - key: wiki-volta
+    title: "Volta (microarchitecture)"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Volta_(microarchitecture)"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "二手來源。2017 年 5 月與 Tesla V100 一起發表，是輝達第一款具備 Tensor Core 的晶片；每個 Tensor Core 將兩個 4×4 FP16 矩陣相乘，再以融合乘加加上第三個矩陣。"
+  - key: nvidia-timeline
+    title: "NVIDIA History: A Timeline of Innovation"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/about-nvidia/corporate-timeline/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "公司自述：1999 年發明 GPU；2006 年發表 CUDA 架構；2012 年以 AlexNet 開啟現代 AI 時代。"
+  - key: alexnet
+    title: "ImageNet Classification with Deep Convolutional Neural Networks"
+    publisher: NeurIPS Proceedings
+    url: "https://papers.nips.cc/paper_files/paper/2012/file/c399862d3b9d6b76c8436e924a68c45b-Paper.pdf"
+    type: paper
+    lang: en
+    accessed: "2026-10-06"
+    note: "以兩張 GTX 580 3GB 訓練 5–6 天；ILSVRC-2012 top-5 錯誤率 15.3%，第二名 26.2%。"
+  - key: wiki-tpu
+    title: "Tensor Processing Unit"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Tensor_Processing_Unit"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "二手來源。TPU 是 Google 為神經網路機器學習開發的 ASIC，2015 年起內部使用；2026-04-22 發表第八代，8t 用於大規模預訓練、8i 用於推論。"
+  - key: google-cloud-tpu
+    title: "Cloud TPU"
+    publisher: Google Cloud
+    url: "https://cloud.google.com/tpu"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "官方產品頁：TPU 8t 為大規模預訓練與大量嵌入運算的工作負載打造，單一 superpod 可達 9,600 顆晶片；TPU 8i 針對後訓練與推論最佳化；兩者皆標示為即將推出（Coming soon）。"
+  - key: amd-openai
+    title: "AMD and OpenAI Announce Strategic Partnership to Deploy 6 Gigawatts of AMD GPUs"
+    publisher: AMD
+    url: "https://ir.amd.com/news-events/press-releases/detail/1260/amd-and-openai-announce-strategic-partnership-to-deploy-6-gigawatts-of-amd-gpus"
+    type: press-release
+    lang: en
+    published: "2025-10-06"
+    accessed: "2026-10-06"
+    note: "多年、多世代合約，共 6 GW；首批 1 GW 的 Instinct MI450 自 2026 年下半年開始部署。"
+  - key: nv-q4fy23
+    title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2023"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2023"
+    type: press-release
+    lang: en
+    published: "2023-02-22"
+    accessed: "2026-10-06"
+    note: "FY2023 資料中心營收 150.1 億美元。"
+  - key: nv-q4fy24
+    title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2024"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2024"
+    type: press-release
+    lang: en
+    published: "2024-02-21"
+    accessed: "2026-10-06"
+    note: "FY2024 資料中心營收 475 億美元，年增 217%。"
+  - key: nv-q4fy25
+    title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2025"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2025"
+    type: press-release
+    lang: en
+    published: "2025-02-26"
+    accessed: "2026-10-06"
+    note: "FY2025 資料中心營收 1,152 億美元，年增 142%。"
+  - key: nv-q4fy26
+    title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2026"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2026"
+    type: press-release
+    lang: en
+    published: "2026-02-25"
+    accessed: "2026-10-06"
+    note: "FY2026 資料中心營收 1,937 億美元，年增 68%；遊戲營收 160 億美元。"
+  - key: nv-q2fy27
+    title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2027"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2027"
+    type: press-release
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-06"
+    note: "單季資料中心營收 890 億美元，年增 117%；Vera Rubin 平台進入全面量產。"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: learn-03
+  checkedBy: "learn-03-check"
+  checkedOn: "2026-10-06"
+---
+
+## 一句話解釋
+
+AI 的核心運算是數量龐大、規則簡單、而且彼此獨立的「乘完再加」，也就是<Term id="matrix-multiplication">矩陣乘法</Term>。<Term id="gpu">GPU</Term>（圖形處理器）內建上萬個小型運算核心，能把這些計算同時做完，再搭配緊貼在旁的 <Term id="hbm">HBM</Term>（高頻寬記憶體）與晶片之間的高速連線，就成了訓練與執行 AI 的主力晶片。
+
+## 生活化比喻
+
+<Callout type="analogy" title="改一萬份考卷：找幾位教授，還是一整座體育館的助教？">
+
+假設要在一小時內改完一萬份選擇題考卷：
+
+- **CPU 像幾位資深教授**：再難的題目都會解，擅長需要判斷、有先後順序的工作。但人數不多，只能一份一份改，一小時改不完。
+- **GPU 像坐滿體育館的上萬名助教**：每個人只會對照標準答案打勾，但大家同時動手，一萬份考卷很快就改完。
+
+神經網路的運算就像改選擇題：規則簡單、數量龐大，而且每一題都能分開處理。不過，助教再多，考卷送不過來也只能乾等；分散在各場館的成績也得彙整在一起。這兩件事，分別對應到 GPU 旁邊的 HBM 記憶體，以及把許多 GPU 串起來的高速網路。
+
+</Callout>
+
+## 原理
+
+### AI 的工作量：數不清的「乘完再加」
+
+<LearnLink id="neural-networks-101">神經網路入門</LearnLink>提到，一層神經網路的計算就是一次矩陣乘法：每個權重都要和輸入相乘，再全部加總。EleutherAI 整理的經驗法則是，模型每處理一個 <Term id="token">Token</Term>，大約要做「2 × 參數量」次浮點運算<Cite k="eleuther" />。一個 80 億參數的<Term id="llm">大型語言模型</Term>，每處理一個 Token 就要約 160 億次運算。<Term id="training">訓練</Term>更驚人：Meta 訓練 Llama 3 405B 總共用了約 3.8 × 10²⁵ 次浮點運算<Cite k="llama3" />。3Blue1Brown 形容，就算每秒能做 10 億次加法與乘法，要做完訓練最大型語言模型所需的運算，也要超過 1 億年<Cite k="3b1b-llm" />。
+
+好消息是，這些乘法大多**彼此獨立**：算第一個神經元時，不必等第二個神經元算完。只要人手夠多，就能全部同時進行，這叫做<Term id="parallel-computing">平行運算</Term>，正是 GPU 的專長。
+
+### CPU 與 GPU：少數高手 vs 千軍萬馬
+
+<Compare
+  title="CPU 與 GPU 的設計取向"
+  left={{ title: "CPU（中央處理器）", items: ["核心數量少，每個核心都很強", "擅長判斷多、步驟有先後順序的工作", "負責作業系統、資料庫、排程與調度", "例：超微（AMD）EPYC 9965 有 192 個核心"] }}
+  right={{ title: "GPU（圖形處理器）", items: ["核心數量多，單一核心比較簡單", "擅長對大量資料做同一種運算", "負責矩陣乘法等大規模平行計算", "例：輝達（NVIDIA）H100（SXM 版）有 16,896 個 CUDA 核心與 528 個 Tensor Core"] }}
+/>
+
+輝達的官方部落格這樣說明兩者的差異：<Term id="cpu">CPU</Term> 由少數幾個核心加上大量快取組成，一次處理少數幾項工作；GPU 則由數百個以上的核心組成，可以同時處理數千項工作<Cite k="nvidia-cpu-gpu" />。上表的核心數分別來自超微產品頁<Cite k="amd-epyc" />與輝達的 Hopper 架構技術文章<Cite k="nvidia-hopper" />。要注意，GPU 並沒有取代 CPU：AI 伺服器裡兩者分工合作，CPU 負責調度與前後處理，GPU 負責大量計算。
+
+### Tensor Core：專做矩陣乘法的計算機
+
+為了 AI，GPU 還長出專門的硬體。2017 年，輝達在 V100 上首度加入 <Term id="tensor-core">Tensor Core</Term>（張量核心）：一般核心一次做一個乘加，Tensor Core 則能一口氣把兩個 4×4 的小矩陣相乘，再加上第三個矩陣<Cite k="wiki-volta" />。V100 有 640 個 Tensor Core，AI 運算峰值為 125 TFLOPS<Cite k="nvidia-v100" />。之後每一代都更快：
+
+<BarChart
+  title="單顆 GPU 的 16 位元 AI 運算峰值"
+  unit="TFLOPS"
+  data={[
+    { label: "V100", value: 125 },
+    { label: "A100", value: 312 },
+    { label: "H100", value: 989 },
+    { label: "B300", value: 2500, note: "由整櫃規格換算" },
+    { label: "Rubin", value: 4000 }]}
+  source={["nvidia-v100", "nvidia-a100", "nvidia-h100", "nvidia-gb300", "nvidia-vera-rubin"]}
+  note="皆為不計稀疏加速的稠密峰值（FP16／BF16）。H100 取官方含稀疏加速數值的一半；B300（Blackwell Ultra）由 GB300 NVL72 整櫃規格換算為每顆 GPU 的稠密值。"
+/>
+
+<Term id="flops">FLOPS</Term> 是每秒浮點運算次數，1 TFLOPS 等於每秒 1 兆次。從 2017 年的 V100 到 2026 年量產的 Rubin，同樣精度下的峰值成長約 32 倍。若改用位元數更少的格式，例如 <Term id="fp8">FP8</Term> 或 <Term id="fp4">FP4</Term>，同一顆晶片還能算得更快：Rubin 的 FP8 稠密算力為 17.5 PFLOPS<Cite k="nvidia-vera-rubin" />；輝達表示，Rubin 以 NVFP4 格式做推論時可達 50 PFLOPS，也就是每秒 5 京次<Cite k="nvidia-rubin" />。不過，官方規格頁把這個 NVFP4 數字標為稀疏規格，不能直接和上圖的稠密值相比<Cite k="nvidia-vera-rubin" />。
+
+### 光算得快還不夠：記憶體與連線
+
+算力再強，資料送不進來也是枉然。GPU 旁邊緊貼著好幾疊 HBM，用來存放模型權重：H100 配備 80 GB 記憶體，頻寬每秒 3.35 TB<Cite k="nvidia-h100" />；Rubin 配備 288 GB 的 HBM4，頻寬每秒 19.2 TB<Cite k="nvidia-vera-rubin" />。即使如此，記憶體頻寬的進步仍比算力慢：從 V100 到 Rubin，16 位元算力成長約 32 倍，記憶體頻寬則從每秒 900 GB 增加到 19.2 TB，約 21 倍<Cite k="nvidia-v100" /><Cite k="nvidia-vera-rubin" />。這種算力跑在前面、資料跟不上的現象，業界稱為<Term id="memory-wall">記憶體牆</Term>。
+
+最大的模型也不是一顆 GPU 裝得下的，必須把許多 GPU 連在一起。輝達用 <Term id="nvlink">NVLink</Term> 把 72 顆 GPU 與 36 顆 CPU 裝進同一座機櫃，組成 <Term id="nvl72">NVL72</Term><Cite k="nvidia-vera-rubin" />，讓整座機櫃像一顆巨大的 GPU。下面的 3D 場景從一顆 GPU 封裝開始，一路放大到機櫃與叢集：
+
+<Scene3D id="gpu-scale" variant="chip" caption="從晶片到超級機櫃：以 Blackwell 世代為例，兩顆運算晶粒與多疊 HBM 封裝在一起，再組成超級晶片、運算托盤、NVL72 機櫃與叢集。按導覽的「下一步」逐級放大；數量與比例為示意。" />
+
+### 從遊戲顯示卡到 AI 引擎
+
+GPU 原本是為電玩畫面而生：一個 1920 × 1080 的畫面就有約 207 萬個像素，每個像素的顏色都能分開計算，天生就是平行運算。後來研究者發現，這種設計也很適合神經網路：
+
+<FlowSteps
+  title="GPU 成為 AI 主力的關鍵時刻"
+  steps={[
+    { title: "1999 年", detail: "輝達推出它所稱的第一顆 GPU，用於 3D 繪圖" },
+    { title: "2007 年", detail: "CUDA 首度釋出，讓 GPU 能執行一般運算程式" },
+    { title: "2012 年", detail: "AlexNet 以兩張 GTX 580 顯示卡訓練，贏得影像辨識競賽" },
+    { title: "2017 年", detail: "V100 首度加入專做矩陣運算的 Tensor Core" },
+    { title: "2026 年", detail: "Vera Rubin 平台全面量產，NVL72 機櫃陸續上線" }]}
+/>
+
+這條路上有兩個轉捩點。第一是 <Term id="cuda">CUDA</Term>：它在 2007 年首度釋出，讓工程師能用熟悉的程式語言指揮 GPU 做一般計算<Cite k="nvidia-cpu-gpu" />。近二十年下來，大量 AI 軟體都建立在 CUDA 上，形成輝達最難被取代的軟體生態。第二是 2012 年的 AlexNet：它用兩張 GTX 580 顯示卡訓練五到六天，在 ImageNet 影像辨識競賽中以 15.3% 對 26.2% 的 top-5 錯誤率大幅領先第二名<Cite k="alexnet" />。輝達把 1999 年視為「發明 GPU」的一年，也把 AlexNet 視為現代 AI 時代的起點<Cite k="nvidia-timeline" />。到了 2026 年，Vera Rubin 平台已經以機櫃形式在合作夥伴的資料中心運轉<Cite k="nv-q2fy27" />。
+
+### GPU 不是唯一的選擇
+
+GPU 是通用型的 <Term id="ai-accelerator">AI 加速器</Term>，幾乎什麼模型都能跑。另一條路是為特定工作量身打造的 <Term id="asic">ASIC</Term>：Google 從 2015 年起在內部使用自家的 <Term id="tpu">TPU</Term>，2026 年 4 月發表第八代，分成訓練用的 8t 與推論用的 8i<Cite k="wiki-tpu" />，官方產品頁目前仍將兩者標示為即將推出<Cite k="google-cloud-tpu" />。在商用 GPU 市場，超微是輝達的主要對手：超微與 OpenAI 在 2025 年 10 月宣布，OpenAI 將分多個世代部署共 6 <Term id="gigawatt">GW</Term> 的超微 Instinct GPU，首批 1 GW 自 2026 年下半年開始部署<Cite k="amd-openai" />。各種晶片的設計取捨，詳見<LearnLink id="gpu-architecture">GPU 與 AI 加速器架構</LearnLink>。
+
+<DeepDive title="深入一點：為什麼產生文字時，記憶體頻寬比算力更要緊？">
+
+大型語言模型回答問題時，是一個 Token 接一個 Token 產生的，這個階段叫做 <Term id="decode">Decode</Term>。每產生一個 Token，模型的全部權重都得從 HBM 讀進運算單元一次。所以只有一位使用者時，每秒最多能產生的 Token 數，大約受這個上限限制：
+
+<MathTeX tex="R \approx B / M" display label="每秒最多產生的 Token 數，約等於記憶體頻寬除以模型權重的大小" />
+
+其中 R 是每秒產生的 Token 數，B 是記憶體頻寬，M 是模型權重的大小。以 Llama 3 的 80 億參數版本為例<Cite k="llama3" />，用 16 位元格式儲存時，每個參數占 2 位元組<Cite k="eleuther" />，權重約 16 GB。放在頻寬每秒 3.35 TB 的 H100 上<Cite k="nvidia-h100" />：
+
+- 讀完一次權重約需 16 ÷ 3,350 秒，約 4.8 毫秒，所以每秒最多產生約 210 個 Token。
+- 每個 Token 需要約 2 × 80 億 = 160 億次運算，每秒 210 個 Token 只用到約 3.4 TFLOPS。
+- H100 的 16 位元稠密算力約 989 TFLOPS<Cite k="nvidia-h100" />，換句話說，超過 99% 的算力都閒著，在等資料從記憶體送過來。
+
+解法是<Term id="batching">批次處理</Term>：把許多使用者的請求排在一起，讀一次權重就同時替幾十人各產生一個 Token，運算單元才不會閒著。這也是為什麼 HBM 越疊越高、頻寬越做越大。業界也發展出各種技巧：<Term id="kv-cache">KV Cache</Term> 把前文算過的中間結果存在記憶體裡重複使用，省下重算的時間，代價是占用更多記憶體；<Term id="quantization">量化</Term>則用較少位元儲存權重，讓每次要搬的資料變少。細節見<LearnLink id="memory-and-hbm">記憶體牆與 HBM</LearnLink>與<LearnLink id="inference-optimization">推論最佳化</LearnLink>。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+「AI 需要大量 GPU」直接改寫了半導體產業的版圖。最明顯的例子是 <CompanyChip id="nvidia" /> 的資料中心營收：
+
+<BarChart
+  title="輝達資料中心營收"
+  unit="億美元"
+  data={[
+    { label: "FY2023", value: 150 },
+    { label: "FY2024", value: 475 },
+    { label: "FY2025", value: 1152 },
+    { label: "FY2026", value: 1937 }]}
+  source={["nv-q4fy23", "nv-q4fy24", "nv-q4fy25", "nv-q4fy26"]}
+  note="輝達財年結束於每年 1 月底，例如 FY2026 約當 2025 年 2 月至 2026 年 1 月。"
+/>
+
+FY2026 輝達資料中心營收達 1,937 億美元，是同年遊戲業務（160 億美元）的 12 倍<Cite k="nv-q4fy26" />；FY2027 第二季（約當 2026 年 5–7 月），資料中心單季營收就有 890 億美元，年增 117%<Cite k="nv-q2fy27" />。一顆 GPU 的背後，是一整條供應鏈：
+
+- **設計晶片** → <SegmentChip id="ai-accelerators" />：<CompanyChip id="nvidia" />、<CompanyChip id="amd" /> 的 GPU，<CompanyChip id="alphabet" /> 的 TPU，以及 <CompanyChip id="broadcom" /> 協助雲端業者打造的客製化 ASIC（見<TrendLink id="custom-asic-rise">客製化 ASIC 崛起</TrendLink>、<TrendLink id="gpu-roadmap-rubin-feynman">GPU 藍圖</TrendLink>）。
+- **製造與封裝** → <SegmentChip id="foundry-packaging" />：H100 與 Blackwell 都由 <CompanyChip id="tsmc" /> 以為輝達客製的製程生產<Cite k="nvidia-hopper" /><Cite k="nvidia-blackwell" />。Blackwell 每顆 GPU 由兩顆達到光罩尺寸上限的晶粒組成，共有 2,080 億個電晶體<Cite k="nvidia-blackwell" />，運算晶粒再和 HBM 以先進封裝組在一起，見<LearnLink id="advanced-packaging-intro">先進封裝入門</LearnLink>。
+- **記憶體** → <SegmentChip id="memory-storage" />：HBM 由 <CompanyChip id="sk-hynix" />、<CompanyChip id="samsung-electronics" />、<CompanyChip id="micron" /> 供應，GPU 需求大增也推升記憶體景氣（見<TrendLink id="memory-supercycle">記憶體超級循環</TrendLink>）。
+- **伺服器、網路與機房** → <SegmentChip id="servers-systems" />、<SegmentChip id="networking-optics" />、<SegmentChip id="datacenter-infra" />：GPU 要裝進伺服器與機櫃，台灣的 <CompanyChip id="foxconn" />、<CompanyChip id="quanta" />、<CompanyChip id="wiwynn" /> 等廠商負責組裝；機櫃之間要靠高速網路與光纖相連；一顆 H100 功耗最高 700 瓦<Cite k="nvidia-h100" />，成千上萬顆擠在一起，資料中心的電力與散熱都得重新設計。延伸閱讀：<LearnLink id="data-centers-101">資料中心入門</LearnLink>與<TrendLink id="rack-scale-systems">機櫃即電腦</TrendLink>。

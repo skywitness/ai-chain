@@ -1,0 +1,304 @@
+---
+/**
+ * Site header: logo, primary navigation, search (Ctrl/⌘+K), theme toggle and a mobile menu
+ * (<details> disclosure that works without JS). Rendered by BaseLayout.
+ */
+import { NAV_ITEMS, sectionOf, withBase, type RouteKey } from '../../lib/paths';
+import { SITE_NAME } from '../../lib/seo';
+import Icon from '../ui/Icon.astro';
+import LogoMark from './LogoMark.astro';
+import SearchButton from './SearchButton.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+interface Props {
+  /** Highlighted section; derived from the URL when omitted */
+  section?: RouteKey | null | undefined;
+}
+const current = Astro.props.section ?? sectionOf(Astro.url.pathname);
+const isHome = current === 'home';
+---
+
+<header class="site-header" data-pagefind-ignore>
+  <div class="container site-header__inner">
+    <a class="brand" href={withBase('/')} aria-current={isHome ? 'page' : undefined}>
+      <LogoMark />
+      <span class="brand__name">{SITE_NAME}</span>
+    </a>
+
+    <nav class="primary-nav" aria-label="主要導覽">
+      <ul role="list">
+        {
+          NAV_ITEMS.map((item) => (
+            <li>
+              <a href={withBase(item.path)} aria-current={current === item.key ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="site-header__actions">
+      <SearchButton />
+      <ThemeToggle />
+      <details class="mobile-nav" data-mobile-nav>
+        <summary class="mobile-nav__toggle" aria-label="開啟選單">
+          <span class="mobile-nav__icon mobile-nav__icon--open"><Icon name="menu" size="22px" /></span>
+          <span class="mobile-nav__icon mobile-nav__icon--close"><Icon name="close" size="22px" /></span>
+          <span class="mobile-nav__text">選單</span>
+        </summary>
+        <nav class="mobile-nav__panel" aria-label="主要導覽（行動版）">
+          <ul role="list">
+            {
+              NAV_ITEMS.map((item) => (
+                <li>
+                  <a href={withBase(item.path)} aria-current={current === item.key ? 'page' : undefined}>
+                    <span>{item.label}</span>
+                    <Icon name="chevron-right" size="18px" />
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+          <ul role="list" class="mobile-nav__secondary">
+            <li><a href={withBase('/sources/')}>資料來源與研究方法</a></li>
+            <li><a href={withBase('/about/')}>關於本站</a></li>
+          </ul>
+        </nav>
+      </details>
+    </div>
+  </div>
+</header>
+
+<script>
+  // Enhance the no-JS <details> menu: Esc closes, outside click closes, summary label tracks state.
+  const menu = document.querySelector<HTMLDetailsElement>('[data-mobile-nav]');
+  if (menu) {
+    const summary = menu.querySelector('summary');
+    const sync = () => {
+      summary?.setAttribute('aria-label', menu.open ? '關閉選單' : '開啟選單');
+      summary?.setAttribute('aria-expanded', String(menu.open));
+    };
+    sync();
+    menu.addEventListener('toggle', sync);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && menu.open) {
+        menu.open = false;
+        summary?.focus();
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (menu.open && e.target instanceof Node && !menu.contains(e.target)) menu.open = false;
+    });
+    // Close when switching to the desktop layout
+    matchMedia('(min-width: 1024px)').addEventListener('change', (e) => {
+      if (e.matches) menu.open = false;
+    });
+  }
+</script>
+
+<style>
+  @layer components {
+    .site-header {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: var(--z-header);
+      view-transition-name: site-header;
+      background: color-mix(in srgb, var(--c-bg) 86%, transparent);
+      border-block-end: 1px solid var(--c-border);
+      backdrop-filter: saturate(1.4) blur(10px);
+      -webkit-backdrop-filter: saturate(1.4) blur(10px);
+    }
+    @supports not (backdrop-filter: blur(1px)) {
+      .site-header {
+        background: var(--c-bg);
+      }
+    }
+    .site-header__inner {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      min-height: var(--header-h);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6em;
+      min-height: var(--tap);
+      color: var(--c-fg);
+      text-decoration: none;
+      font-weight: var(--fw-bold);
+      font-size: 1.0625rem;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      flex: none;
+    }
+    .brand:hover {
+      color: var(--c-fg);
+    }
+
+    .primary-nav {
+      display: none;
+      margin-inline-start: var(--space-4);
+      min-width: 0;
+    }
+    .primary-nav ul {
+      display: flex;
+      align-items: center;
+      gap: 0.15rem;
+      margin: 0;
+    }
+    .primary-nav a {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--tap);
+      padding: 0 0.7rem;
+      border-radius: var(--radius-m);
+      color: var(--c-fg-muted);
+      font-size: 0.95rem;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .primary-nav a:hover {
+      color: var(--c-fg);
+      background: var(--c-hover);
+    }
+    .primary-nav a[aria-current='page'] {
+      color: var(--c-fg);
+      font-weight: var(--fw-semibold);
+    }
+    .primary-nav a[aria-current='page']::after {
+      content: '';
+      position: absolute;
+      inset-inline: 0.7rem;
+      inset-block-end: -1px;
+      block-size: 2px;
+      border-radius: 2px;
+      background: var(--c-accent);
+    }
+
+    .site-header__actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      margin-inline-start: auto;
+    }
+
+    .mobile-nav {
+      position: static;
+    }
+    .mobile-nav__toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35em;
+      min-width: var(--tap);
+      min-height: var(--tap);
+      padding: 0 0.5em;
+      border-radius: var(--radius-m);
+      color: var(--c-fg);
+      cursor: pointer;
+      list-style: none;
+      font-size: var(--fs-s);
+    }
+    .mobile-nav__toggle::-webkit-details-marker {
+      display: none;
+    }
+    .mobile-nav__toggle:hover {
+      background: var(--c-hover);
+    }
+    .mobile-nav__icon {
+      line-height: 0;
+    }
+    .mobile-nav__icon--close,
+    .mobile-nav[open] .mobile-nav__icon--open {
+      display: none;
+    }
+    .mobile-nav[open] .mobile-nav__icon--close {
+      display: inline-block;
+    }
+    .mobile-nav__text {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    @media (min-width: 480px) {
+      .mobile-nav__text {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip-path: none;
+      }
+    }
+
+    .mobile-nav__panel {
+      position: absolute;
+      inset-inline: 0;
+      inset-block-start: 100%;
+      max-height: calc(100dvh - var(--header-h));
+      overflow-y: auto;
+      padding: var(--space-2) var(--gutter) var(--space-5);
+      background: var(--c-bg-elev);
+      border-block-end: 1px solid var(--c-border);
+      box-shadow: var(--shadow-2);
+    }
+    .mobile-nav__panel ul {
+      margin: 0;
+    }
+    .mobile-nav__panel a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 3rem;
+      padding: 0 var(--space-2);
+      border-block-end: 1px solid var(--c-border);
+      color: var(--c-fg);
+      text-decoration: none;
+      font-size: var(--fs-l);
+    }
+    .mobile-nav__panel a:hover {
+      background: var(--c-hover);
+    }
+    .mobile-nav__panel a[aria-current='page'] {
+      font-weight: var(--fw-bold);
+      box-shadow: inset 3px 0 0 var(--c-accent);
+    }
+    .mobile-nav__panel a :global(.icon) {
+      color: var(--c-fg-subtle);
+    }
+    .mobile-nav__secondary {
+      margin-block-start: var(--space-4) !important;
+    }
+    .mobile-nav__secondary a {
+      min-height: var(--tap);
+      border: 0;
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+
+    @media (min-width: 1024px) {
+      .primary-nav {
+        display: block;
+      }
+      .mobile-nav {
+        display: none;
+      }
+    }
+    @media (max-width: 380px) {
+      .brand__name {
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+      }
+      .site-header__inner {
+        gap: var(--space-2);
+      }
+    }
+  }
+</style>

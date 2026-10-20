@@ -1,0 +1,281 @@
+---
+title: "小模型與蒸餾：端側 AI 的崛起"
+description: "用大模型當老師訓練小模型的蒸餾，加上量化與稀疏架構，讓數十億參數的模型能在手機、筆電離線執行。MMLU 過 60% 所需參數兩年多縮小 142 倍；但小模型在複雜推理仍有天花板，蒸餾也引發智財爭議。"
+category: software
+horizon: near
+horizonYears: [2024, 2028]
+confidence: medium
+confidenceRationale: "小模型變強的證據很充分：史丹佛 AI Index 統計 MMLU 過 60% 所需的最小參數量兩年多縮小 142 倍，Google、Apple、Meta、OpenAI 都持續推出可在個人裝置執行的模型，Gemma 系列累計下載逾 9 億次。不確定的是端側推論能取代多少雲端用量：小模型在困難推理與知識問答上仍明顯落後，最強的端側模型也只支援最新的高階裝置。"
+impact: high
+milestones:
+  - { date: "2024-04", label: "Phi-3-mini：38 億參數、MMLU 69%，小到能放進手機", status: done }
+  - { date: "2024-05", label: "微軟定義 Copilot+ PC，須具備 40 TOPS 以上的 NPU", status: done }
+  - { date: "2024-06", label: "Apple Intelligence 發表，核心為約 30 億參數的裝置端模型", status: done }
+  - { date: "2024-09", label: "Llama 3.2 1B／3B：從 8B 剪枝，再以 8B 與 70B 蒸餾", status: done }
+  - { date: "2025-01", label: "DeepSeek-R1 一併釋出 6 個蒸餾小模型", status: done }
+  - { date: "2025-06", label: "Apple 以 Foundation Models 框架開放裝置端模型給 App 開發者", status: done }
+  - { date: "2025-08", label: "OpenAI gpt-oss-20b 可在 16GB 記憶體內執行", status: done }
+  - { date: "2026-02", label: "Anthropic 指控三家中國實驗室以約 2.4 萬個帳號蒸餾 Claude", status: done }
+  - { date: "2026-04", label: "Gemma 4 推出 E2B／E4B 邊緣模型，可在手機完全離線執行", status: done }
+  - { date: "2026-06", label: "Apple AFM 3：200 億參數稀疏模型存放在快閃記憶體、每次啟用 10–40 億", status: done }
+  - { date: "2026-08", label: "Meta 釋出從 Muse Spark 蒸餾的 Muse Glimmer，24GB 顯示卡可執行", status: done }
+  - { date: "2027", label: "Gartner 預測：企業任務專用小模型用量達通用 LLM 的 3 倍以上", status: expected }
+signals:
+  - text: "Google 執行長表示，可在本機裝置執行的 Gemma 開放模型累計下載逾 9 億次，其中 2026 年 4 月推出的 Gemma 4 已逾 3 億次；4 月推出時累計逾 4 億次。"
+    date: "2026-07-22"
+    source: { title: "Alphabet earnings call Q2 2026: Sundar Pichai remarks", publisher: "Google Blog", url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/", type: earnings-call, lang: en, published: "2026-07-22", accessed: "2026-10-16" }
+  - text: "Meta 2026 年 8 月釋出的 Muse Glimmer 約 296 億參數（含視覺編碼器）、由 Muse Spark 蒸餾而來，量化到約 4 位元後語言模型小於 20GB；搭配推測解碼草稿模型，RTX 5090 每秒生成 Token 數由 74.9 提高到 233.4。"
+    source: { title: "Muse Glimmer 30B model card", publisher: "Meta（Hugging Face）", url: "https://huggingface.co/meta-models/Muse-Glimmer-30B", type: docs, lang: en, accessed: "2026-10-16", note: "模型卡標示釋出時間為 2026 年 8 月；Apache 2.0" }
+  - text: "Apple 第三代基礎模型的 AFM 3 Core Advanced 總參數 200 億，完整模型存放在 NAND 快閃記憶體，讀取提示時選定一組專家、生成過程中定期重選，只把需要的專家載入 DRAM，每次只啟用 10 億到 40 億參數。"
+    date: "2026-06-08"
+    source: { title: "Introducing the Third Generation of Apple's Foundation Models", publisher: Apple Machine Learning Research, url: "https://machinelearning.apple.com/research/introducing-third-generation-of-apple-foundation-models", type: company-site, lang: en, published: "2026-06-08", accessed: "2026-10-16" }
+  - text: "輝達研究人員發表立場論文，主張 Agent 系統中大量重複、範圍狹窄的呼叫，用小型語言模型就足夠、更合適也更經濟。"
+    date: "2025-06-02"
+    source: { title: "Small Language Models are the Future of Agentic AI", publisher: "arXiv（Belcak et al., NVIDIA）", url: "https://arxiv.org/abs/2506.02153", type: paper, lang: en, published: "2025-06-02", accessed: "2026-10-16" }
+  - text: "Gemma 4 的 E2B、E4B 與 Pixel 團隊、高通、聯發科合作，可在手機、樹莓派、Jetson Orin Nano 等邊緣裝置上完全離線執行，並改採 Apache 2.0 授權。"
+    date: "2026-04-02"
+    source: { title: "Gemma 4: Our most capable open models to date", publisher: "Google Blog", url: "https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/", type: company-site, lang: en, published: "2026-04-02", accessed: "2026-10-16" }
+counterpoints:
+  - "小模型有能力天花板：DeepSeek 公布的數字中，R1 蒸餾 1.5B 在 GPQA Diamond 只有 33.8%、LiveCodeBench 16.9%，遠低於 o1-mini 的 60.0% 與 53.8%；蒸餾多半只複製老師擅長、又有大量範例的能力。"
+  - "用途受限：Apple 明言其約 30 億參數的裝置端模型擅長摘要、擷取與改寫，但不是為一般世界知識問答設計的聊天機器人。"
+  - "蒸餾的智財爭議：Anthropic 指控 DeepSeek、月之暗面、MiniMax 透過約 2.4 萬個詐欺帳號與 Claude 進行逾 1,600 萬次對話以進行蒸餾，違反服務條款與地區存取限制；前沿實驗室可能收緊輸出的使用條款。"
+  - "硬體分化：最強的端側模型往往只在最新、記憶體最大的裝置上啟用，例如 Apple 的 AFM 3 Core Advanced 只針對最強的 Apple 晶片系統開放，舊裝置仍需仰賴雲端。"
+relatedSegments: [foundation-models, physical-ai, ai-accelerators, memory-storage, devtools-data-mlops]
+relatedCompanies: [apple, alphabet, meta, microsoft, openai, deepseek, anthropic, qualcomm, mediatek, nvidia, xiaomi]
+relatedModels: [google-gemma, apple-foundation-models, meta-muse-llama, openai-gpt-oss, deepseek, alibaba-qwen, ibm-granite]
+relatedLearn: [inference-optimization, post-training-deep, mixture-of-experts, open-vs-closed-models, training-vs-inference-economics]
+glossary: [distillation, quantization, edge-ai, moe, parameter, synthetic-data, speculative-decoding, npu, nand-flash, dram, inference, open-weights, fine-tuning]
+sources:
+  - key: aiindex-2025
+    title: "The 2025 AI Index Report"
+    publisher: Stanford HAI
+    url: "https://hai.stanford.edu/ai-index/2025-ai-index-report"
+    type: analyst
+    lang: en
+    accessed: "2026-10-16"
+    note: "受小模型帶動，達到 GPT-3.5 水準的推論成本在 2022 年 11 月到 2024 年 10 月間下降逾 280 倍；硬體成本每年下降 30%、能源效率每年提升 40%"
+  - key: aiindex-tech
+    title: "Technical Performance | The 2025 AI Index Report"
+    publisher: Stanford HAI
+    url: "https://hai.stanford.edu/ai-index/2025-ai-index-report/technical-performance"
+    type: analyst
+    lang: en
+    accessed: "2026-10-16"
+    note: "MMLU 超過 60% 的最小模型：2022 年 PaLM 5,400 億參數，2024 年 Phi-3-mini 38 億參數，縮小 142 倍"
+  - key: gartner-slm
+    title: "Gartner Predicts by 2027, Organizations Will Use Small, Task-Specific AI Models Three Times More Than General-Purpose Large Language Models"
+    publisher: Gartner
+    url: "https://www.gartner.com/en/newsroom/press-releases/2025-04-09-gartner-predicts-by-2027-organizations-will-use-small-task-specific-ai-models-three-times-more-than-general-purpose-large-language-models"
+    type: analyst
+    lang: en
+    published: "2025-04-09"
+    accessed: "2026-10-16"
+    archiveUrl: "https://web.archive.org/web/20251218110621/https://www.gartner.com/en/newsroom/press-releases/2025-04-09-gartner-predicts-by-2027-organizations-will-use-small-task-specific-ai-models-three-times-more-than-general-purpose-large-language-models"
+    note: "原網址拒絕自動讀取，經網頁封存版核對；用量至少為通用 LLM 的 3 倍"
+  - key: nvidia-slm
+    title: "Small Language Models are the Future of Agentic AI"
+    publisher: "arXiv（Belcak et al., NVIDIA）"
+    url: "https://arxiv.org/abs/2506.02153"
+    type: paper
+    lang: en
+    published: "2025-06-02"
+    accessed: "2026-10-16"
+  - key: deepseek-r1-hf
+    title: "DeepSeek-R1 model card"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-R1"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "以 R1 整理的 80 萬筆樣本微調 Qwen2.5 與 Llama 3 系列，釋出 1.5B、7B、8B、14B、32B、70B 六個蒸餾模型；AIME 2024 pass@1：GPT-4o-0513 9.3、o1-mini 63.6、蒸餾 1.5B 28.9、7B 55.5、14B 69.7、32B 72.6"
+  - key: hinton-2015
+    title: "Distilling the Knowledge in a Neural Network"
+    publisher: "arXiv（Hinton, Vinyals, Dean）"
+    url: "https://arxiv.org/abs/1503.02531"
+    type: paper
+    lang: en
+    published: "2015-03-09"
+    accessed: "2026-10-16"
+  - key: meta-llama32
+    title: "Llama 3.2: Revolutionizing edge AI and vision with open, customizable models"
+    publisher: Meta AI
+    url: "https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/"
+    type: company-site
+    lang: en
+    published: "2024-09-25"
+    accessed: "2026-10-16"
+    note: "1B、3B 由 Llama 3.1 8B 單次結構化剪枝，預訓練時加入 8B 與 70B 的 logits，剪枝後以知識蒸餾恢復表現；支援 128K 上下文，首日支援高通與聯發科硬體"
+  - key: phi3
+    title: "Phi-3 Technical Report: A Highly Capable Language Model Locally on Your Phone"
+    publisher: "arXiv（Microsoft）"
+    url: "https://arxiv.org/abs/2404.14219"
+    type: paper
+    lang: en
+    published: "2024-04-22"
+    accessed: "2026-10-16"
+    note: "38 億參數、3.3 兆 Token 訓練，MMLU 69%、MT-bench 8.38，表現可比 Mixtral 8x7B 與 GPT-3.5"
+  - key: ms-copilot-pc
+    title: "Introducing Copilot+ PCs"
+    publisher: Microsoft
+    url: "https://blogs.microsoft.com/blog/2024/05/20/introducing-copilot-pcs/"
+    type: press-release
+    lang: en
+    published: "2024-05-20"
+    accessed: "2026-10-16"
+  - key: apple-afm-2024
+    title: "Introducing Apple's On-Device and Server Foundation Models"
+    publisher: Apple Machine Learning Research
+    url: "https://machinelearning.apple.com/research/introducing-apple-foundation-models"
+    type: company-site
+    lang: en
+    published: "2024-06-10"
+    accessed: "2026-10-16"
+    note: "約 30 億參數的裝置端語言模型，搭配針對各功能微調的轉接器"
+  - key: apple-afm-2025
+    title: "Updates to Apple's On-Device and Server Foundation Language Models"
+    publisher: Apple Machine Learning Research
+    url: "https://machinelearning.apple.com/research/apple-foundation-models-2025-updates"
+    type: company-site
+    lang: en
+    published: "2025-06-09"
+    accessed: "2026-10-16"
+    note: "約 30 億參數裝置端模型以蒸餾損失訓練、2 位元量化感知訓練；Foundation Models 框架開放給開發者；官方說明該模型不是為一般世界知識設計的聊天機器人"
+  - key: apple-afm3
+    title: "Introducing the Third Generation of Apple's Foundation Models"
+    publisher: Apple Machine Learning Research
+    url: "https://machinelearning.apple.com/research/introducing-third-generation-of-apple-foundation-models"
+    type: company-site
+    lang: en
+    published: "2026-06-08"
+    accessed: "2026-10-16"
+    note: "AFM 3 Core Advanced 為 200 億參數稀疏模型、每次啟用 10–40 億；由輕量稠密區塊在初始處理時選定專家並於生成中定期重選；只針對最強的 Apple 晶片系統開放"
+  - key: google-gemma4
+    title: "Gemma 4: Our most capable open models to date"
+    publisher: "Google Blog"
+    url: "https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/"
+    type: company-site
+    lang: en
+    published: "2026-04-02"
+    accessed: "2026-10-16"
+    note: "推出時 Gemma 累計下載逾 4 億次、衍生版本逾 10 萬個；E2B、E4B 可在手機等邊緣裝置完全離線執行"
+  - key: hf-gemma4-e2b
+    title: "Gemma 4 E2B model card"
+    publisher: "Google（Hugging Face）"
+    url: "https://huggingface.co/google/gemma-4-E2B-it"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "E2B 有效參數 23 億（含嵌入表 51 億），E4B 為 45 億（含嵌入表 80 億）；以逐層嵌入（PLE）提高參數效率"
+  - key: goog-q2-2026
+    title: "Alphabet earnings call Q2 2026: Sundar Pichai remarks"
+    publisher: "Google Blog"
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/"
+    type: earnings-call
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-16"
+  - key: hf-muse-glimmer
+    title: "Muse Glimmer 30B model card"
+    publisher: "Meta（Hugging Face）"
+    url: "https://huggingface.co/meta-models/Muse-Glimmer-30B"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "釋出時間 2026 年 8 月；約 296 億參數（含視覺編碼器），由 Muse Spark 蒸餾；Apache 2.0；RTX 5090 以 llama.cpp 量測 74.9 → 233.4 Token／秒"
+  - key: hf-gpt-oss
+    title: "gpt-oss-120b model card"
+    publisher: "OpenAI（Hugging Face）"
+    url: "https://huggingface.co/openai/gpt-oss-120b"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "gpt-oss-20b 為 210 億參數、啟用 36 億，MXFP4 量化後可在 16GB 記憶體內執行"
+  - key: an-distill
+    title: "Detecting and preventing distillation attacks"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/detecting-and-preventing-distillation-attacks"
+    type: company-site
+    lang: en
+    published: "2026-02-23"
+    accessed: "2026-10-16"
+    note: "Anthropic 單方指控；文中也說明蒸餾本身是廣泛使用的正當訓練方法"
+published: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: trends-07
+  checkedBy: trends-07-check
+  checkedOn: "2026-10-06"
+  notes: "資料基準日 2026-10-06，來源實際讀取日為 2026-10-16。蒸餾模型成績為 DeepSeek 自行公布。Gartner 新聞稿經網頁封存版核對。AI Index 2025 未找到精確發表日，因此只放在內文、不列為有日期的訊號。Muse Glimmer 模型卡只標示 2026 年 8 月釋出（Hugging Face 建檔 2026-08-09），故訊號不標確切日期。查核（trends-07-check）：逐項比對 Apple、Google、Meta、DeepSeek、微軟、OpenAI、Anthropic、史丹佛 HAI 與 Gartner 原文；更正 AFM 3 選專家方式（初始處理時選定、生成中定期重選，而非每個提示只選一次）與 Gemma 4 推出時的累計下載（逾 4 億次）。"
+---
+
+## 趨勢摘要
+
+一句話：用大模型當「老師」來訓練小模型的<Term id="distillation">蒸餾</Term>，加上<Term id="quantization">量化</Term>與稀疏架構，讓數十億<Term id="parameter">參數</Term>的模型就能做到幾年前需要數千億參數才做得到的事，而且能直接在手機、筆電上離線執行，也就是<Term id="edge-ai">邊緣 AI</Term>。
+
+**已發生的事實**：史丹佛 AI Index 統計，MMLU 測驗得分超過 60% 的最小模型，從 2022 年 5,400 億參數的 PaLM，縮小到 2024 年 38 億參數的 Phi-3-mini，兩年多縮小 142 倍<Cite k="aiindex-tech" />；達到 GPT-3.5 水準的推論成本，在 2022 年 11 月到 2024 年 10 月間下降逾 280 倍<Cite k="aiindex-2025" />。Google 的 Gemma 系列開放模型累計下載已逾 9 億次<Cite k="goog-q2-2026" />。
+
+**仍屬預測的部分**：Gartner 預測，到 2027 年企業使用任務專用小模型的量，將至少是通用大型語言模型的 3 倍<Cite k="gartner-slm" />。
+
+## 為什麼重要
+
+大模型能力強，但每次呼叫都要經過雲端資料中心，成本、延遲與隱私都是問題。小模型若夠聰明，就能在裝置上即時回應、資料不必離開手機，也讓雲端<Term id="inference">推論</Term>更便宜。輝達研究人員 2025 年的立場論文就主張，Agent 系統中大量重複、範圍狹窄的呼叫，用小模型就足夠，也更經濟<Cite k="nvidia-slm" />。
+
+蒸餾在推理任務上的效果特別明顯。DeepSeek 用 R1 整理的 80 萬筆樣本，微調現成的 Qwen 與 Llama 模型，數學競賽成績甚至超過 GPT-4o<Cite k="deepseek-r1-hf" />：
+
+<BarChart title="DeepSeek-R1 蒸餾小模型的 AIME 2024 成績" unit="%" data={[{ label: "GPT-4o（0513）", value: 9.3 }, { label: "o1-mini", value: 63.6 }, { label: "R1 蒸餾 1.5B", value: 28.9 }, { label: "R1 蒸餾 7B", value: 55.5 }, { label: "R1 蒸餾 14B", value: 69.7 }, { label: "R1 蒸餾 32B", value: 72.6 }]} source="deepseek-r1-hf" keepOrder note="pass@1，DeepSeek 自行公布。四個蒸餾模型以 Qwen2.5 系列為基底，模型名稱中的數字為參數量。" />
+
+<Callout type="analogy" title="生活化比喻">
+蒸餾就像資深主廚帶學徒：學徒不必重走主廚幾十年的摸索，只要大量觀摩主廚怎麼做、做出什麼味道，就能學會大部分招牌菜。學徒的經驗與臨場應變仍比不上主廚，但撐起一家小店已經綽綽有餘。
+</Callout>
+
+<DeepDive title="深入一點：蒸餾、剪枝與量化怎麼搭配">
+蒸餾的概念可追溯到 Hinton 等人 2015 年的論文：讓小模型學習大模型輸出的整個機率分布，而不只是標準答案<Cite k="hinton-2015" />。Meta 的 Llama 3.2 1B、3B 先從 Llama 3.1 8B 做結構化剪枝，再把 8B 與 70B 模型的輸出（logits）加入預訓練目標，用蒸餾找回剪掉的能力<Cite k="meta-llama32" />。Apple 2025 年約 30 億參數的裝置端模型也以蒸餾損失訓練，並用量化感知訓練把每個權重壓到 2 位元<Cite k="apple-afm-2025" />。
+
+另一條路是讓模型「存得大、算得少」。Google Gemma 4 的 E2B 有效參數 23 億、連同嵌入表為 51 億，靠逐層嵌入提高參數效率<Cite k="hf-gemma4-e2b" />；Apple 的 AFM 3 Core Advanced 總參數 200 億，完整模型放在 <Term id="nand-flash">NAND 快閃記憶體</Term>，每次只啟用 10 億到 40 億參數<Cite k="apple-afm3" />。一般 <Term id="moe">MoE</Term> 每個 Token 都可能換一批專家，但快閃記憶體到 <Term id="dram">DRAM</Term> 的頻寬太慢，無法逐 Token 搬權重；Apple 因此在讀取提示時就選定一組專家，生成過程中再定期重選，只把需要的專家載入 DRAM<Cite k="apple-afm3" />，等於把 MoE 改寫成適合裝置端的版本。
+</DeepDive>
+
+## 關鍵驅動力
+
+**一、資料品質取代規模。** Phi-3-mini 只有 38 億參數，以大幅過濾的網路資料與<Term id="synthetic-data">合成資料</Term>訓練 3.3 兆個 Token，MMLU 69%，表現可比 GPT-3.5，又小到能放進手機<Cite k="phi3" />。
+
+**二、大實驗室主動釋出蒸餾版。** Meta 在 2026 年 8 月釋出由 Muse Spark 蒸餾的 Muse Glimmer，約 296 億參數（含視覺編碼器）、採 Apache 2.0 授權，量化到約 4 位元後語言模型小於 20GB，可在 24GB 顯示卡執行；搭配<Term id="speculative-decoding">推測解碼</Term>的草稿模型，RTX 5090 每秒生成的 Token 數從 74.9 提高到 233.4<Cite k="hf-muse-glimmer" />。OpenAI 的 gpt-oss-20b 也可在 16GB 記憶體內執行<Cite k="hf-gpt-oss" />。
+
+**三、終端晶片與平台就位。** 微軟 2024 年 5 月定義 Copilot+ PC，須具備每秒 40 兆次以上運算（40 TOPS 以上）的 <Term id="npu">NPU</Term><Cite k="ms-copilot-pc" />；Apple 2024 年以約 30 億參數的裝置端模型推出 Apple Intelligence<Cite k="apple-afm-2024" />，2025 年再以 Foundation Models 框架讓 App 直接呼叫<Cite k="apple-afm-2025" />；Gemma 4 與 Pixel 團隊、高通、聯發科合作，可在手機上完全離線執行<Cite k="google-gemma4" />。
+
+**四、開放社群擴散。** Gemma 4 推出時，Gemma 系列累計下載逾 4 億次、衍生版本逾 10 萬個<Cite k="google-gemma4" />；到 2026 年 7 月累計逾 9 億次，其中 Gemma 4 不到 4 個月就逾 3 億次<Cite k="goog-q2-2026" />。<Term id="open-weights">開放權重</Term>小模型方便企業自行<Term id="fine-tuning">微調</Term>成任務專用版本。
+
+## 時間表與里程碑
+
+| 時間 | 事件 | 性質 |
+|---|---|---|
+| 2024 年 4–6 月 | Phi-3-mini<Cite k="phi3" />；Copilot+ PC NPU 門檻<Cite k="ms-copilot-pc" />；Apple 裝置端模型<Cite k="apple-afm-2024" /> | 已發生 |
+| 2024 年 9 月 | Llama 3.2 1B／3B 以剪枝加蒸餾打造<Cite k="meta-llama32" /> | 已發生 |
+| 2025 年 1 月 | DeepSeek-R1 釋出 6 個蒸餾模型<Cite k="deepseek-r1-hf" /> | 已發生 |
+| 2025 年 6 月 | Apple 開放裝置端模型給開發者<Cite k="apple-afm-2025" /> | 已發生 |
+| 2026 年 4–8 月 | Gemma 4 邊緣模型<Cite k="google-gemma4" />、Apple AFM 3<Cite k="apple-afm3" />、Muse Glimmer<Cite k="hf-muse-glimmer" /> | 已發生 |
+| 2027 年 | 任務專用小模型用量達通用 LLM 的 3 倍以上<Cite k="gartner-slm" /> | 研究機構預測 |
+
+## 受影響的環節與公司
+
+- <SegmentChip id="physical-ai" />：<CompanyChip id="apple">Apple</CompanyChip> 等終端品牌把模型直接做進手機與電腦，<CompanyChip id="xiaomi">小米</CompanyChip>則同時經營手機與自家 MiMo 模型，見<TrendLink id="edge-ai-devices">邊緣 AI 裝置</TrendLink>。
+- <SegmentChip id="ai-accelerators" />：<CompanyChip id="qualcomm">高通</CompanyChip>、<CompanyChip id="mediatek">聯發科</CompanyChip>的手機與 PC 處理器內建 NPU，是端側推論的主要載體。
+- <SegmentChip id="memory-storage" />：裝置端模型受限於 DRAM 容量，Apple 改把權重放進快閃記憶體，顯示記憶體容量與頻寬是端側 AI 的關鍵瓶頸。
+- <SegmentChip id="foundation-models" />：<CompanyChip id="alphabet">Google</CompanyChip>、<CompanyChip id="meta">Meta</CompanyChip>、<CompanyChip id="openai">OpenAI</CompanyChip>、<CompanyChip id="deepseek">深度求索（DeepSeek）</CompanyChip>同時推出大模型與蒸餾小模型。代表系列：<ModelChip id="google-gemma" />、<ModelChip id="apple-foundation-models" />、<ModelChip id="meta-muse-llama" />、<ModelChip id="openai-gpt-oss" />。
+
+## 反方觀點與風險
+
+- **小模型有能力天花板**：同一份資料中，R1 蒸餾 1.5B 在 GPQA Diamond 只有 33.8%、LiveCodeBench 16.9%，遠低於 o1-mini 的 60.0% 與 53.8%<Cite k="deepseek-r1-hf" />；蒸餾多半只複製老師擅長、又有大量範例的能力。
+- **用途受限**：Apple 明言，其約 30 億參數的裝置端模型擅長摘要、擷取與改寫，但不是為一般世界知識問答設計的聊天機器人<Cite k="apple-afm-2025" />。
+- **蒸餾的智財爭議**：Anthropic 指控 DeepSeek、月之暗面、MiniMax 透過約 2.4 萬個詐欺帳號與 Claude 進行逾 1,600 萬次對話來蒸餾，違反服務條款與地區存取限制<Cite k="an-distill" />。這是 Anthropic 的單方指控；該文也承認蒸餾本身是廣泛使用的正當訓練方法。前沿實驗室可能收緊輸出的使用限制，蒸餾的「老師」來源會變少。
+- **硬體分化**：最強的端側模型往往只在最新、記憶體最大的裝置上啟用，例如 AFM 3 Core Advanced 只針對最強的 Apple 晶片系統開放<Cite k="apple-afm3" />，舊裝置使用者仍要仰賴雲端。
+
+## 觀察指標
+
+- 各評測上「達到某個分數所需的最小參數量」是否持續下降。
+- Gemma、Qwen 等小型開放模型的下載量與衍生模型數。
+- 手機與 PC 處理器的 NPU 算力、記憶體容量規格。
+- 前沿實驗室對「用模型輸出訓練其他模型」的條款與執法。
+- 企業 Agent 系統中改由小模型處理的呼叫比例。
+
+延伸閱讀：<LearnLink id="inference-optimization">推論最佳化</LearnLink>、<LearnLink id="post-training-deep">後訓練深入：RLHF、DPO、RLVR 與蒸餾</LearnLink>、<TrendLink id="open-weights-race">開放權重競賽與兆級參數模型</TrendLink>。

@@ -1,0 +1,117 @@
+---
+/**
+ * Compact list of registered trends whose article is not written yet, shown under the full cards of a
+ * category group on /trends/. Each row is a link to the trend's (calm, noindex) page (「整理中」 for AT),
+ * so a category that is still being written reads as a short table of contents instead of a wall of
+ * empty cards. Rows carry the same data-* attributes as TrendCard, so TrendFilters filters them too;
+ * the wrapper is a [data-trend-group] and hides itself when every row is filtered out.
+ *   <TrendSoonList trends={pending} label="整理中的趨勢" />
+ */
+import { categoryMeta, type TrendView } from './trend-meta';
+
+interface Props {
+  trends: readonly TrendView[];
+  /** small label above the list */
+  label?: string | undefined;
+  class?: string | undefined;
+}
+const { trends, label = '整理中', class: className } = Astro.props;
+---
+
+{
+  trends.length > 0 && (
+    <div class:list={['tsl', className]} data-trend-group>
+      <p class="tsl__label">
+        {label}
+        <span class="tsl__n">{trends.length} 篇</span>
+      </p>
+      <ul class="tsl__list" role="list">
+        {trends.map((t) => (
+          <li
+            class="tsl__item"
+            style={`--tc: ${categoryMeta(t.category).color}`}
+            data-trend-card
+            data-category={t.category}
+            data-horizon={t.horizon ?? ''}
+            data-confidence={t.confidence ?? ''}
+          >
+            <a class="tsl__link" href={t.href}>
+              <span class="tsl__dot" aria-hidden="true" />
+              <span class="tsl__title">{t.title}</span>
+              <span class="sr-only">（整理中）</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+<style>
+  .tsl {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .tsl__label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    margin: 0;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-muted);
+  }
+  .tsl__n {
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .tsl__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: 0 var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tsl__item {
+    min-width: 0;
+    border-block-end: 1px solid var(--c-border);
+  }
+  .tsl__link {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    min-block-size: var(--tap);
+    padding: var(--space-2) var(--space-2) var(--space-2) 0;
+    color: var(--c-fg);
+    text-decoration: none;
+    line-height: 1.5;
+    border-radius: var(--radius-s);
+  }
+  .tsl__link:hover .tsl__title {
+    color: var(--c-link);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .tsl__dot {
+    flex: none;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: 50%;
+    background: var(--tc);
+    opacity: 0.7;
+  }
+  .tsl__title {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--fs-s);
+    text-wrap: pretty;
+  }
+  @media (forced-colors: active) {
+    .tsl__dot {
+      background: CanvasText;
+    }
+  }
+</style>

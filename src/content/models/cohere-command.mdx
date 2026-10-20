@@ -1,0 +1,546 @@
+---
+title: "Cohere Command 系列"
+family: "Command"
+kind: "llm"
+lab: "cohere"
+labName: "Cohere"
+origin: "CA"
+summary: "加拿大 Cohere 的企業級語言模型系列，主打 RAG、工具呼叫、多語言與私有部署。2026-05-20 推出的 Command A+ 是 Cohere 第一個 MoE 模型（總參數 2,180 億、每個 token 啟用 250 億），把推理、影像輸入、Agent 與 48 種語言整合進同一組權重，並改採 Apache 2.0 開放權重，4-bit 量化後 1 張 B200 或 2 張 H100 即可執行。官方文件稱它是 Command A 家族的最後一個模型；AA 綜合智慧指數 13 分，通用能力與前沿模型差距大。"
+strengths:
+  - "授權大幅放寬：Command A+ 採 Apache 2.0，可商用；前代 Command A 系列為 CC-BY-NC 4.0 非商用授權"
+  - "部署門檻低：W4A4 量化版 1 張 B200 或 2 張 H100 即可執行，官方稱 BF16、FP8、W4A4 三種權重品質差異可忽略"
+  - "企業 Agent 能力進步：官方自報 τ²-Bench Telecom 由 Command A Reasoning 的 37% 升至 85%，AA 實測為 80.7%"
+  - "多語言：Command A+ 支援 48 種語言，涵蓋全部歐盟官方語言，前代為 23 種"
+  - "官方定價頁將 Command A+ 標為免費（API 金鑰與模型下載皆為 0 美元），另可用 Model Vault 取得專屬執行個體"
+weaknesses:
+  - "通用能力落後：AA 綜合智慧指數 v4.3.2 中 Command A+ 為 13.1，低於 AA 同級開放權重模型的中位數（2026 年 10 月約 18 至 19 分），前沿模型則在 50 分以上（2026-10-06）"
+  - "長程程式 Agent 弱：AA 實測 Terminal-Bench 4.0 僅 0.5%"
+  - "上下文較短：Command A+ 上下文 128K、最長輸出 64K，短於前代 Command A 與 Command A Reasoning 的 256K"
+  - "新模型的正式環境用量要洽業務：官方文件指出，生產金鑰在 Command A+、Reasoning、Vision、Translate 等新變體上仍比照試用金鑰，每月限 1,000 次呼叫"
+bestFor:
+  - "需要私有雲、地端或斷網部署的金融、電信、醫療與公部門（搭配 Cohere North 平台）"
+  - "企業內部知識庫的 RAG 問答與工具呼叫"
+  - "多語言文件處理與翻譯（Command A+、Command A Translate）"
+  - "想以少量 GPU 自建企業 Agent 模型的團隊"
+positioning:
+  capability: 13
+  costIndex: 0
+  openness: 0.8
+  method: "computed"
+  asOf: "2026-10-06"
+  note: "以旗艦 Command A+ 計算。capability 取 AA 綜合智慧指數 v4.3.2 的 13.1（2026-10-06）。官方定價頁將 Command A+ 標為免費（API 金鑰與權重下載皆為 0 美元），AA 也列為 0 美元，因此 costIndex 取對數尺度（0.05 美元 → 0、100 美元 → 100）的下限 0；正式環境的實際成本來自自建 GPU 或 Model Vault 執行個體，官方未公開 Command A+ 的 Model Vault 單價。Apache 2.0 開放權重但未公開訓練資料，openness = 0.8。"
+versions:
+  - id: "command-a-plus"
+    name: "Command A+"
+    released: "2026-05-20"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    params:
+      totalB: 218
+      activeB: 25
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 128000
+    maxOutputTokens: 64000
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "self-host"
+      - "cloud-marketplace"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0
+        outputPerMTok: 0
+        currency: "USD"
+        tierNote: "官方定價頁標示免費（API 金鑰與模型下載）；試用金鑰每分鐘 20 次、每月 1,000 次，正式環境需洽業務或改用 Model Vault 專屬執行個體"
+        source:
+          title: "Pricing | Secure and Scalable Enterprise AI | Cohere"
+          publisher: "Cohere"
+          url: "https://cohere.com/pricing"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 13.1
+        setting: "v4.3.2"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Command A+ - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/command-a-plus"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 37
+        setting: "發布時版本的 AA 指數，由 Cohere 在發表文中引用；與 v4.3.2 不可直接比較"
+        reportedBy: "lab"
+        date: "2026-05-20"
+        source:
+          title: "Introducing Command A+: Making sovereign agentic capabilities available to all"
+          publisher: "Cohere"
+          url: "https://cohere.com/blog/command-a-plus"
+          type: "company-site"
+          lang: "en"
+          published: "2026-05-20"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 85
+        setting: "Telecom 情境，官方自報"
+        reportedBy: "lab"
+        date: "2026-05-20"
+        source:
+          title: "Introducing Command A+: Making sovereign agentic capabilities available to all"
+          publisher: "Cohere"
+          url: "https://cohere.com/blog/command-a-plus"
+          type: "company-site"
+          lang: "en"
+          published: "2026-05-20"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 80.7
+        setting: "Telecom 情境，AA 實測"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Command A+ - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/command-a-plus"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 25
+        setting: "Terminal-Bench Hard，官方自報"
+        reportedBy: "lab"
+        date: "2026-05-20"
+        source:
+          title: "Introducing Command A+: Making sovereign agentic capabilities available to all"
+          publisher: "Cohere"
+          url: "https://cohere.com/blog/command-a-plus"
+          type: "company-site"
+          lang: "en"
+          published: "2026-05-20"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 0.5
+        setting: "Terminal-Bench 4.0，AA 實測"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Command A+ - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/command-a-plus"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "mmmu"
+        score: 75.1
+        setting: "官方自報"
+        reportedBy: "lab"
+        date: "2026-05-20"
+        source:
+          title: "Introducing Command A+: Making sovereign agentic capabilities available to all"
+          publisher: "Cohere"
+          url: "https://cohere.com/blog/command-a-plus"
+          type: "company-site"
+          lang: "en"
+          published: "2026-05-20"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 12.0
+        setting: "AA 實測"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Command A+ - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/command-a-plus"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "128 個專家、每個 token 啟用 8 個並加上 1 個共享專家；滑動視窗注意力與全域注意力以 3:1 交錯。權重提供 BF16、FP8、W4A4 三種版本，官方建議 W4A4。AA 列出的上下文為 192K。"
+  - id: "command-a-reasoning"
+    name: "Command A Reasoning"
+    released: "2025-08-21"
+    status: "ga"
+    tier: "reasoning"
+    weights: "open-weights"
+    license: "CC-BY-NC-4.0"
+    architecture: "dense"
+    params:
+      totalB: 111
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 256000
+    maxOutputTokens: 32000
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "self-host"
+    benchmarks:
+      - benchmark: "tau2-bench"
+        score: 37
+        setting: "Telecom 情境，Cohere 在 Command A+ 發表文中引用"
+        reportedBy: "lab"
+        date: "2026-05-20"
+        source:
+          title: "Introducing Command A+: Making sovereign agentic capabilities available to all"
+          publisher: "Cohere"
+          url: "https://cohere.com/blog/command-a-plus"
+          type: "company-site"
+          lang: "en"
+          published: "2026-05-20"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 3
+        setting: "Terminal-Bench Hard，Cohere 在 Command A+ 發表文中引用"
+        reportedBy: "lab"
+        date: "2026-05-20"
+        source:
+          title: "Introducing Command A+: Making sovereign agentic capabilities available to all"
+          publisher: "Cohere"
+          url: "https://cohere.com/blog/command-a-plus"
+          type: "company-site"
+          lang: "en"
+          published: "2026-05-20"
+          accessed: "2026-10-06"
+    notes: "Cohere 第一個推理模型，可開關思考模式並設定思考預算，支援 23 種語言；正式環境建議 4 張 H100。"
+  - id: "command-a-translate"
+    name: "Command A Translate"
+    released: "2025-08-28"
+    status: "ga"
+    tier: "specialized"
+    weights: "open-weights"
+    license: "CC-BY-NC-4.0"
+    architecture: "dense"
+    params:
+      totalB: 111
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 8000
+    maxOutputTokens: 8000
+    reasoning: "none"
+    availability:
+      - "api"
+      - "self-host"
+    notes: "23 種語言的機器翻譯專用模型。"
+  - id: "command-a-vision"
+    name: "Command A Vision"
+    released: "2025-07-31"
+    status: "ga"
+    tier: "specialized"
+    weights: "open-weights"
+    license: "CC-BY-NC-4.0"
+    architecture: "dense"
+    params:
+      totalB: 112
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 128000
+    maxOutputTokens: 8000
+    reasoning: "none"
+    availability:
+      - "api"
+      - "self-host"
+    benchmarks:
+      - benchmark: "mmmu"
+        score: 65.3
+        setting: "Cohere 在 Command A+ 發表文中引用"
+        reportedBy: "lab"
+        date: "2026-05-20"
+        source:
+          title: "Introducing Command A+: Making sovereign agentic capabilities available to all"
+          publisher: "Cohere"
+          url: "https://cohere.com/blog/command-a-plus"
+          type: "company-site"
+          lang: "en"
+          published: "2026-05-20"
+          accessed: "2026-10-06"
+    notes: "Cohere 第一個多模態模型，主打圖表、表格、OCR 與文件問答，每次請求最多 20 張圖；不支援工具呼叫，官方支援 6 種語言。"
+  - id: "command-a"
+    name: "Command A"
+    released: "2025-03-13"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "CC-BY-NC-4.0"
+    architecture: "dense"
+    params:
+      totalB: 111
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 256000
+    maxOutputTokens: 8000
+    reasoning: "none"
+    availability:
+      - "api"
+      - "self-host"
+      - "cloud-marketplace"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 7.0
+        setting: "v4.3.2，AA 標示為估計值"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Command A - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/command-a"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 15.2
+        setting: "Telecom 情境，AA 實測"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Command A - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/command-a"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1354
+        setting: "Overall，±3，第 209 名（command-a-03-2025）"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+    notes: "官方稱 2 張 A100 或 H100 即可執行，吞吐量比 Command R+ 08-2024 高 150%。官方定價頁目前未列出單價，AA 列為每百萬 tokens 輸入 2.5、輸出 10 美元。"
+flagshipVersion: "command-a-plus"
+relatedLearn:
+  - "rag-and-vector-search"
+  - "agents-and-mcp"
+  - "open-vs-closed-models"
+  - "mixture-of-experts"
+  - "model-evaluation"
+glossary:
+  - "rag"
+  - "function-calling"
+  - "moe"
+  - "active-parameters"
+  - "open-weights"
+  - "quantization"
+  - "sovereign-ai"
+  - "agent"
+  - "elo-rating"
+sources:
+  - key: "co-cap-blog"
+    title: "Introducing Command A+: Making sovereign agentic capabilities available to all"
+    publisher: "Cohere"
+    url: "https://cohere.com/blog/command-a-plus"
+    type: "company-site"
+    lang: "en"
+    published: "2026-05-20"
+    accessed: "2026-10-06"
+  - key: "co-cap-docs"
+    title: "Cohere's Command A+ Model"
+    publisher: "Cohere"
+    url: "https://docs.cohere.com/docs/command-a-plus"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "co-cap-hf"
+    title: "Model Card for Command A+ (command-a-plus-05-2026-w4a4)"
+    publisher: "Cohere Labs (Hugging Face)"
+    url: "https://huggingface.co/CohereLabs/command-a-plus-05-2026-w4a4"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "co-models"
+    title: "An Overview of Cohere's Models"
+    publisher: "Cohere"
+    url: "https://docs.cohere.com/docs/models"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "co-pricing"
+    title: "Pricing | Secure and Scalable Enterprise AI | Cohere"
+    publisher: "Cohere"
+    url: "https://cohere.com/pricing"
+    type: "company-site"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "co-rl"
+    title: "Different Types of API Keys and Rate Limits"
+    publisher: "Cohere"
+    url: "https://docs.cohere.com/docs/rate-limits"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "co-depr"
+    title: "Deprecations"
+    publisher: "Cohere"
+    url: "https://docs.cohere.com/docs/deprecations"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "co-command-a"
+    title: "Command A"
+    publisher: "Cohere"
+    url: "https://docs.cohere.com/docs/command-a"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "co-vision"
+    title: "Cohere's Command A Vision Model"
+    publisher: "Cohere"
+    url: "https://docs.cohere.com/docs/command-a-vision"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "co-reasoning"
+    title: "Command A Reasoning: Enterprise-grade control for AI agents"
+    publisher: "Cohere"
+    url: "https://cohere.com/blog/command-a-reasoning"
+    type: "company-site"
+    lang: "en"
+    published: "2025-08-21"
+    accessed: "2026-10-06"
+  - key: "co-north-mini-code"
+    title: "Introducing North Mini Code: Cohere's first model for developers"
+    publisher: "Cohere"
+    url: "https://cohere.com/blog/north-mini-code"
+    type: "company-site"
+    lang: "en"
+    published: "2026-06-09"
+    accessed: "2026-10-06"
+  - key: "co-north2"
+    title: "North 2: Enterprise AI without compromises"
+    publisher: "Cohere"
+    url: "https://cohere.com/blog/introducing-north-2"
+    type: "company-site"
+    lang: "en"
+    published: "2026-10-05"
+    accessed: "2026-10-06"
+  - key: "co-aleph"
+    title: "Cohere and Aleph Alpha sign agreement to become the first transatlantic sovereign AI solution"
+    publisher: "Cohere"
+    url: "https://cohere.com/blog/cohere-and-aleph-alpha-sign-agreement"
+    type: "press-release"
+    lang: "en"
+    published: "2026-09-16"
+    accessed: "2026-10-06"
+  - key: "aa-cap"
+    title: "Command A+ - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/command-a-plus"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-cohere"
+    title: "Cohere: Models Intelligence, Performance & Price"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/providers/cohere"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "arena-text"
+    title: "Text Arena Leaderboard (Overall)"
+    publisher: "LMArena"
+    url: "https://arena.ai/leaderboard/text"
+    type: "leaderboard"
+    lang: "en"
+    published: "2026-10-02"
+    accessed: "2026-10-06"
+    note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-08"
+  checkedBy: "models-08-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+Command 是加拿大 <CompanyChip id="cohere">Cohere</CompanyChip> 的文字生成模型系列。和多數實驗室追求聊天產品不同，Cohere 一開始就鎖定企業：模型以 <Term id="rag">RAG（檢索增強生成）</Term>、<Term id="function-calling">工具呼叫</Term>、多語言與私有部署為重點，搭配自家的 Embed、Rerank 檢索模型與 North 企業 Agent 平台一起銷售<Cite k="co-models" />。
+
+截至 2026-10-06，主力是 2026-05-20 推出的 **Command A+**。它是 Cohere 第一個<Term id="moe">混合專家（MoE）</Term>模型，把前一代分開發行的推理、視覺、翻譯與 Agent 能力合併進同一組權重，並以 Apache 2.0 開放下載<Cite k="co-cap-blog" />。官方文件形容 Command A+ 是「Command A 家族的最後一個模型」，2026-06-09 推出的程式代理模型 North Mini Code 則被定位為新一代 North 系列的第一個模型<Cite k="co-north-mini-code" />。官方模型總覽另列有同屬 North 系列、總參數 2,180 億的翻譯專用 MoE 模型 North Small Translate（版本代號 09-2026），支援 50 種以上語言<Cite k="co-models" />。
+
+## 特性分析
+
+**小硬體、大模型。** Command A+ 總參數 2,180 億，每個 token 只啟用 250 億個<Term id="active-parameters">啟用參數</Term>。Cohere 只對 MoE 專家層做 4-bit（W4A4）<Term id="quantization">量化</Term>、注意力路徑維持全精度，再用量化感知蒸餾補回品質，因此 1 張 B200 或 2 張 H100 就能執行<Cite k="co-cap-hf" />。官方稱在相同量化與並行條件下，它的輸出速度比 111B 稠密的 Command A Reasoning 快最多 63%<Cite k="co-cap-blog" />。
+
+**企業 Agent 導向。** Command A+ 支援影像輸入、工具呼叫與可開關的思考模式，上下文 128K、最長輸出 64K，語言從 23 種擴充到 48 種<Cite k="co-cap-docs" />。官方在 North 平台的內部評測中，Agent 問答與試算表分析分別比 Command A Reasoning 進步 20% 與 32%，但這是以 LLM 評審打分的自家測試<Cite k="co-cap-blog" />。
+
+**授權轉向。** Command A、A Vision、A Reasoning、A Translate 的權重都以 CC-BY-NC 4.0 釋出，只能非商用；Command A+ 與 North Mini Code 改為 Apache 2.0，是 Cohere 開放策略的明顯轉變<Cite k="co-cap-docs" />。
+
+**價格與取得方式。** 官方定價頁把 Command A+ 標為免費，舊款 Command R7B 每百萬 tokens 輸入 0.0375、輸出 0.15 美元<Cite k="co-pricing" />。不過試用金鑰每月限 1,000 次呼叫，官方也說明生產金鑰在 Command A+ 等新變體上比照試用金鑰，正式用量需洽業務<Cite k="co-rl" />。
+
+## 適合與不適合的用途
+
+適合：
+
+- **主權與合規要求高的企業**：可在地端、私有雲或斷網環境部署；2026-10-05 推出的 North 2 平台主打這類部署<Cite k="co-north2" />。
+- **企業知識庫 RAG 與工具呼叫**：Command 系列長期針對這些情境訓練。
+- **多語言工作**：48 種語言的 Command A+，或專做翻譯的 Command A Translate。
+- **GPU 預算有限的自建團隊**：2 張 H100 即可執行旗艦模型。
+
+不適合：
+
+- **需要頂尖推理或程式能力**：AA 智慧指數 13.1，前沿模型多在 50 分以上。
+- **長程程式代理**：AA 實測 Terminal-Bench 4.0 僅 0.5%。
+- **想要穩定低價、按量付費的公開 API**：新模型的正式用量要走業務洽談或 Model Vault。
+
+## 版本演進
+
+| 發布日 | 版本 | 重點 | 狀態（2026-10-06） |
+|---|---|---|---|
+| 2025-03-13 | Command A | 111B，256K 上下文，2 張 GPU 可執行 | 提供中 |
+| 2025-07-31 | Command A Vision | 第一個多模態模型 | 提供中 |
+| 2025-08-21 | Command A Reasoning | 第一個推理模型 | 提供中 |
+| 2025-08-28 | Command A Translate | 23 種語言翻譯專用 | 提供中 |
+| 2025-09-15（棄用公告） | Command、Command Light、Command R 03-2024、Command R+ 04-2024 | 舊模型、多個舊端點與微調服務一併退場 | 已棄用 |
+| 2026-05-20 | Command A+ | 首個 MoE、Apache 2.0、48 種語言 | 主力版本 |
+
+資料取自官方模型總覽與棄用公告<Cite k="co-depr" />。另一個值得注意的動向是公司層級：2026-09-16，Cohere 宣布與德國 <CompanyChip id="aleph-alpha">Aleph Alpha</CompanyChip> 簽署合併協議，合併後以 Cohere 名義營運、在多倫多與柏林設雙總部，交易仍待監管核准<Cite k="co-aleph" />。
+
+## 評測解讀
+
+<Callout type="info" title="同一個指數，兩個數字">Cohere 在 2026-05-20 的發表文中寫 Command A+ 的 AA 智慧指數為 37；2026-10-06 的 AA 頁面則顯示 13.1。同一個模型分數差這麼多，應主要來自 AA 指數改版：現行 v4.3.2 改由 Terminal-Bench 4.0、GDPval-AA、AutomationBench-AA 等 10 項偏重長程 Agent 的評測組成，分數尺度與舊版不同，不能直接比較<Cite k="aa-cap" />。</Callout>
+
+| 評測 | Command A+ | 前代對照 | 來源 |
+|---|---|---|---|
+| AA 智慧指數 v4.3.2 | 13.1 | Command A 7.0（估計） | AA |
+| τ²-Bench Telecom | 85%（自報）／80.7%（AA） | A Reasoning 37%（自報） | 官方、AA |
+| Terminal-Bench | Hard 25%（自報）／4.0 版 0.5%（AA） | A Reasoning Hard 3% | 官方、AA |
+| MMMU | 75.1%（自報） | A Vision 65.3% | 官方 |
+| LMArena 文字榜 | 尚未上榜 | Command A 1354（第 209 名） | LMArena |
+
+AA 數值取自 Cohere 彙整頁<Cite k="aa-cohere" />，LMArena 為 2026-10-02 更新<Cite k="arena-text" />。解讀重點：
+
+- **世代進步是真的**：不論官方或 AA，Command A+ 在客服類 Agent（τ²-Bench）都比前代大幅進步，AA 實測的 80.7% 與官方 85% 相去不遠。
+- **評測版本差異很大**：官方的 Terminal-Bench Hard 25% 與 AA 的 Terminal-Bench 4.0 只有 0.5%，是不同版本、不同難度的題組，不代表任何一方有誤；AA 自己量測的 Terminal-Bench Hard 同樣是 25%<Cite k="aa-cap" />。這也顯示它在最新、最難的終端機任務上幾乎無法完成。
+- **定位要對**：Command A+ 主打的是「能在 2 張 GPU 上跑、可商用的企業 Agent 模型」，和前沿閉源模型比通用智慧並不公平；選型時應以自家 RAG 與工具流程實測為準。

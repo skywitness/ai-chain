@@ -1,0 +1,407 @@
+---
+/**
+ * 「關鍵時間軸」: every trend milestone grouped by year, in four category lanes (硬體／軟體／市場／政策).
+ * It is the accessible HTML equivalent of the roadmap-tunnel scene. Items carry the trend's
+ * data-category / data-horizon / data-confidence so TrendFilters can filter them.
+ * Each lane shows its first `perLane` items; the rest sit in a 「還有 N 則」 disclosure.
+ *   <TrendTimeline trends={views} />
+ */
+import Icon from '../ui/Icon.astro';
+import TimelineItem from './TimelineItem.astro';
+import { DATA_DATE } from '../../lib/seo';
+import {
+  CATEGORY_META,
+  MILESTONE_STATUS_META,
+  TREND_CATEGORIES,
+  milestoneKey,
+  milestoneYear,
+  type Milestone,
+  type TrendView,
+} from './trend-meta';
+
+interface Props {
+  trends: readonly TrendView[];
+  /** heading level of the year labels (default 3) */
+  headingLevel?: 3 | 4 | undefined;
+  /** items per lane and year before the rest collapse (default 4) */
+  perLane?: number | undefined;
+  class?: string | undefined;
+}
+const { trends, headingLevel = 3, perLane = 4, class: className } = Astro.props;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+
+type Item = { t: TrendView; m: Milestone; key: string };
+const items: Item[] = trends
+  .flatMap((t) => t.milestones.map((m) => ({ t, m, key: milestoneKey(m.date) })))
+  .filter((x) => Number.isFinite(milestoneYear(x.m.date)))
+  .sort((a, b) => a.key.localeCompare(b.key) || a.t.order - b.t.order);
+
+const thisYear = Number(DATA_DATE.slice(0, 4));
+const statusCount = (s: string) => items.filter((x) => x.m.status === s).length;
+const catCount = (c: string) => items.filter((x) => x.t.category === c).length;
+// Only categories that have milestones get a lane; the others are named in a 「整理中」 note, so the
+// timeline never shows whole columns of dashes while articles are still being written.
+const activeCats = TREND_CATEGORIES.filter((c) => catCount(c) > 0);
+const pendingCats = TREND_CATEGORIES.filter((c) => catCount(c) === 0);
+const shown = perLane;
+const years = [...new Set(items.map((x) => milestoneYear(x.m.date)))].sort((a, b) => a - b);
+const byYear = years.map((y) => ({
+  y,
+  lanes: activeCats.map((c) => ({ c, meta: CATEGORY_META[c], items: items.filter((x) => milestoneYear(x.m.date) === y && x.t.category === c) })),
+  n: items.filter((x) => milestoneYear(x.m.date) === y).length,
+}));
+---
+
+<div class:list={['tl', className]} data-lanes={activeCats.length} style={`--lanes: ${Math.max(1, activeCats.length)}`}>
+  {
+    items.length === 0 ? (
+      <div class="tl-empty">
+        <Icon name="calendar" size="1.4em" />
+        <div>
+          <p class="tl-empty__title">內容整理中</p>
+          <p>各篇趨勢的里程碑正在整理與查證，完成後會依年份與類別排列在這裡，並同步到上方的 3D 時光隧道。</p>
+        </div>
+      </div>
+    ) : (
+      <>
+        <div class="tl__legend">
+          {(['done', 'expected', 'speculative'] as const).map((s) => (
+            <span class="tl__legend-item">
+              <span class:list={['tl__mark', `tl__mark--${s}`]} aria-hidden="true" />
+              {MILESTONE_STATUS_META[s].label}
+              <span class="tl__legend-n">{statusCount(s)}</span>
+            </span>
+          ))}
+          <span class="tl__legend-item tl__legend-today">資料基準日 {DATA_DATE}</span>
+        </div>
+        {pendingCats.length > 0 && (
+          <p class="tl__pending">
+            <Icon name="info" />
+            <span>
+              {pendingCats.map((c) => CATEGORY_META[c].label).join('、')}類趨勢的里程碑整理中，文章完成後會加入時間軸與 3D 時光隧道。
+            </span>
+          </p>
+        )}
+        <div class="tl__head" aria-hidden="true">
+          <span />
+          {activeCats.map((c) => (
+            <span class="tl__head-cell" style={`--lc: ${CATEGORY_META[c].color}`}>
+              <i class="tl__dot" />
+              {CATEGORY_META[c].label}
+              <small class="tl__head-n">{catCount(c)} 則</small>
+            </span>
+          ))}
+        </div>
+        <ol class="tl__years" role="list">
+          {byYear.map(({ y, lanes, n }) => (
+            <li class:list={['tl__year', { 'tl__year--now': y === thisYear, 'tl__year--past': y < thisYear }]} data-ms-group>
+              <H class="tl__yh">
+                <span class="tl__yh-num">{y}</span>
+                {y === thisYear && <span class="tl__yh-tag">今年</span>}
+                <span class="tl__yh-n">{n} 則</span>
+              </H>
+              <div class="tl__lanes">
+                {lanes.map(({ meta, items: li }) => (
+                  <div class="tl__lane" style={`--lc: ${meta.color}`} data-empty={li.length ? undefined : ''}>
+                    <p class="tl__lane-h">
+                      <i class="tl__dot" aria-hidden="true" />
+                      {meta.label}
+                    </p>
+                    {li.length > 0 ? (
+                      <>
+                        <ul class="tl__list" role="list">
+                          {li.slice(0, shown).map(({ t, m }) => (
+                            <TimelineItem trend={t} milestone={m} />
+                          ))}
+                        </ul>
+                        {li.length > shown && (
+                          <details class="tl__more">
+                            <summary>
+                              還有 {li.length - shown} 則
+                              <span class="sr-only">{`${y} 年${meta.label}類里程碑`}</span>
+                              <Icon name="chevron-down" />
+                            </summary>
+                            <ul class="tl__list" role="list">
+                              {li.slice(shown).map(({ t, m }) => (
+                                <TimelineItem trend={t} milestone={m} />
+                              ))}
+                            </ul>
+                          </details>
+                        )}
+                      </>
+                    ) : (
+                      <p class="tl__none" aria-hidden="true">—</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p class="tl-empty tl-empty--filter" data-ms-empty hidden>
+          沒有符合篩選條件的里程碑。
+        </p>
+      </>
+    )
+  }
+</div>
+
+<style>
+  .tl {
+    --tl-year: 6.5rem;
+    display: grid;
+    gap: var(--space-4);
+  }
+  .tl__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .tl__legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  .tl__legend-n {
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .tl__legend-today {
+    margin-inline-start: auto;
+    font-variant-numeric: tabular-nums;
+    color: var(--c-fg-subtle);
+  }
+  .tl__mark {
+    display: inline-block;
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+    border-radius: 50%;
+    border: 2px solid var(--c-fg-muted);
+    box-sizing: border-box;
+  }
+  .tl__mark--done {
+    background: var(--c-fg-muted);
+  }
+  .tl__mark--speculative {
+    border-style: dashed;
+    border-width: 1.5px;
+  }
+
+  .tl__pending {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-sunken);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .tl__pending :global(svg) {
+    flex: none;
+    margin-block-start: 0.25em;
+    color: var(--c-fg-subtle);
+  }
+  .tl__head {
+    display: none;
+  }
+  /* one lane: its milestones flow into as many columns as fit */
+  .tl[data-lanes='1'] .tl__list {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-4) var(--space-5);
+  }
+  .tl__years {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-block-start: 1px solid var(--c-border);
+  }
+  .tl__year {
+    display: grid;
+    gap: var(--space-3);
+    padding-block: var(--space-5);
+    border-block-end: 1px solid var(--c-border);
+  }
+  .tl__year--now {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c-accent) 7%, transparent), transparent 60%);
+  }
+  .tl__yh {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.25em 0.6em;
+    margin: 0;
+    font-size: var(--fs-xl);
+    line-height: 1.2;
+  }
+  .tl__yh-num {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+  .tl__year--past .tl__yh-num {
+    color: var(--c-fg-muted);
+  }
+  .tl__yh-tag {
+    padding: 0.15em 0.55em;
+    border-radius: var(--radius-pill);
+    background: var(--c-accent);
+    color: var(--c-accent-fg);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+  }
+  .tl__yh-n {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  .tl__lanes {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+  }
+  .tl__lane {
+    min-width: 0;
+  }
+  .tl__lane[data-empty],
+  .tl__lane:not(:has([data-ms]:not([hidden]))) {
+    display: none;
+  }
+  .tl__lane-h {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-muted);
+  }
+  .tl__dot {
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+    border-radius: 50%;
+    background: var(--lc);
+  }
+  .tl__none {
+    margin: 0;
+    color: var(--c-fg-subtle);
+  }
+  .tl__list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tl__more {
+    margin-block-start: var(--space-3);
+  }
+  .tl__more > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    min-block-size: 2rem;
+    padding: 0 0.7em;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    background: var(--c-bg-elev);
+    color: var(--c-fg-muted);
+    font-size: var(--fs-xs);
+    cursor: pointer;
+    list-style: none;
+  }
+  .tl__more > summary::-webkit-details-marker {
+    display: none;
+  }
+  .tl__more > summary:hover {
+    border-color: var(--c-border-strong);
+    color: var(--c-fg);
+  }
+  .tl__more > summary:focus-visible {
+    outline: 3px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  .tl__more[open] > summary {
+    margin-block-end: var(--space-3);
+  }
+  .tl__more[open] > summary :global(svg) {
+    transform: rotate(180deg);
+  }
+
+  @media (min-width: 1000px) {
+    .tl__head {
+      display: grid;
+      grid-template-columns: var(--tl-year) repeat(var(--lanes), minmax(0, 1fr));
+      gap: var(--space-5);
+      position: sticky;
+      inset-block-start: var(--header-h);
+      z-index: 2;
+      padding-block: var(--space-2);
+      background: var(--c-bg);
+    }
+    .tl__head-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45em;
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+    }
+    .tl__head-n {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-regular);
+      color: var(--c-fg-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+    .tl__year {
+      grid-template-columns: var(--tl-year) minmax(0, 1fr);
+      gap: var(--space-5);
+    }
+    .tl__yh {
+      flex-direction: column;
+      align-items: flex-start;
+      position: sticky;
+      inset-block-start: calc(var(--header-h) + 3rem);
+      align-self: start;
+    }
+    .tl__lanes {
+      grid-template-columns: repeat(var(--lanes), minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+    .tl__lane,
+    .tl__lane[data-empty],
+    .tl__lane:not(:has([data-ms]:not([hidden]))) {
+      display: block;
+    }
+    .tl__lane-h {
+      display: none;
+    }
+  }
+
+  .tl-empty {
+    display: flex;
+    gap: var(--space-4);
+    align-items: flex-start;
+    padding: var(--space-5);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    color: var(--c-fg-muted);
+    background: color-mix(in srgb, var(--c-bg-elev) 60%, transparent);
+  }
+  .tl-empty p {
+    margin: 0;
+    max-width: var(--measure);
+  }
+  .tl-empty__title {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg);
+    margin-block-end: var(--space-1) !important;
+  }
+  .tl-empty--filter[hidden] {
+    display: none;
+  }
+</style>

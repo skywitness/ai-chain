@@ -1,0 +1,57 @@
+term: "All-Reduce"
+zh: "全歸約集合通訊"
+en: "All-Reduce"
+aliases:
+  - "AllReduce"
+  - "全歸約"
+  - "全規約"
+  - "Ring All-Reduce"
+  - "環狀全歸約"
+category: networking
+level: 3
+short: "每顆 GPU 貢獻自己的資料、加總後再把同一份結果發回給所有 GPU 的通訊操作，是分散式訓練的基本動作。"
+definition: "All-Reduce 是一種集合通訊操作：參與的每顆 GPU 各提供一份陣列，系統把所有陣列逐元素加總（或取最大值、最小值），再讓每顆 GPU 都拿到完全相同的結果。在資料平行訓練中，每顆 GPU 用不同資料算出各自的梯度，每一步都要透過 All-Reduce 把梯度加總平均，所有 GPU 上的模型才能保持一致。依輝達（NVIDIA）nccl-tests 的說明，n 顆 GPU 做 All-Reduce 時，每顆 GPU 至少要傳輸約 2(n-1)/n 倍的資料量，也就是 GPU 再多，每顆仍要送出接近兩倍的資料，所以網路頻寬直接影響訓練速度。輝達的 NCCL 等通訊函式庫都實作了 All-Reduce；業界也把加總運算移到網路設備內執行，例如輝達 NVLink 6 交換器內建的網路內運算，以及 UALink 2.0 規格新增的 In-Network Compute，以節省頻寬並降低延遲。"
+example: "全班同學各自算了一部分帳目，All-Reduce 就是把大家的數字加總後，再把同一份總帳發給每個人，確保人手一份、內容一致。"
+related:
+  - data-parallelism
+  - scale-out
+  - rdma
+  - bandwidth
+  - nvlink
+learnMore:
+  - networking-for-ai
+segments:
+  - networking-optics
+sources:
+  - title: "NCCL User Guide: Collective Operations"
+    publisher: NVIDIA
+    url: "https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/usage/collectives.html"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - title: "nccl-tests: Performance reported by NCCL tests"
+    publisher: NVIDIA
+    url: "https://github.com/NVIDIA/nccl-tests/blob/master/doc/PERFORMANCE.md"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - title: "NVIDIA Kicks Off the Next Generation of AI With Rubin — Six New Chips, One Incredible AI Supercomputer"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/rubin-platform-ai-supercomputer"
+    type: press-release
+    lang: en
+    published: "2026-01-05"
+    accessed: "2026-10-17"
+    note: "NVLink 6 交換器內建網路內運算，用來加速集合通訊。"
+  - title: "UALink Consortium Publishes Four Specifications Defining In-Network Compute, Chiplets, Manageability and 200G Performance"
+    publisher: UALink Consortium
+    url: "https://ualinkconsortium.org/wp-content/uploads/2026/04/UALink-2.0-Specification-PR_FINAL.pdf"
+    type: press-release
+    lang: en
+    published: "2026-04-07"
+    accessed: "2026-10-17"
+editorial:
+  status: fact-checked
+  author: gloss-networking
+  checkedBy: "gloss-networking-check"
+  checkedOn: "2026-10-06"

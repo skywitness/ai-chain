@@ -1,0 +1,169 @@
+---
+/**
+ * <Heatmap title="台灣 AI 供應鏈月營收年增率" columns={['2024-09', …]} rows={[{ label: '台積電', group: '晶圓代工與先進封裝', values: [36.5, …] }]} />
+ * Companies × months coloured by YoY on a diverging scale (blue = growth, orange = decline,
+ * neutral grey = flat; CVD-safe and themable through --ch-div-up / --ch-div-down). Rows are
+ * grouped (e.g. by segment). The grid scrolls inside its own box on narrow screens.
+ */
+import './charts.css';
+import ChartFrame from './ChartFrame.astro';
+import { isNum, round, tip, vars } from './chart-utils';
+import type { ChartSourceLink, TableSpec } from './types';
+import { formatNumber, formatSignedPercent, monthLabel } from '../../lib/format';
+import { median } from '../../lib/financial-metrics';
+
+export interface HeatRow {
+  label: string;
+  values: Array<number | null>;
+  group?: string | undefined;
+  href?: string | undefined;
+}
+
+interface Props {
+  title: string;
+  /** column keys, 'YYYY-MM' */
+  columns: string[];
+  rows: HeatRow[];
+  subtitle?: string | undefined;
+  asOf?: string | undefined;
+  sources?: ChartSourceLink[] | undefined;
+  notes?: Array<string | null | undefined> | undefined;
+  badge?: string | undefined;
+  /** |value| at which the colour saturates (default 60) */
+  clip?: number | undefined;
+  /** what the values are (default 年增率) */
+  valueLabel?: string | undefined;
+  rowHeader?: string | undefined;
+  /** explicit group order */
+  groupOrder?: string[] | undefined;
+  bare?: boolean | undefined;
+  as?: 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | undefined;
+  class?: string | undefined;
+}
+
+const {
+  title,
+  columns = [],
+  rows = [],
+  subtitle,
+  asOf,
+  sources = [],
+  notes = [],
+  badge,
+  clip = 60,
+  valueLabel = '年增率',
+  rowHeader = '公司',
+  bare,
+  as,
+  class: className,
+} = Astro.props;
+
+// group rows, keeping first-seen (or explicit) group order
+const order = Astro.props.groupOrder ?? [...new Set(rows.map((r) => r.group ?? ''))];
+const grouped = order.map((g) => ({ g, rows: rows.filter((r) => (r.group ?? '') === g) })).filter((x) => x.rows.length);
+const hasGroups = grouped.some((x) => x.g);
+const hasLinks = rows.some((r) => r.href);
+
+const cell = (v: number | null | undefined) => {
+  if (!isNum(v)) return { cls: 'ch-hm__cell--na', t: null };
+  if (Math.abs(v) < 0.5) return { cls: '', t: null };
+  const t = Math.min(1, Math.abs(v) / clip);
+  return { cls: v > 0 ? 'ch-hm__cell--up' : 'ch-hm__cell--down', t: `${round(14 + 86 * t, 1)}%` };
+};
+
+const head = columns.map((c, i) => {
+  const [y, m] = c.split('-').map(Number) as [number, number];
+  return { c, year: i === 0 || m === 1 ? String(y) : '', month: m, minor: ![1, 4, 7, 10].includes(m) };
+});
+
+// summary of the latest column
+const lastCol = columns.length - 1;
+const lastVals = rows.map((r) => r.values[lastCol]).filter(isNum);
+const up = lastVals.filter((v) => v > 0).length;
+const down = lastVals.filter((v) => v < 0).length;
+const med = median(lastVals);
+const aria =
+  columns.length && rows.length
+    ? `${title}熱度圖：${rows.length} 家公司 × ${columns.length} 個月（${monthLabel(columns[0]!)}至${monthLabel(columns.at(-1)!)}），顏色代表${valueLabel}。` +
+      (lastVals.length ? `${monthLabel(columns.at(-1)!)}有 ${up} 家成長、${down} 家衰退，中位數為 ${formatSignedPercent(med)}。` : '') +
+      '完整數字見資料表。'
+    : '';
+
+const table: TableSpec = {
+  columns: [
+    { key: 'name', label: rowHeader },
+    ...(hasGroups ? [{ key: 'group', label: '分組' }] : []),
+    ...columns.map((c, i) => ({ key: `c${i}`, label: monthLabel(c, 'short'), numeric: true })),
+  ],
+  rows: rows.map((r) => {
+    const row: Record<string, string> = { name: r.label, group: r.group ?? '' };
+    columns.forEach((_, i) => (row[`c${i}`] = isNum(r.values[i]) ? formatSignedPercent(r.values[i]) : ''));
+    return row;
+  }),
+};
+const fmtTickPct = (v: number) => (v === 0 ? '0' : `${v > 0 ? '+' : '−'}${formatNumber(Math.abs(v))}%`);
+---
+
+<ChartFrame
+  title={title}
+  as={as}
+  subtitle={subtitle}
+  badge={badge}
+  asOf={asOf}
+  unit={`${valueLabel}（%）`}
+  notes={notes}
+  sources={sources}
+  table={table}
+  empty={!columns.length || !rows.length}
+  bare={bare}
+  class={className}
+>
+  <div class="ch-scale" aria-hidden="true">
+    <span>衰退</span>
+    <span class="ch-scale__bar"></span>
+    <span>成長</span>
+    <span class="ch-scale__ticks">
+      {[-clip, -clip / 2, 0, clip / 2, clip].map((v) => <span style={`--x:${round(((v + clip) / (2 * clip)) * 100, 2)}%`}>{Math.abs(v) === clip ? `${v < 0 ? '≤' : '≥'}${fmtTickPct(v)}` : fmtTickPct(v)}</span>)}
+    </span>
+  </div>
+  <div class="ch-scroll" tabindex="0" role="region" aria-label={`${title}（可左右捲動）`}>
+    <div class="ch-hm" role={hasLinks ? 'group' : 'img'} aria-label={aria} style={vars({ '--cols': columns.length })}>
+      <span aria-hidden="true"></span>
+      {
+        head.map((h) => (
+          <span class="ch-hm__ch" aria-hidden="true">
+            <span>{h.year || ' '}</span>
+            <span data-minor={h.minor ? '' : undefined}>{h.month}</span>
+          </span>
+        ))
+      }
+      {
+        grouped.map(({ g, rows: rs }) => (
+          <>
+            {hasGroups && g && <span class="ch-hm__group">{g}</span>}
+            {rs.map((r) => (
+              <>
+                <span class="ch-hm__rl" title={r.label}>
+                  {r.href ? <a href={r.href}>{r.label}</a> : r.label}
+                </span>
+                {columns.map((c, i) => {
+                  const v = r.values[i];
+                  const { cls, t } = cell(v);
+                  return (
+                    <span
+                      class:list={['ch-hm__cell', cls]}
+                      style={t ? `--t:${t}` : undefined}
+                      aria-hidden="true"
+                      data-tip={tip(`${r.label}・${monthLabel(c)}`, [[valueLabel, isNum(v) ? formatSignedPercent(v) : '無資料']])}
+                    />
+                  );
+                })}
+              </>
+            ))}
+          </>
+        ))
+      }
+    </div>
+  </div>
+  <p class="ch-scroll-hint" aria-hidden="true">左右滑動可查看所有月份</p>
+</ChartFrame>

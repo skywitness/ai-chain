@@ -1,0 +1,108 @@
+---
+/**
+ * <Sparkline values={[…]} label="近 8 季營收走勢" />  or  <Sparkline financials={entry.data} />
+ * Tiny fixed-size SVG trend for cards and tables. Estimates are dashed (line) or pale (bars).
+ */
+import './charts.css';
+import { isNum, round } from './chart-utils';
+import { type FinancialsInput, sparkline } from '../../lib/financial-metrics';
+import { formatNumber } from '../../lib/format';
+
+interface Props {
+  values?: Array<number | null> | undefined;
+  estimate?: boolean[] | undefined;
+  /** derive the last `n` revenue periods from a financials entry */
+  financials?: FinancialsInput | undefined;
+  n?: number | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
+  kind?: 'line' | 'bars' | undefined;
+  /** accessible name; a trend sentence is appended automatically */
+  label?: string | undefined;
+  color?: string | undefined;
+  /** bars start at zero; lines use the data range (default) */
+  zeroBased?: boolean | undefined;
+  class?: string | undefined;
+}
+
+const { financials, n = 8, width = 96, height = 28, kind = 'line', color, class: className } = Astro.props;
+const spark = financials ? sparkline(financials, n) : null;
+const values = (Astro.props.values ?? spark?.values ?? []).slice(-n * 4);
+const estimate = Astro.props.estimate ?? spark?.estimate ?? [];
+const unitWord = { quarter: '季', half: '個半年度', year: '年', month: '個月' }[spark?.periodType ?? 'quarter'];
+const baseLabel = Astro.props.label ?? (spark ? `近 ${values.length} ${unitWord}營收走勢` : '走勢');
+
+const nums = values.filter(isNum);
+const zeroBased = Astro.props.zeroBased ?? kind === 'bars';
+const lo = zeroBased ? Math.min(0, ...nums) : Math.min(...nums);
+const hi = Math.max(...nums);
+const pad = 2.5;
+const span = hi - lo || Math.abs(hi) || 1;
+const y = (v: number) => round(pad + (1 - (v - lo) / span) * (height - pad * 2), 2);
+const x = (i: number) => (values.length <= 1 ? width / 2 : round(pad + (i / (values.length - 1)) * (width - pad * 2), 2));
+
+let solid = '';
+let dashed = '';
+let area = '';
+if (kind === 'line') {
+  for (let i = 1; i < values.length; i++) {
+    const a = values[i - 1];
+    const b = values[i];
+    if (!isNum(a) || !isNum(b)) continue;
+    const seg = `M${x(i - 1)},${y(a)}L${x(i)},${y(b)}`;
+    if (estimate[i - 1] || estimate[i]) dashed += seg;
+    else solid += seg;
+  }
+  const def = values.map((v, i) => [i, v] as const).filter((d): d is readonly [number, number] => isNum(d[1]));
+  if (def.length > 1) area = `M${x(def[0]![0])},${height}` + def.map(([i, v]) => `L${x(i)},${y(v)}`).join('') + `L${x(def.at(-1)![0])},${height}Z`;
+}
+const lastI = values.length - 1;
+const first = nums[0];
+const last = nums.at(-1);
+const change = first != null && last != null && first > 0 && nums.length > 1 ? (last / first - 1) * 100 : null;
+const aria = nums.length
+  ? `${baseLabel}${change != null ? `，期間${change >= 0 ? '成長' : '衰退'} ${formatNumber(Math.abs(change), { digits: 1 })}%` : ''}`
+  : `${baseLabel}：無資料`;
+const barW = values.length ? (width - pad * 2) / values.length : 0;
+---
+
+{
+  nums.length > 0 ? (
+    <svg
+      class:list={['ch-spark', className]}
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      role="img"
+      aria-label={aria}
+      style={color ? `--k:${color}` : undefined}
+      focusable="false"
+    >
+      {kind === 'line' ? (
+        <>
+          {area && <path class="is-area" d={area} />}
+          {solid && <path d={solid} />}
+          {dashed && <path class="is-dash" d={dashed} />}
+          {isNum(values[lastI]) && <circle cx={x(lastI)} cy={y(values[lastI] as number)} r="2.5" />}
+        </>
+      ) : (
+        values.map((v, i) =>
+          isNum(v) ? (
+            <rect
+              class={estimate[i] ? 'is-est' : undefined}
+              x={round(pad + i * barW + barW * 0.15, 2)}
+              y={Math.min(y(v), y(Math.max(lo, 0)))}
+              width={round(barW * 0.7, 2)}
+              height={Math.max(0.5, round(Math.abs(y(Math.max(lo, 0)) - y(v)), 2))}
+              rx="1"
+            />
+          ) : null,
+        )
+      )}
+    </svg>
+  ) : (
+    <span class:list={['ch-spark', className]} role="img" aria-label={aria}>
+      —
+    </span>
+  )
+}

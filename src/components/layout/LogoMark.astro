@@ -1,0 +1,40 @@
+---
+/**
+ * The site mark: five stacked layers (foundation → applications) in the layer colours.
+ * Decorative (aria-hidden); the wordmark next to it carries the name.
+ */
+interface Props {
+  size?: string | undefined;
+  class?: string | undefined;
+}
+const { size = '28px', class: className } = Astro.props;
+// bottom → top
+const layers = ['foundation', 'silicon', 'systems', 'cloud-models', 'applications'] as const;
+const diamond = (yc: number) => `M4 ${yc}L16 ${yc - 5}L28 ${yc}L16 ${yc + 5}Z`;
+---
+
+<svg
+  class:list={['logo-mark', className]}
+  width={size}
+  height={size}
+  viewBox="0 0 32 32"
+  aria-hidden="true"
+  focusable="false"
+>
+  {layers.map((l, i) => <path d={diamond(25 - i * 4.25)} style={`fill: var(--layer-${l})`} />)}
+</svg>
+
+<style>
+  @layer components {
+    .logo-mark {
+      flex: none;
+      overflow: visible;
+    }
+    .logo-mark path {
+      stroke: var(--c-bg);
+      stroke-width: 1.4;
+      stroke-linejoin: round;
+      paint-order: stroke;
+    }
+  }
+</style>

@@ -1,0 +1,224 @@
+---
+/**
+ * Compact company rows (中文名、English name、ticker、地區) in a responsive multi-column list.
+ *   <CompanyList items={rankedCompanies} />
+ *   <CompanyList items={taiwan} showTier showRegion={false} limit={12} />
+ * Rows have a uniform height: the English name stays on one line (ellipsis, full name in `title`),
+ * and in narrow columns the ticker / region line moves under the names. With `limit`, a long list
+ * shows its first `limit` rows and keeps the rest in a 「顯示其餘 N 家」 disclosure (works without JS;
+ * the browser's find-in-page still opens it).
+ */
+import Icon from '../ui/Icon.astro';
+import { companyHref } from '../../lib/paths';
+import type { RankedCompany } from '../../lib/scene-data/segments';
+import { segmentMeta, TIER_LABELS } from '../../lib/collections';
+import { primaryTicker, regionLabel, OWNERSHIP_LABELS, STATUS_LABELS } from './chain-data';
+
+interface Props {
+  items: readonly RankedCompany[];
+  /** accessible label of the list */
+  label?: string | undefined;
+  /** show the company's primary segment (for cross-segment participants) */
+  showSegment?: boolean | undefined;
+  /** show 一線／二線／三線與新創 */
+  showTier?: boolean | undefined;
+  /** show the region (off for lists that are all one region, e.g. 台灣廠商) */
+  showRegion?: boolean | undefined;
+  /** rows shown before the 「顯示其餘」 disclosure (lists at most 3 rows longer are shown whole) */
+  limit?: number | undefined;
+  class?: string | undefined;
+}
+const { items, label, showSegment = false, showTier = false, showRegion = true, limit, class: className } = Astro.props;
+const cut = limit != null && items.length > limit + 3 ? limit : items.length;
+const head = items.slice(0, cut);
+const rest = items.slice(cut);
+---
+
+{
+  [{ list: head, more: false }, ...(rest.length ? [{ list: rest, more: true }] : [])].map(({ list, more }) => {
+    const ul = (
+      <ul class:list={['cl', className]} aria-label={more ? `${label ?? '公司列表'}（其餘 ${rest.length} 家）` : label} role="list" data-pagefind-ignore>
+        {list.map(({ company: c }) => {
+          const ticker = primaryTicker(c);
+          return (
+            <li class="cl__row" style={`--cl-c: var(--seg-${c.segment})`}>
+              <span class="cl__in">
+                <span class="cl__dot" aria-hidden="true" />
+                <span class="cl__names">
+                  <a class="cl__zh" href={companyHref(c.id)}>
+                    {c.nameZh}
+                  </a>
+                  {c.name !== c.nameZh && (
+                    <span class="cl__en" lang="en" title={c.name}>
+                      {c.name}
+                    </span>
+                  )}
+                </span>
+                <span class="cl__meta">
+                  {ticker ? <span class="cl__ticker">{ticker}</span> : <span class="cl__private">{OWNERSHIP_LABELS[c.ownership] ?? '未上市'}</span>}
+                  {showRegion && <span class="cl__region">{regionLabel(c.region)}</span>}
+                  {showTier && <span class="cl__tier">{TIER_LABELS[c.tier]}</span>}
+                  {c.status !== 'active' && <span class="cl__status">{STATUS_LABELS[c.status] ?? '非營運中'}</span>}
+                </span>
+                {showSegment && <span class="cl__seg">主要環節：{segmentMeta(c.segment)?.short}</span>}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    );
+    return more ? (
+      <details class="cl__more" data-pagefind-ignore>
+        <summary class="cl__more-btn">
+          <Icon name="chevron-down" class="cl__chev" />
+          <span class="cl__more-open">顯示其餘 {rest.length} 家</span>
+          <span class="cl__more-close">收合</span>
+        </summary>
+        {ul}
+      </details>
+    ) : (
+      ul
+    );
+  })
+}
+
+<style>
+  .cl {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    column-gap: var(--space-5);
+  }
+  .cl__row {
+    container-type: inline-size;
+    min-width: 0;
+    border-block-end: 1px solid var(--c-border);
+  }
+  /* dot · names · meta on one line; the optional 「主要環節」 line spans under the names */
+  .cl__in {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: var(--space-2);
+    padding-block: var(--space-2);
+  }
+  .cl__dot {
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: 50%;
+    background: var(--cl-c);
+    transform: translateY(-0.1em);
+  }
+  .cl__names {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+  .cl__zh {
+    flex: none;
+    max-inline-size: 100%;
+    font-weight: var(--fw-semibold);
+    text-decoration: none;
+    color: var(--c-fg);
+    padding-block: 0.35em;
+    overflow-wrap: anywhere;
+  }
+  .cl__zh:hover {
+    color: var(--c-link);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .cl__en {
+    min-width: 0;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cl__seg {
+    grid-column: 2 / -1;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .cl__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: baseline;
+    gap: 0 var(--space-2);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    text-align: end;
+  }
+  /* Narrow columns (phones, three-column lists on mid-size screens): ticker line under the names. */
+  @container (max-width: 23rem) {
+    .cl__in {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .cl__zh {
+      padding-block: 0.15em;
+    }
+    .cl__meta {
+      grid-column: 2;
+      justify-content: flex-start;
+      text-align: start;
+    }
+  }
+  .cl__ticker {
+    font-family: var(--font-mono);
+    white-space: nowrap;
+  }
+  .cl__private {
+    color: var(--c-fg-subtle);
+  }
+  .cl__region {
+    white-space: nowrap;
+  }
+  .cl__tier {
+    white-space: nowrap;
+    color: var(--c-fg-subtle);
+  }
+  .cl__status {
+    color: var(--c-warn);
+  }
+
+  .cl__more {
+    margin-block-start: var(--space-1);
+  }
+  .cl__more-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap);
+    padding-inline: var(--space-1);
+    cursor: pointer;
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-link);
+    list-style: none;
+  }
+  .cl__more-btn::-webkit-details-marker {
+    display: none;
+  }
+  .cl__more-btn:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .cl__more :global(.cl__chev) {
+    transition: transform var(--dur-2) ease;
+  }
+  .cl__more[open] :global(.cl__chev) {
+    transform: rotate(180deg);
+  }
+  .cl__more-close,
+  .cl__more[open] .cl__more-open {
+    display: none;
+  }
+  .cl__more[open] .cl__more-close {
+    display: inline;
+  }
+</style>

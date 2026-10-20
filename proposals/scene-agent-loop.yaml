@@ -1,0 +1,72 @@
+# Proposals from the agent-loop scene agent (scene-agent-loop), 2026-10-07.
+# Nothing here blocks the scene: each item has a local workaround in src/three/scenes/agent-loop/.
+
+- id: arcribbons-backface-culling
+  target: src/three/kit/ArcRibbons.ts
+  severity: bug (affects every scene that uses ArcRibbons: attention, agent-loop, cloud-globe, company-globe, taiwan-map)
+  problem: >
+    The ribbon strip offsets each vertex along the screen-space normal nrm = (-dir.y, dir.x) with
+    side = position.y = ±1, and the index order (a, a+1, a+2 / a+1, a+3, a+2) makes the triangles
+    clockwise on screen whenever the arc runs left → right (and counter-clockwise when it runs
+    right → left). The ShaderMaterial uses the default FrontSide, so every left → right arc (or arc
+    segment) is back-face culled. Verified in headless Chromium/SwiftShader with a minimal render
+    (research/tmp/agent-loop/dbg-arcs.mjs): a single red arc from x = −2 to x = +2 draws 64 triangles
+    and 0 pixels; with side = DoubleSide it draws 5 343 pixels. This is also why the kit demo
+    (research/tmp/three-core/kit-dark.png) shows only short fragments of the globe arcs.
+  proposal: >
+    In the ArcRibbons constructor set `side: DoubleSide` and `forceSinglePass: true` on the
+    ShaderMaterial (one draw call, no ordering issue because depthWrite is false), or flip the
+    index order per instance from the sign of the projected direction. DoubleSide is the simpler,
+    branch-free fix.
+  workaround: >
+    agent-loop sets `arcs.object.material.side = DoubleSide` and `forceSinglePass = true` right
+    after constructing the kit object (no kit edits).
+
+- id: pathflow-per-path-time
+  target: src/three/kit/PathFlow.ts
+  severity: enhancement
+  problem: >
+    PathFlow has one time uniform for all paths, so in 'once' mode a scene cannot fire one path
+    (one tool call, one result stream) independently of the others, and setReduced(true) lays out
+    static dots on EVERY path at once, which is wrong for event-style flows where only one path is
+    active.
+  proposal: >
+    Optional per-path time and visibility: `flow.setPathTime(i, t)` / `flow.setPathVisible(i, on)`
+    backed by a small float texture (pathCount × 1) read in the vertex shader. setReduced could then
+    respect the per-path visibility.
+  workaround: >
+    agent-loop time-multiplexes its 'once' paths: path j gets offset −10·j and speed = its own length
+    (so every path runs at 1 path-length per second), and the scene sets uTime = 10·j + τ to show
+    only path j at progress τ. Under reduced motion it never calls setReduced and instead freezes
+    uTime at the representative frame of the step.
+
+# Added by the agent-loop reviewer, 2026-10-16.
+
+- id: labels-size-cache-ignores-stage-width
+  target: src/three/core/labels.ts
+  severity: bug (affects every scene whose stage changes width after mount)
+  problem: >
+    LabelLayerImpl.size() caches the measured [w, h] per `kind|swatch|text`, but the label font
+    size depends on the stage width (`clamp(11px, 0.55rem + 0.4cqi, 13px)` in Scene3D.astro). After
+    the stage narrows (window resize, rotation, fullscreen exit), collisions are computed with the
+    old, larger boxes, so labels that would fit are culled. Seen in the agent-loop sandbox when the
+    stage went from 16:9 to a 390 px wide stage after mount: the code-server label was dropped for a
+    collision with a box larger than the drawn 「LLM 大腦」 label.
+  proposal: >
+    Clear `sizes` when the stage width changes (the host already knows it in onResize), or include
+    the computed font size in the cache key.
+  workaround: none needed in the scene; the reviewer's screenshots load the page at the final stage size.
+
+- id: labels-keep-inside
+  target: src/three/core/labels.ts
+  severity: enhancement
+  problem: >
+    A label whose box crosses the stage edge is hidden. Moving callouts (agent-loop's tool-call
+    comet label) regularly reach the stage edge on phone stages, so they disappear exactly where
+    they matter.
+  proposal: >
+    An opt-in `fit: 'flip' | 'clamp'` on LabelSpec: flip `above` to `left` / `right` near an edge,
+    or clamp the box inside the stage.
+  workaround: >
+    agent-loop projects the anchor itself each frame and switches `align` to `left` / `right`
+    near the edges (calloutAlign in index.ts).

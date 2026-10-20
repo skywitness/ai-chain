@@ -1,0 +1,223 @@
+---
+/**
+ * Products table for a company profile (owner: pages-companies). A real <table> on wide containers;
+ * rows reflow into stacked blocks on narrow ones (explicit ARIA roles keep the table semantics).
+ *
+ *   <ProductsTable products={d.products} />
+ */
+import Badge from '../ui/Badge.astro';
+import { PRODUCT_STATUS, partialDateZh, hostOf } from './labels';
+
+interface ProductLike {
+  name: string;
+  nameZh?: string | undefined;
+  category: string;
+  launched?: string | undefined;
+  status: string;
+  description: string;
+  specs?: ReadonlyArray<{ label: string; value: string }> | undefined;
+  source?: { title: string; url: string; publisher: string } | undefined;
+}
+interface Props {
+  products: readonly ProductLike[];
+  caption?: string | undefined;
+}
+const { products, caption = '主要產品與服務' } = Astro.props;
+const ORDER = ['shipping', 'sampling', 'announced', 'roadmap', 'eol'];
+const rows = [...products].sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status));
+---
+
+<div class="pt-wrap">
+  <table class="pt" role="table">
+    <caption class="sr-only">{caption}</caption>
+    <thead role="rowgroup">
+      <tr role="row">
+        <th scope="col" role="columnheader">產品</th>
+        <th scope="col" role="columnheader">狀態</th>
+        <th scope="col" role="columnheader">說明</th>
+      </tr>
+    </thead>
+    <tbody role="rowgroup">
+      {
+        rows.map((p) => {
+          const st = PRODUCT_STATUS[p.status] ?? { label: p.status, tone: 'neutral' as const };
+          const primaryName = p.nameZh ?? p.name;
+          const alt = p.nameZh && p.nameZh !== p.name ? p.name : undefined;
+          return (
+            <tr role="row">
+              <th scope="row" role="rowheader" class="pt__prod">
+                <span class="pt__name">{primaryName}</span>
+                {alt && <span class="pt__alt" lang="en">{alt}</span>}
+                <span class="pt__cat">
+                  {p.category}
+                  {p.launched && <> · {partialDateZh(p.launched)}推出</>}
+                </span>
+              </th>
+              <td role="cell" class="pt__status">
+                <Badge tone={st.tone}>{st.label}</Badge>
+              </td>
+              <td role="cell" class="pt__desc">
+                <p>{p.description}</p>
+                {p.specs && p.specs.length > 0 && (
+                  <dl class="pt__specs">
+                    {p.specs.map((s) => (
+                      <div>
+                        <dt>{s.label}</dt>
+                        <dd>{s.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+                {p.source && (
+                  <p class="pt__src">
+                    來源：
+                    <a href={p.source.url} rel="noopener noreferrer" target="_blank">
+                      {p.source.publisher || hostOf(p.source.url)}
+                      <span class="sr-only">（{p.source.title}，另開新視窗）</span>
+                    </a>
+                  </p>
+                )}
+              </td>
+            </tr>
+          );
+        })
+      }
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .pt-wrap {
+    container-type: inline-size;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    overflow: hidden;
+  }
+  .pt {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-s);
+    line-height: 1.7;
+  }
+  .pt thead th {
+    padding: 0.6rem 1rem;
+    border-block-end: 1px solid var(--c-border);
+    background: var(--c-bg-sunken);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.04em;
+    color: var(--c-fg-muted);
+    text-align: start;
+  }
+  .pt tbody tr + tr > * {
+    border-block-start: 1px solid var(--c-border);
+  }
+  .pt tbody th,
+  .pt tbody td {
+    padding: 0.9rem 1rem;
+    vertical-align: top;
+    text-align: start;
+  }
+  .pt__prod {
+    inline-size: 28%;
+    font-weight: var(--fw-regular);
+  }
+  .pt__name {
+    display: block;
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+    line-height: 1.45;
+  }
+  .pt__alt {
+    display: block;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    line-height: 1.5;
+  }
+  .pt__cat {
+    display: block;
+    margin-block-start: 0.3rem;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .pt__status {
+    inline-size: 6.5rem;
+    white-space: nowrap;
+  }
+  .pt__desc p {
+    margin: 0;
+    color: var(--c-fg);
+  }
+  .pt__specs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+    gap: 0.35rem 1rem;
+    margin: 0.6rem 0 0;
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--radius-s);
+    background: var(--c-bg-sunken);
+    font-size: var(--fs-xs);
+    line-height: 1.55;
+  }
+  .pt__specs div {
+    min-width: 0;
+  }
+  .pt__specs dt {
+    color: var(--c-fg-muted);
+  }
+  .pt__specs dd {
+    margin: 0;
+    color: var(--c-fg);
+    font-weight: var(--fw-semibold);
+    overflow-wrap: anywhere;
+  }
+  .pt__desc .pt__src {
+    margin-block-start: 0.4rem;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .pt__src a {
+    color: var(--c-fg-muted);
+  }
+
+  @container (max-width: 620px) {
+    .pt,
+    .pt tbody,
+    .pt tr,
+    .pt tbody th,
+    .pt tbody td {
+      display: block;
+      inline-size: auto;
+    }
+    .pt thead {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+    .pt tbody tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      padding: 0.9rem 1rem;
+      gap: 0.4rem 0.75rem;
+    }
+    .pt tbody tr + tr {
+      border-block-start: 1px solid var(--c-border);
+    }
+    .pt tbody tr + tr > * {
+      border-block-start: 0;
+    }
+    .pt tbody th,
+    .pt tbody td {
+      padding: 0;
+    }
+    .pt__desc {
+      grid-column: 1 / -1;
+    }
+    .pt__status {
+      inline-size: auto;
+    }
+  }
+</style>

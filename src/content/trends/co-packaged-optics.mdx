@@ -1,0 +1,241 @@
+---
+title: "共同封裝光學（CPO）走向量產"
+description: "交換器頻寬每代翻倍，可插拔光模組的功耗與成本逼近極限，業界開始把光引擎直接封裝在晶片旁。本文整理博通、輝達已出貨的 CPO 交換器、台積電 COUPE，以及 2028 年 scale-up 光學化的藍圖與反方觀點。"
+category: hardware
+horizon: mid
+horizonYears: [2026, 2030]
+confidence: medium
+confidenceRationale: "博通與輝達的 CPO 交換器已出貨或量產，用在 scale-out 網路已是事實；但 CPO 能否擴及 GPU 之間的 scale-up 互連、取代多少可插拔光模組，取決於 2028 年後的藍圖、可靠度與成本，目前仍有不確定性。"
+impact: high
+milestones:
+  - { date: "2024-03", label: "博通 Bailly：首款 51.2 Tbps CPO 交換器交付客戶", status: done }
+  - { date: "2024-04", label: "台積電公布 COUPE 矽光子引擎，規劃 2026 年整合進 CoWoS 成為 CPO", status: done }
+  - { date: "2025-03", label: "輝達發表 Spectrum-X 與 Quantum-X Photonics 矽光子交換器", status: done }
+  - { date: "2025-10", label: "博通第三代 CPO 交換器 TH6-Davisson（102.4 Tbps）開始出貨，先供早期客戶送樣", status: done }
+  - { date: "2026-02", label: "邁威爾完成收購光互連新創 Celestial AI", status: done }
+  - { date: "2026-03", label: "輝達各投資 Lumentum、Coherent 20 億美元；Ayar Labs 完成 5 億美元 E 輪", status: done }
+  - { date: "2026-05", label: "輝達 Spectrum-X Ethernet Photonics 進入量產", status: done }
+  - { date: "2027", label: "邁威爾預計 FY2028 下半年開始認列 Celestial AI 營收", status: expected }
+  - { date: "2028", label: "輝達 Feynman 世代 Kyber 機櫃首度以 CPO 做 scale-up", status: expected }
+  - { date: "2029-01", label: "邁威爾目標 Celestial AI 年化營收 10 億美元（FY2029 第四季）", status: expected }
+  - { date: "2030", label: "推測：若可靠度與成本達標，光學 scale-up 可能擴及多機櫃 GPU 互連", status: speculative }
+signals:
+  - text: "博通宣布第三代 CPO 交換器 TH6-Davisson 開始出貨（先供早期客戶送樣），採台積電 COUPE 光引擎，光學互連功耗比可插拔方案低 70%。"
+    date: "2025-10-08"
+    source: { title: "Broadcom Announces Tomahawk 6 – Davisson, the Industry’s First 102.4-Tbps Ethernet Switch with Co-Packaged Optics", publisher: Broadcom, url: "https://www.nasdaq.com/press-release/broadcom-announces-tomahawkr-6-davisson-industrys-first-1024-tbps-ethernet-switch-co", type: press-release, lang: en, published: "2025-10-08", accessed: "2026-10-06" }
+  - text: "輝達宣布 Spectrum-X Ethernet Photonics 進入量產，CoreWeave、Lambda 與甲骨文雲端為首批採用者。"
+    date: "2026-05-31"
+    source: { title: "NVIDIA Vera Rubin Ramps Into Full Production to Power Agentic AI Factories Worldwide", publisher: NVIDIA, url: "https://nvidianews.nvidia.com/news/vera-rubin-full-production-agentic-ai-factory", type: press-release, lang: en, published: "2026-05-31", accessed: "2026-10-06" }
+  - text: "輝達分別投資 Lumentum 與 Coherent 各 20 億美元，並簽下數十億美元的雷射與光元件採購承諾。"
+    date: "2026-03-02"
+    source: { title: "NVIDIA Announces Strategic Partnership with Lumentum to Develop State-of-the-Art Optics Technology", publisher: "U.S. SEC（Lumentum）", url: "https://www.sec.gov/Archives/edgar/data/1633978/000119312526085412/d41019dex991.htm", type: press-release, lang: en, published: "2026-03-02", accessed: "2026-10-06" }
+  - text: "Ayar Labs 2026 年累計募資 6.5 億美元，策略投資人包括輝達、超微、英特爾、聯發科、世芯與緯穎。"
+    date: "2026-09-10"
+    source: { title: "Ayar Labs Expands 2026 Funding to $650 Million", publisher: Ayar Labs, url: "https://ayarlabs.com/news/ayar-labs-expands-2026-funding-to-650-million/", type: press-release, lang: en, published: "2026-09-10", accessed: "2026-10-06" }
+  - text: "邁威爾完成收購 Celestial AI，預計 FY2028 下半年開始貢獻營收，FY2029 第四季達年化 10 億美元。"
+    date: "2026-02-02"
+    source: { title: "Marvell Completes Acquisition of Celestial AI", publisher: Marvell Technology, url: "https://investor.marvell.com/news-events/press-releases/detail/1005/marvell-completes-acquisition-of-celestial-ai", type: press-release, lang: en, published: "2026-02-02", accessed: "2026-10-06" }
+  - text: "反向訊號：Arista 發起 XPO 液冷可插拔光模組多源協議，單一模組 12.8 Tbps，前面板密度是 1600G-OSFP 的 4 倍。"
+    date: "2026-03-12"
+    source: { title: "Arista Announces XPO High Density Liquid Cooled Pluggable Optics", publisher: Arista Networks, url: "https://www.arista.com/en/company/news/press-release/23697-pr-20260311", type: press-release, lang: en, published: "2026-03-12", accessed: "2026-10-06" }
+counterpoints:
+  - "可插拔光模組仍在進步：Arista 的 XPO 液冷可插拔模組把前面板密度提高到 1600G-OSFP 的 4 倍，輝達也表示新一代 AI 工廠會同時採用可插拔光模組，CPO 不會一夕取代現有方案。"
+  - "機櫃內的短距離連線，銅線仍有成本與成熟度優勢；輝達到 2028 年的 Feynman 世代仍同時提供銅線與 CPO 兩種 scale-up 版本。"
+  - "光引擎與交換器晶片封在一起後，維修方式和資料中心習慣的「壞了就抽換光模組」不同，可靠度與售後模式仍需大規模部署驗證。"
+  - "量產時程長、供應鏈集中：邁威爾預估 Celestial AI 要到 FY2028 下半年才開始貢獻營收；光引擎、雷射與封裝產能集中在少數廠商，任何一環延誤都會拖慢導入。"
+relatedSegments: [networking-optics, foundry-packaging, ai-accelerators, datacenter-infra]
+relatedCompanies: [broadcom, nvidia, tsmc, marvell, lumentum, coherent, ayar-labs, arista, wiwynn, guc, alchip, mediatek, browave, foxconn, ase, innolight, eoptolink, fabrinet, corning]
+relatedLearn: [interconnect-deep, networking-for-ai, advanced-packaging-deep, datacenter-power-cooling]
+glossary: [cpo, silicon-photonics, optical-transceiver, network-switch, serdes, scale-up, scale-out, cowos, lpo]
+sources:
+  - key: avgo-bailly
+    title: "Broadcom Delivers Industry’s First 51.2-Tbps Co-Packaged Optics Ethernet Switch Platform for Scalable AI Systems"
+    publisher: Broadcom
+    url: "https://www.nasdaq.com/press-release/broadcom-delivers-industrys-first-51.2-tbps-co-packaged-optics-ethernet-switch"
+    type: press-release
+    lang: en
+    published: "2024-03-14"
+    accessed: "2026-10-06"
+  - key: avgo-davisson
+    title: "Broadcom Announces Tomahawk 6 – Davisson, the Industry’s First 102.4-Tbps Ethernet Switch with Co-Packaged Optics"
+    publisher: Broadcom
+    url: "https://www.nasdaq.com/press-release/broadcom-announces-tomahawkr-6-davisson-industrys-first-1024-tbps-ethernet-switch-co"
+    type: press-release
+    lang: en
+    published: "2025-10-08"
+    accessed: "2026-10-06"
+  - key: tsmc-sym24
+    title: "TSMC Celebrates 30th North America Technology Symposium with Innovations Powering AI with Silicon Leadership"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3136"
+    type: press-release
+    lang: en
+    published: "2024-04-24"
+    accessed: "2026-10-06"
+  - key: nv-photonics-25
+    title: "NVIDIA Announces Spectrum-X Photonics, Co-Packaged Optics Networking Switches to Scale AI Factories to Millions of GPUs"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-spectrum-x-co-packaged-optics-networking-switches-ai-factories"
+    type: press-release
+    lang: en
+    published: "2025-03-18"
+    accessed: "2026-10-06"
+  - key: nv-vr-full
+    title: "NVIDIA Vera Rubin Ramps Into Full Production to Power Agentic AI Factories Worldwide"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/vera-rubin-full-production-agentic-ai-factory"
+    type: press-release
+    lang: en
+    published: "2026-05-31"
+    accessed: "2026-10-06"
+  - key: nv-q2-fy27
+    title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2027"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2027"
+    type: press-release
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-06"
+  - key: th-nv-roadmap
+    title: "Nvidia updates data center roadmap with Rosa CPU and stacked Feynman GPUs"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/pc-components/gpus/nvidia-updates-data-center-roadmap-with-rosa-cpu-and-stacked-feynman-gpus-optical-nvlink-groq-lpus-with-nvfp4-and-nvlink-also-on-deck"
+    type: news
+    lang: en
+    published: "2026-03-17"
+    accessed: "2026-10-06"
+  - key: nv-lite
+    title: "NVIDIA Announces Strategic Partnership with Lumentum to Develop State-of-the-Art Optics Technology"
+    publisher: "U.S. SEC（Lumentum）"
+    url: "https://www.sec.gov/Archives/edgar/data/1633978/000119312526085412/d41019dex991.htm"
+    type: press-release
+    lang: en
+    published: "2026-03-02"
+    accessed: "2026-10-06"
+  - key: nv-cohr
+    title: "NVIDIA and Coherent Announce Strategic Partnership to Develop Optics Technology to Scale Next-Generation Data Center Architecture"
+    publisher: "U.S. SEC（Coherent）"
+    url: "https://www.sec.gov/Archives/edgar/data/820318/000119312526084366/d42735dex991.htm"
+    type: press-release
+    lang: en
+    published: "2026-03-02"
+    accessed: "2026-10-06"
+  - key: mrvl-celestial
+    title: "Marvell to Acquire Celestial AI, Accelerating Scale-up Connectivity for Next-Generation Data Centers"
+    publisher: Marvell Technology
+    url: "https://investor.marvell.com/news-events/press-releases/detail/1000/marvell-to-acquire-celestial-ai-accelerating-scale-up-connectivity-for-next-generation-data-centers"
+    type: press-release
+    lang: en
+    published: "2025-12-02"
+    accessed: "2026-10-06"
+  - key: mrvl-celestial-close
+    title: "Marvell Completes Acquisition of Celestial AI"
+    publisher: Marvell Technology
+    url: "https://investor.marvell.com/news-events/press-releases/detail/1005/marvell-completes-acquisition-of-celestial-ai"
+    type: press-release
+    lang: en
+    published: "2026-02-02"
+    accessed: "2026-10-06"
+  - key: ayar-e
+    title: "Ayar Labs Closes $500M Series E, Accelerates Volume Production of Co-Packaged Optics"
+    publisher: Ayar Labs
+    url: "https://ayarlabs.com/news/ayar-labs-closes-500m-series-e-accelerates-volume-production-of-co-packaged-optics/"
+    type: press-release
+    lang: en
+    published: "2026-03-03"
+    accessed: "2026-10-06"
+  - key: ayar-650
+    title: "Ayar Labs Expands 2026 Funding to $650 Million"
+    publisher: Ayar Labs
+    url: "https://ayarlabs.com/news/ayar-labs-expands-2026-funding-to-650-million/"
+    type: press-release
+    lang: en
+    published: "2026-09-10"
+    accessed: "2026-10-06"
+  - key: ayar-wiwynn
+    title: "Ayar Labs and Wiwynn Partner to Bring Co-Packaged Optics to Rack-Scale AI Systems"
+    publisher: Ayar Labs
+    url: "https://ayarlabs.com/news/ayar-labs-and-wiwynn-partner-to-bring-co-packaged-optics-to-rack-scale-ai-systems/"
+    type: press-release
+    lang: en
+    published: "2026-03-11"
+    accessed: "2026-10-06"
+  - key: ayar-guc
+    title: "GUC and Ayar Labs Partner to Advance Co-Packaged Optics for Hyperscalers"
+    publisher: Ayar Labs
+    url: "https://ayarlabs.com/news/guc-and-ayar-labs-partner-to-advance-co-packaged-optics-for-hyperscalers/"
+    type: press-release
+    lang: en
+    published: "2025-11-16"
+    accessed: "2026-10-06"
+  - key: anet-xpo
+    title: "Arista Announces XPO High Density Liquid Cooled Pluggable Optics"
+    publisher: Arista Networks
+    url: "https://www.arista.com/en/company/news/press-release/23697-pr-20260311"
+    type: press-release
+    lang: en
+    published: "2026-03-12"
+    accessed: "2026-10-06"
+published: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial: { status: fact-checked, author: trends-02, checkedBy: "trends-02-check", checkedOn: "2026-10-06" }
+---
+
+## 趨勢摘要
+
+AI 叢集裡的 GPU 要靠 <Term id="network-switch">交換器</Term> 互相連線。傳統做法是在交換器前面板插上一顆顆 <Term id="optical-transceiver">可插拔光模組</Term>，把電訊號轉成光訊號再送進光纖。<Term id="cpo">共同封裝光學（CPO）</Term> 則把負責光電轉換的「光引擎」搬到和交換器晶片同一個封裝基板上，大幅縮短高速電訊號在電路板上要走的距離，藉此降低功耗。
+
+**已出貨的事實**：博通（Broadcom）2024 年 3 月把業界第一款 51.2 Tbps CPO 交換器 Bailly（博通第二代 CPO）交給客戶，內含 8 個以 <Term id="silicon-photonics">矽光子</Term> 製成的 6.4 Tbps 光引擎<Cite k="avgo-bailly" />；2025 年 10 月宣布第三代 TH6-Davisson 開始出貨，交換容量 102.4 Tbps，當時先供早期客戶送樣<Cite k="avgo-davisson" />。輝達（NVIDIA）2026 年 5 月宣布 Spectrum-X Ethernet Photonics 進入量產，CoreWeave、Lambda 與甲骨文雲端是首批採用者<Cite k="nv-vr-full" />。
+
+**仍在藍圖上的部分**：輝達在 GTC 2026 表示，2028 年的 Feynman 世代會在 Kyber 機櫃同時提供銅線與 CPO 兩種 <Term id="scale-up">scale-up</Term> 版本，黃仁勳形容這是「第一次同時用銅線與共同封裝光學做 scale-up」<Cite k="th-nv-roadmap" />。
+
+<BarChart title="代表性 CPO 交換器的交換容量" unit="Tbps" data={[{ label: "2024 博通 Bailly", value: 51.2 }, { label: "2025 博通 Davisson", value: 102.4 }, { label: "2026 輝達 Spectrum-X Photonics", value: 102.4 }]} source={["avgo-bailly", "avgo-davisson", "nv-photonics-25"]} keepOrder note="輝達數值取 128 埠 × 800G 的配置（官方稱約 100 Tb/s）；另有 512 埠 × 800G 的大型配置，總頻寬約 400 Tb/s。" />
+
+## 為什麼重要
+
+<Callout type="analogy" title="生活化比喻">可插拔光模組像是每台電器都要接一個外掛變壓器，電線從插座拉到變壓器有一段路，每段路都在耗電、發熱；CPO 等於把變壓器直接做進電器裡，線變短，損耗也跟著變少。</Callout>
+
+- **功耗與成本**：博通在 2024 年指出，傳統交換系統中的可插拔光模組約佔系統功耗的 50%、成本超過一半；Bailly 的光學互連功耗比可插拔方案低 70%<Cite k="avgo-bailly" />。輝達則宣稱其矽光子交換器的雷射數量少 4 倍、能效高 3.5 倍<Cite k="nv-photonics-25" />；到 2026 年量產時，輝達的說法進一步改為能效高 5 倍、AI 應用不中斷運行時間長 5 倍、部署速度快 1.3 倍<Cite k="nv-vr-full" />。這些都是廠商自行公布的比較，基準是傳統光模組網路。
+- **可靠度**：大型訓練工作只要一條連線斷斷續續，就會拖累整批 GPU。博通表示把光引擎與交換晶片整合，可消除可插拔模組在製造與測試上的許多變異，改善連線中斷（link flap）的表現<Cite k="avgo-davisson" />。
+- **規模**：輝達的目標是把 AI 工廠擴展到百萬顆 GPU，Spectrum-X Photonics 大型配置可達 512 埠 800G；InfiniBand 版的 Quantum-X Photonics 則有 144 埠 800G，並採液冷設計冷卻板上的矽光子元件<Cite k="nv-photonics-25" />。
+
+## 關鍵驅動力
+
+1. **SerDes 速度翻倍**：TH6-Davisson 每通道 200 Gb/s，頻寬是上一代 Bailly 的兩倍<Cite k="avgo-davisson" />。<Term id="serdes">SerDes</Term> 越快，電訊號在電路板上走越遠就越需要補償電路，功耗隨之上升；博通也以此說明，CPO 能減少訊號調節電路與走線損耗<Cite k="avgo-davisson" />。
+2. **封裝技術成熟**：台積電（TSMC）的 COUPE 以 SoIC-X 把電子晶粒疊在光子晶粒上，規劃 2025 年先用於小型可插拔模組、2026 年整合進 <Term id="cowos">CoWoS</Term> 封裝成為 CPO<Cite k="tsmc-sym24" />；博通 Davisson 的光引擎就採用 COUPE<Cite k="avgo-davisson" />。
+3. **大廠砸錢鎖定產能**：輝達 2026 年 3 月分別投資 Lumentum 與 Coherent 各 20 億美元，並承諾數十億美元的雷射與光元件採購<Cite k="nv-lite" /><Cite k="nv-cohr" />；邁威爾（Marvell）以首付約 32.5 億美元、含業績對價最高約 55 億美元收購 Celestial AI，主打單顆 16 Tbps 的光互連小晶片<Cite k="mrvl-celestial" />。
+4. **scale-up 也要變光**：邁威爾認為，多機櫃 scale-up 網路對功耗、頻寬、延遲與距離的要求，會讓互連逐步轉向全光連線<Cite k="mrvl-celestial" />。Ayar Labs 2026 年 3 月完成 5 億美元 E 輪、估值 37.5 億美元，主攻 GPU 之間的光學 scale-up<Cite k="ayar-e" />。
+
+## 時間表與里程碑
+
+| 時間 | 事件 | 性質 |
+|---|---|---|
+| 2024-03 | 博通 51.2 Tbps Bailly 交付客戶<Cite k="avgo-bailly" /> | 已發生 |
+| 2025-10 | 博通 102.4 Tbps TH6-Davisson 開始出貨（早期客戶送樣）<Cite k="avgo-davisson" /> | 已發生 |
+| 2026-05 | 輝達 Spectrum-X Ethernet Photonics 量產<Cite k="nv-vr-full" /> | 已發生 |
+| 2026-08 | 輝達表示 Spectrum-6 交換系統同時支援可插拔與 CPO<Cite k="nv-q2-fy27" /> | 已發生 |
+| FY2028 下半年（約 2027 下半年） | Celestial AI 開始貢獻營收<Cite k="mrvl-celestial-close" /> | 公司目標 |
+| 2028 | Feynman 世代 Kyber 以 CPO 做 scale-up<Cite k="th-nv-roadmap" /> | 輝達藍圖 |
+
+## 受影響的環節與公司
+
+- <SegmentChip id="networking-optics" />：交換晶片的 <CompanyChip id="broadcom">博通</CompanyChip>、<CompanyChip id="nvidia">輝達</CompanyChip> 受惠；雷射供應商 <CompanyChip id="lumentum">Lumentum</CompanyChip>、<CompanyChip id="coherent">Coherent</CompanyChip> 與光纖廠 <CompanyChip id="corning">康寧</CompanyChip> 列名輝達矽光子生態系。可插拔模組大廠 <CompanyChip id="innolight">中際旭創</CompanyChip>、<CompanyChip id="eoptolink">新易盛</CompanyChip> 則被輝達列為可插拔方案夥伴，短期仍並行<Cite k="nv-photonics-25" />。
+- <SegmentChip id="foundry-packaging" />：<CompanyChip id="tsmc">台積電</CompanyChip> 的 COUPE 是關鍵封裝平台；<CompanyChip id="ase">日月光投控</CompanyChip> 旗下矽品也在輝達生態系名單中。
+- <SegmentChip id="ai-accelerators" />：<CompanyChip id="marvell">邁威爾</CompanyChip> 與 <CompanyChip id="ayar-labs">Ayar Labs</CompanyChip> 瞄準加速器之間的光學 I/O。
+- **台灣供應鏈**：輝達矽光子生態系名單包括台積電、<CompanyChip id="browave">波若威</CompanyChip>、<CompanyChip id="foxconn">鴻海</CompanyChip> 與矽品<Cite k="nv-photonics-25" />；<CompanyChip id="wiwynn">緯穎</CompanyChip> 與 Ayar Labs 合作機櫃級 CPO 系統並參與投資<Cite k="ayar-wiwynn" /><Cite k="ayar-650" />，<CompanyChip id="guc">創意</CompanyChip> 與 Ayar Labs 也有合作<Cite k="ayar-guc" />，<CompanyChip id="alchip">世芯</CompanyChip> 與 <CompanyChip id="mediatek">聯發科</CompanyChip> 則是其策略投資人<Cite k="ayar-e" />。
+
+## 反方觀點與風險
+
+- **可插拔沒有停下來**：Arista 2026 年 3 月發起 XPO 液冷可插拔模組多源協議，單一模組 12.8 Tbps，前面板密度是 1600G-OSFP 的 4 倍<Cite k="anet-xpo" />；業界也在推 <Term id="lpo">LPO</Term> 等更省電的可插拔方案，替既有路線爭取時間。
+- **銅線仍有優勢**：機櫃內短距離連線，銅線成本低、技術成熟，輝達到 2028 年仍保留銅線版的 Kyber scale-up<Cite k="th-nv-roadmap" />。
+- **維修與可靠度**：光引擎和交換晶片封在一起，維修方式與「壞了就抽換光模組」的習慣不同，需要大規模部署累積實績。
+- **時程與集中度**：邁威爾預估 Celestial AI 要到 FY2028 下半年才開始貢獻營收，FY2028 第四季年化營收目標 5 億美元<Cite k="mrvl-celestial-close" />，顯示光學 scale-up 的營收放量仍需要數年；光引擎、雷射與先進封裝集中在少數供應商。
+
+## 觀察指標
+
+1. 輝達 Spectrum-X Photonics 與博通 Davisson 的實際部署規模，以及 CPO 佔交換器埠數的比重。
+2. 2028 年 Kyber CPO scale-up 是否如期，以及採用 CPO 版本與銅線版本的比例。
+3. 雷射產能：Lumentum、Coherent 的擴產進度。
+4. 1.6T、3.2T 可插拔模組與 XPO、LPO 的出貨量，判斷替代速度。
+5. 台灣供應鏈：緯穎與 Ayar Labs 的機櫃級 CPO 系統、創意與 Ayar Labs 合作的 CPO 封裝設計何時進入量產出貨。
+6. 延伸閱讀：<LearnLink id="interconnect-deep">互連深入</LearnLink>、<TrendLink id="scale-up-fabric-wars">Scale-up 互連標準之爭</TrendLink>。

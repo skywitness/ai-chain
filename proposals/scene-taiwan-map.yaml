@@ -1,0 +1,42 @@
+# Proposals from the taiwan-map scene agent (scene-taiwan-map), 2026-10-15.
+# Nothing here blocks the scene: each item has a local workaround in src/three/scenes/taiwan-map/.
+
+- id: arcribbons-backface-culling
+  target: src/three/kit/ArcRibbons.ts
+  severity: bug (same finding as proposals/scene-agent-loop.yaml, scene-attention.yaml and scene-cloud-globe.yaml)
+  problem: >
+    The ribbon strip's winding flips with the on-screen direction of the arc and the ShaderMaterial
+    keeps the default FrontSide, so planar arcs that run left → right on screen are culled (on the
+    map, the arcs heading east vanish while the westbound ones render).
+  proposal: >
+    `side: DoubleSide` and `forceSinglePass: true` on the ArcRibbons material (depthWrite is already
+    false, so one pass is enough and the draw-call count does not change).
+  workaround: >
+    index.ts sets `arcs.object.material.side = DoubleSide` and `forceSinglePass = true` right after
+    constructing the kit object.
+
+- id: arcribbons-point-at
+  target: src/three/kit/ArcRibbons.ts
+  severity: enhancement
+  problem: >
+    Scenes that label an arc (「EUV 曝光機」, 「HBM」, 「設計定案」) must re-derive the kit's curve to find
+    a point on it: the planar mode is a quadratic Bézier whose control point is midpoint + up · 2·height,
+    which is an implementation detail of the vertex shader.
+  proposal: >
+    `arcs.pointAt(index: number, t: number, out?: Vector3): Vector3` returning the world point of arc
+    `index` at parameter t (planar and globe modes), so labels and glows can ride the arcs.
+  workaround: >
+    index.ts evaluates the same Bézier on the CPU (layoutArcs, per-arc `labelT`).
+
+- id: setpose-no-fit
+  target: src/three/core/host.ts (fitPose), src/three/core/types.ts (SceneContext.setPose)
+  severity: enhancement
+  problem: >
+    `ctx.setPose` always scales the distance on portrait stages by |camera.portrait| / |camera|. A scene
+    that authors its own portrait poses per step (the map frames different clusters in 16:9 and 4:5)
+    has to pre-divide by that factor so the pose it wrote is the pose it gets.
+  proposal: >
+    `ctx.setPose(pose, { fit: false })` (TweenOptions flag) to skip fitPose for an already
+    stage-specific pose.
+  workaround: >
+    index.ts `go()` divides portrait step poses by the same ratio before calling ctx.setPose.

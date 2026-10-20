@@ -1,0 +1,124 @@
+/*
+ * Layout primitives (composition only — no colour decisions). Owner: design-system agent.
+ * Page agents compose pages from these classes plus their own scoped styles.
+ *
+ *   .container / .container--narrow / .container--wide   centred column with fluid gutters
+ *   .section                                              vertical rhythm between page sections
+ *   .stack (+ --s / --l)                                  vertical flow with consistent gaps
+ *   .cluster                                              wrapping inline group (chips, badges, buttons)
+ *   .grid-auto (--min)                                    responsive auto-fill card grid
+ *   .split                                                main + aside (aside drops under main below 960px)
+ *   .page-head                                            page title block (kicker, h1, lede, meta)
+ *   .scroll-x                                             horizontal scroll container (wide tables)
+ *   .full-bleed                                           escape the container to the viewport edges
+ */
+@layer layout {
+  .site-main {
+    display: block;
+    min-height: 60vh;
+    padding-block-end: var(--space-9);
+  }
+
+  .container {
+    width: 100%;
+    max-width: calc(var(--container) + 2 * var(--gutter));
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+  .container--narrow {
+    max-width: calc(var(--container-narrow) + 2 * var(--gutter));
+  }
+  .container--wide {
+    max-width: calc(90rem + 2 * var(--gutter));
+  }
+
+  .section {
+    padding-block: var(--space-7);
+  }
+  .section + .section {
+    padding-block-start: 0;
+  }
+  .section--tight {
+    padding-block: var(--space-5);
+  }
+
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--stack-gap, var(--space-4));
+  }
+  .stack--s {
+    --stack-gap: var(--space-2);
+  }
+  .stack--l {
+    --stack-gap: var(--space-6);
+  }
+
+  .cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--cluster-gap, var(--space-2));
+  }
+
+  .grid-auto {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--min, 16rem)), 1fr));
+    gap: var(--grid-gap, var(--space-4));
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+  @media (min-width: 960px) {
+    .split {
+      grid-template-columns: minmax(0, 1fr) minmax(14rem, var(--aside, 18rem));
+      gap: var(--space-7);
+    }
+    .split--aside-start {
+      grid-template-columns: minmax(14rem, var(--aside, 18rem)) minmax(0, 1fr);
+    }
+  }
+
+  .page-head {
+    padding-block: var(--space-6) var(--space-5);
+    display: grid;
+    gap: var(--space-3);
+  }
+  .page-head > h1 {
+    max-width: 28em;
+  }
+  .page-head__kicker {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-muted);
+  }
+  .page-head__lede {
+    font-size: var(--fs-l);
+    color: var(--c-fg-muted);
+    max-width: var(--measure);
+    line-height: 1.7;
+  }
+
+  .scroll-x {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .scroll-x:focus-visible {
+    outline-offset: 4px;
+  }
+
+  .full-bleed {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+  }
+
+  .measure {
+    max-width: var(--measure);
+  }
+}

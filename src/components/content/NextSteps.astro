@@ -1,0 +1,237 @@
+---
+/**
+ * 「下一步」 cards. Items are either explicit links or shorthands resolved from the registries:
+ *   <NextSteps items={[
+ *     { learn: 'transformer-and-attention', kicker: '準備好進階了嗎？' },
+ *     { segment: 'foundation-models' },
+ *     { trend: 'reasoning-test-time-compute' },
+ *     { href: withBase('/models/'), title: '大模型特性分析', description: '…' },
+ *   ]} />
+ * Or pass your own markup through the default slot. Prev/next links: `prev` / `next` props.
+ */
+import {
+  getCurriculumArticle,
+  getTrendIndexEntry,
+  levelMeta,
+  segmentMeta,
+  TREND_CATEGORY_LABELS,
+} from '../../lib/collections';
+import { learnHref, segmentHref, trendHref } from '../../lib/paths';
+import Icon from '../ui/Icon.astro';
+
+type Common = { kicker?: string | undefined; description?: string | undefined };
+export type NextItem =
+  | (Common & { href: string; title: string; level?: 1 | 2 | 3 | undefined; color?: string | undefined })
+  | (Common & { learn: string })
+  | (Common & { segment: string })
+  | (Common & { trend: string });
+type PageLink = { href: string; title: string };
+
+interface Props {
+  items?: readonly NextItem[] | undefined;
+  title?: string | undefined;
+  prev?: PageLink | undefined;
+  next?: PageLink | undefined;
+  id?: string | undefined;
+  class?: string | undefined;
+}
+const { items = [], title = '下一步', prev, next, id = 'next-steps', class: className } = Astro.props;
+
+type Resolved = { href: string; title: string; kicker: string; description?: string | undefined; color?: string | undefined };
+const resolved: Resolved[] = [];
+for (const it of items) {
+  if ('learn' in it) {
+    const a = getCurriculumArticle(it.learn);
+    if (!a) continue;
+    const lv = levelMeta(a.level);
+    resolved.push({ href: learnHref(a.slug), title: a.title, kicker: it.kicker ?? `學習路徑 · ${lv.label}`, description: it.description, color: lv.color });
+  } else if ('segment' in it) {
+    const s = segmentMeta(it.segment);
+    if (!s) continue;
+    resolved.push({ href: segmentHref(s.id), title: s.title, kicker: it.kicker ?? `產業鏈 · 第 ${s.order} 環`, description: it.description, color: s.color });
+  } else if ('trend' in it) {
+    const t = getTrendIndexEntry(it.trend);
+    if (!t) continue;
+    resolved.push({ href: trendHref(t.id), title: t.title, kicker: it.kicker ?? `未來趨勢 · ${TREND_CATEGORY_LABELS[t.category]}`, description: it.description });
+  } else {
+    resolved.push({
+      href: it.href,
+      title: it.title,
+      kicker: it.kicker ?? '',
+      description: it.description,
+      color: it.color ?? (it.level ? levelMeta(it.level).color : undefined),
+    });
+  }
+}
+const hasSlot = Astro.slots.has('default');
+const show = resolved.length > 0 || hasSlot || prev || next;
+---
+
+{
+  show && (
+    <section class:list={['next', className]} aria-labelledby={id} data-pagefind-ignore>
+      <h2 class="next__title" id={id}>
+        {title}
+      </h2>
+      {resolved.length > 0 && (
+        <ul class="next__grid" role="list">
+          {resolved.map((r) => (
+            <li class="next__card" style={r.color ? `--nc: ${r.color}` : undefined}>
+              <a href={r.href}>
+                {r.kicker && <span class="next__kicker">{r.kicker}</span>}
+                <span class="next__name">{r.title}</span>
+                {r.description && <span class="next__desc">{r.description}</span>}
+                <Icon name="arrow-right" class="next__arrow" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+      <slot />
+      {(prev || next) && (
+        <nav class="next__pager" aria-label="上一篇與下一篇">
+          {prev ? (
+            <a class="next__pg next__pg--prev" href={prev.href} rel="prev">
+              <span class="next__pg-label">
+                <Icon name="arrow-left" /> 上一篇
+              </span>
+              <span class="next__pg-title">{prev.title}</span>
+            </a>
+          ) : (
+            <span />
+          )}
+          {next && (
+            <a class="next__pg next__pg--next" href={next.href} rel="next">
+              <span class="next__pg-label">
+                下一篇 <Icon name="arrow-right" />
+              </span>
+              <span class="next__pg-title">{next.title}</span>
+            </a>
+          )}
+        </nav>
+      )}
+    </section>
+  )
+}
+
+<style>
+  @layer components {
+    .next {
+      margin-block-start: var(--space-8);
+      padding-block-start: var(--space-5);
+      border-block-start: 1px solid var(--c-border);
+    }
+    .next__title {
+      font-size: var(--fs-xl);
+      margin: 0 0 var(--space-4);
+      padding: 0;
+    }
+    .next__title::before {
+      display: none;
+    }
+    .next__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+      gap: var(--space-3);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .next__card {
+      --nc: var(--c-accent);
+      margin: 0;
+    }
+    .next__card a {
+      position: relative;
+      display: grid;
+      gap: var(--space-1);
+      height: 100%;
+      padding: var(--space-4) var(--space-5) var(--space-4) var(--space-4);
+      padding-inline-end: 2.75rem;
+      border: 1px solid var(--c-border);
+      border-inline-start: 3px solid var(--nc);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      text-decoration: none;
+      transition:
+        border-color var(--dur-2) ease,
+        box-shadow var(--dur-2) ease;
+    }
+    .next__card a:hover {
+      border-color: var(--c-border-strong);
+      border-inline-start-color: var(--nc);
+      box-shadow: var(--shadow-2);
+      color: var(--c-fg);
+    }
+    .next__kicker {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-subtle);
+      letter-spacing: 0.03em;
+    }
+    .next__name {
+      font-weight: var(--fw-bold);
+      line-height: 1.5;
+    }
+    .next__desc {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      line-height: 1.6;
+    }
+    .next__card :global(.next__arrow) {
+      position: absolute;
+      inset-inline-end: var(--space-4);
+      inset-block-start: 50%;
+      translate: 0 -50%;
+      color: var(--c-fg-subtle);
+      transition: translate var(--dur-2) var(--ease-out);
+    }
+    .next__card a:hover :global(.next__arrow) {
+      translate: 3px -50%;
+      color: var(--c-link);
+    }
+    .next__pager {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+      margin-block-start: var(--space-6);
+    }
+    @media (min-width: 640px) {
+      .next__pager {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .next__pg {
+      display: grid;
+      gap: 0.2em;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-m);
+      border: 1px solid var(--c-border);
+      color: var(--c-fg);
+      text-decoration: none;
+    }
+    .next__pg:hover {
+      background: var(--c-hover);
+      color: var(--c-fg);
+    }
+    .next__pg--next {
+      text-align: end;
+      grid-column: -2;
+    }
+    .next__pg-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35em;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .next__pg--next .next__pg-label {
+      justify-content: flex-end;
+    }
+    .next__pg-title {
+      font-weight: var(--fw-semibold);
+      line-height: 1.5;
+    }
+  }
+</style>

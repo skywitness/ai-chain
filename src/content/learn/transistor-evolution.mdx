@@ -1,0 +1,378 @@
+---
+title: "電晶體演進：FinFET、GAA、CFET 與背面供電"
+subtitle: "閘極怎麼把通道越握越緊，電源線又為什麼要搬到晶圓背面"
+description: "電晶體越做越小，閘極越難把電流關緊。本文從開關原理與短通道效應講起，說明平面、FinFET、GAA 奈米片到 Forksheet 與 CFET 的結構演進，以及英特爾、台積電、三星導入背面供電的原因、做法與時程。"
+level: 3
+order: 306
+track: hardware
+prerequisites: [semiconductor-process-nodes]
+next: [lithography-euv-high-na, advanced-packaging-deep]
+relatedSegments: [foundry-packaging, semi-equipment-materials, eda-ip-design, ai-accelerators]
+relatedCompanies: [tsmc, intel, samsung-electronics, applied-materials, lam-research, nvidia, synopsys, cadence]
+relatedModels: []
+relatedTrends: [process-roadmap-2nm-and-beyond, ai-chip-design-eda]
+glossary:
+  - transistor
+  - process-node
+  - finfet
+  - gaa
+  - cfet
+  - bspdn
+  - wafer
+  - foundry
+  - deposition
+  - etching
+  - eda
+scenes:
+  - { id: wafer-transistor, variant: bspdn }
+keyTakeaways:
+  - "電晶體是用電壓控制的開關；尺寸越小，閘極越難把通道關緊，漏電就越嚴重。"
+  - "結構從平面、FinFET 走到 GAA 奈米片，閘極包覆通道的面由 1 面增為 3 面、再到 4 面。"
+  - "背面供電把電源線移到晶圓背面，壓降更小，正面的金屬層則全部留給訊號線。"
+  - "英特爾 18A 已量產 GAA 搭配背面供電；台積電以 A16、A12 跟進，三星規劃 SF2Z。"
+  - "Forksheet、CFET 與二維材料是下一步；專家在 2023 年估計 CFET 還要 7 到 10 年才會商用。"
+estimatedMinutes: 18
+sources:
+  - key: nvidia-blackwell
+    title: "NVIDIA Blackwell Architecture"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "Blackwell 架構 GPU 有 2,080 億個電晶體，採台積電客製的 4NP 製程；由兩顆達光罩極限的晶粒以每秒 10 TB 的晶片間互連組成"
+  - key: wiki-finfet
+    title: "Fin field-effect transistor"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Fin_field-effect_transistor"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "次要來源。1989 年日立中央研究所的久本大（Digh Hisamoto）等人首度做出 FinFET 類元件 DELTA；1997 年 DARPA 資助加州大學柏克萊分校團隊開發，胡正明為關鍵人物；2000 年 12 月的論文首度使用 FinFET 一詞；英特爾 2011 年宣布 22 奈米採三閘極電晶體，2012 年出貨；台積電 2013 年開始生產 16 奈米 FinFET；2014 年台積電、三星、格羅方德在 14／16 奈米採用 FinFET；胡正明 2020 年獲 IEEE 榮譽勳章"
+  - key: wiki-multigate
+    title: "Multigate device"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Multigate_device"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "次要來源。平面電晶體縮小時出現短通道效應，特別是關閉狀態的漏電，使待機功耗上升；多閘極包圍通道可抑制漏電並提高導通電流。1988 年東芝團隊以垂直奈米線首度展示 GAA MOSFET；GAA 奈米片已展示最多 7 層，片寬常見 8 到 50 奈米；與 FinFET 不同，片寬與片數都能調整來改變驅動能力；英特爾的 RibbonFET 為奈米帶版本"
+  - key: wiki-subthreshold
+    title: "Subthreshold slope"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Subthreshold_slope"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "次要來源。次臨界擺幅 S = ln(10) × (kT/q) × (1 + C_d/C_ox)；理論下限為 ln(10) × kT/q，室溫（300 K）約每十倍電流 60 mV；微縮後的 MOSFET 在室溫下通常約 70 mV，因短通道寄生效應而略差"
+  - key: tsmc-16nm-page
+    title: "16/12nm Technology"
+    publisher: TSMC
+    url: "https://www.tsmc.com/english/dedicatedFoundry/technology/logic/l_16_12nm"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "台積電 2013 年成為第一家開始 16 奈米 FinFET 風險試產的晶圓代工廠，2014 年交付第一個功能完整的 16 奈米 FinFET 客戶產品"
+  - key: tsmc-n3-page
+    title: "3nm Technology"
+    publisher: TSMC
+    url: "https://www.tsmc.com/english/dedicatedFoundry/technology/logic/l_3nm"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "2022 年台積電成為第一家將 3 奈米 FinFET（N3）導入大量生產的晶圓代工廠；N3 是業界最先進的 FinFET 技術"
+  - key: samsung-3nm
+    title: "Samsung Begins Chip Production Using 3nm Process Technology With GAA Architecture"
+    publisher: Samsung Electronics
+    url: "https://news.samsung.com/global/samsung-begins-chip-production-using-3nm-process-technology-with-gaa-architecture"
+    type: press-release
+    lang: en
+    published: "2022-06-30"
+    accessed: "2026-10-15"
+    note: "宣布開始以 GAA（三星稱 MBCFET）架構的 3 奈米製程進行初期生產（initial production），為業界首家；採較寬通道的奈米片，可調整奈米片通道寬度以兼顧功耗與效能；第一代 3 奈米相較 5 奈米功耗最多降低 45%、效能提升 23%、面積減少 16%；第二代目標為功耗降低 50%、效能提升 30%、面積減少 35%"
+  - key: tsmc-n2
+    title: "2nm Technology"
+    publisher: TSMC
+    url: "https://www.tsmc.com/english/dedicatedFoundry/technology/logic/l_2nm"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "N2 採業界領先的第一代奈米片電晶體，已於 2025 年第四季如期量產；A14 預定 2028 年量產，相較 N2 同功耗速度提升 10–15%，或同速度功耗降低 25–30%，邏輯密度增加 20% 以上；NanoFlex 標準單元架構將演進為 NanoFlex Pro"
+  - key: tsmc-a16-page
+    title: "A16 Technology"
+    publisher: TSMC
+    url: "https://www.tsmc.com/english/dedicatedFoundry/technology/logic/l_A16"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "A16 結合奈米片電晶體與背面電源軌，提升邏輯密度與效能；A12 採第二代背面電源軌方案"
+  - key: tsmc-symposium-2024
+    title: "TSMC Celebrates 30th North America Technology Symposium with Innovations Powering AI with Silicon Leadership"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3136"
+    type: press-release
+    lang: en
+    published: "2024-04-24"
+    accessed: "2026-10-15"
+    note: "A16 結合 Super Power Rail 背面供電與奈米片電晶體，當時規劃 2026 年量產；相較 N2P，同電壓速度提升 8–10%，同速度功耗降低 15–20%，資料中心產品晶片密度最高 1.10 倍；把正面繞線資源留給訊號，適合訊號繞線複雜、供電網路密集的 HPC 產品。N2 搭配 NanoFlex，可在同一設計區塊中混用矮單元（省面積、省電）與高單元（重效能）"
+  - key: tsmc-symposium-2026
+    title: "TSMC Debuts A13 Technology at 2026 North America Technology Symposium"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3302"
+    type: press-release
+    lang: en
+    published: "2026-04-23"
+    accessed: "2026-10-15"
+    note: "A12 為 A14 平台的強化版，採 Super Power Rail，為 AI 與 HPC 應用提供背面供電，預定 2029 年量產；A13 為 A14 的直接微縮，透過設計與製程協同最佳化，面積節省 6%，設計規則與 A14 完全相容，同樣 2029 年量產；N2U 以設計與製程協同最佳化，相較 N2P 速度提升 3–4% 或功耗降低 8–10%，邏輯密度提升 1.02–1.03 倍，預定 2028 年量產；本新聞稿未提及 A16 時程"
+  - key: trendforce-a16
+    title: "[News] TSMC Latest Roadmap: A12, A13 for 2029 Without High-NA EUV; A16 Volume Production Delayed to 2027"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/news/2026/04/23/news-tsmc-unveils-latest-roadmap-a12-a13-set-for-2029-without-high-na-euv-a16-volume-production-delayed-to-2027/"
+    type: news
+    lang: en
+    published: "2026-04-23"
+    accessed: "2026-10-15"
+    note: "引述 Tom's Hardware 報導：A16 量產時程由 2026 年延至 2027 年；A16 與 A12 都採 Super Power Rail 背面供電；A13、A12 預期不需 High-NA EUV。屬媒體報導"
+  - key: intel-powervia
+    title: "With PowerVia, Intel Achieves a Chipmaking Breakthrough"
+    publisher: Intel
+    url: "https://www.intel.com/content/www/us/en/newsroom/news/powervia-intel-achieves-chipmaking-breakthrough.html"
+    type: press-release
+    lang: en
+    published: "2023-06-05"
+    accessed: "2026-10-15"
+    note: "副標稱 PowerVia 為全球第一個背面供電方案。測試晶片 Blue Sky Creek 以 Meteor Lake 的效率核心為基礎，使用 Intel 4 製程的電晶體；頻率提升超過 5%、標準單元密度（利用率）超過 90%；研究成果發表於 2023 年 VLSI 研討會"
+  - key: spectrum-powervia
+    title: "Intel Is All-In on Backside Power Delivery"
+    publisher: IEEE Spectrum
+    url: "https://spectrum.ieee.org/backside-power-delivery"
+    type: news
+    lang: en
+    published: "2023-06-08"
+    accessed: "2026-10-15"
+    note: "Samuel K. Moore 撰文。PowerVia 流程：先在矽表面做電晶體（測試晶片為 Intel 4 的 FinFET），同時鑽出深而窄的奈米矽穿孔並填入金屬，再於電晶體上方做資料導線，接著在頂部接合一片空白載體晶圓後翻面，把原本晶圓的底部研磨到露出穿孔末端，再於背面做較粗的電源導線與接點。測試核心頻率提升超過 6%、電源損耗減少 30%，部分區域標準單元填滿率達 95%；未使晶片變貴、可靠度變差或更難測試；英特爾另訂設計規則控制散熱"
+  - key: intel-18a
+    title: "Intel 18A"
+    publisher: Intel Foundry
+    url: "https://www.intel.com/content/www/us/en/foundry/process/18a.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "相較 Intel 3：同功耗效能最多提升 18%、同效能功耗降低 38%、晶片密度提升 30%；量產矽晶片在約 0.5 V 下的 CPU 頻率比 FinFET 設計高約 30%；RibbonFET 改善靜電控制與驅動能力；PowerVia 把最差情況的動態電壓下降最多減為十分之一，繞線後區塊面積最多縮小 11%；已在美國大量生產"
+  - key: intel-2q26
+    title: "Intel Reports Second-Quarter 2026 Financial Results (Form 8-K Exhibit 99.1)"
+    publisher: Intel
+    url: "https://www.sec.gov/Archives/edgar/data/50863/000005086326000155/q226earningsrelease.htm"
+    type: filing
+    lang: en
+    published: "2026-07-23"
+    accessed: "2026-10-15"
+    note: "Intel 18A-P 進入風險試產；Xeon 6+ 為英特爾首款採 Intel 18A 的伺服器產品；部分 Panther Lake 處理器已使用 ASML EXE High-NA EUV 進入大量生產"
+  - key: wiki-bspdn
+    title: "Backside power delivery"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Backside_power_delivery"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "次要來源。背面供電讓正面空間留給訊號、降低擁塞與寄生電容，背面較粗的電源線電阻較低、供電更穩定；挑戰包括新的設計規則與工具、熱密度上升、鑽孔與雙面加工晶圓帶來的額外成本，以及熱與機械應力對可靠度的影響"
+  - key: samsung-sff2024
+    title: "Samsung Showcases AI-Era Vision and Latest Foundry Technologies at SFF 2024"
+    publisher: Samsung Electronics
+    url: "https://news.samsung.com/global/samsung-showcases-ai-era-vision-and-latest-foundry-technologies-at-sff-2024"
+    type: press-release
+    lang: en
+    published: "2024-06-13"
+    accessed: "2026-10-15"
+    note: "2024 年三星晶圓代工論壇公布 SF2Z：2 奈米製程導入最佳化的背面供電網路（BSPDN），把電源軌移到晶圓背面以消除電源線與訊號線之間的瓶頸，相較第一代 2 奈米 SF2 改善功耗、效能與面積，並大幅降低壓降（IR drop）；SF2Z 預定 2027 年量產"
+  - key: imec-roadmap
+    title: "Smaller, better, faster: imec presents chip scaling roadmap"
+    publisher: imec
+    url: "https://www.imec-int.com/en/articles/smaller-better-faster-imec-presents-chip-scaling-roadmap"
+    type: company-site
+    lang: en
+    published: "2023-02-02"
+    accessed: "2026-10-15"
+    note: "imec 發明的 Forksheet 在 n 型與 p 型通道之間加入隔離牆，讓兩者靠得更近，預期標準單元縮小 20%；CFET 把 n 與 p 通道上下堆疊，密度大增但製程更複雜，尤其是源極與汲極的接點；CFET 日後將導入原子厚度的二維單層材料，例如二硫化鎢（WS2）；imec 也研究把電源軌埋入晶圓、以奈米矽穿孔從背面連接；路線圖預計 2036 年由 7 奈米走到 0.2 奈米（2 埃米），每代約 2 到 2.5 年"
+  - key: spectrum-cfet
+    title: "Intel, Samsung, and TSMC Demo 3D-Stacked Transistors"
+    publisher: IEEE Spectrum
+    url: "https://spectrum.ieee.org/cfet-intel-samsung-tsmc"
+    type: news
+    lang: en
+    published: "2023-12-16"
+    accessed: "2026-10-15"
+    note: "Samuel K. Moore 撰文，報導 IEDM 2023。CFET 把 nFET 與 pFET 上下疊在同一製程中，可讓電晶體密度接近加倍。英特爾在單一鰭上做出反相器，以背面供電從下方接觸底層電晶體，接觸閘極間距 60 奈米（當時 5 奈米晶片約 50 奈米），每個元件的奈米片由 2 片增為 3 片，上下元件間距由 50 奈米縮到 30 奈米；三星展示 48 與 45 奈米間距的單一元件，改用乾式蝕刻使良好元件的良率提高 80%；台積電達到 48 奈米間距；專家估計 CFET 還要 7 到 10 年才會商用"
+  - key: amat-q1-fy2026
+    title: "Applied Materials Announces First Quarter 2026 Results"
+    publisher: "Applied Materials (Form 8-K, SEC)"
+    url: "https://www.sec.gov/Archives/edgar/data/6951/000162828026007661/exhibit991q12026earningsre.htm"
+    type: press-release
+    lang: en
+    published: "2026-02-12"
+    accessed: "2026-10-15"
+    note: "推出提升 2 奈米及以下 GAA 電晶體與導線能效的系統：Viva 以純自由基處理在原子級精度下平滑 GAA 矽奈米片；Sym3 Z Magnum 導體蝕刻提供埃米級立體溝槽輪廓控制；Spectral 以鉬取代鎢做電晶體接點，降低電阻"
+  - key: amat-q2-fy2026
+    title: "Applied Materials Announces Second Quarter 2026 Results"
+    publisher: "Applied Materials (Form 8-K, SEC)"
+    url: "https://www.sec.gov/Archives/edgar/data/6951/000162828026035071/exhibit991q22026earningsre.htm"
+    type: press-release
+    lang: en
+    published: "2026-05-14"
+    accessed: "2026-10-15"
+    note: "推出製作立體 GAA 電晶體最小原子級特徵的設備；Trillium ALD 以複雜的金屬閘極堆疊包覆矽奈米片"
+  - key: lam-akara
+    title: "Lam Research Unveils Industry's Most Advanced Conductor Etch Technology to Date"
+    publisher: Lam Research
+    url: "https://newsroom.lamresearch.com/2025-02-19-Lam-Research-Unveils-Industrys-Most-Advanced-Conductor-Etch-Technology-to-Date"
+    type: press-release
+    lang: en
+    published: "2025-02-19"
+    accessed: "2026-10-15"
+    note: "Akara 導體蝕刻設備支援 GAA 電晶體微縮，已獲領先廠商選為多項先進平面 DRAM 與晶圓代工 GAA 應用的量產指定設備（production tool of record）；DirectDrive 電漿源反應速度快 100 倍；可延伸到 4F2 DRAM、CFET 與 3D DRAM"
+updated: "2026-10-15"
+lastVerified: "2026-10-15"
+editorial: { status: fact-checked, author: learn-15, checkedBy: "learn-15-check", checkedOn: "2026-10-06", notes: "內容以 2026-10-06 為資料基準日，來源實際讀取日為 2026-10-15。查核已逐項比對台積電技術頁與 2024、2026 年技術論壇新聞稿、三星新聞稿、英特爾 PowerVia 新聞稿與 18A 官網、英特爾與應用材料的 SEC 8-K、科林研發新聞稿、imec 與 IEEE Spectrum 原文。A16 量產時程：台積電 2024 年規劃 2026 年，2026 年 4 月媒體報導延至 2027 年，台積電 2026 年 4 月新聞稿與 A16 技術頁未提及年份，內文並陳並標示為媒體報導。三星 SF2Z 2027 年量產已改引三星 2024 年 6 月新聞稿，屬當時規劃，未見更新的官方說法。台積電 16 奈米改依官網寫為 2013 年風險試產。PowerVia 流程順序已依 IEEE Spectrum 原文更正（奈米穿孔在正面導線之前製作）。" }
+---
+
+## 一句話解釋
+
+**<Term id="transistor">電晶體</Term>是用電壓控制的開關，晶片裡的每一次運算，都是數百億個這種開關一開一關的結果。** 以輝達的 Blackwell GPU 為例，一顆就有 2,080 億個電晶體<Cite k="nvidia-blackwell" />。為了在同樣面積塞進更多開關、又不讓它們漏電，電晶體的結構在十多年內換了兩次：2011 年前後從平面改成立體的 <Term id="finfet">FinFET</Term>，2022 年起再換成閘極四面包覆的 <Term id="gaa">GAA</Term> 奈米片。現在業界正把供電線路搬到<Term id="wafer">晶圓</Term>背面，再下一步則是把兩種電晶體上下疊起來的 <Term id="cfet">CFET</Term>。
+
+## 生活化比喻
+
+<Callout type="analogy" title="用手捏住水管，以及把水電管線搬到地下室">
+
+把電晶體想成一條水管，再加上一隻控制水流的手。手捏緊，水就停（關）；手放開，水就流（開）。
+
+- **平面電晶體**：只用一根手指從上方壓住水管。水管粗長時壓得住；水管越來越短、越來越細時，水就會從手指旁邊漏出去。
+- **FinFET**：把水管立起來，用三根手指從左、右、上三面捏住，漏水少很多。
+- **GAA**：把一條水管拆成幾條扁平的細管上下疊起來，每一條都被整隻手完整握住。
+- **CFET**：把熱水管和冷水管上下疊在一起，共用同一隻手控制，地板面積幾乎省一半。
+
+背面供電則是另一件事。一棟大樓原本把自來水管和網路線都從天花板走，管線越來越擠，水壓也在長長的管路中流失。新做法是把水電管線全部搬到地下室，從地板直接往上供水，天花板只留給網路線。
+
+</Callout>
+
+## 原理
+
+### 好的開關要做到兩件事
+
+每顆電晶體有四個部分：電流的入口「源極」、出口「汲極」、兩者之間的「通道」，以及控制通道的「閘極」。閘極加上電壓，通道導通，電流從源極流到汲極，代表 1；拿掉電壓，通道截止，代表 0。
+
+一個好開關要同時做到兩件事：**打開時電流要大**（驅動電流大，切換就快），**關上時漏電要小**（不然待機也在耗電發熱）。麻煩在於，電晶體縮小時兩者會互相拉扯。通道越短，汲極的電場越容易「伸手」干擾通道，閘極的控制力就被分走，關閉時仍有電流偷偷漏過。這就是短通道效應，它讓待機功耗隨著微縮一路上升<Cite k="wiki-multigate" />。
+
+解法的方向始終如一：**讓閘極從更多面包住通道。** 包得越完整，閘極對通道的控制力越強，漏電就越容易壓下來，導通電流也更大<Cite k="wiki-multigate" />。過去十五年的電晶體演進，幾乎都是在回答「怎麼包得更緊」。
+
+### 第一次轉型：FinFET
+
+FinFET 把通道從平躺改成直立的一片薄「鰭」，閘極從左、右、上三面包覆。這個概念的起點，是 1989 年日立中央研究所做出的 DELTA 元件；1997 年起，美國國防高等研究計畫署（DARPA）資助加州大學柏克萊分校團隊開發，胡正明是其中的關鍵人物，FinFET 這個名稱則在 2000 年 12 月的論文中首度出現。胡正明後來因此獲得 2020 年 IEEE 榮譽勳章<Cite k="wiki-finfet" />。
+
+量產時間表如下：英特爾在 2011 年宣布 22 奈米採用三閘極（tri-gate）電晶體，2012 年開始出貨<Cite k="wiki-finfet" />；台積電在 2013 年開始 16 奈米 FinFET 的風險試產，2014 年交出第一個功能完整的 16 奈米 FinFET 客戶產品<Cite k="tsmc-16nm-page" />；2014 年起，台積電、三星與格羅方德等晶圓代工大廠陸續在 14／16 奈米世代採用 FinFET<Cite k="wiki-finfet" />。FinFET 一路撐了十多年，台積電 2022 年量產的 3 奈米（N3），至今仍是業界最先進的 FinFET 技術<Cite k="tsmc-n3-page" />。
+
+FinFET 也有天生的限制：鰭片的形狀大致固定，要增加驅動電流，只能增加鰭片的數量，像樂高積木一樣「一塊一塊」加，無法細緻微調<Cite k="wiki-multigate" />。三星在推出 GAA 時就形容，新結構突破了 FinFET 的效能限制：既能降低供電電壓、提升能效，又能提高驅動電流<Cite k="samsung-3nm" />。
+
+### 第二次轉型：GAA 奈米片
+
+GAA（Gate-All-Around，環繞式閘極）把通道切成幾片水平的「奈米片」上下疊放，閘極從上下左右四面把每一片完整包住。GAA 的研究並不新，東芝團隊在 1988 年就以垂直奈米線展示過<Cite k="wiki-multigate" />，難處在於如何大量、穩定地製造。奈米片的另一個好處是**寬度可以調**：片寬常見 8 到 50 奈米，片數也能改變，設計者可以依需求細緻調整驅動能力，不必像 FinFET 那樣只能整片加減<Cite k="wiki-multigate" />。
+
+三大廠導入 GAA 的節奏不同：
+
+- **三星**：2022 年 6 月 30 日宣布開始以 GAA 架構的 3 奈米製程進行初期生產，是業界第一家。三星把它的 GAA 稱為 MBCFET，採較寬的奈米片，並可調整奈米片的通道寬度。第一代 3 奈米相較 5 奈米，功耗最多降低 45%、效能提升 23%、面積減少 16%<Cite k="samsung-3nm" />。
+- **台積電**：N2 是第一代奈米片電晶體，已在 2025 年第四季如期量產<Cite k="tsmc-n2" />。搭配的 NanoFlex 技術，讓設計者在同一個區塊中混用省面積、省電的「矮」標準單元，與重效能的「高」標準單元<Cite k="tsmc-symposium-2024" />。
+- **英特爾**：GAA 稱為 RibbonFET，用在 Intel 18A。官方數字是相較 Intel 3，同功耗效能最多提升 18%、同效能功耗降低 38%、晶片密度提升 30%；量產晶片在約 0.5 V 的低電壓下，CPU 頻率比 FinFET 設計高約 30%<Cite k="intel-18a" />。
+
+要注意，這些都是各家自行公布、各自比較基準不同的數字，不能直接互相比大小。共同的訊息是：GAA 讓電晶體在更低的電壓下依然能有效開關<Cite k="samsung-3nm" /><Cite k="intel-18a" />，這對耗電驚人的 AI 晶片特別重要。
+
+| 結構 | 閘極包覆通道 | 量產狀態 | 代表例子 |
+|---|---|---|---|
+| 平面 | 上方 1 面 | FinFET 普及前的主流 | 英特爾 22 奈米之前的製程 |
+| FinFET | 左右上 3 面 | 2012 年起量產<Cite k="wiki-finfet" /> | 台積電 N3 為最先進的 FinFET<Cite k="tsmc-n3-page" /> |
+| GAA 奈米片 | 4 面完整包覆 | 2022 年起生產 | 三星 3 奈米<Cite k="samsung-3nm" />、台積電 N2<Cite k="tsmc-n2" />、Intel 18A<Cite k="intel-18a" /> |
+| Forksheet | n、p 奈米片之間多一道隔離牆 | 研發中 | imec 提出<Cite k="imec-roadmap" /> |
+| CFET | n、p 電晶體上下堆疊 | 研發中 | 英特爾、三星、台積電 2023 年展示<Cite k="spectrum-cfet" /> |
+
+### 結構之外：設計與製程一起最佳化
+
+當電晶體本身的微縮越來越慢，晶圓廠也開始從「怎麼排」找空間，業界稱為設計與製程協同最佳化（DTCO）。三星在推出 GAA 時就指出，片寬可調的奈米片特別適合 DTCO，能放大效能、功耗與面積的綜合效益<Cite k="samsung-3nm" />。台積電的 NanoFlex 讓矮、高兩種標準單元混用<Cite k="tsmc-symposium-2024" />，並將在 A14 演進為 NanoFlex Pro<Cite k="tsmc-n2" />。2026 年公布的 N2U 同樣靠 DTCO，相較 N2P 速度提升 3–4% 或功耗降低 8–10%，邏輯密度只多 2–3%，預定 2028 年量產；A13 則是把 A14 直接微縮，節省 6% 面積，設計規則與 A14 完全相容<Cite k="tsmc-symposium-2026" />。
+
+這些數字都不大，卻說明了一件事：在電晶體結構的兩次大轉型之間，每一代的進步越來越依賴設計與製程的細部配合，而不只是把尺寸縮小。
+
+### 第三步：把電源線搬到背面
+
+電晶體做好了，還要接上電源與訊號。傳統晶片的做法，是在電晶體上方疊上多層金屬導線，越底層越細越密，訊號線與電源線全擠在這一疊裡。電流要從頂端的凸塊一路穿過層層細導線，才能抵達電晶體，沿途電阻造成電壓下降（壓降），電源線也和訊號線搶繞線空間<Cite k="wiki-bspdn" />。
+
+<Term id="bspdn">背面供電</Term>的想法很直接：把整個電源網路移到晶圓背面，用較粗、電阻較低的導線直接從下方供電，正面的金屬層全部留給訊號線<Cite k="spectrum-powervia" />。這樣做能降低擁塞與寄生電容，供電也更穩定<Cite k="wiki-bspdn" />。
+
+<Scene3D id="wafer-transistor" variant="bspdn" caption="背面供電剖面：左右比較傳統正面供電與背面供電。電源網路從電晶體上方的金屬層移到晶圓背面，正面只留訊號線，晶圓翻面接合在載體晶圓上、原本的矽基板被磨薄。也可切換導覽步驟，回頭比較平面、FinFET、GAA 與 CFET 的結構。圖中尺寸與層數皆為示意。" />
+
+英特爾稱 PowerVia 是全球第一個背面供電方案<Cite k="intel-powervia" />，它的製作流程如下<Cite k="spectrum-powervia" />：
+
+<FlowSteps title="背面供電怎麼做（以英特爾 PowerVia 為例）" steps={[{ title: "電晶體與穿孔", detail: "在矽表面做出電晶體，同時鑽出深而窄的奈米矽穿孔並填入金屬" }, { title: "正面訊號層", detail: "在電晶體上方疊出訊號導線" }, { title: "接合翻面", detail: "在頂部接合一片空白載體晶圓，再整片翻過來" }, { title: "研磨薄化", detail: "把原本的矽基板磨薄，直到露出穿孔末端" }, { title: "背面供電層", detail: "在背面做較粗的電源導線與接點" }]} caption="資料來源：IEEE Spectrum（2023-06-08）。" />
+
+完成後的晶片從上到下依序是：厚厚的載體晶圓、訊號導線層、極薄的電晶體層，以及背面的電源導線層<Cite k="spectrum-powervia" />。成效方面，英特爾 2023 年的測試晶片 Blue Sky Creek 沿用 Intel 4 製程的 FinFET 電晶體，頻率提升超過 5%，標準單元的利用率超過 90%<Cite k="intel-powervia" />；IEEE Spectrum 的報導另指出，電源損耗減少 30%，而且沒有讓晶片變貴、可靠度變差或更難測試<Cite k="spectrum-powervia" />。這也說明背面供電和電晶體結構是兩件事：FinFET 也能搭配背面供電，只是三大廠的量產規劃都選擇與 GAA 一起導入。
+
+<StatGrid title="背面供電的官方數字" items={[{ label: "英特爾測試晶片頻率", value: "超過 5%", note: "2023 年，Intel 4 電晶體" }, { label: "Intel 18A 最差動態壓降", value: "最多降為十分之一", note: "PowerVia" }, { label: "Intel 18A 區塊面積", value: "最多縮小 11%", note: "繞線後的設計" }, { label: "台積電 A16 同速度功耗", value: "降低 15–20%", note: "相較 N2P" }]} caption="資料來源：英特爾新聞稿與 Intel 18A 官網、台積電 2024 年技術論壇新聞稿。各家比較基準不同。" />
+
+三大廠的時程：
+
+- **英特爾**：Intel 18A 結合 RibbonFET 與 PowerVia，官方表示已在美國大量生產；PowerVia 把最差情況的動態電壓下降最多減為十分之一，繞線後的區塊面積最多縮小 11%<Cite k="intel-18a" />。首款採 18A 的伺服器處理器 Xeon 6+ 已推出，強化版 18A-P 也已進入風險試產<Cite k="intel-2q26" />。
+- **台積電**：A16 結合奈米片電晶體與 Super Power Rail 背面供電，相較 N2P，同電壓速度提升 8–10%，或同速度功耗降低 15–20%，資料中心產品的晶片密度最高 1.10 倍<Cite k="tsmc-symposium-2024" />。A16 原本規劃 2026 年量產<Cite k="tsmc-symposium-2024" />，2026 年 4 月有媒體報導已延至 2027 年<Cite k="trendforce-a16" />。同月台積電公布 A14 平台的強化版 A12，採第二代背面電源軌，預定 2029 年投產<Cite k="tsmc-symposium-2026" /><Cite k="tsmc-a16-page" />。
+- **三星**：2024 年 6 月公布 SF2Z，在 2 奈米製程導入背面供電網路，相較第一代 2 奈米 SF2 改善功耗、效能與面積，並大幅降低壓降，當時預定 2027 年量產<Cite k="samsung-sff2024" />。
+
+背面供電也有代價：需要新的設計規則與工具、熱密度可能上升，鑽孔與雙面加工晶圓也增加成本<Cite k="wiki-bspdn" />。電晶體層被夾在兩組導線之間，散熱路徑改變，英特爾因此另訂設計規則控制溫度<Cite k="spectrum-powervia" />。
+
+### 下一步：Forksheet、CFET 與二維材料
+
+GAA 之後，比利時研究機構 imec 在 2023 年公布的路線圖提出三步<Cite k="imec-roadmap" />：
+
+1. **Forksheet**：在 n 型與 p 型奈米片之間插入一道隔離牆，讓兩種電晶體可以靠得更近，預期標準單元縮小 20%。
+2. **CFET**：把 n 型與 p 型電晶體直接上下堆疊。密度大增，但製程更複雜，尤其是源極與汲極的接點怎麼拉出來。
+3. **二維材料**：日後在 CFET 中導入只有原子厚度的單層材料，例如二硫化鎢（WS2），當作更薄的通道。
+
+依這份路線圖，製程世代將在 2036 年從 7 奈米走到 0.2 奈米（2 埃米），每代約間隔 2 到 2.5 年<Cite k="imec-roadmap" />。
+
+CFET 已經走出紙上談兵。2023 年 12 月的 IEDM 國際電子元件會議上，英特爾、三星與台積電都展示了 CFET 研究：CFET 可讓電晶體密度接近加倍；英特爾在單一鰭上做出完整的反相器，並用背面供電從下方接觸底層電晶體，接觸閘極間距 60 奈米；三星展示 48 與 45 奈米間距的單一元件；台積電則做到 48 奈米間距。不過專家當時估計，CFET 還要 7 到 10 年才會商用<Cite k="spectrum-cfet" />。細節上，英特爾把每個元件的奈米片從 2 片增為 3 片，並把上下兩個元件的間距從 50 奈米縮到 30 奈米；三星改用乾式蝕刻隔離上下元件的源極與汲極，讓良好元件的良率提高 80%<Cite k="spectrum-cfet" />。三星同樣從矽的下方接觸底層元件，以節省面積<Cite k="spectrum-cfet" />。可見 CFET 的難處不在概念，而在如何把上下兩層各自接好線，彼此又不互相漏電。這兩個例子也說明，背面供電不只是省電技巧，很可能會和 CFET 一起發展：上下疊起來之後，從背面接觸底層電晶體，是節省面積的直接做法。
+
+### 時間軸：三十多年的演進
+
+- **1988 年**：東芝以垂直奈米線展示 GAA 電晶體<Cite k="wiki-multigate" />。
+- **1989 年**：日立做出 FinFET 類元件 DELTA<Cite k="wiki-finfet" />。
+- **2012 年**：英特爾 22 奈米三閘極電晶體出貨，FinFET 進入量產<Cite k="wiki-finfet" />。
+- **2022 年**：三星開始生產 GAA 3 奈米<Cite k="samsung-3nm" />；台積電量產 N3，成為業界最先進的 FinFET<Cite k="tsmc-n3-page" />。
+- **2023 年**：英特爾以測試晶片驗證背面供電<Cite k="intel-powervia" />；三大廠在 IEDM 展示 CFET<Cite k="spectrum-cfet" />。
+- **2025–2026 年**：台積電 N2 奈米片於 2025 年第四季量產<Cite k="tsmc-n2" />；Intel 18A 在美國大量生產<Cite k="intel-18a" />，首款採用它的伺服器處理器 Xeon 6+ 於 2026 年推出<Cite k="intel-2q26" />。
+- **2027 年**：據媒體報導的台積電 A16 量產時程<Cite k="trendforce-a16" />；三星 2024 年公布的 SF2Z 量產目標<Cite k="samsung-sff2024" />。
+- **2028–2029 年**：台積電 A14 預定 2028 年量產<Cite k="tsmc-n2" />；採第二代背面供電的 A12，以及 A14 的微縮版 A13，都預定 2029 年投產<Cite k="tsmc-symposium-2026" />。
+- **2036 年**：imec 路線圖中的 0.2 奈米（2 埃米）世代<Cite k="imec-roadmap" />。
+
+<DeepDive title="深入一點：為什麼閘極包得越緊，晶片就能越省電？">
+
+關鍵在一個叫「次臨界擺幅」（subthreshold swing，S）的指標：電晶體從關到開的過程中，閘極電壓要改變多少，電流才會增加 10 倍。數字越小，開關越「乾脆」。它可以寫成<Cite k="wiki-subthreshold" />：
+
+<MathTeX tex={"S=\\ln(10)\\,\\frac{kT}{q}\\left(1+\\frac{C_d}{C_{ox}}\\right)"} display label="次臨界擺幅等於 ln10 乘以熱電壓 kT/q，再乘以 1 加上空乏層電容與閘極氧化層電容的比值" />
+
+其中 kT/q 是熱電壓，由溫度決定；括號內的比值反映「閘極以外的部分」對通道的影響。就算括號裡的比值降到 0，室溫下 S 也有一個物理下限：約每十倍電流 60 mV。微縮後的傳統電晶體因短通道效應，通常只能做到約 70 mV<Cite k="wiki-subthreshold" />。
+
+這個下限直接限制了供電電壓。假設希望關閉時的漏電，比導通時小 1 萬倍（4 個十倍），閘極電壓至少要擺動 4 × S：S 為 60 mV 時需要 240 mV，S 為 70 mV 時就要 280 mV（示意計算）。電壓降不下去，動態功率（與電壓平方成正比，見<LearnLink id="semiconductor-process-nodes">製程節點</LearnLink>一文）也就降不下去。
+
+閘極從 1 面、3 面增加到 4 面包覆，等於讓通道幾乎只聽閘極的話，汲極與基板的干擾變小，漏電更容易壓低<Cite k="wiki-multigate" />，S 也就更有機會逼近 60 mV 的極限。這也呼應 Intel 18A 公布的數字：採 GAA 的量產晶片在約 0.5 V 的低電壓下，CPU 頻率比 FinFET 設計高約 30%<Cite k="intel-18a" />。
+
+另一個角度是「等效寬度」，也就是電流實際能流過的通道周長。FinFET 每片鰭的等效寬度約為兩側高度加上頂部寬度；奈米片則是每片的完整周長：
+
+<MathTeX tex={"W_{\\mathrm{FinFET}}=N_{\\mathrm{fin}}(2H_{\\mathrm{fin}}+W_{\\mathrm{fin}}),\\quad W_{\\mathrm{GAA}}=N_{\\mathrm{sheet}}\\cdot2(W_{\\mathrm{sheet}}+T_{\\mathrm{sheet}})"} display label="FinFET 等效寬度為鰭片數乘以兩倍鰭高加鰭寬；GAA 等效寬度為奈米片數乘以兩倍的片寬加片厚" />
+
+FinFET 只能透過鰭片數 N 整數調整；奈米片除了片數，還能調整片寬 W。以示意數字來說，3 片寬 30 奈米、厚 5 奈米的奈米片，等效寬度約 3 × 2 × 35 = 210 奈米；把片寬改成 20 奈米就變成 150 奈米，可依電路需求微調，這正是三星推出 GAA 時強調的設計彈性<Cite k="samsung-3nm" /><Cite k="wiki-multigate" />。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+電晶體結構的每一次轉型，都會重新洗牌整條半導體供應鏈的技術門檻與設備需求。
+
+- **晶圓代工**（<SegmentChip id="foundry-packaging" />）：GAA 世代是<Term id="foundry">晶圓代工</Term>龍頭的新戰場。<CompanyChip id="samsung-electronics">三星電子</CompanyChip>在 2022 年搶先開始生產 GAA<Cite k="samsung-3nm" />，<CompanyChip id="tsmc">台積電（TSMC）</CompanyChip>的 N2 在 2025 年第四季量產<Cite k="tsmc-n2" />，<CompanyChip id="intel">英特爾</CompanyChip>則以 18A 同時推出 GAA 與背面供電<Cite k="intel-18a" />。下一輪比拚的是背面供電：英特爾已經量產；台積電的 A16 原規劃 2026 年量產（媒體報導延至 2027 年），2029 年再推出第二代的 A12<Cite k="tsmc-symposium-2024" /><Cite k="trendforce-a16" /><Cite k="tsmc-symposium-2026" />；三星則規劃以 SF2Z 跟進<Cite k="samsung-sff2024" />。
+- **設備與材料**（<SegmentChip id="semi-equipment-materials" />）：GAA 要把奈米片一層層做出來，再用金屬閘極完整包覆、接上電極，需要更多原子級的<Term id="deposition">薄膜沉積</Term>與<Term id="etching">蝕刻</Term>步驟。<CompanyChip id="applied-materials">應用材料</CompanyChip>在 2026 年陸續推出平滑奈米片表面的 Viva、提供埃米級溝槽輪廓控制的 Sym3 Z Magnum、以鉬取代鎢做接點的 Spectral<Cite k="amat-q1-fy2026" />，以及用金屬閘極包覆奈米片的 Trillium ALD<Cite k="amat-q2-fy2026" />；<CompanyChip id="lam-research">科林研發</CompanyChip>的 Akara 導體蝕刻設備，已獲領先廠商選為多項晶圓代工 GAA 應用的量產設備，並可延伸到 CFET<Cite k="lam-akara" />。背面供電則新增晶圓接合、翻面與研磨薄化等步驟<Cite k="spectrum-powervia" />，這類過去多見於立體堆疊的工序，也走進了製作電晶體的前段製程。
+- **設計工具**（<SegmentChip id="eda-ip-design" />）：背面供電需要新的設計規則與工具<Cite k="wiki-bspdn" />，電源網路的規劃從正面移到背面，散熱分析也要重做。晶片公司得靠<CompanyChip id="synopsys">新思科技</CompanyChip>、<CompanyChip id="cadence">益華電腦</CompanyChip>等 <Term id="eda">EDA</Term> 業者，同步支援新的標準單元與繞線方式。
+- **AI 晶片**（<SegmentChip id="ai-accelerators" />）：<CompanyChip id="nvidia">輝達</CompanyChip>的 Blackwell 採台積電客製 4NP 製程<Cite k="nvidia-blackwell" />；由於台積電直到 N3 都採 FinFET<Cite k="tsmc-n3-page" />，Blackwell 仍屬 FinFET 世代，GAA 與背面供電的效益，要等採用 2 奈米與 A16 等新製程的產品才會顯現。台積電表示，A16 適合訊號繞線複雜、供電網路密集的 HPC 產品<Cite k="tsmc-symposium-2024" />，正是 AI 加速器的寫照。
+
+換句話說，<Term id="process-node">製程節點</Term>的名字一代代往下數，背後真正推動進步的，是電晶體結構與供電方式的翻新。接下來可以讀<LearnLink id="lithography-euv-high-na">微影深入：EUV 與 High-NA EUV</LearnLink>，了解這些奈米級結構是怎麼「印」出來的；想追蹤各家時程，請看<TrendLink id="process-roadmap-2nm-and-beyond">2 奈米之後的製程藍圖</TrendLink>。

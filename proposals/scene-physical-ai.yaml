@@ -1,0 +1,62 @@
+# Proposals from the physical-ai scene agent, 2026-10-15.
+# Nothing here blocks the scene: each capability is implemented locally in
+# src/three/scenes/physical-ai/ and can move to the kit / core unchanged.
+
+- id: moving-endpoint-streams
+  target: src/three/kit/DotStreams.ts (or a `dynamic` mode for kit/PathFlow.ts)
+  problem: >
+    PathFlow bakes its paths into a DataTexture once, so a flow cannot follow a moving part. The
+    robot variant streams data from sensors on a moving wrist (wrist camera, force/torque sensor)
+    into the VLA model, and action commands from the model to joints that move every frame
+    (shoulder, elbow, wrist). Rebuilding a PathFlow per frame is far too expensive.
+  proposal: >
+    `new DotStreams(ctx, specs: { from(out), to(out), bend?, color(p), group, dots?, speed?, phase? }[], parent)`
+    with `update(dt)`, `setGroup(name, level)` (eased dim / hide per group), `setPalette(p)`,
+    `setReduced(on)` (evenly spaced, frozen dots). One InstancedMesh of dots plus GlowSprites halos
+    on the dark theme; end points are re-read every frame and joined by a quadratic Bezier.
+  workaround: src/three/scenes/physical-ai/common.ts (DotStreams).
+
+- id: role-coloured-merged-parts
+  target: src/three/kit/PartsBuilder.ts
+  problem: >
+    Procedural rigs (a humanoid's links, a car, a street block) are built from dozens of small
+    primitives. One mesh per primitive blows the draw-call budget; merging loses per-part colour,
+    and baking colours breaks theme switching.
+  proposal: >
+    `new PartsBuilder().add(geo, role, pos?, rot?, scale?).addAlong(geo, role, a, b).build()` returns
+    `{ geometry, recolor(roles: Record<role, Color>) }`: a single merged non-indexed geometry with a
+    vertex-colour attribute that `recolor` rewrites from palette colours in onPalette.
+  workaround: src/three/scenes/physical-ai/common.ts (PartsBuilder, RoleGeometry).
+
+- id: cross-variant-hotspots
+  target: src/three/core/hotspots.ts (same request as scene-hbm.yaml and scene-cowos.yaml)
+  problem: >
+    meta.json lists the hotspots of both variants (robot parts and street sensors). Choosing one
+    from the HTML list while the other variant is mounted does nothing by default.
+  proposal: >
+    A meta hotspot `variant` (or `step`) field: the host switches variant / step first, then
+    focuses the hotspot.
+  workaround: >
+    src/three/scenes/physical-ai/common.ts (crossHotspots): the mounted variant registers list-only
+    stubs whose onSelect dispatches `scene:command {type:'step'}` to the guided step that shows the
+    part (the step's `variant` makes the host switch).
+
+- id: portrait-step-poses
+  target: src/three/core/types.ts (same request as scene-hbm.yaml)
+  problem: >
+    `ctx.setPose` scales every pose's distance by |portrait home| / |landscape home| on portrait
+    stages, so a pose authored for 4:5 has to be pre-divided by that ratio to land where intended.
+  proposal: >
+    `setPose({ ...pose, portrait?: Partial<CameraPose> })`, applied without scaling on portrait stages.
+  workaround: src/three/scenes/physical-ai/common.ts (fitPortrait).
+
+- id: ray-cast-point-cloud
+  target: src/three/kit/LidarCloud.ts
+  problem: >
+    A spinning-LiDAR point cloud (beams x azimuth steps ray-cast once against boxes, spheres and a
+    ground rectangle, sorted by azimuth so a sweep is a draw range of one shared buffer) is useful
+    for any scene about sensing or autonomy.
+  proposal: >
+    `castCloud(spec, rng)` → `{ positions, az, cls, count }` plus `lowerBound(az, n, a)` for sweep
+    windows; tier-scaled beam and azimuth counts.
+  workaround: src/three/scenes/physical-ai/lidar.ts.

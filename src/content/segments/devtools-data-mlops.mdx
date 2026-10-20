@@ -1,0 +1,595 @@
+---
+title: 開發工具、資料與 MLOps
+titleEn: Developer Tools, Data & MLOps
+order: 12
+layer: cloud-models
+tagline: 把模型變成產品的工具箱：資料平台、訓練資料、推論平台與 AI 寫程式
+description: 模型要變成能用的產品，中間需要資料平台、訓練資料標註、MLOps、推論平台、Agent 框架與 AI 程式開發工具。本章解析這一環的技術、商業模式、市場規模、2025–2026 年的併購潮，以及台灣的機會。
+upstream: [cloud-neocloud, foundation-models]
+downstream: [apps-agents, physical-ai]
+scene: { id: train-infer, variant: pipeline }
+scope:
+  includes:
+    - 資料平台：資料湖倉、雲端資料倉儲、營運資料庫、即時資料串流與搜尋引擎
+    - 向量資料庫與檢索：獨立向量資料庫，以及一般資料庫內建的向量搜尋
+    - 訓練資料：資料標註、RLHF 與專家示範資料、模型評測與 RL 環境
+    - MLOps 與 LLMOps：實驗追蹤、模型託管、可觀測性、評測與監控工具
+    - 推論平台軟體：開源推論引擎（vLLM、SGLang）、推論平台、Serverless GPU 與模型路由市集
+    - Agent 框架與工作流程自動化：LangChain／LangGraph、n8n、AI SDK
+    - AI 程式開發工具：AI 程式編輯器、Coding Agent 與 vibe coding 平台（Cursor、Cognition、Replit、Lovable）
+  excludes:
+    - GPU 雲與超大規模雲端的算力租賃本身（歸雲端與新雲環節）
+    - 基礎模型的研發與訓練；模型實驗室自家推出的程式工具（例如 Claude Code、Codex）隨母公司歸基礎模型環節
+    - 面向終端使用者與企業部門的 SaaS 應用與 Agent（歸應用與 Agent 環節）
+    - 儲存硬體與儲存系統（歸記憶體與儲存環節）
+concentration: competitive
+bottleneck:
+  level: 2
+  note: 軟體層進入門檻相對低、替代方案多，沒有晶片或電力那樣的實體瓶頸；真正稀缺的是高品質的專家訓練資料、推論用 GPU 的成本，以及少數前沿模型供應商的議價力。多數 AI 程式工具仰賴外部模型，成本與產品節奏都受模型供應商牽制。
+keyMetrics:
+  - label: Databricks 年化營收（run-rate）
+    value: "逾 70 億美元"
+    asOf: "2026-08-13"
+    note: 年增逾 80%；同時以 1,900 億美元估值完成 50 億美元募資，近 12 個月調整後自由現金流為正。
+    source:
+      title: "Databricks Grows >80% YoY, Surpasses $7B Revenue Run-Rate"
+      publisher: Databricks
+      url: "https://www.databricks.com/company/newsroom/press-releases/databricks-grows-80-yoy-surpasses-7b-revenue-run-rate-scales"
+      type: press-release
+      lang: en
+      published: "2026-08-13"
+      accessed: "2026-10-06"
+  - label: Snowflake 單季產品營收
+    value: "14.9 億美元"
+    asOf: "2026-07-31"
+    note: FY2027 第二季（約當 2026 年 5–7 月），年增 37%；淨營收留存率 126%，全年產品營收財測 60.7 億美元。
+    source:
+      title: "Snowflake Reports Financial Results for the Second Quarter of Fiscal 2027"
+      publisher: Snowflake
+      url: "https://investors.snowflake.com/news/news-details/2026/Snowflake-Reports-Financial-Results-for-the-Second-Quarter-of-Fiscal-2027/default.aspx"
+      type: press-release
+      lang: en
+      published: "2026-09-02"
+      accessed: "2026-10-06"
+  - label: 2026 年全球 AI 資料科學與機器學習平台支出（預測）
+    value: "約 264 億美元"
+    asOf: "2026-09-16"
+    note: Gartner 2026 年 9 月版預測，2025 年約 194 億美元、2027 年約 356 億美元；同一機構 2026 年 1 月版對 2026 年的預測為約 311 億美元。
+    source:
+      title: "Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026"
+      publisher: Gartner
+      url: "https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026"
+      archiveUrl: "https://web.archive.org/web/20260923143442/https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026"
+      type: analyst
+      lang: en
+      published: "2026-09-16"
+      accessed: "2026-10-16"
+  - label: 2025 年企業 AI 程式開發支出
+    value: "40 億美元"
+    asOf: "2025-12-09"
+    note: Menlo Ventures 依 495 位美國企業 AI 決策者的調查估計，佔企業部門級 AI 支出 73 億美元的 55%，是最大類別。
+    source:
+      title: "2025: The State of Generative AI in the Enterprise"
+      publisher: Menlo Ventures
+      url: "https://menlovc.com/perspective/2025-the-state-of-generative-ai-in-the-enterprise/"
+      type: analyst
+      lang: en
+      published: "2025-12-09"
+      accessed: "2026-10-06"
+  - label: Cursor 年化經常性營收（ARR）
+    value: "約 30 億美元"
+    asOf: "2026-05-21"
+    note: 媒體報導，非公司揭露；Cursor 母公司 Anysphere 已於 2026 年 8 月 14 日以全股票方式併入 SpaceX，隱含股權價值 600 億美元（SpaceX 8-K）。
+    source:
+      title: "Cursor Hits $3 Billion Annual Sales Rate Ahead of SpaceX Deal"
+      publisher: Bloomberg
+      url: "https://www.bloomberg.com/news/articles/2026-05-21/cursor-hits-3-billion-annual-sales-rate-ahead-of-spacex-deal"
+      type: news
+      lang: en
+      published: "2026-05-21"
+      accessed: "2026-10-06"
+  - label: Hugging Face 託管模型數
+    value: "約 300 萬個"
+    asOf: "2026-09-03"
+    note: 另有約 50 萬個資料集、100 萬個應用，開發者逾 1,800 萬；NVIDIA 同日宣布收購（收購價約 119 億美元，另含最多約 10 億美元員工留任股權）。
+    source:
+      title: "Nvidia confirms it will buy Hugging Face for $12.9 billion"
+      publisher: TechCrunch
+      url: "https://techcrunch.com/2026/09/03/nvidia-confirms-it-will-buy-hugging-face-for-12-9-billion/"
+      type: news
+      lang: en
+      published: "2026-09-03"
+      accessed: "2026-10-06"
+  - label: OpenRouter 每月處理 Token 數
+    value: "逾 500 兆"
+    asOf: "2026-10-03"
+    note: 公司官網數字（2026-10-03 存檔頁）；串接 500 多個模型、80 多家供應商，全球使用者逾 1,000 萬。官網數字更新頻繁，2026-10-10 存檔頁已改為逾 600 兆。
+    source:
+      title: "About OpenRouter"
+      publisher: OpenRouter
+      url: "https://openrouter.ai/about"
+      archiveUrl: "https://web.archive.org/web/20261003130055/https://openrouter.ai/about"
+      type: company-site
+      lang: en
+      accessed: "2026-10-06"
+marketSize:
+  - year: 2025
+    value: 27.1
+    unit: billion
+    currency: USD
+    status: estimate
+    definition: 全球支出，合計 Gartner 2026 年 9 月版預測的「AI 資料科學與機器學習平台」（194.1 億）、「AI 應用開發平台」（68.9 億）與「AI 資料」（8.3 億）三類，單位為美元。
+    source:
+      title: "Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026"
+      publisher: Gartner
+      url: "https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026"
+      archiveUrl: "https://web.archive.org/web/20260923143442/https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026"
+      type: analyst
+      lang: en
+      published: "2026-09-16"
+      accessed: "2026-10-16"
+  - year: 2026
+    value: 39.1
+    unit: billion
+    currency: USD
+    status: forecast
+    definition: 全球支出，合計 Gartner 2026 年 9 月版預測的「AI 資料科學與機器學習平台」（264.5 億）、「AI 應用開發平台」（95.4 億）與「AI 資料」（31.3 億）三類，單位為美元。
+    source:
+      title: "Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026"
+      publisher: Gartner
+      url: "https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026"
+      archiveUrl: "https://web.archive.org/web/20260923143442/https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026"
+      type: analyst
+      lang: en
+      published: "2026-09-16"
+      accessed: "2026-10-16"
+  - year: 2027
+    value: 54.5
+    unit: billion
+    currency: USD
+    status: forecast
+    definition: 全球支出，合計 Gartner 2026 年 9 月版預測的「AI 資料科學與機器學習平台」（355.5 億）、「AI 應用開發平台」（124.8 億）與「AI 資料」（64.8 億）三類，單位為美元。
+    source:
+      title: "Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026"
+      publisher: Gartner
+      url: "https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026"
+      archiveUrl: "https://web.archive.org/web/20260923143442/https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026"
+      type: analyst
+      lang: en
+      published: "2026-09-16"
+      accessed: "2026-10-16"
+featuredCompanies:
+  - databricks
+  - snowflake
+  - anysphere
+  - hugging-face
+  - datadog
+  - mongodb
+  - cognition
+  - scale-ai
+  - fireworks-ai
+  - openrouter
+  - langchain
+  - lovable
+taiwanRole: 台灣在這一環的軟體公司規模不大，主要角色是讓工具「落地」：台智雲提供主權 AI 雲與 AFS AI 平台，APMIC 等新創做地端私有化模型與 RAG，國科會 TAIDE 計畫以合法授權資料建立繁體中文模型與嵌入模型；推論平台背後的 GPU 伺服器則大多由台灣廠商製造。
+relatedLearn:
+  - how-machines-learn
+  - rag-and-vector-search
+  - agents-and-mcp
+  - pretraining-to-chat
+  - post-training-deep
+  - inference-optimization
+  - model-evaluation
+  - open-vs-closed-models
+relatedTrends:
+  - ai-coding
+  - agentic-ai-standards
+  - inference-demand
+  - open-weights-race
+  - ai-monetization
+  - reverse-acquihire-deals
+  - copyright-data-licensing
+glossary:
+  - mlops
+  - data-labeling
+  - rlhf
+  - post-training
+  - rl-environment
+  - rag
+  - embedding
+  - vector-database
+  - inference-engine
+  - kv-cache
+  - throughput
+  - agent
+  - mcp
+  - arr
+  - saas
+  - open-weights
+  - token
+  - sovereign-ai
+sources:
+  - key: dbx-2026-08
+    title: "Databricks Grows >80% YoY, Surpasses $7B Revenue Run-Rate"
+    publisher: Databricks
+    url: "https://www.databricks.com/company/newsroom/press-releases/databricks-grows-80-yoy-surpasses-7b-revenue-run-rate-scales"
+    type: press-release
+    lang: en
+    published: "2026-08-13"
+    accessed: "2026-10-06"
+  - key: snow-q2-fy27
+    title: "Snowflake Reports Financial Results for the Second Quarter of Fiscal 2027"
+    publisher: Snowflake
+    url: "https://investors.snowflake.com/news/news-details/2026/Snowflake-Reports-Financial-Results-for-the-Second-Quarter-of-Fiscal-2027/default.aspx"
+    type: press-release
+    lang: en
+    published: "2026-09-02"
+    accessed: "2026-10-06"
+  - key: gartner-ai-spend-2026
+    title: "Gartner Says Worldwide AI Spending Will Total $2.5 Trillion in 2026"
+    publisher: Gartner
+    url: "https://www.gartner.com/en/newsroom/press-releases/2026-1-15-gartner-says-worldwide-ai-spending-will-total-2-point-5-trillion-dollars-in-2026"
+    type: analyst
+    lang: en
+    archiveUrl: "https://web.archive.org/web/20260116181229/https://www.gartner.com/en/newsroom/press-releases/2026-1-15-gartner-says-worldwide-ai-spending-will-total-2-point-5-trillion-dollars-in-2026"
+    published: "2026-01-15"
+    accessed: "2026-10-16"
+    note: Table 1 Worldwide AI Spending by Market, 2025-2027（2026 年 1 月版）
+  - key: gartner-ai-spend-2026-09
+    title: "Gartner Forecasts Worldwide AI Spending to Grow 49.5% in 2026"
+    publisher: Gartner
+    url: "https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026"
+    archiveUrl: "https://web.archive.org/web/20260923143442/https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026"
+    type: analyst
+    lang: en
+    published: "2026-09-16"
+    accessed: "2026-10-16"
+    note: Table 1 Worldwide AI Spending by Market, 2025-2027（2026 年 9 月版）
+  - key: menlo-2025
+    title: "2025: The State of Generative AI in the Enterprise"
+    publisher: Menlo Ventures
+    url: "https://menlovc.com/perspective/2025-the-state-of-generative-ai-in-the-enterprise/"
+    type: analyst
+    lang: en
+    published: "2025-12-09"
+    accessed: "2026-10-06"
+  - key: menlo-factory
+    title: "Menlo's Investment in Factory: The System That Builds Software"
+    publisher: Menlo Ventures
+    url: "https://menlovc.com/perspective/menlos-investment-in-factory-the-system-that-builds-software/"
+    type: analyst
+    lang: en
+    published: "2026-10-05"
+    accessed: "2026-10-06"
+  - key: wiki-cursor
+    title: "Cursor (company)"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Cursor_(company)"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: 2025 年 1 月 ARR 約 1 億美元一說引述 Entrepreneur 報導。
+  - key: bloomberg-cursor-3b
+    title: "Cursor Hits $3 Billion Annual Sales Rate Ahead of SpaceX Deal"
+    publisher: Bloomberg
+    url: "https://www.bloomberg.com/news/articles/2026-05-21/cursor-hits-3-billion-annual-sales-rate-ahead-of-spacex-deal"
+    type: news
+    lang: en
+    published: "2026-05-21"
+    accessed: "2026-10-06"
+  - key: spacex-8k-cursor
+    title: "Space Exploration Technologies Corp. Form 8-K (Item 2.01, completion of Cursor merger)"
+    publisher: Space Exploration Technologies Corp.
+    url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026056945/spcx-20260814.htm"
+    type: filing
+    lang: en
+    published: "2026-08-14"
+    accessed: "2026-10-16"
+  - key: tc-cursor-kimi
+    title: "Cursor admits its new coding model was built on top of Moonshot AI's Kimi"
+    publisher: TechCrunch
+    url: "https://techcrunch.com/2026/03/22/cursor-admits-its-new-coding-model-was-built-on-top-of-moonshot-ais-kimi/"
+    type: news
+    lang: en
+    published: "2026-03-22"
+    accessed: "2026-10-06"
+  - key: tc-cognition
+    title: "Cognition hits $48B valuation, signaling investors believe AI coding is far from a winner-take-all market"
+    publisher: TechCrunch
+    url: "https://techcrunch.com/2026/09/08/cognition-hits-48b-valuation-signaling-investors-believe-ai-coding-is-far-from-a-winner-take-all-market/"
+    type: news
+    lang: en
+    published: "2026-09-08"
+    accessed: "2026-10-06"
+  - key: anthropic-series-g
+    title: "Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation"
+    type: press-release
+    lang: en
+    published: "2026-02-12"
+    accessed: "2026-10-06"
+  - key: tc-nvidia-hf
+    title: "Nvidia confirms it will buy Hugging Face for $12.9 billion"
+    publisher: TechCrunch
+    url: "https://techcrunch.com/2026/09/03/nvidia-confirms-it-will-buy-hugging-face-for-12-9-billion/"
+    type: news
+    lang: en
+    published: "2026-09-03"
+    accessed: "2026-10-06"
+  - key: nvda-8k-hf
+    title: "NVIDIA Corporation Form 8-K (Item 8.01, agreement to acquire Hugging Face)"
+    publisher: NVIDIA
+    url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000078/nvda-20260902.htm"
+    type: filing
+    lang: en
+    published: "2026-09-03"
+    accessed: "2026-10-16"
+  - key: openrouter-about
+    title: "About OpenRouter"
+    publisher: OpenRouter
+    url: "https://openrouter.ai/about"
+    archiveUrl: "https://web.archive.org/web/20261003130055/https://openrouter.ai/about"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: tc-stripe-openrouter
+    title: "Stripe didn't really buy OpenRouter because of the singularity"
+    publisher: TechCrunch
+    url: "https://techcrunch.com/2026/08/19/stripe-didnt-really-buy-openrouter-because-of-the-singularity/"
+    type: news
+    lang: en
+    published: "2026-08-19"
+    accessed: "2026-10-06"
+  - key: ibm-confluent
+    title: "IBM Completes Acquisition of Confluent, Making Real-Time Data the Engine of Enterprise AI and Agents"
+    publisher: IBM
+    url: "https://newsroom.ibm.com/2026-03-17-ibm-completes-acquisition-of-confluent,-making-real-time-data-the-engine-of-enterprise-ai-and-agents"
+    type: press-release
+    lang: en
+    published: "2026-03-17"
+    accessed: "2026-10-06"
+  - key: scale-meta
+    title: "Scale AI Announces Next Phase of Company's Evolution"
+    publisher: Scale AI
+    url: "https://scale.com/blog/scale-ai-announces-next-phase-of-company-evolution"
+    type: company-site
+    lang: en
+    published: "2025-06-12"
+    accessed: "2026-10-16"
+  - key: wiki-scale
+    title: "Scale AI"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Scale_AI"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: 2024 年營收約 8.7 億美元引述 Reuters 報導；Meta 投資金額各家報導為 143 億至 148 億美元。
+  - key: wiki-mercor
+    title: "Mercor"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Mercor"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+  - key: inferact
+    title: "Introducing Inferact: Building the Future of AI Inference"
+    publisher: Inferact
+    url: "https://inferact.ai/news/introducing-inferact-building-the-future-of-ai-inference"
+    type: company-site
+    lang: en
+    accessed: "2026-10-16"
+    note: 公司公告標示為 2026 年 1 月，未列出確切日期。
+  - key: radixark
+    title: "RadixArk: Ship AI for All"
+    publisher: RadixArk
+    url: "https://www.radixark.com"
+    type: company-site
+    lang: en
+    accessed: "2026-10-16"
+  - key: sa-snow
+    title: "Snowflake (SNOW) Quarterly Income Statement"
+    publisher: Stock Analysis
+    url: "https://stockanalysis.com/stocks/snow/financials/?p=quarterly"
+    type: dataset
+    lang: en
+    accessed: "2026-10-06"
+  - key: sa-ddog
+    title: "Datadog (DDOG) Quarterly Income Statement"
+    publisher: Stock Analysis
+    url: "https://stockanalysis.com/stocks/ddog/financials/?p=quarterly"
+    type: dataset
+    lang: en
+    accessed: "2026-10-06"
+  - key: sa-mdb
+    title: "MongoDB (MDB) Quarterly Income Statement"
+    publisher: Stock Analysis
+    url: "https://stockanalysis.com/stocks/mdb/financials/?p=quarterly"
+    type: dataset
+    lang: en
+    accessed: "2026-10-06"
+  - key: sa-estc
+    title: "Elastic (ESTC) Quarterly Income Statement"
+    publisher: Stock Analysis
+    url: "https://stockanalysis.com/stocks/estc/financials/?p=quarterly"
+    type: dataset
+    lang: en
+    accessed: "2026-10-06"
+  - key: sa-gtlb
+    title: "GitLab (GTLB) Quarterly Income Statement"
+    publisher: Stock Analysis
+    url: "https://stockanalysis.com/stocks/gtlb/financials/?p=quarterly"
+    type: dataset
+    lang: en
+    accessed: "2026-10-06"
+  - key: twsc
+    title: "台智雲 Taiwan AI Cloud"
+    publisher: Taiwan AI Cloud
+    url: "https://www.twcloud.ai/"
+    type: company-site
+    lang: zh-TW
+    accessed: "2026-10-16"
+  - key: apmic
+    title: "APMIC"
+    publisher: APMIC
+    url: "https://www.apmic.ai"
+    type: company-site
+    lang: zh-TW
+    accessed: "2026-10-16"
+  - key: n8n-license
+    title: "n8n README: License"
+    publisher: n8n
+    url: "https://github.com/n8n-io/n8n/blob/master/README.md"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+  - key: ikala
+    title: "iKala"
+    publisher: iKala
+    url: "https://ikala.ai"
+    type: company-site
+    lang: en
+    accessed: "2026-10-16"
+  - key: taide
+    title: "TAIDE 推動臺灣可信任生成式AI發展計畫"
+    publisher: 國家實驗研究院
+    url: "https://taide.stpi.niar.org.tw/index"
+    type: government
+    lang: zh-TW
+    accessed: "2026-10-16"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: seg-devtools-data-mlops
+  checkedBy: "seg-devtools-data-mlops-check"
+  checkedOn: "2026-10-06"
+  notes: 查核：Databricks、Snowflake、IBM、Anthropic、Inferact 數字對照一手公告；Cursor 併購與 NVIDIA 收購 Hugging Face 條件改引 SEC 8-K；市場規模改用 Gartner 2026 年 9 月版預測（附存檔連結），並說明與 1 月版的差異；上市公司季營收年增率已與 stockanalysis 核對。私人公司（Cursor、Cognition、Scale AI、Mercor）的營收與估值仍為媒體報導或維基百科轉引，內文已標明。移除無法證實的台智雲營運晶創26 與 RadixArk 創辦人說法，TAIDE 啟動年份更正為 2023 年。
+---
+
+<LevelSection level={1} title="這一環在做什麼">
+
+晶片、雲端和基礎模型都到位之後，還差最後一段路：把模型變成企業每天真的用得上的產品。這一環就是 AI 的「工具箱」，負責準備資料、訓練與評測模型、把模型部署上線並持續監控，也提供讓工程師（甚至不會寫程式的人）更快做出 AI 應用的工具。它向 <SegmentChip id="cloud-neocloud" /> 取得算力、向 <SegmentChip id="foundation-models" /> 取得模型，服務的對象則是 <SegmentChip id="apps-agents" /> 與 <SegmentChip id="physical-ai" />。
+
+這一環大致可以分成六塊：
+
+- **資料平台**：企業的資料倉庫，例如 <CompanyChip id="databricks" />、<CompanyChip id="snowflake" />、<CompanyChip id="mongodb" />。AI 要回答公司內部的問題，得先能安全地讀到這些資料。
+- **訓練資料**：替模型準備「教材」與「考卷」，包括<Term id="data-labeling">資料標註</Term>、<Term id="rlhf">RLHF</Term>（人類回饋強化學習）所需的偏好資料，以及模型評測。代表業者有 <CompanyChip id="scale-ai" />、<CompanyChip id="surge-ai" />、<CompanyChip id="mercor" />；它們的主要客戶是基礎模型實驗室。
+- **<Term id="mlops">MLOps</Term>**：把機器學習模型從實驗室帶到正式環境的流程與工具，包括版本管理、部署、監控與評測，例如 <CompanyChip id="datadog" /> 的 LLM 可觀測性服務與 <CompanyChip id="langchain" /> 的 LangSmith。
+- **推論平台**：替應用程式「跑」模型的服務，例如 <CompanyChip id="fireworks-ai" />、<CompanyChip id="baseten" />，以及用一個 <Term id="token">Token</Term> 計費帳戶就能呼叫數百個模型的 <CompanyChip id="openrouter" />。
+- **Agent 框架**：讓模型能呼叫工具、串接流程的開發套件，例如 LangChain、<CompanyChip id="n8n" />，以及讓模型連接外部工具的 <Term id="mcp">MCP</Term> 協定。
+- **AI 程式開發工具**：從自動補全一路進化到能自己規劃、寫程式、跑測試的 <Term id="agent">Agent</Term>，例如 <CompanyChip id="anysphere">Cursor</CompanyChip>、<CompanyChip id="cognition" />，以及讓非工程師用一句話生成網站的 <CompanyChip id="lovable" />、<CompanyChip id="replit" />。
+
+<FlowSteps title="一個 AI 功能從資料到上線" steps={["蒐集與整理資料","標註與評測","訓練或微調","部署推論","監控與改進"]} />
+
+<Callout type="analogy" title="把這一環想成連鎖餐廳的中央廚房">
+基礎模型像一位天分很高、剛畢業的主廚，但光有主廚開不了連鎖餐廳。你還需要冷藏倉庫和食材管理（資料平台）、負責挑食材和試吃的品管團隊（資料標註與評測）、標準作業流程和出餐監控（MLOps 與可觀測性）、把餐點準時送到客人桌上的出餐系統（推論平台），以及讓廚房裡每個人動作都更快的智慧廚具（AI 程式開發工具）。主廚再厲害，少了這些，菜也端不上桌。
+</Callout>
+
+這一環近兩年成長得很快。資料平台龍頭 Databricks 在 2026 年 8 月宣布年化營收突破 70 億美元、年增逾 80%<Cite k="dbx-2026-08" />；AI 程式編輯器 Cursor 的年化經常性營收（<Term id="arr">ARR</Term>）據報導從 2025 年 1 月約 1 億美元<Cite k="wiki-cursor" />，增加到 2026 年 5 月約 30 億美元<Cite k="bloomberg-cursor-3b" />。這些多半是公司自行宣布或媒體報導的「年化」數字，不等於經會計師查核的全年營收，閱讀時要留意。
+
+<StatGrid items={[{ label: "Databricks 年化營收", value: "逾 70 億美元", note: "2026-08，年增逾 80%" }, { label: "Cursor ARR", value: "約 30 億美元", note: "2026-05（Bloomberg 報導）" }, { label: "Hugging Face 託管模型", value: "約 300 萬個", note: "2026-09，開發者逾 1,800 萬" }, { label: "OpenRouter 每月 Token", value: "逾 500 兆", note: "官網數字，2026-10 初" }]} />
+
+</LevelSection>
+
+<LevelSection level={2} title="關鍵技術與商業模式" data-lint="level==2">
+
+### 資料平台：從「存資料」到「讓 Agent 用資料」
+
+企業資料過去主要用來做報表，現在則要餵給模型與 Agent。Databricks 以資料湖倉（Lakehouse）架構整合資料工程、分析與模型開發；Snowflake 從雲端資料倉儲起家，再加上 Cortex AI 等服務，讓企業直接在受治理的資料上執行模型。Snowflake 2026 年 5–7 月的產品營收為 14.9 億美元、年增 37%，淨營收留存率 126%，代表既有客戶付給 Snowflake 的金額比一年前多了約四分之一<Cite k="snow-q2-fy27" />。Databricks 則表示，近 12 個月調整後自由現金流為正，年化營收逾 100 萬美元的客戶超過 1,000 家<Cite k="dbx-2026-08" />。
+
+### 向量檢索與 RAG
+
+要讓模型回答公司內部文件的問題，常見做法是 <Term id="rag">RAG</Term>（檢索增強生成）：先把文件切段、轉成<Term id="embedding">嵌入向量</Term>存進<Term id="vector-database">向量資料庫</Term>，提問時找出最相關的段落交給模型。<CompanyChip id="pinecone" />、<CompanyChip id="zilliz" />（Milvus）、<CompanyChip id="weaviate" />、<CompanyChip id="qdrant" /> 是獨立向量資料庫的代表；但 MongoDB、<CompanyChip id="elastic" />、<CompanyChip id="supabase" /> 等一般資料庫也陸續內建向量搜尋，向量檢索正從獨立產品變成資料庫的標準功能。
+
+### 訓練資料與評測
+
+基礎模型的<Term id="post-training">後訓練</Term>需要大量由人類專家撰寫的示範答案、偏好比較與評分，近年還多了模擬真實工作的 <Term id="rl-environment">RL 環境</Term>。資料供應商從早期的群眾外包，轉向招募律師、醫師、工程師等專家。Scale AI 2024 年營收據報導約 8.7 億美元；2025 年 6 月 Meta 大額入股，Scale 估值逾 290 億美元<Cite k="scale-meta" />，媒體報導 Meta 投入約 143 億至 148 億美元、取得約 49% 無投票權股份<Cite k="wiki-scale" />。Mercor 2025 年 10 月以 100 億美元估值募得 3.5 億美元，公司表示當時管理約 3 萬名合約專家<Cite k="wiki-mercor" />。
+
+### 推論引擎與推論平台
+
+<Term id="inference-engine">推論引擎</Term>決定一顆 GPU 每秒能產出多少 Token。開源的 vLLM 支援 500 多種模型架構、200 多種加速器，貢獻者超過 2,000 人；核心團隊在 2026 年 1 月宣布成立 <CompanyChip id="inferact" />，以 8 億美元估值募得 1.5 億美元<Cite k="inferact" />。另一個熱門開源引擎 SGLang 也有以它為核心的商業化公司 <CompanyChip id="radixark" />，在 SGLang 之上提供託管的推論與訓練服務<Cite k="radixark" />。推論平台把這些引擎包裝成服務，按 Token 或 GPU 時間收費；模型路由市集 OpenRouter 串接 500 多個模型、80 多家供應商<Cite k="openrouter-about" />。
+
+### AI 程式開發工具
+
+這是目前生成式 AI 最大的企業應用。創投 Menlo Ventures 依美國企業調查估計，2025 年企業部門級 AI 支出 73 億美元中，程式開發佔 40 億美元（55%）<Cite k="menlo-2025" />；該機構 2026 年 10 月在宣布投資 AI 程式新創 Factory 的文章中再指出，程式開發市場在兩年內從 5.5 億美元、40 億美元成長到 300 億美元以上，接近 AI 應用支出的一半<Cite k="menlo-factory" />。由於 Menlo 本身是這個市場的投資人，這類數字宜視為業界估計。Cognition 的 ARR 從 2026 年 5 月的 4.92 億美元增加到 9 月的 9 億美元，並以 480 億美元估值募得 20 億美元<Cite k="tc-cognition" />。
+
+### 商業模式與成本結構
+
+- **依用量計費**：Snowflake、Databricks 按運算用量收費，客戶資料越多、AI 工作負載越重，營收越高。
+- **訂閱加用量**：AI 程式工具多半是月訂閱，再對高階模型或大量使用另外計價。新創常用的 ARR 通常是「單月營收乘以 12」<Cite k="tc-cognition" />，成長快時會放大看起來的規模。
+- **開源核心加託管服務**：Hugging Face、vLLM、LangChain 以開源、n8n 以原始碼公開（fair-code）授權<Cite k="n8n-license" />先累積開發者，再靠企業版與託管服務收費。
+- **專案與人力服務**：資料標註依任務或工時計價，主要成本是專家薪酬，客戶集中在少數模型實驗室。
+- **成本結構**：AI 原生工具最大的變動成本是模型 API 或 GPU 租金，毛利受模型與 GPU 的定價影響；傳統資料軟體的成本則以雲端基礎設施、研發與業務人力為主，屬於典型的 <Term id="saas">SaaS</Term> 結構。
+
+### 市場規模
+
+Gartner 在 2026 年 9 月更新的預測中，2026 年全球「AI 資料科學與機器學習平台」支出約 264 億美元、「AI 應用開發平台」約 95 億美元、「AI 資料」約 31 億美元，三者合計約 391 億美元，較 2025 年成長約 44%；2027 年將達約 545 億美元<Cite k="gartner-ai-spend-2026-09" />。這只佔同年全球 AI 支出約 2.67 兆美元的約 1.5%，絕大部分的錢仍流向伺服器、晶片等基礎設施。Menlo Ventures 的估計也類似：2025 年企業生成式 AI 支出 370 億美元中，負責資料儲存、檢索與流程編排的 AI 基礎軟體只有約 15 億美元<Cite k="menlo-2025" />。
+
+市場預測也會隨改版而變動。Gartner 2026 年 1 月的版本，對 2026 年資料科學與機器學習平台支出的預測是約 311 億美元<Cite k="gartner-ai-spend-2026" />；9 月版連同 2025 年的基期一起調低到約 264 億美元，但把應用開發平台 2026 年的成長率從前一版的 28% 上調到 39%<Cite k="gartner-ai-spend-2026-09" />。引用這類數字時，最好註明是哪一版預測。
+
+<BarChart title="AI 平台、開發工具與資料軟體的全球支出" unit="十億美元" data={[{ label: "2025", value: 27.1, estimate: true }, { label: "2026", value: 39.1, estimate: true }, { label: "2027", value: 54.5, estimate: true }]} source="gartner-ai-spend-2026-09" note="合計 Gartner 的「AI 資料科學與機器學習平台」「AI 應用開發平台」「AI 資料」三類；2025 年為估計、2026–2027 年為預測（2026 年 9 月版）。" />
+
+### 競爭格局
+
+| 子領域 | 代表業者 | 競爭型態 |
+|---|---|---|
+| 資料平台 | Databricks、Snowflake、MongoDB、ClickHouse、Elastic | 雙強領先，另有雲端業者自家服務 |
+| 向量資料庫 | Pinecone、Zilliz、Weaviate、Qdrant | 分散，受一般資料庫內建功能擠壓 |
+| 訓練資料與評測 | Scale AI、Surge AI、Mercor、Turing、Labelbox | 少數業者服務少數前沿實驗室 |
+| 推論平台與路由 | Fireworks AI、Baseten、Modal、Fal、OpenRouter | 新創快速成長，雲端與新雲也在搶 |
+| MLOps 與 Agent 框架 | Hugging Face、LangChain、n8n、Datadog | 開源專案與商用可觀測性平台並存，多靠託管與企業版變現 |
+| AI 程式開發 | Cursor、Cognition、Replit、Lovable、Factory | 高度競爭，模型實驗室同時是供應商與對手 |
+
+上市公司方面，資料與可觀測性平台仍維持三成以上的成長：<CompanyChip id="datadog" /> 2026 年第二季營收 11.2 億美元<Cite k="sa-ddog" />，與 Snowflake、MongoDB 同樣年增三成以上；以搜尋和 DevOps 為主的 Elastic、<CompanyChip id="gitlab" /> 成長則較慢。
+
+<BarChart title="上市資料與開發工具公司：最近一季營收年增率" unit="%" data={[{ label: "Datadog", value: 35.6 }, { label: "Snowflake", value: 35.1 }, { label: "MongoDB", value: 30.5 }, { label: "GitLab", value: 21.3 }, { label: "Elastic", value: 15.1 }]} source={["sa-ddog", "sa-snow", "sa-mdb", "sa-gtlb", "sa-estc"]} note="Datadog 為 2026 年 4–6 月；其餘四家為截至 2026 年 7 月 31 日的財季。依各公司財報總營收計算。" />
+
+</LevelSection>
+
+<LevelSection level={3} title="深入議題" data-lint="level===3">
+
+### 瓶頸一：模型供應商的議價力
+
+多數 AI 程式工具建立在 Anthropic、OpenAI 等前沿模型之上，而這些實驗室也自己做工具。<CompanyChip id="anthropic" /> 在 2026 年 2 月揭露，Claude Code 的年化營收已超過 25 億美元，比 2026 年初多了一倍以上<Cite k="anthropic-series-g" />。工具公司的對策是訓練自家模型：Cursor 在 2026 年 3 月推出的 Composer 2，是以 <CompanyChip id="moonshot-ai" /> 的<Term id="open-weights">開放權重</Term>模型 Kimi K2.5 為基礎再訓練；這點在發布後由使用者發現，Cursor 才承認，並表示最終模型只有約四分之一的運算量來自基礎模型<Cite k="tc-cursor-kimi" />。開放權重模型因此成為工具公司降低依賴的關鍵籌碼。
+
+### 瓶頸二：專家資料與推論成本
+
+模型越強，需要的訓練資料就越專業，能寫出博士級答案的專家人力有限，資料供應商的中立性也受到關注：Meta 入股 Scale AI 之後，Scale 創辦人 Alexandr Wang 轉往 Meta 投入 AI 工作<Cite k="scale-meta" />。當資料商有某家實驗室大幅入股，其他互相競爭的實驗室是否還放心把資料需求交給它，就成了新的問題。推論端則受 GPU 供給與租金牽制；同樣一批 GPU 能服務多少使用者，取決於推論引擎的批次處理與 <Term id="kv-cache">KV Cache</Term> 管理能力，也就是<Term id="throughput">吞吐量</Term>。這讓 vLLM、SGLang 這類開源軟體在 GPU 短缺時更有價值。
+
+### 供需：2025–2026 年的整併潮
+
+這一環的公司正被晶片、雲端、支付與太空業者收購，買方看中的是開發者入口與 Token 流量：
+
+| 時間 | 交易 | 規模 |
+|---|---|---|
+| 2025-06 | Meta 入股 Scale AI（約 49% 無投票權股份） | 據報導約 143 億至 148 億美元 |
+| 2026-03 | IBM 完成收購 Confluent | 企業價值約 110 億美元 |
+| 2026-08 | SpaceX 完成收購 Cursor（Anysphere） | 全股票，隱含股權價值 600 億美元 |
+| 2026-08 | Stripe 宣布收購 OpenRouter | 據報導約 75 億美元，未正式揭露 |
+| 2026-09 | NVIDIA 宣布收購 Hugging Face | 收購價約 119 億美元，另含最多約 10 億美元員工留任股權；待主管機關核准 |
+
+資料來源依序為<Cite k="wiki-scale" /><Cite k="ibm-confluent" /><Cite k="spacex-8k-cursor" /><Cite k="tc-stripe-openrouter" /><Cite k="nvda-8k-hf" />。<CompanyChip id="nvidia" /> 承諾 Hugging Face 會維持開放，使用者可以上傳、下載自己選擇的模型與資料集，平台也會繼續支援其他晶片業者<Cite k="nvda-8k-hf" />；執行長黃仁勳也表示，在平台上開發或部署不需要使用 NVIDIA 的運算資源<Cite k="tc-nvidia-hf" />。但全球最大的開源模型平台歸屬晶片龍頭，平台中立性仍是業界觀察的重點。
+
+### 地緣政治
+
+出口管制主要針對晶片，軟體工具大多是開源或雲端服務，但資料主權讓這一環出現區域分化。中國有自己的企業 AI 平台與資料標註業者，例如 <CompanyChip id="4paradigm" /> 與 <CompanyChip id="haitian-ruisheng" />；歐美企業若要服務政府、金融與醫療客戶，也必須提供地端或客戶自有雲端的部署方式。<Term id="sovereign-ai">主權 AI</Term> 的需求，讓「資料不出境」的私有化平台成為在地業者的切入點。另一方面，美國工具採用中國開放權重模型作為基礎（例如 Composer 2），也讓模型來源的揭露與審查成為新議題<Cite k="tc-cursor-kimi" />。NVIDIA 在宣布收購 Hugging Face 的 8-K 文件中也提到，許多熱門開源模型源自中國，若政府限制特定地區來源的模型，可能對平台造成重大影響<Cite k="nvda-8k-hf" />。
+
+### 2026–2028 年看點
+
+- **NVIDIA 收購 Hugging Face 的審查**：預計 2027 年上半年完成<Cite k="nvda-8k-hf" />，條件與承諾值得追蹤。
+- **市場規模是否如預測翻倍**：Gartner 9 月版預估三類支出從 2025 年約 271 億美元增至 2027 年約 545 億美元<Cite k="gartner-ai-spend-2026-09" />，下一版預測是否再調整也值得留意。
+- **AI 程式工具的定價與毛利**：從按席次訂閱轉向按用量計費，以及工具公司自研模型的成效（見 <TrendLink id="ai-coding">AI 寫程式</TrendLink>）。
+- **Agent 標準化**：MCP 等協定普及後，Agent 框架與資料平台的整合方式（見 <TrendLink id="agentic-ai-standards">Agent 生態與標準化</TrendLink>）。
+- **開源推論引擎的商業化**：Inferact、RadixArk 能否在保持開源的同時建立營收。
+
+</LevelSection>
+
+## 台灣的角色
+
+台灣在這一環的軟體公司規模遠小於美國同業，強項仍在硬體：推論平台與 GPU 雲租用的 AI 伺服器，大多由台灣廠商製造（見 <SegmentChip id="servers-systems" />）。不過，在「讓工具在台灣落地」這件事上，已經有幾股力量：
+
+- **主權 AI 雲與平台**：由華碩集團與政府共同推動成立的 <CompanyChip id="taiwan-ai-cloud" /> 提供算力基建、AFS AI Hub 企業 AI 平台、不需技術背景也能上手的 Agent 工具 AFS MyAgent 與企業推論雲服務，並曾建置數座登上 TOP500 的超級電腦；2026 年 5 月 29 日登錄興櫃<Cite k="twsc" />。
+- **企業私有化 AI 新創**：<CompanyChip id="apmic" /> 推出建構在 NVIDIA NeMo 框架上的模型訓練工具 PrivModel（涵蓋持續預訓練、指令微調與蒸餾），以及能解析文件與圖表的 RAG 系統 PrivStation；2026 年 3 月完成 700 萬美元 A 輪募資，由 AIPO 領投、趨勢科技參投<Cite k="apmic" />。<CompanyChip id="ikala" /> 則以 iKala Nexus 平台協助企業把內部資料整理成知識並部署 AI Agent<Cite k="ikala" />。
+- **繁體中文資料與模型**：國科會於 2023 年 4 月正式啟動 <ModelChip id="taide">TAIDE</ModelChip> 計畫，由國家實驗研究院執行，訓練資料來自與政府單位及民間出版社洽談的合法授權；2026 年 2 月發布 Gemma-3-TAIDE-12b-Chat-2602，6 月再推出以台灣法規資料微調、強化法規檢索的嵌入模型<Cite k="taide" />。
+
+對台灣企業來說，金融、政府與製造業常有資料不能上公有雲的限制，這讓地端部署、私有化 RAG 與繁體中文評測成為在地業者最有機會的領域；而台灣大量的軟硬體工程師，則是 AI 程式開發工具的重要使用者。

@@ -1,0 +1,212 @@
+---
+/**
+ * Editorial status counts per collection (stub / draft / researched / fact-checked):
+ * headline tiles, one stacked bar per collection with a legend, and a data table.
+ *   <EditorialStatusPanel />
+ */
+import Stat from '../ui/Stat.astro';
+import StackBar from './StackBar.astro';
+import { getEditorialStatus, STATUS_LABELS, STATUS_ORDER, type EditorialStatus } from './reference-data';
+
+const { rows, totals, total } = await getEditorialStatus();
+const COLORS: Record<EditorialStatus, string> = {
+  'fact-checked': 'var(--c-pos)',
+  researched: 'var(--c-accent)',
+  draft: 'var(--c-warn)',
+  stub: 'var(--c-border-strong)',
+};
+const share = (n: number) => (total ? Math.round((n / total) * 100) : 0);
+// Per-row figure on the right: the fact-checked share once anything is fact-checked; until then the
+// researched share (a column of 「已查核 0%」 says nothing the tiles do not already say).
+const rowMetric = totals['fact-checked'] > 0 ? 'fact-checked' : 'researched';
+const rowPct = (r: (typeof rows)[number]) =>
+  r.total ? Math.round(((rowMetric === 'fact-checked' ? r.counts['fact-checked'] : r.counts.researched + r.counts['fact-checked']) / r.total) * 100) : 0;
+const fmt = (n: number) => n.toLocaleString('zh-TW');
+---
+
+<div class="esp" data-pagefind-ignore>
+  <div class="esp__tiles">
+    <Stat label="已查核" value={fmt(totals['fact-checked'])} unit="筆" note={total ? `占全部 ${share(totals['fact-checked'])}%` : undefined} size="s" />
+    <Stat label="已調研、待查核" value={fmt(totals.researched)} unit="筆" note={total ? `占全部 ${share(totals.researched)}%` : undefined} size="s" />
+    <Stat label="草稿與待補" value={fmt(totals.draft + totals.stub)} unit="筆" note={total ? `占全部 ${share(totals.draft + totals.stub)}%` : undefined} size="s" />
+    <Stat label="條目合計" value={fmt(total)} unit="筆" size="s" />
+  </div>
+
+  <ul class="esp__legend" role="list" aria-label="圖例">
+    {
+      STATUS_ORDER.map((s) => (
+        <li>
+          <span class:list={['esp__sw', { 'esp__sw--hatched': s === 'stub' }]} style={`--c: ${COLORS[s]}`} aria-hidden="true" />
+          {STATUS_LABELS[s]}
+        </li>
+      ))
+    }
+  </ul>
+
+  <ul class="esp__rows" role="list">
+    {
+      rows.map((r) => (
+        <li class="esp__row">
+          <span class="esp__label">{r.label}</span>
+          <span class="esp__n num">{r.total ? `${fmt(r.total)} 筆` : '尚無條目'}</span>
+          <StackBar
+            class="esp__bar"
+            label={r.label}
+            parts={STATUS_ORDER.map((s) => ({ id: s, label: STATUS_LABELS[s], value: r.counts[s], color: COLORS[s], hatched: s === 'stub' }))}
+          />
+          <span class="esp__pct num">{r.total ? `${STATUS_LABELS[rowMetric]} ${rowPct(r)}%` : '—'}</span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <details class="esp__table">
+    <summary>顯示資料表</summary>
+    <div class="scroll-x">
+      <table>
+        <caption class="sr-only">各類內容的編輯狀態筆數</caption>
+        <thead>
+          <tr>
+            <th scope="col">內容類型</th>
+            {STATUS_ORDER.map((s) => <th scope="col" class="esp__num">{STATUS_LABELS[s]}</th>)}
+            <th scope="col" class="esp__num">合計</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            rows.map((r) => (
+              <tr>
+                <th scope="row">{r.label}</th>
+                {STATUS_ORDER.map((s) => (
+                  <td class="esp__num">{fmt(r.counts[s])}</td>
+                ))}
+                <td class="esp__num">{fmt(r.total)}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+</div>
+
+<style>
+  @layer components {
+    .esp {
+      display: grid;
+      gap: var(--space-5);
+      max-width: 48rem;
+    }
+    .esp__tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+      gap: var(--space-4);
+      padding: var(--space-5);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+    }
+    .esp__legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2) var(--space-5);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+    .esp__legend li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .esp__sw {
+      inline-size: 0.85em;
+      block-size: 0.85em;
+      border-radius: 3px;
+      background: var(--c);
+    }
+    .esp__sw--hatched {
+      background: repeating-linear-gradient(135deg, var(--c) 0 2px, color-mix(in srgb, var(--c) 35%, transparent) 2px 5px);
+    }
+    /* same card as the freshness panel's rows (FreshnessPanel .frp__rows) */
+    .esp__rows {
+      display: grid;
+      gap: var(--space-4);
+      margin: 0;
+      padding: var(--space-5);
+      list-style: none;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+    }
+    .esp__row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'label n'
+        'bar bar'
+        'pct pct';
+      align-items: baseline;
+      gap: var(--space-1) var(--space-3);
+    }
+    @media (min-width: 640px) {
+      .esp__row {
+        grid-template-columns: 7.5rem 5.5rem minmax(0, 1fr) 6.5rem;
+        grid-template-areas: 'label n bar pct';
+        align-items: center;
+      }
+    }
+    .esp__label {
+      grid-area: label;
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+    }
+    .esp__n {
+      grid-area: n;
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      text-align: end;
+    }
+    .esp__row :global(.esp__bar) {
+      grid-area: bar;
+    }
+    .esp__pct {
+      grid-area: pct;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    @media (min-width: 640px) {
+      .esp__n {
+        text-align: start;
+      }
+      .esp__pct {
+        text-align: end;
+      }
+    }
+    .esp__table > summary {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--tap);
+      cursor: pointer;
+      font-size: var(--fs-s);
+      color: var(--c-link);
+    }
+    .esp__table table {
+      display: table;
+      inline-size: 100%;
+      font-size: var(--fs-s);
+      font-variant-numeric: tabular-nums;
+    }
+    .esp__table th,
+    .esp__table td {
+      min-width: 0;
+      white-space: nowrap;
+    }
+    .esp__table .esp__num {
+      text-align: end;
+    }
+  }
+</style>

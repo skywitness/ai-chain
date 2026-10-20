@@ -1,0 +1,348 @@
+---
+title: "Transformer 與注意力機制"
+subtitle: "每個 Token 都在問：這句話裡，誰跟我最有關？"
+description: "Transformer 是當今大型語言模型的共同骨架。本文用開會的比喻說明注意力機制的 Q、K、V，以及多頭注意力、因果遮罩與位置編碼，再拆解運算量平方成長與 KV Cache 的記憶體成本，和 2026 年模型的改良方向。"
+level: 2
+order: 202
+track: models
+prerequisites: [tokens-and-embeddings, neural-networks-101]
+next: [pretraining-to-chat, multimodal-models, mixture-of-experts]
+relatedSegments: [foundation-models, ai-accelerators, memory-storage, devtools-data-mlops, cloud-neocloud]
+relatedCompanies: [alphabet, openai, meta, deepseek, alibaba, nvidia, sk-hynix, samsung-electronics, micron, inferact, radixark]
+relatedModels: [openai-gpt, openai-gpt-oss, meta-muse-llama, deepseek, alibaba-qwen, google-gemini]
+relatedTrends: [long-context-memory, inference-demand, inference-chips-new-paradigms, memory-supercycle]
+glossary:
+  - transformer
+  - neural-network
+  - attention
+  - token
+  - llm
+  - embedding
+  - parameter
+  - matrix-multiplication
+  - gpu
+  - softmax
+  - context-window
+  - inference
+  - kv-cache
+  - open-weights
+  - flash-attention
+  - sram
+  - hbm
+  - sparse-attention
+  - moe
+  - prefill
+  - decode
+  - tensor-core
+scenes:
+  - { id: attention, variant: attention }
+keyTakeaways:
+  - "Transformer 於 2017 年提出，靠注意力讓所有 Token 同時互相參照，適合交給 GPU 平行計算。"
+  - "注意力用 Q、K、V 運作：Q 與每個 K 比對打分，經 Softmax 變成權重，再依權重加總各 Token 的 V。"
+  - "多頭注意力從不同角度看關係；因果遮罩讓語言模型看不到後面的字；RoPE 等方法補上位置資訊。"
+  - "每個區塊是注意力加前饋網路，疊上數十到上百層；GPT-3 有 96 層，參數大多在前饋網路。"
+  - "注意力的計算量隨上下文長度平方成長，KV Cache 則隨長度線性增加，長上下文推論非常吃 HBM。"
+  - "2025–2026 年的模型以滑動視窗、稀疏與線性注意力降低長上下文成本，再用 GQA 縮小 KV Cache、用 MoE 節省運算。"
+estimatedMinutes: 16
+sources:
+  - key: transformer-2017
+    title: "Attention Is All You Need"
+    publisher: "arXiv（Vaswani et al., Google Brain／Google Research）"
+    url: "https://arxiv.org/abs/1706.03762"
+    type: paper
+    lang: en
+    published: "2017-06-12"
+    accessed: "2026-10-06"
+    note: "英翻德 28.4 BLEU，比既有最佳成績（含組合模型）高 2 分以上；英翻法 41.8 BLEU 創單一模型紀錄，大模型在 8 顆 NVIDIA P100 GPU 上訓練 3.5 天。base 模型 dmodel = 512、8 個頭、每頭 64 維、編碼器與解碼器各 6 層、前饋層 2,048 維；以 √dk 縮放內積（附註 4：分量為平均 0、變異數 1 的獨立隨機數時，內積變異數為 dk）；解碼器以遮罩防止看到後面位置；以不同頻率的正弦與餘弦函數作為位置編碼。"
+  - key: 3b1b-attention
+    title: "Attention in transformers, step-by-step (Deep Learning Chapter 6)"
+    publisher: 3Blue1Brown
+    url: "https://www.3blue1brown.com/lessons/attention"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "遮罩：在 Softmax 前把後面位置的分數設為負無限大；注意力圖的大小是上下文長度的平方；GPT-3 每個區塊有 96 個注意力頭，96 層的注意力參數合計不到 580 億，約占總參數三分之一。"
+  - key: gpt3
+    title: "Language Models are Few-Shot Learners"
+    publisher: "OpenAI（arXiv）"
+    url: "https://arxiv.org/abs/2005.14165"
+    type: paper
+    lang: en
+    published: "2020-05-28"
+    accessed: "2026-10-06"
+    note: "表 2.1：GPT-3 175B 有 96 層、dmodel 12,288、96 個頭、每頭 128 維；所有模型的上下文視窗為 2,048 個 token；前饋層寬度為 dmodel 的 4 倍。"
+  - key: kaplan
+    title: "Scaling Laws for Neural Language Models"
+    publisher: "arXiv（Kaplan et al., OpenAI）"
+    url: "https://arxiv.org/abs/2001.08361"
+    type: paper
+    lang: en
+    published: "2020-01-23"
+    accessed: "2026-10-06"
+    note: "表 1：前向運算量 Cforward ≈ 2N + 2·nlayer·nctx·dattn；當 dmodel 大於 nctx/12 時，與上下文相關的運算只占總運算的一小部分。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "Meta AI（arXiv）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-06"
+    note: "405B 模型 126 層、模型維度 16,384、128 個注意力頭、8 個 KV 頭；採用 8 個 KV 頭的 GQA 以提升推論速度、縮小解碼時的 KV cache；RoPE 基頻提高到 500,000。"
+  - key: gqa
+    title: "GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints"
+    publisher: "arXiv（Ainslie et al., Google Research）"
+    url: "https://arxiv.org/abs/2305.13245"
+    type: paper
+    lang: en
+    published: "2023-05-22"
+    accessed: "2026-10-06"
+    note: "GQA 讓多個查詢頭共用一組 key／value 頭，品質接近多頭注意力，速度接近只用一組 KV 頭的 MQA。"
+  - key: roformer
+    title: "RoFormer: Enhanced Transformer with Rotary Position Embedding"
+    publisher: "arXiv（Su et al.）"
+    url: "https://arxiv.org/abs/2104.09864"
+    type: paper
+    lang: en
+    published: "2021-04-20"
+    accessed: "2026-10-06"
+    note: "RoPE 以旋轉矩陣編碼絕對位置，同時讓自注意力自然帶有相對位置資訊。"
+  - key: flashattention
+    title: "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness"
+    publisher: "arXiv（Dao et al., Stanford）"
+    url: "https://arxiv.org/abs/2205.14135"
+    type: paper
+    lang: en
+    published: "2022-05-27"
+    accessed: "2026-10-06"
+    note: "自注意力的時間與記憶體複雜度隨序列長度平方成長；以分塊（tiling）減少 GPU 的 HBM 與晶片上 SRAM 之間的讀寫，結果與標準注意力相同；GPT-2（序列長度 1K）訓練加速 3 倍。"
+  - key: qwen3-8b
+    title: "Qwen/Qwen3-8B model card"
+    publisher: "Qwen（Hugging Face）"
+    url: "https://huggingface.co/Qwen/Qwen3-8B"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "參數 8.2B；36 層；GQA 注意力頭 Q 為 32 個、KV 為 8 個；原生上下文 32,768 個 token。"
+  - key: qwen3-8b-config
+    title: "Qwen/Qwen3-8B config.json"
+    publisher: "Qwen（Hugging Face）"
+    url: "https://huggingface.co/Qwen/Qwen3-8B/blob/main/config.json"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "architectures 為 Qwen3ForCausalLM；hidden_size 4,096、num_hidden_layers 36、num_attention_heads 32、num_key_value_heads 8、head_dim 128、rope_theta 1,000,000、torch_dtype bfloat16。"
+  - key: deepseek-v4
+    title: "DeepSeek-V4-Pro model card"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-06"
+    note: "V4 系列預覽版：V4-Pro 總參數 1.6T、啟用 49B，支援 100 萬個 token 上下文；結合 Compressed Sparse Attention 與 Heavily Compressed Attention 的混合注意力，在 100 萬 token 情境下，單一 token 推論 FLOPs 只需 DeepSeek-V3.2 的 27%，KV cache 只需 10%。"
+  - key: deepseek-v4-config
+    title: "deepseek-ai/DeepSeek-V4-Pro config.json"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/config.json"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "architectures 為 DeepseekV4ForCausalLM；hidden_size 7,168、num_hidden_layers 61、num_attention_heads 128、n_routed_experts 384、num_experts_per_tok 6。"
+  - key: qwen35
+    title: "Qwen/Qwen3.5-397B-A17B model card"
+    publisher: "Qwen（Hugging Face）"
+    url: "https://huggingface.co/Qwen/Qwen3.5-397B-A17B"
+    type: docs
+    lang: en
+    published: "2026-02-16"
+    accessed: "2026-10-06"
+    note: "60 層，配置為 15 ×（3 ×（Gated DeltaNet → MoE）→ 1 ×（Gated Attention → MoE））；Gated DeltaNet 為線性注意力；MoE 共 512 位專家，每個 token 啟用 10 位路由專家加 1 位共享專家；原生上下文 262,144 個 token。"
+  - key: gpt-oss-config
+    title: "openai/gpt-oss-120b config.json"
+    publisher: "OpenAI（Hugging Face）"
+    url: "https://huggingface.co/openai/gpt-oss-120b/blob/main/config.json"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "architectures 為 GptOssForCausalLM；36 層，sliding_attention 與 full_attention 交替排列，sliding_window 為 128；64 個注意力頭、8 個 KV 頭。"
+  - key: bert
+    title: "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding"
+    publisher: "arXiv（Devlin et al., Google AI Language）"
+    url: "https://arxiv.org/abs/1810.04805"
+    type: paper
+    lang: en
+    published: "2018-10-11"
+    accessed: "2026-10-06"
+    note: "BERT 為 Transformer 編碼器，所有層同時參考左右兩側的上下文。"
+  - key: gemini-1
+    title: "Gemini: A Family of Highly Capable Multimodal Models"
+    publisher: "Google DeepMind（arXiv）"
+    url: "https://arxiv.org/abs/2312.11805"
+    type: paper
+    lang: en
+    published: "2023-12-19"
+    accessed: "2026-10-06"
+    note: "第 2 節：Gemini 模型建立在 Transformer 解碼器之上，並針對大規模訓練與 TPU 推論加以改良。"
+  - key: vllm
+    title: "Efficient Memory Management for Large Language Model Serving with PagedAttention"
+    publisher: "arXiv（Kwon et al., UC Berkeley）"
+    url: "https://arxiv.org/abs/2309.06180"
+    type: paper
+    lang: en
+    published: "2023-09-12"
+    accessed: "2026-10-06"
+    note: "每個請求的 KV cache 很大且會動態增減；PagedAttention 借用作業系統的虛擬記憶體分頁概念，讓 KV cache 幾乎沒有浪費；vLLM 在相同延遲下的吞吐量比當時的系統高 2–4 倍。"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: learn-06
+  checkedBy: "learn-06-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：數字皆與原始來源核對（arXiv 論文、Hugging Face 模型卡與 config.json、DeepSeek 官方公告）。修正多頭注意力的「切向量」說法、區塊子層數（編碼器兩層、解碼器三層）、Qwen3.5 線性注意力的成長方式與型號，並補上 Kaplan 1/12 的推導依據。"
+---
+
+## 一句話解釋
+
+<Term id="transformer">Transformer</Term> 是 2017 年提出的一種<Term id="neural-network">神經網路</Term>架構，也是今天主流大型語言模型的共同骨架。它的核心是<Term id="attention">注意力機制</Term>：句子裡的每個 <Term id="token">Token</Term> 都會「環顧」其他 Token，判斷誰跟自己最相關，再依相關程度吸收它們的資訊、更新自己的意思。把這個動作疊上幾十層，模型就能讀懂整段上下文。
+
+## 生活化比喻
+
+<Callout type="analogy" title="一場每個人都在找重點的會議">
+
+想像一場會議，每位與會者（Token）手上都有三樣東西：
+
+- **問題卡（Query，查詢）**：「我需要什麼資訊？」例如「生產」這個詞想知道：是誰在生產？替誰生產？
+- **名牌（Key，鍵）**：「我能提供什麼？」例如「台積電」的名牌上寫著「我是一家公司，可以當主詞」。
+- **筆記（Value，值）**：真正要分享出去的內容。
+
+每個人拿自己的問題卡去比對所有人的名牌，越對得上的人，就越仔細聽他的筆記，最後把聽到的內容按比例整理成自己的新理解。所有人同時這樣做，而且會開很多輪（很多層），每開一輪，大家對整件事的理解就更深一點。
+
+</Callout>
+
+## 原理
+
+### 為什麼需要 Transformer
+
+在 Transformer 出現之前，翻譯與語言模型的主流是循環神經網路（RNN）。RNN 像一個人逐字閱讀：讀到第 100 個字時，第 1 個字的資訊只能靠一路傳下來的「記憶」保存；而且每一步都要等上一步算完，Transformer 論文指出，這種先天的循序特性讓訓練無法在同一段文字內平行化，句子越長越吃虧<Cite k="transformer-2017" />。
+
+2017 年，以 Google 研究人員為主的團隊發表〈Attention Is All You Need〉，提出完全只靠注意力、不用循環結構的 Transformer。論文中的大型模型在英翻德任務拿到 28.4 分 BLEU（機器翻譯常用的評分），比當時最佳成績高出 2 分以上；英翻法拿到 41.8 分，創下單一模型的新紀錄，訓練只用了 8 顆 NVIDIA P100 GPU、3.5 天<Cite k="transformer-2017" />。關鍵在於，句子裡所有 Token 可以同時計算，正好發揮 GPU 擅長的平行運算。
+
+### 注意力的三個角色：Q、K、V
+
+前一篇提到，每個 Token 會先換成一串數字，也就是<Term id="embedding">嵌入向量</Term>。注意力就在這些向量上運作。以句子「台積電為輝達生產 AI 晶片」為例（切法與結果皆為示意），假設模型正在處理「生產」這個 Token：
+
+<FlowSteps
+  title="一次注意力計算的四個步驟"
+  steps={[
+    { title: "產生 Q、K、V", detail: "每個 Token 的向量分別乘上三個學來的權重矩陣，得到查詢 Q、鍵 K 與值 V" },
+    { title: "打分數", detail: "「生產」的 Q 和每個 Token 的 K 做內積，越相關，分數越高" },
+    { title: "換成權重", detail: "分數除以 √d 後經 Softmax，變成加總為 100% 的注意力權重" },
+    { title: "加權加總", detail: "依權重把各 Token 的 V 加起來，成為「生產」的新向量" }]}
+/>
+
+結果可能是：「生產」把較多注意力放在「台積電」（誰在生產）和「輝達」（替誰生產），較少放在「為」。等模型讀到「晶片」時，它可能會特別參考「AI」和「生產」。重點是，沒有人告訴模型什麼是主詞、什麼是受詞；這些關係都是從大量文字中學出來的，而產生 Q、K、V 的權重矩陣，就是模型的<Term id="parameter">參數</Term>。
+
+<Scene3D id="attention" variant="attention" caption="Transformer 注意力劇場：Token 先變成 Q、K、V，弧線越粗代表注意力權重越大；可逐步瀏覽多頭注意力與 KV 快取。所有權重與數值皆為示意。" />
+
+寫成公式，就是 Transformer 論文的核心式子<Cite k="transformer-2017" />：
+
+<MathTeX tex={"\\mathrm{Attention}(Q,K,V)=\\mathrm{softmax}\\left(\\frac{QK^{\\top}}{\\sqrt{d_k}}\\right)V"} display label="注意力的輸出，等於 Q 乘以 K 的轉置、除以根號 d_k 後取 Softmax，再乘以 V" />
+
+這裡的 Q、K、V 是把所有 Token 的向量疊起來的矩陣，所以只要幾次<Term id="matrix-multiplication">矩陣乘法</Term>，就能一口氣算完所有 Token 之間的分數。這種大量的矩陣乘法，正是 <Term id="gpu">GPU</Term> 最擅長的工作。中間的 <Term id="softmax">Softmax</Term> 負責把分數換成加總為 1 的權重。
+
+### 多頭注意力：同時從好幾個角度看
+
+一組 Q、K、V 只能捕捉一種關係。Transformer 因此設置多個「注意力頭」：每個頭各有一組權重矩陣，把向量投影到較小的空間，各自平行計算注意力，最後再把結果拼回來。原始論文的基礎模型寬度為 512 維，用 8 個頭、每個頭處理 64 維<Cite k="transformer-2017" />；GPT-3 每一層則有 96 個頭<Cite k="gpt3" />。分工之後，有的頭可能專注於「主詞是誰」，有的頭專注於「前一個字」，各看各的重點。
+
+### 不准偷看：因果遮罩
+
+像 GPT 這樣用來「接龍」的<Term id="llm">大型語言模型</Term>，訓練時每個位置都要預測下一個 Token，所以不能讓它偷看後面的答案。做法是在 Softmax 之前，把「後面 Token」的分數設成負無限大，經過 Softmax 後，這些位置的權重就變成 0<Cite k="3b1b-attention" />。原始 Transformer 的解碼器也是用遮罩，防止每個位置看到後面的內容<Cite k="transformer-2017" />。
+
+### 位置從哪裡來
+
+注意力本身不在乎順序：把句子裡的字打亂，每個 Token 收到的分數組合並不會改變。「台積電為輝達生產」和「輝達為台積電生產」意思完全不同，模型必須另外得到位置資訊。原始論文把不同頻率的正弦與餘弦波加到嵌入向量上<Cite k="transformer-2017" />；2021 年提出的 RoPE（旋轉位置編碼）則把位置轉換成向量的旋轉角度，讓注意力分數自然反映兩個 Token 的相對距離<Cite k="roformer" />。Llama 3 與 Qwen3 都採用 RoPE<Cite k="llama3" /><Cite k="qwen3-8b-config" />。
+
+### 一個 Transformer 區塊長什麼樣子
+
+注意力只是一個區塊的一半。原始論文的編碼器中，每個區塊有兩個子層（解碼器的區塊再多一層參考原文的注意力）<Cite k="transformer-2017" />；今天的解碼器型語言模型沒有原文可參考，區塊同樣是這兩個子層：
+
+1. **注意力層**：Token 之間交換資訊。
+2. **前饋網路**：每個 Token 各自通過一個兩層的小型神經網路，消化剛收到的資訊。
+
+每個子層都有「殘差連接」（把輸入直接加回輸出）與正規化，讓訊號能在數十層之間穩定傳遞。這樣的區塊一層一層疊上去，就是模型的主體：
+
+| 模型 | 發表年份 | 層數 | 模型寬度（維） | 每層注意力頭 |
+|---|---|---|---|---|
+| Transformer（基礎版） | 2017 | 編碼器、解碼器各 6 層 | 512 | 8 |
+| GPT-3 | 2020 | 96 | 12,288 | 96 |
+| Llama 3 405B | 2024 | 126 | 16,384 | 128（KV 頭 8 個） |
+| Qwen3-8B | 2025 | 36 | 4,096 | 32（KV 頭 8 個） |
+| DeepSeek-V4-Pro | 2026 | 61 | 7,168 | 128 |
+
+表中數字來自各模型的論文或官方設定檔<Cite k="transformer-2017" /><Cite k="gpt3" /><Cite k="llama3" /><Cite k="qwen3-8b-config" /><Cite k="deepseek-v4-config" />。有趣的是，注意力雖然最受矚目，參數卻大多不在這裡：3Blue1Brown 估算，GPT-3 的 96 層注意力合計不到 580 億個參數，只占總數約三分之一<Cite k="3b1b-attention" />，其餘大部分在前饋網路。
+
+### 編碼器與解碼器：兩條路線
+
+原始 Transformer 為翻譯而設計，同時有編碼器（讀原文）和解碼器（寫譯文）。之後發展出兩條主要路線：
+
+<Compare
+  title="Transformer 的兩條主要路線"
+  left={{ title: "編碼器型（例如 BERT）", items: ["每個 Token 同時看前後文", "常用於分類、搜尋等理解型任務", "不適合逐字生成長文"] }}
+  right={{ title: "解碼器型（例如 GPT、Llama、Qwen）", items: ["只能看前面的 Token（因果遮罩）", "一次產生一個 Token，擅長生成", "今天聊天模型的主流"] }}
+/>
+
+Google 在 2018 年發表的 BERT 只用編碼器，每一層都同時參考左右兩側的上下文<Cite k="bert" />。生成文字的語言模型則走解碼器路線：Qwen3、DeepSeek-V4 與 OpenAI 的<Term id="open-weights">開放權重</Term>模型 gpt-oss，官方設定檔中的架構名稱都標示為因果語言模型（CausalLM）<Cite k="qwen3-8b-config" /><Cite k="deepseek-v4-config" /><Cite k="gpt-oss-config" />。
+
+### 注意力的代價：平方成長與 KV Cache
+
+每個 Token 都要和其他所有 Token 打分數，所以注意力分數表的大小是上下文長度的平方<Cite k="3b1b-attention" />：在每一層、每個注意力頭裡，1,000 個 Token 要算 100 萬個分數，10 萬個 Token 就是 100 億個。FlashAttention 論文也指出，自注意力的時間與記憶體複雜度都隨序列長度呈平方成長<Cite k="flashattention" />。這是<Term id="context-window">上下文視窗</Term>難以無限拉長的根本原因。
+
+生成文字時還有另一筆成本：<Term id="kv-cache">KV Cache</Term>。模型在<Term id="inference">推論</Term>時一次只產生一個 Token，但每個新 Token 都要回頭和前面所有 Token 做注意力。前面 Token 的 K、V 不會改變，於是被存起來重複使用，這就是 KV Cache。它省下重算的時間，卻要占用記憶體，而且隨上下文長度線性增加。
+
+以阿里巴巴的開放權重模型 Qwen3-8B 為例，依官方設定檔推算（36 層、8 個 KV 頭、每頭 128 維、BF16 格式每個數字 2 個位元組）<Cite k="qwen3-8b-config" />，模型本身有 82 億個參數、原生上下文為 32,768 個 Token<Cite k="qwen3-8b" />：
+
+<StatGrid
+  title="Qwen3-8B 的 KV Cache 試算"
+  items={[
+    { label: "每個 Token", value: "144 KiB", note: "2（K 與 V）× 36 層 × 8 頭 × 128 維 × 2 位元組" },
+    { label: "32,768 個 Token", value: "約 4.8 GB", note: "單一請求、原生最長上下文" },
+    { label: "若 KV 頭與查詢頭一樣多", value: "約 19 GB", note: "32 個 KV 頭；比約 16 GB 的模型權重還大" }]}
+  caption="依 Qwen3-8B 設定檔與模型卡（82 億個參數）自行推算，未計入推論框架的額外開銷。"
+/>
+
+這就是業界普遍改用 GQA（分組查詢注意力）的原因：讓多個查詢頭共用一組 K、V，品質接近標準多頭注意力，速度則接近只用一組 K、V 的作法<Cite k="gqa" />。Meta 也明確表示，Llama 3 採用 8 個 KV 頭的 GQA，就是為了提升推論速度、縮小解碼時的 KV Cache<Cite k="llama3" />。
+
+### 2025–2026 年的改良方向
+
+上下文從幾千個 Token 拉長到百萬個 Token，平方成長的注意力成了瓶頸，各家模型紛紛改造：
+
+- **讓計算更貼近硬體**：<Term id="flash-attention">FlashAttention</Term> 不改變計算結果，而是把注意力切成小塊，在 GPU 晶片上的 <Term id="sram">SRAM</Term> 裡算完，減少讀寫 <Term id="hbm">HBM</Term> 的次數；論文中 GPT-2（序列長度 1K）的訓練速度因此提升 3 倍<Cite k="flashattention" />。
+- **只看附近的字**：OpenAI 的 gpt-oss-120b 共 36 層，一半的層只看最近 128 個 Token（滑動視窗），另一半才看完整上下文<Cite k="gpt-oss-config" />。
+- **稀疏與壓縮**：2026 年 4 月推出預覽版的 DeepSeek-V4 採用混合注意力，結合「壓縮<Term id="sparse-attention">稀疏注意力</Term>」（CSA）與「高度壓縮注意力」（HCA），官方表示在 100 萬個 Token 的情境下，V4-Pro 每個 Token 的推論運算量只需前一代 V3.2 的 27%，KV Cache 只需 10%<Cite k="deepseek-v4" />。
+- **混合線性注意力**：Qwen3.5 系列最大的開放權重模型 Qwen3.5-397B-A17B 共 60 層，每 4 層只有 1 層使用一般的注意力（加上閘控的 Gated Attention），另外 3 層改用 Gated DeltaNet 這種線性注意力<Cite k="qwen35" />。這 3 層的計算量大致隨長度線性成長，只有剩下的 1 層仍是平方成長。
+- **把前饋網路換成專家**：<Term id="moe">MoE</Term>（混合專家）把前饋網路換成許多「專家」，每個 Token 只啟用其中幾位。Qwen3.5-397B-A17B 每層有 512 位專家，每個 Token 只啟用 10 位路由專家與 1 位共享專家<Cite k="qwen35" />，詳見<LearnLink id="mixture-of-experts">混合專家模型（MoE）深入</LearnLink>。
+
+<DeepDive title="深入一點：為什麼要除以 √d？注意力什麼時候變成主要成本？">
+
+**為什麼除以 √d。** 假設 Q 與 K 的每個分量都是平均 0、變異數 1 的獨立隨機數，兩者的內積是 d 項相加，變異數就會變成 d<Cite k="transformer-2017" />。維度一大，分數之間的差距被拉得很開，Softmax 幾乎把全部權重給最高分的那一個，其餘接近 0，梯度變得極小，模型難以訓練。除以 √d 正好把變異數拉回 1。原始論文每個頭是 64 維，所以分數要除以 8。
+
+**注意力何時成為主要成本。** Kaplan 等人 2020 年的縮放定律論文，把每個 Token 的前向運算量拆成兩部分<Cite k="kaplan" />：
+
+<MathTeX tex={"C_{\\mathrm{forward}}\\approx 2N+2\\,n_{\\mathrm{layer}}\\,n_{\\mathrm{ctx}}\\,d_{\\mathrm{attn}}"} display label="前向運算量約等於 2 倍參數量，加上 2 乘以層數、上下文長度與注意力寬度" />
+
+第一項與參數量 N 成正比，是「每個 Token 都要跑一遍所有權重」的成本；第二項與上下文長度成正比，就是注意力的額外成本。論文指出，只要模型寬度大於上下文長度的 1/12，第二項就只占一小部分<Cite k="kaplan" />。這個 1/12 來自論文的近似：參數量 N 約等於 12 × 層數 × 寬度²，所以當上下文長度約為寬度的 12 倍時，兩項大小相當。反過來粗估：寬度 4,096 維的模型（例如 Qwen3-8B），上下文超過約 4.9 萬個 Token 後，注意力的運算量就會追上權重本身；GPT-3 寬度 12,288 維，交叉點約在 14.7 萬個 Token。當上下文來到 100 萬個 Token，注意力就成了主要成本，這也是上一節那些改良方向的動機。
+
+**預填與解碼。** 推論分成兩個階段。<Term id="prefill">預填（Prefill）</Term>一次讀完整段提示，所有 Token 平行計算，主要受限於算力；<Term id="decode">解碼（Decode）</Term>一次只產生一個 Token，每一步都要從 HBM 讀出模型權重與整個 KV Cache，計算量不大，卻受限於記憶體頻寬。上下文越長、同時服務的使用者越多，KV Cache 就越大，HBM 的容量與頻寬也就越吃緊。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+Transformer 的每個設計細節，最後都會變成晶片、記憶體與軟體的需求：
+
+- **發明者與使用者** → <SegmentChip id="foundation-models" />：Transformer 出自 <CompanyChip id="alphabet" /> 旗下 Google 的研究團隊，Google 在第一代 <ModelChip id="google-gemini" /> 的技術報告中也說明，模型建立在 Transformer 解碼器之上<Cite k="gemini-1" />；<CompanyChip id="openai" />（<ModelChip id="openai-gpt" />、<ModelChip id="openai-gpt-oss" />）、<CompanyChip id="meta" />（<ModelChip id="meta-muse-llama" />）、<CompanyChip id="deepseek" />（<ModelChip id="deepseek" />）與 <CompanyChip id="alibaba" />（<ModelChip id="alibaba-qwen" />）的模型，差別主要在注意力的改良方式與規模。
+- **矩陣乘法的需求** → <SegmentChip id="ai-accelerators" />：注意力與前饋網路本質上都是大型矩陣乘法，2017 年的論文就是在 <CompanyChip id="nvidia" /> 的 GPU 上訓練<Cite k="transformer-2017" />。NVIDIA GPU 中專門加速矩陣運算的 <Term id="tensor-core">Tensor Core</Term>，正是為這類工作而設計，見<LearnLink id="gpu-architecture">GPU 與 AI 加速器架構</LearnLink>；注意力設計的演變也影響專用晶片怎麼做，見<TrendLink id="inference-chips-new-paradigms">推論專用晶片與後 GPU 運算範式</TrendLink>。
+- **KV Cache 吃記憶體** → <SegmentChip id="memory-storage" />：上下文越長、同時服務的使用者越多，KV Cache 就越大，必須放在 GPU 旁的 HBM 中。這是 <CompanyChip id="sk-hynix" />、<CompanyChip id="samsung-electronics" />、<CompanyChip id="micron" /> 等 HBM 供應商受惠於 AI 的原因之一，見<LearnLink id="memory-and-hbm">記憶體牆與 HBM</LearnLink> 與<TrendLink id="memory-supercycle">記憶體超級循環</TrendLink>。
+- **推論軟體** → <SegmentChip id="devtools-data-mlops" />、<SegmentChip id="cloud-neocloud" />：如何管理 KV Cache 是推論引擎的核心問題。2023 年的 vLLM 借用作業系統的記憶體分頁概念設計 PagedAttention，讓 KV Cache 幾乎沒有浪費，在相同延遲下的吞吐量比當時的系統高 2 到 4 倍<Cite k="vllm" />。vLLM 核心團隊成立的 <CompanyChip id="inferact" />，以及 SGLang 背後的 <CompanyChip id="radixark" />，都在這個領域；雲端與新雲業者則靠這些軟體，用同樣的 GPU 服務更多請求。長上下文的發展見<TrendLink id="long-context-memory">長上下文與模型記憶</TrendLink>，推論用量的成長見<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>。

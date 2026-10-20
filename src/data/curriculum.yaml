@@ -1,0 +1,61 @@
+# 學習路徑名冊（由淺入深）。FROZEN after Phase 0; changes via proposals/.
+# order: 1xx 入門 / 2xx 進階 / 3xx 深入。prereqs 必須是 order 較小的文章。
+# scene: 文章內嵌的 3D 場景（id:variant），null 表示不需要。
+tracks:
+  foundations: 基礎概念
+  models: 模型與軟體
+  hardware: 晶片與硬體
+  infra-business: 基礎設施與商業
+  society: 社會與未來
+paths:
+  - id: models
+    title: 模型線
+    slugs: [what-is-ai, how-machines-learn, neural-networks-101, what-is-llm, tokens-and-embeddings, transformer-and-attention, pretraining-to-chat, reasoning-models, multimodal-models, rag-and-vector-search, agents-and-mcp, open-vs-closed-models, scaling-laws, post-training-deep, mixture-of-experts, inference-optimization, model-evaluation]
+  - id: hardware
+    title: 硬體線
+    slugs: [what-is-ai, ai-supply-chain-map, why-gpus, how-chips-are-made, gpu-architecture, semiconductor-process-nodes, advanced-packaging-intro, memory-and-hbm, networking-for-ai, transistor-evolution, lithography-euv-high-na, advanced-packaging-deep, hbm-deep, interconnect-deep]
+  - id: business
+    title: 產業線
+    slugs: [ai-supply-chain-map, data-centers-101, cloud-and-ai-business, ai-apps-and-agents-101, training-vs-inference-economics, datacenter-power-cooling, ai-capex-economics, ai-safety-and-regulation, physical-ai-deep]
+articles:
+  # ───────── Level 1 入門 ─────────
+  - { order: 101, slug: what-is-ai, level: 1, track: foundations, title: "什麼是 AI？人工智慧、機器學習與深度學習", prereqs: [], scene: null }
+  - { order: 102, slug: ai-supply-chain-map, level: 1, track: infra-business, title: "一張圖看懂 AI 產業鏈", prereqs: [what-is-ai], scene: "chain-panorama:explore" }
+  - { order: 103, slug: how-machines-learn, level: 1, track: foundations, title: "機器如何學習：資料、模型、訓練與推論", prereqs: [what-is-ai], scene: null }
+  - { order: 104, slug: neural-networks-101, level: 1, track: foundations, title: "神經網路入門：神經元、權重與層", prereqs: [how-machines-learn], scene: "neural-net:forward" }
+  - { order: 105, slug: what-is-llm, level: 1, track: models, title: "大型語言模型是什麼：從「預測下一個字」開始", prereqs: [neural-networks-101], scene: null }
+  - { order: 106, slug: why-gpus, level: 1, track: hardware, title: "為什麼 AI 需要 GPU？", prereqs: [neural-networks-101], scene: "gpu-scale:chip" }
+  - { order: 107, slug: how-chips-are-made, level: 1, track: hardware, title: "晶片是怎麼做出來的？", prereqs: [ai-supply-chain-map], scene: "wafer-transistor:wafer" }
+  - { order: 108, slug: data-centers-101, level: 1, track: infra-business, title: "資料中心入門：AI 工廠長什麼樣子", prereqs: [why-gpus], scene: "datacenter:overview" }
+  - { order: 109, slug: cloud-and-ai-business, level: 1, track: infra-business, title: "雲端與 AI 的商業模式", prereqs: [what-is-llm], scene: null }
+  - { order: 110, slug: ai-apps-and-agents-101, level: 1, track: models, title: "AI 能做什麼？從聊天機器人到 Agent 與機器人", prereqs: [what-is-llm], scene: null }
+  # ───────── Level 2 進階 ─────────
+  - { order: 201, slug: tokens-and-embeddings, level: 2, track: models, title: "Token 與嵌入向量：模型如何讀懂文字", prereqs: [what-is-llm], scene: "embedding-space:semantic" }
+  - { order: 202, slug: transformer-and-attention, level: 2, track: models, title: "Transformer 與注意力機制", prereqs: [tokens-and-embeddings, neural-networks-101], scene: "attention:attention" }
+  - { order: 203, slug: pretraining-to-chat, level: 2, track: models, title: "從預訓練到對話助理：SFT、RLHF 與對齊", prereqs: [transformer-and-attention], scene: "train-infer:pipeline" }
+  - { order: 204, slug: reasoning-models, level: 2, track: models, title: "推理模型：讓 AI 先想再答", prereqs: [pretraining-to-chat], scene: null }
+  - { order: 205, slug: multimodal-models, level: 2, track: models, title: "多模態模型：看、聽、說、畫", prereqs: [transformer-and-attention], scene: null }
+  - { order: 206, slug: rag-and-vector-search, level: 2, track: models, title: "RAG 與向量檢索：讓模型查資料", prereqs: [tokens-and-embeddings], scene: "embedding-space:rag" }
+  - { order: 207, slug: agents-and-mcp, level: 2, track: models, title: "AI Agent 與 MCP：讓模型使用工具", prereqs: [pretraining-to-chat, rag-and-vector-search], scene: "agent-loop:loop" }
+  - { order: 208, slug: open-vs-closed-models, level: 2, track: models, title: "開放權重 vs 封閉模型", prereqs: [pretraining-to-chat], scene: "model-galaxy:galaxy" }
+  - { order: 209, slug: gpu-architecture, level: 2, track: hardware, title: "GPU 與 AI 加速器架構", prereqs: [why-gpus], scene: "gpu-scale:die" }
+  - { order: 210, slug: training-vs-inference-economics, level: 2, track: infra-business, title: "訓練與推論的經濟學", prereqs: [cloud-and-ai-business, gpu-architecture], scene: "train-infer:training" }
+  - { order: 211, slug: semiconductor-process-nodes, level: 2, track: hardware, title: "製程節點：從 7 奈米到 2 奈米代表什麼", prereqs: [how-chips-are-made], scene: "wafer-transistor:transistor" }
+  - { order: 212, slug: advanced-packaging-intro, level: 2, track: hardware, title: "先進封裝入門：CoWoS 與 Chiplet", prereqs: [semiconductor-process-nodes], scene: "cowos:cowos" }
+  - { order: 213, slug: memory-and-hbm, level: 2, track: hardware, title: "記憶體牆與 HBM", prereqs: [gpu-architecture], scene: "hbm:hbm" }
+  - { order: 214, slug: networking-for-ai, level: 2, track: hardware, title: "AI 叢集網路：Scale-up 與 Scale-out", prereqs: [data-centers-101, gpu-architecture], scene: "network:scale-up" }
+  # ───────── Level 3 深入 ─────────
+  - { order: 301, slug: scaling-laws, level: 3, track: models, title: "縮放定律與運算最適化", prereqs: [pretraining-to-chat, training-vs-inference-economics], scene: "scaling-surface:default" }
+  - { order: 302, slug: post-training-deep, level: 3, track: models, title: "後訓練深入：RLHF、DPO、RLVR 與蒸餾", prereqs: [reasoning-models], scene: null }
+  - { order: 303, slug: mixture-of-experts, level: 3, track: models, title: "混合專家模型（MoE）深入", prereqs: [transformer-and-attention, networking-for-ai], scene: "attention:moe" }
+  - { order: 304, slug: inference-optimization, level: 3, track: infra-business, title: "推論最佳化：KV Cache、量化、推測解碼與分離式推論", prereqs: [training-vs-inference-economics, memory-and-hbm], scene: "train-infer:inference" }
+  - { order: 305, slug: model-evaluation, level: 3, track: models, title: "模型評測：Benchmark、競技場與 Agent 評測", prereqs: [reasoning-models], scene: null }
+  - { order: 306, slug: transistor-evolution, level: 3, track: hardware, title: "電晶體演進：FinFET、GAA、CFET 與背面供電", prereqs: [semiconductor-process-nodes], scene: "wafer-transistor:bspdn" }
+  - { order: 307, slug: lithography-euv-high-na, level: 3, track: hardware, title: "微影深入：EUV 與 High-NA EUV", prereqs: [semiconductor-process-nodes], scene: "euv-litho:euv" }
+  - { order: 308, slug: advanced-packaging-deep, level: 3, track: hardware, title: "先進封裝深入：CoWoS-L、SoIC、混合鍵合與面板級封裝", prereqs: [advanced-packaging-intro], scene: "cowos:soic" }
+  - { order: 309, slug: hbm-deep, level: 3, track: hardware, title: "HBM 深入：TSV、堆疊與 HBM4 客製化", prereqs: [memory-and-hbm, advanced-packaging-deep], scene: "hbm:hierarchy" }
+  - { order: 310, slug: interconnect-deep, level: 3, track: hardware, title: "互連深入：SerDes、CPO 與 Scale-up 標準之爭", prereqs: [networking-for-ai], scene: "network:cpo" }
+  - { order: 311, slug: datacenter-power-cooling, level: 3, track: infra-business, title: "資料中心電力與散熱深入", prereqs: [data-centers-101, networking-for-ai], scene: "datacenter:liquid" }
+  - { order: 312, slug: ai-capex-economics, level: 3, track: infra-business, title: "AI 資本支出與雲端經濟學", prereqs: [training-vs-inference-economics], scene: "cloud-globe:globe" }
+  - { order: 313, slug: ai-safety-and-regulation, level: 3, track: society, title: "AI 安全、治理與法規", prereqs: [open-vs-closed-models], scene: null }
+  - { order: 314, slug: physical-ai-deep, level: 3, track: society, title: "實體 AI 深入：機器人、自駕與世界模型", prereqs: [multimodal-models, agents-and-mcp], scene: "physical-ai:robot" }

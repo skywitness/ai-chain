@@ -1,0 +1,324 @@
+---
+title: "NVIDIA Isaac GR00T"
+family: "Isaac GR00T N"
+kind: "robotics"
+lab: "nvidia"
+labName: "NVIDIA（輝達）"
+origin: "US"
+summary: "輝達（NVIDIA）為人形機器人開發的開放基礎模型系列，屬於視覺—語言—動作（VLA）模型：看相機畫面、理解語言指令，再直接輸出馬達動作，廠商可用少量示範資料後訓練。2025-03 發表 N1 後每 3 到 6 個月更新一次，目前主力是 30 億參數的 GR00T N1.7：2026-03 推出搶先體驗並首度提供商用授權，2026-07 轉為正式版；改用世界動作模型架構的 N2 已於 2026-03 預告，預計年底前推出。"
+strengths:
+  - "跨機體設計：同一個模型可依機體編號控制人形、雙臂與單臂等多種機器人，並支援 Unitree G1 全身控制"
+  - "小而能上機：N1.7 只有 30 億參數，以 TensorRT 執行時 Jetson AGX Thor 每步約 94 毫秒（約 11 Hz），H100 約 28 毫秒"
+  - "N1.7 權重採可商用的 NVIDIA Open Model License、程式碼採 Apache 2.0，並整合進 Hugging Face LeRobot"
+  - "與 Cosmos 世界模型、Isaac Sim／Lab 模擬及 Jetson Thor 串成從資料、訓練到部署的完整工具鏈"
+weaknesses:
+  - "評測幾乎都是 NVIDIA 自報，機器人領域缺乏可直接比較的第三方排行榜"
+  - "官方承認多任務語言遵循與分布外任務泛化仍具挑戰；N1.5 零樣本抓取新物體的成功率僅 15%"
+  - "N1 至 N1.6 只限非商業使用；宣稱大幅進步的 N2 截至 2026-10-06 尚未釋出"
+bestFor:
+  - "人形與機械臂研發團隊以預訓練模型為起點做後訓練"
+  - "學術研究與教學（LeRobot、開放人形機器人參考設計）"
+  - "需要可商用授權、又想自行部署在機器人上的公司"
+  - "搭配 Cosmos 合成資料擴充訓練"
+positioning:
+  capability: 60
+  costIndex: 15
+  openness: 0.7
+  method: "editorial"
+  asOf: "2026-10-06"
+  note: "機器人模型沒有可比較的第三方排行榜，本站評測登錄表也沒有適用指標，capability 與 costIndex 為編輯判斷，不宜與語言模型直接比較。capability 60：以旗艦 GR00T N1.7 評估，它是採用最廣的開放人形機器人基礎模型之一，跨機體、可商用並有多家廠商導入，但只有 30 億參數，官方承認多任務語言遵循與分布外泛化仍是挑戰，成績也多為自報；N2 宣稱的大幅進步尚未釋出，無法計入。costIndex 15：沒有按量計價，權重免費，30 億參數可在 Jetson AGX Thor 上約 11 Hz 執行，主要成本是機器人硬體與資料收集。openness 0.7：N1.7 權重採可商用的 NVIDIA Open Model License、程式碼採 Apache 2.0，NVIDIA 也在 Hugging Face 公開多個 GR00T 訓練資料集，但授權附有安全防護與可信任 AI 條款，且未公開完整訓練資料，介於受限授權（0.5）與寬鬆授權（0.8）之間。"
+versions:
+  - id: "gr00t-n2"
+    name: "Isaac GR00T N2"
+    released: "2026-03-16"
+    status: "announced"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "未公布"
+    architecture: "unknown"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "action"
+    availability:
+      - "self-host"
+    notes: "2026-03-16 GTC 主題演講預告，以 DreamZero 研究為基礎、改採世界動作模型架構。NVIDIA 宣稱它在新環境完成新任務的成功率是主流 VLA 的兩倍以上，並在 MolmoSpaces 與 RoboArena 通用機器人策略排行榜居首，預計 2026 年底前推出。是否開放權重、參數量、授權與輸入格式都尚未公布，本站暫依 GR00T N 系列前例列為開放權重，正式釋出前不能視為確定；截至 2026-10-06，Hugging Face 上尚無 N2 權重。"
+  - id: "gr00t-n1-7"
+    name: "Isaac GR00T N1.7（3B）"
+    released: "2026-03-16"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "NVIDIA Open Model License"
+    architecture: "hybrid"
+    params:
+      totalB: 3
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "action"
+    availability:
+      - "self-host"
+      - "on-device"
+    notes: "2026-03-16 於 GTC 以搶先體驗形式推出並提供商用授權，GitHub 於 2026-04-18 上架，2026-07-07 轉為正式版（GA）。視覺語言骨幹改為 Cosmos-Reason2-2B（Qwen3-VL 架構），動作頭為 16 層 flow matching 擴散 Transformer；預訓練加入 2 萬小時 EgoScale 人類第一人稱影片，並改用相對末端位姿動作表示。官方量測以 TensorRT 跑完整流程：H100 為 27.9 毫秒（35.9 Hz）、DGX Spark 為 98.6 毫秒（10.1 Hz）、Jetson AGX Thor 為 93.8 毫秒（10.7 Hz）。訓練使用 64 個 GB200 節點約 120 小時，官方估算耗電約 41,288 kWh、排放約 16.9 公噸二氧化碳當量。另有 LIBERO、DROID、SimplerEnv 等後訓練檢查點與手術用的 GR00T-H-N1.7。"
+  - id: "gr00t-n1-6"
+    name: "Isaac GR00T N1.6（3B）"
+    released: "2025-12-15"
+    status: "deprecated"
+    tier: "mid"
+    weights: "open-weights"
+    license: "NVIDIA OneWay Noncommercial License"
+    architecture: "hybrid"
+    params:
+      totalB: 3
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "action"
+    availability:
+      - "self-host"
+      - "on-device"
+    notes: "視覺語言骨幹改為 NVIDIA 內部的 Cosmos-2B 變體，擴散動作頭加倍至 32 層，多數機體改為預測相對動作；預訓練加入數千小時的雙臂 YAM、AgiBot Genie-1、Galaxea R1 Pro（模擬）與 Unitree G1 移動操作資料，預訓練 30 萬步。權重僅限非商業使用。官方 GitHub 主線已改為 N1.7，N1.6 列為先前版本並封存於 n1d6 分支。"
+  - id: "gr00t-n1-5"
+    name: "Isaac GR00T N1.5（3B）"
+    released: "2025-06-11"
+    status: "deprecated"
+    tier: "mid"
+    weights: "open-weights"
+    license: "NVIDIA OneWay Noncommercial License"
+    architecture: "hybrid"
+    params:
+      totalB: 3
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "action"
+    availability:
+      - "self-host"
+    notes: "視覺語言模型改用 Eagle 2.5 並在訓練中凍結，加入 FLARE 目標以便從人類第一人稱影片學習；以 1,000 張 H100 訓練 25 萬步。官方比較顯示真實 GR-1 人形機器人的語言遵循率由 N1 的 46.6% 提升到 93.3%。權重僅限非商業使用，已列為先前版本。"
+  - id: "gr00t-n1"
+    name: "Isaac GR00T N1（2B）"
+    released: "2025-03-18"
+    status: "deprecated"
+    tier: "mid"
+    weights: "open-weights"
+    license: "NVIDIA OneWay Noncommercial License"
+    architecture: "hybrid"
+    params:
+      totalB: 2
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "action"
+    availability:
+      - "self-host"
+    notes: "系列第一版，NVIDIA 稱為首個開放的通用人形機器人基礎模型，以視覺語言模型加擴散 Transformer 動作頭的雙系統架構組成；同步公開 GR00T X-Embodiment 模擬資料集。已被後續版本取代。"
+flagshipVersion: "gr00t-n1-7"
+relatedLearn:
+  - "physical-ai-deep"
+  - "multimodal-models"
+  - "ai-apps-and-agents-101"
+  - "open-vs-closed-models"
+glossary:
+  - "vla"
+  - "humanoid-robot"
+  - "physical-ai"
+  - "diffusion-model"
+  - "imitation-learning"
+  - "world-model"
+  - "synthetic-data"
+  - "sim-to-real"
+  - "edge-ai"
+  - "open-weights"
+sources:
+  - key: "nv-gtc26"
+    title: "NVIDIA and Global Robotics Leaders Take Physical AI to the Real World"
+    publisher: "NVIDIA Newsroom"
+    url: "https://nvidianews.nvidia.com/news/nvidia-and-global-robotics-leaders-take-physical-ai-to-the-real-world"
+    type: "press-release"
+    lang: "en"
+    published: "2026-03-16"
+    accessed: "2026-10-06"
+  - key: "nv-ces26"
+    title: "NVIDIA Releases New Physical AI Models as Global Partners Unveil Next-Generation Robots"
+    publisher: "NVIDIA Newsroom"
+    url: "https://nvidianews.nvidia.com/news/nvidia-releases-new-physical-ai-models-as-global-partners-unveil-next-generation-robots"
+    type: "press-release"
+    lang: "en"
+    published: "2026-01-05"
+    accessed: "2026-10-06"
+  - key: "nv-groot-ref"
+    title: "NVIDIA Announces NVIDIA Isaac GR00T Reference Humanoid Robot for Academic Research"
+    publisher: "NVIDIA Newsroom"
+    url: "https://nvidianews.nvidia.com/news/nvidia-open-humanoid-robot-reference-design"
+    type: "press-release"
+    lang: "en"
+    published: "2026-05-31"
+    accessed: "2026-10-06"
+  - key: "gh-groot"
+    title: "NVIDIA/Isaac-GR00T"
+    publisher: "NVIDIA (GitHub)"
+    url: "https://github.com/NVIDIA/Isaac-GR00T"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "gh-groot-commits"
+    title: "Commit history of README.md, NVIDIA/Isaac-GR00T"
+    publisher: "NVIDIA (GitHub)"
+    url: "https://github.com/NVIDIA/Isaac-GR00T/commits/main/README.md"
+    type: "docs"
+    note: "2026-04-18「GR00T N1.7 Release」、2026-07-07「GR00T N1.7 General Release」、2025-12-16「GR00T N1.6 Release」"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-n17"
+    title: "nvidia/GR00T-N1.7-3B"
+    publisher: "NVIDIA (Hugging Face)"
+    url: "https://huggingface.co/nvidia/GR00T-N1.7-3B"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-n16"
+    title: "nvidia/GR00T-N1.6-3B"
+    publisher: "NVIDIA (Hugging Face)"
+    url: "https://huggingface.co/nvidia/GR00T-N1.6-3B"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-groot-h"
+    title: "nvidia/GR00T-H"
+    publisher: "NVIDIA (Hugging Face)"
+    url: "https://huggingface.co/nvidia/GR00T-H"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-api-groot"
+    title: "Hugging Face Hub API: nvidia models matching GR00T"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/api/models?author=nvidia&search=GR00T"
+    type: "dataset"
+    note: "截至 2026-10-06 未列出 GR00T N2；downloads 欄位為近 30 天下載次數"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-xembodiment"
+    title: "nvidia/PhysicalAI-Robotics-GR00T-X-Embodiment-Sim"
+    publisher: "NVIDIA (Hugging Face)"
+    url: "https://huggingface.co/datasets/nvidia/PhysicalAI-Robotics-GR00T-X-Embodiment-Sim"
+    type: "dataset"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "gear-n15"
+    title: "GR00T N1.5: An Improved Open Foundation Model for Generalist Humanoid Robots"
+    publisher: "NVIDIA GEAR Lab"
+    url: "https://research.nvidia.com/labs/gear/gr00t-n1_5/"
+    type: "company-site"
+    lang: "en"
+    published: "2025-06-11"
+    accessed: "2026-10-06"
+  - key: "gear-n16"
+    title: "GR00T N1.6: An Improved Open Foundation Model for Generalist Humanoid Robots"
+    publisher: "NVIDIA GEAR Lab"
+    url: "https://research.nvidia.com/labs/gear/gr00t-n1_6/"
+    type: "company-site"
+    lang: "en"
+    published: "2025-12-15"
+    accessed: "2026-10-06"
+  - key: "arxiv-n1"
+    title: "GR00T N1: An Open Foundation Model for Generalist Humanoid Robots"
+    publisher: "NVIDIA (arXiv)"
+    url: "https://arxiv.org/abs/2503.14734"
+    type: "paper"
+    lang: "en"
+    published: "2025-03-18"
+    accessed: "2026-10-06"
+  - key: "nv-oml"
+    title: "NVIDIA Open Model License Agreement"
+    publisher: "NVIDIA"
+    url: "https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/"
+    type: "other"
+    lang: "en"
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-06"
+  checkedBy: "models-06-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+Isaac GR00T 是 <CompanyChip id="nvidia">輝達（NVIDIA）</CompanyChip>為<Term id="humanoid-robot">人形機器人</Term>開發的開放基礎模型系列，屬於 <Term id="vla">VLA</Term>（視覺—語言—動作）模型：看相機畫面、聽懂語言指令，再直接輸出馬達該怎麼動。機器人廠商可以拿它當起點，用自家機器人的少量示範資料做後訓練，不必從零開始。
+
+GR00T 模型是 NVIDIA「Isaac GR00T 平台」的一部分，平台還包括收集示範資料的 Isaac Teleop、Isaac Sim 與 Isaac Lab 模擬環境，以及在機器人上執行推論的 Jetson Thor<Cite k="nv-groot-ref" />。2025-03-18 發表的 GR00T N1 是第一版<Cite k="arxiv-n1" />，之後每 3 到 6 個月更新一次。目前主力是 2026 年 7 月正式釋出的 N1.7，下一代 N2 已在 2026 年 3 月預告<Cite k="nv-gtc26" />。
+
+## 特性分析
+
+**雙系統架構。** GR00T N1.x 由兩部分組成：視覺語言模型負責看與理解，<Term id="diffusion-model">擴散</Term> Transformer 則用 flow matching 一次產生一小段連續動作。不同機器人的關節數不同，模型以「機體編號」切換對應的輸入與輸出層，因此同一個模型能控制多種機體<Cite k="hf-n17" />。
+
+**每一代換了什麼。**
+
+- **N1.5**：視覺語言模型改用 Eagle 2.5 並在訓練中凍結，加入 FLARE 目標，能從人類第一人稱影片學習<Cite k="gear-n15" />。
+- **N1.6**：改用內部的 Cosmos-2B 變體，動作頭加倍到 32 層，預訓練加入數千小時的雙臂 YAM、AgiBot Genie-1 與 Unitree G1 移動操作資料<Cite k="gear-n16" />。
+- **N1.7**：骨幹換成 <ModelChip id="nvidia-cosmos" /> 的 Cosmos-Reason2-2B，預訓練加入 2 萬小時人類第一人稱影片，動作改用相對末端位姿表示，讓人與機器人的資料可以共用<Cite k="gh-groot" />。
+
+**小而能上機。** N1.7 只有 30 億參數。官方以 TensorRT 跑完整流程，H100 每步 27.9 毫秒（約 36 Hz），機器人用的 Jetson AGX Thor 為 93.8 毫秒（約 11 Hz），可在機器人本體上即時執行，屬於典型的<Term id="edge-ai">邊緣 AI</Term><Cite k="hf-n17" />。
+
+**授權轉向商用。** N1 到 N1.6 的權重只限非商業使用<Cite k="hf-n16" />；N1.7 改採可商用的 NVIDIA Open Model License，程式碼為 Apache 2.0<Cite k="gh-groot" />。不過該授權要求不得移除安全防護，並須遵守 NVIDIA 的可信任 AI 條款<Cite k="nv-oml" />。
+
+## 適合與不適合的用途
+
+適合：
+
+- **人形與機械臂研發團隊**：以預訓練模型為起點，用少量示範做<Term id="imitation-learning">模仿學習</Term>式的後訓練。
+- **學術研究與教學**：GR00T 已整合進 <CompanyChip id="hugging-face">Hugging Face</CompanyChip> 的 LeRobot<Cite k="nv-ces26" />；NVIDIA 也在 2026-05-31 推出以 <CompanyChip id="unitree">宇樹（Unitree）</CompanyChip> H2 Plus 為機身的開放人形機器人參考設計，Ai2、ETH Zurich 與史丹佛等機構將採用<Cite k="nv-groot-ref" />。
+- **需要商用授權的機器人公司**：<CompanyChip id="agibot">智元（AGIBOT）</CompanyChip>、LG Electronics、NEURA Robotics 等已採用 GR00T N 模型<Cite k="nv-gtc26" />。
+- **搭配合成資料**：可用世界模型生成的<Term id="synthetic-data">合成資料</Term>（DreamGen 流程）擴充訓練；透過這個流程，N1.5 在 12 個新動作上的成功率為 38.3%，N1 只有 13.1%<Cite k="gear-n15" />。
+- **手術機器人研究**：GR00T-H 是以 Open-H 資料集後訓練的手術用變體<Cite k="hf-groot-h" />。
+
+不適合：
+
+- **期待開箱即用的通用家務機器人**：NVIDIA 坦言，多任務語言遵循與分布外任務的泛化仍是挑戰<Cite k="gear-n16" />。
+- **未經驗證的安全關鍵場景**：需要另外的安全系統、測試與認證。
+- **算力很低的舊平台**：在 Jetson Orin 上直接以 PyTorch 執行只有約 2.9 Hz，加上部分 TensorRT 最佳化也只有約 4.6 Hz<Cite k="hf-n17" />。
+- **需要跨廠牌客觀比較的採購決策**：<ModelChip id="gemini-robotics" /> 與 <ModelChip id="physical-intelligence-pi" /> 等競爭者同樣缺乏統一的第三方評測，目前只能靠自家機體實測。
+
+## 版本演進
+
+| 日期 | 版本 | 重點 |
+|---|---|---|
+| 2025-03-18 | GR00T N1（2B） | 第一版開放人形機器人基礎模型，非商業授權 |
+| 2025-06-11 | GR00T N1.5（3B） | 語言遵循大幅改善，可從人類影片學習 |
+| 2025-12-15 | GR00T N1.6（3B） | 新骨幹、加大動作頭，支援移動操作 |
+| 2026-03-16 | N1.7 搶先體驗、N2 預告 | N1.7 首度提供商用授權 |
+| 2026-07-07 | GR00T N1.7 正式版 | 完整基準與部署工具 |
+| 預計 2026 年底前 | GR00T N2 | 世界動作模型架構 |
+
+N1.7 的程式碼於 2026-04-18 上架 GitHub，2026-07-07 轉為正式版<Cite k="gh-groot-commits" />。N2 以 DreamZero 研究為基礎，改用「世界動作模型」架構<Cite k="nv-gtc26" />，概念上是讓模型同時預測接下來的畫面變化與該做的動作，與<Term id="world-model">世界模型</Term>的想法相通。截至 2026-10-06，Hugging Face 上尚未出現 N2 權重<Cite k="hf-api-groot" />。NVIDIA 也持續公開 GR00T 訓練資料集，例如跨機體模擬資料集 X-Embodiment-Sim<Cite k="hf-xembodiment" />。
+
+## 評測解讀
+
+<Callout type="warn" title="機器人模型沒有共同排行榜">本站評測登錄表沒有適用於機器人的指標。機器人成績高度依賴機體、任務、示範數量與評分方式，以下數字都是 NVIDIA 自報，不能與其他公司的數字直接比較。</Callout>
+
+N1.5 與 N1 的官方比較（2025-06-11）<Cite k="gear-n15" />：
+
+| 測試 | GR00T N1 | GR00T N1.5 |
+|---|---|---|
+| 真實 GR-1 人形：語言遵循率 | 46.6% | 93.3% |
+| 真實 GR-1 人形：整體成功率 | 43.3% | 83.0% |
+| RoboCasa 模擬（每任務 30 筆示範） | 17.4% | 47.5% |
+| 10 種新物體（零樣本） | 0% | 15.0% |
+| DreamGen 12 個新動作 | 13.1% | 38.3% |
+
+- **進步明確，但絕對值仍低**：零樣本抓取新物體只有 15%；加入含新物體的人類影片後訓練可提高到 55%，說明泛化仍要靠額外資料補足。
+- **N2 的宣稱尚無法驗證**：NVIDIA 表示 N2 在新環境完成新任務的成功率是主流 VLA 的兩倍以上，並在 MolmoSpaces 與 RoboArena 排名第一<Cite k="nv-gtc26" />，但模型尚未公開。
+- **重跑也有誤差**：官方提醒，資料擴增的隨機性會讓不同次訓練的結果相差 5% 到 6%<Cite k="gh-groot" />。
+- **訓練成本可供參考**：N1.7 使用 64 個 GB200 節點訓練約 120 小時，官方估算耗電約 41,288 度、排放約 16.9 公噸二氧化碳當量<Cite k="hf-n17" />。

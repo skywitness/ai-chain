@@ -1,0 +1,88 @@
+# Proposals from the gpu-scale scene agent (scene-gpu-scale), 2026-10-07.
+# Nothing here blocks the scene: each capability is implemented locally in
+# src/three/scenes/gpu-scale/kit.ts and could move to src/three/kit/ if other scenes need it.
+
+- id: instanced-parts-with-hotspots
+  target: src/three/kit (new module, e.g. kit/InstancedParts.ts)
+  problem: >
+    Hardware scenes (gpu-scale, datacenter, cowos, network) draw hundreds of repeated parts
+    (trays, racks, bumps, SM tiles) with one InstancedMesh, but each instance belongs to a
+    different hotspot and must follow the theme. Every scene re-implements per-instance palette
+    tones, the instanceId → hotspot id resolver for ctx.picker, and the highlight repaint.
+  proposal: >
+    class InstancedParts { constructor(geo, mat, items: { matrix, tone: ColorRef, hotspot?: string }[]);
+    paint(palette, hot?: Set<string>, amount?); setMatrices(); idAt(hit) } — one draw call, theme-aware,
+    pickable via `ctx.picker.add(parts.mesh, { id: parts.idAt })`.
+  workaround: "`Inst` in src/three/scenes/gpu-scale/kit.ts."
+
+- id: hotspot-highlighter
+  target: src/three/core/hotspots.ts or a kit helper
+  problem: >
+    The default highlight (scale ×1.06) does not work for parts that sit inside other parts
+    (a tray inside a rack, an HBM stack beside a die) or for instanced subsets. Scenes need an
+    emissive / instance-colour highlight with aliases (hovering 「NVL72 機櫃」 lights all its trays).
+  proposal: >
+    Optional `highlight: { materials?: Material[]; instances?: InstancedParts[]; aliases?: string[] }`
+    on HotspotSpec, handled by the registry, re-applied on palette changes.
+  workaround: "`Highlighter` in src/three/scenes/gpu-scale/kit.ts (emissive + instance colours + aliases)."
+
+- id: hotspot-go-to-step
+  target: src/three/core/hotspots.ts + Scene3D hotspot list
+  problem: >
+    A multi-variant scene lists every hotspot in one HTML list, but a hotspot may only exist in
+    another variant (e.g. 「Tensor Core」 lives in `die` while the reader is in `chip`). Selecting it
+    currently opens a card with no 3D anchor.
+  proposal: >
+    Allow `step` (a meta.json step id) on meta.json hotspots; selecting a hotspot whose step names
+    another variant switches step first, then focuses the hotspot after the remount.
+  workaround: >
+    `crossHotspots()` registers the foreign hotspots with a related local anchor (so list hover still
+    shows the card, with a 「在「…」步驟中顯示」 hint) and an `onSelect` that dispatches
+    `scene:command { type: 'step', index }` on ctx.root.
+
+- id: front-panel-atlas
+  target: src/three/kit/canvasTex.ts
+  problem: >
+    Racks, switches and power shelves need panel detail (vents, ports, PSU fans) that follows the
+    theme without per-theme textures.
+  proposal: >
+    A grayscale "pattern atlas" helper: canvasAtlas(rows: { id, draw(g, w, h) }[]) → { texture,
+    plate(id, w, h): PlaneGeometry } whose white areas take the material / instance colour.
+  workaround: "`frontAtlas()` + `frontPlate()` in src/three/scenes/gpu-scale/kit.ts."
+
+- id: deep-zoom-camera
+  target: src/three/core/tween.ts (camera tween)
+  problem: >
+    gpu-scale zooms across scales (package 0.2 m → pod 9 m) inside one world. The camera tween
+    interpolates the orbit radius linearly, so long zooms rush at the small end.
+  proposal: >
+    Interpolate the radius in log space when r1 / r0 > 3 (or accept `ease`-per-channel options).
+  workaround: Steps zoom one level at a time (ratios ≈ 2–3), which keeps linear interpolation calm.
+
+- id: setpose-home-portrait
+  target: src/three/core/host.ts (ctx.setPose / fitPose)
+  problem: >
+    On portrait stages ctx.setPose() scales every pose by |camera.portrait| / |camera|. Passing
+    ctx.homePose (already the portrait pose there) scales it a second time, so "return to step 0"
+    lands too far away on phones (the copy-paste template and neural-net use this pattern). Also, a
+    camera tween started on mount (setStep(0) → setPose(homePose)) keeps running after a stage
+    resize, overriding the portrait pose that onResize just applied.
+  proposal: >
+    Skip fitPose when the pose is the current homePose (or add ctx.goHome(opts)), and cancel or
+    retarget a running home tween when the stage flips orientation.
+  workaround: >
+    `stepCamera()` in src/three/scenes/gpu-scale/kit.ts pre-divides the home pose like any other
+    portrait pose, skips the mount-time move at step 0, and re-frames deep steps on orientation flips.
+
+- id: label-portrait-placement
+  target: src/three/core/labels.ts (LabelSpec)
+  problem: >
+    Side labels (align 'left' / 'right' next to a rack, a die or a magnified SM) fit a 16:9 stage but
+    leave a 4:5 phone stage, and the layer then drops them (labels must lie fully inside), so a step's
+    key labels (rack tray groups, supplier roles, Tensor Cores) silently disappear on phones.
+  proposal: >
+    Optional `portrait?: { position?, align?, text? }` on LabelSpec, applied by the layer whenever the
+    stage is portrait (aspect < 1), so scenes declare a phone placement next to the desktop one.
+  workaround: >
+    `placeLabels()` in src/three/scenes/gpu-scale/kit.ts: each variant keeps the landscape spec of a
+    label plus a portrait override and re-applies them in create() and onResize().

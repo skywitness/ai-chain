@@ -1,0 +1,357 @@
+---
+title: "ElevenLabs 語音模型"
+family: "Eleven"
+kind: audio
+lab: elevenlabs
+labName: "ElevenLabs"
+origin: US
+summary: "ElevenLabs 的語音與音訊模型家族，涵蓋文字轉語音（Eleven v3、v4 與低延遲的 Flash／Turbo）、語音辨識（Scribe）與音樂生成（Eleven Music）。2026-09-28 推出的 Eleven v4 與 v4 Turbo 支援 90 種以上語言，在 Artificial Analysis 文字轉語音競技場（2026-10-06）排名第 1、2。模型全為封閉權重，透過 API 與 ElevenAgents、ElevenCreative 等自家產品提供，按字元或分鐘計價。"
+strengths:
+  - "語音自然度領先：Eleven v4 Turbo 與 v4 在 Artificial Analysis 文字轉語音競技場（94 個模型）以 Elo 1,334、1,321 分居第 1、2 名（2026-10-06）。"
+  - "可用 [laughs]、[whispers] 等行內音訊標籤與自然語言指示控制語氣、情緒與音效，v4 支援 90 種以上語言並改善口音一致性。"
+  - "延遲選擇完整：Flash v2.5 約 75 毫秒、v4 Turbo 推論延遲中位數約 100 毫秒，適合即時語音代理；v4 與 v3 則偏重表現力。"
+  - "產品線橫跨語音合成、語音辨識（Scribe v2，90 種以上語言）、配音、音效與音樂，並與 ElevenAgents 語音代理平台整合。"
+  - "音樂模型走授權路線：2026-09-10 與環球音樂（UMG）簽署多年授權與產品合作協議，Music v2 標示可商用。"
+weaknesses:
+  - "價格偏高：v4 原價每 1,000 字元 0.08 美元（每百萬字元 80 美元），約為 Gemini 3.8 Flash TTS、Qwen-Audio 等競品在 AA 榜上標價的 4–5 倍。"
+  - "封閉權重，只能透過 ElevenLabs 雲端使用，無法自行部署或微調模型本身。"
+  - "音樂模型不是強項：在 AA 音樂人聲榜，Eleven Music v2.5 以 1,012 分排第 7，落後 Suno、Mureka 與 Google Lyria。"
+  - "高擬真語音與 10 秒即可建立的聲音複製，帶來深度偽造與冒名詐騙的濫用風險。"
+bestFor:
+  - "有聲書、旁白、遊戲角色與廣告配音等重視表現力的長篇語音"
+  - "客服、電話銷售等需要低延遲的即時語音代理"
+  - "多語系影片配音與在地化"
+  - "會議、字幕與醫療紀錄的語音轉文字"
+positioning:
+  capability: 92
+  costIndex: 90
+  openness: 0
+  method: editorial
+  asOf: "2026-10-06"
+  note: "語音模型沒有 AA 智慧指數，也不按 tokens 計價，三項座標皆為編輯判斷。capability：旗艦 v4 Turbo／v4 在 AA 文字轉語音競技場（94 個模型，Elo 830–1,334，Zonos-v0.1 固定為 1,000）居第 1、2，以同榜最低至最高做最小—最大正規化為 100；但兩者 95% 信賴區間（1,315–1,353、1,303–1,339）與第 3 名 Qwen-Audio-3.1-TTS-Plus（1,274–1,310）相距不遠，且上市僅一週、票數較少，故取 92。costIndex：官方以每百萬字元計價，若直接套用 $0.05→0、$100→100 的對數公式，v4 原價 80 美元約為 97、v4 Turbo 40 美元約為 88；字元與 tokens 不等價，取 90 表示屬於高價區。全系列封閉權重，openness 為 0。"
+versions:
+  - id: eleven-flash-v2-5
+    name: "Eleven Flash v2.5"
+    released: "2024-12-18"
+    status: ga
+    tier: small
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text]
+    modalitiesOut: [audio]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "低延遲文字轉語音模型，生成延遲約 75 毫秒（不含應用與網路延遲），支援 32 種語言，單次上限 40,000 字元；另有僅支援英文的 Flash v2。API 定價每 1,000 字元 0.04 美元。舊的 Turbo v2.5／v2 已列為淘汰，官方以功能相同、延遲更低的 Flash 取代。"
+  - id: scribe-v1
+    name: "Scribe v1"
+    released: "2025-02-26"
+    status: deprecated
+    tier: specialized
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [audio]
+    modalitiesOut: [text]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "ElevenLabs 第一個語音轉文字模型，支援 99 種語言，提供字詞層級時間戳、說話者分離與笑聲等音訊事件標記。官方模型頁已列為淘汰，由 Scribe v2 取代。"
+  - id: eleven-v3
+    name: "Eleven v3"
+    released: "2025-06-03"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text]
+    modalitiesOut: [audio]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "2025-06-03 以 alpha 研究預覽推出，支援 70 種以上語言、多人對話與 [excited]、[whispers] 等音訊標籤；2026-02-02 正式 GA，官方稱數字、符號等特殊格式的朗讀錯誤率由 15.3% 降至 4.9%。單次上限 5,000 字元，API 定價每 1,000 字元 0.08 美元。官方模型頁現列為前一代、已由 v4 取代，但仍可使用。AA 文字轉語音競技場 Elo 1,174，第 18 名（2026-10-06）。"
+  - id: scribe-v2
+    name: "Scribe v2／v2 Realtime／v2 Medical"
+    released: "2026-01-09"
+    status: ga
+    tier: specialized
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [audio]
+    modalitiesOut: [text]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "批次轉錄模型，強化長音訊、停頓與靜音段落的穩定度，支援最多 100 個關鍵詞提示與實體偵測，支援 90 種以上語言。另有延遲約 150 毫秒的 Scribe v2 Realtime，以及 2026-09-11 GA 的醫療版 Scribe v2 Medical。API 定價：Scribe v2 每小時 0.22 美元、Realtime 每小時 0.39 美元。"
+  - id: eleven-v3-conversational
+    name: "Eleven v3 Conversational"
+    released: "2026-02-10"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text]
+    modalitiesOut: [audio]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "以 Eleven v3 為基礎、針對即時對話最佳化的版本，隨 ElevenAgents 的 Expressive Mode 推出，可跨回合維持對話脈絡並調整語氣；延遲約 280 毫秒，API 定價每 1,000 字元 0.04 美元。AA 文字轉語音競技場 Elo 1,203，第 15 名（2026-10-06）。"
+  - id: eleven-music-v1
+    name: "Eleven Music"
+    released: "2025-08-05"
+    status: ga
+    tier: specialized
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text]
+    modalitiesOut: [audio]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "以自然語言提示生成含人聲或純器樂的完整歌曲，可分段編輯歌詞與段落，支援英、西、德、日等多種語言。官方模型頁仍列出此模型（music_v1），並標示已被 v2 與 v2.5 超越（outclassed）。AA 音樂器樂榜 Elo 1,021（第 7 名）、人聲榜約 1,000 分，與榜單錨點 MiniMax Music 3.0 相當（2026-10-06 讀取）。"
+  - id: eleven-music-v2
+    name: "Eleven Music v2"
+    released: "2026-05-26"
+    status: ga
+    tier: specialized
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text]
+    modalitiesOut: [audio]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "改善人聲、配器與編曲，支援單曲內切換曲風、快速饒舌與分段重新生成（inpainting）；官方稱與藝人、唱片公司與發行商合作開發，生成曲目可商用。API 音樂生成定價每分鐘 0.15 美元，單次最長 5 分鐘。"
+  - id: eleven-music-v2-5
+    name: "Eleven Music v2.5"
+    released: "2026-09-14"
+    status: ga
+    tier: specialized
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text]
+    modalitiesOut: [audio]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "官方模型頁稱為目前最先進的音樂模型；發布日期取自 API 開始支援 music_v2_5 的更新紀錄日。AA 音樂人聲榜 Elo 1,012（第 7 名）、器樂榜 1,002（第 12 名），2026-10-06 讀取。"
+  - id: eleven-v4
+    name: "Eleven v4"
+    released: "2026-09-28"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text]
+    modalitiesOut: [audio]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "全新架構的文字轉語音模型，支援 90 種以上語言，強化語氣、節奏與情緒詮釋、多人對話的連貫性與 IPA 音標發音；快速聲音複製只需 10 秒音訊，並新增專業聲音複製（PVC）。單次上限 10,000 字元。API 原價每 1,000 字元 0.08 美元（2026-10-12 前優惠價 0.022 美元）。AA 文字轉語音競技場 Elo 1,321，第 2 名（2026-10-06）。官方盲測稱約 75% 聽眾偏好 v4 勝過 Cartesia Sonic 3.6、Inworld TTS-2 與 Gemini 3.8 Flash／Flash-Lite TTS。"
+  - id: eleven-v4-turbo
+    name: "Eleven v4 Turbo"
+    released: "2026-09-28"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text]
+    modalitiesOut: [audio]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "v4 的低延遲版本，推論延遲中位數約 100 毫秒、以 WebSocket 串流時首段語音時間中位數約 150 毫秒（官方 2026-09 量測，不含網路延遲），官方稱與 ElevenAgents 語音代理平台作為同一系統共同最佳化，支援 90 種以上語言。API 原價每 1,000 字元 0.04 美元（2026-10-12 前優惠價 0.011 美元）。AA 文字轉語音競技場 Elo 1,334（95% 信賴區間 1,315–1,353），第 1 名（2026-10-06）。"
+flagshipVersion: eleven-v4
+relatedLearn: [multimodal-models, ai-apps-and-agents-101, model-evaluation]
+glossary: [elo-rating, latency, agent, deepfake, multimodal]
+sources:
+  - key: el-models
+    title: "Models — ElevenLabs Documentation"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/docs/overview/models"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: el-pricing
+    title: "ElevenLabs API Pricing"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/pricing/api"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "v4 與 v4 Turbo 標示 2026-10-12 前 72% 優惠（優惠價 0.022／0.011 美元），已以 Wayback Machine 2026-10-09 快照核對；優惠結束後頁面僅列原價"
+  - key: el-v4
+    title: "Introducing Eleven v4, our most emotive model"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/blog/eleven-v4"
+    type: press-release
+    lang: en
+    published: "2026-09-28"
+    accessed: "2026-10-06"
+  - key: el-v3-alpha
+    title: "Introducing Eleven v3 (alpha)"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/blog/eleven-v3"
+    type: press-release
+    lang: en
+    published: "2025-06-03"
+    accessed: "2026-10-06"
+  - key: el-v3-ga
+    title: "Eleven v3 is Now Generally Available"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/blog/eleven-v3-is-now-generally-available"
+    type: press-release
+    lang: en
+    published: "2026-02-02"
+    accessed: "2026-10-06"
+  - key: el-expressive
+    title: "Introducing Expressive Mode for ElevenAgents"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/blog/introducing-expressive-mode"
+    type: press-release
+    lang: en
+    published: "2026-02-10"
+    accessed: "2026-10-06"
+  - key: el-flash
+    title: "Meet Flash"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/blog/meet-flash"
+    type: press-release
+    lang: en
+    published: "2024-12-18"
+    accessed: "2026-10-06"
+  - key: el-scribe
+    title: "Meet Scribe"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/blog/meet-scribe"
+    type: press-release
+    lang: en
+    published: "2025-02-26"
+    accessed: "2026-10-06"
+  - key: el-scribe-v2
+    title: "Introducing Scribe v2"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/blog/introducing-scribe-v2"
+    type: press-release
+    lang: en
+    published: "2026-01-09"
+    accessed: "2026-10-06"
+  - key: el-music
+    title: "Eleven Music is here"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/blog/eleven-music-is-here"
+    type: press-release
+    lang: en
+    published: "2025-08-05"
+    accessed: "2026-10-06"
+  - key: el-music-v2
+    title: "Introducing Music v2"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/blog/introducing-music-v2"
+    type: press-release
+    lang: en
+    published: "2026-05-26"
+    accessed: "2026-10-06"
+  - key: el-changelog
+    title: "ElevenLabs Changelog"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/docs/changelog"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "2026-09-14 API 支援 music_v2_5；2026-09-11 Scribe v2 Medical GA；2026-09-28 v4 上線"
+  - key: el-umg
+    title: "Universal Music Group and ElevenLabs announce multi-year strategic agreement"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/blog/umg"
+    type: press-release
+    lang: en
+    published: "2026-09-10"
+    accessed: "2026-10-06"
+  - key: el-arr
+    title: "ElevenLabs crosses $500M ARR as it welcomes new investors including BlackRock, NVIDIA, Jamie Foxx and Eva Longoria"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/blog/500m-arr-and-new-investors"
+    type: press-release
+    lang: en
+    published: "2026-05-05"
+    accessed: "2026-10-06"
+  - key: el-tender
+    title: "ElevenLabs valuation increases to $22 billion fueled by enterprise demand for conversational agents"
+    publisher: "ElevenLabs"
+    url: "https://elevenlabs.io/blog/tender-22bn"
+    type: press-release
+    lang: en
+    published: "2026-09-30"
+    accessed: "2026-10-06"
+  - key: aa-tts
+    title: "Text to Speech Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/text-to-speech/leaderboard"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "94 個模型；Elo 以 Zonos-v0.1 固定為 1,000；排名依 Speech Arena 使用者盲測投票"
+  - key: aa-music-vocal
+    title: "AA-Music-Vocal v1.1 Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/music/leaderboard/vocals"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "13 個模型；Elo 以 MiniMax Music 3.0 固定為 1,000；由招募評審盲測"
+  - key: aa-music-inst
+    title: "AA-Music-Instrumental v1.1 Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/music/leaderboard/instrumental"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: models-15
+  checkedBy: "models-15-check"
+  checkedOn: "2026-10-06"
+  notes: "版本日期、語言數、延遲、字元上限與狀態已對照 ElevenLabs 模型文件、更新紀錄與各發表文；API 價格對照官方定價頁，v4／v4 Turbo 的 72% 限時優惠以 Wayback Machine 2026-10-09 快照核對；ARR、估值與 UMG 協議對照官方部落格。AA 文字轉語音榜與音樂榜數字為 2026-10-06 讀取值；2026-10-17 查核時 TTS 榜已增為 97 個模型（v4 Turbo 1,330、v4 1,329，仍居第 1、2），音樂榜分數小幅變動、名次大致不變，下次更新時一併刷新。"
+---
+
+## 系列概覽
+
+<CompanyChip id="elevenlabs">ElevenLabs</CompanyChip> 是專做語音 AI 的公司，模型家族統稱 Eleven，涵蓋三條產品線：文字轉語音（TTS）、語音轉文字（Scribe）與音樂生成（Eleven Music）。它不像通用大型語言模型那樣以對話能力取勝，而是把「聲音聽起來像不像真人、能不能即時回應」做到極致，再包裝成 API 與 ElevenAgents（語音代理）、ElevenCreative（創作工具）等產品。
+
+2026-09-28 推出的 Eleven v4 與 v4 Turbo 是目前旗艦，官方說明採用全新架構，支援 90 種以上語言<Cite k="el-v4" />。公司營運也在擴大：2025 年底年化經常性營收（ARR）為 3.5 億美元，2026 年前四個月已超過 5 億美元<Cite k="el-arr" />；2026-09 完成 3 億美元的員工持股收購（tender offer），對應估值 220 億美元，約為同年 2 月 D 輪估值的兩倍，企業客戶占營收 55%<Cite k="el-tender" />。
+
+## 特性分析
+
+- **可「導演」的語音**：從 v3 開始可在文字中插入 [laughs]、[whispers] 等音訊標籤，或用自然語言描述語氣；v4 宣稱更準確地遵循這些指示，並改善多人對話中說話者的一致性與 IPA 音標發音<Cite k="el-v4" />。
+- **延遲分層**：Flash v2.5 約 75 毫秒<Cite k="el-flash" />、v4 Turbo 推論延遲中位數約 100 毫秒、v3 Conversational 約 280 毫秒，v4 與 v3 則以表現力為主<Cite k="el-models" />。這種分層讓開發者在<Term id="latency">延遲</Term>與自然度之間取捨。
+- **聲音複製門檻低**：v4 的快速聲音複製只需 10 秒音訊，並新增專業聲音複製<Cite k="el-v4" />。這同時是賣點與風險：高擬真語音可被用於<Term id="deepfake">深度偽造</Term>與冒名詐騙。
+- **不只朗讀**：Scribe v2 可指定最多 100 個關鍵詞，讓品牌名與專有名詞的轉錄更準確，並內建實體偵測<Cite k="el-scribe-v2" />；Eleven Music v2 支援在同一首歌內切換曲風、分段重新生成，官方稱與藝人及唱片公司合作開發、生成曲目可商用<Cite k="el-music-v2" />。
+- **按字元計價**：TTS 以每 1,000 字元計價，v4 原價 0.08 美元、v4 Turbo 0.04 美元（2026-10-12 前有 72% 優惠），Scribe v2 每小時 0.22 美元，音樂每分鐘 0.15 美元<Cite k="el-pricing" />。這類計價無法直接換算成語言模型的每百萬 tokens 價格。
+
+## 適合與不適合的用途
+
+**適合**：有聲書、遊戲角色、廣告旁白等需要情緒起伏的長篇內容；客服、電話銷售等需要即時回應的<Term id="agent">語音代理</Term>，可搭配 v4 Turbo 或 Flash；多語系配音與在地化；以 Scribe v2 做會議紀錄、字幕與醫療轉錄<Cite k="el-scribe-v2" />。
+
+**不適合**：預算敏感的大量朗讀，AA 榜上的前段班競品如 Gemini 3.8 Flash TTS 標價每百萬字元 16.5 美元、Qwen-Audio-3.1-TTS-Plus 為 19.3 美元，v4 原價約為其 4–5 倍<Cite k="aa-tts" />；需要自行部署或客製模型權重的場景（全系列封閉）；以音樂為主要需求的團隊，Eleven Music 的評測名次落後專注音樂的模型<Cite k="aa-music-vocal" />。
+
+## 版本演進
+
+| 版本 | 時間 | 重點 |
+|---|---|---|
+| Flash v2.5 | 2024-12-18 | 約 75 毫秒的低延遲模型，32 種語言 |
+| Scribe v1 | 2025-02-26 | 第一個語音辨識模型，99 種語言；現已淘汰 |
+| Eleven v3（alpha） | 2025-06-03 | 音訊標籤、多人對話；2026-02-02 GA |
+| Eleven Music | 2025-08-05 | 文字生成完整歌曲 |
+| Scribe v2 | 2026-01-09 | 長音訊穩定度、關鍵詞提示 |
+| v3 Conversational | 2026-02-10 | 即時對話版 v3 |
+| Music v2／v2.5 | 2026-05-26／2026-09-14 | 人聲與編曲改善；v2.5 為 API 支援日 |
+| Eleven v4／v4 Turbo | 2026-09-28 | 新架構、90 種以上語言 |
+
+v3 從 alpha 到 GA 花了 8 個月，官方稱 GA 版在數字、網址、化學式等特殊格式的朗讀錯誤率由 15.3% 降到 4.9%<Cite k="el-v3-ga" />。音樂線則轉向授權合作，2026-09-10 與環球音樂簽署多年授權協議，是 ElevenLabs 第一份主要唱片公司合約<Cite k="el-umg" />。
+
+## 評測解讀
+
+語音與音樂模型沒有標準答案的題庫，主流做法是讓人盲聽兩段音訊選出偏好，再換算成 <Term id="elo-rating">Elo 分數</Term>。截至 2026-10-06，Artificial Analysis 文字轉語音榜共 94 個模型，Eleven v4 Turbo 以 1,334 分、v4 以 1,321 分居第 1、2 名，第 3 名阿里巴巴 Qwen-Audio-3.1-TTS-Plus 為 1,292 分；較舊的 v3 Conversational 與 v3 分居第 15、18 名<Cite k="aa-tts" />。解讀時要注意三點：第一，v4 上市僅一週，票數約 1,600–1,900，少於許多較舊模型的 4,000 票以上，前兩名的 95% 信賴區間彼此重疊；第二，這個榜由網站使用者比較同一段文字的兩個生成結果，衡量的是聽感偏好，不包含延遲、長篇穩定度與價格；第三，官方「約 75% 聽眾偏好 v4」的數字是原廠自行設計的盲測，比較對象由原廠挑選<Cite k="el-v4" />。
+
+音樂方面，AA 音樂榜改由招募的評審盲聽，Eleven Music v2.5 在人聲榜排第 7（1,012 分）、器樂榜排第 12（1,002 分），落後 Suno v6（1,142 分）<Cite k="aa-music-vocal" /><Cite k="aa-music-inst" />。這兩個榜的 Elo 錨點與評審群體不同，分數不能跨榜比較。

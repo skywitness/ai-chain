@@ -1,0 +1,60 @@
+# Proposals from the train-infer scene agent (scene-train-infer), 2026-10-09.
+# Nothing here blocks the scene: each item has a local workaround in src/three/scenes/train-infer/.
+
+- id: label-set-idempotent
+  target: src/three/core/labels.ts (LabelHandle.set)
+  severity: minor (performance / reduced-motion correctness)
+  problem: >
+    LabelHandle.set() always invalidates the frame, even when the patch equals the current spec.
+    A scene that refreshes a caption from its update() (a phase caption such as
+    「Decode：每步替每個請求產生 1 個 token」) keeps a demand loop rendering forever under reduced
+    motion, so the test "frames stop increasing" fails unless every call site diffs by hand.
+  proposal: >
+    Make set() compare the patch with the stored spec (shallow, arrays element-wise) and return
+    without invalidating when nothing changed.
+  workaround: common.ts `guarded()` wraps every handle the scene creates.
+
+- id: label-groups
+  target: src/three/core/labels.ts (ctx.labels.group())
+  problem: >
+    Scenes with several sub-dioramas or step-dependent annotations show and hide sets of labels
+    together (train-infer hides a whole zone's labels when the camera leaves it; some labels only
+    belong to one guided step). Each scene re-implements the bookkeeping.
+  proposal: >
+    `const g = ctx.labels.group(); g.add(spec, when?: (step) => boolean); g.setVisible(on);
+    g.setStep(i)` — the group owns its handles and removes them on dispose.
+  workaround: common.ts `LabelSet` (add / sync(on, step)).
+
+- id: multi-zone-variants
+  target: src/three/core/hotspots.ts + host.ts
+  problem: >
+    train-infer keeps its three variants as three dioramas on one table and flies the camera
+    between them (setVariant handled in place). Hotspots of the zones not in view stay in the HTML
+    list; choosing one must switch variant first, wait for the camera to arrive, then select it.
+    Same need as proposals/scene-cowos.yaml `cross-variant-hotspots`.
+  proposal: >
+    Support `variant?: string` on HotspotSpec / meta.json hotspots. On list click or
+    scene:command focus/select for a hotspot of another variant, the host switches variant and
+    replays focus + select after the instance's setVariant/setStep.
+  workaround: index.ts `makeEnv().register` wraps card/onSelect (card says which 視角 it lives in;
+    onSelect dispatches the variant command and selects once the camera settles).
+
+- id: ribbon-line
+  target: src/three/kit/Ribbon.ts
+  problem: >
+    WebGL ignores LineBasicMaterial.linewidth, so a chart curve drawn with Line is 1 px thin and
+    hard to read on high-DPR screens; a growing curve (loss going down step by step) needs a
+    thick, palette-coloured polyline whose visible length can change cheaply.
+  proposal: >
+    `new Ribbon({ points, width, plane: 'xy' | 'billboard' })` with `.setProgress(k)` (drawRange)
+    and a palette-bound material, one draw call.
+  workaround: training.ts `ribbonGeometry()` (flat XY ribbon + setDrawRange).
+
+- id: floor-grid
+  target: src/three/kit/Floor.ts
+  problem: >
+    Many dioramas want the same calm floor: a square grid whose lines fade out radially plus a soft
+    contact disc, themed for light and dark.
+  proposal: >
+    `new Floor({ radius, step, y })` → `{ group, setPalette(p) }` (2 draw calls).
+  workaround: common.ts `makeFloor()`.

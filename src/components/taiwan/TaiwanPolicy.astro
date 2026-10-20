@@ -1,0 +1,337 @@
+---
+/**
+ * 「政策與風險」 for /taiwan/: a lead card for the taiwan-ai-policy trend (its description, horizon and
+ * milestones when the article exists) plus related policy trends, then four risk cards that link to the
+ * trend articles discussing them. Qualitative only; numbers live on the linked pages.
+ *   <TaiwanPolicy trends={await getTrendViews()} />
+ */
+import Icon from '../ui/Icon.astro';
+import Badge from '../ui/Badge.astro';
+import { CONFIDENCE_META, HORIZON_META, MILESTONE_STATUS_META, isPast, milestoneDateLabel, yearsLabel, type TrendView } from '../trend/trend-meta';
+import { trendHref } from '../../lib/paths';
+
+interface Props {
+  trends: readonly TrendView[];
+  class?: string | undefined;
+}
+const { trends, class: className } = Astro.props;
+const byId = new Map(trends.map((t) => [t.id, t]));
+const lead = byId.get('taiwan-ai-policy');
+const policyRelated = ['ai-regulation-global', 'sovereign-ai'].map((id) => byId.get(id)).filter((t): t is TrendView => !!t);
+
+const RISKS = [
+  {
+    title: '地緣政治與出口管制',
+    text: '先進晶片、設備與 AI 伺服器的出口規定持續調整，直接影響台廠能出貨給哪些客戶、要在哪裡設廠，也牽動中國市場的營收比重。',
+    trends: ['export-controls-us-china', 'china-self-sufficiency'],
+  },
+  {
+    title: '電力與用水',
+    text: '晶圓廠與 AI 資料中心都是用電、用水大戶。穩定供電、綠電取得與電價，是在台灣擴產與設置算力中心的前提條件。',
+    trends: ['power-bottleneck-onsite-generation', 'datacenter-local-impact'],
+  },
+  {
+    title: '產能與客戶集中',
+    text: '先進製程與先進封裝集中在少數廠區，伺服器代工也高度仰賴少數雲端大客戶；任何一端的變化，都會沿著供應鏈被放大。',
+    trends: ['cowos-capacity-panel-level', 'hyperscaler-capex', 'custom-asic-rise'],
+  },
+  {
+    title: '投資循環與需求波動',
+    text: 'AI 基礎設施投資擴張得很快，一旦需求、融資或庫存出現變化，記憶體、零組件等循環性較強的環節通常最先感受到。',
+    trends: ['ai-infra-financing-bubble', 'memory-supercycle'],
+  },
+].map((r) => ({ ...r, links: r.trends.map((id) => byId.get(id)).filter((t): t is TrendView => !!t) }));
+
+// 「近期」: up to two milestones before the data date and the next ones after it (milestones are date-sorted).
+const allMs = lead?.milestones ?? [];
+const firstAhead = allMs.findIndex((m) => !isPast(m.date));
+const msStart = Math.max(0, (firstAhead < 0 ? allMs.length : firstAhead) - 2);
+const leadMilestones = allMs.slice(msStart, msStart + 4);
+---
+
+<div class:list={['tp', className]}>
+  {
+    lead && (
+      <article class:list={['tp-lead', { 'tp-lead--pending': !lead.hasEntry }]}>
+        <div class="tp-lead__main">
+          <p class="tp-lead__kicker">
+            <Icon name="book" /> 政策 · 延伸閱讀
+          </p>
+          <h3 class="tp-lead__title">
+            <a href={lead.href}>{lead.title}</a>
+          </h3>
+          <p class="tp-lead__desc">
+            {lead.description ??
+              '這篇趨勢分析正在整理中，會說明台灣在 AI 算力、資料、人才與法規上的政策方向，並列出時間表與觀察指標。'}
+          </p>
+          <div class="tp-lead__badges">
+            {lead.horizon && (
+              <Badge tone="info">
+                {`${HORIZON_META[lead.horizon].label} ${yearsLabel(lead.horizonYears)}`}
+              </Badge>
+            )}
+            {lead.confidence && <Badge tone={CONFIDENCE_META[lead.confidence].tone}>信心 {CONFIDENCE_META[lead.confidence].label}</Badge>}
+            {!lead.hasEntry && <Badge tone="estimate">內容整理中</Badge>}
+          </div>
+          {lead.hasEntry && (
+            <a class="tp-lead__cta" href={lead.href}>
+              閱讀趨勢分析
+              <Icon name="arrow-right" />
+            </a>
+          )}
+        </div>
+        {leadMilestones.length > 0 && (
+          <div class="tp-lead__ms">
+            <p class="tp-lead__ms-h">近期里程碑</p>
+            <ol class="tp-lead__ms-list" role="list">
+              {leadMilestones.map((m) => (
+                <li>
+                  <span class="tp-lead__ms-date">
+                    {milestoneDateLabel(m.date)} · {MILESTONE_STATUS_META[m.status].label}
+                  </span>
+                  <span>{m.label}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+        {policyRelated.length > 0 && (
+          <div class:list={['tp-lead__more', { 'tp-lead__more--side': leadMilestones.length === 0 }]}>
+            <p class="tp-lead__ms-h">相關政策趨勢</p>
+            <ul class="tp-lead__more-list" role="list">
+              {policyRelated.map((t) => (
+                <li>
+                  <a href={t.href}>{t.title}</a>
+                  {!t.hasEntry && <span class="tp-soon">整理中</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </article>
+    )
+  }
+
+  <ul class="tp-risks" role="list">
+    {
+      RISKS.map((r) => (
+        <li class="tp-risk">
+          <h3 class="tp-risk__title">
+            <Icon name="warn" />
+            {r.title}
+          </h3>
+          <p class="tp-risk__text">{r.text}</p>
+          {r.links.length > 0 && (
+            <ul class="tp-risk__links" role="list" aria-label={`延伸閱讀：${r.title}`}>
+              {r.links.map((t) => (
+                <li>
+                  <a href={trendHref(t.id)}>{t.title}</a>
+                  {!t.hasEntry && <span class="tp-soon">整理中</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<style>
+  .tp {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .tp-lead {
+    display: grid;
+    gap: var(--space-5);
+    padding: var(--space-5);
+    border: 1px solid color-mix(in srgb, var(--scene-tw-accent) 30%, var(--c-border));
+    border-radius: var(--radius-l);
+    background:
+      radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--scene-tw-accent) 9%, transparent), transparent 55%),
+      var(--c-bg-elev);
+  }
+  @media (min-width: 900px) {
+    .tp-lead {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      padding: var(--space-6);
+    }
+    .tp-lead__more:not(.tp-lead__more--side) {
+      grid-column: 1 / -1;
+    }
+  }
+  /* without milestones the related trends take the side column, styled like the milestone box */
+  .tp-lead__more--side {
+    align-self: start;
+    align-content: start;
+    padding: var(--space-4);
+    border-radius: var(--radius-m);
+    background: var(--c-bg);
+  }
+  .tp-lead__more--side .tp-lead__more-list {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .tp-lead p {
+    margin: 0;
+  }
+  .tp-lead__main {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+  }
+  .tp-lead__kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-muted);
+  }
+  .tp-lead__title {
+    margin: 0;
+    font-size: var(--fs-xl);
+    line-height: 1.35;
+  }
+  .tp-lead__title a {
+    color: var(--c-fg);
+    text-decoration: none;
+  }
+  .tp-lead__title a:hover {
+    color: var(--c-link);
+    text-decoration: underline;
+  }
+  .tp-lead__desc {
+    color: var(--c-fg-muted);
+    line-height: 1.8;
+    max-width: var(--measure);
+  }
+  .tp-lead__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .tp-lead__badges:empty {
+    display: none;
+  }
+  .tp-lead__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    justify-self: start;
+    min-block-size: var(--tap);
+    padding: 0 1.1em;
+    border-radius: var(--radius-m);
+    background: var(--c-accent);
+    color: var(--c-accent-fg);
+    font-weight: var(--fw-semibold);
+    text-decoration: none;
+  }
+  .tp-lead__cta:hover {
+    background: color-mix(in srgb, var(--c-accent) 88%, var(--c-fg));
+    color: var(--c-accent-fg);
+  }
+  .tp-lead__ms {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+    padding: var(--space-4);
+    border-radius: var(--radius-m);
+    background: var(--c-bg);
+  }
+  .tp-lead__ms-h {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-muted);
+  }
+  .tp-lead__ms-list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tp-lead__ms-list li {
+    display: grid;
+    gap: 2px;
+    font-size: var(--fs-s);
+    line-height: 1.6;
+  }
+  .tp-lead__ms-date {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .tp-lead__more {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .tp-lead__more-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-s);
+  }
+
+  .tp-risks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tp-risk {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5) var(--space-5);
+    border: 1px solid var(--c-border);
+    border-block-start: 3px solid var(--c-warn);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .tp-risk__title {
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
+    margin: 0;
+    font-size: var(--fs-m);
+  }
+  .tp-risk__title :global(svg) {
+    color: var(--c-warn);
+    flex: none;
+  }
+  .tp-risk__text {
+    margin: 0;
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .tp-risk__links {
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-s);
+    line-height: 1.6;
+  }
+  .tp-risk__links a::before {
+    content: '→ ';
+    content: '→ ' / ''; /* decorative */
+    color: var(--c-fg-subtle);
+  }
+  .tp-soon {
+    margin-inline-start: 0.5em;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    white-space: nowrap;
+  }
+</style>

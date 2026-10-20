@@ -1,0 +1,401 @@
+---
+title: "多模態模型：看、聽、說、畫"
+subtitle: "把圖片、聲音與影片也變成 Token，交給同一個模型處理"
+description: "多模態模型能看圖、聽聲音、看影片，也能開口說話與生成圖片。本文說明圖片如何被切成視覺 Token、CLIP 如何讓圖文對齊、兩種接線架構、端到端語音為何更快，以及擴散與自迴歸生成，和它們對算力與產業鏈的影響。"
+level: 2
+order: 205
+track: models
+prerequisites: [transformer-and-attention]
+next: [rag-and-vector-search, agents-and-mcp, physical-ai-deep]
+relatedSegments: [foundation-models, ai-accelerators, cloud-neocloud, devtools-data-mlops, apps-agents, physical-ai]
+relatedCompanies: [openai, alphabet, anthropic, meta, alibaba, mediatek, kuaishou, black-forest-labs, midjourney, runway, elevenlabs, nvidia, scale-ai, essilorluxottica, apple, qualcomm]
+relatedModels: [google-gemini, openai-gpt, anthropic-claude, meta-muse-llama, alibaba-qwen, mediatek-breeze, openai-gpt-image, google-nano-banana, google-veo, kling, bfl-flux, midjourney, elevenlabs, gemini-robotics]
+relatedTrends: [inference-demand, world-models-spatial-intelligence, edge-ai-devices, copyright-data-licensing, physical-ai-commercialization]
+glossary:
+  - multimodal
+  - token
+  - transformer
+  - llm
+  - token-pricing
+  - context-window
+  - embedding
+  - moe
+  - latency
+  - open-weights
+  - diffusion-model
+  - hallucination
+  - deepfake
+  - ai-watermark
+  - inference
+  - gpu
+  - data-labeling
+  - ai-glasses
+  - npu
+  - vla
+scenes: []
+keyTakeaways:
+  - "多模態模型能處理圖片、聲音與影片，關鍵是把各種資料都轉成 Token，交給同一個模型處理。"
+  - "圖片會被切成小方塊變成視覺 Token：一張約 100 萬像素的圖，約等於 1,100 到 1,300 個 Token。"
+  - "CLIP 用 4 億組網路圖文，把圖片與文字放進同一個向量空間，是以文搜圖與看圖理解的基礎。"
+  - "架構有兩路：外接視覺編碼器加轉接層（如 LLaVA），或從頭混合訓練的原生多模態（如 Gemini）。"
+  - "端到端語音模型把對話延遲從數秒降到約 0.3 秒，也保留語氣、背景聲音等資訊。"
+  - "生成圖片與影片主要靠擴散或自迴歸模型；影片 Token 量龐大，推高算力需求並帶來深偽風險。"
+estimatedMinutes: 15
+sources:
+  - key: vit
+    title: "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale"
+    publisher: "arXiv（Dosovitskiy et al., Google Research, Brain Team）"
+    url: "https://arxiv.org/abs/2010.11929"
+    type: paper
+    lang: en
+    published: "2020-10-22"
+    accessed: "2026-10-15"
+    note: "把圖片切成固定大小的 patch 序列、攤平後線性投影並加上位置嵌入，直接送進標準 Transformer；patch 數 N = HW/P²，也是 Transformer 的輸入序列長度；序列長度與 patch 邊長的平方成反比。"
+  - key: clip
+    title: "Learning Transferable Visual Models From Natural Language Supervision"
+    publisher: "arXiv（Radford et al., OpenAI）"
+    url: "https://arxiv.org/abs/2103.00020"
+    type: paper
+    lang: en
+    published: "2021-02-26"
+    accessed: "2026-10-15"
+    note: "以網路蒐集的 4 億組（圖片, 文字）預訓練，任務是預測哪段說明配哪張圖；批次大小 32,768；讓 N 組正確配對的餘弦相似度最大、其餘錯誤配對最小；零樣本 ImageNet 準確率追平原始 ResNet-50（76.2%），完全不用其 128 萬張訓練圖片。"
+  - key: llava
+    title: "Visual Instruction Tuning"
+    publisher: "arXiv（Liu, Li, Wu, Lee；UW–Madison、Microsoft Research、Columbia University）"
+    url: "https://arxiv.org/abs/2304.08485"
+    type: paper
+    lang: en
+    published: "2023-04-17"
+    accessed: "2026-10-15"
+    note: "LLaVA 以 CLIP 視覺編碼器 ViT-L/14 接上語言模型 Vicuna，中間以一個可訓練的投影矩陣 W 轉成詞向量空間；第一階段凍結編碼器與語言模型，只用過濾後的 59.5 萬組 CC3M 圖文訓練 W，論文稱可視為替凍結的語言模型訓練相容的視覺分詞器；第二階段用 GPT-4 產生的 15.8 萬筆圖文指令資料微調。"
+  - key: flamingo
+    title: "Flamingo: a Visual Language Model for Few-Shot Learning"
+    publisher: "arXiv（Alayrac et al., DeepMind）"
+    url: "https://arxiv.org/abs/2204.14198"
+    type: paper
+    lang: en
+    published: "2022-04-29"
+    accessed: "2026-10-15"
+    note: "提出橋接預訓練純視覺模型與純語言模型的架構，可處理任意交錯的圖片、影片與文字序列。"
+  - key: breeze2
+    title: "MediaTek-Research/Llama-Breeze2-8B-Instruct-v0_1 model card"
+    publisher: "MediaTek Research（Hugging Face）"
+    url: "https://huggingface.co/MediaTek-Research/Llama-Breeze2-8B-Instruct-v0_1"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "Breeze 2 為 3B 與 8B 的多模態語言模型，以 Llama 3.2 為基礎持續預訓練以強化繁體中文，透過視覺編碼器與橋接模組加上看圖能力，並支援函式呼叫；技術報告為 arXiv 2501.13921（2025）。"
+  - key: gemini-1
+    title: "Gemini: A Family of Highly Capable Multimodal Models"
+    publisher: "arXiv（Gemini Team, Google）"
+    url: "https://arxiv.org/abs/2312.11805"
+    type: paper
+    lang: en
+    published: "2023-12-19"
+    accessed: "2026-10-15"
+    note: "Gemini 從一開始就是多模態，在文字、圖片、音訊與影片上聯合訓練；可直接輸入 16kHz 音訊（USM 特徵），並能以離散圖像 Token 原生輸出圖片；影片以一連串畫面放進上下文處理。"
+  - key: chameleon
+    title: "Chameleon: Mixed-Modal Early-Fusion Foundation Models"
+    publisher: "arXiv（Chameleon Team, FAIR at Meta）"
+    url: "https://arxiv.org/abs/2405.09818"
+    type: paper
+    lang: en
+    published: "2024-05-16"
+    accessed: "2026-10-15"
+    note: "以 Token 為基礎的早期融合混合模態模型，能以任意順序理解與生成圖片和文字。"
+  - key: llama4
+    title: "meta-llama/Llama-4-Scout-17B-16E-Instruct model card"
+    publisher: "Meta（Hugging Face）"
+    url: "https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E-Instruct"
+    type: docs
+    lang: en
+    published: "2025-04-05"
+    accessed: "2026-10-15"
+    note: "Llama 4 為採用混合專家（MoE）架構的自迴歸語言模型，並以早期融合實現原生多模態；輸入為多語言文字與圖片，輸出為文字與程式碼；發布日 2025-04-05。"
+  - key: openai-models
+    title: "Models"
+    publisher: OpenAI API Docs
+    url: "https://developers.openai.com/api/docs/models"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "「All latest OpenAI models support text and image input, text output, multilingual capabilities, and vision.」"
+  - key: claude-vision
+    title: "Vision"
+    publisher: Claude API Docs（Anthropic）
+    url: "https://platform.claude.com/docs/en/build-with-claude/vision"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "Claude 以 28×28 像素的 patch 看圖，每張圖的 Token 數為 ⌈寬/28⌉ × ⌈高/28⌉；1000×1000 圖片為 1,296 個 Token，1092×1092 為 1,521 個；超過模型解析度上限的圖片會先縮小；FAQ：Claude 只能理解圖片，不能生成或編輯圖片。"
+  - key: openai-vision
+    title: "Images and vision"
+    publisher: OpenAI API Docs
+    url: "https://developers.openai.com/api/docs/guides/images-vision"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "較新模型以 32px × 32px patch 覆蓋圖片，patch 數乘上模型倍數後無條件進位為計費 Token；倍數表中 gpt-5.2、gpt-5.4、gpt-5.5 及更新的模型皆為 1.2（gpt-5-nano 1.5、gpt-4.1-mini 1.62、o4-mini 1.72）。文件範例：1024 × 1024 圖片需 32 × 32 = 1,024 個 patch，ceil(1024 × 1.2) = 1,229 個 Token（high detail，未觸及 2,500 patch 上限）。gpt-5.1、gpt-4.1、gpt-4o 等模型改採 512px 方塊計費。"
+  - key: gemini-media-res
+    title: "Media resolution"
+    publisher: Google AI for Developers
+    url: "https://ai.google.dev/gemini-api/docs/media-resolution"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "Gemini 4 與 Gemini 3 模型：每張圖片 low 280、medium 560、high 1,120、ultra_high 2,240 個 Token，未指定時預設 1,120；影片每格 70（high 為 280）；音訊每秒約 25 個；可對個別媒體設定解析度。頁面最後更新 2026-10-13。"
+  - key: gemini-video
+    title: "Video understanding"
+    publisher: Google AI for Developers
+    url: "https://ai.google.dev/gemini-api/docs/video-understanding"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "模型以每秒 1 格取樣影片，快速動作或鏡頭切換可能漏掉細節；預設（低）媒體解析度約每秒 100 個 Token，高解析度約每秒 300 個；上下文 100 萬 Token 的模型預設可處理約 3 小時影片，高解析度約 1 小時。"
+  - key: gemini-audio
+    title: "Audio understanding"
+    publisher: Google AI for Developers
+    url: "https://ai.google.dev/gemini-api/docs/audio"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "音訊每秒 32 個 Token（1 分鐘 = 1,920 個）；單次提示最長 9.5 小時；也能理解鳥鳴、警笛等非語音聲音。媒體解析度頁另列 Gemini 3 與 4 模型為每秒約 25 個。"
+  - key: gemini-embedding
+    title: "Embeddings"
+    publisher: Google AI for Developers
+    url: "https://ai.google.dev/gemini-api/docs/embeddings"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "gemini-embedding-2 是 Gemini API 第一個多模態嵌入模型，把文字、圖片、影片、音訊與文件映射到同一個嵌入空間，可跨模態搜尋。"
+  - key: deepseek-tokens
+    title: "Token & Token Usage"
+    publisher: DeepSeek API Docs
+    url: "https://api-docs.deepseek.com/quick_start/token_usage"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "1 個英文字元約 0.3 個 Token，1 個中文字約 0.6 個 Token；不同模型分詞方式不同，比例會有差異。"
+  - key: whisper
+    title: "Robust Speech Recognition via Large-Scale Weak Supervision"
+    publisher: "arXiv（Radford et al., OpenAI）"
+    url: "https://arxiv.org/abs/2212.04356"
+    type: paper
+    lang: en
+    published: "2022-12-06"
+    accessed: "2026-10-15"
+    note: "以 68 萬小時的多語言、多任務音訊轉錄資料訓練，零樣本即可在標準測試上與既有全監督結果競爭。"
+  - key: gpt-4o
+    title: "Hello GPT-4o"
+    publisher: OpenAI
+    url: "https://openai.com/index/hello-gpt-4o/"
+    type: company-site
+    lang: en
+    published: "2024-05-13"
+    accessed: "2026-10-15"
+    archiveUrl: "https://web.archive.org/web/20240531224336/https://openai.com/index/hello-gpt-4o/"
+    note: "原網址對自動化讀取回應 403，查核時以 Internet Archive 2024-05-31 快照核對內文。GPT-4o 對音訊輸入最快 232 毫秒、平均 320 毫秒回應，接近人類對話反應時間；先前的 Voice Mode 由三個模型接力（語音轉文字、GPT-3.5 或 GPT-4、文字轉語音），平均延遲 2.8 秒（GPT-3.5）與 5.4 秒（GPT-4），且無法直接感知語氣、多人說話與背景聲音，也無法笑、唱歌或表達情緒；GPT-4o 為跨文字、視覺與音訊端到端訓練的單一模型。"
+  - key: qwen3-omni
+    title: "Qwen/Qwen3-Omni-30B-A3B-Instruct model card"
+    publisher: "Qwen（Hugging Face）"
+    url: "https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Instruct"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "原生端到端全模態模型，可處理文字、圖片、音訊與影片，以文字與自然語音即時串流回應；採 MoE 架構的 Thinker–Talker 設計；支援 119 種文字語言、19 種語音輸入語言、10 種語音輸出語言；授權為 Apache 2.0；Hugging Face 模型庫建立於 2025-09-20，技術報告 arXiv 2509.17765 提交於 2025-09-22。"
+  - key: ldm
+    title: "High-Resolution Image Synthesis with Latent Diffusion Models"
+    publisher: "arXiv（Rombach et al., LMU Munich、Heidelberg University、Runway ML）"
+    url: "https://arxiv.org/abs/2112.10752"
+    type: paper
+    lang: en
+    published: "2021-12-20"
+    accessed: "2026-10-15"
+    note: "在預訓練自編碼器的潛在空間中訓練擴散模型，大幅降低運算需求；編碼器把圖片長寬各縮小 f 倍（比較 f = 1 到 32），LDM-4 到 LDM-16 在效率與畫質間取得良好平衡；以交叉注意力層接受文字等條件輸入。"
+  - key: gpt-image-card
+    title: "Addendum to GPT-4o System Card: Native image generation"
+    publisher: OpenAI
+    url: "https://cdn.openai.com/11998be9-5319-4302-bfbf-1167e093f1fb/Native_Image_Generation_System_Card.pdf"
+    type: docs
+    lang: en
+    published: "2025-03-25"
+    accessed: "2026-10-15"
+    note: "不同於以擴散模型運作的 DALL·E，4o 圖片生成是原生內建於 ChatGPT 的自迴歸模型（an autoregressive model natively embedded within ChatGPT）；能力包括以圖片為輸入加以轉換、照片級寫實，以及遵循詳細指示並較可靠地在圖中呈現文字。"
+  - key: gemini-omni
+    title: "Gemini Omni"
+    publisher: Google DeepMind
+    url: "https://deepmind.google/models/gemini-omni/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "「Create anything from any input – starting with video」；可用圖片、文字、影片或音訊為參考，並以自然語言逐步對話修改影片；在 Gemini App、Google Flow 與 YouTube 以 Omni 製作或編輯的內容會加上 SynthID 隱形數位浮水印與 C2PA 內容憑證。"
+  - key: kuaishou-q2-2026
+    title: "Kuaishou Technology Announces Second Quarter and Interim 2026 Unaudited Financial Results"
+    publisher: "Kuaishou Technology（PR Newswire）"
+    url: "https://www.prnewswire.com/news-releases/kuaishou-technology-announces-second-quarter-and-interim-2026-unaudited-financial-results-302855081.html"
+    type: press-release
+    lang: en
+    published: "2026-08-19"
+    accessed: "2026-10-15"
+    note: "公司經 PR Newswire 發布的官方新聞稿（2026-08-19，香港）：可靈 AI 2026 年第二季營收超過人民幣 8.5 億元，年增逾 200%；同季推出 Kling 3.0 Turbo 模型；集團季營收人民幣 355 億元。"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: learn-08
+  checkedBy: "learn-08-check"
+  checkedOn: "2026-10-06"
+  notes: "內容以 2026-10-06 為資料基準日；各來源的 accessed 為實際讀取日 2026-10-15。API 文件中的 Token 換算規則（Claude、OpenAI、Gemini）會隨模型更新調整，查核時請以讀取當下的官方頁面為準；為避免引用基準日之後才推出的版本，內文以模型系列描述，不點名最新版號。查核（learn-08-check）：逐一對照 arXiv 原文（ViT、CLIP、LLaVA、Flamingo、Gemini、Chameleon、Whisper、LDM、Qwen3-Omni）、官方文件與新聞稿，數字均相符；OpenAI 1.2 倍率同樣適用於 gpt-5.2 等基準日前的模型；Gemini 音訊 Token 率文件不一致（32 與 25／秒），內文改為並列兩者；可靈營收改引 PR Newswire 官方新聞稿；GPT-4o 原文頁拒絕自動讀取，以 Internet Archive 快照核對。"
+---
+
+## 一句話解釋
+
+<Term id="multimodal">多模態模型</Term>是能處理不只一種資料的 AI：除了讀寫文字，還能看圖片、聽聲音、看影片，有些還能開口說話、畫圖，甚至生成影片。它的關鍵技巧是把每一種資料都轉成 <Term id="token">Token</Term>，再交給同一個 <Term id="transformer">Transformer</Term> 處理。對模型來說，一張照片、一段錄音和一句話，最後都變成同一種「語言」。
+
+## 生活化比喻
+
+<Callout type="analogy" title="一場多國語言的會議">
+
+想像一場國際會議，主席只懂一種工作語言（文字 Token），與會者卻有人用照片發言、有人用聲音、有人播放影片。
+
+- **口譯員（編碼器）**：每種「語言」都有專屬的口譯員，把照片、聲音翻譯成主席聽得懂的工作語言。早期的多模態模型就是這樣，替現成的<Term id="llm">大型語言模型</Term>外接一位「看圖口譯員」。
+- **從小就會多國語言的主席（原生多模態）**：更新的做法是讓主席從受訓第一天起，就同時接觸文字、圖片、聲音與影片，不必事事經過翻譯，也比較不會漏掉語氣、表情這類細節。
+- **畫家與配音員（解碼器）**：如果要主席「畫一張圖」或「說一句話」，還需要有人把主席的指示還原成像素或聲波。
+
+能看、能聽、能說、能畫，背後都是同一個問題：怎麼把不同的感官訊號，翻成同一種語言，再翻回來。
+
+</Callout>
+
+## 原理
+
+### 看：把圖片切成「視覺 Token」
+
+文字可以切成 Token，圖片要怎麼切？2020 年，Google 的研究團隊發表了一篇標題很直白的論文：「一張圖片值 16×16 個字」。他們提出的 Vision Transformer（ViT）把圖片切成一格格固定大小的小方塊（patch），每個小方塊就像一個字，攤平成一串數字、加上位置資訊後，直接送進原本處理文字的 Transformer<Cite k="vit" />。小方塊的數量等於圖片的高乘寬，除以小方塊邊長的平方<Cite k="vit" />：一張 224×224 像素的圖片切成 16×16 的方塊，就是 14×14＝196 個視覺 Token。
+
+今天的商用模型仍沿用這個思路，只是方塊大小各家不同。Anthropic 的文件說明，Claude 以 28×28 像素為一塊，一張 1000×1000 像素的圖片是 1,296 個 Token<Cite k="claude-vision" />；OpenAI 文件中較新的模型以 32×32 像素為一塊，再乘上依模型而定的倍數，一張 1024×1024 的圖片以 1.2 倍計是 1,229 個 Token<Cite k="openai-vision" />；Google 從 Gemini 3 起的模型則依「媒體解析度」設定決定每張圖片的 Token 數，文件列出的約略值從 280 到 2,240 個，預設為 1,120 個<Cite k="gemini-media-res" />。
+
+<BarChart
+  title="一張約 100 萬像素的圖片，約等於多少 Token？"
+  unit="Token"
+  data={[
+    { label: "Claude（1000×1000）", value: 1296 },
+    { label: "OpenAI（1024×1024）", value: 1229 },
+    { label: "Gemini 3 起（預設）", value: 1120 },
+    { label: "對照：1,000 個中文字", value: 600 }]}
+  source={["claude-vision", "openai-vision", "gemini-media-res", "deepseek-tokens"]}
+  note="OpenAI 以 32×32 像素切塊、乘上 1.2 倍計算；Gemini 為文件列出的預設約略值，可用解析度設定調高或調低；中文字依 DeepSeek 文件「1 個中文字約 0.6 個 Token」換算，各模型的分詞方式不同。"
+/>
+
+換句話說，以 DeepSeek 文件的換算比例粗估，丟一張照片給模型，大約相當於丟進兩千個中文字<Cite k="deepseek-tokens" />。圖片的 Token 一樣要算錢（見 <Term id="token-pricing">Token 計價</Term>），也一樣占用<Term id="context-window">上下文視窗</Term>，所以各家都設有解析度或 Token 上限，超過上限的圖片會先縮小再處理<Cite k="claude-vision" /><Cite k="openai-vision" />。
+
+### 對齊：讓圖片與文字說同一種語言
+
+把圖片切成 Token 只是第一步，模型還得知道「這些像素代表一隻狗」。2021 年 OpenAI 發表的 CLIP 是關鍵突破：研究人員從網路蒐集 4 億組「圖片＋說明文字」，只訓練一件事，就是猜哪段文字配哪張圖<Cite k="clip" />。每一批訓練資料有 32,768 組圖文，模型要讓配對正確的圖文向量彼此靠近、配錯的彼此遠離<Cite k="clip" />。
+
+訓練完成後，圖片與文字就落在同一個<Term id="embedding">嵌入向量</Term>空間：「一隻狗在草地上奔跑」這句話的向量，會和狗在草地上奔跑的照片很接近。CLIP 完全沒用 ImageNet 那 128 萬張標註好的訓練圖片，就能直接在 ImageNet 上分類，準確率追平當年的經典模型 ResNet-50<Cite k="clip" />。這種「共同空間」也是以文搜圖、多模態搜尋的基礎：Google 的 gemini-embedding-2 已能把文字、圖片、影片、音訊與文件放進同一個向量空間<Cite k="gemini-embedding" />，延伸應用見<LearnLink id="rag-and-vector-search">RAG 與向量檢索</LearnLink>。
+
+### 接線：外接一雙眼睛，還是天生多模態？
+
+有了看得懂圖的編碼器，下一步是把它接上語言模型。主流有兩種路線：
+
+<Compare
+  title="多模態模型的兩種架構"
+  left={{ title: "外接式（編碼器＋轉接層）", items: ["現成的視覺編碼器把圖片轉成向量", "一個小小的轉接層，把向量翻成語言模型看得懂的詞向量", "可沿用既有的語言模型，訓練便宜、上手快", "代表：Flamingo、LLaVA、Breeze 2"] }}
+  right={{ title: "原生多模態（從頭一起訓練）", items: ["從預訓練一開始就混合文字、圖片、聲音與影片", "各種資料在同一個網路中互相參照，也能交錯輸出", "需要大量配對資料，從頭訓練的成本高", "代表：Gemini、Chameleon、Llama 4、GPT-4o"] }}
+/>
+
+以外接式為例，一張圖片和一個問題進到模型後，會經過這幾步：
+
+<FlowSteps
+  title="外接式多模態模型如何「看圖回答」"
+  steps={[
+    { title: "切塊", detail: "圖片切成數百到上千個小方塊" },
+    { title: "視覺編碼", detail: "視覺編碼器把每個小方塊轉成向量" },
+    { title: "轉接", detail: "轉接層把向量投影到語言模型的詞向量空間" },
+    { title: "併排", detail: "視覺 Token 與問題的文字 Token 排成同一個序列" },
+    { title: "生成", detail: "語言模型像平常一樣，逐字寫出回答" }]}
+/>
+
+外接式的經典例子是 2023 年的 LLaVA：它把 CLIP 的視覺編碼器接上開源語言模型 Vicuna，中間只用一個可訓練的投影矩陣當轉接頭<Cite k="llava" />。第一階段先凍結編碼器與語言模型，只用 59.5 萬組圖文訓練這個轉接頭，論文形容這等於替語言模型訓練一個「視覺分詞器」；第二階段再用 15.8 萬筆由 GPT-4 產生的圖文指令資料微調<Cite k="llava" />。DeepMind 2022 年的 Flamingo，同樣是把預訓練好的純視覺模型與純語言模型「橋接」起來<Cite k="flamingo" />。台灣的例子是聯發科旗下聯發創新基地的 Breeze 2：以 Llama 3.2 為基礎強化繁體中文，再透過視覺編碼器與橋接模組加上看圖能力<Cite k="breeze2" />。
+
+原生路線則從頭一起訓練。Google 在 2023 年底發表 Gemini 1.0 時強調，它「從一開始就是多模態」，在文字、圖片、音訊與影片上聯合訓練；音訊以 16kHz 的聲音特徵直接輸入，也能用離散的圖像 Token 直接輸出圖片<Cite k="gemini-1" />。Meta 2024 年的 Chameleon 研究把圖片與文字都變成 Token、混在同一個序列裡學習，稱為「早期融合」<Cite k="chameleon" />；2025 年 4 月推出的 Llama 4 也採用 <Term id="moe">MoE</Term> 架構加上早期融合<Cite k="llama4" />。
+
+到了 2026 年，「看得懂圖」已是主流模型的基本配備：OpenAI 表示，其最新模型都支援文字與圖片輸入、文字輸出<Cite k="openai-models" />；Anthropic 的 Claude 能分析圖片，但文件明言它只負責理解，不能生成或編輯圖片<Cite k="claude-vision" />。
+
+### 聽與說：從三段接力到一個模型
+
+語音的難處在於「即時」。2022 年 OpenAI 的 Whisper 用 68 萬小時的多語言音訊訓練語音辨識，不需額外微調就能在標準測試上與既有的監督式模型競爭，讓機器「聽寫」的準確度與穩健度逼近人類<Cite k="whisper" />。但早期的語音助理是三段接力：先把語音轉成文字，交給語言模型回答，再把文字合成語音。OpenAI 指出，這種做法搭配 GPT-3.5 與 GPT-4 時，平均<Term id="latency">延遲</Term>分別是 2.8 秒與 5.4 秒；而且居中的語言模型聽不到語氣、分不出多人說話與背景聲音，也無法笑、唱歌或表達情緒<Cite k="gpt-4o" />。
+
+2024 年 5 月的 GPT-4o 改成一個端到端訓練的模型，文字、影像與聲音的輸入和輸出都由同一個神經網路處理，對語音最快 232 毫秒、平均 320 毫秒就能回應，接近人類對話的反應時間<Cite k="gpt-4o" />。
+
+<BarChart
+  title="語音對話的平均回應延遲"
+  unit="毫秒"
+  data={[
+    { label: "三段接力（GPT-4）", value: 5400 },
+    { label: "三段接力（GPT-3.5）", value: 2800 },
+    { label: "端到端（GPT-4o）", value: 320 }]}
+  source="gpt-4o"
+  note="OpenAI 於 2024 年 5 月公布；GPT-4o 最快 232 毫秒。"
+/>
+
+<Term id="open-weights">開放權重</Term>陣營也跟上了。阿里巴巴 Qwen 團隊 2025 年 9 月開源的 Qwen3-Omni，分成「Thinker（思考者）」與「Talker（說話者）」兩部分，前者負責理解與產生文字，後者負責即時說話；它可輸入文字、圖片、音訊與影片，輸出文字與語音，支援 119 種文字語言、19 種語音輸入語言與 10 種語音輸出語言<Cite k="qwen3-omni" />。
+
+聲音同樣要換算成 Token。Gemini 的音訊理解文件指出，音訊每秒 32 個 Token，1 分鐘約 1,920 個，單次提示最多可放 9.5 小時的音訊，也能聽懂鳥鳴、警笛這類非語音的聲音<Cite k="gemini-audio" />；媒體解析度文件則列出 Gemini 3 以後的模型約每秒 25 個<Cite k="gemini-media-res" />。不論哪個數字，1 小時的錄音都要用掉約 9 萬到 11.5 萬個 Token。
+
+### 畫與拍：生成圖片與影片
+
+讓模型「輸出」圖片，主要有兩條路線。
+
+第一條是<Term id="diffusion-model">擴散模型</Term>：從一張純雜訊出發，在文字引導下一步步去除雜訊，慢慢「顯影」出圖片。直接在像素上這樣做非常昂貴，2021 年底的潛在擴散模型（Latent Diffusion）改為先用自編碼器把圖片壓縮到較小的「潛在空間」，在裡面去雜訊，最後再還原成圖片。論文比較多種壓縮倍率，發現長寬各縮小 4 到 16 倍之間，能在效率與畫質間取得良好平衡，並以交叉注意力讓文字引導生成<Cite k="ldm" />。
+
+第二條是自迴歸路線：像寫文字一樣，一個 Token 接一個 Token 地「寫」出圖片。OpenAI 在 2025 年 3 月說明，GPT-4o 的原生圖片生成不同於以擴散模型運作的 DALL·E，是原生內建於 ChatGPT 的自迴歸模型；它能拿圖片當輸入來改圖、遵循詳細指示，也能較可靠地在圖中寫出文字<Cite k="gpt-image-card" />。
+
+影片是「隨時間變化的圖片」，資料量又大上一個量級。以理解影片為例，Gemini 預設每秒取樣 1 格畫面，連同聲音約每秒 100 個 Token，高解析度約 300 個；上下文 100 萬 Token 的模型，預設最多能處理約 3 小時的影片<Cite k="gemini-video" />。生成端則朝「任何輸入、任何輸出」整合：Google DeepMind 的 Gemini Omni（見 <ModelChip id="google-veo" />）主打以圖片、文字、影片或音訊為參考生成影片，並能用自然語言一步步對話修改<Cite k="gemini-omni" />。
+
+<StatGrid
+  title="不同資料換算成 Token（Gemini 文件）"
+  items={[
+    { label: "1 張圖片", value: "1,120", unit: "Token", note: "Gemini 3 起的預設值；低解析度為 280" },
+    { label: "1 分鐘音訊", value: "1,500–1,920", unit: "Token", note: "音訊文件為每秒 32 個；Gemini 3 以後約每秒 25 個" },
+    { label: "1 秒影片", value: "約 100", unit: "Token", note: "每秒取 1 格、預設解析度；高解析度約 300" },
+    { label: "100 萬 Token 上下文", value: "約 3 小時", note: "預設解析度下可放入的影片長度" }]}
+  caption="資料來源：Google Gemini API 文件（媒體解析度、音訊理解、影片理解），2026 年 10 月讀取。"
+/>
+
+能以假亂真也帶來風險，例如<Term id="deepfake">深度偽造</Term>。Google 表示，在 Gemini App、Google Flow 與 YouTube 中以 Gemini Omni 製作或編輯的內容，會加上肉眼看不見的 SynthID 數位浮水印與 C2PA 內容憑證<Cite k="gemini-omni" />，這類做法統稱 <Term id="ai-watermark">AI 浮水印</Term>。
+
+### 還不完美：看圖也會看走眼
+
+多模態模型「看得懂」，不代表「看得準」。Anthropic 在文件中列出 Claude 看圖的限制，很能代表這類模型的共同弱點<Cite k="claude-vision" />：
+
+- **小圖與模糊圖**：畫質差、旋轉過，或小於 200 像素的圖片，可能產生<Term id="hallucination">幻覺</Term>，看到不存在的東西。
+- **數數**：只能給出大概的數量，圖中有一大堆小物件時尤其容易數錯。
+- **空間位置**：回報的座標與位置只是近似值，需要精準定位的工作要另外驗證。
+- **辨別 AI 生成圖**：模型無法可靠判斷一張圖是不是 AI 做的，不能拿來抓假圖。
+
+原因不難理解：圖片在進入模型前已被切塊、縮小，細節在過程中流失；而模型是從大量圖文配對中學到「大致的樣子」，並沒有真的逐一清點。所以在醫療影像、工業檢測這類高風險場景，仍需要專門的模型與人工把關。
+
+<DeepDive title="深入一點：一張圖為什麼要上千個 Token？">
+
+**視覺 Token 的數量。** ViT 論文把高 H、寬 W 的圖片，以邊長 P 的小方塊切開，得到 N 個 Token<Cite k="vit" />：
+
+<MathTeX tex={"N=\\frac{H\\times W}{P^{2}}"} display label="視覺 Token 數，等於圖片的高乘寬，除以小方塊邊長的平方" />
+
+這個公式有一個重要推論：圖片長寬各放大 2 倍，Token 數就變成 4 倍，按 Token 計費的帳單也跟著變成約 4 倍（在觸及各家的解析度上限之前）。以 Claude 為例，1000×1000 的圖片用 28×28 的方塊切，每邊需要 36 塊（最後一塊會超出邊界），共 1,296 個 Token<Cite k="claude-vision" />。而<LearnLink id="transformer-and-attention">注意力機制</LearnLink>的計算量又隨序列長度的平方成長，所以解析度一提高，背後的運算量上升得比想像中快。這就是各家要限制解析度、提供「低、中、高」選項的原因<Cite k="gemini-media-res" />。
+
+**影片的帳更驚人。** 以 Gemini 預設約每秒 100 個 Token 計<Cite k="gemini-video" />，1 小時的影片約 36 萬個 Token，相當於約 60 萬個中文字；改用高解析度（每秒約 300 個），1 小時約 108 萬個 Token，已是百萬 Token 的量級；Google 文件也指出，百萬 Token 上下文的模型在高解析度下只能處理約 1 小時的影片<Cite k="gemini-video" />。所以 Gemini 預設每秒只取 1 格畫面，代價是可能漏掉快速動作與鏡頭切換，Google 文件也提醒了這一點<Cite k="gemini-video" />。
+
+**CLIP 為什麼要那麼大的批次？** 一批有 N 組圖文，模型就要比較 N×N 種配對，只有 N 組是正確答案，其餘都是「錯誤示範」。CLIP 的批次是 32,768 組<Cite k="clip" />，每一批要比較約 10.7 億種配對。錯誤示範越多，模型越能學會細微的差別，但也越吃 GPU 記憶體與運算。
+
+**潛在空間省了多少？** 潛在擴散模型的編碼器把長寬各縮小 f 倍<Cite k="ldm" />。若 f＝8，去雜訊時要處理的位置數就少了 64 倍。影片多了時間這個維度，這類壓縮更是不可或缺。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+- **模型實驗室的主戰場** → <SegmentChip id="foundation-models" />：<CompanyChip id="openai" />（<ModelChip id="openai-gpt" />、<ModelChip id="openai-gpt-image" />）、<CompanyChip id="alphabet" />（<ModelChip id="google-gemini" />、<ModelChip id="google-nano-banana" />、<ModelChip id="google-veo" />）、<CompanyChip id="anthropic" />（<ModelChip id="anthropic-claude" />）、<CompanyChip id="meta" />（<ModelChip id="meta-muse-llama" />）與 <CompanyChip id="alibaba" />（<ModelChip id="alibaba-qwen" />）都把多模態列為旗艦模型的標配。另有專攻單一模態的業者，例如圖像的 <CompanyChip id="black-forest-labs" />（<ModelChip id="bfl-flux" />）與 <CompanyChip id="midjourney" />（<ModelChip id="midjourney" />），影片的 <CompanyChip id="runway" /> 與 <CompanyChip id="kuaishou" />（<ModelChip id="kling" />），以及語音的 <CompanyChip id="elevenlabs" />（<ModelChip id="elevenlabs" />）。影片生成已能帶來可觀營收：快手旗下的可靈 AI 在 2026 年第二季營收超過人民幣 8.5 億元，年增逾 200%<Cite k="kuaishou-q2-2026" />。
+- **Token 暴增推高算力需求** → <SegmentChip id="ai-accelerators" />、<SegmentChip id="cloud-neocloud" />：一張圖上千個 Token、一小時影片數十萬個 Token，多模態讓每次請求的運算量成倍增加，生成影片更是吃重。這些<Term id="inference">推論</Term>工作大多跑在 <CompanyChip id="nvidia" /> 等業者的 <Term id="gpu">GPU</Term> 與雲端資料中心上，見<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>。
+- **資料與版權** → <SegmentChip id="devtools-data-mlops" />：CLIP 一個模型就用了 4 億組網路圖文<Cite k="clip" />，LLaVA 的指令資料也要另外生成<Cite k="llava" />。多模態模型需要海量配對資料與人工審核，<CompanyChip id="scale-ai" /> 等業者提供<Term id="data-labeling">資料標註</Term>服務；網路圖片、影片與音樂的使用權爭議，見<TrendLink id="copyright-data-licensing">著作權訴訟與資料授權市場</TrendLink>。
+- **走進手機、眼鏡與機器人** → <SegmentChip id="physical-ai" />：能看能聽的模型，讓相機與麥克風變成 AI 的感官。<CompanyChip id="essilorluxottica" /> 與 Meta 合作的 <Term id="ai-glasses">AI 眼鏡</Term>、內建 <Term id="npu">NPU</Term> 的手機與晶片（<CompanyChip id="apple" />、<CompanyChip id="qualcomm" />、<CompanyChip id="mediatek" />），以及把視覺、語言與動作串起來的 <Term id="vla">VLA</Term> 機器人模型（例如 <ModelChip id="gemini-robotics" />），都是多模態的延伸，見<TrendLink id="edge-ai-devices">邊緣 AI</TrendLink>、<TrendLink id="world-models-spatial-intelligence">世界模型與空間智慧</TrendLink>與<LearnLink id="physical-ai-deep">實體 AI 深入</LearnLink>。台灣方面，聯發科旗下的 <ModelChip id="mediatek-breeze" /> 以外接視覺編碼器的方式，讓繁體中文模型也能看圖<Cite k="breeze2" />。

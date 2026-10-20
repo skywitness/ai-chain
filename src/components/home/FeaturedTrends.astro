@@ -1,0 +1,148 @@
+---
+/**
+ * Featured trend cards (category, title, description, horizon / confidence / impact when the trend
+ * article exists; the trends-index title otherwise).
+ *   <FeaturedTrends items={await getFeaturedTrends(6)} />
+ */
+import Icon from '../ui/Icon.astro';
+import { trendHref } from '../../lib/paths';
+import type { FeaturedTrend } from './home-data';
+
+interface Props {
+  items: FeaturedTrend[];
+}
+const { items } = Astro.props;
+const CAT_COLOR: Record<string, string> = {
+  hardware: 'var(--layer-silicon)',
+  software: 'var(--layer-cloud-models)',
+  market: 'var(--layer-foundation)',
+  policy: 'var(--layer-applications)',
+};
+---
+
+<ul class="ft" role="list">
+  {
+    items.map((t) => (
+      <li class="ft__card" style={`--ft-c: ${CAT_COLOR[t.category] ?? 'var(--c-accent)'}`}>
+        <p class="ft__cat">
+          <span class="ft__dot" aria-hidden="true" />
+          {t.categoryLabel}
+          {t.horizon && <span class="ft__horizon">· {t.horizon}</span>}
+        </p>
+        <h3 class="ft__title">
+          <a class="ft__link" href={trendHref(t.id)}>
+            {t.title}
+          </a>
+        </h3>
+        {t.description && <p class="ft__desc">{t.description}</p>}
+        {t.confidence || t.impact ? (
+          <p class="ft__meta">
+            {t.impact && <span>影響 {t.impact}</span>}
+            {t.confidence && <span>把握度 {t.confidence}</span>}
+          </p>
+        ) : (
+          !t.description && (
+            <p class="ft__meta ft__meta--pending">
+              <Icon name="clock" />
+              專文整理中：將整理驅動力、時間表與觀察指標
+            </p>
+          )
+        )}
+        <Icon name="arrow-right" class="ft__arrow" />
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .ft {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: var(--space-4);
+  }
+  .ft__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5) var(--space-5);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    min-block-size: 8.5rem;
+    transition:
+      border-color var(--dur-2) ease,
+      box-shadow var(--dur-2) ease;
+  }
+  .ft__card:hover {
+    border-color: color-mix(in srgb, var(--ft-c) 45%, var(--c-border));
+    box-shadow: var(--shadow-2);
+  }
+  .ft__card:has(.ft__link:focus-visible) {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  .ft__cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.05em;
+    color: color-mix(in srgb, var(--ft-c) 75%, var(--c-fg));
+  }
+  .ft__dot {
+    inline-size: 0.55rem;
+    block-size: 0.55rem;
+    border-radius: 50%;
+    background: var(--ft-c);
+  }
+  .ft__horizon {
+    color: var(--c-fg-subtle);
+    font-weight: var(--fw-regular);
+  }
+  .ft__title {
+    font-size: var(--fs-l);
+    line-height: 1.45;
+    padding-inline-end: var(--space-5);
+    text-wrap: balance;
+  }
+  .ft__link {
+    color: var(--c-fg);
+    text-decoration: none;
+  }
+  .ft__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .ft__link:focus-visible {
+    outline: none;
+  }
+  .ft__desc {
+    font-size: var(--fs-s);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+  }
+  .ft__meta {
+    display: flex;
+    gap: var(--space-3);
+    margin-block-start: auto;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .ft__meta--pending {
+    align-items: center;
+    gap: 0.4em;
+    line-height: 1.6;
+  }
+  .ft__card :global(.ft__arrow) {
+    position: absolute;
+    inset-inline-end: var(--space-4);
+    inset-block-start: var(--space-4);
+    color: var(--ft-c);
+  }
+</style>

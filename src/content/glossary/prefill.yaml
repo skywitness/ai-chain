@@ -1,0 +1,40 @@
+term: "Prefill"
+zh: "預填階段"
+en: "Prefill"
+aliases:
+  - "預填"
+  - "Prefill 階段"
+  - "提示處理階段"
+  - "Prompt Processing"
+  - "Context Phase"
+category: inference
+level: 3
+short: >-
+  LLM 推論的第一階段：一次平行讀完整段輸入提示並建立 KV Cache，屬於運算密集型工作。
+definition: >-
+  大型語言模型處理一個請求時，會先進入 Prefill 階段：把使用者輸入的全部 token 一次送進模型平行計算，產生每一層的 Key 與 Value 存入 KV Cache，並算出第一個輸出 token。這是大型的矩陣對矩陣運算，能讓 GPU 的運算單元接近滿載，屬於運算受限（compute-bound）的工作；它的耗時主導了首 token 延遲（TTFT），輸入越長，例如整份合約、程式碼庫或長對話紀錄，花的時間就越久。Splitwise 論文的量測指出，提示運算階段吃重運算，後續的 token 產生階段則受記憶體限制、用不滿最新 GPU 的運算能力。兩者特性不同，正是業界把 Prefill 與 Decode 拆到不同硬體執行的分離式推論，以及提示快取的出發點。
+example: >-
+  像考試開始時先把整份題目從頭到尾讀一遍並畫重點：可以一眼掃很多行，但題目越長，開始作答前要花的時間就越多。
+related: [decode, ttft, kv-cache, disaggregated-inference, flops]
+learnMore: [inference-optimization]
+segments: [ai-accelerators, cloud-neocloud]
+sources:
+  - title: "Mastering LLM Techniques: Inference Optimization"
+    publisher: "NVIDIA Technical Blog"
+    url: "https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/"
+    type: company-site
+    lang: en
+    published: "2023-11-17"
+    accessed: "2026-10-06"
+  - title: "Splitwise: Efficient generative LLM inference using phase splitting"
+    publisher: "arXiv（ISCA 2024）"
+    url: "https://arxiv.org/abs/2311.18677"
+    type: paper
+    lang: en
+    published: "2023-11-30"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-inference
+  checkedBy: "gloss-inference-check"
+  checkedOn: "2026-10-06"

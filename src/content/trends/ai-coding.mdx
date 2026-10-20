@@ -1,0 +1,416 @@
+---
+title: "AI 寫程式：從補全到自主 Agent"
+description: "AI 寫程式從編輯器裡的自動補全，演進到能自己讀程式庫、改檔案、跑測試的 Agent。Claude Code 正式開放 9 個月年化營收逾 25 億美元，Cursor 被 SpaceX 以隱含 600 億美元的股票收購；生產力實證、資安與就業影響仍有爭議。"
+category: software
+horizon: near
+horizonYears: [2024, 2028]
+confidence: high
+confidenceRationale: "採用面的證據很充分：Stack Overflow 2025 年調查有 84% 開發者正在或計畫使用 AI 工具，Claude Code、Cursor、Cognition 的年化營收都已跨過 10 億美元，GitHub Copilot 使用者達 5,000 萬。不確定的是效益幅度：METR 的隨機對照試驗曾發現資深開發者用 AI 反而變慢，AI 產生程式碼的資安缺陷也仍常見，對就業的影響尚無因果定論。"
+impact: high
+milestones:
+  - { date: "2024-03", label: "Cognition 發表 Devin，主打能獨立完成工程任務的「AI 軟體工程師」", status: done }
+  - { date: "2024-10", label: "Google：逾四分之一新程式碼由 AI 產生、再經工程師審查", status: done }
+  - { date: "2025-02", label: "Claude Code 研究預覽推出；Karpathy 提出「vibe coding」", status: done }
+  - { date: "2025-05", label: "Claude Code 正式開放；OpenAI 推出雲端 Codex 研究預覽", status: done }
+  - { date: "2025-07", label: "Cognition 簽約收購 Windsurf；METR 試驗發現資深開發者用 AI 慢 19%", status: done }
+  - { date: "2025-11", label: "Cursor 與 Claude Code 年化營收各達 10 億美元", status: done }
+  - { date: "2026-02", label: "Claude Code 年化營收逾 25 億美元，年初以來翻倍以上", status: done }
+  - { date: "2026-07", label: "微軟：GitHub Copilot 使用者達 5,000 萬，6 月起改採依用量計費", status: done }
+  - { date: "2026-08", label: "SpaceX 以隱含 600 億美元的股票完成收購 Cursor", status: done }
+  - { date: "2026-09", label: "Cognition 以 480 億美元估值募資，年化營收突破 10 億美元", status: done }
+  - { date: "2028", label: "Gartner 預測：75% 企業軟體工程師使用 AI 程式助理", status: expected }
+signals:
+  - text: "Anthropic 表示，Claude Code 在 2025 年 5 月正式開放，2026 年 2 月年化營收已逾 25 億美元，且 2026 年初以來翻倍以上；每週活躍使用者也翻倍。"
+    date: "2026-02-12"
+    source: { title: "Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation", publisher: Anthropic, url: "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation", type: press-release, lang: en, published: "2026-02-12", accessed: "2026-10-16" }
+  - text: "微軟 FY2026 第四季法說會：GitHub Copilot 使用者達 5,000 萬，6 月起改採依用量計費，Copilot 營收季增逾 60%；半年前（FY2026 第二季）付費訂閱數逾 470 萬。"
+    date: "2026-07-29"
+    source: { title: "Microsoft Fiscal Year 2026 Fourth Quarter Earnings Conference Call", publisher: Microsoft Investor Relations, url: "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q4", type: earnings-call, lang: en, published: "2026-07-29", accessed: "2026-10-16" }
+  - text: "OpenRouter 分析逾 100 兆個 Token：程式類請求佔平台 Token 量的比例，從 2025 年初約 11% 升到報告發表前數週超過五成。"
+    date: "2025-12-04"
+    source: { title: "State of AI: An Empirical 100 Trillion Token Study with OpenRouter", publisher: "OpenRouter、a16z", url: "https://openrouter.ai/state-of-ai", type: analyst, lang: en, published: "2025-12-04", accessed: "2026-10-16", note: "僅反映 OpenRouter 平台的使用者組成" }
+  - text: "Stack Overflow 2025 年開發者調查：84% 受訪者正在或計畫使用 AI 工具（前一年 76%），51% 的專業開發者每天使用；但不信任 AI 輸出準確度者（46%）多於信任者（33%）。"
+    date: "2025-07-29"
+    source: { title: "2025 Stack Overflow Developer Survey: AI", publisher: Stack Overflow, url: "https://survey.stackoverflow.co/2025/ai", type: dataset, lang: en, published: "2025-07-29", accessed: "2026-10-16" }
+  - text: "Google 執行長表示，以 Agent 為核心的開發平台 Antigravity 每週活躍使用者逾 240 萬。"
+    date: "2026-07-22"
+    source: { title: "Alphabet earnings call Q2 2026: Sundar Pichai remarks", publisher: "Google Blog", url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/", type: earnings-call, lang: en, published: "2026-07-22", accessed: "2026-10-16" }
+  - text: "Cognition 宣布年化營收突破 10 億美元；同月稍早以 480 億美元估值募得逾 20 億美元。"
+    date: "2026-09-25"
+    source: { title: "Cognition Crosses $1B in Annualized Revenue Run Rate", publisher: Cognition, url: "https://cognition.com/blog/1b-run-rate", type: company-site, lang: en, published: "2026-09-25", accessed: "2026-10-16" }
+counterpoints:
+  - "生產力未必如體感：METR 2025 年的隨機對照試驗中，16 位資深開源開發者處理 246 個真實問題，可用 AI 時反而多花 19% 時間，但他們事後仍以為自己快了 20%；METR 2026 年 2 月表示現今工具很可能已帶來加速，但不願在無 AI 下工作的開發者退出實驗，造成選樣偏誤，加速幅度的證據仍很弱。"
+  - "資安缺陷常見：Veracode 測試 100 多個大型語言模型，45% 的程式碼樣本未通過資安測試，帶入 OWASP Top 10 類型漏洞，Java 的失敗率達 72%。"
+  - "開發者信任度低：Stack Overflow 2025 年調查中，不信任 AI 輸出準確度的開發者（46%）多於信任者（33%），只有約 3% 高度信任。"
+  - "供應商即對手：程式工具多半依 Token 向模型業者付費，而 Anthropic、OpenAI 也推出 Claude Code、Codex 等直接競品，工具商的毛利與議價力受壓。"
+  - "就業衝擊仍待觀察：史丹佛數位經濟實驗室以 ADP 薪資資料發現，AI 暴露度高的職業中，22–25 歲年輕員工的就業比對照情境低 19%，作者強調這是描述性指標而非因果估計。"
+relatedSegments: [devtools-data-mlops, foundation-models, apps-agents, cloud-neocloud, ai-accelerators]
+relatedCompanies: [anthropic, openai, anysphere, cognition, microsoft, alphabet, spacex, replit, lovable, openrouter]
+relatedModels: [anthropic-claude, openai-gpt, google-gemini, xai-grok]
+relatedLearn: [ai-apps-and-agents-101, agents-and-mcp, reasoning-models, model-evaluation, post-training-deep]
+glossary: [agent, token, reinforcement-learning, reasoning-model, mcp, benchmark, arr, token-pricing, prompt-injection]
+sources:
+  - key: an-series-g
+    title: "Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation"
+    type: press-release
+    lang: en
+    published: "2026-02-12"
+    accessed: "2026-10-16"
+    note: "Claude Code 於 2025 年 5 月正式開放；年化營收逾 25 億美元，2026 年初以來翻倍以上"
+  - key: an-series-f
+    title: "Anthropic raises $13B Series F at $183B post-money valuation"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/anthropic-raises-series-f-at-usd183b-post-money-valuation"
+    type: press-release
+    lang: en
+    published: "2025-09-02"
+    accessed: "2026-10-16"
+    note: "Claude Code 年化營收逾 5 億美元，三個月內用量成長逾 10 倍"
+  - key: an-bun
+    title: "Anthropic acquires Bun as Claude Code reaches $1B milestone"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/anthropic-acquires-bun-as-claude-code-reaches-usd1b-milestone"
+    type: press-release
+    lang: en
+    published: "2025-12-03"
+    accessed: "2026-10-16"
+    note: "2025 年 11 月、公開推出六個月後年化營收達 10 億美元"
+  - key: an-claude37
+    title: "Claude 3.7 Sonnet and Claude Code"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/claude-3-7-sonnet"
+    type: press-release
+    lang: en
+    published: "2025-02-24"
+    accessed: "2026-10-16"
+    note: "Claude Code 以有限研究預覽推出；SWE-bench Verified 在 489 題子集、不使用平行取樣鷹架時為 63.7%，使用鷹架為 70.3%"
+  - key: an-claude4
+    title: "Introducing Claude 4"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/claude-4"
+    type: press-release
+    lang: en
+    published: "2025-05-22"
+    accessed: "2026-10-16"
+    note: "Claude Code 正式開放；Claude Opus 4 在 SWE-bench Verified 為 72.5%"
+  - key: an-c35
+    title: "Introducing computer use, a new Claude 3.5 Sonnet, and Claude 3.5 Haiku"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/3-5-models-and-computer-use"
+    type: press-release
+    lang: en
+    published: "2024-10-22"
+    accessed: "2026-10-16"
+    note: "新版 Claude 3.5 Sonnet 的 SWE-bench Verified 由 33.4% 提升到 49.0%"
+  - key: an-sonnet45
+    title: "Introducing Claude Sonnet 4.5"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/claude-sonnet-4-5"
+    type: press-release
+    lang: en
+    published: "2025-09-29"
+    accessed: "2026-10-16"
+    note: "SWE-bench Verified 77.2%（10 次平均、完整 500 題）；觀察到可在複雜多步驟任務上持續專注逾 30 小時"
+  - key: cursor-series-b
+    title: "Series B and Automating Code"
+    publisher: Cursor (Anysphere)
+    url: "https://cursor.com/blog/series-b"
+    type: company-site
+    lang: en
+    published: "2025-01-16"
+    accessed: "2026-10-16"
+    note: "經常性收入逾 1 億美元"
+  - key: cursor-series-c
+    title: "Series C and Scale"
+    publisher: Cursor (Anysphere)
+    url: "https://cursor.com/blog/series-c"
+    type: company-site
+    lang: en
+    published: "2025-06-06"
+    accessed: "2026-10-16"
+    note: "ARR 逾 5 億美元，逾半數財星 500 大企業使用"
+  - key: cursor-series-d
+    title: "Past, Present, and Future"
+    publisher: Cursor (Anysphere)
+    url: "https://cursor.com/blog/series-d"
+    type: company-site
+    lang: en
+    published: "2025-11-13"
+    accessed: "2026-10-16"
+    note: "年化營收突破 10 億美元"
+  - key: bloomberg-cursor
+    title: "Cursor Hits $3 Billion Annual Sales Rate Ahead of SpaceX Deal"
+    publisher: Bloomberg
+    url: "https://www.bloomberg.com/news/articles/2026-05-21/cursor-hits-3-billion-annual-sales-rate-ahead-of-spacex-deal"
+    type: news
+    lang: en
+    published: "2026-05-21"
+    accessed: "2026-10-16"
+    note: "付費牆，未能讀取全文；數字取自報導標題，屬媒體報導、非公司揭露"
+  - key: spacex-8k
+    title: "Space Exploration Technologies Corp. Form 8-K (completion of Cursor merger)"
+    publisher: Space Exploration Technologies Corp.
+    url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026056945/spcx-20260814.htm"
+    type: filing
+    lang: en
+    published: "2026-08-14"
+    accessed: "2026-10-16"
+    note: "以 389,289,254 股 A 類普通股完成合併，隱含 Cursor 股權價值 600 億美元"
+  - key: cognition-devin
+    title: "Introducing Devin, the first AI software engineer"
+    publisher: Cognition
+    url: "https://cognition.com/blog/introducing-devin"
+    type: company-site
+    lang: en
+    published: "2024-03-12"
+    accessed: "2026-10-16"
+  - key: cognition-windsurf
+    title: "Cognition's acquisition of Windsurf"
+    publisher: Cognition
+    url: "https://cognition.com/blog/windsurf"
+    type: company-site
+    lang: en
+    published: "2025-07-14"
+    accessed: "2026-10-16"
+  - key: cognition-series-e
+    title: "Do it all with Devin: Announcing our Series E"
+    publisher: Cognition
+    url: "https://cognition.com/blog/series-e"
+    type: company-site
+    lang: en
+    published: "2026-09-08"
+    accessed: "2026-10-16"
+    note: "募資逾 20 億美元，估值 480 億美元"
+  - key: cognition-1b
+    title: "Cognition Crosses $1B in Annualized Revenue Run Rate"
+    publisher: Cognition
+    url: "https://cognition.com/blog/1b-run-rate"
+    type: company-site
+    lang: en
+    published: "2026-09-25"
+    accessed: "2026-10-16"
+  - key: goog-q3-2024
+    title: "Alphabet Q3 earnings call: CEO Sundar Pichai's remarks"
+    publisher: "Google Blog"
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q3-2024/"
+    type: earnings-call
+    lang: en
+    published: "2024-10-29"
+    accessed: "2026-10-16"
+    note: "逾四分之一的 Google 新程式碼由 AI 產生，再經工程師審查與接受"
+  - key: goog-q2-2026
+    title: "Alphabet earnings call Q2 2026: Sundar Pichai remarks"
+    publisher: "Google Blog"
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/"
+    type: earnings-call
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-16"
+    note: "Antigravity 每週活躍使用者逾 240 萬"
+  - key: ms-fy26q2
+    title: "Microsoft Fiscal Year 2026 Second Quarter Earnings Conference Call"
+    publisher: Microsoft Investor Relations
+    url: "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q2"
+    type: earnings-call
+    lang: en
+    published: "2026-01-28"
+    accessed: "2026-10-16"
+    note: "GitHub Copilot 付費訂閱逾 470 萬，年增 75%"
+  - key: ms-fy26q4
+    title: "Microsoft Fiscal Year 2026 Fourth Quarter Earnings Conference Call"
+    publisher: Microsoft Investor Relations
+    url: "https://www.microsoft.com/en-us/investor/events/fy-2026/earnings-fy-2026-q4"
+    type: earnings-call
+    lang: en
+    published: "2026-07-29"
+    accessed: "2026-10-16"
+    note: "GitHub Copilot 使用者 5,000 萬；導入依用量計費；Copilot 營收季增逾 60%"
+  - key: openrouter
+    title: "State of AI: An Empirical 100 Trillion Token Study with OpenRouter"
+    publisher: "OpenRouter、a16z"
+    url: "https://openrouter.ai/state-of-ai"
+    type: analyst
+    lang: en
+    published: "2025-12-04"
+    accessed: "2026-10-16"
+    note: "程式類請求約佔 2025 年初 Token 量的 11%，報告發表前數週超過 50%"
+  - key: so-2025
+    title: "2025 Stack Overflow Developer Survey: AI"
+    publisher: Stack Overflow
+    url: "https://survey.stackoverflow.co/2025/ai"
+    type: dataset
+    lang: en
+    published: "2025-07-29"
+    accessed: "2026-10-16"
+    note: "發表日依 Stack Overflow 官方部落格公告網址"
+  - key: metr-2025
+    title: "Measuring the Impact of Early-2025 AI on Experienced Open-Source Developer Productivity"
+    publisher: METR
+    url: "https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/"
+    type: paper
+    lang: en
+    published: "2025-07-10"
+    accessed: "2026-10-16"
+    note: "16 位資深開發者、246 個問題；用 AI 多花 19% 時間，事前預期快 24%、事後自認快 20%"
+  - key: metr-2026
+    title: "We are Changing our Developer Productivity Experiment Design"
+    publisher: METR
+    url: "https://metr.org/blog/2026-02-24-uplift-update/"
+    type: paper
+    lang: en
+    published: "2026-02-24"
+    accessed: "2026-10-16"
+    note: "回流的原受試者估計加速 18%（95% 信賴區間從加速 38% 到減速 9%），新受試者加速 4%；不願在無 AI 下工作的開發者退出或跳過任務，可能使加速被低估，METR 稱資料對加速幅度只是很弱的證據"
+  - key: veracode
+    title: "Insights from 2025 GenAI Code Security Report"
+    publisher: Veracode
+    url: "https://www.veracode.com/blog/genai-code-security-report/"
+    type: analyst
+    lang: en
+    published: "2025-07-30"
+    accessed: "2026-10-16"
+    note: "測試 100 多個大型語言模型；45% 程式碼樣本未通過資安測試，Java 失敗率 72%"
+  - key: stanford-canaries
+    title: "Canaries in the Coal Mine? Six Facts about the Recent Employment Effects of Artificial Intelligence"
+    publisher: Stanford Digital Economy Lab
+    url: "https://digitaleconomy.stanford.edu/publications/canaries-in-the-coal-mine/"
+    type: paper
+    lang: en
+    published: "2026-08-12"
+    accessed: "2026-10-16"
+    note: "2026 年 8 月修訂版，ADP 資料至 2026 年 6 月；未見整體經濟的大規模失業，但 AI 暴露職業的 22–25 歲員工就業低於對照 19%"
+  - key: gartner-2028
+    title: "Gartner Says 75% of Enterprise Software Engineers Will Use AI Code Assistants by 2028"
+    publisher: Gartner
+    url: "https://www.gartner.com/en/newsroom/press-releases/2024-04-11-gartner-says-75-percent-of-enterprise-software-engineers-will-use-ai-code-assistants-by-2028"
+    type: analyst
+    lang: en
+    published: "2024-04-11"
+    accessed: "2026-10-16"
+    archiveUrl: "https://web.archive.org/web/20241227093308/https://www.gartner.com/en/newsroom/press-releases/2024-04-11-gartner-says-75-percent-of-enterprise-software-engineers-will-use-ai-code-assistants-by-2028"
+    note: "原網址拒絕自動讀取，經網頁封存版核對；2023 年初不到 10%"
+  - key: wiki-vibe
+    title: "Vibe coding"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Vibe_coding"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: "2025 年 2 月由 Andrej Karpathy 提出"
+  - key: openai-codex
+    title: "Introducing Codex"
+    publisher: OpenAI
+    url: "https://openai.com/index/introducing-codex/"
+    type: press-release
+    lang: en
+    published: "2025-05-16"
+    accessed: "2026-10-16"
+    note: "推出雲端軟體工程 Agent Codex 的研究預覽，可平行處理多項任務"
+  - key: collins-woty
+    title: "Collins' Word of the Year 2025: AI meets authenticity as society shifts"
+    publisher: Collins Dictionary
+    url: "https://blog.collinsdictionary.com/language-lovers/collins-word-of-the-year-2025-ai-meets-authenticity-as-society-shifts/"
+    type: other
+    lang: en
+    published: "2025-11-06"
+    accessed: "2026-10-16"
+    note: "「vibe coding」獲選 Collins 2025 年度詞彙，詞由 Andrej Karpathy 提出"
+  - key: cursor-grok-45
+    title: "Introducing Grok 4.5"
+    publisher: Cursor (Anysphere)
+    url: "https://cursor.com/blog/grok-4-5"
+    type: company-site
+    lang: en
+    published: "2026-07-08"
+    accessed: "2026-10-16"
+    note: "Cursor 與 SpaceXAI 共同訓練並推出 MoE 模型 Grok 4.5"
+published: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: trends-07
+  checkedBy: trends-07-check
+  checkedOn: "2026-10-06"
+  notes: "資料基準日 2026-10-06，來源實際讀取日為 2026-10-16。SWE-bench Verified 皆為 Anthropic 自行公布、設定不同，只看趨勢。Cursor 2026-05 約 30 億美元為 Bloomberg 報導（付費牆未能讀全文，維基百科亦引同一報導），圖中以估計值標示。Gartner 新聞稿經網頁封存版核對。查核（trends-07-check）：逐項比對 Anthropic、Cursor、Cognition、微軟、Alphabet、SEC 8-K、METR、Stack Overflow、Veracode、史丹佛與 OpenRouter 原文；Codex 改引 OpenAI 官方公告；原「Cursor 併入 SpaceX 後參與 Grok 開發」缺來源，改寫為 2026 年 7 月與 SpaceXAI 共同推出 Grok 4.5 並引 Cursor 官方公告；Cognition 網址改為 cognition.com。"
+---
+
+## 趨勢摘要
+
+一句話：AI 寫程式已從「在編輯器裡幫你補完下一行」，走到「交代一件工作，<Term id="agent">Agent</Term> 自己讀程式庫、修改多個檔案、執行測試，再送出修改」。程式開發也因此成為目前營收最明確的 AI 應用之一。
+
+**已發生的事實**：Anthropic 的 Claude Code 在 2025 年 5 月正式開放，2026 年 2 月年化營收已逾 25 億美元<Cite k="an-series-g" />；Cursor 的年化營收在 2025 年 11 月突破 10 億美元<Cite k="cursor-series-d" />，2026 年 8 月被 SpaceX 以隱含 600 億美元的股票完成收購<Cite k="spacex-8k" />；微軟表示 GitHub Copilot 使用者已達 5,000 萬<Cite k="ms-fy26q4" />。
+
+**仍屬預測的部分**：Gartner 在 2024 年預測，2028 年將有 75% 的企業軟體工程師使用 AI 程式助理，2023 年初還不到 10%<Cite k="gartner-2028" />。至於 AI 能否大幅提高整體軟體產出、會不會減少工程師職缺，目前的證據仍互相矛盾。
+
+## 為什麼重要
+
+程式碼有兩個特性特別適合 AI：結果可以自動驗證（能否編譯、測試有沒有過），而且整個工作流程本來就在電腦裡。這讓模型實驗室能用<Term id="reinforcement-learning">強化學習</Term>大量訓練，也讓 Agent 能自己檢查成果。以修復真實 GitHub 問題的 <Term id="benchmark">Benchmark</Term> SWE-bench Verified 為例，Anthropic 公布的成績在一年多內從三成多升到七成以上：
+
+<BarChart title="Anthropic 模型的 SWE-bench Verified 成績" unit="%" data={[{ label: "Claude 3.5 Sonnet（2024-06）", value: 33.4 }, { label: "Claude 3.5 Sonnet 新版（2024-10）", value: 49.0 }, { label: "Claude 3.7 Sonnet（2025-02）", value: 63.7 }, { label: "Claude Opus 4（2025-05）", value: 72.5 }, { label: "Claude Sonnet 4.5（2025-09）", value: 77.2 }]} source={["an-c35", "an-claude37", "an-claude4", "an-sonnet45"]} keepOrder note="廠商自行公布；3.7 Sonnet 為 489 題子集、未使用平行取樣的成績。各版本的工具與設定不同，只適合看趨勢；分數逼近上限後，業界也開始採用更難的 SWE-bench Pro 等評測。" />
+
+用量也反映在 <Term id="token">Token</Term> 上。OpenRouter 統計，程式類請求佔平台 Token 量的比例，從 2025 年初約 11% 升到年底部分週次超過五成<Cite k="openrouter" />。Google 執行長早在 2024 年 10 月就表示，Google 逾四分之一的新程式碼由 AI 產生，再經工程師審查接受<Cite k="goog-q3-2024" />。
+
+<Callout type="analogy" title="生活化比喻">
+早期的程式助理像會幫你接話的同事：你打半句，它猜後半句。現在的程式 Agent 比較像外包工程師：你開一張工單，它自己翻程式庫、動手修改、跑完測試再交件；你的工作變成把需求寫清楚、審查結果。
+</Callout>
+
+<DeepDive title="深入一點：程式 Agent 的工作迴圈">
+程式 Agent 的核心其實很單純：模型拿到任務後，反覆「讀檔案、決定下一步、呼叫工具、看結果」，直到測試通過或判斷完成。Anthropic 測 SWE-bench Verified 時，只給 Claude Sonnet 4.5 兩種工具：執行 bash 指令，以及用字串取代的方式編輯檔案<Cite k="an-sonnet45" />。工具這麼簡單，成績高低就主要取決於模型本身會不會規劃、能不能讀懂錯誤訊息再修正。
+
+外加的「鷹架」也有影響。Claude 3.7 Sonnet 在同一組 489 題中，一般設定為 63.7%；若平行產生多個嘗試、丟掉讓既有測試失敗的修改，再用評分模型挑出最好的一個，可提高到 70.3%<Cite k="an-claude37" />。也就是說，程式 Agent 同樣能用更多推論算力換取準確度，代價是更多 Token。產品端則把同一個迴圈搬進不同場景：Claude Code 正式開放時，就支援透過 GitHub Actions 在背景執行任務，並整合 VS Code 與 JetBrains 編輯器<Cite k="an-claude4" />。
+</DeepDive>
+
+## 關鍵驅動力
+
+**一、模型能做更長的工作。** Claude Sonnet 4.5 在 SWE-bench Verified 拿下 77.2%，Anthropic 稱觀察到它能在複雜的多步驟任務上持續專注逾 30 小時<Cite k="an-sonnet45" />。<Term id="reasoning-model">推理模型</Term>讓 Agent 能先規劃再動手，詳見<TrendLink id="reasoning-test-time-compute">推理模型與推論時運算</TrendLink>。
+
+**二、產品從補全變成 Agent。** 2024 年 3 月 Cognition 發表 Devin，主打能獨立完成工程任務<Cite k="cognition-devin" />；2025 年 2 月 Claude Code 以命令列工具推出研究預覽<Cite k="an-claude37" />，5 月正式開放<Cite k="an-claude4" />；同月 OpenAI 推出雲端 Codex 研究預覽<Cite k="openai-codex" />。Agent 透過 <Term id="mcp">MCP</Term> 等標準連接外部工具，見<TrendLink id="agentic-ai-standards">Agent 生態與標準化</TrendLink>。
+
+**三、非工程師也開始寫程式。** Andrej Karpathy 在 2025 年 2 月提出「vibe coding」：用自然語言描述需求、幾乎不看程式碼就讓 AI 產生可用的程式，這個詞後來獲選 Collins 英語詞典 2025 年度詞彙<Cite k="wiki-vibe" /><Cite k="collins-woty" />。<CompanyChip id="replit">Replit</CompanyChip>、<CompanyChip id="lovable">Lovable</CompanyChip> 等平台主打這群使用者。
+
+**四、營收與資本快速放大。** 程式工具多以訂閱加 <Term id="token-pricing">Token 計價</Term>收費，<Term id="arr">年化營收</Term>成長極快。Cursor 從 2025 年 1 月逾 1 億美元，6 月逾 5 億美元、11 月破 10 億美元<Cite k="cursor-series-b" /><Cite k="cursor-series-c" /><Cite k="cursor-series-d" />：
+
+<LineChart title="Cursor 年化營收" unit="億美元" series={[{ name: "Cursor", points: [{ x: "2025-01", y: 1 }, { x: "2025-06", y: 5 }, { x: "2025-11", y: 10 }, { x: "2026-05", y: 30, estimate: true }] }]} source={["cursor-series-b", "cursor-series-c", "cursor-series-d", "bloomberg-cursor"]} note="2025 年三個點為公司公布的「逾」門檻值；2026-05 為 Bloomberg 報導（虛線，非公司揭露）。被 SpaceX 收購後不再單獨揭露。" />
+
+Claude Code 的年化營收從 2025 年 9 月逾 5 億美元、11 月達 10 億美元，到 2026 年 2 月逾 25 億美元<Cite k="an-series-f" /><Cite k="an-bun" /><Cite k="an-series-g" />。Cognition 在 2026 年 9 月以 480 億美元估值募得逾 20 億美元，同月宣布年化營收突破 10 億美元<Cite k="cognition-series-e" /><Cite k="cognition-1b" />。
+
+## 時間表與里程碑
+
+| 時間 | 事件 | 性質 |
+|---|---|---|
+| 2024 年 3 月 | Cognition 發表 Devin<Cite k="cognition-devin" /> | 已發生 |
+| 2025 年 2–5 月 | Claude Code 研究預覽<Cite k="an-claude37" />、正式開放<Cite k="an-claude4" />；雲端 Codex 預覽<Cite k="openai-codex" /> | 已發生 |
+| 2025 年 7 月 | Cognition 簽約收購 Windsurf<Cite k="cognition-windsurf" />；METR 試驗發現資深開發者變慢<Cite k="metr-2025" /> | 已發生 |
+| 2026 年 1–7 月 | GitHub Copilot 付費訂閱逾 470 萬<Cite k="ms-fy26q2" />；半年後使用者達 5,000 萬，6 月起改依用量計費<Cite k="ms-fy26q4" /> | 已發生 |
+| 2026 年 8–9 月 | SpaceX 完成收購 Cursor<Cite k="spacex-8k" />；Cognition 年化營收破 10 億美元<Cite k="cognition-1b" /> | 已發生 |
+| 2028 年 | 75% 企業軟體工程師使用 AI 程式助理<Cite k="gartner-2028" /> | 研究機構預測 |
+
+## 受影響的環節與公司
+
+<Scene3D id="agent-loop" variant="loop" caption="Agent 的規劃、工具呼叫、觀察與記憶迴圈" />
+
+- <SegmentChip id="devtools-data-mlops" />：<CompanyChip id="anysphere">Cursor</CompanyChip>、<CompanyChip id="cognition">Cognition</CompanyChip>等工具商成長最快，但多半要向模型實驗室購買 Token。
+- <SegmentChip id="foundation-models" />：<CompanyChip id="anthropic">Anthropic</CompanyChip>、<CompanyChip id="openai">OpenAI</CompanyChip>同時是模型供應商與直接競爭者；Cursor 在 2026 年 7 月與 SpaceXAI 共同推出 Grok 4.5<Cite k="cursor-grok-45" />，8 月併入 <CompanyChip id="spacex">SpaceX</CompanyChip>，工具商與模型商的界線越來越模糊。代表系列：<ModelChip id="anthropic-claude" />、<ModelChip id="openai-gpt" />、<ModelChip id="google-gemini" />、<ModelChip id="xai-grok" />。
+- <SegmentChip id="cloud-neocloud" />：<CompanyChip id="microsoft">微軟</CompanyChip>的 GitHub 與 <CompanyChip id="alphabet">Google</CompanyChip> 的 Antigravity（每週活躍使用者逾 240 萬<Cite k="goog-q2-2026" />）把程式 Agent 綁進自家雲端與開發平台。
+- <SegmentChip id="ai-accelerators" />：長時間執行的 Agent 消耗大量推論 Token，最終轉成對 GPU 與 ASIC 的需求。
+
+## 反方觀點與風險
+
+- **生產力未必如體感**：METR 2025 年的隨機對照試驗中，16 位資深開源開發者處理 246 個真實問題，可用 AI 時反而多花 19% 時間，事後卻仍以為自己快了 20%<Cite k="metr-2025" />。METR 2026 年 2 月表示，現在的工具很可能已帶來加速，但許多開發者不願在沒有 AI 的條件下工作而退出實驗，造成選樣偏誤，因此對加速幅度只能算很弱的證據<Cite k="metr-2026" />。
+- **資安缺陷**：Veracode 測試 100 多個模型，45% 的程式碼樣本未通過資安測試，帶入 OWASP Top 10 類型的漏洞<Cite k="veracode" />。Agent 能執行指令，也讓<Term id="prompt-injection">提示注入</Term>的後果更嚴重。
+- **信任度低**：Stack Overflow 2025 年調查中，不信任 AI 輸出準確度的開發者（46%）多於信任者（33%）<Cite k="so-2025" />。
+- **供應商即對手**：程式工具依 Token 向模型業者付費，而模型業者也推出 Claude Code、Codex 等直接競品，工具商的毛利與議價力受壓。
+- **就業衝擊**：史丹佛數位經濟實驗室以 ADP 薪資資料發現，AI 暴露度高的職業中，22–25 歲年輕員工的就業比對照情境低 19%；作者強調這是描述性指標，不是因果估計<Cite k="stanford-canaries" />。
+
+## 觀察指標
+
+- Claude Code、Cursor、Cognition、GitHub Copilot 的年化營收與使用者數。
+- 程式類 Token 在 OpenRouter 等平台的佔比。
+- SWE-bench Pro、Terminal-Bench 等較難評測的分數，以及每個任務的成本。
+- METR 等機構的實地生產力研究能否得出一致結論。
+- AI 產生程式碼的漏洞率，以及企業如何限制 Agent 的權限。
+- 新進工程師的職缺與就業變化。
+
+延伸閱讀：<LearnLink id="ai-apps-and-agents-101">AI 能做什麼？從聊天機器人到 Agent</LearnLink>、<LearnLink id="agents-and-mcp">AI Agent 與 MCP</LearnLink>。

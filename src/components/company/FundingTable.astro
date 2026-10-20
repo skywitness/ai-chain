@@ -1,0 +1,250 @@
+---
+/**
+ * Funding rounds of a private company, newest first (owner: pages-companies).
+ *
+ *   <FundingTable rounds={d.funding} company="Anthropic" />
+ */
+import { formatMoney } from '../../lib/format';
+import { partialDateZh } from './labels';
+
+interface RoundLike {
+  date: string;
+  round: string;
+  amountUsdM?: number | undefined;
+  valuationUsdM?: number | undefined;
+  investors?: readonly string[] | undefined;
+  source: { title: string; url: string; publisher: string };
+}
+interface Props {
+  rounds: readonly RoundLike[];
+  company: string;
+}
+const { rounds, company } = Astro.props;
+const sorted = [...rounds].sort((a, b) => b.date.localeCompare(a.date));
+const latestVal = sorted.find((r) => r.valuationUsdM != null);
+const totalRaised = rounds.reduce((a, r) => a + (r.amountUsdM ?? 0), 0);
+---
+
+<div class="fund">
+  {
+    (latestVal || totalRaised > 0) && (
+      <dl class="fund__stats">
+        {latestVal && (
+          <div>
+            <dt>最近一次估值（{partialDateZh(latestVal.date)}）</dt>
+            <dd>{formatMoney(latestVal.valuationUsdM ?? null, 'USD')}</dd>
+          </div>
+        )}
+        {totalRaised > 0 && (
+          <div>
+            <dt>本表列出的募資合計</dt>
+            <dd>{formatMoney(totalRaised, 'USD')}</dd>
+          </div>
+        )}
+      </dl>
+    )
+  }
+  <div class="scroll-x fund__scroll">
+    <table class="fund__table">
+      <caption class="sr-only">{company}募資紀錄（金額以美元計）</caption>
+      <thead>
+        <tr>
+          <th scope="col">日期</th>
+          <th scope="col">輪次</th>
+          <th scope="col" class="num">金額</th>
+          <th scope="col" class="num">投後估值</th>
+          <th scope="col">主要投資人</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          sorted.map((r) => (
+            <tr>
+              <td class="nowrap">{partialDateZh(r.date)}</td>
+              <th scope="row">
+                <a href={r.source.url} rel="noopener noreferrer" target="_blank">
+                  {r.round}
+                  <span class="sr-only">（來源：{r.source.publisher}，另開新視窗）</span>
+                </a>
+              </th>
+              <td class="num">{r.amountUsdM != null ? formatMoney(r.amountUsdM, 'USD') : '—'}</td>
+              <td class="num">{r.valuationUsdM != null ? formatMoney(r.valuationUsdM, 'USD') : '—'}</td>
+              <td class="fund__inv">{r.investors?.length ? r.investors.join('、') : '—'}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  <ol class="fund__cards" role="list" aria-label={`${company}募資紀錄`}>
+    {
+      sorted.map((r) => (
+        <li class="fund__card">
+          <p class="fund__card-head">
+            <a href={r.source.url} rel="noopener noreferrer" target="_blank">
+              {r.round}
+              <span class="sr-only">（來源：{r.source.publisher}，另開新視窗）</span>
+            </a>
+            <span class="fund__card-date">{partialDateZh(r.date)}</span>
+          </p>
+          {(r.amountUsdM != null || r.valuationUsdM != null) && (
+            <dl class="fund__card-nums">
+              {r.amountUsdM != null && (
+                <div>
+                  <dt>金額</dt>
+                  <dd>{formatMoney(r.amountUsdM, 'USD')}</dd>
+                </div>
+              )}
+              {r.valuationUsdM != null && (
+                <div>
+                  <dt>投後估值</dt>
+                  <dd>{formatMoney(r.valuationUsdM, 'USD')}</dd>
+                </div>
+              )}
+            </dl>
+          )}
+          {r.investors?.length ? <p class="fund__card-inv">主要投資人：{r.investors.join('、')}</p> : null}
+        </li>
+      ))
+    }
+  </ol>
+  <p class="fund__note">估值與募資金額多為公司公告或媒體報導，未經審計；點選輪次可查看來源。</p>
+</div>
+
+<style>
+  .fund {
+    container-type: inline-size;
+    display: grid;
+    gap: var(--space-3);
+  }
+  /* narrow containers: one card per round instead of a sideways-scrolling table */
+  .fund__cards {
+    display: none;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  @container (max-width: 39.99rem) {
+    .fund__scroll {
+      display: none;
+    }
+    .fund__cards {
+      display: block;
+    }
+  }
+  .fund__card {
+    display: grid;
+    gap: 0.35rem;
+    padding: var(--space-3) var(--space-4);
+  }
+  .fund__card + .fund__card {
+    border-block-start: 1px solid var(--c-border);
+  }
+  .fund__card-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.2rem 0.75rem;
+    margin: 0;
+    font-weight: var(--fw-semibold);
+  }
+  .fund__card-date {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .fund__card-nums {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem var(--space-5);
+    margin: 0;
+  }
+  .fund__card-nums div {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+  .fund__card-nums dt {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .fund__card-nums dd {
+    margin: 0;
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+  .fund__card-inv {
+    margin: 0;
+    font-size: var(--fs-xs);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+  }
+  .fund__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-6);
+    margin: 0;
+  }
+  .fund__stats dt {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .fund__stats dd {
+    margin: 0;
+    font-size: var(--fs-l);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+  }
+  .fund__scroll {
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .fund__table {
+    inline-size: 100%;
+    min-inline-size: 36rem;
+    border-collapse: collapse;
+    font-size: var(--fs-s);
+    line-height: 1.6;
+  }
+  .fund__table th,
+  .fund__table td {
+    padding: 0.6rem 0.9rem;
+    text-align: start;
+    vertical-align: top;
+    border-block-start: 1px solid var(--c-border);
+  }
+  .fund__table thead th {
+    border-block-start: 0;
+    background: var(--c-bg-sunken);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .fund__table tbody th {
+    font-weight: var(--fw-semibold);
+    /* Round names are CJK and wrap anywhere, while the investors column also wraps anywhere: without a floor
+       the round column was squeezed to a few characters per line (「C 輪（承諾 / 資金逾 10 / 億美元）」). */
+    min-inline-size: 9em;
+  }
+  .fund__table .num {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .fund__inv {
+    color: var(--c-fg-muted);
+    font-size: var(--fs-xs);
+    overflow-wrap: anywhere;
+  }
+  .fund__note {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+</style>

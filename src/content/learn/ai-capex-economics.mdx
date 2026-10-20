@@ -1,0 +1,435 @@
+---
+title: "AI 資本支出與雲端經濟學"
+subtitle: "一季上千億美元的建置潮，靠什麼賺回來？折舊、現金流與融資的算術"
+description: "2026 年科技巨頭的 AI 資本支出以每季上千億美元計。本文說明這些錢花在哪裡、如何變成折舊與雲端營收、為何自由現金流轉弱，以及客戶預付、合資與供應商擔保等新融資方式如何分攤風險。"
+level: 3
+order: 312
+track: infra-business
+prerequisites: [training-vs-inference-economics]
+next: [datacenter-power-cooling, inference-optimization]
+relatedSegments: [cloud-neocloud, ai-accelerators, servers-systems, datacenter-infra, energy-power, foundation-models]
+relatedCompanies: [amazon, alphabet, microsoft, meta, oracle, coreweave, lambda, nvidia, broadcom, tsmc, sk-hynix, foxconn, quanta, wiwynn, vertiv, ge-vernova, openai, softbank-group, blue-owl]
+relatedModels: []
+relatedTrends: [hyperscaler-capex, ai-infra-financing-bubble, ai-monetization, inference-demand, custom-asic-rise, power-bottleneck-onsite-generation]
+glossary:
+  - capex
+  - hyperscaler
+  - neocloud
+  - depreciation
+  - free-cash-flow
+  - gpu-as-a-service
+  - token-pricing
+  - arr
+  - rpo
+  - gross-margin
+  - gigawatt
+  - spv
+  - gpu-backed-loan
+  - circular-financing
+  - guidance
+  - tco
+  - asic
+scenes:
+  - { id: cloud-globe, variant: globe }
+keyTakeaways:
+  - "2026 年第二季，亞馬遜、Alphabet、微軟與 Meta 的資本支出合計約 1,650 億美元，年增 87%。"
+  - "四大業者多以 5 到 6 年折舊伺服器與 GPU，今天的資本支出會在之後數年變成逐年墊高的折舊費用。"
+  - "雲端靠出租算力、販售 Token 與訂閱回收投資，使用率、價格、耐用年限與資金成本決定回本速度。"
+  - "以新雲 CoreWeave 為例，調整後 EBITDA 率達 59%，扣除折舊與利息後仍是淨損。"
+  - "投資跑在現金流前面，業者改用發債、增資、客戶預付、合資 SPV 與供應商擔保來籌資。"
+  - "數千億美元的 RPO 撐起需求，但客戶能否付款、折舊年限與循環交易都是需要追蹤的風險。"
+estimatedMinutes: 22
+sources:
+  - key: amzn-q2-2026
+    title: "Amazon.com Announces Second Quarter Results (Exhibit 99.1)"
+    publisher: "Amazon（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000024/amzn-20260630xex991.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-30"
+    accessed: "2026-10-16"
+    note: "2026 年第二季購置不動產與設備 542.08 億美元；近四季扣除出售與獎勵後為 1,690.07 億美元；近四季自由現金流為負 76 億美元（一年前為正 182 億美元），主因 AI 投資；營收 2,006 億美元；AWS 營收 422 億美元、年增 37%，營業利益 166 億美元，年化營收約 1,690 億美元；AWS 的 AI 業務年化營收超過 250 億美元；Anthropic 與 OpenAI 對 Trainium 做出多年期、數 GW 的承諾。"
+  - key: amzn-10k-2025
+    title: "Amazon.com, Inc. Form 10-K for the fiscal year ended December 31, 2025"
+    publisher: "Amazon（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000004/amzn-20251231.htm"
+    type: filing
+    lang: en
+    published: "2026-02-06"
+    accessed: "2026-10-16"
+    note: "自 2025 年 1 月 1 日起，部分伺服器與網路設備的耐用年限由 6 年改為 5 年，原因是技術發展加快，特別是 AI 與機器學習領域；2025 年折舊與攤銷因此增加 14 億美元、淨利減少 10 億美元，主要影響 AWS。2024 年 1 月 1 日曾將伺服器耐用年限由 5 年延長為 6 年。"
+  - key: goog-q2-2026
+    title: "Alphabet Announces Second Quarter 2026 Results (Exhibit 99.1)"
+    publisher: "Alphabet（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-16"
+    note: "營收 1,197.96 億美元（2025 年同期 964.28 億美元）；購置不動產與設備 449.24 億美元（2025 年同期 224.46 億美元），近四季 1,324.02 億美元；不動產與設備折舊 71.04 億美元（2025 年同期 49.98 億美元）；第二季自由現金流負 58.55 億美元，近四季 532.73 億美元；Google Cloud 營收 247.68 億美元、年增 82%，營業利益 88.14 億美元；Cloud 產品營收主要來自銷售 TPU 系統；2026 年 6 月發行股票與強制轉換特別股，淨籌 496 億美元，用途含擴充 AI 基礎設施的資本支出；第二季發行公司債淨籌 203 億美元。"
+  - key: goog-10k-2025
+    title: "Alphabet Inc. Form 10-K for the fiscal year ended December 31, 2025"
+    publisher: "Alphabet（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/goog-20251231.htm"
+    type: filing
+    lang: en
+    published: "2026-02-05"
+    accessed: "2026-10-16"
+    note: "資本支出 2024 年 525 億美元、2025 年 914 億美元，2026 年預期相對 2025 年大幅增加；技術基礎設施含伺服器與網路設備、資料中心土地與建物；伺服器與網路設備一般以 6 年折舊，資料中心與辦公建物 7 至 40 年；資產可使用時才開始折舊，從購買到上線可能需數月至數年，資料中心建設通常為多年期、分階段的專案；擴充受電力、水與土地可得性限制。"
+  - key: msft-fy26-q4
+    title: "Microsoft FY26 Fourth Quarter Earnings Release (Exhibit 99.1)"
+    publisher: "Microsoft（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/789019/000119312526323632/msft-ex99_1.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-29"
+    accessed: "2026-10-16"
+    note: "FY2026 第四季（2026 年 4–6 月）營收 900.07 億美元（前一年同期 764.41 億美元）；不動產與設備增添 358.02 億美元（前一年同期 170.79 億美元）；FY2026 全年 1,159.48 億美元（FY2025 為 645.51 億美元）；FY2026 Azure 營收首度超過 1,000 億美元；商業剩餘履約義務年增 84% 至 6,780 億美元。"
+  - key: msft-10k-fy26
+    title: "Microsoft Corporation Form 10-K for the fiscal year ended June 30, 2026"
+    publisher: "Microsoft（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm"
+    type: filing
+    lang: en
+    published: "2026-07-29"
+    accessed: "2026-10-16"
+    note: "伺服器與網路設備的估計耐用年限為 2 至 6 年；建物與改良 5 至 15 年；土地不折舊。"
+  - key: meta-q2-2026
+    title: "Meta Reports Second Quarter 2026 Results (Exhibit 99.1)"
+    publisher: "Meta（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/1326801/000162828026050596/meta-06302026xexhibit991.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-29"
+    accessed: "2026-10-16"
+    note: "營收 608.01 億美元（2025 年同期 475.16 億美元）；資本支出（含融資租賃本金）310.8 億美元，其中購置不動產與設備 301.16 億美元（2025 年同期 165.38 億美元）；營業現金流 318.6 億美元、自由現金流 7.84 億美元；折舊與攤銷 63.56 億美元（2025 年同期 43.42 億美元）；2026 年資本支出（含融資租賃本金）展望 1,300 億至 1,450 億美元，先前為 1,250 億至 1,450 億美元。"
+  - key: meta-10k-2025
+    title: "Meta Platforms, Inc. Form 10-K for the fiscal year ended December 31, 2025"
+    publisher: "Meta（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/1326801/000162828026003942/meta-20251231.htm"
+    type: filing
+    lang: en
+    published: "2026-01-29"
+    accessed: "2026-10-16"
+    note: "2025 年資本支出（含融資租賃本金）722.2 億美元；自 2025 年 1 月 1 日起，多數伺服器與網路資產的耐用年限延長為 5.5 年，2025 年折舊費用因此減少 29.2 億美元、淨利增加 25.9 億美元；2025 年 10 月與外部投資人合資開發路易斯安那州資料中心園區，Meta 持有 20%，總開發成本約 270 億美元，租約 2029 年起算、初始租期 4 年、最長可續至 20 年，初始租賃承諾約 123.1 億美元，殘值保證門檻約 280 億美元，Meta 不合併該變動利益實體，最大損失曝險 459.5 億美元。"
+  - key: meta-hyperion
+    title: "Meta Announces Joint Venture with Funds Managed by Blue Owl Capital to Develop Hyperion Data Center"
+    publisher: Meta
+    url: "https://investor.atmeta.com/investor-news/press-release-details/2025/Meta-Announces-Joint-Venture-with-Funds-Managed-by-Blue-Owl-Capital-to-Develop-Hyperion-Data-Center/default.aspx"
+    type: press-release
+    lang: en
+    published: "2025-10-21"
+    accessed: "2026-10-16"
+    note: "Blue Owl 管理的基金持股 80%、Meta 20%；總開發成本約 270 億美元，涵蓋建物與長期使用的電力、冷卻與連網基礎設施；Blue Owl 基金出資約 70 億美元現金，部分資金來自向 PIMCO 等債券投資人發行的私募債；Meta 投入土地與在建資產並取得約 30 億美元一次性分配；完工後 Meta 以營業租賃承租，初始租期 4 年，並提供前 16 年營運期的殘值保證。"
+  - key: orcl-fy27-q1
+    title: "Oracle Announces Q1 Results Driven by Triple Digit Growth in Cloud Infrastructure Revenues (Exhibit 99.1)"
+    publisher: "Oracle（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/1341439/000119312526387905/orcl-ex99_1.htm"
+    type: press-release
+    lang: en
+    published: "2026-09-10"
+    accessed: "2026-10-16"
+    note: "FY2027 第一季（2026 年 6–8 月）營收 193 億美元；雲端基礎設施營收年增 121%；RPO 年增 2,090 億美元至 6,640 億美元，本季新簽逾 300 億美元 AI 雲端合約；AI 雲端需求成長快於供給；交付 850 MW 新增容量，自上季末起交付逾 30 萬顆 GPU；自由現金流負 50 億美元；透過市價增資計畫出售 200 億美元普通股；資本支出 284.99 億美元，扣除與資本支出相關的客戶預付款 113.63 億美元等項目後，淨現金支出 179.66 億美元；FY2026 資本支出 556.63 億美元。"
+  - key: crwv-q2-2026
+    title: "CoreWeave Reports Strong Second Quarter 2026 Results (Exhibit 99.1)"
+    publisher: "CoreWeave（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000362/coreweave2q26earningspress.htm"
+    type: press-release
+    lang: en
+    published: "2026-08-11"
+    accessed: "2026-10-16"
+    note: "營收 25.75 億美元；營業損失 0.49 億美元；淨利息費用 6.40 億美元；淨損 6.26 億美元；折舊與攤銷 13.93 億美元；調整後 EBITDA 15.10 億美元（59%）；購置不動產與設備 64.22 億美元；營收積壓訂單約 1,040 億美元（未含第三季初新增逾 250 億美元）；啟用電力增加近 500 MW 至 1.5 GW，合約電力約 3.7 GW；取得以 HPC 基礎設施為擔保的 31 億美元定期貸款。"
+  - key: nvda-q2-fy27
+    title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2027 (Exhibit 99.1)"
+    publisher: "NVIDIA（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000073/q2fy27pr.htm"
+    type: press-release
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-16"
+    note: "截至 2026 年 7 月 26 日的季度營收 962 億美元、年增 106%；資料中心營收 890 億美元、年增 117%，其中超大規模業者 487 億美元；毛利率 75.0%；第三季營收展望 1,080 億美元（正負 2%）。"
+  - key: nvda-cfo-q2-fy27
+    title: "NVIDIA CFO Commentary on Second Quarter Fiscal 2027 Results"
+    publisher: "NVIDIA（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000073/q2fy27cfocommentary.htm"
+    type: ir-presentation
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-16"
+    note: "取得土地、電力與機房外殼已成 AI 基礎設施建置的下一個關鍵階段；許多 AI 雲與模型公司的成長快過其資產負債表與長期信用所能支撐；2026 年 8 月為 SB Energy 位於俄亥俄州的 PORTS-Pike 園區約 4.25 GW 的土地、電力與外殼建置提供信用支持，該園區以 20 年租約專供 OpenAI 使用輝達基礎設施，擔保上限 1,050 億美元，隨資料中心可供使用分階段生效（首批預計在 FY2029），並隨 OpenAI 支付租金而遞減；另有約 3.8 GW 的擴充選項；每部署一代輝達基礎設施約 150 萬顆 GPU，約當 1,500 億至 2,000 億美元的輝達營收；其他 AI 雲夥伴租約擔保的最大總曝險 35 億美元。"
+  - key: oa-stargate
+    title: "OpenAI, Oracle, and SoftBank expand Stargate with five new AI data center sites"
+    publisher: OpenAI
+    url: "https://openai.com/index/five-new-stargate-sites/"
+    type: press-release
+    lang: en
+    published: "2025-09-23"
+    accessed: "2026-10-16"
+    archiveUrl: "https://web.archive.org/web/20250928181032/https://openai.com/index/five-new-stargate-sites/"
+    note: "五個新場址加上德州 Abilene 旗艦園區與 CoreWeave 相關專案，使 Stargate 規劃容量接近 7 GW、未來三年投資逾 4,000 億美元；有望在 2025 年底前提前達成 2025 年 1 月宣布的 5,000 億美元、10 GW 承諾。"
+  - key: oa-business
+    title: "A business that scales with the value of intelligence"
+    publisher: OpenAI
+    url: "https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/"
+    type: company-site
+    lang: en
+    published: "2026-01-18"
+    accessed: "2026-10-16"
+    archiveUrl: "https://web.archive.org/web/20261001144751/https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/"
+    note: "可用算力 2023 年 0.2 GW、2024 年 0.6 GW、2025 年約 1.9 GW；年化經常性營收 2023 年 20 億美元、2024 年 60 億美元、2025 年逾 200 億美元；營收與可用算力同步成長。"
+  - key: iea-2026
+    title: "Data centre electricity use surged in 2025, even with tightening bottlenecks driving a scramble for solutions"
+    publisher: "International Energy Agency (IEA)"
+    url: "https://www.iea.org/news/data-centre-electricity-use-surged-in-2025-even-with-tightening-bottlenecks-driving-a-scramble-for-solutions"
+    type: government
+    lang: en
+    published: "2026-04-16"
+    accessed: "2026-10-16"
+    archiveUrl: "https://web.archive.org/web/20260603014834/https://www.iea.org/news/data-centre-electricity-use-surged-in-2025-even-with-tightening-bottlenecks-driving-a-scramble-for-solutions"
+    note: "受資料中心投資帶動，五家大型科技公司的資本支出在 2025 年超過 4,000 億美元，2026 年預計再增加 75%。"
+  - key: synergy-q2-2026
+    title: "Q2 Cloud Market Passes $143 Billion; Highest Growth Rate in Eight Years"
+    publisher: "Synergy Research Group"
+    url: "https://www.srgresearch.com/articles/q2-cloud-market-passes-143-billion-highest-growth-rate-in-eight-years"
+    type: analyst
+    lang: en
+    published: "2026-07-30"
+    accessed: "2026-10-16"
+    note: "2026 年第二季全球雲端基礎設施服務營收 1,434 億美元、年增 43%，為八年來最高；近四季合計約 5,000 億美元；生成式 AI 專屬雲端服務年增 165%；市占率亞馬遜 28%、微軟 20%、Google 15%。"
+  - key: sequoia-600b
+    title: "AI's $600B Question"
+    publisher: "Sequoia Capital"
+    url: "https://www.sequoiacap.com/article/ais-600b-question/"
+    type: analyst
+    lang: en
+    published: "2024-06-20"
+    accessed: "2026-10-16"
+    note: "David Cahn 撰。以輝達的年化營收預測（run-rate revenue forecast）乘以 2（GPU 約占資料中心總擁有成本的一半），再乘以 2（GPU 終端使用者 50% 毛利率），估算需要的 AI 營收；2023 年 9 月的「2,000 億美元問題」因此擴大為「6,000 億美元問題」。"
+  - key: lambda-pricing
+    title: "AI cloud pricing"
+    publisher: Lambda
+    url: "https://lambda.ai/pricing"
+    type: company-site
+    lang: en
+    accessed: "2026-10-16"
+    archiveUrl: "https://web.archive.org/web/20261006150056/https://lambda.ai/pricing"
+    note: "執行個體牌價（Instances pricing）每 GPU 小時：B200 SXM6 6.69 美元、H100 SXM 3.99 美元、A100 SXM 80GB 2.79 美元、Tesla V100 0.79 美元（未稅）。"
+  - key: openai-broadcom
+    title: "OpenAI and Broadcom announce strategic collaboration to deploy 10 gigawatts of OpenAI-designed AI accelerators"
+    publisher: OpenAI
+    url: "https://openai.com/index/openai-and-broadcom-announce-strategic-collaboration/"
+    type: press-release
+    lang: en
+    published: "2025-10-13"
+    accessed: "2026-10-16"
+    archiveUrl: "https://web.archive.org/web/20251017075343/https://openai.com/index/openai-and-broadcom-announce-strategic-collaboration/"
+    note: "OpenAI 設計加速器與系統，與博通共同開發與部署，規模 10 GW；雙方已簽署條款書（term sheet），機櫃部署目標自 2026 年下半年開始、2029 年底前完成。"
+  - key: sa-amzn-cf
+    title: "Amazon.com (AMZN) Cash Flow Statement, Quarterly"
+    publisher: Stock Analysis
+    url: "https://stockanalysis.com/stocks/amzn/financials/cash-flow-statement/?p=quarterly"
+    type: dataset
+    lang: en
+    accessed: "2026-10-16"
+    note: "季度資本支出（購置不動產與設備），2024 Q1 至 2026 Q2。"
+  - key: sa-googl-cf
+    title: "Alphabet (GOOGL) Cash Flow Statement, Quarterly"
+    publisher: Stock Analysis
+    url: "https://stockanalysis.com/stocks/googl/financials/cash-flow-statement/?p=quarterly"
+    type: dataset
+    lang: en
+    accessed: "2026-10-16"
+    note: "季度資本支出（購置不動產與設備），2024 Q1 至 2026 Q2。"
+  - key: sa-msft-cf
+    title: "Microsoft (MSFT) Cash Flow Statement, Quarterly"
+    publisher: Stock Analysis
+    url: "https://stockanalysis.com/stocks/msft/financials/cash-flow-statement/?p=quarterly"
+    type: dataset
+    lang: en
+    accessed: "2026-10-16"
+    note: "季度資本支出（不動產與設備增添，不含融資租賃），2024 Q1 至 2026 Q2（微軟 FY2024 Q3 至 FY2026 Q4）。"
+  - key: sa-meta-cf
+    title: "Meta Platforms (META) Cash Flow Statement, Quarterly"
+    publisher: Stock Analysis
+    url: "https://stockanalysis.com/stocks/meta/financials/cash-flow-statement/?p=quarterly"
+    type: dataset
+    lang: en
+    accessed: "2026-10-16"
+    note: "季度資本支出（購置不動產與設備，不含融資租賃本金），2024 Q1 至 2026 Q2。"
+updated: "2026-10-16"
+lastVerified: "2026-10-16"
+editorial: { status: fact-checked, author: learn-18, checkedBy: "learn-18-check", checkedOn: "2026-10-06", notes: "查核：季度資本支出圖表 36 個資料點與 stockanalysis 逐一核對，最新一季與各公司 SEC 8-K 附件一致；年度加總、成長率、資本密集度與 CoreWeave 比例均重算無誤；10-K 耐用年限、Meta 合資、甲骨文客戶預付、輝達擔保、IEA、Synergy、OpenAI、Sequoia 與 Lambda 牌價皆已對照原文。補充 PORTS-Pike 每 GW 換算的前提、輝達擔保分階段生效、博通部署時程與 Sequoia 方法的改編說明。" }
+---
+
+## 一句話解釋
+
+**AI 的<Term id="capex">資本支出</Term>，是雲端業者與 AI 公司預先砸下的「建廠費」：買 GPU 與伺服器、蓋資料中心、拉電力。雲端經濟學問的則是：這些資產在被淘汰之前，能不能靠出租算力、販售 Token 與訂閱，賺回比投資更多的錢。** 2026 年第二季，亞馬遜、Alphabet、微軟與 Meta 四家公司的單季資本支出合計約 1,650 億美元，比一年前多了 87%。
+
+## 生活化比喻
+
+<Callout type="analogy" title="開一家計程車行">
+
+想像你要開一家計程車行：
+
+- **車子是 GPU 與伺服器**：最貴，也貶值最快。新車款每一兩年就推出一次，舊車還能跑，但每公里的成本比不上新車。
+- **車庫、加油站與道路是資料中心與電力**：蓋起來慢、用得久，可以撐過好幾代車子。
+- **載客收入是雲端營收**：車子每天跑越多趟（使用率越高）、每趟收費越高，就越快回本。
+- **企業包車合約是積壓訂單**：先簽下好幾年的包車合約，銀行比較願意借錢讓你買車。
+- **會計上的折舊**：買車的錢不會一次算成費用，而是分攤到車子能用的年數。如果帳上假設車子能開 6 年，結果第 4 年就被新車款打趴，帳面獲利就被高估了。
+
+</Callout>
+
+## 原理
+
+### 規模：一季超過 1,600 億美元
+
+先看最直接的數字。下圖是四家<Term id="hyperscaler">超大規模業者</Term>每季在現金流量表上「購置不動產與設備」的金額：
+
+<LineChart title="四大業者的單季資本支出" unit="十億美元" series={[{ name: "亞馬遜", points: [{ x: "2024 Q2", y: 17.6 }, { x: "2024 Q3", y: 22.6 }, { x: "2024 Q4", y: 27.8 }, { x: "2025 Q1", y: 25.0 }, { x: "2025 Q2", y: 32.2 }, { x: "2025 Q3", y: 35.1 }, { x: "2025 Q4", y: 39.5 }, { x: "2026 Q1", y: 44.2 }, { x: "2026 Q2", y: 54.2 }] }, { name: "Alphabet", points: [{ x: "2024 Q2", y: 13.2 }, { x: "2024 Q3", y: 13.1 }, { x: "2024 Q4", y: 14.3 }, { x: "2025 Q1", y: 17.2 }, { x: "2025 Q2", y: 22.4 }, { x: "2025 Q3", y: 24.0 }, { x: "2025 Q4", y: 27.9 }, { x: "2026 Q1", y: 35.7 }, { x: "2026 Q2", y: 44.9 }] }, { name: "微軟", points: [{ x: "2024 Q2", y: 13.9 }, { x: "2024 Q3", y: 14.9 }, { x: "2024 Q4", y: 15.8 }, { x: "2025 Q1", y: 16.7 }, { x: "2025 Q2", y: 17.1 }, { x: "2025 Q3", y: 19.4 }, { x: "2025 Q4", y: 29.9 }, { x: "2026 Q1", y: 30.9 }, { x: "2026 Q2", y: 35.8 }] }, { name: "Meta", points: [{ x: "2024 Q2", y: 8.2 }, { x: "2024 Q3", y: 8.3 }, { x: "2024 Q4", y: 14.4 }, { x: "2025 Q1", y: 12.9 }, { x: "2025 Q2", y: 16.5 }, { x: "2025 Q3", y: 18.8 }, { x: "2025 Q4", y: 21.4 }, { x: "2026 Q1", y: 19.0 }, { x: "2026 Q2", y: 30.1 }] }]} source={["sa-amzn-cf", "sa-googl-cf", "sa-msft-cf", "sa-meta-cf"]} note="以日曆季度排列；微軟的會計年度結束於 6 月，2026 Q2 即其 FY2026 第四季。金額為現金流量表的購置不動產與設備，不含融資租賃；最新一季已與各公司財報核對。" />
+
+把四家加總，2024 年約 2,280 億美元，2025 年約 3,760 億美元，一年成長約 65%；2026 年上半年就已達約 2,950 億美元（本站依同一批季度資料、以日曆年加總）。國際能源總署（IEA）也指出，受資料中心投資帶動，五家大型科技公司的資本支出在 2025 年超過 4,000 億美元，2026 年預計再增加 75%<Cite k="iea-2026" />。
+
+各公司的說法一致指向「還會更多」。Meta 預估 2026 年資本支出（含融資租賃本金）為 1,300 億至 1,450 億美元<Cite k="meta-q2-2026" />，約是 2025 年 722 億美元的 1.8 到 2 倍<Cite k="meta-10k-2025" />；微軟 FY2026（2025 年 7 月至 2026 年 6 月）的不動產與設備增添為 1,159 億美元，前一年是 646 億美元<Cite k="msft-fy26-q4" />；Alphabet 的資本支出從 2024 年的 525 億美元增加到 2025 年的 914 億美元，並表示 2026 年將再大幅增加<Cite k="goog-10k-2025" />。甲骨文（Oracle）光是 FY2027 第一季（2026 年 6–8 月）就花了 285 億美元，超過 FY2026 全年 557 億美元的一半<Cite k="orcl-fy27-q1" />。
+
+要注意，各家對資本支出的定義不完全相同：Meta 的公司口徑含融資租賃本金，微軟上述數字則不含；用租賃取得的設備，也不一定出現在「購置」這一欄。比較時要先看清楚口徑。
+
+### 錢花到哪裡：短命資產與長命資產
+
+這筆錢大致分成兩類。第一類是伺服器、GPU 與網路設備，屬於「短命資產」：Alphabet 一般以 6 年折舊，微軟的估計耐用年限是 2 至 6 年<Cite k="goog-10k-2025" /><Cite k="msft-10k-fy26" />。第二類是資料中心土地、建物，以及電力、冷卻等設施，屬於「長命資產」：Alphabet 的資料中心建物以 7 至 40 年折舊，土地則不折舊<Cite k="goog-10k-2025" /><Cite k="msft-10k-fy26" />。
+
+短命資產的錢，很大一部分流向了晶片廠。輝達截至 2026 年 7 月 26 日的那一季，資料中心營收達 890 億美元、年增 117%，其中 487 億美元來自超大規模業者，整體毛利率 75.0%<Cite k="nvda-q2-fy27" />。換句話說，雲端業者的資本支出，有相當比例直接變成了輝達的營收與高毛利。
+
+一座 GW 級園區要花多少錢？兩個公開數字可以提供數量級：
+
+- OpenAI 與甲骨文、軟銀推動的 Stargate 計畫，以 5,000 億美元對應 10 <Term id="gigawatt">GW</Term> 的承諾<Cite k="oa-stargate" />，平均每 GW 約 500 億美元（本站換算）。
+- 輝達在 2026 年 8 月為俄亥俄州 PORTS-Pike 園區約 4.25 GW 的建置提供信用支持，並表示這座園區每部署一代輝達基礎設施，約需 150 萬顆 GPU，相當於 1,500 億至 2,000 億美元的輝達營收<Cite k="nvda-cfo-q2-fy27" />。若以這 4.25 GW 計算，每 GW 約 350 億至 470 億美元（本站換算；該園區另有約 3.8 GW 的擴充選項，輝達未說明 150 萬顆 GPU 對應的確切電力），而且這只是輝達自己的部分。
+
+兩者的統計範圍不同，不能直接相減，但結論一致：1 GW 的 AI 算力，對應的是數百億美元的投資。
+
+<StatGrid title="資本支出的幾個量級" items={[{ label: "四大業者單季資本支出", value: "約 1,650 億", unit: "美元", note: "2026 年第二季，本站加總" }, { label: "Meta 2026 年資本支出展望", value: "1,300–1,450 億", unit: "美元", note: "含融資租賃本金" }, { label: "輝達單季資料中心營收", value: "890 億", unit: "美元", note: "截至 2026 年 7 月" }, { label: "Stargate 承諾", value: "5,000 億美元／10 GW", note: "平均每 GW 約 500 億美元，本站換算" }]} />
+
+這些錢最後變成散布在世界各地的園區。下方的地球儀把大型 AI 園區依規劃電力畫成柱子，可以看出投資集中在電力、土地與併網條件好的地方：
+
+<Scene3D id="cloud-globe" variant="globe" caption="雲端與新雲版圖：每根柱子是一座大型 AI 資料中心園區，越高代表規劃電力越大，顏色代表營運中、興建中或規劃中。切換導覽步驟，比較超大規模雲、新雲與主權 AI 的布局，以及 GW 級園區的建置進度。若畫面標示「示意資料」，數字僅供示意。" />
+
+### 從資本支出到損益：折舊
+
+買伺服器的錢不會在當年一次認列為費用，而是依耐用年限，用直線法分攤成每年的<Term id="depreciation">折舊</Term>：
+
+<MathTeX tex={"D=\\frac{C}{N}"} display label="每年折舊等於購置成本除以耐用年限" />
+
+假設花 1,000 億美元買伺服器：耐用年限 6 年，每年折舊約 167 億美元；改成 5 年，就變成每年 200 億美元，多了兩成。耐用年限怎麼估，直接影響帳面獲利，而各家的判斷並不一致：
+
+| 公司 | 伺服器與網路設備的耐用年限 | 近期變動與影響 |
+|---|---|---|
+| Alphabet | 一般為 6 年 | — |
+| 微軟 | 2 至 6 年 | FY2026 10-K 的估計範圍 |
+| 亞馬遜 | 部分設備由 6 年縮短為 5 年 | 2025 年起生效，理由是 AI 技術發展加快；當年折舊增加 14 億美元 |
+| Meta | 多數設備延長為 5.5 年 | 2025 年起生效；當年折舊減少 29.2 億美元 |
+
+資料來源：各公司 10-K<Cite k="goog-10k-2025" /><Cite k="msft-10k-fy26" /><Cite k="amzn-10k-2025" /><Cite k="meta-10k-2025" />。
+
+亞馬遜在 2024 年才把伺服器耐用年限從 5 年延長為 6 年，隔年又把部分設備改回 5 年，並明說是因為 AI 與機器學習的技術發展加快<Cite k="amzn-10k-2025" />；Meta 則反方向延長<Cite k="meta-10k-2025" />。這正是「GPU 到底能用幾年」的爭論核心。
+
+折舊也有遞延效果。資產要等到「可以使用」才開始折舊<Cite k="goog-10k-2025" />，之後再分 5 到 6 年攤提，所以今天的資本支出，會在未來幾年陸續變成折舊，並逐年墊高。Alphabet 2026 年第二季的不動產與設備折舊為 71 億美元，比一年前的 50 億美元多了 42%<Cite k="goog-q2-2026" />；Meta 同季的折舊與攤銷為 64 億美元，一年前是 43 億美元<Cite k="meta-q2-2026" />。即使資本支出明天停止成長，折舊費用還會繼續往上爬好幾年。
+
+### 收入端：算力怎麼變成營收
+
+雲端業者回收投資的方式大致有三種：
+
+1. **出租算力**：以 <Term id="gpu-as-a-service">GPUaaS</Term> 按小時出租 GPU，或簽多年期的容量合約。
+2. **販售模型服務**：以 <Term id="token-pricing">Token 計價</Term>提供模型 API。
+3. **放進自家產品**：例如廣告推薦、搜尋與訂閱型軟體，營收不一定單獨揭露。
+
+營收確實在加速。亞馬遜 AWS 第二季營收 422 億美元、年增 37%，營業利益 166 億美元，AI 業務的年化營收已超過 250 億美元<Cite k="amzn-q2-2026" />；Google Cloud 營收 248 億美元、年增 82%，營業利益 88 億美元<Cite k="goog-q2-2026" />；微軟 FY2026 的 Azure 營收首度突破 1,000 億美元<Cite k="msft-fy26-q4" />。研究機構 Synergy 統計，2026 年第二季全球雲端基礎設施服務營收 1,434 億美元、年增 43%，生成式 AI 專屬的雲端服務更年增 165%<Cite k="synergy-q2-2026" />。模型公司端，OpenAI 的可用算力從 2023 年的 0.2 GW 增加到 2025 年約 1.9 GW，<Term id="arr">年化經常性營收</Term>也從 20 億美元成長到逾 200 億美元，兩者幾乎同步<Cite k="oa-business" />。
+
+更大的數字在「還沒認列」的部分。<Term id="rpo">RPO</Term>（剩餘履約義務）代表已簽約、尚未交付的合約金額：
+
+<BarChart title="已簽約、尚未認列的營收" unit="十億美元" data={[{ label: "微軟（商業 RPO）", value: 678 }, { label: "甲骨文（RPO）", value: 664 }, { label: "CoreWeave（營收積壓訂單）", value: 104 }]} source={["msft-fy26-q4", "orcl-fy27-q1", "crwv-q2-2026"]} note="微軟為 2026 年 6 月底、甲骨文為 2026 年 8 月底、CoreWeave 為 2026 年 6 月底。各公司定義不同，CoreWeave 的積壓訂單另含估計會認列的金額。" keepOrder />
+
+甲骨文表示，客戶對 AI 訓練與推論雲端服務的需求成長快於供給，它在一季內新簽超過 300 億美元的 AI 雲端合約、交付 850 MW 的新增容量<Cite k="orcl-fy27-q1" />。不過，積壓訂單要變成營收，前提是機房能如期蓋好、電力能如期接上，而且客戶付得出錢。
+
+### 時間差：先付錢，後收租
+
+資本支出與營收之間，隔著一段建設期。Alphabet 在 10-K 中說明，從購買到資產正式上線，可能要幾個月到幾年；資料中心通常是多年期、分階段的專案，要先取得土地與建物、蓋好機房，再安裝伺服器與網路設備<Cite k="goog-10k-2025" />。輝達也在 2026 年 8 月指出，取得土地、電力與機房外殼，已成為 AI 基礎設施建置的下一個關鍵階段<Cite k="nvda-cfo-q2-fy27" />。
+
+這段時間差在新雲身上最明顯：CoreWeave 已簽約的電力約 3.7 GW，實際啟用的只有 1.5 GW<Cite k="crwv-q2-2026" />。中間的差距，是已經談好、但還在等待併網、蓋機房與設備到貨的產能。這代表兩件事：一方面，未來的營收能見度很高；另一方面，任何電力或施工延誤，都會讓已經投入的資金晚一步開始回收，而利息照樣要付。電力為何成為瓶頸，可參考<LearnLink id="datacenter-power-cooling">資料中心電力與散熱深入</LearnLink>。
+
+### 資本密集度：投資跑在營收前面
+
+把資本支出除以同一季的營收，可以看出各家「投資跑得多前面」：
+
+<BarChart title="單季資本支出佔營收比" unit="%" data={[{ label: "亞馬遜", value: 27.0 }, { label: "Alphabet", value: 37.5 }, { label: "微軟", value: 39.8 }, { label: "Meta", value: 49.5 }, { label: "甲骨文", value: 147.3 }, { label: "CoreWeave", value: 249.4 }]} source={["amzn-q2-2026", "goog-q2-2026", "msft-fy26-q4", "meta-q2-2026", "orcl-fy27-q1", "crwv-q2-2026"]} note="本站以各公司財報的購置不動產與設備除以同季營收計算。甲骨文為 2026 年 6–8 月，其餘為 2026 年 4–6 月；亞馬遜的營收含零售，比例因此偏低。" keepOrder />
+
+一年前（2025 年 4–6 月），Alphabet 與微軟的這個比例都只有 22% 到 23%，Meta 約 35%<Cite k="goog-q2-2026" /><Cite k="msft-fy26-q4" /><Cite k="meta-q2-2026" />（本站以同一批財報的前一年同期數字計算）。如今 Meta 每 1 美元營收，就對應將近 0.5 美元的基礎設施投資，甲骨文與 CoreWeave 的資本支出更超過營收。這代表 AI 雲端越來越像電力公司或電信業者：先重押資產，再用很多年慢慢回收。
+
+### 單位經濟：以新雲 CoreWeave 為例
+
+專門出租 GPU 的<Term id="neocloud">新雲</Term>，讓我們能看到最「純」的 AI 雲端損益表。CoreWeave 2026 年第二季的數字如下<Cite k="crwv-q2-2026" />：
+
+<BarChart title="CoreWeave 2026 年第二季損益拆解" unit="億美元" data={[{ label: "營收", value: 25.75 }, { label: "調整後 EBITDA", value: 15.10 }, { label: "折舊與攤銷", value: 13.93 }, { label: "淨利息費用", value: 6.40 }, { label: "淨損", value: 6.26 }]} source="crwv-q2-2026" note="淨損以正值呈現長度。調整後 EBITDA 為公司自行定義的非 GAAP 指標，未扣除折舊、利息、稅與股票薪酬。" keepOrder />
+
+這張圖說明了 AI 雲端的關鍵矛盾：
+
+- **未扣折舊前的獲利率很高**：在還沒扣除折舊、利息、稅與股票薪酬之前，調整後 EBITDA 率高達 59%。
+- **但折舊與利息吃掉大半**：折舊與攤銷佔營收 54%，淨利息費用又佔 25%（本站計算），GAAP 營業損益已是小幅虧損 0.49 億美元，最後是 6.26 億美元的淨損。
+- **而且還在加速投資**：同一季購置設備 64.22 億美元，是營收的 2.5 倍。
+
+一顆 GPU 能不能回本，取決於四個變數：租金價格、使用率、耐用年限，以及資金成本。用 Lambda 官網的隨選牌價試算<Cite k="lambda-pricing" />：
+
+<MathTeX tex={"R_{\\text{year}}=p\\times 8760\\times u"} display label="一顆 GPU 一年的租金收入等於每小時價格乘以 8760 小時再乘以使用率" />
+
+H100 每小時 3.99 美元，全年無休租出去約 3.5 萬美元；若使用率 70%，一年約 2.4 萬美元，5 年約 12 萬美元（本站試算，未稅）。這筆收入要支付 GPU 與伺服器本身、機房與電力、網路、維運，以及借錢的利息。同一張價目表上，B200 每小時 6.69 美元、A100 為 2.79 美元、更早的 V100 只要 0.79 美元<Cite k="lambda-pricing" />：世代越舊，每小時能收的租金越低。如果一顆 GPU 能收的租金逐年下滑，帳上卻用直線法平均攤提 6 年，前幾年的獲利就會看起來比實際的經濟價值更好，這就是耐用年限之爭的核心。
+
+### 現金流與融資：錢從哪裡來
+
+投資跑在營收前面，<Term id="free-cash-flow">自由現金流</Term>（營業現金流減資本支出）就會被壓縮。亞馬遜近四季的自由現金流為負 76 億美元，一年前還是正 182 億美元<Cite k="amzn-q2-2026" />；Alphabet 第二季的自由現金流為負 59 億美元<Cite k="goog-q2-2026" />；Meta 第二季只剩 7.8 億美元<Cite k="meta-q2-2026" />；甲骨文 FY2027 第一季為負 50 億美元<Cite k="orcl-fy27-q1" />。
+
+自己的現金不夠，就得向外部籌錢。目前常見的工具有五種：
+
+1. **發債與增資**：Alphabet 在 2026 年 6 月發行股票與強制轉換特別股，淨籌 496 億美元，用途包括擴充 AI 基礎設施，同一季也發行了淨額 203 億美元的公司債<Cite k="goog-q2-2026" />；甲骨文則透過市價增資計畫賣出 200 億美元股票<Cite k="orcl-fy27-q1" />。
+2. **客戶預付**：甲骨文 FY2027 第一季的資本支出是 285 億美元，但扣除與資本支出相關的客戶預付款 114 億美元等項目後，自己實際掏出的現金約 180 億美元<Cite k="orcl-fy27-q1" />。
+3. **合資與 <Term id="spv">SPV</Term>**：Meta 在 2025 年 10 月與 Blue Owl 管理的基金合資開發路易斯安那州的 Hyperion 園區，Blue Owl 持股 80%、Meta 20%，總開發成本約 270 億美元，部分資金來自向 PIMCO 等債券投資人發行的私募債<Cite k="meta-hyperion" />。Meta 完工後承租、初始租期 4 年，並提供殘值保證；因為不主導合資公司的經營，Meta 不把它併入報表，但在 10-K 中揭露的最大損失曝險為 459.5 億美元<Cite k="meta-10k-2025" />。
+4. **以硬體為擔保借款**：CoreWeave 取得以 HPC 基礎設施為擔保的 31 億美元定期貸款<Cite k="crwv-q2-2026" />，這類做法常被稱為 <Term id="gpu-backed-loan">GPU 擔保融資</Term>。
+5. **供應商擔保**：輝達在 2026 年 8 月的財務長評論中直言，許多 AI 雲與模型公司的成長速度，已經快過它們的資產負債表與長期信用所能支撐；它為專供 OpenAI 使用的 PORTS-Pike 園區提供土地、電力與機房外殼建置的信用支持，擔保上限 1,050 億美元；擔保會隨資料中心可供使用而分階段生效（首批預計在輝達 FY2029），並隨 OpenAI 支付租金而遞減<Cite k="nvda-cfo-q2-fy27" />。
+
+<Compare title="兩種解讀" left={{ title: "看好的理由", items: ["雲端與 AI 雲營收加速成長，生成式 AI 雲端服務年增 165%", "數千億美元的 RPO 已經簽約", "甲骨文表示 AI 雲端需求成長快於供給", "OpenAI 表示營收與可用算力幾乎同步成長"] }} right={{ title: "擔心的理由", items: ["自由現金流轉弱，部分業者已轉負", "折舊年限若高估，帳面獲利會被高估", "積壓訂單能否兌現，取決於 AI 客戶的募資與營收", "供應商擔保、合資與表外安排，讓風險不容易一眼看清"] }} caption="兩欄的事實分別取自上文引用的財報、Synergy 與 OpenAI；本站不做投資建議。" />
+
+當供應商入股或擔保客戶、客戶再向供應商採購時，市場會擔心出現<Term id="circular-financing">循環交易</Term>：資金在少數公司之間繞圈，可能放大帳面上的需求。這不代表需求是假的，但提醒讀者在看營收與訂單時，也要看錢是從哪裡來的。
+
+<DeepDive title="深入一點：要多少營收，才填得滿這個洞？">
+
+紅杉資本（Sequoia Capital）的 David Cahn 在 2024 年 6 月提出一個常被引用的粗估方法<Cite k="sequoia-600b" />：
+
+1. 以輝達營收的年化金額，代表一年的 AI 晶片採購。
+2. GPU 約佔資料中心<Term id="tco">TCO</Term>（總擁有成本）的一半，所以乘以 2，得到包含電力、建物等成本的總投資。
+3. 終端使用者也需要約 50% 的<Term id="gross-margin">毛利率</Term>才有利可圖，所以再乘以 2，得到終端需要創造的 AI 營收。
+
+<MathTeX tex={"R_{\\text{needed}}\\approx\\text{DC}_{\\text{NVIDIA}}\\times 2\\times 2"} display label="需要的終端 AI 營收約等於輝達資料中心營收乘以 2 再乘以 2" />
+
+當時他據此把「AI 的 2,000 億美元問題」改稱為「6,000 億美元問題」<Cite k="sequoia-600b" />。
+
+套用同一個方法到最新數字（原文用的是輝達的年化營收預測，本站改以資料中心營收代入）：輝達單季資料中心營收 890 億美元<Cite k="nvda-q2-fy27" />，年化約 3,560 億美元，乘以 2 再乘以 2，約 1.4 兆美元（本站粗估）。對照之下，Synergy 統計的全球雲端基礎設施服務近四季營收約 5,000 億美元，其中生成式 AI 專屬的雲端服務只佔一部分<Cite k="synergy-q2-2026" />。
+
+這個方法刻意簡化，有幾個重要的限制：
+
+- **資產可以用好幾年**：一年的投資不需要在同一年賺回來，用 5 到 6 年的耐用年限分攤，每年需要的營收會小得多。
+- **漏算自研晶片**：Google 的 TPU、亞馬遜的 Trainium 等自研 <Term id="asic">ASIC</Term> 不在輝達營收裡，實際投資更大。
+- **漏算內部價值**：Meta 等公司把 AI 用在廣告推薦與內容排序上，產生的價值反映在既有營收中，不會出現在「AI 營收」這一欄。
+- **一季的年化有誤差**：輝達的資料中心營收也包含網路設備，而用單一季度乘以 4，會放大季度之間的波動。
+
+所以這個數字不是預測，而是一把尺：它提醒我們，資本支出每成長一倍，終端需要多賺的錢也大約成長一倍。追蹤 AI 營收能不能追上這把尺，就是追蹤這一輪投資能不能回本。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+AI 資本支出是整條產業鏈的「上游訂單來源」。錢從雲端業者流出，依序變成以下環節的營收：
+
+- **晶片與加速器** <SegmentChip id="ai-accelerators" />：<CompanyChip id="nvidia">輝達</CompanyChip>的資料中心營收單季 890 億美元，是最大的直接受益者<Cite k="nvda-q2-fy27" />；<CompanyChip id="broadcom">博通</CompanyChip>則與 OpenAI 合作開發 OpenAI 自研的加速器，規劃自 2026 年下半年起到 2029 年底部署 10 GW<Cite k="openai-broadcom" />，延伸閱讀<TrendLink id="custom-asic-rise">客製化 ASIC 崛起</TrendLink>。晶片再往上帶動 <CompanyChip id="tsmc">台積電</CompanyChip>的先進製程與封裝，以及 <CompanyChip id="sk-hynix">SK 海力士</CompanyChip>等廠商的 HBM。
+- **伺服器與零組件** <SegmentChip id="servers-systems" />：<CompanyChip id="foxconn">鴻海</CompanyChip>、<CompanyChip id="quanta">廣達</CompanyChip>、<CompanyChip id="wiwynn">緯穎</CompanyChip>等台灣 ODM 把晶片組裝成整櫃伺服器，是資本支出中「短命資產」的主要承接者。
+- **資料中心與電力** <SegmentChip id="datacenter-infra" /> <SegmentChip id="energy-power" />：建物、電力與冷卻等「長命資產」，流向 <CompanyChip id="vertiv">維諦技術</CompanyChip>等設備商與 <CompanyChip id="ge-vernova">奇異維諾瓦</CompanyChip>等電力設備廠；設計細節見<LearnLink id="datacenter-power-cooling">資料中心電力與散熱深入</LearnLink>，電力瓶頸見<TrendLink id="power-bottleneck-onsite-generation">電力瓶頸</TrendLink>。
+- **雲端與新雲** <SegmentChip id="cloud-neocloud" />：<CompanyChip id="amazon">亞馬遜</CompanyChip>、<CompanyChip id="alphabet">Alphabet</CompanyChip>、<CompanyChip id="microsoft">微軟</CompanyChip>、<CompanyChip id="oracle">甲骨文</CompanyChip>與 <CompanyChip id="coreweave">CoreWeave</CompanyChip>、<CompanyChip id="lambda">Lambda</CompanyChip> 等業者是出錢的一方，它們每季公布的資本支出與<Term id="guidance">財測</Term>，是整條鏈最重要的領先指標之一。
+- **模型公司與資金方** <SegmentChip id="foundation-models" />：<CompanyChip id="meta">Meta</CompanyChip> 與 <CompanyChip id="openai">OpenAI</CompanyChip> 既是算力的大買家，也透過 Stargate 等計畫與<CompanyChip id="softbank-group">軟銀集團</CompanyChip>、<CompanyChip id="blue-owl">Blue Owl</CompanyChip> 等資金方合作；它們的營收能否追上算力投資，決定了這一輪建置的持續性。
+
+想追蹤後續，可以看<TrendLink id="hyperscaler-capex">超大規模業者的 AI 資本支出</TrendLink>、<TrendLink id="ai-infra-financing-bubble">AI 基礎設施融資與泡沫風險</TrendLink>、<TrendLink id="ai-monetization">AI 營收化</TrendLink>與<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>；每個 Token 的成本如何計算，則回顧<LearnLink id="training-vs-inference-economics">訓練與推論的經濟學</LearnLink>。

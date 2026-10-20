@@ -1,0 +1,301 @@
+---
+/**
+ * <RevenueBars financials={entry.data} company="台積電" />
+ *
+ * Quarterly (or half-yearly / annual) bars in the native currency with company-native fiscal
+ * labels, a YoY % line in an aligned lower panel, hatched estimates, the pending guidance range
+ * as a whisker after the last actual bar, and the calendar range of each period in the tooltip.
+ */
+import './charts.css';
+import ChartFrame from './ChartFrame.astro';
+import BarsPlot, { type BarSlot } from './BarsPlot.astro';
+import { tip, round } from './chart-utils';
+import type { ChartSourceLink, LegendItem, TableSpec } from './types';
+import {
+  type FinancialsInput,
+  type FinMetric,
+  type MetricPoint,
+  annualRevenue,
+  metricPoints,
+  pendingGuidance,
+  primaryPeriodType,
+  seriesCurrency,
+  sourcesFor,
+} from '../../lib/financial-metrics';
+import {
+  formatAmount,
+  formatChange,
+  zhConcat,
+  formatDate,
+  currencyName,
+  formatMoney,
+  formatMoneyRange,
+  formatNumber,
+  monthLabel,
+  formatSignedPercent,
+  moneyUnitLabel,
+  pickAxisUnit,
+  pctChange,
+  scaleMillions,
+} from '../../lib/format';
+import { detectGaps, fiscalShortLabel, isCalendarNamed, labelForPeriod, parsePeriod, periodDays } from '../../lib/fiscal';
+import { FX_COVERAGE, usdNote, usdRate } from '../../lib/fx';
+
+interface Props {
+  financials: FinancialsInput;
+  periodType?: 'quarter' | 'half' | 'year' | undefined;
+  metric?: FinMetric | undefined;
+  /** label of a segment-revenue series */
+  seriesLabel?: string | undefined;
+  /** periods shown (default: 12 quarters, 8 halves, 6 years) */
+  count?: number | undefined;
+  /** display name used in the title and the aria summary, e.g. 「台積電」 */
+  company?: string | undefined;
+  title?: string | undefined;
+  subtitle?: string | undefined;
+  showYoy?: boolean | undefined;
+  showGuidance?: boolean | undefined;
+  showUsd?: boolean | undefined;
+  height?: number | undefined;
+  notes?: string[] | undefined;
+  badge?: string | undefined;
+  bare?: boolean | undefined;
+  titleHidden?: boolean | undefined;
+  as?: 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | undefined;
+  class?: string | undefined;
+}
+
+const {
+  financials: fin,
+  metric = 'revenue',
+  seriesLabel,
+  company = '',
+  subtitle,
+  showYoy = true,
+  showGuidance = true,
+  showUsd = true,
+  height = 220,
+  notes: extraNotes = [],
+  badge,
+  bare = false,
+  titleHidden = false,
+  as,
+  class: className,
+} = Astro.props;
+
+const periodType = Astro.props.periodType ?? primaryPeriodType(fin, metric) ?? 'quarter';
+const count = Astro.props.count ?? (periodType === 'quarter' ? 12 : periodType === 'half' ? 8 : 6);
+const METRIC_ZH: Partial<Record<FinMetric, string>> = {
+  revenue: '營收',
+  'data-center-revenue': '資料中心營收',
+  'segment-revenue': seriesLabel ?? '分項營收',
+  capex: '資本支出',
+  'operating-income': '營業利益',
+  'net-income': '淨利',
+  'free-cash-flow': '自由現金流',
+  rnd: '研發費用',
+  arr: '年化經常性營收（ARR）',
+  rpo: '剩餘履約義務（RPO）',
+  backlog: '未交貨訂單',
+};
+const metricZh = METRIC_ZH[metric] ?? '營收';
+const unitWord = periodType === 'quarter' ? '季' : periodType === 'half' ? '個半年度' : '個年度';
+const title = Astro.props.title ?? `${company}${periodType === 'year' ? '年度' : periodType === 'half' ? '半年度' : '季'}${metricZh}`;
+
+const all: MetricPoint[] = (
+  metric === 'revenue' && periodType === 'year' ? annualRevenue(fin) : metricPoints(fin, metric, periodType, seriesLabel ? { label: seriesLabel } : {})
+).filter((p) => p.status !== 'guidance');
+const shown = all.slice(-count);
+const currency = seriesCurrency(fin, metric, periodType === 'year' ? undefined : periodType);
+
+// guidance whisker (revenue only), placed after the last bar when it is the next period
+const lastShown = shown.at(-1);
+const rawGuide = metric === 'revenue' && showGuidance ? pendingGuidance(fin) : null;
+// guidance issued in another currency (e.g. TSMC guides in USD) is converted at the latest
+// monthly average rate so the whisker shares the bars' axis; the note keeps the original.
+const fxMonth = FX_COVERAGE.to;
+const guideFactor =
+  rawGuide && rawGuide.currency !== currency
+    ? (() => {
+        const a = usdRate(rawGuide.currency, fxMonth);
+        const b = usdRate(currency, fxMonth);
+        return a && b ? b / a : null;
+      })()
+    : 1;
+const guide =
+  rawGuide && guideFactor
+    ? { ...rawGuide, low: rawGuide.low * guideFactor, high: rawGuide.high * guideFactor, mid: rawGuide.mid * guideFactor, currency }
+    : null;
+const guideKind = guide ? parsePeriod(guide.forPeriod)?.kind : null;
+const showGuide = !!guide && !!lastShown && guideKind === periodType && guide.forPeriod > lastShown.period;
+const gLabel = guide ? labelForPeriod(guide.forPeriod, fin.fiscalYear) : '';
+
+const maxAbs = Math.max(1, ...shown.map((p) => Math.abs(p.value)), showGuide ? guide!.high : 0);
+const unit = pickAxisUnit(maxAbs);
+const s = (v: number) => round(scaleMillions(v, unit), 4);
+const money = (v: number | null | undefined) => (v == null ? '—' : formatMoney(v, currency));
+const lastActual = [...shown].reverse().find((p) => !p.estimate);
+const lastEstimate = [...shown].reverse().find((p) => p.estimate);
+const calendarNamed = shown.length > 0 && shown.every((p) => isCalendarNamed(p));
+
+function xLabels(p: { period: string }): { label: string; group?: string } {
+  const parsed = parsePeriod(p.period);
+  if (!parsed) return { label: p.period };
+  const fy = parsed.fy ?? 0;
+  const group = calendarNamed ? String(fy) : `FY${String(fy).slice(2)}`;
+  if (parsed.kind === 'quarter') return { label: `Q${parsed.quarter}`, group };
+  if (parsed.kind === 'half') return { label: `H${parsed.half}`, group };
+  return { label: calendarNamed ? String(fy) : `FY${String(fy).slice(2)}` };
+}
+
+const popLabel = periodType === 'quarter' ? '季增率' : periodType === 'half' ? '較上期' : '年增率';
+const statusZh: Record<string, string> = { estimate: '估計', restated: '重編', preliminary: '初步數字', guidance: '財測' };
+
+const slots: BarSlot[] = shown.map((p) => {
+  const { label, group } = xLabels(p);
+  const parsed = parsePeriod(p.period);
+  const minor = periodType === 'quarter' && shown.length > 8 && (parsed?.quarter === 2 || parsed?.quarter === 4);
+  // very narrow: quarter labels give way to the fiscal-year ticks below them
+  const minor2 = periodType === 'quarter' || periodType === 'half';
+  return {
+    value: s(p.value),
+    estimate: p.estimate,
+    label,
+    group,
+    minor,
+    minor2: minor2 && shown.length > 6,
+    strip: showYoy ? p.yoy : null,
+    stripEstimate: p.estimate,
+    valueLabel: p === lastActual ? formatAmount(p.value) : p === lastEstimate ? '估計' : undefined,
+    valueLabelBadge: p === lastEstimate,
+    tip: tip(p.longLabel, [
+      [metricZh, money(p.value)],
+      ['年增率', p.yoy != null ? formatSignedPercent(p.yoy) : ''],
+      periodType !== 'year' ? [popLabel, p.pop != null ? formatSignedPercent(p.pop) : ''] : null,
+      p.status !== 'reported' ? ['狀態', statusZh[p.status] ?? p.status] : null,
+      p.longPeriod ? ['附註', p.longPeriod] : null,
+    ]),
+  };
+});
+
+if (showGuide && guide) {
+  const { label, group } = xLabels({ period: guide.forPeriod });
+  const prior = all.find((p) => p.period === guide.forPeriod.replace(/^FY(\d{4})/, (_m, y) => `FY${Number(y) - 1}`));
+  const impliedYoy = prior ? pctChange(guide.mid, prior.value) : null;
+  slots.push({
+    value: null,
+    label,
+    group,
+    whisker: { low: s(guide.low), high: s(guide.high) },
+    valueLabel: '公司財測',
+    valueLabelMinor: true,
+    minor2: true,
+    strip: showYoy ? impliedYoy : null,
+    stripEstimate: true,
+    tip: tip(`公司財測：${gLabel}`, [
+      ['區間', formatMoneyRange(guide.low, guide.high, currency)],
+      ['中位數', money(guide.mid)],
+      ['隱含年增率', impliedYoy != null ? formatSignedPercent(impliedYoy) : ''],
+      ['發布日期', formatDate(guide.issued, 'iso')],
+    ]),
+  });
+}
+
+// aria summary
+const first = shown[0];
+const last = shown.at(-1);
+const actual = shown.filter((p) => !p.estimate);
+const hi = actual.length ? actual.reduce((a, b) => (b.value > a.value ? b : a)) : null;
+const lo = actual.length ? actual.reduce((a, b) => (b.value < a.value ? b : a)) : null;
+const estCount = shown.filter((p) => p.estimate).length;
+const aria = first && last
+  ? [
+      `${title}長條圖，${first.label} 至 ${last.label}，共 ${shown.length} ${unitWord}。`,
+      lastActual ? `最新一期 ${lastActual.longLabel}為${money(lastActual.value)}${lastActual.yoy != null ? `，${formatChange(lastActual.yoy, 'yoy')}` : ''}。` : '',
+      hi && lo && shown.length > 2 ? `期間最高為 ${hi.label}（${money(hi.value)}），最低為 ${lo.label}（${money(lo.value)}）。` : '',
+      estCount ? `其中 ${estCount} 期為估計值。` : '',
+      showGuide && guide ? `公司財測 ${gLabel} 營收為 ${formatMoneyRange(guide.low, guide.high, currency)}。` : '',
+      showYoy ? '下方折線為年增率。' : '',
+    ].join('')
+  : '';
+
+// legend
+const legend: LegendItem[] = [{ label: metricZh, kind: 'bar', color: 'var(--chart-1)' }];
+if (estCount) legend.push({ label: '估計值', kind: 'estimate' });
+if (showGuide) legend.push({ label: '公司財測區間', kind: 'range', color: 'var(--chart-1)' });
+if (showYoy && shown.some((p) => p.yoy != null)) legend.push({ label: '年增率（下圖）', kind: 'line', color: 'var(--chart-2)' });
+
+// notes
+const notes: string[] = [];
+if (showUsd && lastActual && currency !== 'USD') {
+  const n = usdNote(lastActual.value, currency, { start: lastActual.start, end: lastActual.end });
+  if (n) notes.push(`${zhConcat(lastActual.label, metricZh)} ${n}`);
+}
+if (periodType !== 'year' || !calendarNamed) notes.push(`財年說明：${fin.fiscalYear.description}`);
+for (const p of shown) if (p.longPeriod) notes.push(`${p.label}：${p.longPeriod}。`);
+const byBasis = new Map<string, string[]>();
+for (const p of shown) if (p.estimate && p.estimateBasis) byBasis.set(p.estimateBasis, [...(byBasis.get(p.estimateBasis) ?? []), p.label]);
+for (const [basis, labels] of byBasis) notes.push(`${zhConcat(labels.join('、'), '為估計值')}：${basis}`);
+for (const p of shown) if (p.status === 'restated' && p.note) notes.push(`${p.label} 為重編數字：${p.note}`);
+const gaps = detectGaps(shown);
+const lbl = (x: string) => labelForPeriod(x, fin.fiscalYear);
+for (const g of gaps) notes.push(`${lbl(g.after)} 與 ${lbl(g.before)} 之間缺少資料${g.missing.length ? `（${g.missing.map(lbl).join('、')}）` : ''}。`);
+if (showGuide && guide && rawGuide) {
+  const conv =
+    rawGuide.currency !== currency
+      ? `；財測原以${currencyName(rawGuide.currency)}發布（${formatMoneyRange(rawGuide.low, rawGuide.high, rawGuide.currency)}），圖中依 ${monthLabel(fxMonth)}平均匯率換算`
+      : '';
+  notes.push(`公司財測：${gLabel} 營收 ${formatMoneyRange(guide.low, guide.high, currency)}（${formatDate(guide.issued, 'iso')} 發布${conv}）。`);
+}
+notes.push(...extraNotes);
+
+const srcKeys = [...shown.map((p) => p.src), ...(showGuide && guide ? [guide.src] : [])];
+const sources: ChartSourceLink[] = sourcesFor(fin, srcKeys).map((x) => ({ title: x.title, url: x.url, publisher: x.publisher }));
+
+const table: TableSpec = {
+  columns: [
+    { key: 'period', label: '期間' },
+    { key: 'range', label: '期間起訖' },
+    ...(periodType === 'quarter' && !calendarNamed ? [{ key: 'cal', label: '約當日曆季' }] : []),
+    { key: 'value', label: `${metricZh}（${moneyUnitLabel(unit, currency)}）`, numeric: true },
+    { key: 'yoy', label: '年增率', numeric: true },
+    ...(periodType !== 'year' ? [{ key: 'pop', label: popLabel, numeric: true }] : []),
+    { key: 'status', label: '備註' },
+  ],
+  rows: [...shown].reverse().map((p) => ({
+    period: periodType === 'year' && !calendarNamed ? fiscalShortLabel(p.period) : p.label,
+    range: `${p.start}～${p.end}`,
+    cal: p.cal?.label ?? '',
+    value: formatNumber(scaleMillions(p.value, unit), { digits: unit === '兆' ? 2 : unit === '億' ? 1 : 0 }),
+    yoy: p.yoy != null ? formatSignedPercent(p.yoy) : '',
+    pop: p.pop != null ? formatSignedPercent(p.pop) : '',
+    status: [p.status !== 'reported' ? statusZh[p.status] : '', p.derived ? (p.note ?? '加總') : '', periodDays(p) >= 95 && periodType === 'quarter' ? '14 週' : '']
+      .filter(Boolean)
+      .join('、'),
+  })),
+};
+---
+
+<ChartFrame
+  title={title}
+  titleHidden={titleHidden}
+  as={as}
+  subtitle={subtitle}
+  badge={badge}
+  asOf={fin.lastVerified}
+  unit={moneyUnitLabel(unit, currency)}
+  legend={legend}
+  notes={notes}
+  sources={sources}
+  table={table}
+  empty={shown.length === 0}
+  bare={bare}
+  class={className}
+>
+  <BarsPlot
+    slots={slots}
+    ariaLabel={aria}
+    height={height}
+    strip={showYoy && shown.some((p) => p.yoy != null) ? { label: '年增率（%）', color: 'var(--chart-2)' } : null}
+  />
+</ChartFrame>

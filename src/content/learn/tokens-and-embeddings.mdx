@@ -1,0 +1,398 @@
+---
+title: "Token 與嵌入向量：模型如何讀懂文字"
+subtitle: "先把文字切成積木，再替每塊積木找到「意義地圖」上的座標"
+description: "語言模型讀不懂文字，只會算數字。本文說明分詞器如何用 BPE 把文字切成 Token、詞彙表大小如何影響中文的成本與速度，以及嵌入向量如何把 Token 變成意義空間中的座標，並延伸到語意搜尋與 RAG。"
+level: 2
+order: 201
+track: models
+prerequisites: [what-is-llm]
+next: [transformer-and-attention, rag-and-vector-search]
+relatedSegments: [foundation-models, cloud-neocloud, devtools-data-mlops, apps-agents, memory-storage]
+relatedCompanies: [openai, alphabet, meta, alibaba, deepseek, mediatek, hugging-face, pinecone, zilliz, qdrant, weaviate]
+relatedModels: [openai-gpt, openai-gpt-oss, google-gemini, google-gemma, meta-muse-llama, alibaba-qwen, deepseek, mediatek-breeze, taide]
+relatedTrends: [inference-demand, ai-monetization, long-context-memory, sovereign-ai]
+glossary:
+  - llm
+  - tokenizer
+  - token
+  - embedding
+  - parameter
+  - backpropagation
+  - transformer
+  - attention
+  - rag
+  - vector-database
+  - multimodal
+  - softmax
+  - token-pricing
+  - context-window
+  - hbm
+scenes:
+  - { id: embedding-space, variant: semantic }
+keyTakeaways:
+  - "模型只會算數字：分詞器先把文字切成 Token，每個 Token 對應詞彙表裡的一個編號。"
+  - "主流分詞法是 BPE：從字元或位元組出發，反覆合併最常見的組合，常用詞會變成一整塊。"
+  - "詞彙表越大，同一段文字通常切出越少 Token；Breeze 加入 3 萬個繁中 Token 後，重寫中文快約 2 倍。"
+  - "嵌入層是一張大表，把每個 Token 換成一串數字；意思相近的詞，向量的方向也相近。"
+  - "專門的嵌入模型把整段文字壓成一個向量，是語意搜尋、RAG 與向量資料庫的基礎。"
+  - "Token 也是計費與算力的單位：Google 模型 API 在 2026 年 7 月時每分鐘約處理 220 億個 Token。"
+estimatedMinutes: 14
+sources:
+  - key: bpe-2016
+    title: "Neural Machine Translation of Rare Words with Subword Units"
+    publisher: "arXiv（Sennrich, Haddow, Birch；University of Edinburgh）"
+    url: "https://arxiv.org/abs/1508.07909"
+    type: paper
+    lang: en
+    published: "2015-08-31"
+    accessed: "2026-10-06"
+    note: "把 1994 年的 BPE 壓縮演算法改造成切詞方法：反覆把最常見的相鄰符號合併成新符號；圖 1 以 low、lowest、newer、wider 學出合併規則，沒看過的 lower 被切成 low 與 er。"
+  - key: gpt2
+    title: "Language Models are Unsupervised Multitask Learners"
+    publisher: OpenAI
+    url: "https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf"
+    type: paper
+    lang: en
+    published: "2019-02-14"
+    accessed: "2026-10-06"
+    note: "第 2.2 節：以 Unicode 字元為起點的 BPE 基本詞彙超過 130,000 個，位元組層級 BPE 只需 256 個；詞彙表擴大到 50,257 個。"
+  - key: utf8-wiki
+    title: "UTF-8"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/UTF-8"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "基本多文種平面中其餘 61,440 個碼位需要 3 個位元組，包含大多數中日韓文字；基本平面以外的碼位（含較罕見的中日韓文字與 emoji）需要 4 個位元組。"
+  - key: breeze-7b
+    title: "MediaTek-Research/Breeze-7B-Instruct-v1_0 model card"
+    publisher: "MediaTek Research（Hugging Face）"
+    url: "https://huggingface.co/MediaTek-Research/Breeze-7B-Instruct-v1_0"
+    type: docs
+    lang: en
+    published: "2024-03-05"
+    accessed: "2026-10-06"
+    note: "以 Mistral-7B 為基礎，詞彙表由 32k 擴充到 62k，新增 30,000 個繁體中文 Token，官方稱繁中推論速度為 Mistral-7B 的 2 倍；在 2 張 RTX A6000 上以 vLLM 重寫 700 字中文文章，Breeze-7B 10.74 秒、Mistral-7B-Instruct-v0.2 20.48 秒。模型卡示範「你好，請問你可以完成什麼任務？」的分詞結果為 10 個 Token。"
+  - key: gemini-tokens
+    title: "Understand and count tokens"
+    publisher: Google AI for Developers
+    url: "https://ai.google.dev/gemini-api/docs/tokens"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "對 Gemini 模型而言，1 個 token 約等於 4 個字元，100 個 token 約為 60–80 個英文單字。"
+  - key: deepseek-tokens
+    title: "Token & Token Usage"
+    publisher: DeepSeek API Docs
+    url: "https://api-docs.deepseek.com/quick_start/token_usage"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "1 個英文字元約 0.3 個 token，1 個中文字約 0.6 個 token；不同模型的分詞方式不同，比例會有差異。"
+  - key: llama2
+    title: "Llama 2: Open Foundation and Fine-Tuned Chat Models"
+    publisher: "Meta AI（arXiv）"
+    url: "https://arxiv.org/abs/2307.09288"
+    type: paper
+    lang: en
+    published: "2023-07-18"
+    accessed: "2026-10-06"
+    note: "第 2.2 節：沿用 Llama 1 的 BPE 分詞器（SentencePiece 實作），詞彙表共 32k 個 token。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "Meta AI（arXiv）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-06"
+    note: "詞彙表 128K 個 token：100K 來自 tiktoken，另加 28K 個非英語 token；英文樣本的壓縮率由 Llama 2 分詞器的每 token 3.17 個字元提高到 3.94 個字元。"
+  - key: tiktoken
+    title: "tiktoken/model.py"
+    publisher: "OpenAI（GitHub）"
+    url: "https://github.com/openai/tiktoken/blob/main/tiktoken/model.py"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "模型與編碼對照：gpt-4 系列使用 cl100k_base；gpt-4o、gpt-4.1、gpt-5、o 系列使用 o200k_base；gpt-oss 使用 o200k_harmony。"
+  - key: gemma3
+    title: "Gemma 3 Technical Report"
+    publisher: "Google DeepMind（arXiv）"
+    url: "https://arxiv.org/abs/2503.19786"
+    type: paper
+    lang: en
+    published: "2025-03-25"
+    accessed: "2026-10-06"
+    note: "沿用 Gemini 2.0 的 SentencePiece 分詞器（數字拆開、保留空白、位元組編碼），詞彙表 262k（即 262,144 = 256 × 1,024，Google 部落格寫作 256k）；對非英語語言更平衡。"
+  - key: qwen3
+    title: "Qwen3 Technical Report"
+    publisher: "Qwen Team（arXiv）"
+    url: "https://arxiv.org/abs/2505.09388"
+    type: paper
+    lang: en
+    published: "2025-05-14"
+    accessed: "2026-10-06"
+    note: "Qwen 分詞器為位元組層級 BPE，詞彙表 151,669；表 1：0.6B、1.7B、4B 共用輸入與輸出嵌入（Tie Embedding），8B、14B、32B 不共用。"
+  - key: gpt-oss-config
+    title: "openai/gpt-oss-120b config.json"
+    publisher: "OpenAI（Hugging Face）"
+    url: "https://huggingface.co/openai/gpt-oss-120b/blob/main/config.json"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "vocab_size 201,088（嵌入矩陣列數）。"
+  - key: qwen35
+    title: "Qwen/Qwen3.5-397B-A17B model card"
+    publisher: "Qwen（Hugging Face）"
+    url: "https://huggingface.co/Qwen/Qwen3.5-397B-A17B"
+    type: docs
+    lang: en
+    published: "2026-02-16"
+    accessed: "2026-10-06"
+    note: "Token Embedding 248,320（含填充）；支援 201 種語言與方言。"
+  - key: petrov
+    title: "Language Model Tokenizers Introduce Unfairness Between Languages"
+    publisher: "arXiv（Petrov et al., University of Oxford；NeurIPS 2023）"
+    url: "https://arxiv.org/abs/2305.15425"
+    type: paper
+    lang: en
+    published: "2023-05-17"
+    accessed: "2026-10-06"
+    note: "同一段文字翻成不同語言後，Token 數最多相差 15 倍；ChatGPT 與 GPT-4 的分詞器處理義大利文約需英文的 1.6 倍 Token、保加利亞文 2.6 倍、阿拉伯文 3 倍，撣語可達 15 倍；差距影響計費、延遲與可放進上下文的內容量。"
+  - key: 3b1b-gpt
+    title: "Transformers, the tech behind LLMs (Deep Learning Chapter 5)"
+    publisher: 3Blue1Brown
+    url: "https://www.3blue1brown.com/lessons/gpt"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "GPT-3 詞彙表 50,257 個 token、嵌入維度 12,288，嵌入矩陣共 617,558,016 個權重；輸出端的反嵌入矩陣形狀相反，再加約 6.17 億個參數；總參數 1,750 億。"
+  - key: qwen3-8b
+    title: "Qwen/Qwen3-8B model card"
+    publisher: "Qwen（Hugging Face）"
+    url: "https://huggingface.co/Qwen/Qwen3-8B"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "參數 8.2B，非嵌入參數 6.95B；36 層。設定檔 config.json：hidden_size 4,096、vocab_size 151,936、tie_word_embeddings 為 false。"
+  - key: gemma-270m
+    title: "Introducing Gemma 3 270M: The compact model for hyper-efficient AI"
+    publisher: Google Developers Blog
+    url: "https://developers.googleblog.com/en/introducing-gemma-3-270m/"
+    type: company-site
+    lang: en
+    published: "2025-08-14"
+    accessed: "2026-10-06"
+    note: "總參數 2.7 億，其中 1.7 億為嵌入參數（因為詞彙表大），1 億在 Transformer 區塊。"
+  - key: word2vec
+    title: "Efficient Estimation of Word Representations in Vector Space"
+    publisher: "arXiv（Mikolov, Chen, Corrado, Dean；Google）"
+    url: "https://arxiv.org/abs/1301.3781"
+    type: paper
+    lang: en
+    published: "2013-01-16"
+    accessed: "2026-10-06"
+    note: "不到一天即可從 16 億字的資料學出高品質詞向量；vector(King) − vector(Man) + vector(Woman) 最接近 Queen；以餘弦距離找最接近的詞。"
+  - key: openai-embeddings
+    title: "Vector embeddings"
+    publisher: OpenAI API Docs
+    url: "https://developers.openai.com/api/docs/guides/embeddings"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "text-embedding-3-small 預設 1,536 維、text-embedding-3-large 3,072 維；以每頁約 800 token 計，每美元約可處理 62,500 頁與 9,615 頁（約合每百萬 token 0.02 與 0.13 美元）；large 截短到 256 維仍優於 1,536 維的 ada-002；嵌入向量已正規化為長度 1，建議用餘弦相似度。"
+  - key: openai-emb-pricing
+    title: "text-embedding-3-small model page"
+    publisher: OpenAI API Docs
+    url: "https://developers.openai.com/api/docs/models/text-embedding-3-small"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "官方模型頁定價：text-embedding-3-small 每百萬 token 0.02 美元；同頁比較表列出 text-embedding-3-large 為 0.13 美元。"
+  - key: gemini-embeddings
+    title: "Embeddings"
+    publisher: Google AI for Developers
+    url: "https://ai.google.dev/gemini-api/docs/embeddings"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "gemini-embedding-2 為 Gemini API 第一個多模態嵌入模型（文字、圖片、影片、音訊、PDF），輸入上限 8,192 token，輸出 128–3,072 維，建議 768、1,536 或 3,072 維，最近更新 2026 年 4 月；與 gemini-embedding-001 皆以 Matryoshka 表示學習訓練。"
+  - key: qwen3-embedding
+    title: "Qwen/Qwen3-Embedding-8B model card"
+    publisher: "Qwen（Hugging Face）"
+    url: "https://huggingface.co/Qwen/Qwen3-Embedding-8B"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "支援 100 多種語言、上下文 32k，嵌入維度最高 4,096，可自訂 32 到 4,096 維；截至 2025-06-05 在 MTEB 多語言排行榜第一（70.58 分）。"
+  - key: press-wolf
+    title: "Using the Output Embedding to Improve Language Models"
+    publisher: "arXiv（Press, Wolf）"
+    url: "https://arxiv.org/abs/1608.05859"
+    type: paper
+    lang: en
+    published: "2016-08-20"
+    accessed: "2026-10-06"
+    note: "建議輸入嵌入與輸出嵌入共用權重（weight tying），可在不損及效能下把神經機器翻譯模型縮小到原本的一半以下。"
+  - key: alphabet-q2-2026
+    title: "Alphabet earnings call Q2 2026: Sundar Pichai remarks"
+    publisher: Google
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/"
+    type: earnings-call
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-06"
+    note: "模型 API 每分鐘處理約 220 億個 token，前一季為 160 億個；近 500 家雲端客戶在過去一年各處理超過 1 兆個 token。"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: learn-06
+  checkedBy: "learn-06-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：數字皆與原始來源核對（arXiv 論文、Hugging Face 模型卡與設定檔、OpenAI 與 Google 文件、Alphabet 法說稿）。修正 UTF-8 罕見字為 3 到 4 個位元組、Alphabet Token 數的時間點與 SentencePiece「▁」說明；嵌入模型價格改引用 OpenAI 官方模型頁。"
+---
+
+## 一句話解釋
+
+<Term id="llm">大型語言模型</Term>其實讀不懂文字，它只會計算數字。所以文字進入模型之前要經過兩道手續：先由<Term id="tokenizer">分詞器</Term>把文字切成一塊塊的 <Term id="token">Token</Term>，每塊對應詞彙表裡的一個編號；再由嵌入層把每個編號換成一長串數字，也就是<Term id="embedding">嵌入向量</Term>。在這個數字空間裡，意思相近的詞，位置也相近，模型對語言的「理解」就從這裡開始。
+
+## 生活化比喻
+
+<Callout type="analogy" title="先切成樂高積木，再放到意義地圖上">
+
+想像你要把一篇文章寄給一位只看得懂數字的朋友。
+
+- **切積木（分詞）**：你不會一筆一畫地寄，也不會替每一句話發明新代號，而是把文字拆成常用的「積木」：常見的詞是一整塊，罕見的詞拆成幾小塊。每種積木有固定編號，寫在雙方都有的「積木目錄」裡，這本目錄就是詞彙表。
+- **查座標（嵌入）**：光有編號還不夠，編號 1234 和 1235 不代表意思相近。所以每塊積木還要對應到一張「意義地圖」上的座標：「貓」和「狗」住在同一區，「晶片」和「記憶體」住在隔壁區，「貓」和「晶片」則相隔很遠。
+
+差別在於，這張地圖不是 2 維，而是有數千甚至上萬個維度；座標也不是人畫的，而是模型在訓練中自己學出來的。
+
+</Callout>
+
+## 原理
+
+### 第一步：分詞，把文字切成 Token
+
+切文字有兩個極端。每個字元切一刀，詞彙表很小，但句子會變得很長，模型要處理的步數暴增；每個單字切一刀，句子變短，詞彙表卻會無限膨脹，遇到沒看過的新詞（例如新產品名稱）就束手無策。現在的主流做法是折衷的「子詞」：常見的詞保持完整，罕見的詞拆成較小的片段。
+
+最常用的子詞演算法是 BPE（Byte Pair Encoding，位元組對編碼）。它原本是 1994 年提出的資料壓縮技術，2015 年由 Sennrich 等人改造成切詞方法<Cite k="bpe-2016" />。做法很直覺：
+
+<FlowSteps
+  title="BPE 如何學出詞彙表"
+  steps={[
+    { title: "從最小單位出發", detail: "把訓練文字全部拆成單一字元（或位元組）" },
+    { title: "數一數", detail: "統計所有相鄰的兩個符號，看哪一對出現最多次" },
+    { title: "合併", detail: "把最常見的那一對合成一個新符號，加進詞彙表" },
+    { title: "重複", detail: "持續合併，直到詞彙表達到預定的大小" }]}
+/>
+
+論文中的小例子是：只用 low、lowest、newer、wider 四個字學出合併規則後，沒看過的 lower 會被切成「low」與「er」兩塊<Cite k="bpe-2016" />。模型不必認得每一個字，只要認得夠多積木，就能拼出任何新詞。
+
+**中文怎麼切？** 2019 年的 GPT-2 改用「位元組層級」的 BPE：若以 Unicode 字元為起點，基本詞彙就超過 13 萬個；改以位元組為起點，基本詞彙只要 256 個，就能表示任何文字<Cite k="gpt2" />。在 UTF-8 編碼中，大多數中日韓文字占 3 個位元組，更罕見的擴充區漢字則占 4 個位元組<Cite k="utf8-wiki" />。所以詞彙表沒收錄的罕見字，會被拆成 3 到 4 個位元組 Token；常用的字與詞，則會在合併過程中變成一整塊。
+
+實際切切看。聯發科旗下聯發創新基地在 Breeze-7B 的模型卡中示範，「你好，請問你可以完成什麼任務？」會被切成以下 10 個 Token<Cite k="breeze-7b" />：
+
+> ▁ ／ 你好 ／ ， ／ 請問 ／ 你 ／ 可以 ／ 完成 ／ 什麼 ／ 任務 ／ ？
+
+開頭的「▁」是 SentencePiece 分詞器代表空白的符號，這裡是分詞器自動在句首補上的空白。可以看到，「你好」「請問」「任務」這些常用詞都是一整塊，15 個字元（含標點）只用了 10 個 Token，其中還包括開頭的「▁」。
+
+至於一般的換算比例，Google 文件指出，Gemini 模型的 1 個 Token 約等於 4 個字元，100 個 Token 約是 60 到 80 個英文單字<Cite k="gemini-tokens" />；DeepSeek 則估計 1 個中文字約 0.6 個 Token<Cite k="deepseek-tokens" />。比例因模型而異，最準確的方法是看 API 回傳的實際用量。
+
+### 詞彙表越大越好嗎？
+
+詞彙表就是分詞器認得的所有積木。近幾年，主流模型的詞彙表明顯變大：
+
+<BarChart
+  title="主流模型的詞彙表大小"
+  unit="萬個 Token"
+  data={[
+    { label: "GPT-2（2019）", value: 5.03 },
+    { label: "Llama 2（2023）", value: 3.2 },
+    { label: "Llama 3（2024）", value: 12.8 },
+    { label: "Gemma 3（2025）", value: 26.2 },
+    { label: "Qwen3（2025）", value: 15.17 },
+    { label: "gpt-oss（2025）", value: 20.11 },
+    { label: "Qwen3.5（2026）", value: 24.83 }]}
+  source={["gpt2", "llama2", "llama3", "gemma3", "qwen3", "gpt-oss-config", "qwen35"]}
+  note="GPT-2 為 50,257；Llama 2 為 32k；Llama 3 為 128K；Gemma 3 為 262k（262,144，Google 部落格寫作 256k）；Qwen3 為 151,669；gpt-oss 取模型設定檔的 201,088；Qwen3.5 取模型卡的嵌入矩陣大小 248,320（含填充）。"
+/>
+
+詞彙表變大，最直接的好處是同一段文字切出的 Token 變少。Meta 的 Llama 3 把詞彙表從 Llama 2 的 3.2 萬個擴大到 12.8 萬個（其中 10 萬個來自 OpenAI 的 tiktoken，另加 2.8 萬個非英語 Token），英文樣本的壓縮率從每個 Token 3.17 個字元提高到 3.94 個字元，同樣的訓練算力就能「讀」更多文字<Cite k="llama3" />。OpenAI 也把分詞器從 GPT-4 使用的 cl100k_base，換成 GPT-4o 與 GPT-5 使用的 o200k_base<Cite k="tiktoken" />；同屬 o200k 家族的開放權重模型 gpt-oss，詞彙表約 20 萬個<Cite k="gpt-oss-config" />。
+
+對繁體中文，差別更明顯。聯發創新基地的 Breeze-7B 以 Mistral-7B 為基礎，加入 3 萬個繁體中文 Token，把詞彙表從 3.2 萬個擴大到 6.2 萬個。官方在兩張 RTX A6000 GPU 上請模型重寫一篇 700 字的中文文章：Breeze-7B 花 10.74 秒，Mistral-7B 要 20.48 秒，速度約快一倍<Cite k="breeze-7b" />。原因很單純：同樣的中文，切出的 Token 少了，模型要一個一個產生的步數也就少了。
+
+反過來說，分詞器對哪種語言「不友善」，那種語言的使用者就要付出更多。2023 年一篇 NeurIPS 論文比較同一段內容翻成不同語言後的 Token 數：ChatGPT 與 GPT-4 使用的分詞器，處理義大利文約需英文的 1.6 倍 Token、保加利亞文 2.6 倍、阿拉伯文約 3 倍，最極端的撣語高達 15 倍<Cite k="petrov" />。API 依 Token 計費，Token 數也決定處理時間與<Term id="context-window">上下文視窗</Term>能放多少內容，因此作者認為這等於讓不同語言的使用者付出不同代價<Cite k="petrov" />。各國投入在地語言模型的討論，可參考<TrendLink id="sovereign-ai">主權 AI</TrendLink>。
+
+當然，詞彙表也不是越大越好。詞彙表變大，嵌入矩陣與輸出層都會跟著變大，罕見的 Token 在訓練中出現的次數也比較少。這是一種取捨，下一節會看到它的實際代價。
+
+### 第二步：查表，把 Token 變成向量
+
+分詞器輸出的只是一串整數編號。編號本身沒有意義，模型接下來做的事是「查表」：嵌入層是一張大表格，稱為嵌入矩陣，詞彙表裡的每個 Token 各占一列，每列是一串固定長度的數字。查到哪一列，那串數字就是這個 Token 的嵌入向量。
+
+這張表的大小等於「詞彙量 × 向量維度」。3Blue1Brown 以 GPT-3 為例：詞彙表 50,257 個 Token、每個向量 12,288 維，光是嵌入矩陣就有 617,558,016 個<Term id="parameter">參數</Term><Cite k="3b1b-gpt" />。這些數字一開始是隨機的，和模型其他權重一樣，在訓練中透過<Term id="backpropagation">反向傳播</Term>慢慢調整，直到每個 Token 落在合適的位置。
+
+嵌入層占模型多大比重，取決於模型大小：
+
+<StatGrid
+  title="嵌入參數占模型的比重"
+  items={[
+    { label: "Gemma 3 270M", value: "約 63%", note: "2.7 億個參數中，1.7 億個是嵌入參數" },
+    { label: "Qwen3-8B", value: "約 15%", note: "82 億個參數中，非嵌入參數 69.5 億" },
+    { label: "GPT-3", value: "約 0.35%", note: "1,750 億個參數中，輸入嵌入矩陣約 6.18 億；連同輸出端約 0.7%" }]}
+  caption="依 Google、Qwen 官方資料與 3Blue1Brown 的 GPT-3 計算換算。"
+/>
+
+小模型若想保留大詞彙表、支援多種語言，嵌入參數甚至會超過一半：Google 的 Gemma 3 270M 總共 2.7 億個參數，其中 1.7 億個是嵌入參數<Cite k="gemma-270m" />。阿里巴巴的 Qwen3-8B 有 82 億個參數，其中非嵌入參數 69.5 億<Cite k="qwen3-8b" />，差額約 12.5 億，正好約等於輸入與輸出兩張表（各 151,936 列 × 4,096 維）的大小。到了 GPT-3 這種千億級模型，嵌入矩陣只占總參數的一小部分<Cite k="3b1b-gpt" />。
+
+### 嵌入空間：意思相近，位置就相近
+
+模型怎麼知道「貓」和「狗」意思相近？沒有人告訴它，是它從大量文字中學到的：常出現在相似上下文的詞（前後常有「餵」「養」「寵物」），在訓練中會被推向相近的位置。
+
+<Scene3D id="embedding-space" variant="semantic" caption="嵌入向量空間：詞語依意思聚成聚落，「國王 − 男人 + 女人」最接近「女王」。位置、維度與相似度皆為示意。" />
+
+2013 年，Google 研究人員發表的 word2vec 論文展示了這個空間的特性：不到一天，就能從 16 億個英文單字的資料學出高品質的詞向量；而且向量可以做加減，「國王」減「男人」加「女人」，結果最接近「女王」<Cite k="word2vec" />。換句話說，「性別」這種關係在空間裡大致成了一個固定的方向。
+
+衡量兩個向量有多相似，最常用的是**餘弦相似度**：只看兩個向量方向的夾角，方向越一致，數值越接近 1。OpenAI 的開發文件示範語意搜尋時，就是計算查詢與每份文件的嵌入向量之間的餘弦相似度，再取分數最高的文件<Cite k="openai-embeddings" />。
+
+### 從「字的向量」到「整段話的向量」
+
+要注意，查表得到的嵌入向量是「靜態」的：不論「蘋果」出現在「蘋果發表新手機」還是「這顆蘋果很甜」，查到的都是同一串數字。分辨兩種蘋果的工作，由後面的 <Term id="transformer">Transformer</Term> 層負責：透過<Term id="attention">注意力機制</Term>，每個 Token 的向量會吸收上下文的資訊，一層一層被改寫成「在這句話裡的意思」。這部分留到<LearnLink id="transformer-and-attention">Transformer 與注意力機制</LearnLink>詳談。
+
+另一類專門的**嵌入模型**，目的不是生成文字，而是把一整段文字（甚至圖片、影片）壓成一個向量，讓電腦可以依「意思」搜尋，而不只是比對關鍵字。這是 <Term id="rag">RAG</Term>（檢索增強生成）與<Term id="vector-database">向量資料庫</Term>的基礎。以下是 2026 年幾個具代表性的嵌入模型：
+
+| 模型 | 推出者 | 向量維度 | 特點 |
+|---|---|---|---|
+| text-embedding-3-small | OpenAI | 預設 1,536 | 每百萬 Token 0.02 美元 |
+| text-embedding-3-large | OpenAI | 預設 3,072 | 每百萬 Token 0.13 美元；在 MTEB 評測中，截短到 256 維仍勝過舊款 1,536 維的 ada-002 |
+| gemini-embedding-2 | Google | 128–3,072 | <Term id="multimodal">多模態</Term>，文字、圖片、影片、音訊與 PDF 共用同一個向量空間 |
+| Qwen3-Embedding-8B | 阿里巴巴 Qwen | 32–4,096 | 開放權重，支援 100 多種語言 |
+
+表中資料分別來自 OpenAI 的開發文件與模型定價頁<Cite k="openai-embeddings" /><Cite k="openai-emb-pricing" />、Google<Cite k="gemini-embeddings" />與 Qwen 官方模型卡<Cite k="qwen3-embedding" />。Google 的 gemini-embedding-2 單次輸入上限 8,192 個 Token，最近一次更新在 2026 年 4 月<Cite k="gemini-embeddings" />；Qwen3-Embedding-8B 在 2025 年 6 月曾登上 MTEB 多語言排行榜第一<Cite k="qwen3-embedding" />。
+
+表中的模型都支援「可截短」的向量：訓練時讓向量的前幾段本身就是堪用的精簡版（Matryoshka 表示學習，名稱來自俄羅斯娃娃），使用者可以只保留前幾百維，以少許品質換取更省的儲存空間。Google 的文件即建議使用 768、1,536 或 3,072 維<Cite k="gemini-embeddings" />。
+
+<DeepDive title="深入一點：相似度怎麼算？向量要占多少空間？">
+
+**餘弦相似度。** 兩個向量 a、b 的餘弦相似度，是兩者的內積除以兩者長度的乘積：
+
+<MathTeX tex={"\\cos\\theta=\\frac{\\mathbf{a}\\cdot\\mathbf{b}}{\\lVert\\mathbf{a}\\rVert\\,\\lVert\\mathbf{b}\\rVert}=\\frac{\\sum_i a_i b_i}{\\sqrt{\\sum_i a_i^2}\\,\\sqrt{\\sum_i b_i^2}}"} display label="夾角的餘弦，等於兩向量對應分量相乘的總和，除以兩向量長度的乘積" />
+
+結果介於 −1 到 1：1 代表方向完全相同，0 代表互相垂直、沒有關聯，−1 代表方向相反。OpenAI 的嵌入向量已預先正規化為長度 1，此時餘弦相似度只要算內積就好，速度稍快，排序結果也和用歐氏距離相同<Cite k="openai-embeddings" />。
+
+**向量要占多少空間？** 做個試算：把一個企業知識庫切成 100 萬個片段，每段用 1,536 維向量，每個數字以 32 位元浮點數（4 個位元組）儲存，就需要 1,536 × 4 × 100 萬，約 61 億個位元組，也就是約 6.1 GB，還不含索引。改用 768 維可以減半。這就是截短維度、壓縮向量這類技術受到重視的原因。
+
+**輸入與輸出能共用一張表嗎？** 模型最後一層要把向量轉回「詞彙表中每個 Token 的分數」，再經 <Term id="softmax">Softmax</Term> 變成機率。這一層的矩陣形狀和嵌入矩陣剛好相反，3Blue1Brown 稱之為反嵌入矩陣<Cite k="3b1b-gpt" />。2016 年的研究提出讓兩者共用同一組權重，可在不損及效能下把翻譯模型縮小到原本的一半以下<Cite k="press-wolf" />。實務上因模型而異：Qwen3 的 0.6B、1.7B、4B 小模型共用，8B 以上則分開<Cite k="qwen3" />。
+
+**詞彙表大小的取捨。** 詞彙表越大，每段文字的 Token 越少，推論越快、上下文能裝越多、按 Token 計費也越便宜；但嵌入矩陣與輸出層會變大，最後一步的 Softmax 要在更多候選之間計算。對小模型來說這個代價特別明顯，所以 Gemma 3 270M 有六成以上參數都花在嵌入<Cite k="gemma-270m" />。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+Token 與嵌入向量看似只是軟體細節，卻牽動模型、雲端、資料庫到記憶體的多個環節：
+
+- **模型實驗室決定分詞器** → <SegmentChip id="foundation-models" />：分詞器要在預訓練前定案，因為嵌入矩陣的每一列都對應一個 Token。<CompanyChip id="openai" />（<ModelChip id="openai-gpt" />、<ModelChip id="openai-gpt-oss" />）、<CompanyChip id="meta" />（<ModelChip id="meta-muse-llama" />）、<CompanyChip id="alphabet" />（<ModelChip id="google-gemini" />、<ModelChip id="google-gemma" />）、<CompanyChip id="alibaba" />（<ModelChip id="alibaba-qwen" />）與 <CompanyChip id="deepseek" />（<ModelChip id="deepseek" />）的詞彙表大小各不相同，近年整體趨勢是擴大詞彙表、強化多語言，例如 Qwen3.5 宣稱支援 201 種語言與方言<Cite k="qwen35" />。台灣方面，<CompanyChip id="mediatek" /> 旗下的 <ModelChip id="mediatek-breeze" /> 以擴充繁中詞彙提升效率，國科會推動的 <ModelChip id="taide" /> 也以繁體中文為重點。
+- **Token 是計費與算力的單位** → <SegmentChip id="cloud-neocloud" />：雲端 API 多採 <Term id="token-pricing">Token 計價</Term>，同一段中文切出多少 Token，直接影響成本。Alphabet 執行長在 2026 年 7 月的法說會上表示，Google 模型 API 每分鐘處理約 220 億個 Token，上一季為 160 億個；近 500 家雲端客戶在過去一年各自處理超過 1 兆個 Token<Cite k="alphabet-q2-2026" />。用量的成長，見<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>與<TrendLink id="ai-monetization">AI 營收化</TrendLink>。
+- **嵌入向量撐起搜尋與 RAG** → <SegmentChip id="devtools-data-mlops" />、<SegmentChip id="apps-agents" />：向量資料庫業者如 <CompanyChip id="pinecone" />、<CompanyChip id="zilliz" />（Milvus）、<CompanyChip id="qdrant" />、<CompanyChip id="weaviate" /> 專門儲存與搜尋嵌入向量，企業的知識庫問答、客服與 Agent 都建立在這類檢索之上。許多開放權重模型與分詞器也透過 <CompanyChip id="hugging-face" /> 發布，本文引用的 Qwen、gpt-oss 與 Breeze 模型卡都來自該平台。實際做法見<LearnLink id="rag-and-vector-search">RAG 與向量檢索</LearnLink>。
+- **向量也要放進記憶體** → <SegmentChip id="memory-storage" />：嵌入矩陣是模型權重的一部分，推論時要和其他權重一起放進 GPU 旁的 <Term id="hbm">HBM</Term>；向量資料庫裡的大量向量，則需要伺服器記憶體與 SSD 承載（儲存量的試算見上方「深入一點」）。上下文越拉越長，模型一次要處理的 Token 越多，見<TrendLink id="long-context-memory">長上下文與模型記憶</TrendLink>。

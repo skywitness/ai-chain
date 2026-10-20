@@ -1,0 +1,123 @@
+---
+/**
+ * /models/compare/ 「模型並排比較」: pick 2–4 versions (?m=a,b,c) and compare specs, prices and
+ * benchmarks side by side, with a warning when snapshot dates are more than 90 days apart.
+ * The no-JS default is a preset flagship comparison rendered at build time.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Icon from '../../components/ui/Icon.astro';
+import CompareView from '../../components/model/CompareView.astro';
+import { buildCompareData } from '../../components/model/compare-data';
+import { getFamilies } from '../../components/model/model-data';
+import { sectionHref } from '../../lib/paths';
+import { DATA_DATE } from '../../lib/seo';
+
+const families = await getFamilies();
+const data = buildCompareData(families);
+const familyCount = new Set(data.versions.map((v) => v.familyId)).size;
+---
+
+<BaseLayout
+  title="模型並排比較"
+  description="任選 2 到 4 個大模型版本，並排比較權重開放方式、上下文長度、API 價格與評測分數；日期相差超過 90 天的分數會特別標示。"
+  breadcrumbs={[{ label: '大模型', href: sectionHref('models') }, { label: '模型並排比較' }]}
+  section="models"
+  pagefind={false}
+>
+  <div class="container compare">
+    <header class="page-head">
+      <p class="page-head__kicker">大模型</p>
+      <h1>模型並排比較</h1>
+      <p class="page-head__lede">
+        挑選 2 到 4 個版本，並排比較規格、API 價格與評測分數。目前可比較 {familyCount} 個系列、{data.versions.length} 個版本；評測分數各自標示日期與來源類型。
+      </p>
+      <div class="compare__meta">
+        <DataAsOf date={DATA_DATE} />
+        <a href={sectionHref('models')} class="compare__back">
+          <Icon name="arrow-left" /> 回到大模型總覽
+        </a>
+      </div>
+    </header>
+
+    {
+      data.versions.length >= 2 ? (
+        <CompareView data={data} />
+      ) : (
+        <p class="compare__pending">
+          <Icon name="clock" /> 模型資料整理中，完成後即可在這裡並排比較。
+        </p>
+      )
+    }
+
+    <aside class="compare__tips" aria-labelledby="tips-title">
+      <h2 id="tips-title">比較時的三個提醒</h2>
+      <ol>
+        <li>
+          <strong>同一項評測也可能不同版。</strong>
+          排行榜會改版、實驗室自評常使用最有利的設定；格子裡的日期與「第三方／實驗室自評」標示，是判斷能否直接比較的依據。
+        </li>
+        <li>
+          <strong>價格不等於實際花費。</strong>
+          表中是官方標準單價；推理模型會產生大量思考 tokens，快取、批次處理則能大幅降低成本。
+        </li>
+        <li>
+          <strong>規格不是能力。</strong>
+          上下文長度、參數量只是上限或規模；實際表現仍要看評測與自己的使用情境。
+        </li>
+      </ol>
+    </aside>
+  </div>
+</BaseLayout>
+
+<style>
+  .compare {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+    padding-block-end: var(--space-8);
+  }
+  .compare__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-5);
+  }
+  .compare__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    min-block-size: 2.75rem;
+    font-size: var(--fs-s);
+  }
+  .compare__pending {
+    padding: var(--space-6);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    text-align: center;
+    color: var(--c-fg-muted);
+  }
+  .compare__tips {
+    padding: var(--space-5) var(--space-6);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-sunken);
+  }
+  .compare__tips h2 {
+    font-size: var(--fs-l);
+    margin-block-end: var(--space-3);
+  }
+  .compare__tips ol {
+    margin: 0;
+    padding-inline-start: 1.3em;
+    display: grid;
+    gap: var(--space-3);
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .compare__tips strong {
+    color: var(--c-fg);
+    margin-inline-end: 0.3em;
+  }
+</style>

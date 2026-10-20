@@ -1,0 +1,76 @@
+---
+/**
+ * Pill-shaped tag; a link when `href` is given. For segment/track/category labels and filters.
+ *
+ *   <Tag>先進封裝</Tag>
+ *   <Tag href={segmentHref('memory-storage')} segment="memory-storage">記憶體</Tag>
+ *   <Tag active>全部</Tag>
+ */
+import type { SegmentId } from '../../lib/collections';
+
+interface Props {
+  href?: string | undefined;
+  segment?: SegmentId | string | undefined;
+  active?: boolean | undefined;
+  class?: string | undefined;
+  title?: string | undefined;
+}
+const { href, segment, active = false, class: className, title } = Astro.props;
+const Tag = href ? 'a' : 'span';
+const style = segment ? `--tag-dot: var(--seg-${segment})` : undefined;
+---
+
+<Tag
+  class:list={['tag', { 'tag--link': !!href, 'tag--active': active }, className]}
+  href={href}
+  style={style}
+  title={title}
+  aria-current={href && active ? 'true' : undefined}
+>
+  {segment && <span class="tag__dot" aria-hidden="true" />}
+  <slot />
+</Tag>
+
+<style>
+  @layer components {
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45em;
+      min-height: 1.9rem;
+      padding: 0.15em 0.8em;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--c-border);
+      background: var(--c-bg-elev);
+      color: var(--c-fg-muted);
+      font-size: var(--fs-s);
+      line-height: 1.4;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .tag--link {
+      color: var(--c-fg);
+      transition:
+        border-color var(--dur-1) ease,
+        background-color var(--dur-1) ease;
+    }
+    .tag--link:hover {
+      border-color: var(--c-border-strong);
+      background: var(--c-hover);
+      color: var(--c-fg);
+    }
+    .tag--active {
+      border-color: var(--c-accent);
+      background: var(--c-accent-soft);
+      color: var(--c-fg);
+      font-weight: var(--fw-semibold);
+    }
+    .tag__dot {
+      inline-size: 0.6em;
+      block-size: 0.6em;
+      border-radius: 50%;
+      background: var(--tag-dot);
+      flex: none;
+    }
+  }
+</style>

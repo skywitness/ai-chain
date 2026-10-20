@@ -1,0 +1,110 @@
+---
+/**
+ * Key metrics (market share, capacity, ARR …) as dated stat tiles with their source (owner:
+ * pages-companies).
+ *
+ *   <KeyMetrics items={d.keyMetrics} />
+ */
+import { hostOf } from './labels';
+
+interface MetricLike {
+  label: string;
+  value: string;
+  asOf: string;
+  note?: string | undefined;
+  source: { title: string; url: string; publisher: string };
+}
+interface Props {
+  items: readonly MetricLike[];
+}
+const { items } = Astro.props;
+/**
+ * Value length decides the type size: a short figure (「72.5%」「逾 1,700 萬片」) is the tile's headline, but
+ * many compact profiles store a whole clause as the value (「合併營收 73.47 億元（年增 12.3%）、每股盈餘…」),
+ * which at headline size turns the tile into a wall of bold text.
+ */
+const sizeOf = (v: string) => {
+  const n = [...v].length;
+  return n <= 16 ? 'l' : n <= 30 ? 'm' : 's';
+};
+---
+
+<ul class="km" role="list">
+  {
+    items.map((m) => (
+      <li class="km__item">
+        <p class="km__label">{m.label}</p>
+        <p class="km__value" data-size={sizeOf(m.value)}>{m.value}</p>
+        {m.note && <p class="km__note">{m.note}</p>}
+        <p class="km__meta">
+          <span>截至 {m.asOf}</span>
+          <a href={m.source.url} rel="noopener noreferrer" target="_blank">
+            {m.source.publisher || hostOf(m.source.url)}
+            <span class="sr-only">：{m.source.title}（另開新視窗）</span>
+          </a>
+        </p>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .km {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .km__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: inset 0 3px 0 color-mix(in srgb, var(--profile-accent, var(--c-accent)) 70%, transparent);
+  }
+  .km__label {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+    line-height: 1.5;
+  }
+  .km__value {
+    font-size: var(--fs-l);
+    font-weight: var(--fw-bold);
+    line-height: 1.35;
+    color: var(--c-fg);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .km__value[data-size='m'] {
+    font-size: var(--fs-m);
+    line-height: 1.5;
+  }
+  .km__value[data-size='s'] {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    line-height: 1.65;
+  }
+  .km__note {
+    font-size: var(--fs-xs);
+    line-height: 1.6;
+    color: var(--c-fg-muted);
+  }
+  .km__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.6rem;
+    margin-block-start: auto;
+    padding-block-start: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--c-fg-subtle);
+  }
+  .km__meta a {
+    color: var(--c-fg-subtle);
+  }
+</style>

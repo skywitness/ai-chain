@@ -1,0 +1,313 @@
+---
+title: "推論專用晶片與後 GPU 運算範式"
+description: "推論需求讓 AI 晶片開始分工：GPU 之外出現 SRAM 型 LPU、晶圓級晶片、以模型為中心的 ASIC 與記憶體內運算。輝達、超微以授權與併購吸收新架構，類比與光子等後 GPU 範式仍在早期。"
+category: hardware
+horizon: mid
+horizonYears: [2025, 2030]
+confidence: medium
+confidenceRationale: "推論專用硬體已有量產與 GW 級部署計畫，輝達、Google、微軟也都推出鎖定推論的產品，方向明確；但新創能否在 CUDA 生態與大廠收編下獨立壯大、專用架構會不會被模型演進淘汰，以及類比、光子等新範式何時商用，仍有很大變數。"
+impact: high
+milestones:
+  - { date: "2024-03", label: "Cerebras 發表 WSE-3：4 兆電晶體、44 GB 晶片內 SRAM", status: done }
+  - { date: "2025-04", label: "Google 發表 Ironwood，稱為首款專為推論設計的 TPU", status: done }
+  - { date: "2025-09", label: "輝達發表專攻長上下文的 Rubin CPX", status: done }
+  - { date: "2025-12", label: "輝達取得 Groq LPU 推論技術的非獨家授權", status: done }
+  - { date: "2026-01", label: "微軟推論加速器 Maia 200 上線；Cerebras 宣布與 OpenAI 的 750 MW 合約", status: done }
+  - { date: "2026-03", label: "GTC 2026：Groq 3 LPX 納入 Vera Rubin，Rubin CPX 未再出現", status: done }
+  - { date: "2026-04", label: "Google 發表 TPU 8i，SRAM 為前代 3 倍、依 KV 快取需求設計", status: done }
+  - { date: "2026-05", label: "Cerebras 於 Nasdaq 上市，以每股 185 美元募資約 55.5 億美元", status: done }
+  - { date: "2026-08", label: "Groq 3 LPX 全面量產；超微簽約收購推論晶片新創 Taalas", status: done }
+  - { date: "2027", label: "Positron Asimov 預定推出（單顆最多 2.3 TB 記憶體）；博通預期 Anthropic 部署 5 GW TPU 8i", status: expected }
+  - { date: "2028", label: "輝達 Feynman 世代搭配下一代 LPU「LP40」", status: expected }
+  - { date: "2030", label: "類比、光子等後 GPU 晶片進入資料中心商用部署", status: speculative }
+signals:
+  - text: "輝達宣布 Groq 3 LPX 全面量產，Nebius 為首家採用的 AI 雲；Artificial Analysis 以 10 萬 Token 上下文執行 Gemma 4 31B，測得每秒 3,400 個輸出 Token。"
+    date: "2026-08-24"
+    source: { title: "NVIDIA Groq 3 LPX Now in Full Production With World-Class Speed for Agentic AI", publisher: NVIDIA, url: "https://nvidianews.nvidia.com/news/nvidia-groq-3-lpx-now-in-full-production-with-world-class-speed-for-agentic-ai", type: press-release, lang: en, published: "2026-08-24", accessed: "2026-10-06" }
+  - text: "博通 FY2026 第三季（約當 2026 年 5–7 月）開始量產出貨推論導向的 Google TPU 8i，並出貨 OpenAI 第一代自研加速器 Jalapeño；執行長陳福陽預期 Anthropic 2027 年將再部署 5 GW 的 TPU 8i。"
+    date: "2026-09-09"
+    source: { title: "Broadcom (AVGO) Q3 2026 Earnings Call Transcript", publisher: "The Motley Fool", url: "https://www.fool.com/earnings/call-transcripts/2026/09/09/broadcom-avgo-q3-2026-earnings-call-transcript/", type: earnings-call, lang: en, published: "2026-09-09", accessed: "2026-10-06" }
+  - text: "Cerebras 招股書揭露：2025 年 12 月與 OpenAI 簽訂主合約（MRA），2026 年 1 月宣布這項價值逾 200 億美元、750 MW 的多年期合作，3 月起與 AWS 合作；但 2025 年營收有 62% 來自 MBZUAI、24% 來自 G42。"
+    date: "2026-04-17"
+    source: { title: "Cerebras Systems, Inc. Form S-1 Registration Statement", publisher: "Cerebras（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/2021728/000162828026025762/cerebras-sx1april2026.htm", type: filing, lang: en, published: "2026-04-17", accessed: "2026-10-06" }
+  - text: "超微宣布簽約收購多倫多推論晶片新創 Taalas（尚待交割與主管機關核准），計畫把其技術整合進加速器路線圖，並與 Instinct GPU 組成系統方案。"
+    date: "2026-08-06"
+    source: { title: "AMD Acquires Taalas to Advance Compute Solutions for Rapidly Growing AI Inference Market", publisher: AMD, url: "https://ir.amd.com/news-events/press-releases/detail/1296/amd-acquires-taalas-to-advance-compute-solutions-for-rapidly-growing-ai-inference-market", type: press-release, lang: en, published: "2026-08-06", accessed: "2026-10-06" }
+  - text: "d-Matrix 宣布成為輝達 NVLink Fusion 夥伴，把下一代 Raptor 推論晶片放進輝達 MGX 機櫃，由 Vera Rubin GPU 負責 Prefill、Raptor 負責 Decode；新創改以接入 GPU 大廠平台的方式爭取客戶。"
+    date: "2026-09-10"
+    source: { title: "d-Matrix Adopts NVIDIA NVLink Fusion Rackscale Infrastructure for Ultra-Low Latency AI Inference", publisher: d-Matrix, url: "https://www.d-matrix.ai/announcements/d-matrix-rackscale-nvidia/", type: press-release, lang: en, published: "2026-09-10", accessed: "2026-10-06" }
+counterpoints:
+  - "GPU 大廠能把有效的專用設計納入自家平台：輝達以授權取得 Groq 技術並推出 LPX，超微簽約收購 Taalas，d-Matrix 也選擇接入 NVLink Fusion；獨立新創可能被擠壓成技術供應商。"
+  - "越專用越容易過時：輝達 2025 年 9 月發表的 Rubin CPX，半年後就未出現在 GTC 2026 的主題演講簡報中（Tom's Hardware 觀察）；模型架構、上下文長度與量化格式變化很快。"
+  - "新創營收高度集中：Cerebras 2025 年營收有 62% 來自 MBZUAI、24% 來自 G42，規模也遠小於輝達單季 962 億美元的營收。"
+  - "SRAM 型晶片單顆容量小（LP30 每顆約 512 MB），執行兆級參數模型必須串接大量晶片，機櫃數、網路與電力成本隨之上升。"
+  - "35 倍、30%、80% 等效能數字多為廠商在自家條件下測得，跨平台的獨立評測仍有限。"
+relatedSegments: [ai-accelerators, foundry-packaging, memory-storage, cloud-neocloud]
+relatedCompanies: [nvidia, groq, cerebras, amd, taalas, alphabet, microsoft, broadcom, etched, d-matrix, positron, unconventional-ai, openai, anthropic, nebius, tsmc]
+relatedModels: [google-gemma, openai-gpt, anthropic-claude]
+relatedLearn: [inference-optimization, training-vs-inference-economics, gpu-architecture, memory-and-hbm]
+glossary: [inference, prefill, decode, disaggregated-inference, lpu, sram, hbm, memory-wall, wafer-scale-engine, tpu, kv-cache, asic]
+sources:
+  - key: groq-nv
+    title: "Groq and Nvidia Enter Non-Exclusive Inference Technology Licensing Agreement to Accelerate AI Inference at Global Scale"
+    publisher: Groq
+    url: "https://groq.com/newsroom/groq-and-nvidia-enter-non-exclusive-inference-technology-licensing-agreement-to-accelerate-ai-inference-at-global-scale"
+    type: press-release
+    lang: en
+    published: "2025-12-24"
+    accessed: "2026-10-06"
+  - key: wp-groq
+    title: "Groq"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Groq"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "交易金額約 200 億美元為媒體報導，雙方新聞稿未揭露"
+  - key: nv-cpx
+    title: "NVIDIA Unveils Rubin CPX: A New Class of GPU Designed for Massive-Context Inference"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-unveils-rubin-cpx-a-new-class-of-gpu-designed-for-massive-context-inference"
+    type: press-release
+    lang: en
+    published: "2025-09-09"
+    accessed: "2026-10-06"
+  - key: nv-vr-gtc
+    title: "NVIDIA Vera Rubin Opens Agentic AI Frontier"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-vera-rubin-platform"
+    type: press-release
+    lang: en
+    published: "2026-03-16"
+    accessed: "2026-10-06"
+  - key: th-cpx
+    title: "Nvidia removes Rubin CPX accelerators from its roadmap — Groq 3 LPUs take center stage as CPX is removed"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/pc-components/gpus/nvidia-removes-rubin-cpx-accelerators-from-its-roadmap-groq-3-lpus-take-center-stage-as-cpx-is-removed"
+    type: news
+    lang: en
+    published: "2026-03-17"
+    accessed: "2026-10-06"
+  - key: nv-gtc26-blog
+    title: "NVIDIA GTC 2026: Live Updates on What's Next in AI"
+    publisher: "NVIDIA Blog"
+    url: "https://blogs.nvidia.com/blog/gtc-2026-news/"
+    type: company-site
+    lang: en
+    published: "2026-03-16"
+    accessed: "2026-10-06"
+  - key: nv-lpx
+    title: "NVIDIA Groq 3 LPX Now in Full Production With World-Class Speed for Agentic AI"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-groq-3-lpx-now-in-full-production-with-world-class-speed-for-agentic-ai"
+    type: press-release
+    lang: en
+    published: "2026-08-24"
+    accessed: "2026-10-06"
+  - key: nv-q2fy27
+    title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2027"
+    publisher: NVIDIA
+    url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000073/q2fy27pr.htm"
+    type: press-release
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-06"
+  - key: g-ironwood
+    title: "Ironwood: The first Google TPU for the age of inference"
+    publisher: Google
+    url: "https://blog.google/products/google-cloud/ironwood-tpu-age-of-inference/"
+    type: company-site
+    lang: en
+    published: "2025-04-09"
+    accessed: "2026-10-06"
+  - key: g-tpu8
+    title: "Two chips for the agentic era"
+    publisher: Google
+    url: "https://blog.google/innovation-and-ai/infrastructure-and-cloud/google-cloud/eighth-generation-tpu-agentic-era/"
+    type: company-site
+    lang: en
+    published: "2026-04-22"
+    accessed: "2026-10-06"
+  - key: ms-maia
+    title: "Maia 200: The AI accelerator built for inference"
+    publisher: Microsoft
+    url: "https://blogs.microsoft.com/blog/2026/01/26/maia-200-the-ai-accelerator-built-for-inference/"
+    type: company-site
+    lang: en
+    published: "2026-01-26"
+    accessed: "2026-10-06"
+  - key: avgo-call
+    title: "Broadcom (AVGO) Q3 2026 Earnings Call Transcript"
+    publisher: "The Motley Fool"
+    url: "https://www.fool.com/earnings/call-transcripts/2026/09/09/broadcom-avgo-q3-2026-earnings-call-transcript/"
+    type: earnings-call
+    lang: en
+    published: "2026-09-09"
+    accessed: "2026-10-06"
+  - key: cbrs-s1
+    title: "Cerebras Systems, Inc. Form S-1 Registration Statement"
+    publisher: "Cerebras（SEC EDGAR）"
+    url: "https://www.sec.gov/Archives/edgar/data/2021728/000162828026025762/cerebras-sx1april2026.htm"
+    type: filing
+    lang: en
+    published: "2026-04-17"
+    accessed: "2026-10-06"
+  - key: cbrs-ipo
+    title: "Cerebras Systems Announces Pricing of Initial Public Offering"
+    publisher: Cerebras
+    url: "https://www.cerebras.ai/press-release/cerebras-systems-announces-pricing-of-initial-public-offering"
+    type: press-release
+    lang: en
+    published: "2026-05-13"
+    accessed: "2026-10-06"
+  - key: cerebras-wse3
+    title: "Cerebras Systems Unveils World's Fastest AI Chip with Whopping 4 Trillion Transistors"
+    publisher: Cerebras
+    url: "https://www.cerebras.ai/press-release/cerebras-announces-third-generation-wafer-scale-engine"
+    type: press-release
+    lang: en
+    published: "2024-03-13"
+    accessed: "2026-10-06"
+  - key: amd-taalas
+    title: "AMD Acquires Taalas to Advance Compute Solutions for Rapidly Growing AI Inference Market"
+    publisher: AMD
+    url: "https://ir.amd.com/news-events/press-releases/detail/1296/amd-acquires-taalas-to-advance-compute-solutions-for-rapidly-growing-ai-inference-market"
+    type: press-release
+    lang: en
+    published: "2026-08-06"
+    accessed: "2026-10-06"
+  - key: etched-site
+    title: "Etched"
+    publisher: Etched
+    url: "https://www.etched.com/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "公司自述，未經第三方查證"
+  - key: positron-site
+    title: "Positron AI"
+    publisher: "Positron AI"
+    url: "https://www.positron.ai/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "Asimov 效能數字來自公司模擬，非出貨硬體實測"
+  - key: dmatrix-news
+    title: "d-Matrix Adopts NVIDIA NVLink Fusion Rackscale Infrastructure for Ultra-Low Latency AI Inference"
+    publisher: d-Matrix
+    url: "https://www.d-matrix.ai/announcements/d-matrix-rackscale-nvidia/"
+    type: press-release
+    lang: en
+    published: "2026-09-10"
+    accessed: "2026-10-06"
+  - key: unconv-site
+    title: "Unconventional AI"
+    publisher: "Unconventional AI"
+    url: "https://unconv.ai/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "首頁研究文章列表，含〈How to improve AI energy efficiency by 1000x〉與 Un-0 耦合振盪器模型（以模擬執行）"
+  - key: wp-feynman
+    title: "Feynman (microarchitecture)"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Feynman_(microarchitecture)"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "Feynman 預定 2028 年推出（次要來源）"
+published: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: trends-04
+  checkedBy: "trends-04-check"
+  checkedOn: "2026-10-06"
+---
+
+## 趨勢摘要
+
+一句話：AI 算力的重心正從「訓練模型」移向「使用模型」，也就是<Term id="inference">推論</Term>；晶片因此開始分工。除了通用 GPU，還出現把權重放進晶片內 <Term id="sram">SRAM</Term> 的 <Term id="lpu">LPU</Term>、整片晶圓做成一顆的晶圓級晶片、以模型為中心設計的 <Term id="asic">ASIC</Term>，以及記憶體內運算晶片。
+
+截至 2026-10-06 **已經發生**的事：
+
+- **GPU 大廠吸收專用設計**：2025-12-24，Groq 宣布與<CompanyChip id="nvidia">輝達（NVIDIA）</CompanyChip>簽訂非獨家推論技術授權，創辦人 Jonathan Ross 等人加入輝達，Groq 繼續獨立營運<Cite k="groq-nv" />；媒體報導金額約 200 億美元，雙方未正式揭露<Cite k="wp-groq" />。輝達 2026 年 8 月宣布 Groq 3 LPX 推論機櫃全面量產<Cite k="nv-lpx" />。<CompanyChip id="amd">超微（AMD）</CompanyChip>則在 8 月宣布簽約收購推論晶片新創 <CompanyChip id="taalas">Taalas</CompanyChip>，尚待交割<Cite k="amd-taalas" />。
+- **雲端業者推出推論專用晶片**：Google 稱 2025 年的 Ironwood 是第一款專為推論設計的 <Term id="tpu">TPU</Term><Cite k="g-ironwood" />；微軟 2026 年 1 月推出 Maia 200<Cite k="ms-maia" />。這部分的詳細發展見<TrendLink id="custom-asic-rise">客製 ASIC 崛起</TrendLink>。
+- **資本市場買單**：<CompanyChip id="cerebras">Cerebras</CompanyChip> 2026 年 5 月以每股 185 美元發行 3,000 萬股，在 Nasdaq 上市<Cite k="cbrs-ipo" />。
+
+至於類比、光子等「後 GPU」運算，目前仍在研發或早期產品階段，本文歸為推測。
+
+## 為什麼重要
+
+推論分成兩個階段：讀入提示的 <Term id="prefill">Prefill</Term> 是運算密集；逐字產生答案的 <Term id="decode">Decode</Term> 則受記憶體頻寬限制。GPU 把模型權重與 <Term id="kv-cache">KV 快取</Term>放在運算晶粒之外的 <Term id="hbm">HBM</Term>（與 GPU 封裝在一起的堆疊記憶體），Decode 時大量時間花在搬資料，這就是<Term id="memory-wall">記憶體牆</Term>。LPU 改把權重放進晶片內 SRAM：一座 Groq 3 LPX 機櫃有 256 顆 LPU、合計 128 GB 晶片內 SRAM 與 640 TB/s 的縱向擴展頻寬<Cite k="nv-vr-gtc" />；代價是單顆容量小，LP30 每顆約 512 MB<Cite k="th-cpx" />。
+
+<Callout type="analogy" title="生活化比喻">
+GPU 像大型中央廚房，什麼菜都能做，但每道菜都要跑去倉庫（HBM）拿食材；推論專用晶片像只做幾道招牌菜的快餐店，食材全擺在手邊（SRAM），出菜極快，但菜單一改就可能得重新裝潢。
+</Callout>
+
+推論是跟使用量成正比的經常性成本，Agent 與推理模型又讓每個任務消耗更多 Token，誰能用更少的電與錢產生 Token，誰就掌握 AI 服務的毛利。輝達宣稱 LPX 搭配 Vera Rubin 可讓每 MW 的推論吞吐量最多提高 35 倍<Cite k="nv-vr-gtc" />；微軟稱 Maia 200 的每美元效能比機群現有最新硬體高 30%<Cite k="ms-maia" />；Google 稱 TPU 8i 每美元效能比上一代高 80%<Cite k="g-tpu8" />。這些都是廠商說法，但顯示競爭焦點已從峰值算力轉向「每瓦、每美元能產生多少 Token」。
+
+## 關鍵驅動力
+
+**一、速度成為產品力。** Agent 寫程式與多步推理需要又多又快的 Token。LPX 在 Artificial Analysis 測試中以 10 萬 Token 上下文執行 Gemma 4 31B，達到每秒 3,400 個輸出 Token<Cite k="nv-lpx" />。
+
+**二、<Term id="disaggregated-inference">分離式推論</Term>。** 把 Prefill 與 Decode 交給不同硬體。輝達 2025 年 9 月發表搭載 128 GB GDDR7、專攻長上下文的 Rubin CPX，鎖定 Prefill 階段，原訂 2026 年底推出<Cite k="nv-cpx" />；但 Tom's Hardware 觀察到，GTC 2026 主題演講與簡報不再出現 CPX，改列 Groq 3 LPU 與 LPX 機櫃<Cite k="th-cpx" />。LPU 的強項在另一端的 Decode：輝達說明 LPX 與 Vera Rubin 一起部署時，Rubin GPU 與 LPU 會共同計算每一個輸出 Token<Cite k="nv-vr-gtc" />。d-Matrix 的規劃也類似，由 GPU 處理 Prefill、自家 Raptor 晶片加速 Decode<Cite k="dmatrix-news" />。Google 的 TPU 8i 則把晶片內 SRAM 增為 384 MB、是前代的 3 倍，並依推理模型的 KV 快取需求設計<Cite k="g-tpu8" />。
+
+**三、新架構百花齊放。** 主要路線如下，多數規格為公司自述：
+
+| 路線 | 代表 | 做法與進度 |
+|---|---|---|
+| 晶圓級 | Cerebras | WSE-3 整片晶圓一顆，4 兆電晶體、90 萬個核心、44 GB 晶片內 SRAM<Cite k="cerebras-wse3" /> |
+| SRAM 型 LPU | Groq／輝達 | 權重常駐晶片內，Groq 3 LPX 已量產<Cite k="nv-lpx" /> |
+| 以模型為中心的 ASIC | Taalas、<CompanyChip id="etched">Etched</CompanyChip> | Taalas 圍繞模型打造硬體、最佳化推論資料流<Cite k="amd-taalas" />；Etched 稱晶片採台積電 N4P，已啟動生產履行逾 10 億美元客戶合約<Cite k="etched-site" /> |
+| 大容量記憶體 | <CompanyChip id="positron">Positron</CompanyChip> | Atlas 已出貨；Asimov 單顆最多 2.3 TB 記憶體，預定 2027 年<Cite k="positron-site" /> |
+| 以記憶體為中心 | <CompanyChip id="d-matrix">d-Matrix</CompanyChip> | Corsair 已量產；下一代 Raptor 把 DRAM 晶片疊在 SRAM 運算晶片上，2026 年 9 月宣布接入輝達 NVLink Fusion 機櫃<Cite k="dmatrix-news" /> |
+| 類比／物理運算 | <CompanyChip id="unconventional-ai">Unconventional AI</CompanyChip> | 研究以耦合振盪器等物理系統直接做運算，探討把 AI 能效提高 1,000 倍的路徑；Un-0 影像模型目前仍以模擬執行，屬研究階段<Cite k="unconv-site" /> |
+
+**四、大額訂單與資本。** Cerebras 招股書揭露，公司 2025 年 12 月與 OpenAI 簽訂主合約，2026 年 1 月宣布這項價值逾 200 億美元、750 MW 的多年期合作，並自 2026 年 3 月與 AWS 合作<Cite k="cbrs-s1" />。
+
+## 時間表與里程碑
+
+Cerebras 是少數公開財報的推論晶片公司，它的營收曲線可以看出這個市場的成長速度，也看得出規模仍遠小於 GPU：
+
+<BarChart title="Cerebras 年營收" unit="百萬美元" data={[{ label: "2022", value: 24.6 }, { label: "2023", value: 78.7 }, { label: "2024", value: 290.3 }, { label: "2025", value: 510.0 }]} source="cbrs-s1" note="作為對照，輝達 FY2027 第二季（約當 2026 年 5–7 月）單季營收 962 億美元" />
+
+輝達同一季的營收是 962 億美元，其中資料中心 890 億美元<Cite k="nv-q2fy27" />。
+
+| 時間 | 事件 | 性質 |
+|---|---|---|
+| 2026 年 5–7 月 | 博通（FY2026 第三季）開始量產出貨 TPU 8i，並出貨 OpenAI 的 Jalapeño<Cite k="avgo-call" /> | 已發生 |
+| 2027 年 | Positron Asimov 預定推出<Cite k="positron-site" />；博通預期 Anthropic 部署 5 GW 的 TPU 8i<Cite k="avgo-call" /> | 公司規劃 |
+| 2028 年 | Feynman 世代的 Rosa CPU 搭配下一代 LPU「LP40」<Cite k="nv-gtc26-blog" /><Cite k="wp-feynman" /> | 公司預告 |
+| 2030 年前後 | 類比、光子運算進入資料中心商用部署 | 本站推測 |
+
+<Callout type="info" title="怎麼讀這張表">
+「公司規劃」與「公司預告」是管理層在法說會或發表會上的說法，會隨客戶需求與供應鏈產能調整；「本站推測」沒有任何公司的正式時程，只是依目前研發進度所做的判斷。
+</Callout>
+
+## 受影響的環節與公司
+
+- <SegmentChip id="ai-accelerators" />：輝達、超微、Cerebras、Groq 與眾多新創正面交鋒；雲端自研晶片則屬於 <CompanyChip id="alphabet">Alphabet</CompanyChip>、<CompanyChip id="microsoft">微軟</CompanyChip>等母公司，並由<CompanyChip id="broadcom">博通</CompanyChip>等設計夥伴實作。
+- <SegmentChip id="foundry-packaging" />：Maia 200 採用<CompanyChip id="tsmc">台積電</CompanyChip> 3 奈米製程，含 272 MB 晶片內 SRAM 與 216 GB HBM3e<Cite k="ms-maia" />；WSE-3 同樣由台積電 5 奈米生產<Cite k="cerebras-wse3" />。不論哪條路線，多半回到台積電的先進製程。
+- <SegmentChip id="memory-storage" />：記憶體路線出現分歧。GPU 與多數 ASIC 仍依賴 HBM，例如 Ironwood 每顆 192 GB、頻寬 7.37 TB/s<Cite k="g-ironwood" />；SRAM 型晶片則降低對 HBM 的依賴，但需要更多晶片面積。
+- <SegmentChip id="cloud-neocloud" />：<CompanyChip id="nebius">Nebius</CompanyChip> 是首家採用 LPX 的 AI 雲<Cite k="nv-lpx" />；<CompanyChip id="groq">Groq</CompanyChip> 授權技術後仍獨立營運 GroqCloud 推論服務<Cite k="groq-nv" />。
+
+<Scene3D id="train-infer" variant="inference" caption="推論時的 Prefill 與 Decode：專用晶片多半鎖定其中一個階段最佳化" />
+
+## 反方觀點與風險
+
+- **平台吸收效應**：輝達授權 Groq、超微簽約收購 Taalas、d-Matrix 選擇接入 NVLink Fusion，顯示 GPU 大廠能把有效的專用設計納入自家機櫃，獨立新創可能被擠壓成技術供應商（見<TrendLink id="reverse-acquihire-deals">反向人才收購</TrendLink>）。
+- **架構押錯的風險**：Rubin CPX 從發表到淡出 GTC 簡報只隔約半年<Cite k="th-cpx" />；Tom's Hardware 也指出 CPX 是否仍會供貨尚待觀察，已為它調整軟體的客戶仍可能採用。模型架構、上下文長度與量化格式變化很快，越專用的晶片越容易過時。
+- **客戶集中**：Cerebras 2025 年營收有 62% 來自 MBZUAI、24% 來自 G42<Cite k="cbrs-s1" />。
+- **容量與成本**：SRAM 型晶片單顆容量小，跑大模型要串接大量晶片，網路與電力成本隨之上升。
+- **數字多為廠商自評**：Positron 自己註明 Asimov 的效能來自模擬而非出貨硬體<Cite k="positron-site" />；35 倍、30%、80% 等數字也都是特定條件下的廠商說法。
+
+## 觀察指標
+
+- 輝達財報與法說會中 LPX 的出貨量與採用客戶數，以及 LP40 的時程。
+- 博通 TPU 8i、Jalapeño 的出貨節奏與 GW 級部署進度<Cite k="avgo-call" />。
+- Cerebras 季營收、OpenAI 750 MW 合約的部署進度，以及客戶集中度是否下降。
+- Artificial Analysis 等第三方評測中，GPU 與專用晶片在每秒 Token 數與每百萬 Token 成本上的差距。
+- 超微整合 Taalas 後的第一款產品，以及類比、光子新創能否拿到資料中心量產訂單。
+
+延伸閱讀：<LearnLink id="inference-optimization">推論最佳化</LearnLink>、<LearnLink id="training-vs-inference-economics">訓練與推論的經濟學</LearnLink>、<TrendLink id="inference-demand">推論需求</TrendLink>、<TrendLink id="gpu-roadmap-rubin-feynman">GPU 藍圖</TrendLink>。

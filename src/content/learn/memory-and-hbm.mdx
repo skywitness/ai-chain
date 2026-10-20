@@ -1,0 +1,422 @@
+---
+title: "記憶體牆與 HBM"
+subtitle: "為什麼 AI 晶片常常在等資料？從記憶體階層、HBM 堆疊到 HBM4"
+description: "AI 晶片的算力成長遠快於記憶體頻寬，運算單元常常閒著等資料。本文說明記憶體牆的成因、記憶體階層，以及 HBM 如何用垂直堆疊與超寬介面換取頻寬，並連結到記憶體、封裝與設備供應鏈。"
+level: 2
+order: 213
+track: hardware
+prerequisites: [gpu-architecture]
+next: [hbm-deep, inference-optimization, networking-for-ai]
+relatedSegments: [memory-storage, foundry-packaging, ai-accelerators, semi-equipment-materials, eda-ip-design]
+relatedCompanies: [sk-hynix, samsung-electronics, micron, tsmc, nvidia, amd, microsoft, hanmi-semiconductor, disco, besi, advantest, guc, rambus, nanya-tech, winbond]
+relatedModels: []
+relatedTrends: [hbm4-custom-base-die, memory-supercycle, long-context-memory, gpu-roadmap-rubin-feynman]
+glossary:
+  - memory-wall
+  - hbm
+  - dram
+  - gpu
+  - flops
+  - decode
+  - token
+  - parameter
+  - memory-hierarchy
+  - sram
+  - lpddr
+  - tsv
+  - base-die
+  - interposer
+  - cowos
+  - hybrid-bonding
+  - bandwidth
+  - hbm4
+  - kv-cache
+  - batching
+  - attention
+  - quantization
+  - moe
+  - memory-supercycle
+scenes:
+  - id: hbm
+    variant: hbm
+keyTakeaways:
+  - "AI 晶片的算力成長遠快於記憶體頻寬，運算單元常常閒著等資料，這就是記憶體牆。"
+  - "大型語言模型每產生一個 Token 都要把權重讀過一遍，推論速度主要由記憶體頻寬決定。"
+  - "HBM 把 8 到 16 層 DRAM 以矽穿孔垂直堆疊，放在 GPU 旁的中介層上，靠超寬介面換取頻寬。"
+  - "HBM4 介面加倍為 2,048 位元，標準每疊 2 TB/s，三星量產品最高達 3.3 TB/s。"
+  - "HBM 主要由 SK海力士、三星、美光供應；生產同樣位元數，HBM3E 約耗用 DDR5 的 3 倍晶圓，會排擠一般 DRAM 產能。"
+estimatedMinutes: 15
+sources:
+  - key: gholami-memwall
+    title: "AI and Memory Wall"
+    publisher: "Gholami et al.（arXiv）"
+    url: "https://arxiv.org/abs/2403.14123"
+    type: paper
+    lang: en
+    published: "2024-03-21"
+    accessed: "2026-10-15"
+    note: "過去 20 年，伺服器硬體峰值 FLOPS 每 2 年成長 3.0 倍，DRAM 與互連頻寬每 2 年只成長 1.6 倍與 1.4 倍；記憶體已取代算力成為 AI 應用（特別是推論服務）的主要瓶頸，解碼器模型尤其明顯。20 年累計倍數為本站依年增率換算。"
+  - key: nvidia-h100
+    title: "NVIDIA H100 Tensor Core GPU"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/h100/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "H100 SXM：80 GB、記憶體頻寬 3.35 TB/s、NVLink 900 GB/s；BF16 Tensor Core 1,979 TFLOPS（含稀疏加速，稠密值為一半）。"
+  - key: nvidia-hopper
+    title: "NVIDIA Hopper Architecture In-Depth"
+    publisher: NVIDIA Technical Blog
+    url: "https://developer.nvidia.com/blog/nvidia-hopper-architecture-in-depth/"
+    type: docs
+    lang: en
+    published: "2022-03-22"
+    accessed: "2026-10-15"
+    note: "H100 SXM5：50 MB L2 快取；每個 SM 有 256 KB 合併的 L1／共享記憶體；80 GB HBM3，由 5 疊 HBM3 與 10 個 512 位元記憶體控制器組成。"
+  - key: nvidia-h200
+    title: "NVIDIA H200 Tensor Core GPU"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/h200/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "H200 SXM：141 GB、記憶體頻寬 4.8 TB/s；容量接近 H100 的兩倍、頻寬為 1.4 倍（初步規格）。"
+  - key: nvidia-gb200
+    title: "NVIDIA GB200 NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/gb200-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "每顆 GB200 超級晶片（1 顆 Grace CPU、2 顆 Blackwell GPU）：372 GB HBM3E、16 TB/s；LPDDR5X 最多 480 GB、最多 512 GB/s。每顆 GPU 186 GB、8 TB/s 為本站以兩顆 GPU 平分換算。"
+  - key: nvidia-vera-rubin
+    title: "NVIDIA Vera Rubin NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "每顆 Rubin GPU：288 GB HBM4、19.2 TB/s；每組超級晶片（2 顆 GPU、1 顆 CPU）：LPDDR5X 最多 1.5 TB、NVLink-C2C 1.8 TB/s；整櫃 72 顆 GPU 合計 20.7 TB HBM4、1,400 TB/s。"
+  - key: nvidia-hgx
+    title: "NVIDIA HGX Platform"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/hgx/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "「Individual GPU Specifications」列出單顆 Rubin GPU：288 GB HBM4、22 TB/s，NVLink 3.6 TB/s；與 Vera Rubin NVL72 產品頁的單顆數字（19.2 TB/s、3 TB/s）不同。"
+  - key: ms-maia200
+    title: "Maia 200: The AI accelerator built for inference"
+    publisher: Microsoft
+    url: "https://blogs.microsoft.com/blog/2026/01/26/maia-200-the-ai-accelerator-built-for-inference/"
+    type: press-release
+    lang: en
+    published: "2026-01-26"
+    accessed: "2026-10-15"
+    note: "台積電 3 奈米製程；重新設計的記憶體系統包含 216 GB、7 TB/s 的 HBM3e 與 272 MB 晶片上 SRAM，並以資料搬移引擎讓大型模型維持高利用率。"
+  - key: amd-mi400
+    title: "AMD Instinct MI400 Series"
+    publisher: AMD
+    url: "https://www.amd.com/en/products/accelerators/instinct/mi400.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "MI455X：432 GB HBM4（12 疊）、峰值理論頻寬 23.3 TB/s；Helios 機櫃 72 顆 GPU、31 TB HBM4。同頁與輝達的比較表把 Vera Rubin 的記憶體頻寬列為 22.0 TB/s。"
+  - key: jedec-hbm3
+    title: "JEDEC Publishes HBM3 Update to High Bandwidth Memory (HBM) Standard"
+    publisher: JEDEC
+    url: "https://www.jedec.org/news/pressreleases/jedec-publishes-hbm3-update-high-bandwidth-memory-hbm-standard"
+    type: standard
+    lang: en
+    published: "2022-01-27"
+    accessed: "2026-10-15"
+    note: "JESD238：每腳位最高 6.4 Gb/s，相當於每個裝置 819 GB/s；獨立通道由 HBM2 的 8 個增加到 16 個；支援 4、8、12 層 TSV 堆疊。"
+  - key: jedec-hbm4
+    title: "JEDEC and Industry Leaders Collaborate to Release JESD270-4 HBM4 Standard: Advancing Bandwidth, Efficiency, and Capacity for AI and HPC"
+    publisher: JEDEC
+    url: "https://www.jedec.org/news/pressreleases/jedec%C2%AE-and-industry-leaders-collaborate-release-jesd270-4-hbm4-standard-advancing"
+    type: standard
+    lang: en
+    published: "2025-04-16"
+    accessed: "2026-10-15"
+    note: "2,048 位元介面、傳輸速度最高 8 Gb/s、總頻寬最高 2 TB/s；獨立通道由 HBM3 的 16 個加倍為 32 個；支援 4、8、12、16 層堆疊，單疊最大 64 GB。"
+  - key: wiki-hbm
+    title: "High Bandwidth Memory"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/High_Bandwidth_Memory"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "HBM 由 AMD 自 2008 年開始研發，並與 SK海力士合作；JEDEC 於 2013 年 10 月採納為 JESD235；第一款採用 HBM 的 GPU 是 2015 年 6 月推出、用於 Radeon R9 Fury X 的 Fiji。第一代每疊 1,024 位元、128 GB/s；HBM2 於 2016 年 1 月獲 JEDEC 採納，每疊 256 GB/s（2018 年底的規格更新提高到 307 GB/s）。"
+  - key: wiki-ddr5
+    title: "DDR5 SDRAM"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/DDR5_SDRAM"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "每個 DIMM 有兩個獨立的 32 位元子通道，合計 64 位元（不含 ECC）；JEDEC 標準速率 4.0–8.8 GT/s，對應每模組 32.0–70.4 GB/s。"
+  - key: ss-hbm3e-12h
+    title: "Samsung Develops Industry-First 36GB HBM3E 12H DRAM"
+    publisher: Samsung Electronics
+    url: "https://news.samsung.com/global/samsung-develops-industry-first-36gb-hbm3e-12h-dram"
+    type: press-release
+    lang: en
+    published: "2024-02-27"
+    accessed: "2026-10-15"
+    note: "12 層 HBM3E 頻寬最高 1,280 GB/s、容量 36 GB；採用熱壓非導電膜（TC NCF），讓 12 層產品與 8 層同高；晶粒間隙縮小到 7 微米。"
+  - key: ss-hbm4
+    title: "Samsung Ships Industry-First Commercial HBM4 With Ultimate Performance for AI Computing"
+    publisher: Samsung Electronics
+    url: "https://news.samsung.com/global/samsung-ships-industry-first-commercial-hbm4-with-ultimate-performance-for-ai-computing"
+    type: press-release
+    lang: en
+    published: "2026-02-12"
+    accessed: "2026-10-15"
+    note: "HBM4 量產出貨，每腳位穩定 11.7 Gb/s（比標準 8 Gb/s 快約 46%），最高可達 13 Gb/s；每疊頻寬最高 3.3 TB/s，為 HBM3E 的 2.7 倍；12 層容量 24–36 GB；資料 I/O 由 1,024 個加倍為 2,048 個；採用 1c DRAM 與 4 奈米邏輯基底晶粒；能效提升 40%；預期 2026 年 HBM 銷售額為 2025 年的 3 倍以上。"
+  - key: skh-hbm4-dev
+    title: "SK hynix Completes World’s First HBM4 Development and Readies Mass Production"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/sk-hynix-completes-worlds-first-hbm4-development-and-readies-mass-production/"
+    type: press-release
+    lang: en
+    published: "2025-09-12"
+    accessed: "2026-10-15"
+    note: "HBM4 採用 2,048 個 I/O 端子，頻寬加倍、能效提升逾 40%；運作速度逾 10 Gb/s，超過 JEDEC 標準的 8 Gb/s；採用 Advanced MR-MUF 製程與 1b 奈米 DRAM。"
+  - key: skh-tsmc
+    title: "SK hynix Partners with TSMC to Strengthen HBM Technological Leadership"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/sk-hynix-partners-with-tsmc-to-strengthen-hbm-technological-leadership/"
+    type: press-release
+    lang: en
+    published: "2024-04-19"
+    accessed: "2026-10-15"
+    note: "HBM 由核心 DRAM 晶粒以 TSV 垂直堆疊在基底晶粒上，基底晶粒連接負責控制 HBM 的 GPU；SK海力士到 HBM3E 都用自家製程做基底晶粒，HBM4 將改用台積電的先進邏輯製程，以便塞進更多功能、生產客製化 HBM；雙方也合作最佳化 HBM 與 CoWoS 的整合。"
+  - key: skh-q2-26
+    title: "SK hynix Announces 2Q26 Financial Results"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/q2-2026-business-results/"
+    type: press-release
+    lang: en
+    published: "2026-07-29"
+    accessed: "2026-10-15"
+    note: "2026 年第二季營收 79.3187 兆韓元、營業利益 60.5426 兆韓元（營業利益率 76%）；HBM4 第二季開始大量出貨、下半年擴大量產；HBM4E 上半年完成送樣；已與約 10 家客戶簽訂長期供貨協議。"
+  - key: skh-f1
+    title: "SK hynix Inc. Registration Statement (Form F-1/A)"
+    publisher: "U.S. SEC（SK hynix）"
+    url: "https://www.sec.gov/Archives/edgar/data/0002120882/000119312526295501/d32785df1a.htm"
+    type: filing
+    lang: en
+    published: "2026-07-06"
+    accessed: "2026-10-15"
+    note: "2026 年 7 月 6 日提交的第 2 號修正版。引述 IDC：2026 年第一季 SK海力士 HBM 營收市占 56.4%，居全球第一。引述 Gartner：HBM 營收預估從 2025 年 330 億美元增至 2027 年 860 億美元。AI 伺服器採分層記憶體架構：HBM 緊鄰 GPU、頻寬最高；伺服器 DRAM 緊鄰 CPU；企業級 SSD 提供大容量持久儲存。MR-MUF 是在堆疊晶片間注入液態保護材料再固化，散熱比在每層之間鋪膜更有效率。"
+  - key: mu-hbm4
+    title: "Micron in High-Volume Production of HBM4 Designed for NVIDIA Vera Rubin, PCIe Gen6 SSD and SOCAMM2"
+    publisher: Micron Technology
+    url: "https://investors.micron.com/news/press-release/2026/Micron-in-High-Volume-Production-of-HBM4-Designed-for-NVIDIA-Vera-Rubin-PCIe-Gen6-SSD-and-SOCAMM2-03-16-2026/default.aspx"
+    type: press-release
+    lang: en
+    published: "2026-03-16"
+    accessed: "2026-10-15"
+    note: "HBM4 36GB 12 層進入大量生產，每腳位逾 11 Gb/s、每疊頻寬逾 2.8 TB/s（HBM3E 的 2.3 倍），能效比 HBM3E 提升逾 20%；48GB 16 層樣品已送交客戶。"
+  - key: anandtech-mu-hbm3e
+    title: "Micron Sells Out Entire HBM3E Supply for 2024, Most of 2025"
+    publisher: AnandTech
+    url: "https://www.anandtech.com/show/21319/micron-sells-out-entire-hbm3e-supply-for-2024-most-of-2025"
+    archiveUrl: "https://web.archive.org/web/20241213154721/https://www.anandtech.com/show/21319/micron-sells-out-entire-hbm3e-supply-for-2024-most-of-2025"
+    type: news
+    lang: en
+    published: "2024-03-22"
+    accessed: "2026-10-15"
+    note: "引述美光執行長 Sanjay Mehrotra 於法說會備稿：以同一製程節點生產相同位元數，HBM3E 消耗的晶圓約為 DDR5 的 3 倍；HBM 擴產將限制非 HBM 產品的供給成長。原網站已關閉，以網際網路檔案館存檔為準。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "Meta（arXiv）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-15"
+    note: "表 3：70B 模型有 80 層、模型維度 8,192、64 個注意力頭、8 個鍵值（KV）頭；採用 8 個鍵值頭的分組查詢注意力（GQA），以提升推論速度並縮小解碼時的 KV Cache。"
+updated: "2026-10-15"
+lastVerified: "2026-10-15"
+editorial:
+  status: fact-checked
+  author: learn-12
+  checkedBy: "learn-12-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：主要數字已逐一對照一手來源（NVIDIA、AMD、JEDEC、三星、SK海力士、美光、微軟、SEC F-1/A、arXiv 論文）。修正：Vera Rubin 產品頁並未標示初步規格；補上輝達 HGX 頁面單顆 Rubin 為 22 TB/s 的不同數字與超微比較表的 22.0 TB/s；HBM2 頻寬的版本說明；第一款 HBM GPU 為 Fiji；SK海力士逾 10 Gb/s 為開發完成時的數字；HBM 供應商與 DRAM 漲價的措辭改為有來源支持的說法。設備與矽智財業者的角色描述為定性說明，與名冊一致，未另附來源。"
+---
+
+## 一句話解釋
+
+AI 晶片的算力成長得比記憶體頻寬快得多，運算單元常常閒著等資料，這道看不見的瓶頸叫做<Term id="memory-wall">記憶體牆</Term>。<Term id="hbm">HBM</Term>（高頻寬記憶體）的解法，是把多層 <Term id="dram">DRAM</Term> 晶粒疊成一疊、緊貼在 <Term id="gpu">GPU</Term> 旁邊，再用上千條線路同時傳輸，讓每秒送進晶片的資料量比一般記憶體高出一個數量級以上。
+
+## 生活化比喻
+
+<Callout type="analogy" title="把倉庫蓋在廚房隔壁">
+
+想像一間生意興隆的中央廚房：
+
+- **廚師是運算單元**：這些年廚房不斷加派人手、換上更快的切菜機，每分鐘能處理的食材翻了好幾倍。
+- **一般記憶體像城外的大倉庫**：空間大、租金便宜，但只有一條窄窄的道路通往廚房，貨車開得再快，每小時能運進來的貨也有上限。
+- **HBM 像蓋在廚房隔壁的多層倉儲大樓**：每層樓都堆滿食材（DRAM 晶粒），貫穿各樓層的電梯井（矽穿孔）把貨送到一樓收發室（基底晶粒），再由上千條專用輸送帶直通廚房。蓋這種大樓很貴，但出貨速度快得多。
+- **廚師手邊的備料台是 SRAM**：伸手就拿得到，可是只放得下一點點。
+
+廚師越請越多、輸送帶卻加得慢，大家就只能站著等貨。這就是記憶體牆。
+
+</Callout>
+
+## 原理
+
+### 記憶體牆：算力跑在前面，頻寬追在後面
+
+Gholami 等研究者在 2024 年的論文〈AI and Memory Wall〉整理了過去 20 年的硬體資料：伺服器硬體的峰值算力（<Term id="flops">FLOPS</Term>）每 2 年成長 3.0 倍，DRAM 頻寬每 2 年只成長 1.6 倍，晶片之間的互連頻寬更只有 1.4 倍<Cite k="gholami-memwall" />。每一期的差距看起來不大，累積 20 年就非常驚人：照這個速度換算，算力成長約 6 萬倍，DRAM 頻寬只成長約 110 倍。論文的結論是，記憶體已經取代算力，成為 AI 應用、尤其是推論服務的主要瓶頸<Cite k="gholami-memwall" />。
+
+<BarChart
+  title="過去 20 年，硬體能力每 2 年的成長倍數"
+  unit="倍"
+  data={[
+    { label: "峰值算力", value: 3.0 },
+    { label: "DRAM 頻寬", value: 1.6 },
+    { label: "互連頻寬", value: 1.4 }]}
+  source="gholami-memwall"
+  note="依論文整理的伺服器硬體資料。累積 10 期（20 年）後，三者分別約為 59,000 倍、110 倍與 29 倍（本站換算）。"
+  keepOrder
+/>
+
+為什麼大型語言模型特別容易撞牆？<LearnLink id="gpu-architecture">GPU 與 AI 加速器架構</LearnLink>介紹過屋頂線模型：以 H100 為例，16 位元稠密算力約 989 TFLOPS、記憶體頻寬 3.35 TB/s，每從記憶體讀進 1 位元組要做約 300 次運算，Tensor Core 才不會閒著<Cite k="nvidia-h100" />。可是模型逐字產生回答的 <Term id="decode">Decode</Term> 階段，每產生一個 <Term id="token">Token</Term>，都要把全部<Term id="parameter">參數</Term>從記憶體讀一遍；16 位元的參數每讀 2 位元組只做 1 次乘法與 1 次加法，等於每位元組只做約 1 次運算。在只服務一位使用者的情況下，算力用不到百分之一，速度幾乎完全由記憶體頻寬決定。
+
+### 記憶體階層：快的小，大的慢
+
+電腦裡的記憶體不是只有一種，而是一層層的<Term id="memory-hierarchy">記憶體階層</Term>：越靠近運算單元越快、越小、越貴；越往外容量越大、每位元越便宜，速度也越慢。SK海力士（SK hynix）在向美國證券交易委員會（SEC）提交的上市申請文件中，這樣描述 AI 伺服器的分層架構：HBM 緊鄰 GPU、頻寬最高；伺服器 DRAM 緊鄰 CPU，是調度工作的主記憶體；企業級 SSD 位於最底層，提供大容量的持久儲存<Cite k="skh-f1" />。
+
+| 層級 | 位置 | 實例 | 特性 |
+|---|---|---|---|
+| <Term id="sram">SRAM</Term>（暫存器、快取） | 運算晶粒上 | H100 的 L2 快取 50 MB | 最快，但很占晶片面積 |
+| HBM | 同一個封裝內、GPU 旁邊 | H100：80 GB、3.35 TB/s；Rubin：288 GB、19.2 TB/s | 頻寬最高的 DRAM |
+| CPU 端 DRAM（<Term id="lpddr">LPDDR</Term>、DDR5） | CPU 旁或主機板插槽 | GB200 的 Grace CPU：最多 480 GB、最多 512 GB/s | 容量大、較便宜，頻寬低一截 |
+| 企業級 SSD | 伺服器或儲存系統內 | 容量最大 | 斷電不遺失，速度再慢一大截 |
+
+表中數字分別來自輝達（NVIDIA）的 Hopper 架構文章<Cite k="nvidia-hopper" />與產品頁<Cite k="nvidia-h100" /><Cite k="nvidia-vera-rubin" /><Cite k="nvidia-gb200" />。最能看出差距的是同一顆 GB200 超級晶片：兩顆 Blackwell GPU 合計配備 372 GB 的 HBM3E，頻寬合計 16 TB/s；旁邊 Grace CPU 的 LPDDR5X 容量最多 480 GB，頻寬卻最多只有 512 GB/s，相差約 31 倍<Cite k="nvidia-gb200" />。容量相近，頻寬卻差了一個數量級以上，這就是 GPU 非用 HBM 不可的原因。
+
+### HBM 怎麼做：往上疊，再貼到 GPU 旁邊
+
+HBM 最早由超微（AMD）在 2008 年開始研發，並與 SK海力士合作；JEDEC 在 2013 年 10 月把它定為標準；第一款採用 HBM 的 GPU 是 2015 年 6 月推出的 Fiji，用在 Radeon R9 Fury X 顯示卡上<Cite k="wiki-hbm" />。它的結構可以拆成三個部分：
+
+1. **DRAM 核心晶粒**：真正存放資料的記憶體晶粒，磨薄之後一層層往上疊，常見 8、12 或 16 層。
+2. **<Term id="tsv">矽穿孔（TSV）</Term>**：貫穿矽晶粒的垂直導線，把上下各層連通，資料沿著它上下移動。
+3. **<Term id="base-die">基底晶粒</Term>**：疊在最底層的邏輯晶片，本身不存資料，負責和 GPU 溝通。SK海力士的說明是：HBM 把核心 DRAM 晶粒以 TSV 垂直堆疊在基底晶粒上，基底晶粒再連到負責控制 HBM 的 GPU<Cite k="skh-tsmc" />。
+
+層與層之間的縫隙要填滿，才能固定接點、幫助散熱，主要有兩種做法。SK海力士採用 MR-MUF：疊好之後，在晶片之間注入液態保護材料再固化，散熱比在每層之間鋪膜更有效率<Cite k="skh-f1" />。三星（Samsung）則採用熱壓非導電膜（TC NCF），把晶粒間隙縮小到 7 微米，讓 12 層產品維持與 8 層相同的高度<Cite k="ss-hbm3e-12h" />。層數再往上加，業界正在發展不用凸塊、直接以銅對銅接合的<Term id="hybrid-bonding">混合鍵合</Term>。
+
+疊好的 HBM 不是插在主機板上，而是和 GPU 一起放在一塊<Term id="interposer">矽中介層</Term>上。每一疊 HBM 有上千條資料線，一般電路板的線路太粗，容納不下，所以要靠線路細密得多的中介層來牽線。台積電（TSMC）的 <Term id="cowos">CoWoS</Term> 就是把 GPU 與 HBM 並排放在中介層上的先進封裝製程<Cite k="skh-tsmc" />，細節見<LearnLink id="advanced-packaging-intro">先進封裝入門</LearnLink>。
+
+<FlowSteps
+  title="一疊 HBM 從晶圓到上機"
+  steps={["DRAM 晶圓與 TSV", "研磨薄化", "疊上基底晶粒並接合", "填充與封模", "整疊測試", "與 GPU 一起放上中介層（CoWoS）"]}
+/>
+
+<Scene3D id="hbm" variant="hbm" caption="拆開一顆 AI 晶片封裝：中央是 GPU，兩側是多疊 HBM，全部放在矽中介層上。按「下一步」依序觀察 DRAM 晶粒堆疊、矽穿孔、接合填充，以及 HBM4 加倍的介面寬度。堆疊數量與比例為示意。" />
+
+### 頻寬從哪裡來：介面夠寬
+
+記憶體的頻寬可以用一個簡單公式估算：
+
+<MathTeX tex={"\\mathrm{BW}=\\frac{W\\times f}{8}"} display label="頻寬 BW（GB/s）等於介面寬度 W（位元）乘以每腳位速率 f（Gb/s），再除以 8 換算成位元組" />
+
+套進幾個實例（以每腳位 Gb/s 計算）：
+
+- **DDR5 記憶體模組**：64 位元 × 6.4 ÷ 8 = 51.2 GB/s。一般 DDR5 模組有兩個 32 位元子通道，合計 64 位元，標準速率下頻寬約 32 至 70 GB/s<Cite k="wiki-ddr5" />。
+- **HBM3**：1,024 位元 × 6.4 ÷ 8 ≈ 819 GB/s，正是 JEDEC 標準寫的每疊 819 GB/s<Cite k="jedec-hbm3" />。
+- **HBM4**：2,048 位元 × 8 ÷ 8 ≈ 2 TB/s<Cite k="jedec-hbm4" />。
+
+注意 HBM3 和 DDR5-6400 的每腳位速率一樣，頻寬差 16 倍，全靠 16 倍寬的介面。HBM 的訣竅不是每條線特別快，而是「路很寬、距離很短」。H100 用了 5 疊 HBM3，搭配 10 個 512 位元的記憶體控制器<Cite k="nvidia-hopper" />，合計 5,120 位元；用 3.35 TB/s 回推，每條線只要跑約 5.2 Gb/s 就夠了（本站換算）。
+
+### 一代比一代寬、一代比一代快
+
+<Term id="bandwidth">頻寬</Term>是 HBM 每一代升級的主軸。<Term id="hbm4">HBM4</Term> 標準在 2025 年 4 月公布，把介面從 1,024 位元加倍到 2,048 位元、獨立通道從 16 個增加到 32 個，支援 4 到 16 層堆疊，單疊最大 64 GB<Cite k="jedec-hbm4" />。三家記憶體廠的產品都跑得比標準快：三星的量產品每腳位穩定在 11.7 Gb/s、最高 13 Gb/s，每疊頻寬最高 3.3 TB/s<Cite k="ss-hbm4" />；美光（Micron）的量產品每腳位逾 11 Gb/s、每疊逾 2.8 TB/s<Cite k="mu-hbm4" />；SK海力士在 2025 年 9 月宣布完成開發時，公布的速度則是逾 10 Gb/s<Cite k="skh-hbm4-dev" />。
+
+<BarChart
+  title="每疊 HBM 的頻寬演進"
+  unit="GB/s"
+  data={[
+    { label: "HBM（2013）", value: 128 },
+    { label: "HBM2（2016）", value: 256 },
+    { label: "HBM3（2022）", value: 819 },
+    { label: "HBM3E 12 層（2024）", value: 1280 },
+    { label: "HBM4 標準（2025）", value: 2048 },
+    { label: "HBM4 量產品（2026）", value: 3300 }]}
+  source={["wiki-hbm", "jedec-hbm3", "ss-hbm3e-12h", "jedec-hbm4", "ss-hbm4"]}
+  note="HBM 與 HBM2 為首版規格（HBM2 在 2018 年底的規格更新提高到 307 GB/s）；HBM3 與 HBM4 標準為 JEDEC 公布的上限；HBM3E 12 層與 HBM4 量產品取三星公布的最高值。"
+  keepOrder
+/>
+
+另一個重要變化發生在基底晶粒。SK海力士到 HBM3E 為止都用自家製程做基底晶粒，並在 2024 年宣布 HBM4 將改用台積電的先進邏輯製程，以便在有限面積內塞進更多功能、做出依客戶需求設計的客製化 HBM<Cite k="skh-tsmc" />；三星則採用自家 4 奈米邏輯製程<Cite k="ss-hbm4" />。記憶體從此不再只是標準品，延伸閱讀：<TrendLink id="hbm4-custom-base-die">HBM4 與客製化記憶體</TrendLink>、<LearnLink id="hbm-deep">HBM 深入</LearnLink>。
+
+放到整顆加速器上，就是每一代 GPU 的記憶體規格：
+
+<BarChart
+  title="每顆 AI 加速器的 HBM 頻寬"
+  unit="TB/s"
+  data={[
+    { label: "H100", value: 3.35, note: "80 GB HBM3" },
+    { label: "H200", value: 4.8, note: "141 GB HBM3E" },
+    { label: "Blackwell（GB200）", value: 8, note: "每顆 GPU 186 GB HBM3E" },
+    { label: "Rubin", value: 19.2, note: "288 GB HBM4" },
+    { label: "MI455X", value: 23.3, note: "432 GB HBM4" }]}
+  source={["nvidia-h100", "nvidia-h200", "nvidia-gb200", "nvidia-vera-rubin", "nvidia-hgx", "amd-mi400"]}
+  note="GB200 為超級晶片規格（2 顆 GPU 合計 372 GB、16 TB/s）由本站平分換算；Rubin 取 Vera Rubin NVL72 產品頁的數字，輝達 HGX 頁面的單顆 GPU 規格與超微的比較表則寫 22 TB/s；MI455X 為超微公布的峰值理論頻寬。"
+  keepOrder
+/>
+
+注意 Rubin 的頻寬，輝達自己的不同頁面就有兩種寫法：Vera Rubin NVL72 產品頁是每顆 19.2 TB/s<Cite k="nvidia-vera-rubin" />，HGX 頁面的單顆 GPU 規格則是 22 TB/s<Cite k="nvidia-hgx" />。從 H100 到 Rubin，每顆 GPU 的 HBM 頻寬約成長 5.7 倍（以 22 TB/s 計約 6.6 倍），容量成長 3.6 倍（本站換算）。超微的 MI455X 用了 12 疊 HBM4<Cite k="amd-mi400" />，把容量當成主要賣點。各家公布的頻寬多是理論峰值，口徑也不完全相同，適合看數量級，不宜當成精確排名。
+
+### HBM 的代價
+
+HBM 換來頻寬，也付出不小的代價：
+
+- **吃掉更多晶圓**：美光執行長在 2024 年 3 月表示，以同一製程生產相同位元數，HBM3E 消耗的晶圓約為 DDR5 的 3 倍，HBM 擴產會限制其他 DRAM 產品的供給成長<Cite k="anandtech-mu-hbm3e" />。AI 需求因此連帶讓一般 DRAM 供給吃緊，這是<Term id="memory-supercycle">記憶體超級循環</Term>的成因之一。
+- **製造更難**：晶粒要磨得更薄、疊得更高，任何一層出問題都可能讓整疊報廢，散熱也更難處理，所以測試與接合製程格外重要。
+- **容量仍然不夠**：即使 Rubin 每顆有 288 GB，兆級參數的模型還是要拆到許多顆 GPU 上執行，這就需要高速的晶片間網路，見<LearnLink id="networking-for-ai">AI 叢集網路</LearnLink>。
+
+### 繞過記憶體牆的其他方法
+
+HBM 不是唯一的對策。晶片與系統設計者還有幾種常見做法，實務上通常會一起使用：
+
+- **把晶片上的 SRAM 做大**：微軟（Microsoft）在 2026 年 1 月發表的推論晶片 Maia 200，除了 216 GB、7 TB/s 的 HBM3e，還在晶片上放了 272 MB 的 SRAM，並搭配專門的資料搬移引擎<Cite k="ms-maia200" />。常用的資料留在晶片上，就不必一再往返 HBM。
+- **讓每個數字變小**：<Term id="quantization">量化</Term>把權重從 16 位元改用 8 位元或 4 位元儲存，同樣的頻寬每秒就能搬運 2 到 4 倍的參數。
+- **讓要讀的資料變少**：例如縮小 KV Cache（見下方的深入段落），或採用每次只啟動部分參數的 <Term id="moe">MoE</Term> 模型。
+- **多加一層大而慢的記憶體**：輝達 Vera Rubin 的每組超級晶片（1 顆 Vera CPU 加 2 顆 Rubin GPU）另配有最多 1.5 TB 的 LPDDR5X，CPU 與 GPU 之間以 1.8 TB/s 的 NVLink-C2C 相連<Cite k="nvidia-vera-rubin" />，讓 GPU 多了一層容量更大、但頻寬較低的記憶體可用。
+
+<DeepDive title="深入一點：記憶體頻寬如何決定 Token 的速度？">
+
+用一個簡化模型估算。Decode 時，每一步要從 HBM 讀出全部權重 W，以及這一批對話累積的 <Term id="kv-cache">KV Cache</Term> K；如果頻寬是 B，每秒最多能跑的步數約為：
+
+<MathTeX tex={"N_{\\mathrm{step}}\\approx\\frac{B}{W+K}"} display label="每秒步數約等於記憶體頻寬 B 除以權重大小 W 加上 KV Cache 大小 K" />
+
+以 Meta 的 Llama 3 70B 為例。論文列出它有 80 層、8 個鍵值頭，每個頭的維度是 8,192 ÷ 64 = 128<Cite k="llama3" />。KV Cache 要替每個 Token、每一層存一份鍵（K）與值（V），以 16 位元儲存時：
+
+<MathTeX tex={"2\\times80\\times8\\times128\\times2=327{,}680\\ \\mathrm{bytes}"} display label="每個 Token 的 KV Cache 約為 2 乘 80 層乘 8 個頭乘 128 維乘 2 位元組，約 0.33 MB" />
+
+也就是每個 Token 約 0.33 MB。一段 12.8 萬個 Token 的長對話，光 KV Cache 就約 42 GB。這個數字已經是「省過」的：Llama 3 採用分組查詢<Term id="attention">注意力</Term>（GQA），只保留 8 個鍵值頭來縮小 KV Cache<Cite k="llama3" />；如果 64 個頭都存，會再大 8 倍。
+
+接著代入 Vera Rubin NVL72 產品頁的 19.2 TB/s<Cite k="nvidia-vera-rubin" />，假設權重以 8 位元儲存，約 70 GB：
+
+- **只服務 1 位使用者**：K 很小，每秒約 19,200 ÷ 70 ≈ 274 步，也就是每秒約 274 個 Token。
+- **<Term id="batching">批次</Term>服務 32 位使用者、每人 8,000 個 Token 的上下文**：K 約 84 GB，每步要讀約 154 GB，每秒約 125 步。每一步替 32 人各產生 1 個 Token，總輸出約每秒 4,000 個 Token，是單人時的 14 倍多；每位使用者的速度則降到每秒約 125 個 Token。
+
+這個估算忽略了運算時間與各種軟體最佳化，只用來看數量級。它說明了兩件事：第一，頻寬直接決定每位使用者看到的回應速度；第二，批次越大、上下文越長，KV Cache 越會同時吃掉容量與頻寬，HBM 再大也不嫌多。這也是推論業者努力壓縮 KV Cache 的原因，詳見<LearnLink id="inference-optimization">推論最佳化</LearnLink>與<TrendLink id="long-context-memory">長上下文與模型記憶</TrendLink>。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+HBM 是一條橫跨好幾個環節的供應鏈：
+
+- **記憶體** → <SegmentChip id="memory-storage" />：HBM 主要由三家記憶體廠生產。依 IDC 統計，<CompanyChip id="sk-hynix" /> 2026 年第一季 HBM 營收市占 56.4%，排名第一<Cite k="skh-f1" />；它在第二季開始大量出貨 HBM4，當季營業利益率達 76%，並已與約 10 家客戶簽訂長期供貨協議<Cite k="skh-q2-26" />。<CompanyChip id="samsung-electronics" /> 在 2026 年 2 月宣布開始量產並出貨商用 HBM4（三星稱是業界第一家），預期 2026 年 HBM 銷售額將達 2025 年的 3 倍以上<Cite k="ss-hbm4" />；<CompanyChip id="micron" /> 則為輝達 Vera Rubin 量產 36 GB 的 12 層 HBM4<Cite k="mu-hbm4" />。SK海力士的上市文件引述 Gartner 預估，HBM 營收將從 2025 年的 330 億美元增加到 2027 年的 860 億美元<Cite k="skh-f1" />。
+- **排擠效應**：HBM 吃掉大量 DRAM 晶圓，一般 DRAM 跟著吃緊，台灣的 <CompanyChip id="nanya-tech" /> 與 <CompanyChip id="winbond" /> 等 DRAM 廠也身處這波循環之中，見<TrendLink id="memory-supercycle">記憶體超級循環</TrendLink>。
+- **晶圓代工與封裝** → <SegmentChip id="foundry-packaging" />：<CompanyChip id="tsmc" /> 一方面以邏輯製程承接 SK海力士 HBM4 的基底晶粒，一方面用 CoWoS 把 HBM 與 GPU 封裝在一起<Cite k="skh-tsmc" />。
+- **設備** → <SegmentChip id="semi-equipment-materials" />：HBM 帶動一批專門設備，例如 <CompanyChip id="disco" /> 的研磨與切割設備、<CompanyChip id="hanmi-semiconductor" /> 的熱壓鍵合機、<CompanyChip id="besi" /> 的混合鍵合設備，以及 <CompanyChip id="advantest" /> 的測試機。
+- **介面矽智財** → <SegmentChip id="eda-ip-design" />：GPU 與 ASIC 要和 HBM 溝通，需要 HBM 實體層與控制器，<CompanyChip id="guc" /> 與 <CompanyChip id="rambus" /> 都提供這類矽智財。
+- **加速器** → <SegmentChip id="ai-accelerators" />：記憶體容量與頻寬已是 AI 晶片的主要規格之一。<CompanyChip id="nvidia" /> 的 Rubin 搭配 288 GB HBM4<Cite k="nvidia-vera-rubin" />；<CompanyChip id="amd" /> 的 MI455X 以 432 GB HBM4 主打容量<Cite k="amd-mi400" />。輝達後續的路線圖見<TrendLink id="gpu-roadmap-rubin-feynman">GPU 藍圖</TrendLink>。

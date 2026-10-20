@@ -1,0 +1,586 @@
+---
+title: 伺服器、系統與關鍵零組件
+titleEn: Servers, Systems & Key Components
+order: 8
+layer: systems
+tagline: 把晶片、記憶體、電源與液冷組成整櫃 AI 電腦，是台灣代工廠的主場
+description: 伺服器與系統環節把 GPU、CPU、記憶體、網卡、電源與液冷整合成 AI 伺服器與整櫃系統。本頁由淺入深說明 ODM 與 OEM 的商業模式、電源散熱與板材等關鍵零組件、市場規模、瓶頸、地緣政治與台灣的角色。
+upstream:
+  - ai-accelerators
+  - memory-storage
+  - networking-optics
+downstream:
+  - datacenter-infra
+  - cloud-neocloud
+scene:
+  id: gpu-scale
+  variant: rack
+scope:
+  includes:
+    - AI 伺服器 ODM（替雲端業者設計並製造）與 OEM 品牌系統廠
+    - 機櫃級整合（L10／L11）：整機與整櫃組裝、液冷管路安裝、系統測試與出貨
+    - 主機板、GPU 運算板與交換板（L6）
+    - 伺服器電源供應器（PSU）、機櫃電源架、BBU 與板上供電元件
+    - 伺服器端散熱：水冷板、分歧管、快接頭、均熱片、風扇與熱導管
+    - PCB、銅箔基板（CCL），以及 CCL 的原料玻纖布與銅箔
+    - 滑軌、機殼、CPU 插槽與伺服器連接器、BMC 管理晶片、被動元件
+  excludes:
+    - 機房級設備：CDU、冰水機、UPS 與開關設備（歸資料中心）
+    - GPU、AI ASIC 與伺服器 CPU 晶片本身（歸 AI 晶片與加速器）
+    - 交換器、光模組與機櫃之間的網路（歸網通與光通訊）
+    - ABF／BT 載板（歸晶圓代工與先進封裝）
+    - HBM、DRAM 與企業級 SSD（歸記憶體與儲存）
+concentration: oligopoly
+bottleneck:
+  level: 3
+  note: 組裝產能可以隨訂單擴充，真正卡關的多半是更前段的晶片、先進封裝與記憶體。本環節內較吃緊的是液冷零組件、高速低損耗板材與整櫃測試產能；機櫃功率超過 200 kW 並邁向 1 MW，供電與散熱設計也必須跟著換代。GPU、DRAM 與 SSD 漲價則壓縮系統廠的成本空間。
+keyMetrics:
+  - label: 全球伺服器營收中 ODM 直供佔比（2025 Q4）
+    value: 53.2%（約 666 億美元）
+    asOf: "2026-03-12"
+    note: 品牌 OEM 前兩名為 Dell 10.0%、Supermicro 9.3%（IDC 依廠商營收計算）
+    source:
+      title: "Worldwide Server Market finished 2025 with an all-time record of 444 billion dollars revenue, according to IDC"
+      publisher: IDC
+      url: "https://www.idc.com/resource-center/press-releases/4q25servertracker/"
+      type: analyst
+      lang: en
+      published: "2026-03-12"
+      accessed: "2026-10-06"
+  - label: 全球 AI 伺服器出貨成長（2026 預估）
+    value: 年增近 31%
+    asOf: "2026-08-03"
+    note: TrendForce 由 28% 上修；同期估計前九大雲端業者資本支出合計逾 8,867 億美元、年增約 90%
+    source:
+      title: "AI Server Shipments Forecast Raised to Nearly 31% YoY in 2026 as 90% Surge in CSP CapEx Fuels Infrastructure Expansion, Says TrendForce"
+      publisher: TrendForce
+      url: "https://www.trendforce.com/presscenter/news/20260803-13161.html"
+      type: analyst
+      lang: en
+      published: "2026-08-03"
+      accessed: "2026-10-06"
+  - label: AI 晶片液冷滲透率（2026 預估）
+    value: 53%（2025 年約 33%）
+    asOf: "2026-08-17"
+    note: TrendForce 預估 2027 年接近 60%
+    source:
+      title: "Liquid Cooling Becomes Standard for High-End AI Infrastructure, with Penetration Expected to Reach 53% in 2026, Says TrendForce"
+      publisher: TrendForce
+      url: "https://www.trendforce.com/presscenter/news/20260817-13183.html"
+      type: analyst
+      lang: en
+      published: "2026-08-17"
+      accessed: "2026-10-06"
+  - label: NVL72 機櫃產值（2027 預估）
+    value: 逾 7,100 億美元（年增 214%）
+    asOf: "2026-08-28"
+    note: 含 GB300、VR200 與 VR300 NVL72；TrendForce 估 Vera Rubin 系統均價約為 GB300 的 2 倍
+    source:
+      title: "NVIDIA's AI Rack Transition Accelerates; NVL72 Output Value to Exceed US$710 Billion in 2027, Says TrendForce"
+      publisher: TrendForce
+      url: "https://www.trendforce.com/presscenter/news/20260828-13204.html"
+      type: analyst
+      lang: en
+      published: "2026-08-28"
+      accessed: "2026-10-06"
+  - label: 鴻海 2026 年 9 月合併營收
+    value: 新台幣 1 兆 1,586 億元（年增 38.4%）
+    asOf: "2026-10-05"
+    note: 鴻海首度單月營收破兆；2026 年 1–9 月累計 7.67 兆元、年增 39.5%
+    source:
+      title: "鴻海（2317）營收表"
+      publisher: Yahoo 奇摩股市
+      url: "https://tw.stock.yahoo.com/quote/2317.TW/revenue"
+      type: monthly-revenue
+      lang: zh-TW
+      accessed: "2026-10-06"
+  - label: 鴻海 2026 年第二季毛利率
+    value: 6.12%
+    asOf: "2026-08-12"
+    note: 同季營收新台幣 2.53 兆元、營業利益率 3.75%；對照輝達同期毛利率 75.0%
+    source:
+      title: "Hon Hai Technology Group (Foxconn) Announces Second Quarter 2026 Financial Results"
+      publisher: Hon Hai Technology Group (Foxconn)
+      url: "https://www.foxconn.com/en-us/press-center/press-releases/latest-news/2095"
+      type: press-release
+      lang: en
+      published: "2026-08-12"
+      accessed: "2026-10-06"
+  - label: Dell AI 伺服器在手訂單
+    value: 950 億美元
+    asOf: "2026-07-31"
+    note: FY2027 第二季（2026 年 5–7 月）AI 伺服器接單 609 億、營收 164 億美元；全年 AI 伺服器營收財測上調至 740 億美元
+    source:
+      title: "Dell Technologies Delivers Second Quarter Fiscal 2027 Financial Results"
+      publisher: Dell Technologies
+      url: "https://www.sec.gov/Archives/edgar/data/1571996/000157199626000039/exhibit991earnings8kq2fy27.htm"
+      type: filing
+      lang: en
+      published: "2026-09-01"
+      accessed: "2026-10-06"
+  - label: Supermicro FY2027 營收財測
+    value: 650–720 億美元
+    asOf: "2026-08-11"
+    note: FY2026（至 2026 年 6 月）營收 391 億美元、毛利率 10.8%
+    source:
+      title: "Supermicro Announces Fourth Quarter and Full Fiscal Year 2026 Financial Results"
+      publisher: Super Micro Computer
+      url: "https://www.sec.gov/Archives/edgar/data/1375365/000137536526000021/exhibit991_20260630.htm"
+      type: filing
+      lang: en
+      published: "2026-08-11"
+      accessed: "2026-10-06"
+marketSize:
+  - year: 2024
+    value: 254.5
+    unit: billion
+    currency: USD
+    status: actual
+    definition: 全球伺服器市場廠商營收（IDC Worldwide Quarterly Server Tracker，含 x86 與非 x86、一般與加速伺服器）；2024 年值由 IDC 公布的 2025 年值 4,535 億美元與年增 78.2% 回推，約 2,545 億美元
+    source:
+      title: "Servers Market Insights"
+      publisher: IDC
+      url: "https://www.idc.com/promo/servers/"
+      type: analyst
+      lang: en
+      published: "2026-07-28"
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20260806022621/https://www.idc.com/promo/servers/"
+  - year: 2025
+    value: 453.5
+    unit: billion
+    currency: USD
+    status: actual
+    definition: 全球伺服器市場廠商營收（IDC 2026-07-28 更新值；2026 年 3 月初次公布為 4,441 億美元、年增 80.4%）
+    source:
+      title: "Servers Market Insights"
+      publisher: IDC
+      url: "https://www.idc.com/promo/servers/"
+      type: analyst
+      lang: en
+      published: "2026-07-28"
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20260806022621/https://www.idc.com/promo/servers/"
+  - year: 2026
+    value: 647.0
+    unit: billion
+    currency: USD
+    status: forecast
+    definition: 全球伺服器市場廠商營收預測（IDC，年增 42.7%；其中非 x86 伺服器預估年增 100.7%）
+    source:
+      title: "Servers Market Insights"
+      publisher: IDC
+      url: "https://www.idc.com/promo/servers/"
+      type: analyst
+      lang: en
+      published: "2026-07-28"
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20260806022621/https://www.idc.com/promo/servers/"
+  - year: 2027
+    value: 930.6
+    unit: billion
+    currency: USD
+    status: forecast
+    definition: 全球伺服器市場廠商營收預測（IDC，年增 43.8%；IDC 預估至 2030 年的五年年複合成長率為 25.1%）
+    source:
+      title: "Servers Market Insights"
+      publisher: IDC
+      url: "https://www.idc.com/promo/servers/"
+      type: analyst
+      lang: en
+      published: "2026-07-28"
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20260806022621/https://www.idc.com/promo/servers/"
+featuredCompanies:
+  - foxconn
+  - quanta
+  - wistron
+  - wiwynn
+  - inventec
+  - dell
+  - supermicro
+  - hpe
+  - lenovo
+  - delta-electronics
+  - avc
+  - emc
+taiwanRole: 台灣是全球 AI 伺服器的組裝中心。鴻海、廣達、緯創、緯穎、英業達等 ODM 直接替雲端業者設計並組裝整櫃系統，據中央社報導，鴻海的 AI 伺服器全球市佔逾四成；台達電、奇鋐、雙鴻、台光電、金像電、川湖、信驊等零組件廠則供應電源、液冷、板材、滑軌與管理晶片。為貼近美國客戶，鴻海、緯創、緯穎正把整櫃產能擴展到德州等地。
+relatedLearn:
+  - data-centers-101
+  - why-gpus
+  - gpu-architecture
+  - networking-for-ai
+  - datacenter-power-cooling
+  - ai-capex-economics
+relatedTrends:
+  - rack-scale-systems
+  - liquid-cooling-mainstream
+  - 800v-dc-power
+  - hyperscaler-capex
+  - custom-asic-rise
+  - memory-supercycle
+  - export-controls-us-china
+glossary:
+  - ai-server
+  - odm
+  - oem
+  - rack
+  - nvl72
+  - l10-l11
+  - gpu
+  - asic
+  - pcb
+  - ccl
+  - psu
+  - bbu
+  - liquid-cooling
+  - cold-plate
+  - 800v-dc
+  - rack-power-density
+  - hyperscaler
+  - neocloud
+  - gross-margin
+  - entity-list
+sources:
+  - key: idc-4q25
+    title: "Worldwide Server Market finished 2025 with an all-time record of 444 billion dollars revenue, according to IDC"
+    publisher: IDC
+    url: "https://www.idc.com/resource-center/press-releases/4q25servertracker/"
+    type: analyst
+    lang: en
+    published: "2026-03-12"
+    accessed: "2026-10-06"
+  - key: idc-servers
+    title: "Servers Market Insights"
+    publisher: IDC
+    url: "https://www.idc.com/promo/servers/"
+    type: analyst
+    lang: en
+    published: "2026-07-28"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20260806022621/https://www.idc.com/promo/servers/"
+    note: 本頁採用標示更新日 2026-07-28 的版本（含 2025–2027 年市場規模表與 2026 年第一季數據），可由 archiveUrl 的 2026-08-06 存檔查閱；IDC 於資料基準日之後再次改版此頁並調整預測，閱讀現行頁面時數字可能不同
+  - key: idc-1q26
+    title: "Worldwide Server Market Revenue Surpasses $122 Billion in the First Quarter of 2026"
+    publisher: IDC
+    url: "https://www.idc.com/resource-center/press-releases/1q26-server-tracker/"
+    type: analyst
+    lang: en
+    published: "2026-06-15"
+    accessed: "2026-10-06"
+  - key: tf-ai-server
+    title: "AI Server Shipments Forecast Raised to Nearly 31% YoY in 2026 as 90% Surge in CSP CapEx Fuels Infrastructure Expansion, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260803-13161.html"
+    type: analyst
+    lang: en
+    published: "2026-08-03"
+    accessed: "2026-10-06"
+  - key: tf-nvl72
+    title: "NVIDIA's AI Rack Transition Accelerates; NVL72 Output Value to Exceed US$710 Billion in 2027, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260828-13204.html"
+    type: analyst
+    lang: en
+    published: "2026-08-28"
+    accessed: "2026-10-06"
+  - key: tf-liquid
+    title: "Liquid Cooling Becomes Standard for High-End AI Infrastructure, with Penetration Expected to Reach 53% in 2026, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260817-13183.html"
+    type: analyst
+    lang: en
+    published: "2026-08-17"
+    accessed: "2026-10-06"
+  - key: foxconn-q2
+    title: "Hon Hai Technology Group (Foxconn) Announces Second Quarter 2026 Financial Results"
+    publisher: Hon Hai Technology Group (Foxconn)
+    url: "https://www.foxconn.com/en-us/press-center/press-releases/latest-news/2095"
+    type: press-release
+    lang: en
+    published: "2026-08-12"
+    accessed: "2026-10-06"
+  - key: cna-foxconn-sep
+    title: "Hon Hai reports first monthly sales over NT$1 trillion in September"
+    publisher: Focus Taiwan（中央社）
+    url: "https://focustaiwan.tw/business/202610050019"
+    type: news
+    lang: en
+    published: "2026-10-05"
+    accessed: "2026-10-06"
+  - key: cna-robot
+    title: "Nvidia, Hon Hai use robots to improve GB300 assembly success rates"
+    publisher: Focus Taiwan（中央社）
+    url: "https://focustaiwan.tw/sci-tech/202610050008"
+    type: news
+    lang: en
+    published: "2026-10-05"
+    accessed: "2026-10-06"
+  - key: dell-q2-fy27
+    title: "Dell Technologies Delivers Second Quarter Fiscal 2027 Financial Results"
+    publisher: Dell Technologies
+    url: "https://www.sec.gov/Archives/edgar/data/1571996/000157199626000039/exhibit991earnings8kq2fy27.htm"
+    type: filing
+    lang: en
+    published: "2026-09-01"
+    accessed: "2026-10-06"
+  - key: smci-fy26
+    title: "Supermicro Announces Fourth Quarter and Full Fiscal Year 2026 Financial Results"
+    publisher: Super Micro Computer
+    url: "https://www.sec.gov/Archives/edgar/data/1375365/000137536526000021/exhibit991_20260630.htm"
+    type: filing
+    lang: en
+    published: "2026-08-11"
+    accessed: "2026-10-06"
+  - key: nvidia-q2-fy27
+    title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2027"
+    publisher: NVIDIA
+    url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000073/q2fy27pr.htm"
+    type: filing
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-06"
+  - key: nvidia-gb300
+    title: "NVIDIA GB300 NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/gb300-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: nvidia-800v
+    title: "NVIDIA 800 VDC Architecture Will Power the Next Generation of AI Factories"
+    publisher: NVIDIA Technical Blog
+    url: "https://developer.nvidia.com/blog/nvidia-800-v-hvdc-architecture-will-power-the-next-generation-of-ai-factories/"
+    type: company-site
+    lang: en
+    published: "2025-05-20"
+    accessed: "2026-10-06"
+  - key: nvidia-us-mfg
+    title: "NVIDIA to Manufacture American-Made AI Supercomputers in US for First Time"
+    publisher: NVIDIA
+    url: "https://blogs.nvidia.com/blog/nvidia-manufacture-american-made-ai-supercomputers-us/"
+    type: press-release
+    lang: en
+    published: "2025-04-14"
+    accessed: "2026-10-06"
+  - key: wiwynn-texas
+    title: "Wiwynn Strengthens Global Supply Chain Resilience with Grand Opening of Advanced Manufacturing Facility in Texas"
+    publisher: Wiwynn
+    url: "https://www.wiwynn.com/news/wiwynn-strengthens-global-supply-chain-resilience-with-grand-opening-of-advanced-manufacturing-facility-in-texas"
+    type: press-release
+    lang: en
+    published: "2026-09-14"
+    accessed: "2026-10-06"
+  - key: wiki-inspur
+    title: "Inspur"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Inspur"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+  - key: sa-margins
+    title: "Quarterly income statements: Quanta (2382), Wistron (3231), Wiwynn (6669), Delta Electronics (2308)"
+    publisher: Stock Analysis
+    url: "https://stockanalysis.com/quote/tpe/2382/financials/?p=quarterly"
+    type: dataset
+    lang: en
+    accessed: "2026-10-06"
+    note: 2026 年第二季毛利率依各公司毛利除以營收計算：廣達 5.02%、緯創 5.66%、緯穎 9.26%、台達電 35.64%；其餘公司頁面路徑為 quote/tpe/3231、quote/tpe/6669、quote/tpe/2308
+  - key: yahoo-2317
+    title: "鴻海（2317）營收表"
+    publisher: Yahoo 奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/2317.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-2382
+    title: "廣達（2382）營收表"
+    publisher: Yahoo 奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/2382.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-3231
+    title: "緯創（3231）營收表"
+    publisher: Yahoo 奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/3231.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-6669
+    title: "緯穎（6669）營收表"
+    publisher: Yahoo 奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/6669.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-2356
+    title: "英業達（2356）營收表"
+    publisher: Yahoo 奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/2356.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-2059
+    title: "川湖（2059）營收表"
+    publisher: Yahoo 奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/2059.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-2383
+    title: "台光電（2383）營收表"
+    publisher: Yahoo 奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/2383.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-3324
+    title: "雙鴻（3324）營收表"
+    publisher: Yahoo 奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/3324.TWO/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-3017
+    title: "奇鋐（3017）營收表"
+    publisher: Yahoo 奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/3017.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-5274
+    title: "信驊（5274）營收表"
+    publisher: Yahoo 奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/5274.TWO/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-2368
+    title: "金像電（2368）營收表"
+    publisher: Yahoo 奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/2368.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-2308
+    title: "台達電（2308）營收表"
+    publisher: Yahoo 奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/2308.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: seg-servers-systems
+  checkedBy: "seg-servers-systems-check"
+  checkedOn: "2026-10-06"
+  notes: 查核：IDC、TrendForce、鴻海、Dell、Supermicro、輝達、緯穎與中央社來源逐項核對；台股月營收與 Stock Analysis 毛利率抽查與一手數字一致。IDC 市場規模頁已於基準日後改版，2026-07-28 版數字以 Wayback 存檔核實並附 archiveUrl。更正機器人組裝的對象（GB300 測試托盤，原文未提休士頓廠）與嘉澤產品描述。
+---
+
+<LevelSection level={1} title="這一環在做什麼">
+
+一顆 GPU 再強，單獨也無法工作：它必須裝上電路板，接上 CPU、記憶體、網卡與電源，再配好散熱，才會變成一台能工作的電腦。這一環就是負責「把零件變成電腦」的產業：設計並組裝<Term id="ai-server">AI 伺服器</Term>，以及讓伺服器能運作的關鍵零組件。
+
+今天最先進的 AI 系統，已經不是一台一台的伺服器，而是一整個<Term id="rack">機櫃</Term>。以輝達的 GB300 <Term id="nvl72">NVL72</Term> 為例，一櫃裝了 72 顆 Blackwell Ultra GPU 與 36 顆 Grace CPU，GPU 之間以 130 TB/s 的 NVLink 互連，而且全櫃採用液冷<Cite k="nvidia-gb300" />。這樣的機櫃要在工廠裡組好、灌好冷卻液、通電測試完畢，才整櫃運到資料中心。
+
+<FlowSteps title="從零件到整櫃 AI 電腦" steps={["晶片與零組件","主機板與運算板（L6）","整機組裝（L10）","整櫃整合與測試（L11）","出貨到資料中心"]} />
+
+這一環的參與者大致分成三類：
+
+- **ODM 代工廠**：<Term id="odm">ODM</Term> 依雲端業者的需求設計並製造伺服器，產品直接交給客戶使用，例如 <CompanyChip id="foxconn">鴻海（Foxconn）</CompanyChip>、<CompanyChip id="quanta">廣達（Quanta）</CompanyChip>、<CompanyChip id="wistron">緯創（Wistron）</CompanyChip>、<CompanyChip id="wiwynn">緯穎（Wiwynn）</CompanyChip>。
+- **OEM 品牌廠**：在伺服器產業，<Term id="oem">OEM</Term> 指以自有品牌銷售系統的廠商，例如 <CompanyChip id="dell">戴爾（Dell）</CompanyChip>、<CompanyChip id="supermicro">美超微（Supermicro）</CompanyChip>、<CompanyChip id="hpe">慧與（HPE）</CompanyChip>、<CompanyChip id="lenovo">聯想（Lenovo）</CompanyChip>，主要賣給企業與新興 AI 雲。
+- **關鍵零組件廠**：電源、散熱、電路板、滑軌、機殼、連接器與管理晶片的供應商。
+
+為什麼這一環值得注意？AI 讓伺服器支出急速放大：IDC 統計 2025 年全球伺服器市場營收年增約八成，第四季內建 GPU 的伺服器營收已超過整體的一半<Cite k="idc-4q25" />。晶片越來越熱、越來越耗電，伺服器廠的工作也從「把零件鎖進鐵盒」，變成同時處理供電、液冷、高速訊號與整櫃測試的系統工程。
+
+<Callout type="analogy" title="晶片是引擎，伺服器廠是整車廠">
+GPU 就像一具馬力強大的引擎，但光有引擎不會跑。伺服器廠要把引擎、油箱（電源）、水箱（散熱）、底盤（電路板與機殼）和儀表板（管理晶片）組成一輛車。AI 機櫃更像出廠前就編組好的高鐵列車：72 節「車廂」彼此高速連通，在工廠整列測試完才交車。引擎的毛利最高，整車廠則靠規模、交期與工程能力賺錢。
+</Callout>
+
+</LevelSection>
+
+<LevelSection level={2} title="關鍵技術與商業模式" data-lint="level==2">
+
+### 關鍵零組件：電、熱、板、機構
+
+**電源。** 伺服器需要 <Term id="psu">PSU</Term>（電源供應器）把交流電轉成低壓直流電；AI 機櫃通常把多組電源模組集中在電源架上統一供電，並加上 <Term id="bbu">BBU</Term>（電池備援模組）。輝達指出，現行 AI 機櫃以 54V 直流配電，功耗超過 200 kW 就會開始碰到物理極限，而它計畫自 2027 年起支援 1 MW 等級的機櫃；它推動的 <Term id="800v-dc">800V 直流</Term>架構可比 415V 交流配電少用 45% 的銅，端到端效率最多提升 5%。合作夥伴包括 <CompanyChip id="delta-electronics">台達電（Delta）</CompanyChip>、<CompanyChip id="lite-on">光寶科（Lite-On）</CompanyChip>、<CompanyChip id="flex">偉創力（Flex）</CompanyChip>，以及 <CompanyChip id="infineon">英飛凌（Infineon）</CompanyChip>、<CompanyChip id="monolithic-power-systems">芯源系統（MPS）</CompanyChip>、<CompanyChip id="navitas" /> 等功率晶片廠<Cite k="nvidia-800v" />。
+
+**散熱。** 單一機櫃的<Term id="rack-power-density">機櫃功率密度</Term>上升後，傳統氣冷已不敷使用，<Term id="liquid-cooling">液冷</Term>成為主流。TrendForce 估計 AI 晶片的液冷滲透率將從 2025 年約 33% 升至 2026 年的 53%，2027 年接近 60%；Google 已有逾 80% 的 AI 伺服器採用液冷。關鍵零件是<Term id="cold-plate">水冷板</Term>、分歧管與快接頭，水冷板供應商包括 <CompanyChip id="avc">奇鋐（AVC）</CompanyChip>、<CompanyChip id="auras">雙鴻（Auras）</CompanyChip>，<CompanyChip id="jentech">健策（Jentech）</CompanyChip>則是 Rubin 平台均熱片的唯一供應商<Cite k="tf-liquid" />。
+
+**電路板與板材。** GPU 運算板與交換板需要層數多、訊號損耗低的 <Term id="pcb">PCB</Term>，原料是高階 <Term id="ccl">CCL</Term>（銅箔基板）。代表廠商有 CCL 的 <CompanyChip id="emc">台光電（EMC）</CompanyChip>、<CompanyChip id="tuc">台燿（TUC）</CompanyChip>、<CompanyChip id="shengyi">生益科技</CompanyChip>，PCB 的 <CompanyChip id="gce">金像電（GCE）</CompanyChip>、<CompanyChip id="victory-giant">勝宏科技</CompanyChip>、<CompanyChip id="ttm">TTM</CompanyChip>，以及 CCL 原料玻纖布的 <CompanyChip id="nittobo">日東紡（Nittobo）</CompanyChip>。
+
+**機構與管理。** 沉重的 AI 機櫃需要高承重滑軌（<CompanyChip id="king-slide">川湖（King Slide）</CompanyChip>）、機殼（<CompanyChip id="chenbro">勤誠（Chenbro）</CompanyChip>）、CPU 插槽與連接器（<CompanyChip id="lotes">嘉澤（Lotes）</CompanyChip>），以及負責遠端監控的 BMC 晶片（<CompanyChip id="aspeed">信驊（ASPEED）</CompanyChip>）。
+
+### 商業模式：ODM、OEM 與 EMS
+
+- **ODM 直供**：<Term id="hyperscaler">超大規模業者</Term>自訂規格，ODM 負責設計、組裝與測試，訂單大、規格集中，但議價空間有限。除了輝達 GPU 機櫃，ODM 也組裝雲端業者自研 <Term id="asic">ASIC</Term> 的伺服器。
+- **OEM 品牌**：賣給企業、政府與<Term id="neocloud">新雲</Term>，附帶軟體、維修與融資服務。Dell 在 FY2027 第二季（2026 年 5–7 月）接下 609 億美元 AI 伺服器訂單、認列 164 億美元營收，季末在手訂單達 950 億美元<Cite k="dell-q2-fy27" />；Supermicro FY2026 營收 391 億美元，FY2027 財測為 650–720 億美元<Cite k="smci-fy26" />。
+- **EMS 大廠**：<CompanyChip id="celestica">天弘（Celestica）</CompanyChip>、<CompanyChip id="jabil">捷普（Jabil）</CompanyChip>、<CompanyChip id="sanmina">新美亞（Sanmina）</CompanyChip>與 Flex，總部多在北美，也承接機櫃整合、電源與液冷模組等業務。
+
+**成本結構。** 系統廠的營收裡包含大量外購的 GPU、CPU 與記憶體，自身加值的比重相對小，因此毛利率很薄。2026 年第二季，<CompanyChip id="nvidia">輝達</CompanyChip>的<Term id="gross-margin">毛利率</Term>為 75.0%<Cite k="nvidia-q2-fy27" />，鴻海只有 6.12%<Cite k="foxconn-q2" />，廣達與緯創約 5%–6%；做電源等關鍵零組件的台達電則有約 36%<Cite k="sa-margins" />。系統廠靠的是巨大的營收規模、交期與良率。
+
+<BarChart title="2026 年第二季毛利率：晶片、零組件與系統廠" unit="%" data={[{ label: "輝達", value: 75.0 }, { label: "台達電", value: 35.6 }, { label: "緯穎", value: 9.3 }, { label: "鴻海", value: 6.1 }, { label: "緯創", value: 5.7 }, { label: "廣達", value: 5.0 }]} source={["nvidia-q2-fy27", "foxconn-q2", "sa-margins"]} note="輝達為 FY2027 第二季（至 2026-07-26）；其餘為 2026 年 4–6 月。各公司毛利率涵蓋全公司業務，不只伺服器。" keepOrder />
+
+### 市場規模
+
+IDC 統計，2025 年全球伺服器市場營收達 4,441 億美元、年增 80.4%；同年第四季，內建 GPU 的伺服器營收年增 59.1%，非 x86 伺服器營收更年增 146.4%、達 555 億美元，x86 伺服器只成長 16.9%<Cite k="idc-4q25" />。IDC 在 2026 年 7 月將 2025 年值更新為 4,535 億美元，並預估 2026 年達 6,470 億美元、2027 年 9,306 億美元，至 2030 年的五年年複合成長率為 25.1%<Cite k="idc-servers" />。2026 年第一季支出年增 30.7%，出貨台數卻只增加 3.3%，代表成長主要來自單價更高的 AI 機器<Cite k="idc-servers" />。TrendForce 則估計 2026 年 AI 伺服器出貨年增近 31%<Cite k="tf-ai-server" />。
+
+### 競爭格局
+
+依 IDC 的廠商營收統計，2025 年第四季有 53.2% 的伺服器營收來自「ODM 直供」，品牌廠中 Dell 以 10.0% 居首，其次是 Supermicro 9.3%、浪潮旗下的 IEIT Systems 4.1%、聯想 4.0% 與 HPE 3.1%<Cite k="idc-4q25" />。換句話說，超過一半的伺服器營收並不掛品牌，而是由代工廠直接交給雲端業者。
+
+<BarChart title="全球伺服器營收市佔（2025 年第四季）" unit="%" data={[{ label: "ODM 直供", value: 53.2 }, { label: "Dell", value: 10.0 }, { label: "Supermicro", value: 9.3 }, { label: "IEIT Systems", value: 4.1 }, { label: "Lenovo", value: 4.0 }, { label: "HPE", value: 3.1 }, { label: "其他", value: 16.2 }]} source="idc-4q25" keepOrder />
+
+這個比重會隨季度明顯波動：2026 年第一季 ODM 直供降到 50.2%，Dell 則升到 16.5%、Supermicro 為 7.6%<Cite k="idc-1q26" />。IDC 的預測假設中，也包含部分整櫃 GPU 需求從 ODM 客製機櫃轉向 OEM 的整櫃與標準機櫃方案<Cite k="idc-servers" />。
+
+</LevelSection>
+
+<LevelSection level={3} title="深入議題" data-lint="level===3">
+
+### 瓶頸一：功率與散熱逼著系統換代
+
+輝達指出，若 1 MW 機櫃沿用現行 54V 直流配電，光是銅匯流排就可能重達 200 公斤，因此要改用 800V 直流，並隨 2027 年的 Kyber 機櫃全面量產<Cite k="nvidia-800v" />。這代表電源架、配電、冷板與機構都要重新設計，也更考驗系統廠與零組件廠的電源和液冷整合能力。
+
+### 瓶頸二：零組件漲價與單價墊高
+
+IDC 提醒，GPU、DRAM 與 SSD 等零組件價格大幅波動，部分企業已提前鎖價，市場可能走向「台數較少、平均單價更高」<Cite k="idc-4q25" />。TrendForce 估計 Vera Rubin 系統的平均售價約為 GB300 的 2 倍<Cite k="tf-nvl72" />。單價越高，系統廠需要的營運資金與存貨風險也越大。
+
+### 瓶頸三：整櫃組裝與測試
+
+整櫃系統零件多、單價高，任何一條纜線或接頭出錯都要返工。鴻海表示，面對高單價、高複雜度的 AI 產品，它靠垂直整合與高度自動化維持效率與良率，CNC 與 SMT 製程的自動化率已接近 100%<Cite k="foxconn-q2" />。據中央社引述輝達技術部落格，輝達與鴻海訓練機器人組裝 GB300 NVL72 的測試托盤（出貨前用來驗證運算模組的治具）：需鎖 16 顆螺絲的匯流排組裝成功率逾 95%，四個不同尺寸纜線接頭的插接成功率約 90%–95%。輝達指出，設計週期短、產量相對低，使固定式自動化難以適用，因此需要能適應變化的彈性自動化<Cite k="cna-robot" />。
+
+### 供需：需求來自少數大客戶
+
+TrendForce 估計 2026 年前九大雲端業者資本支出合計逾 8,867 億美元、年增約 90%，2027 年可能達約 1.3 兆美元<Cite k="tf-ai-server" />。客戶集中度仍高，但正在分散：北美五大雲端業者佔輝達機櫃採購的比重，預估從 2025 年約 70% 降到 2026 年的 60%；Tesla 體系（含 xAI、SpaceX）、<CompanyChip id="coreweave">CoreWeave</CompanyChip>，以及新雲與主權雲業者的需求正在增加<Cite k="tf-nvl72" />。
+
+### 地緣政治：產能往美國移
+
+2025 年 4 月，輝達宣布與合作夥伴在美國啟用逾百萬平方英尺的製造與測試空間，由鴻海在休士頓、緯創在達拉斯興建超級電腦工廠，目標四年內在美國生產最多 5,000 億美元的 AI 基礎設施<Cite k="nvidia-us-mfg" />。緯穎投資逾 16 億美元、位於德州艾爾帕索（El Paso）地區的工廠已於 2026 年 9 月 14 日開幕，具備氣冷與液冷整櫃的生產與測試能力<Cite k="wiwynn-texas" />；鴻海也表示將因應美國在地化需求，在德州、威斯康辛、俄亥俄與加州擴充研發與製造<Cite k="foxconn-q2" />。中國方面，浪潮於 2023 年 3 月被列入美國<Term id="entity-list">實體清單</Term>，2025 年 3 月旗下 Aivres 等子公司也被納入<Cite k="wiki-inspur" />。延伸閱讀：<TrendLink id="export-controls-us-china">晶片出口管制與中美科技角力</TrendLink>。
+
+### 2026–2028 年觀察重點
+
+1. **Vera Rubin 放量**：輝達表示 Vera Rubin 已全面量產<Cite k="nvidia-q2-fy27" />；鴻海預期 2026 年 AI 機櫃出貨量將超過 2025 年的兩倍<Cite k="foxconn-q2" />。
+2. **整櫃產值**：TrendForce 預估 2027 年 NVL72 機櫃產值逾 7,100 億美元、年增 214%<Cite k="tf-nvl72" />。
+3. **800V 與 MW 級機櫃**：2027 年 Kyber 機櫃能否如期導入 800V 直流<Cite k="nvidia-800v" />。
+4. **液冷滲透率**：2027 年是否接近 60%<Cite k="tf-liquid" />。
+5. **獲利能力**：Supermicro FY2026 第四季毛利率 17.5%，但全年只有 10.8%<Cite k="smci-fy26" />，可觀察系統廠毛利能否隨整櫃方案提升。
+
+延伸閱讀：<TrendLink id="rack-scale-systems">機櫃即電腦：從 NVL72 到 Kyber</TrendLink>、<TrendLink id="liquid-cooling-mainstream">液冷成為主流</TrendLink>。
+
+</LevelSection>
+
+## 台灣的角色
+
+台灣是全球 AI 伺服器的組裝中心。鴻海 2026 年 9 月單月營收達新台幣 1 兆 1,586 億元、年增 38.4%，首度單月破兆<Cite k="yahoo-2317" /><Cite k="cna-foxconn-sep" />；據中央社報導，鴻海在全球 AI 伺服器市場的佔有率逾四成<Cite k="cna-foxconn-sep" />。緯創 2026 年 8 月營收新台幣 4,600.7 億元，單月超越廣達的 4,239.7 億元<Cite k="yahoo-3231" /><Cite k="yahoo-2382" />。廣達與緯創 2026 年 1–8 月累計營收都約翻倍（年增約 99%–103%），緯穎與 <CompanyChip id="inventec">英業達（Inventec）</CompanyChip>則成長約四成<Cite k="yahoo-6669" /><Cite k="yahoo-2356" />。
+
+<BarChart title="台灣伺服器代工廠 2026 年 1–8 月累計營收年增率" unit="%" data={[{ label: "廣達", value: 102.6 }, { label: "緯創", value: 98.9 }, { label: "緯穎", value: 42.8 }, { label: "英業達", value: 40.1 }, { label: "鴻海", value: 39.7 }]} source={["yahoo-2382", "yahoo-3231", "yahoo-6669", "yahoo-2356", "yahoo-2317"]} note="合併營收，含非伺服器業務；鴻海營收另含消費電子等其他產品。" keepOrder />
+
+零組件廠的成長同樣明顯。下圖中的滑軌、CCL、液冷、BMC 與高階 PCB 廠，2026 年 1–8 月營收都年增七成以上，電源大廠台達電也成長約四成<Cite k="yahoo-2059" /><Cite k="yahoo-2308" />；而且台達電的毛利率約 36%，遠高於組裝廠<Cite k="sa-margins" />。
+
+<BarChart title="台灣 AI 伺服器零組件廠 2026 年 1–8 月累計營收年增率" unit="%" data={[{ label: "川湖", value: 164.0 }, { label: "台光電", value: 95.2 }, { label: "雙鴻", value: 81.0 }, { label: "奇鋐", value: 76.1 }, { label: "信驊", value: 74.5 }, { label: "金像電", value: 71.2 }, { label: "台達電", value: 41.1 }]} source={["yahoo-2059", "yahoo-2383", "yahoo-3324", "yahoo-3017", "yahoo-5274", "yahoo-2368", "yahoo-2308"]} keepOrder />
+
+產能布局也在改變。鴻海與緯創是輝達在美國生產 AI 超級電腦的合作夥伴<Cite k="nvidia-us-mfg" />，緯穎投資逾 16 億美元的德州廠已經開幕<Cite k="wiwynn-texas" />；鴻海也表示，資本支出將在台灣、美國、墨西哥與越南持續增加<Cite k="foxconn-q2" />。
+
+挑戰也很清楚：組裝廠毛利率約只有 5%–9%，客戶集中在少數雲端業者，產能又必須跟著客戶前往美國。台灣廠商能否在電源、液冷與整櫃測試累積更多技術含量，將決定這一波 AI 需求能留下多少獲利。政策面可參考 <TrendLink id="taiwan-ai-policy">台灣 AI 政策與算力布局</TrendLink>。

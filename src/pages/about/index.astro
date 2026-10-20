@@ -1,0 +1,392 @@
+---
+/**
+ * /about/ 關於本站: purpose, how to use the site 由淺入深, editorial and fact-check process,
+ * update cadence and the disclaimer. Body from pages entry "about" (MDX), or AboutFallback.
+ *
+ * Layout: header, then (≥ 1100 px) the MDX body on the left and a 「網站收錄」 numbers card plus an
+ * 「更新與查核」 card on the right; on narrow screens the numbers come first, the cards after the body.
+ * The body's own 「免責聲明」 section is styled as a callout; when the body has no disclaimer the page
+ * renders one. Owner: pages-reference agent.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Icon from '../../components/ui/Icon.astro';
+import SourcesList from '../../components/content/SourcesList.astro';
+import { mdxComponents } from '../../components/content/mdx-components';
+import AboutFallback from '../../components/reference/AboutFallback.astro';
+import HowToUse from '../../components/reference/HowToUse.astro';
+import SectionLinks from '../../components/reference/SectionLinks.astro';
+import UpdateCadence from '../../components/reference/UpdateCadence.astro';
+import {
+  getEditorialStatus,
+  getSiteNumbers,
+  loadPageEntry,
+  trailingSectionParagraphs,
+} from '../../components/reference/reference-data';
+import { sectionHref } from '../../lib/paths';
+import { DATA_DATE, DISCLAIMER, SITE_DESCRIPTION } from '../../lib/seo';
+
+const page = await loadPageEntry('about');
+const n = await getSiteNumbers();
+const { totals, total: statusTotal } = await getEditorialStatus();
+const Content = page?.Content;
+const updated = page?.data.updated ?? DATA_DATE;
+const pageSources = page?.data.sources ?? [];
+
+// Reading order: the MDX body (purpose, readers, editorial process) → 「怎麼使用本站：由淺入深」 →
+// 免責聲明 last. When the body ends with its own 「免責聲明」 section of plain paragraphs, that section
+// is hidden in place and its text is shown in the disclaimer callout at the end instead.
+const movedDisclaimer = page ? trailingSectionParagraphs(page.body, '免責聲明') : undefined;
+const bodyKeepsDisclaimer = !movedDisclaimer && !!page?.body.includes('不構成投資建議');
+const DEFAULT_DISCLAIMER = [
+  `${DISCLAIMER}。本站不推薦任何投資標的，也不預測股價。`,
+  '本站整理的公司、財務、市場與技術資訊可能有誤或已經過時，請以公司公告、監理機關申報與官方文件為準；依據本站內容所做的任何決定，請自行判斷並承擔風險。',
+  '文中提到的公司名稱、產品名稱與商標屬於各自的所有者，本站與這些公司沒有任何合作或從屬關係。',
+];
+const disclaimer = movedDisclaimer ?? DEFAULT_DISCLAIMER;
+const researched = totals.researched + totals['fact-checked'];
+const description =
+  page?.data.description ??
+  'AI 產業鏈全景的目的、由淺入深的使用方式、內容調研與查核流程、更新頻率，以及免責聲明：本站內容僅供教育參考，不構成投資建議。';
+const fmt = (x: number) => x.toLocaleString('zh-TW');
+
+const numbers = [
+  { value: n.segments, unit: '個', label: '產業鏈環節', href: sectionHref('chain') },
+  { value: n.rosterCompanies, unit: '家', label: '收錄公司', href: sectionHref('companies') },
+  { value: n.learnArticles, unit: '篇', label: '學習文章', href: sectionHref('learn') },
+  { value: n.modelFamilies, unit: '個', label: '模型系列', href: sectionHref('models') },
+  { value: n.trends, unit: '個', label: '趨勢主題', href: sectionHref('trends') },
+  { value: n.glossaryTerms, unit: '個', label: '名詞解釋', href: sectionHref('glossary') },
+].filter((x) => x.value > 0);
+---
+
+<BaseLayout
+  title="關於本站"
+  description={description}
+  breadcrumbs={[{ label: '關於本站' }]}
+  section="about"
+  sources={pageSources}
+  modifiedTime={updated}
+>
+  <div class="container ab">
+    <header class="page-head ab-head">
+      <p class="page-head__kicker">關於</p>
+      <h1 data-pagefind-weight="10">關於本站</h1>
+      <p class="page-head__lede">{SITE_DESCRIPTION}</p>
+      <DataAsOf date={updated} label="本頁更新於" />
+    </header>
+
+    <div class="ab-grid">
+      <section class="ab-card ab-numbers" aria-labelledby="ab-numbers-h" data-pagefind-ignore>
+        <h2 id="ab-numbers-h" class="ab-card__h">網站收錄</h2>
+        <ul class="ab-numbers__list" role="list">
+          {
+            numbers.map((x) => (
+              <li>
+                <a href={x.href} class="ab-num">
+                  <span class="ab-num__value">
+                    <span class="num">{fmt(x.value)}</span>
+                    <span class="ab-num__unit">{x.unit}</span>
+                  </span>
+                  <span class="ab-num__label">{x.label}</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <div class="ab-main">
+        <div class:list={['prose', 'ab-body', { 'ab-body--moved': !!movedDisclaimer }]}>
+          {Content ? <Content components={mdxComponents} /> : <AboutFallback />}
+          {Content && <HowToUse />}
+        </div>
+
+        {
+          !bodyKeepsDisclaimer && (
+            <section class="ab-disclaimer" aria-labelledby="disclaimer">
+              <h2 id="disclaimer" class="ab-disclaimer__h">
+                <Icon name="warn" size="1.1em" />
+                免責聲明
+              </h2>
+              {disclaimer.map((text, i) => (
+                <p class={i === 0 ? 'ab-disclaimer__lead' : undefined}>{text}</p>
+              ))}
+            </section>
+          )
+        }
+
+        {pageSources.length > 0 && <SourcesList sources={pageSources} title="本頁參考來源" class="ref-sources" />}
+      </div>
+
+      <section class="ab-card ab-updates" aria-labelledby="ab-updates-h">
+        <h2 id="ab-updates-h" class="ab-card__h">
+          更新與查核
+        </h2>
+        <div class="prose ab-updates__prose">
+          <UpdateCadence />
+        </div>
+        {statusTotal > 0 && (
+          <dl class="ab-stats">
+            <div>
+              <dt>已調研</dt>
+              <dd>
+                <span class="num">{fmt(researched)}</span> 筆
+              </dd>
+            </div>
+            <div>
+              <dt>已獨立查核</dt>
+              <dd>
+                <span class="num">{fmt(totals['fact-checked'])}</span> 筆
+              </dd>
+            </div>
+          </dl>
+        )}
+        <a class="ab-updates__link" href={`${sectionHref('sources')}#editorial-status`}>
+          查核狀態與研究方法
+          <Icon name="arrow-right" size="1em" />
+        </a>
+      </section>
+    </div>
+
+    <section class="ab-start" aria-labelledby="ab-start-h" data-pagefind-ignore>
+      <h2 id="ab-start-h" class="ab-h2">探索各單元</h2>
+      <SectionLinks exclude={['about']} />
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  @layer components {
+    .ab {
+      display: grid;
+      gap: var(--space-7);
+    }
+    .ab-head {
+      padding-block-end: 0;
+    }
+    .ab-head > :global(.page-head__lede) {
+      max-width: 42rem;
+    }
+
+    /* Narrow: numbers → body → updates. Wide: body on the left, the two cards stacked on the right. */
+    .ab-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'numbers'
+        'main'
+        'updates';
+      gap: var(--space-7);
+    }
+    @media (min-width: 1100px) {
+      .ab-grid {
+        grid-template-columns: minmax(0, 46rem) minmax(17rem, 21rem);
+        grid-template-rows: auto auto 1fr;
+        grid-template-areas:
+          'main numbers'
+          'main updates'
+          'main .';
+        justify-content: space-between;
+        column-gap: clamp(var(--space-7), 6vw, var(--space-9));
+        row-gap: var(--space-5);
+        align-items: start;
+      }
+    }
+    .ab-numbers {
+      grid-area: numbers;
+    }
+    .ab-main {
+      grid-area: main;
+      display: grid;
+      gap: var(--space-7);
+      min-width: 0;
+    }
+    .ab-updates {
+      grid-area: updates;
+    }
+
+    .ab-card {
+      display: grid;
+      gap: var(--space-4);
+      min-width: 0;
+    }
+    @media (min-width: 1100px) {
+      .ab-card {
+        padding: var(--space-5);
+        border: 1px solid var(--c-border);
+        border-radius: var(--radius-l);
+        background: var(--c-bg-elev);
+        box-shadow: var(--shadow-1);
+      }
+    }
+    .ab-card__h {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--c-fg-subtle);
+    }
+
+    .ab-numbers__list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr));
+      gap: var(--space-2);
+      margin: 0;
+      padding: 0;
+    }
+    @media (min-width: 1100px) {
+      .ab-numbers__list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    .ab-num {
+      display: grid;
+      gap: 2px;
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      text-decoration: none;
+      transition:
+        border-color var(--dur-2) ease,
+        background-color var(--dur-2) ease;
+    }
+    @media (min-width: 1100px) {
+      .ab-num {
+        background: var(--c-bg);
+      }
+    }
+    .ab-num:hover {
+      border-color: var(--c-accent);
+      color: var(--c-fg);
+    }
+    .ab-num__value {
+      display: flex;
+      align-items: baseline;
+      gap: 0.2em;
+      font-size: var(--fs-xl);
+      font-weight: var(--fw-bold);
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
+    }
+    .ab-num__unit {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-regular);
+      color: var(--c-fg-muted);
+    }
+    .ab-num__label {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+
+    .ab-main > :global(.ref-sources.sources) {
+      margin-block-start: 0;
+    }
+    .ab-body > :global(:first-child) {
+      margin-block-start: 0;
+    }
+    /* When the body ends with 「免責聲明」, that section is shown in the callout below the body instead */
+    .ab-body--moved :global(h2[id^='免責聲明']),
+    .ab-body--moved :global(h2[id^='免責聲明'] ~ :not([data-htu], .htu-levels)) {
+      display: none;
+    }
+
+    .ab-disclaimer {
+      display: grid;
+      gap: var(--space-3);
+      padding: var(--space-5) var(--space-6);
+      border: 1px solid color-mix(in srgb, var(--c-warn) 35%, var(--c-border));
+      border-inline-start: 4px solid var(--c-warn);
+      border-radius: var(--radius-l);
+      background: color-mix(in srgb, var(--c-warn) 7%, var(--c-bg-elev));
+      font-size: var(--fs-s);
+      line-height: 1.8;
+      color: var(--c-fg-muted);
+    }
+    .ab-disclaimer__h {
+      display: flex;
+      align-items: center;
+      gap: 0.45em;
+      font-size: var(--fs-l);
+      color: var(--c-warn);
+    }
+    .ab-disclaimer__lead {
+      font-size: var(--fs-m);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+    }
+    @media (max-width: 479px) {
+      .ab-disclaimer {
+        padding: var(--space-4);
+      }
+    }
+
+    .ab-h2 {
+      font-size: var(--fs-xl);
+      line-height: var(--lh-tight);
+    }
+
+    .ab-updates {
+      padding: var(--space-5);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-sunken);
+    }
+    @media (min-width: 1100px) {
+      .ab-updates {
+        background: var(--c-bg-elev);
+      }
+    }
+    .ab-updates__prose {
+      font-size: var(--fs-s);
+      line-height: 1.75;
+    }
+    .ab-updates__prose :global(ul) {
+      margin-block: 0;
+    }
+    .ab-updates__prose :global(li + li) {
+      margin-block-start: var(--space-2);
+    }
+    .ab-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+      margin: 0;
+      padding-block-start: var(--space-4);
+      border-block-start: 1px solid var(--c-border);
+    }
+    .ab-stats > div {
+      display: grid;
+      gap: 2px;
+    }
+    .ab-stats dt {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .ab-stats dd {
+      margin: 0;
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+    .ab-stats .num {
+      font-size: var(--fs-xl);
+      font-weight: var(--fw-bold);
+      color: var(--c-fg);
+    }
+    .ab-updates__link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35em;
+      min-height: var(--tap);
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+    }
+
+    .ab-start {
+      display: grid;
+      gap: var(--space-4);
+      padding-block-start: var(--space-7);
+      border-block-start: 1px solid var(--c-border);
+    }
+  }
+</style>

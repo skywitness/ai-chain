@@ -1,0 +1,80 @@
+---
+/**
+ * Breadcrumb trail. The last item is the current page (aria-current). Hrefs must already be based
+ * (use withBase / route helpers). Pair with breadcrumbJsonLd() from lib/seo.ts, or pass
+ * `breadcrumbs` to BaseLayout, which renders both.
+ *
+ *   <Breadcrumbs items={[{ label: '首頁', href: withBase('/') }, { label: '產業鏈', href: sectionHref('chain') }, { label: '記憶體與儲存' }]} />
+ */
+import type { BreadcrumbItem } from '../../lib/seo';
+
+interface Props {
+  items: readonly BreadcrumbItem[];
+  /** Landmark label (must be unique per page) */
+  label?: string | undefined;
+  class?: string | undefined;
+}
+const { items, label = '頁面路徑', class: className } = Astro.props;
+const last = items.length - 1;
+---
+
+{
+  items.length > 0 && (
+    <nav class:list={['crumbs', className]} aria-label={label} data-pagefind-ignore>
+      <ol role="list">
+        {items.map((it, i) => (
+          <li>
+            {it.href && i !== last ? (
+              <a href={it.href}>{it.label}</a>
+            ) : (
+              <span aria-current={i === last ? 'page' : undefined}>{it.label}</span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </nav>
+  )
+}
+
+<style>
+  @layer components {
+    .crumbs ol {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.2em 0;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: var(--fs-s);
+      color: var(--c-fg-subtle);
+      line-height: 1.5;
+    }
+    .crumbs li {
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
+    }
+    .crumbs li + li::before {
+      content: '/';
+      margin-inline: 0.55em;
+      color: var(--c-border-strong);
+    }
+    .crumbs a {
+      color: var(--c-fg-muted);
+      text-decoration: none;
+      padding-block: 0.35em;
+    }
+    .crumbs a:hover {
+      color: var(--c-link);
+      text-decoration: underline;
+    }
+    .crumbs [aria-current] {
+      color: var(--c-fg-subtle);
+      max-width: 32ch;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+</style>

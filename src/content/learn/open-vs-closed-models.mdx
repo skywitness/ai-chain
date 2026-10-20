@@ -1,0 +1,491 @@
+---
+title: "開放權重 vs 封閉模型"
+subtitle: "能下載、能修改、能自己架：模型開放的光譜、授權條款與能力差距"
+description: "開放權重模型可以下載後自行部署與微調，封閉模型只能透過 API 使用。本文說明模型開放的不同層次與授權條款、各家選擇開放或封閉的理由、兩者的能力與價格差距，以及自架所需的硬體與安全爭議。"
+level: 2
+order: 208
+track: models
+prerequisites: [pretraining-to-chat]
+next: [ai-safety-and-regulation, mixture-of-experts, inference-optimization]
+relatedSegments: [foundation-models, devtools-data-mlops, cloud-neocloud, ai-accelerators, memory-storage]
+relatedCompanies: [openai, anthropic, alphabet, meta, deepseek, alibaba, moonshot-ai, zhipu-ai, xiaomi, ai2, hugging-face, openrouter, together-ai, nvidia, amd, foxconn, mediatek]
+relatedModels: [openai-gpt, anthropic-claude, google-gemini, openai-gpt-oss, google-gemma, meta-muse-llama, deepseek, alibaba-qwen, moonshot-kimi, zhipu-glm, xiaomi-mimo, ai2-olmo, taide, foxconn-foxbrain, mediatek-breeze]
+relatedTrends: [open-weights-race, sovereign-ai, small-models-distillation, china-self-sufficiency, ai-regulation-global]
+glossary:
+  - open-weights
+  - parameter
+  - fine-tuning
+  - api
+  - training-data
+  - pretraining
+  - post-training
+  - frontier-model
+  - distillation
+  - reasoning-model
+  - benchmark
+  - export-controls
+  - ai-safety
+  - quantization
+  - gpu
+  - moe
+  - active-parameters
+  - hbm
+  - kv-cache
+  - inference
+  - sovereign-ai
+keyTakeaways:
+  - "開放權重可下載後自行部署與微調，封閉模型只能透過 API 或 App 使用；兩者之間還有授權條件的差別。"
+  - "多數「開源模型」其實只開放權重；OSI 定義的開源 AI 還要提供訓練資料資訊與完整程式碼。"
+  - "Llama、Kimi K3、Qwen3.8 等授權主要對具規模的平台與模型服務業者設門檻，多數使用者不受影響。"
+  - "Epoch AI 估計開放模型平均落後封閉前沿約 4 個月；2026 年 10 月 AA 智慧指數最高分仍差 12 分。"
+  - "開放模型的價格常只有封閉旗艦的幾分之一，但自架要備妥 GPU 與 HBM，安全防護也得自己負責。"
+  - "TAIDE、FoxBrain、Breeze 等台灣在地模型都以開放權重續訓而成，是主權 AI 的重要基礎。"
+estimatedMinutes: 16
+scenes:
+  - { id: model-galaxy, variant: galaxy }
+sources:
+  - key: osaid
+    title: "The Open Source AI Definition – 1.0"
+    publisher: Open Source Initiative
+    url: "https://opensource.org/ai/open-source-ai-definition"
+    type: standard
+    lang: en
+    accessed: "2026-10-15"
+    note: "開源 AI 須讓人自由使用、研究、修改與分享；修改所需的偏好形式包括三項：足夠詳細的訓練資料資訊（讓有能力的人能建立實質相當的系統）、訓練與執行系統的完整原始碼，以及模型參數。不要求公開訓練資料本身，但須完整描述所有訓練資料，並列出公開與第三方資料的取得方式。"
+  - key: osi-release
+    title: "The Open Source Initiative Announces the Release of the Industry's First Open Source AI Definition"
+    publisher: Open Source Initiative
+    url: "https://opensource.org/blog/the-open-source-initiative-announces-the-release-of-the-industrys-first-open-source-ai-definition"
+    type: press-release
+    lang: en
+    published: "2024-10-28"
+    accessed: "2026-10-15"
+    note: "2024 年 10 月 28 日於 All Things Open 2024 發布 OSAID 1.0。"
+  - key: llama-license
+    title: "Llama 3.1 Community License Agreement"
+    publisher: "Meta（GitHub meta-llama/llama-models）"
+    url: "https://github.com/meta-llama/llama-models/blob/main/models/llama3_1/LICENSE"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "第 2 條：若在 Llama 3.1 發布日，被授權方及其關係企業的產品前一個月月活躍用戶超過 7 億，須向 Meta 申請授權；散布時須顯著標示「Built with Llama」，以 Llama 訓練出的模型名稱須以「Llama」開頭。"
+  - key: kimi-license
+    title: "Kimi K3 License"
+    publisher: "Moonshot AI（Hugging Face）"
+    url: "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "經營「模型即服務」（讓第三方透過 API 等方式實質控制模型輸入、參數或訓練資料）的業者，若連續 12 個月營收合計超過 2,000 萬美元，商用前須與月之暗面另簽協議；月活躍用戶超過 1 億或月營收超過 2,000 萬美元的商用產品，須在介面顯著標示「Kimi K3」；內部使用不受此限。"
+  - key: qwen-license
+    title: "Qwen3.8-Max License"
+    publisher: "Qwen（Hugging Face）"
+    url: "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/blob/main/LICENSE"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "Qwen3.8-2.4T-A95B 開放權重所附的授權，名稱為 Qwen3.8-Max License。被授權方或其關係企業經營模型即服務或 AI 工作助理（以程式或辦公生產力為主的獨立 AI 產品）業務，且連續 12 個月營收合計超過 5,000 萬美元者，商用前須另取得授權；不對第三方提供的內部使用不受此項限制。月活躍用戶超過 1 億或月營收超過 2,000 萬美元的商用產品須顯著標示模型名稱。"
+  - key: qwen-card
+    title: "Qwen/Qwen3.8-2.4T-A95B model card"
+    publisher: "Qwen（Hugging Face）"
+    url: "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "總參數 2.4 兆、啟用 950 億；官方稱 Qwen3.8 首次把 Qwen-Max 等級的模型開放釋出；Qwen3.8-Max 是以 Qwen3.8-2.4T-A95B 為基礎、功能較多的官方版本（支援圖像輸入、預設 100 萬上下文、內建工具等），開放權重版本則只支援文字且必須使用思考模式。Hugging Face 儲存庫建立於 2026-08-08。"
+  - key: glm-license
+    title: "GLM-5.3 License"
+    publisher: "Z.ai（Hugging Face）"
+    url: "https://huggingface.co/zai-org/GLM-5.3/blob/main/LICENSE"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "以類 MIT 條款授權使用、修改、散布與商用；但經營「模型即服務」的被授權方及其關係企業，若連續 12 個月營收合計超過 100 億美元，商用前須通過 Z.ai 的安全審查。"
+  - key: kimi-card
+    title: "moonshotai/Kimi-K3 model card"
+    publisher: "Moonshot AI（Hugging Face）"
+    url: "https://huggingface.co/moonshotai/Kimi-K3"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "總參數 2.8 兆、啟用參數 1,040 億、上下文 100 萬 Token；官方稱為全球第一個開放的 3 兆參數級模型；自 SFT 階段起採量化感知訓練，權重為 MXFP4、啟用值為 MXFP8。Hugging Face API 顯示參數數約 2.78 兆、近 30 天下載 1,063,166 次；儲存庫首次提交為 2026-07-27。"
+  - key: gptoss-card
+    title: "openai/gpt-oss-120b model card"
+    publisher: "OpenAI（Hugging Face）"
+    url: "https://huggingface.co/openai/gpt-oss-120b"
+    type: docs
+    lang: en
+    published: "2025-08-05"
+    accessed: "2026-10-15"
+    note: "Apache 2.0 授權；gpt-oss-120b 為 1,170 億參數、每個 Token 啟用 51 億，MoE 權重以 MXFP4 量化後訓練，可放進單張 80 GB GPU（如 NVIDIA H100 或 AMD MI300X）；gpt-oss-20b 可在 16 GB 記憶體內執行。"
+  - key: r1-card
+    title: "deepseek-ai/DeepSeek-R1 model card"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-R1"
+    type: docs
+    lang: en
+    published: "2025-01-20"
+    accessed: "2026-10-15"
+    note: "MIT 授權；官方稱在數學、程式與推理任務上表現與 OpenAI-o1 相當；開源 DeepSeek-R1-Zero、DeepSeek-R1，以及以 R1 生成資料、基於 Qwen2.5 與 Llama 3 微調的 6 個蒸餾模型（1.5B、7B、8B、14B、32B、70B）。"
+  - key: muse-spark
+    title: "Introducing Muse Spark: Meta's Most Powerful Model Yet"
+    publisher: Meta
+    url: "https://about.fb.com/news/2026/04/introducing-muse-spark-meta-superintelligence-labs/"
+    type: press-release
+    lang: en
+    published: "2026-04-08"
+    accessed: "2026-10-15"
+    note: "Meta 超級智慧實驗室（MSL）的 Muse 系列首款模型，Meta 稱為「迄今最強大的模型」，但也說明這個初始模型刻意設計得小而快，更大的模型仍在開發中；驅動 Meta AI App，API 先以私人預覽提供給特定夥伴；公告未釋出權重，僅表示「希望未來版本能開源」。2026-05-12 更新推出範圍。"
+  - key: muse-glimmer
+    title: "meta-models/Muse-Glimmer-30B"
+    publisher: "Meta（Hugging Face）"
+    url: "https://huggingface.co/meta-models/Muse-Glimmer-30B"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "Apache 2.0 授權；模型卡稱 Muse Glimmer 是約 300 億參數、自 Muse Spark 蒸餾而來、可在消費級硬體上執行的 Agent 模型（2026 年 8 月發布）；Hugging Face API 顯示約 298 億參數，儲存庫建立於 2026-08-09，發布帳號為經認證的 Meta Inc. 組織。"
+  - key: olmo-card
+    title: "allenai/Olmo-3.1-32B-Think model card"
+    publisher: "Ai2（Hugging Face）"
+    url: "https://huggingface.co/allenai/Olmo-3.1-32B-Think"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "Apache 2.0；以 Dolma 3 資料集預訓練、Dolci 資料集後訓練；公開全部程式碼、檢查點與訓練細節。"
+  - key: dolma3
+    title: "allenai/dolma3_mix-6T"
+    publisher: "Ai2（Hugging Face Datasets）"
+    url: "https://huggingface.co/datasets/allenai/dolma3_mix-6T"
+    type: dataset
+    lang: en
+    accessed: "2026-10-15"
+    note: "Olmo 3 32B 預訓練階段使用的資料集合，約 6 兆個 Token，涵蓋網頁、學術文獻與程式碼等；公開下載，未設存取限制。"
+  - key: hf-licenses
+    title: "Hugging Face 模型頁（google/gemma-4-26B-A4B-it、XiaomiMiMo/MiMo-V2.6-Pro-RL、zai-org/GLM-5.3、deepseek-ai/DeepSeek-V4.1-Flash）"
+    publisher: Hugging Face
+    url: "https://huggingface.co/google/gemma-4-26B-A4B-it"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "以 Hugging Face 模型 API 查詢各模型授權：Gemma 4 26B A4B 與 31B 為 Apache 2.0；MiMo-V2.6-Pro 為 MIT；GLM-5.3 為自訂的 glm-5.3 授權；DeepSeek-V4.1-Flash 為 MIT。其他頁面：https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL 、https://huggingface.co/zai-org/GLM-5.3 、https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash"
+  - key: hf-downloads
+    title: "Hugging Face Hub 模型下載統計（API）"
+    publisher: Hugging Face
+    url: "https://huggingface.co/models?sort=downloads"
+    type: dataset
+    lang: en
+    accessed: "2026-10-15"
+    note: "2026-10-15 以 Hugging Face 模型 API 查詢的近 30 天下載次數：google/gemma-4-26B-A4B-it 11,170,734；google/gemma-4-31B-it 9,180,042；openai/gpt-oss-120b 3,423,004；zai-org/GLM-5.3 1,803,969；deepseek-ai/DeepSeek-R1 1,254,482；moonshotai/Kimi-K3 1,063,166。"
+  - key: action-plan
+    title: "Winning the Race: America's AI Action Plan"
+    publisher: The White House
+    url: "https://www.whitehouse.gov/wp-content/uploads/2025/07/Americas-AI-Action-Plan.pdf"
+    type: government
+    lang: en
+    published: "2025-07-23"
+    accessed: "2026-10-15"
+    note: "「鼓勵開源與開放權重 AI」一節：新創可彈性使用、不必依賴封閉模型供應商；許多企業與政府有不能送給封閉模型業者的敏感資料；學術研究需要取得權重與訓練資料；開放模型可能成為全球標準，具地緣戰略價值；是否開放由開發者決定，聯邦政府應營造支持開放模型的環境。"
+  - key: distill
+    title: "Detecting and preventing distillation attacks"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/detecting-and-preventing-distillation-attacks"
+    type: company-site
+    lang: en
+    published: "2026-02-23"
+    accessed: "2026-10-15"
+    note: "Anthropic 指稱 DeepSeek、月之暗面與 MiniMax 透過約 2.4 萬個詐欺帳號與 Claude 進行逾 1,600 萬次對話（DeepSeek 逾 15 萬次、月之暗面逾 340 萬次、MiniMax 逾 1,300 萬次），以蒸餾取得能力；認為非法蒸餾的模型不太可能保留原有安全防護，並會削弱美國晶片出口管制的效果。為 Anthropic 單方面說法。"
+  - key: openrouter
+    title: "State of AI: An Empirical 100 Trillion Token Study with OpenRouter"
+    publisher: "OpenRouter、a16z"
+    url: "https://openrouter.ai/state-of-ai"
+    type: analyst
+    lang: en
+    accessed: "2026-10-15"
+    note: "2025 年 12 月發表；分析 OpenRouter 平台逾 100 兆個 Token 的匿名中繼資料（模型層級分析期間 2024-11-03 至 2025-11-30）。開放權重模型到 2025 年底約占三分之一用量，均衡點約 30%；中國開放模型平均占每週 Token 量 13.0%，部分週次接近 30%；非中國開放模型平均 13.7%，非中國封閉模型約 70%。報告註明企業內部使用、本地部署與封閉的內部系統不在資料範圍內。"
+  - key: epoch-2024
+    title: "How far behind are open models?"
+    publisher: Epoch AI
+    url: "https://epoch.ai/blog/open-models-report"
+    type: analyst
+    lang: en
+    published: "2024-11-04"
+    accessed: "2026-10-15"
+    note: "以 MMLU、GSM1k、BBH、GPQA 四項評測，最好的開放模型落後最好的封閉模型 5 到 22 個月（90% 信賴區間）；綜合評測與訓練算力趨勢的加權中心估計約 14 個月，約一年；最大開放模型的訓練算力落後約 15 個月。"
+  - key: epoch-2025
+    title: "Open-weight models lag state-of-the-art by around 3 months on average"
+    publisher: Epoch AI
+    url: "https://epoch.ai/data-insights/open-weights-vs-closed-weights-models"
+    type: analyst
+    lang: en
+    published: "2025-10-30"
+    accessed: "2026-10-15"
+    note: "以 Epoch 能力指數（ECI）衡量，開放權重前沿平均落後約 3.5 個月（90% 信賴區間 1.1 到 5.3 個月），平均 ECI 差距約 7 分（信賴區間 0 到 14 分）；作者認為部分新開放模型尚未有足夠評測，差距可能被高估。"
+  - key: epoch-2026
+    title: "Open models lag state-of-the-art closed models by 4 months"
+    publisher: Epoch AI
+    url: "https://epoch.ai/data-insights/open-closed-eci-gap"
+    type: analyst
+    lang: en
+    published: "2026-05-29"
+    accessed: "2026-10-15"
+    note: "2026 年 1 月以來，最強的開放權重模型以 ECI 衡量平均落後封閉前沿 4 個月；平均 ECI 差距 8 分，約相當於 GPT-5 與 GPT-5.5 之間的差距。"
+  - key: aa-leaderboard
+    title: "LLM Leaderboard: Comparison of AI Models"
+    publisher: Artificial Analysis
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-15"
+    note: "Artificial Analysis 智慧指數：Claude Opus 5.5（max）58、GPT-6 Astra（max）53、Gemini 4 Argon（high）53。"
+  - key: aa-open
+    title: "Open Source & Open Weights AI Models: Intelligence, Performance & Price"
+    publisher: Artificial Analysis
+    url: "https://artificialanalysis.ai/models/open-source"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-15"
+    note: "智慧指數 v4.3.2（含 10 項評測）的開放權重排行：MiMo-V2.6-Pro 46、GLM-5.3（Max）45、Kimi K3（Max）44、GLM-5.3-Flash 42、DeepSeek V4.1 Flash（Max）39、Qwen3.8 27B（Xhigh）34。"
+  - key: claude-pricing
+    title: "Pricing"
+    publisher: Claude Platform Docs（Anthropic）
+    url: "https://platform.claude.com/docs/en/about-claude/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "Claude Opus 5.5 每百萬 Token：輸入 4 美元、輸出 20 美元。"
+  - key: openai-pricing
+    title: "Pricing"
+    publisher: OpenAI API Docs
+    url: "https://developers.openai.com/api/docs/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "標準方案、短上下文（272K 以內）：GPT-6 Astra 每百萬 Token 輸入 10 美元、輸出 50 美元。"
+  - key: mimo-pricing
+    title: "Xiaomi MiMo API Pricing (Pay-As-You-Go)"
+    publisher: Xiaomi MiMo
+    url: "https://mimo.mi.com/static/docs/price/pay-as-you-go.md"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "海外即時 API：mimo-v2.6-pro 每百萬 Token 輸入（未命中快取）0.435 美元、輸出 0.87 美元。"
+  - key: glm-pricing
+    title: "Pricing"
+    publisher: Z.ai Developer Docs
+    url: "https://docs.z.ai/guides/overview/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "GLM-5.3 每百萬 Token 輸入 1.4 美元、輸出 4.4 美元。"
+  - key: kimi-pricing
+    title: "Model Inference Pricing Explanation"
+    publisher: Kimi API Platform（Moonshot AI）
+    url: "https://platform.kimi.ai/docs/pricing/chat"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "kimi-k3 每百萬 Token 輸入 3.00 美元（快取命中 0.30 美元）、輸出 15.00 美元，未含稅。"
+  - key: deepseek-pricing
+    title: "Models & Pricing"
+    publisher: DeepSeek API Docs
+    url: "https://api-docs.deepseek.com/quick_start/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "deepseek-flash（DeepSeek-V4.1-Flash）尖峰時段每百萬 Token 輸入（未命中快取）0.30 美元、輸出 1.20 美元；離峰為半價。"
+  - key: finetune-safety
+    title: "Fine-tuning Aligned Language Models Compromises Safety, Even When Users Do Not Intend To!"
+    publisher: "arXiv（Qi et al., Princeton University、Virginia Tech、IBM Research、Stanford University）"
+    url: "https://arxiv.org/abs/2310.03693"
+    type: paper
+    lang: en
+    published: "2023-10-05"
+    accessed: "2026-10-15"
+    note: "透過 OpenAI 的 API 只用 10 個對抗性設計的例子、花費不到 0.20 美元微調，就能突破 GPT-3.5 Turbo 的安全防護。"
+  - key: ntia
+    title: "Dual-Use Foundation Models with Widely Available Model Weights Report"
+    publisher: "美國商務部國家電信暨資訊管理局（NTIA）"
+    url: "https://www.ntia.gov/issues/artificial-intelligence/open-model-weights-report"
+    type: government
+    lang: en
+    published: "2024-07-30"
+    accessed: "2026-10-15"
+    note: "結論：現有證據不足以確定應限制開放權重，建議政府主動監測一系列風險，必要時再採取行動。開放權重的好處：擴大研發參與、降低市場集中於少數開發者、使用者不必與第三方分享資料；風險：可能危及國家安全，以及公平、安全、隱私與公民權利。"
+  - key: taide-site
+    title: "TAIDE - 推動臺灣可信任生成式AI發展計畫"
+    publisher: 國家實驗研究院
+    url: "https://taide.stpi.niar.org.tw/index"
+    type: government
+    lang: zh-TW
+    accessed: "2026-10-15"
+    note: "計畫官網：指導單位國科會、執行單位國家實驗研究院；歷程列出國科會於 2023-04-27（民國 112 年）正式啟動 TAIDE 先期計畫；歷屆模型比較表中最新的對話模型為 Gemma-3-TAIDE-12b-Chat-2602。"
+  - key: taide
+    title: "taide/Gemma-3-TAIDE-12b-Chat-2602"
+    publisher: "TAIDE（Hugging Face）"
+    url: "https://huggingface.co/taide/Gemma-3-TAIDE-12b-Chat-2602"
+    type: docs
+    lang: zh-TW
+    accessed: "2026-10-15"
+    note: "以 Google 的 Gemma-3-12b-pt 為基礎，用 220 億個 Token 的繁體中文資料續訓（中央社新聞、法規資料庫、立法院公報、司法院裁判書等）；TMMLU+ 平均 58.02，高於 Gemma-3-12b-it 的 53.82；授權為 Gemma 版次 TAIDE 模型授權條款。"
+  - key: foxbrain
+    title: "鴻海研究院推出第一版具有推理能力繁體中文大型語言模型"
+    publisher: 鴻海精密
+    url: "https://www.honhai.com/zh-tw/press-center/press-releases/latest-news/1548"
+    type: press-release
+    lang: zh-TW
+    published: "2025-03-10"
+    accessed: "2026-10-15"
+    note: "FoxBrain 以 Meta Llama 3.1（70B 參數）為基礎，以 120 張 NVIDIA H100 GPU 約四週完成訓練，生成 98B tokens 中文預訓練資料；表示後續將對外開源分享。"
+  - key: breeze2
+    title: "The Breeze 2 Herd of Models: Traditional Chinese LLMs Based on Llama with Vision-Aware and Function-Calling Capabilities"
+    publisher: "arXiv（MediaTek Research）"
+    url: "https://arxiv.org/abs/2501.13921"
+    type: paper
+    lang: en
+    published: "2025-01-23"
+    accessed: "2026-10-15"
+    note: "以 Llama 3.2 系列為基礎的 3B、8B 繁體中文模型，續訓強化繁中語言與文化知識，加入函式呼叫與圖像理解；以 Llama 3.2 社群授權釋出，並示範在行動裝置上執行。"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: learn-09
+  checkedBy: "learn-09-check"
+  checkedOn: "2026-10-06"
+  notes: "內容以 2026-10-06 為資料基準日；各來源的 accessed 為實際讀取日 2026-10-15。Artificial Analysis 排行與 Hugging Face 下載數為 2026-10-15 讀取（最高封閉 58、最高開放 46）；基準日當天的榜單無法回溯核對，故內文標明讀取時間。Meta 於 2026-10-12（基準日之後）另推出未公開權重的 Muse Wonder，智慧指數 52 到 56，未改變最高分差距，內文未納入。Epoch AI 三次估計方法不同（2024 年以評測與算力、2025 與 2026 年以 ECI），圖中已註明。權重記憶體為依參數數與位元數的試算。2026-10-15 查核：27 個來源全數重新讀取並新增 2 個；修正 Qwen3.8 開放權重版本的名稱（Qwen3.8-Max 是以 Qwen3.8-2.4T-A95B 為基礎的官方版本）、Muse Spark 的定位描述、Epoch AI 差距「略為擴大」的過度解讀、授權門檻適用對象，以及 OpenRouter 資料的時間與範圍。"
+---
+
+## 一句話解釋
+
+<Term id="open-weights">開放權重</Term>模型把訓練完成的<Term id="parameter">參數</Term>（權重）檔案公開，任何人都能下載到自己的電腦或伺服器上執行、<Term id="fine-tuning">微調</Term>；封閉模型的權重則留在開發商手中，只能透過 <Term id="api">API</Term> 或 App 使用。兩者不是非黑即白，而是一道光譜：公開了哪些東西、授權條款允許你做什麼，差別都很大。
+
+## 生活化比喻
+
+<Callout type="analogy" title="招牌菜、公開配方與整本研發筆記">
+
+- **封閉模型像餐廳的招牌菜**：只能到店裡點，或叫外送。味道穩定、出了問題有餐廳負責；但配方保密，價格與菜單由餐廳決定，哪天停賣你也只能接受。
+- **開放權重像公開的成品配方**：你可以在自家廚房照做、加辣減鹹，甚至拿去開店（要看配方附註的條件）；但你不知道研發時試過什麼、食材向誰採購。
+- **完全開源像連研發筆記都公開**：食材來源、每一次試做的紀錄、廚具設定通通攤開，別人能從頭重做一遍，也能研究為什麼好吃。
+
+配方上的附註就是授權條款：有的寫「隨便用」，有的寫「年營業額超過一定規模的連鎖店，請先來談」。
+
+</Callout>
+
+## 原理
+
+### 一個模型包含哪些東西？
+
+在<LearnLink id="pretraining-to-chat">從預訓練到對話助理</LearnLink>中提過，對話模型是先用大量<Term id="training-data">訓練資料</Term>做<Term id="pretraining">預訓練</Term>，再經過<Term id="post-training">後訓練</Term>做出來的。所以一個完整的「模型」其實包含好幾樣東西：訓練資料、訓練程式、訓練完成的權重、執行模型的推論程式，以及說明做法的技術報告。公開了哪幾樣，決定它開放到什麼程度：
+
+| 開放程度 | 公開了什麼 | 例子（2026 年 10 月） |
+|---|---|---|
+| 封閉 | 只提供 API 或 App | OpenAI GPT-6、Anthropic Claude、Google Gemini |
+| 開放權重，附條件授權 | 權重可下載，大規模商用有門檻 | Llama 3.1、Kimi K3、Qwen3.8（2.4T-A95B）、GLM-5.3 |
+| 開放權重，寬鬆授權 | 權重採 MIT、Apache 2.0 等授權 | DeepSeek、gpt-oss、Gemma 4、小米 MiMo |
+| 完全開源 | 權重、訓練資料、程式碼與中間檢查點 | Ai2 OLMo |
+
+表中各模型的授權，可在其授權檔與模型頁查證<Cite k="llama-license" /><Cite k="kimi-license" /><Cite k="qwen-license" /><Cite k="glm-license" /><Cite k="r1-card" /><Cite k="gptoss-card" /><Cite k="hf-licenses" />。位在光譜最開放一端的 OLMo 由非營利研究機構 Ai2 開發，不只公開權重，還公開全部程式碼、訓練過程的檢查點，以及預訓練與後訓練用的資料集<Cite k="olmo-card" />；其中預訓練階段使用的 Dolma 3 混合資料集約有 6 兆個 Token，任何人都能下載<Cite k="dolma3" />。
+
+「開源」這個詞常被混用。開放原始碼促進會（OSI）在 2024 年 10 月 28 日發布「開源 AI 定義 1.0」<Cite k="osi-release" />：要稱為開源 AI，必須讓人能自由使用、研究、修改與分享，並提供三樣東西：足夠詳細的訓練資料資訊（詳細到有能力的人可以做出實質相當的系統）、訓練與執行的完整程式碼，以及模型參數<Cite k="osaid" />。依這個標準，市面上大多數被稱為「開源模型」的，其實只是開放權重。
+
+### 授權條款：可以下載，不等於可以隨便用
+
+開放權重的授權大致分兩類。第一類是 MIT、Apache 2.0 這類寬鬆授權，幾乎可以任意使用、修改與商用，例如 DeepSeek-R1 採 MIT 授權<Cite k="r1-card" />，OpenAI 的 gpt-oss 採 Apache 2.0<Cite k="gptoss-card" />。
+
+第二類是附條件的自訂授權，條件多半瞄準「大到足以和原廠競爭」的業者：
+
+- **Llama 3.1**：若被授權方的產品在該版本發布時月活躍用戶超過 7 億，必須另向 Meta 申請授權；散布時要標示「Built with Llama」<Cite k="llama-license" />。
+- **Kimi K3**：經營「模型即服務」（例如以 API 讓第三方使用模型）的業者，若連續 12 個月營收超過 2,000 萬美元，商用前須與月之暗面另簽協議；月活躍用戶超過 1 億或月營收超過 2,000 萬美元的產品，須在介面上標示「Kimi K3」<Cite k="kimi-license" />。
+- **Qwen3.8**：阿里巴巴把旗艦 Qwen3.8-Max 的基礎模型 Qwen3.8-2.4T-A95B 開放下載（線上的 Max 版另加圖像輸入、內建工具等功能）<Cite k="qwen-card" />。授權規定，經營模型即服務或 AI 工作助理（以寫程式或辦公生產力為主的 AI 產品）的業者，連續 12 個月營收超過 5,000 萬美元，商用前須另取得授權<Cite k="qwen-license" />。
+- **GLM-5.3**：經營模型即服務、連續 12 個月營收超過 100 億美元的業者，商用前須通過智譜的安全審查<Cite k="glm-license" />。
+
+對新創、研究者與企業內部使用來說，這些門檻通常碰不到；Kimi K3 與 Qwen3.8 的授權也都明定，只在內部使用、不把模型或其輸出提供給第三方的情況，不受營收門檻限制<Cite k="kimi-license" /><Cite k="qwen-license" />。要注意的是，門檻看的是業者整體營收，而不只是轉賣模型的收入：營收具一定規模的雲端或模型託管業者，若想以 API 對外提供 Kimi K3 或 Qwen3.8，就得先另談授權。
+
+### 誰選擇開放、誰選擇封閉？
+
+**封閉的理由**很直接：訓練<Term id="frontier-model">前沿模型</Term>的成本極高，API 與訂閱收入是回收成本的主要來源；權重留在自己手上，也能隨時修補安全問題、下架有問題的版本。另一個顧慮是能力外流。2026 年 2 月，Anthropic 指稱 DeepSeek、月之暗面與 MiniMax 透過約 2.4 萬個詐欺帳號與 Claude 進行超過 1,600 萬次對話，藉此<Term id="distillation">蒸餾</Term>（用強模型的輸出訓練較弱的模型）自家模型；這是 Anthropic 單方面的說法<Cite k="distill" />。
+
+**開放的理由**則多元：吸引開發者在自家模型上建立生態系、招募人才、讓模型成為業界標準，或替本業（雲端、晶片、硬體）帶來需求。政府也有盤算：美國 2025 年 7 月的《AI 行動計畫》主張鼓勵開源與開放權重模型，理由包括新創不必依賴封閉模型供應商、握有敏感資料的企業與政府無法把資料送給封閉模型業者、學術研究需要取得權重，以及開放模型可能成為全球標準、具有地緣戰略價值<Cite k="action-plan" />。
+
+2025 到 2026 年有三個值得記住的轉折：
+
+1. **DeepSeek-R1（2025 年 1 月）**：以 MIT 授權公開的<Term id="reasoning-model">推理模型</Term>，官方稱表現與 OpenAI o1 相當；同時用 R1 產生的資料，把推理能力蒸餾進 6 個以 Qwen 與 Llama 為基礎、參數從 15 億到 700 億不等的較小模型<Cite k="r1-card" />。開放模型「站在彼此肩膀上」進步的特性，在這裡表現得很清楚。
+2. **OpenAI 釋出 gpt-oss（2025 年 8 月）**：兩個 Apache 2.0 授權的模型，較大的 120b 版本可放進單張 80 GB 的 GPU<Cite k="gptoss-card" />。
+3. **Meta 的最強模型改走封閉（2026 年 4 月）**：以開放權重 Llama 聞名的 Meta，推出 Meta 超級智慧實驗室的第一款模型 Muse Spark，稱為自家迄今最強的模型，卻沒有公開權重，只表示希望未來版本能開源<Cite k="muse-spark" />；之後另以 Apache 2.0 釋出由 Muse Spark 蒸餾而來、約 300 億參數的 Muse Glimmer<Cite k="muse-glimmer" />。
+
+目前開放權重的領先群幾乎都來自中國。Artificial Analysis 的開放權重排行中，前五名依序是小米 MiMo-V2.6-Pro、智譜 GLM-5.3、月之暗面 Kimi K3、GLM-5.3-Flash 與 DeepSeek V4.1 Flash<Cite k="aa-open" />。使用量方面，OpenRouter 與 a16z 分析該平台逾 100 兆個 Token 的紀錄（統計至 2025 年 11 月），開放權重模型在 2025 年底約占三分之一用量，中國開放模型平均占每週用量的 13%，部分週次接近 30%<Cite k="openrouter" />。不過這只是單一平台的資料，報告也說明企業內部使用與本地部署不在統計範圍內，不能代表整體市場<Cite k="openrouter" />。
+
+### 差距有多大？
+
+研究機構 Epoch AI 多次估算「最好的開放模型落後最好的封閉模型多久」：
+
+<BarChart
+  title="開放模型落後封閉前沿多久？（Epoch AI 三次估計）"
+  unit="個月"
+  data={[
+    { label: "2024 年 11 月估計", value: 14 },
+    { label: "2025 年 10 月估計", value: 3.5 },
+    { label: "2026 年 5 月估計", value: 4 }]}
+  source={["epoch-2024", "epoch-2025", "epoch-2026"]}
+  note="2024 年以 MMLU 等四項評測（落差的 90% 信賴區間為 5 到 22 個月）與訓練算力（約 15 個月）加權；2025 與 2026 年改用 Epoch 能力指數（ECI），2026 年為 1 月以來的平均。方法不同，只適合看大方向。"
+  keepOrder
+/>
+
+差距從一年多縮短到幾個月，之後大致持平：2026 年以來平均落後約 4 個月，仍落在 2025 年估計的信賴區間（1.1 到 5.3 個月）之內；能力指數差距約 8 分，相當於 GPT-5 到 GPT-5.5 的進步幅度<Cite k="epoch-2025" /><Cite k="epoch-2026" />。
+
+換成 Artificial Analysis 的綜合智慧指數來看，本文讀取時（2026 年 10 月中旬）的差距同樣清楚<Cite k="aa-leaderboard" /><Cite k="aa-open" />：
+
+| 模型 | 類型 | 智慧指數 | 輸入／輸出價格（美元／百萬 Token） |
+|---|---|---|---|
+| Claude Opus 5.5 | 封閉 | 58 | 4／20 |
+| GPT-6 Astra | 封閉 | 53 | 10／50 |
+| 小米 MiMo-V2.6-Pro | 開放（MIT） | 46 | 0.435／0.87 |
+| 智譜 GLM-5.3 | 開放（自訂授權） | 45 | 1.4／4.4 |
+| 月之暗面 Kimi K3 | 開放（自訂授權） | 44 | 3／15 |
+| DeepSeek V4.1 Flash | 開放（MIT） | 39 | 0.30／1.20 |
+
+價格取自各家官方定價頁，OpenAI 為輸入 27.2 萬 Token 以內的標準價格，DeepSeek 為尖峰時段價格（離峰半價）<Cite k="claude-pricing" /><Cite k="openai-pricing" /><Cite k="mimo-pricing" /><Cite k="glm-pricing" /><Cite k="kimi-pricing" /><Cite k="deepseek-pricing" />；智慧指數取各模型在榜上的最高設定。最強的封閉模型仍領先約 12 分，但開放模型的價格常只有幾分之一：MiMo-V2.6-Pro 的輸出價格不到 Claude Opus 5.5 的二十分之一。要注意的是，<Term id="benchmark">Benchmark</Term> 只能反映部分能力，而且開放模型也可以由託管業者另訂價格。
+
+<Scene3D id="model-galaxy" variant="galaxy" caption="大模型星系：每顆星是一個模型系列，越高越強、越右越貴、越前面越開放。切到「封閉與開放」步驟，可以比較前後兩區的高度與價格位置；能力分數只適合看大方向。" />
+
+### 怎麼選？
+
+<Compare
+  title="封閉模型 vs 開放權重模型"
+  left={{ title: "封閉模型（API）", items: ["能力最強的前沿模型多在這一側", "不必管硬體，按 Token 付費，用量小時最省事", "資料要送到供應商處理，需審視合約與法規", "模型改版或下架由供應商決定"] }}
+  right={{ title: "開放權重模型", items: ["可在自己的機房或裝置上執行，資料不必外送", "可深度微調、蒸餾成小模型，版本自己掌握", "同等能力的價格通常較低，也能在多家託管業者間比價", "要自備 GPU 與維運能力，安全防護也得自己負責"] }}
+  caption="實務上很多企業兩者並用：一般任務交給便宜的開放模型，最困難的任務再呼叫前沿封閉模型。"
+/>
+
+### 安全與政策：權重一旦公開就收不回來
+
+開放權重最常被提到的風險，是「收不回來」：權重一旦被下載，就無法撤回或修補，原廠加上的安全防護也可能被微調移除。2023 年一項研究顯示，只用 10 個精心設計的例子、花不到 0.20 美元，透過 OpenAI 的微調 API 就能破壞 GPT-3.5 Turbo 的安全防護<Cite k="finetune-safety" />；開放權重模型任何人都能微調，門檻只會更低。Anthropic 也據此認為，透過非法蒸餾做出的模型不太可能保留原本的安全措施，還會削弱美國晶片<Term id="export-controls">出口管制</Term>的效果<Cite k="distill" />。
+
+支持開放的一方則認為，開放權重讓更多人能檢驗模型，也讓權力不至於集中在少數公司。美國商務部國家電信暨資訊管理局（NTIA）在 2024 年 7 月的報告中結論是：現有證據不足以斷定應該限制開放權重，政府應持續監測風險，必要時再採取行動；報告也肯定開放權重能擴大研發參與、降低市場集中，並讓使用者不必把資料交給第三方<Cite k="ntia" />。<Term id="ai-safety">AI 安全</Term>與監管的完整討論，見<LearnLink id="ai-safety-and-regulation">AI 安全、治理與法規</LearnLink>。
+
+<DeepDive title="深入一點：自己架一個開放模型，需要多少硬體？">
+
+**先算權重有多大。** 記憶體需求的第一步是權重本身：參數數量乘以每個參數占用的位元數，再換算成位元組。
+
+<MathTeX tex={"\\text{權重記憶體（位元組）}\\approx N\\times\\frac{b}{8}"} display label="權重記憶體約等於參數數量 N 乘以每個參數的位元數 b 再除以 8" />
+
+以 16 位元格式儲存時，每個參數占 2 個位元組；<Term id="quantization">量化</Term>到 4 位元，就只要 0.5 個位元組。
+
+- **gpt-oss-120b**：約 1,170 億參數，MoE 層的權重以約 4 位元的 MXFP4 格式量化，因此能放進單張 80 GB 的 <Term id="gpu">GPU</Term>，例如輝達 H100 或超微 MI300X；20b 版本約 16 GB 記憶體即可執行<Cite k="gptoss-card" />。
+- **Kimi K3**：約 2.8 兆參數，從監督微調階段起採量化感知訓練，權重同樣以 MXFP4 格式提供<Cite k="kimi-card" />。試算：2.8 兆 × 0.5 位元組約 1.4 TB（未計量化縮放係數等額外開銷），光是權重就超過一台 8 張 80 GB GPU 伺服器的 640 GB 總記憶體，必須用多台伺服器或記憶體更大的 GPU 分攤。
+
+**為什麼兆級模型還算得動？** 這些大模型多採 <Term id="moe">MoE</Term>（混合專家）架構，每個 Token 只啟用一小部分專家。Kimi K3 總參數 2.8 兆，每個 Token 只啟用 1,040 億，約 3.7%<Cite k="kimi-card" />；gpt-oss-120b 每個 Token 只啟用 51 億<Cite k="gptoss-card" />。<Term id="active-parameters">啟用參數</Term>決定每個 Token 要算多少，總參數決定要準備多少記憶體。所以自架大型 MoE 模型時，往往先碰到的是 <Term id="hbm">HBM</Term> 容量不夠，而不是算力不足。
+
+**別忘了 KV Cache。** 權重之外，每個進行中的對話都要保存 <Term id="kv-cache">KV Cache</Term>；上下文越長、同時服務的使用者越多，占用越大。細節見<LearnLink id="inference-optimization">推論最佳化</LearnLink>。
+
+**自架比較省嗎？** API 按 Token 計費，用多少付多少；自架則是買或租 GPU 的固定成本，GPU 越忙，每個 Token 攤到的成本越低。用量小或起伏大時，API 通常比較省；用量大而穩定，或資料不能離開機房時，自架才有優勢。不想自己維運的企業，也可以向託管業者按 Token 購買開放模型的<Term id="inference">推論</Term>服務。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+- **模型實驗室的路線分歧** → <SegmentChip id="foundation-models" />：<CompanyChip id="openai" /> 與 <CompanyChip id="anthropic" /> 的旗艦維持封閉，但 OpenAI 也有開放權重的 gpt-oss；<CompanyChip id="alphabet" /> 的 Gemini 封閉、Gemma 開放；<CompanyChip id="meta" /> 的最強模型從開放的 Llama 改為不公開權重的 Muse Spark，但仍以 Apache 2.0 釋出較小的 Muse Glimmer<Cite k="muse-spark" /><Cite k="muse-glimmer" />。開放權重的領先群則是 <CompanyChip id="xiaomi" />、<CompanyChip id="zhipu-ai" />、<CompanyChip id="moonshot-ai" />、<CompanyChip id="deepseek" /> 與 <CompanyChip id="alibaba" /> 等中國業者<Cite k="aa-open" />；透明度最高的則是非營利的 <CompanyChip id="ai2" />。
+- **權重的集散地與推論服務** → <SegmentChip id="devtools-data-mlops" />：開放權重幾乎都放在 <CompanyChip id="hugging-face" /> 上。2026 年 10 月中旬，Gemma 4 26B A4B 近 30 天下載約 1,117 萬次、gpt-oss-120b 約 342 萬次、DeepSeek-R1 約 125 萬次、Kimi K3 約 106 萬次<Cite k="hf-downloads" />。<CompanyChip id="openrouter" /> 這類路由服務則讓開發者用同一個介面切換開放與封閉模型<Cite k="openrouter" />。
+- **雲端與新雲** → <SegmentChip id="cloud-neocloud" />：權重公開後，任何雲端或新雲業者，例如 <CompanyChip id="together-ai" />，都能提供推論服務，模型商品化、比價也更激烈；但 Kimi K3 與 Qwen3.8 的授權，對連續 12 個月營收分別超過 2,000 萬與 5,000 萬美元的「模型即服務」業者設有門檻<Cite k="kimi-license" /><Cite k="qwen-license" />。
+- **硬體需求分散** → <SegmentChip id="ai-accelerators" />、<SegmentChip id="memory-storage" />：開放模型讓推論從少數實驗室的資料中心，分散到企業機房、各國的主權 AI 資料中心與終端裝置；gpt-oss-120b 的模型頁就同時列出 <CompanyChip id="nvidia" /> H100 與 <CompanyChip id="amd" /> MI300X<Cite k="gptoss-card" />。兆級 MoE 模型吃的是大容量 HBM，也帶動記憶體需求。
+- **台灣的在地模型** → 國科會啟動、國家實驗研究院執行的 TAIDE 計畫<Cite k="taide-site" />，最新對話模型以 Google Gemma 3 12B 為基礎，用 220 億個 Token 的繁體中文資料續訓，模型卡自評的 TMMLU+ 平均 58.02，高於原版 Gemma 3 12B 指令模型的 53.82<Cite k="taide" />；<CompanyChip id="foxconn" /> 的 FoxBrain 以 Llama 3.1 70B 為基礎，用 120 張 H100、約四週完成訓練<Cite k="foxbrain" />；<CompanyChip id="mediatek" /> 旗下聯發創新基地的 Breeze 2 同樣建立在 Llama 之上<Cite k="breeze2" />。這些模型都是在開放權重上續訓，而不是從頭預訓練，正是<Term id="sovereign-ai">主權 AI</Term>常見的路線。延伸閱讀：<TrendLink id="open-weights-race">開放權重競賽與兆級參數模型</TrendLink>、<TrendLink id="sovereign-ai">主權 AI</TrendLink>、<TrendLink id="small-models-distillation">小模型與蒸餾</TrendLink>與<TrendLink id="china-self-sufficiency">中國 AI 晶片與模型的自主化</TrendLink>。

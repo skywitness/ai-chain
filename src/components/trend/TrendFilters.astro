@@ -1,0 +1,314 @@
+---
+/**
+ * Filter form for /trends/: category, horizon and confidence as labelled radio groups, an
+ * aria-live result count and a reset button. A ~1 KB script toggles `hidden` on
+ *   [data-trend-card]   cards            (data-category, data-horizon, data-confidence)
+ *   [data-ms]           timeline items   (same attributes, inherited from their trend)
+ * and hides [data-trend-group] / [data-ms-group] containers whose items are all hidden.
+ * The state is mirrored in the URL (?cat=hardware&h=near&c=high). Without JS every item stays visible.
+ */
+import { CATEGORY_META, CONFIDENCE_META, HORIZON_META, TREND_CATEGORIES, type TrendView } from './trend-meta';
+
+interface Props {
+  trends: readonly TrendView[];
+  class?: string | undefined;
+}
+const { trends, class: className } = Astro.props;
+const total = trends.length;
+const count = (k: keyof TrendView, v: string) => trends.filter((t) => t[k] === v).length;
+
+const groups = [
+  {
+    name: 'cat',
+    attr: 'category',
+    legend: '類別',
+    options: TREND_CATEGORIES.map((c) => ({ value: c, label: CATEGORY_META[c].label, n: count('category', c), color: CATEGORY_META[c].color })),
+  },
+  {
+    name: 'h',
+    attr: 'horizon',
+    legend: '時間範圍',
+    options: (['near', 'mid', 'long'] as const).map((h) => ({ value: h, label: `${HORIZON_META[h].label}`, sub: HORIZON_META[h].range, n: count('horizon', h) })),
+  },
+  {
+    name: 'c',
+    attr: 'confidence',
+    legend: '信心程度',
+    options: (['high', 'medium', 'low'] as const).map((c) => ({ value: c, label: CONFIDENCE_META[c].label, n: count('confidence', c) })),
+  },
+] as const;
+---
+
+<form class:list={['tf', className]} data-trend-filter aria-label="篩選趨勢" data-total={total}>
+  {
+    groups.map((g) => (
+      <fieldset class="tf__group" data-attr={g.attr} hidden={g.options.every((o) => o.n === 0) ? true : undefined}>
+        <legend class="tf__legend">{g.legend}</legend>
+        <div class="tf__opts">
+          <label class="tf__opt">
+            <input type="radio" name={g.name} value="" checked />
+            <span>全部</span>
+          </label>
+          {g.options.map((o) => (
+            <label class="tf__opt" style={'color' in o ? `--o: ${o.color}` : undefined}>
+              <input type="radio" name={g.name} value={o.value} disabled={o.n === 0 ? true : undefined} />
+              <span>
+                {'color' in o && <i class="tf__dot" aria-hidden="true" />}
+                {o.label}
+                {'sub' in o && <small class="tf__sub">{o.sub}</small>}
+                <small class="tf__n">
+                  <span class="sr-only">（</span>
+                  {o.n}
+                  <span class="sr-only"> 則）</span>
+                </small>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+    ))
+  }
+  <div class="tf__foot">
+    <p class="tf__count" aria-live="polite" aria-atomic="true">
+      顯示 <strong data-trend-count>{total}</strong>／{total} 則趨勢
+    </p>
+    <button type="reset" class="tf__reset">清除篩選</button>
+  </div>
+</form>
+
+<script>
+  type Sel = Record<string, string>;
+  const KEYS: Record<string, string> = { cat: 'category', h: 'horizon', c: 'confidence' };
+
+  function init(form: HTMLFormElement) {
+    const total = Number(form.dataset.total ?? 0);
+    const countEl = form.querySelector<HTMLElement>('[data-trend-count]');
+    const read = (): Sel => {
+      const fd = new FormData(form);
+      const s: Sel = {};
+      for (const k of Object.keys(KEYS)) s[k] = String(fd.get(k) ?? '');
+      return s;
+    };
+    const match = (el: HTMLElement, s: Sel) =>
+      Object.entries(KEYS).every(([k, attr]) => !s[k] || el.dataset[attr] === s[k]);
+
+    const apply = (sync = true) => {
+      const s = read();
+      let shown = 0;
+      document.querySelectorAll<HTMLElement>('[data-trend-card]').forEach((el) => {
+        const ok = match(el, s);
+        el.hidden = !ok;
+        if (ok) shown++;
+      });
+      document.querySelectorAll<HTMLElement>('[data-ms]').forEach((el) => (el.hidden = !match(el, s)));
+      document.querySelectorAll<HTMLElement>('[data-trend-group], [data-ms-group]').forEach((g) => {
+        const items = g.querySelectorAll<HTMLElement>('[data-trend-card], [data-ms]');
+        g.hidden = items.length > 0 && [...items].every((i) => i.hidden);
+      });
+      document.querySelectorAll<HTMLElement>('[data-ms-empty]').forEach((e) => {
+        const any = document.querySelector('[data-ms]:not([hidden])');
+        e.hidden = !!any || !document.querySelector('[data-ms]');
+      });
+      document.querySelectorAll<HTMLElement>('[data-trend-empty]').forEach((e) => (e.hidden = shown > 0));
+      if (countEl) countEl.textContent = String(shown);
+      form.toggleAttribute('data-active', shown !== total);
+      if (sync) {
+        try {
+          const url = new URL(location.href);
+          for (const k of Object.keys(KEYS)) {
+            if (s[k]) url.searchParams.set(k, s[k]!);
+            else url.searchParams.delete(k);
+          }
+          history.replaceState(history.state, '', url);
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+
+    // restore from the URL
+    try {
+      const params = new URLSearchParams(location.search);
+      for (const k of Object.keys(KEYS)) {
+        const v = params.get(k);
+        if (!v) continue;
+        const input = form.querySelector<HTMLInputElement>(`input[name="${k}"][value="${CSS.escape(v)}"]`);
+        if (input) input.checked = true;
+      }
+    } catch {
+      /* ignore */
+    }
+    form.addEventListener('change', () => apply());
+    form.addEventListener('reset', () => requestAnimationFrame(() => apply()));
+    form.addEventListener('submit', (e) => e.preventDefault());
+    apply(false);
+  }
+
+  document.querySelectorAll<HTMLFormElement>('form[data-trend-filter]').forEach(init);
+</script>
+
+<style>
+  .tf {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: var(--shadow-1);
+  }
+  .tf__group[hidden] {
+    display: none;
+  }
+  .tf__group {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  @media (min-width: 768px) {
+    .tf__group {
+      grid-template-columns: 6.5em minmax(0, 1fr);
+      align-items: center;
+    }
+  }
+  .tf__legend {
+    float: left; /* lets the legend sit in the grid */
+    padding: 0;
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .tf__opts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .tf__opt {
+    position: relative;
+    display: inline-flex;
+  }
+  .tf__opt input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+  .tf__opt > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    min-block-size: var(--tap);
+    padding: 0 0.95em;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font-size: var(--fs-s);
+    line-height: 1.2;
+    white-space: nowrap;
+    transition:
+      background-color var(--dur-1) ease,
+      border-color var(--dur-1) ease;
+  }
+  .tf__opt:hover > span {
+    border-color: var(--c-border-strong);
+  }
+  .tf__opt input:checked + span {
+    border-color: var(--c-accent);
+    background: var(--c-accent-soft);
+    color: var(--c-fg);
+    font-weight: var(--fw-semibold);
+    box-shadow: inset 0 0 0 1px var(--c-accent);
+  }
+  .tf__opt input:disabled + span {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .tf__opt input:disabled {
+    cursor: not-allowed;
+  }
+  .tf__opt input:focus-visible + span {
+    outline: 3px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  .tf__dot {
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+    border-radius: 50%;
+    background: var(--o);
+  }
+  .tf__sub {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-weight: var(--fw-regular);
+    font-variant-numeric: tabular-nums;
+  }
+  /* phones: the year ranges are spelled out in 「如何閱讀這些標示」; dropping them keeps each group on one row */
+  @media (max-width: 599px) {
+    .tf {
+      padding: var(--space-4);
+    }
+    .tf__opt > span {
+      padding: 0 0.8em;
+    }
+    .tf__sub {
+      display: none;
+    }
+  }
+  .tf__n {
+    min-inline-size: 1.6em;
+    padding: 0 0.4em;
+    border-radius: var(--radius-pill);
+    background: var(--c-bg-sunken);
+    color: var(--c-fg-muted);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .tf__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-4);
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .tf__count {
+    margin: 0;
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .tf__count strong {
+    color: var(--c-fg);
+  }
+  .tf__reset {
+    min-block-size: var(--tap);
+    padding: 0 1em;
+    border: 1px solid transparent;
+    border-radius: var(--radius-m);
+    background: none;
+    color: var(--c-link);
+    font: inherit;
+    font-size: var(--fs-s);
+    cursor: pointer;
+    visibility: hidden;
+  }
+  .tf[data-active] .tf__reset {
+    visibility: visible;
+  }
+  .tf__reset:hover {
+    text-decoration: underline;
+  }
+  .tf__reset:focus-visible {
+    outline: 3px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+</style>

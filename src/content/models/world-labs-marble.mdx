@@ -1,0 +1,246 @@
+---
+title: "World Labs Marble／Atlas"
+family: "Marble / RTFM / Atlas"
+kind: world
+lab: world-labs
+labName: "World Labs"
+origin: US
+summary: "World Labs（李飛飛共同創辦）的世界模型系列。Marble 能把文字、圖片、多張圖片、全景圖或影片轉成可自由走動、可匯出的 3D 世界（高斯潑濺或網格），2025-11-12 起開放一般使用，2026-01-21 推出 World API，2026-04-02 更新為 Marble 1.1 與 1.1 Plus。2026-09-01 發表新一代全模態世界模型 Atlas，目前僅限合作夥伴早期存取。超微（AMD）已於 2026-09-28 宣布以約 82 億美元全股票收購 World Labs。"
+strengths:
+  - "輸出是持久、可匯出的 3D 場景：可存成高斯潑濺（SPZ）、碰撞網格與高品質貼圖網格，直接帶進遊戲引擎、Three.js 或機器人模擬器。"
+  - "輸入彈性大：文字、單張或多張圖片、360 度全景、影片與粗略 3D 配置都能生成世界，並可編輯、擴展與合併多個世界。"
+  - "有公開 API 與按量計價：World API 以點數計費，以 Marble 1.1 從單張圖片生成一個世界約 1,580 點，約 1.26 美元。"
+  - "研究路線完整：RTFM 可在單張 H100 GPU 上以互動幀率即時生成畫面；Atlas 把生成、3D 重建與時空模擬整合在單一模型。"
+weaknesses:
+  - "Marble 的輸出是靜態 3D 場景，不模擬物體運動或物理互動；生成一個世界約需 5 分鐘，不是即時互動。"
+  - "沒有第三方排行榜或公開評測，Atlas 的優勢數字全部來自原廠設計的比較。"
+  - "封閉權重；最新的 Atlas 只開放給選定合作夥伴，一般開發者還無法使用。"
+  - "被超微收購後的產品路線、定價與對外服務方式仍有不確定性，交易預計 2026 年底完成。"
+bestFor:
+  - "遊戲、影視特效的場景原型與鏡位規劃"
+  - "建築與室內設計的快速空間視覺化"
+  - "機器人導航與操作的模擬環境建置（real-to-sim）"
+  - "以圖片或影片打造可分享的沉浸式 3D 體驗"
+positioning:
+  capability: 72
+  costIndex: 50
+  openness: 0
+  method: editorial
+  asOf: "2026-10-06"
+  note: "世界模型沒有可比較的第三方排行榜，也不按 tokens 計價，三項座標皆為編輯判斷。capability 72：Marble 是少數已商用、可輸出持久 3D 資產並提供公開 API 的世界模型，Atlas 在原廠評測中，鏡頭控制勝過多款主流影片模型、稀疏視角 3D 重建勝過專門重建模型；但 Marble 本身不含動態模擬、生成需數分鐘，Atlas 尚未公開，且缺乏第三方評測，此分數不宜與語言模型直接比較。costIndex 50：World API 每 1,250 點 1 美元，Marble 1.1 單張圖片生成約 1,580 點（約 1.26 美元），1.1 Plus 最多約 3,080 點（約 2.46 美元），1.0 Draft 約 0.18 美元；按次計費、門檻不高，但無法換算成每百萬 tokens，故置於中段。封閉權重，openness 為 0。"
+versions:
+  - id: marble-1-0
+    name: "Marble（現稱 Marble 1.0）"
+    released: "2025-11-12"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, video]
+    modalitiesOut: ["3d", video]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "2025-09-16 以 marble.worldlabs.ai 有限測試版預覽，2025-11-12 開放所有人使用，同時加入多圖片、影片與粗略 3D 配置輸入，以及編輯、擴展與合併世界功能，可匯出高斯潑濺、網格或影片。2026-04-02 起改稱 Marble 1.0 並保留給既有專案；每次生成 1,500 點，另有每次 150 點的快速版 Marble 1.0 Draft。"
+  - id: rtfm
+    name: "RTFM（Real-Time Frame Model）"
+    released: "2025-10-16"
+    status: preview
+    tier: specialized
+    weights: closed
+    license: proprietary
+    architecture: diffusion
+    modalitiesIn: [image]
+    modalitiesOut: [video]
+    reasoning: none
+    availability: [chat-app]
+    notes: "研究預覽，可在瀏覽器試玩。以自回歸擴散 Transformer 根據先前畫面預測下一格，不建立明確的 3D 表示，而是把輸入畫面存成 KV cache 作為隱式世界記憶，扮演「學習而來的渲染器」。設計目標是在單張 H100 GPU 上維持互動幀率，且世界不會因轉身而消失。"
+  - id: marble-1-1
+    name: "Marble 1.1"
+    released: "2026-04-02"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, video]
+    modalitiesOut: ["3d", video]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "官方建議的入門模型，以固定成本提升生成品質，每次生成 1,500 點；另依輸入方式加收文字或單張圖片 80 點、多圖片或影片 100 點，全景圖免加收。API 模型代號 marble-1.1，生成約需 5 分鐘。"
+  - id: marble-1-1-plus
+    name: "Marble 1.1 Plus"
+    released: "2026-04-02"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, video]
+    modalitiesOut: ["3d", video]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "官方稱為目前最先進、可生成最大世界的 Marble 模型，會在可行時自動擴大涵蓋的 3D 空間，API 文件建議用於戶外或較大的室內場景。每次生成 1,500 點基本費加 0–1,500 點變動費。API 輸出 SPZ 格式高斯潑濺（10 萬、50 萬與完整解析度）、GLB 碰撞網格、高品質貼圖網格、全景圖與縮圖；高品質網格匯出另收 3,500 點。"
+  - id: atlas
+    name: "Atlas"
+    released: "2026-09-01"
+    status: preview
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: diffusion
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [image, video, "3d"]
+    reasoning: none
+    availability: [api]
+    notes: "從零預訓練的全模態世界模型，為多模態自回歸擴散 Transformer（rectified flow），所有輸入都對應到 3D 空間位置形成「空間上下文」。可依精確相機路徑生成最長 1 分鐘、1440p 的影片，從一張到上百張圖片重建場景並輸出點雲或高斯潑濺，也能從少數手機影片重新取景或建立機器人模擬環境。官方表示 Atlas 將驅動未來版本的 Marble；目前僅開放選定合作夥伴早期存取，沒有公開價格。"
+flagshipVersion: marble-1-1-plus
+relatedLearn: [physical-ai-deep, multimodal-models, model-evaluation]
+glossary: [world-model, diffusion-model, kv-cache, sim-to-real, multimodal]
+sources:
+  - key: wl-preview
+    title: "Generating Bigger and Better Worlds"
+    publisher: "World Labs"
+    url: "https://www.worldlabs.ai/blog/bigger-better-worlds"
+    type: press-release
+    lang: en
+    published: "2025-09-16"
+    accessed: "2026-10-06"
+  - key: wl-marble
+    title: "Marble: A Multimodal World Model"
+    publisher: "World Labs"
+    url: "https://www.worldlabs.ai/blog/marble-world-model"
+    type: press-release
+    lang: en
+    published: "2025-11-12"
+    accessed: "2026-10-06"
+  - key: wl-rtfm
+    title: "RTFM: A Real-Time Frame Model"
+    publisher: "World Labs"
+    url: "https://www.worldlabs.ai/blog/rtfm"
+    type: press-release
+    lang: en
+    published: "2025-10-16"
+    accessed: "2026-10-06"
+  - key: wl-api
+    title: "Announcing the World API"
+    publisher: "World Labs"
+    url: "https://www.worldlabs.ai/blog/announcing-the-world-api"
+    type: press-release
+    lang: en
+    published: "2026-01-21"
+    accessed: "2026-10-06"
+  - key: wl-atlas
+    title: "Atlas: A World Model for Spatial Intelligence"
+    publisher: "World Labs"
+    url: "https://www.worldlabs.ai/blog/atlas"
+    type: paper
+    lang: en
+    published: "2026-09-01"
+    accessed: "2026-10-06"
+  - key: wl-release-notes
+    title: "Marble release notes"
+    publisher: "World Labs"
+    url: "https://docs.worldlabs.ai/marble/release-notes"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "2026-04-02 新增 Marble 1.1 與 1.1 Plus"
+  - key: wl-models
+    title: "Marble models"
+    publisher: "World Labs"
+    url: "https://docs.worldlabs.ai/marble/models"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: wl-api-pricing
+    title: "World API pricing"
+    publisher: "World Labs"
+    url: "https://docs.worldlabs.ai/api/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: wl-api-docs
+    title: "World API documentation"
+    publisher: "World Labs"
+    url: "https://docs.worldlabs.ai/api"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: wl-billing
+    title: "Subscriptions & billing"
+    publisher: "World Labs"
+    url: "https://docs.worldlabs.ai/marble/support/account-billing"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: wl-funding
+    title: "World Labs Announces New Funding"
+    publisher: "World Labs"
+    url: "https://www.worldlabs.ai/blog/funding-2026"
+    type: press-release
+    lang: en
+    published: "2026-02-18"
+    accessed: "2026-10-06"
+  - key: wl-amd
+    title: "World Labs is Joining AMD"
+    publisher: "World Labs"
+    url: "https://www.worldlabs.ai/blog/amd-announcement"
+    type: press-release
+    lang: en
+    published: "2026-09-28"
+    accessed: "2026-10-06"
+  - key: amd-pr
+    title: "AMD to Acquire World Labs to Advance the Future of AI Compute"
+    publisher: "AMD"
+    url: "https://ir.amd.com/news-events/press-releases/detail/1299/amd-to-acquire-world-labs-to-advance-the-future-of-ai-compute"
+    type: press-release
+    lang: en
+    published: "2026-09-28"
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: models-15
+  checkedBy: "models-15-check"
+  checkedOn: "2026-10-06"
+  notes: "Marble、RTFM、World API 與 Atlas 的日期、功能與評測數字已對照 World Labs 官方部落格；點數價格、模型代號、輸出格式與 5 分鐘生成時間對照 docs.worldlabs.ai 的定價、模型、API 與帳務頁；募資與超微收購條件對照 World Labs 公告與超微 IR 新聞稿。美元換算以每 1,250 點 1 美元計算。"
+---
+
+## 系列概覽
+
+<CompanyChip id="world-labs">World Labs</CompanyChip> 由 AI 研究者李飛飛共同創辦並擔任執行長，以「空間智慧」為核心，開發能生成、重建與模擬 3D 世界的<Term id="world-model">世界模型</Term>。旗下有三條線：已商用的 Marble、研究預覽的即時畫面模型 RTFM，以及 2026-09-01 發表的新一代全模態模型 Atlas<Cite k="wl-atlas" />。
+
+2026-02 公司宣布募得 10 億美元，投資人包括超微、Autodesk、輝達等<Cite k="wl-funding" />。2026-09-28，<CompanyChip id="amd">超微（AMD）</CompanyChip>宣布以約 82 億美元全股票收購 World Labs，預計 2026 年底前完成，李飛飛將出任超微執行副總裁兼首席科學家<Cite k="amd-pr" />。World Labs 表示雙方去年起已在超微 GPU 上合作訓練與推論最佳化<Cite k="wl-amd" />。
+
+## 特性分析
+
+- **產出可帶走的 3D 世界**：與 Google <ModelChip id="google-genie">Genie</ModelChip> 這類逐格即時生成畫面的模型不同，Marble 產出的是持久存在、可自由走動的 3D 場景，並能匯出為高斯潑濺（以大量半透明色點描述場景的 3D 表示法）、網格或影片<Cite k="wl-marble" />。
+- **多種輸入與編輯**：可從文字、單張或多張圖片、全景圖、影片與粗略 3D 配置生成，再進行編輯、擴展與合併<Cite k="wl-marble" /><Cite k="wl-api" />。World API 把這些能力開放給開發者，生成約需 5 分鐘，輸出含 SPZ 高斯潑濺與 GLB 網格<Cite k="wl-api-docs" />。
+- **即時路線 RTFM**：以自回歸<Term id="diffusion-model">擴散模型</Term>逐格生成畫面，把看過的畫面存成 <Term id="kv-cache">KV cache</Term> 作為世界記憶，目標是在單張 H100 上維持互動幀率<Cite k="wl-rtfm" />。
+- **Atlas 的整合嘗試**：同一個模型同時處理影像、相機位置與深度圖，能依指定相機路徑生成最長 1 分鐘的 1440p 影片、從少量照片重建場景，並為機器人產生模擬感測畫面<Cite k="wl-atlas" />。
+
+## 適合與不適合的用途
+
+**適合**：遊戲與影視特效的場景原型與鏡位規劃；建築與室內設計的空間視覺化；為機器人訓練快速建立大量多樣的模擬環境，官方指出生成的世界可整合進 NVIDIA Isaac Sim、MuJoCo 等模擬器<Cite k="wl-api" />，這類 <Term id="sim-to-real">sim-to-real</Term> 用途是世界模型連結實體 AI 的關鍵。World API 推出時，影視前製平台 Preview 已用它把單張圖片變成可自由取景的 3D 場景，建築設計平台 Fenestra 則把草圖與照片轉成可走動的空間<Cite k="wl-api" />。
+
+**不適合**：需要物體運動、碰撞等物理模擬的工作（Marble 生成的是靜態 3D 場景資產）；需要即時互動回應的體驗（每次生成約 5 分鐘）；需要精確測量的工程應用，生成結果會「想像」補齊沒拍到的區域。計價上，Marble App 與 World API 分開計費、點數不能互通<Cite k="wl-billing" />。
+
+## 版本演進
+
+| 版本 | 時間 | 重點 |
+|---|---|---|
+| Marble 測試版 | 2025-09-16 | 有限測試，從圖片或文字生成 3D 世界 |
+| RTFM | 2025-10-16 | 即時畫面生成的研究預覽 |
+| Marble（1.0） | 2025-11-12 | 開放所有人使用，加入多模態輸入與編輯 |
+| World API | 2026-01-21 | 公開 API，按點數計費 |
+| Marble 1.1／1.1 Plus | 2026-04-02 | 品質提升；Plus 可生成更大世界 |
+| Atlas | 2026-09-01 | 全模態世界模型，合作夥伴早期存取 |
+
+依 API 定價，每 1,250 點 1 美元；Marble 1.1 每次生成 1,500 點，1.1 Plus 為 1,500 點加 0–1,500 點變動費，1.0 Draft 只要 150 點<Cite k="wl-api-pricing" /><Cite k="wl-models" />。2026-04-02 推出 1.1 版時，原本的標準與草稿模型改名為 Marble 1.0 與 1.0 Draft 並繼續提供<Cite k="wl-release-notes" />。
+
+## 評測解讀
+
+3D 世界生成還沒有像語言模型或影片模型那樣被廣泛採用的人類偏好排行榜，本站的評測登錄表也沒有適用指標，因此能引用的數字主要來自原廠。Atlas 發表文提供兩組比較：在相機控制生成上，第三方評審判斷 Atlas 比 MiniMax H3、Gemini Omni Flash、Seedance 2.5 等影片模型更能依照指定鏡頭移動，勝率 75%–94%（依對手不同）；在稀疏視角 3D 重建上，7 個資料集的平均相對誤差（AbsRel，以千分之一為單位）為 25.3，低於第二名專門重建模型 Pi3X 的 28.7<Cite k="wl-atlas" />。
+
+解讀時要注意：相機控制比較中，Atlas 直接接收相機參數，其他影片模型只能用文字描述鏡頭，官方也承認更好的提示可能改善對手表現，這是對 Atlas 有利的設定；重建比較的基準模型由 World Labs 以統一流程自行重跑，分數未經獨立驗證。這些評測都在 2026-09-01 發表，而 Atlas 尚未公開，外界無法重現。World Labs 也表示 Atlas 的表現隨訓練算力增加而提升，並預期這個趨勢會延續<Cite k="wl-atlas" />；這是原廠對規模化的判斷，實際成效要等模型開放、出現獨立評測後才能確認。對讀者而言，目前比較可靠的參考是實際試用 Marble 1.1 的成品品質與匯出格式是否符合自己的工作流程。

@@ -1,0 +1,213 @@
+---
+title: "Physical Intelligence π 系列"
+family: "π（pi）"
+kind: robotics
+lab: physical-intelligence
+labName: "Physical Intelligence"
+origin: US
+summary: "Physical Intelligence（PI）的通用機器人基礎模型系列，屬於視覺—語言—動作模型（VLA）：看攝影機畫面、讀語言指令，直接輸出機械手臂的連續動作。π0、π0-FAST 與 π0.5 已透過 openpi 開放權重與程式碼；2025-11 的 π*0.6 加入從實際部署經驗學習的強化學習方法 Recap；2026-04-16 發表的 π0.7 約 50 億參數，展現跨機體、可組合的泛化能力，但權重與 API 均未公開。"
+strengths:
+  - "通用性強：π0.7 不需針對任務再訓練，就能完成操作咖啡機、摺衣服、折紙箱、削蔬菜等長時程靈巧任務，表現可比肩逐一以強化學習微調的專用模型（原廠評測）。"
+  - "跨機體轉移：π0.7 能把摺 T 恤的技能零樣本轉移到從未學過摺衣服的 UR5e 雙臂機器人，原廠稱表現與專家遙控操作者初次嘗試相當（成功率 80%，專家為 80.6%）。"
+  - "開放程度在前沿機器人模型中較高：π0、π0-FAST、π0.5 的權重與訓練程式以 openpi 公開，基礎模型以 1 萬小時以上機器人資料預訓練，推論只需 8 GB 以上顯示卡記憶體。"
+  - "π*0.6 的 Recap 方法讓模型從實際部署、失敗與人工介入中學習，最難任務的產出量提高一倍以上、失敗率約減半，曾連續 13 小時製作濃縮咖啡。"
+weaknesses:
+  - "最新的 π*0.6 與 π0.7 只以論文發表，openpi 與論文中都未提供其權重或公開 API，外部無法獨立驗證。"
+  - "泛化仍有落差：π0.7 在見過的任務成功率常超過 90%，未見過的任務或任務與機體組合則約 60–80%。"
+  - "缺乏共同的第三方評測，各家機器人模型多以自選任務與自家硬體比較，難以橫向排名。"
+  - "openpi 權重衍生自 Google PaliGemma，需遵守 Gemma 授權條款；官方也提醒模型針對自家機器人開發，移植到其他平台不保證成功。"
+bestFor:
+  - "研究機構與新創以 openpi 權重微調自家機器人的操作策略"
+  - "研究 VLA 架構、動作標記化與強化學習後訓練方法"
+  - "評估家務、物流、餐飲等非結構化環境的通用機器人可行性"
+positioning:
+  capability: 76
+  costIndex: 25
+  openness: 0.3
+  method: editorial
+  asOf: "2026-10-06"
+  note: "機器人模型沒有可比較的第三方排行榜，本站評測登錄表也沒有適用指標，也沒有按 tokens 計價，三項座標皆為編輯判斷。capability 76：π0.7 能不經任務微調完成多項長時程靈巧操作、零樣本跨機體轉移，屬機器人基礎模型第一梯隊；但成績全部來自原廠評測，未見任務成功率約 60–80%，此分數不宜與語言模型直接比較。costIndex 25：PI 沒有公開 API 或定價；開放的 π0.5 推論需 8 GB 以上顯示卡記憶體、LoRA 微調需 22.5 GB 以上，π0.7 論文以單張 H100 推論，主要成本在機器人硬體與資料收集而非模型費用。openness 0.3：旗艦 π0.7 與 π*0.6 封閉（0），前代 π0／π0-FAST／π0.5 以 openpi 公開權重與 Apache-2.0 程式碼（權重受 Gemma 條款約束，約 0.5），取 0.3 代表「部分開放」。"
+versions:
+  - id: pi0
+    name: "π0"
+    released: "2024-10-31"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Apache-2.0（openpi 程式碼）；權重衍生自 PaliGemma，受 Gemma 條款約束"
+    architecture: hybrid
+    params:
+      totalB: 3.3
+      disclosed: true
+    modalitiesIn: [text, image]
+    modalitiesOut: [action]
+    reasoning: none
+    availability: [self-host]
+    notes: "系列第一代。以 30 億參數的 PaliGemma 視覺語言模型為骨幹，加上 3 億參數、以 flow matching（擴散的一種變體）訓練的「動作專家」，合計 33 億參數，可用最高 50 Hz 控制機器人；以約 1 萬小時機器人示範資料預訓練。論文 2024-10-31 發表，權重與程式碼其後在 openpi 開源，提供基礎模型與 DROID、ALOHA 等微調版本。"
+  - id: pi0-fast
+    name: "π0-FAST"
+    released: "2025-01-16"
+    status: ga
+    tier: mid
+    weights: open-weights
+    license: "Apache-2.0（openpi 程式碼）；權重衍生自 PaliGemma，受 Gemma 條款約束"
+    architecture: dense
+    modalitiesIn: [text, image]
+    modalitiesOut: [action]
+    reasoning: none
+    availability: [self-host]
+    notes: "以 FAST 動作標記器把連續動作壓縮成離散 tokens，改用自回歸方式生成動作，語言指令遵循較佳，但推論比 flow matching 版本慢。openpi 提供基礎模型與 π0-FAST-DROID 微調版，後者可在新場景零樣本完成多種桌面操作。"
+  - id: pi05
+    name: "π0.5"
+    released: "2025-04-22"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Apache-2.0（openpi 程式碼）；權重衍生自 PaliGemma，受 Gemma 條款約束"
+    architecture: hybrid
+    modalitiesIn: [text, image]
+    modalitiesOut: [action]
+    reasoning: none
+    availability: [self-host]
+    notes: "在 π0 架構上混合多種機器人、網路資料與高階語意子任務預測共同訓練，首度展示在從未見過的住家中完成清理廚房、臥室等長時程任務。2025-09 起權重在 openpi 公開（含 knowledge insulation 訓練的 DROID 版），openpi 另公布 LIBERO 模擬基準微調版平均成功率 96.85%。"
+  - id: pi06-star
+    name: "π*0.6"
+    released: "2025-11-18"
+    status: announced
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: hybrid
+    modalitiesIn: [text, image]
+    modalitiesOut: [action]
+    reasoning: none
+    availability: [on-device]
+    notes: "以 π0.6 為基礎（Gemma 3 4B 視覺語言骨幹、動作專家擴大到 8.6 億參數），提出 Recap 方法：先以離線強化學習預訓練，再用示範、自主執行資料與專家即時介入持續改進，搭配以 6.7 億參數 Gemma 3 骨幹建構的價值函數。原廠稱在最難任務上產出量提高一倍以上、失敗率約減半，可連續 13 小時製作濃縮咖啡、在新住家連續摺衣 2 小時以上。日期為 arXiv 論文提交日；僅以論文發表，未開放權重，availability 欄僅表示在 PI 機器人上執行。"
+  - id: pi07
+    name: "π0.7"
+    released: "2026-04-16"
+    status: announced
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: hybrid
+    params:
+      totalB: 5
+      disclosed: true
+    modalitiesIn: [text, image]
+    modalitiesOut: [action]
+    reasoning: none
+    availability: [on-device]
+    notes: "以 Gemma 3 4B 視覺語言模型（含 4 億參數視覺編碼器）為骨幹，加上 8.6 億參數的 flow matching 動作專家，合計約 50 億參數。訓練時在提示中加入任務品質、速度、失誤標記與子目標圖片等「多模態情境」，因此能吸收失敗資料、人類第一人稱影片與網路資料。策略模型推論使用單張 H100，最小版本 38 毫秒、加上記憶與子目標圖片最慢 127 毫秒；子目標圖片由以 140 億參數 BAGEL 模型初始化的世界模型生成，另以 4 張 H100 平行運算。僅以論文發表，未開放權重，availability 欄僅表示在 PI 機器人上執行。"
+flagshipVersion: pi07
+relatedLearn: [physical-ai-deep, open-vs-closed-models, post-training-deep]
+glossary: [vla, physical-ai, reinforcement-learning, open-weights, fine-tuning, world-model]
+sources:
+  - key: pi07-paper
+    title: "π0.7: a Steerable Generalist Robotic Foundation Model with Emergent Capabilities"
+    publisher: "Physical Intelligence（arXiv）"
+    url: "https://arxiv.org/abs/2604.15483"
+    type: paper
+    lang: en
+    published: "2026-04-16"
+    accessed: "2026-10-06"
+  - key: pi06-paper
+    title: "π*0.6: a VLA That Learns From Experience"
+    publisher: "Physical Intelligence（arXiv）"
+    url: "https://arxiv.org/abs/2511.14759"
+    type: paper
+    lang: en
+    published: "2025-11-18"
+    accessed: "2026-10-06"
+  - key: pi05-paper
+    title: "π0.5: a Vision-Language-Action Model with Open-World Generalization"
+    publisher: "Physical Intelligence（arXiv）"
+    url: "https://arxiv.org/abs/2504.16054"
+    type: paper
+    lang: en
+    published: "2025-04-22"
+    accessed: "2026-10-06"
+  - key: pi0-paper
+    title: "π0: A Vision-Language-Action Flow Model for General Robot Control"
+    publisher: "Physical Intelligence（arXiv）"
+    url: "https://arxiv.org/abs/2410.24164"
+    type: paper
+    lang: en
+    published: "2024-10-31"
+    accessed: "2026-10-06"
+  - key: fast-paper
+    title: "FAST: Efficient Action Tokenization for Vision-Language-Action Models"
+    publisher: "Physical Intelligence（arXiv）"
+    url: "https://arxiv.org/abs/2501.09747"
+    type: paper
+    lang: en
+    published: "2025-01-16"
+    accessed: "2026-10-06"
+  - key: openpi
+    title: "openpi (GitHub repository)"
+    publisher: "Physical Intelligence"
+    url: "https://github.com/Physical-Intelligence/openpi"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "README 更新紀錄：2025-09 釋出 π0.5 與 PyTorch 支援；程式碼採 Apache-2.0"
+  - key: openpi-libero
+    title: "openpi LIBERO example: Results"
+    publisher: "Physical Intelligence"
+    url: "https://github.com/Physical-Intelligence/openpi/blob/main/examples/libero/README.md"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: hf-pi05
+    title: "lerobot/pi05_base"
+    publisher: "Hugging Face（LeRobot）"
+    url: "https://huggingface.co/lerobot/pi05_base"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "LeRobot 移植版，模型卡標示 Gemma 授權（π0.5 衍生自 PaliGemma）"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: models-15
+  checkedBy: "models-15-check"
+  checkedOn: "2026-10-06"
+  notes: "π0、π0-FAST、π0.5、π*0.6、π0.7 的 arXiv 提交日、參數量、骨幹、延遲與成功率已對照論文原文；openpi 的釋出內容、顯示卡記憶體需求、更新紀錄與 LIBERO 96.85% 對照 GitHub README；Gemma 授權對照 openpi 的 LICENSE_GEMMA 與 Hugging Face 模型卡。所有能力數字皆為原廠評測。"
+---
+
+## 系列概覽
+
+<CompanyChip id="physical-intelligence">Physical Intelligence</CompanyChip>（簡稱 PI）是位於美國舊金山的機器人 AI 新創，目標是做出能操控各種機器人的通用「大腦」。它的 π 系列屬於 <Term id="vla">VLA（視覺—語言—動作模型）</Term>：輸入攝影機畫面與一句語言指令，例如「把桌上的碗收進水槽」，模型直接輸出手臂關節與夾爪的連續動作。
+
+π 系列的基本架構從第一代就確立：拿一個預訓練好的視覺語言模型當骨幹，提供看圖與理解語言的常識，再接一個專門輸出動作的「動作專家」。π0 用 Google 開源的 PaliGemma（30 億參數）加上 3 億參數的動作專家，合計 33 億參數<Cite k="pi0-paper" />；最新的 π0.7 換成 <ModelChip id="google-gemma">Gemma 3</ModelChip> 4B 骨幹與 8.6 億參數動作專家，合計約 50 億參數<Cite k="pi07-paper" />。
+
+## 特性分析
+
+- **連續動作生成**：動作專家以 flow matching（擴散模型的一種變體）一次輸出一段動作序列，π0 可用最高 50 Hz 控制機器人，適合摺衣服這類需要細膩動作的任務<Cite k="pi0-paper" />。π0-FAST 則把動作壓縮成離散 tokens，改用語言模型式的自回歸生成<Cite k="fast-paper" />。
+- **從經驗學習**：π*0.6 的 Recap 方法結合示範、自主執行資料與專家即時介入，以<Term id="reinforcement-learning">強化學習</Term>持續改進；原廠稱最難任務的產出量提高一倍以上、失敗率約減半<Cite k="pi06-paper" />。
+- **可被「引導」的通才**：π0.7 在提示中加入任務品質、速度、失誤標記與子目標圖片等情境，因此能吸收失敗示範、人類第一人稱影片與網路資料；子目標圖片由一個以 140 億參數圖像模型初始化的<Term id="world-model">世界模型</Term>生成。策略模型在單張 H100 上推論，最小版本約 38 毫秒<Cite k="pi07-paper" />。
+- **部分開放**：openpi 公開 π0、π0-FAST、π0.5 的<Term id="open-weights">開放權重</Term>與訓練程式，基礎模型以 1 萬小時以上機器人資料預訓練；推論需 8 GB 以上顯示卡記憶體，LoRA <Term id="fine-tuning">微調</Term>需 22.5 GB 以上<Cite k="openpi" />。
+
+## 適合與不適合的用途
+
+**適合**：研究機構與機器人新創用 openpi 權重，在自家機械手臂上微調操作策略；研究 VLA 架構、動作標記化與強化學習後訓練；評估家務、物流、餐飲等非結構化環境的<Term id="physical-ai">實體 AI</Term> 可行性。
+
+**不適合**：需要立即商用部署與廠商技術支援的工廠產線（最新模型沒有對外提供）；與 PI 機器人差異很大的硬體，openpi 官方提醒移植「可能成功也可能不成功」<Cite k="openpi" />；需要安全認證的高風險場景，論文成果都是研究環境下的原廠評測。同類的機器人基礎模型還有 Google 的 <ModelChip id="gemini-robotics">Gemini Robotics</ModelChip> 與輝達的 <ModelChip id="nvidia-gr00t">Isaac GR00T</ModelChip>，選型時可一併比較取得方式與授權。
+
+## 版本演進
+
+| 版本 | 時間 | 重點 |
+|---|---|---|
+| π0 | 2024-10-31 | VLM 加 flow matching 動作專家，33 億參數；後於 openpi 開源 |
+| π0-FAST | 2025-01-16 | FAST 動作標記器，自回歸生成動作 |
+| π0.5 | 2025-04-22 | 多來源共同訓練，在陌生住家完成長時程任務；2025-09 開放權重 |
+| π*0.6 | 2025-11-18 | Recap 強化學習，從部署經驗自我改進 |
+| π0.7 | 2026-04-16 | 約 50 億參數，多模態情境引導、跨機體與組合式泛化 |
+
+演進主軸是讓同一個模型「做得更廣」再「做得更好」：π0.5 透過混合多種資料，首度在從未見過的住家完成清理廚房與臥室<Cite k="pi05-paper" />；π*0.6 加入強化學習提升可靠度；π0.7 則把專用模型的能力收回單一通才模型，原廠稱它不需任務微調，就能在咖啡、摺衣、折紙箱任務上追平以強化學習逐一微調的專用模型<Cite k="pi07-paper" />。值得注意的是開放策略的轉變：截至 2026-10-06，openpi 只提供到 π0.5 為止的權重，π*0.6 與 π0.7 都只有論文<Cite k="openpi" />。
+
+## 評測解讀
+
+機器人模型沒有像語言模型那樣的公開題庫或人類偏好排行榜，本站的評測登錄表也沒有適用指標，因此本頁不列入評測分數。PI 的數字主要有兩類：一是真實機器人實驗，例如 π0.7 在見過的任務成功率常超過 90%，未見過的任務或任務與機體組合約 60–80%<Cite k="pi07-paper" />；二是模擬基準，例如 openpi 公布 π0.5 在 LIBERO 基準微調後平均成功率 96.85%<Cite k="openpi-libero" />。
+
+解讀時要注意三點：第一，真實機器人實驗的任務、場地與評分標準都由原廠設計，論文作者也坦言，在如此龐大多樣的訓練資料下，很難嚴格判定哪些任務真的「沒見過」<Cite k="pi07-paper" />；第二，LIBERO 這類模擬基準已接近飽和，高分不代表在真實環境同樣可靠；第三，不同公司的機器人硬體、相機配置與任務各不相同，π 系列與 Gemini Robotics、GR00T 的成績不能直接比較。以上論文日期介於 2024-10 至 2026-04，讀數字時應留意版本與時間。

@@ -1,0 +1,109 @@
+# Proposals from the model-galaxy scene agent, 2026-10-09 (updated 2026-10-15, second pass).
+# Nothing here blocks the scene: every item is handled locally in src/three/scenes/model-galaxy/
+# (or degrades gracefully when the data is absent).
+
+- id: models-data-tier-short
+  target: "docs/SCENES.md (頁面資料形狀 models) and src/lib/scene-data/models.ts (owner: pages-models)"
+  status: optional
+  problem: >
+    `history` (earlier versions on the same scale) is now delivered by getModelGalaxyData() for
+    language families with third-party index scores, and the scene uses it for version trails, the
+    moving frontier and the 同能力降價 markers. Two small fields are still missing: star size is
+    derived from the capability rank within each kind (top ≈ 35 % large, bottom ≈ 30 % small)
+    because the payload has no tier, and the 3D label is derived from the title by shortName()
+    (「OpenAI GPT 系列」→ GPT, 「Meta Muse 與 Llama 系列」→ Muse／Llama).
+  proposal: >
+    Add two OPTIONAL fields per datum (the scene's type guard already accepts them):
+      tier?: 'flagship' | 'mid' | 'small' | 'reasoning' | 'specialized'   # the flagship version's tier
+      short?: string                                                        # compact 3D label
+    and list `history` in docs/SCENES.md so other consumers know it exists.
+  workaround: >
+    src/three/scenes/model-galaxy/data.ts sizes by rank and derives labels; families without
+    history appear on the time slider at their flagship release date.
+
+- id: models-page-hotspots
+  target: "src/pages/models/index.astro (owner: pages-models)"
+  status: optional
+  problem: >
+    (The earlier caption item is resolved: the caption now says 顏色代表來源地區.) The galaxy's
+    stars are registered as hotspots under the bare model id, but the page passes no `hotspots`
+    prop, so the in-scene 「場景重點」 list only carries the seven concept hotspots from meta.json.
+    Keyboard and screen-reader readers reach each family through the page's own 「模型系列」 list,
+    which the caption points to, so nothing is missing; it is just not linked to the 3D.
+  proposal: >
+    Optionally pass `hotspots={galaxy.map((m) => ({ id: m.id, label: m.title, href: m.href }))}`
+    to <Scene3D id="model-galaxy">. The scene already handles it: a list hover lights the star and
+    its version trail, and a list click switches the kind filter or the time slider when the star is
+    hidden, flies to it and opens its card.
+
+- id: axes3d-refit
+  target: "src/three/kit/Axes3D.ts"
+  problem: >
+    The galaxy refits its capability axis whenever the kind filter changes (LLM scores span about
+    5–60, image/video/audio scores up to 100). Axes3D has no way to change a domain, so the scene
+    disposes and re-creates it; each rebuild binds two new line materials into ctx.materials (kept
+    until the scene is disposed). Axes3D also always creates tick label handles, even when `format`
+    returns '' because the scene draws its own (pooled, collision-aware) tick labels.
+  proposal: >
+    `axes.setDomain('y', [lo, hi], ticks?)` that rewrites the grid/axis LineSegments in place (same
+    materials), and `AxisSpec.labels?: false` to skip the HTML tick labels for an axis.
+  workaround: >
+    buildAxes() in src/three/scenes/model-galaxy/index.ts re-creates the Axes3D (rare: only on a
+    filter change) with blank formats and places its own pooled tick labels.
+
+- id: label-auto-side
+  target: "src/three/core/labels.ts (LabelLayer)"
+  problem: >
+    Dense scatter plots need each point label to pick the side (right / left / above / below) that
+    clears neighbouring points and higher-priority labels; the LabelLayer only culls on collision.
+  proposal: >
+    `align: 'auto'` with an optional `radius` (px of the marker to keep clear) and an optional
+    `owner` point: the layout pass tries the current side first, then right, right-up, right-down,
+    left, left-up, left-down, above, below, rejecting spots that sit nearer another owner point
+    (the label would read as the neighbour's name), before culling. Smaller asks that would remove
+    most of the workaround: `LabelLayer.measure(spec) → [w, h]` (the scene now keeps a private
+    measurer with the same class/kind/swatch markup) and `LabelLayer.reserve(box)` for screen areas
+    covered by HTML controls.
+  workaround: >
+    placeLabels() in src/three/scenes/model-galaxy/index.ts: greedy and priority-ordered (with a
+    fractional tiebreak so it agrees with the LabelLayer's own sort); boxes measured exactly; keeps
+    8 px from every other label (the 4 px collision grid with its 2 px pad needs that), the star
+    discs and the HTML controls; sticky while the view moves, one fresh deterministic pass once it
+    settles; a star without a clear, unambiguous spot shows its name on hover only. "Unambiguous"
+    is judged per side: beside a star the whole box must be clearly nearer it than any other star;
+    centred above/below, the middle of the facing edge must be much nearer it (box distance alone
+    hid flagship names such as Gemini's next to Claude). The two named frontier ends (step
+    能力與成本) fall back to a spot next to a near-coincident neighbour rather than lose the note.
+    The cost-decline names (threshold, markers, drop note) are packed into rows above/below the bar
+    within the chart's height, so narrow stages stack them instead of the LabelLayer dropping them.
+
+- id: stage-safe-area
+  target: "src/three/core/host.ts (SceneContext)"
+  status: optional
+  problem: >
+    In-stage HTML controls are fixed in px, so on a phone (a 4:5 stage about 450 px tall) the
+    legend and the two control rows cover over a quarter of the frame, while every camera pose
+    (homePose, the reset view, step poses) is tuned for a large stage.
+  proposal: >
+    `ctx.setSafeArea({ top, bottom })` (px) that the host folds into homePose / fitPose (a view
+    offset or a slightly longer distance), so the reset view respects the controls too.
+  workaround: >
+    fitStage() in src/three/scenes/model-galaxy/index.ts measures the controls and shrinks the whole
+    diorama about the chart's top (scale ≥ 0.74) whenever less than 88 % of the height is free.
+
+- id: axes3d-flatten
+  target: "src/three/kit/Axes3D.ts (optional)"
+  status: optional
+  problem: >
+    A 3D scatter read straight on suffers perspective parallax: points on the back wall (a projected
+    frontier) and points nearer the camera no longer line up, and the y ticks on the front edge sit
+    at a different height from the same value on the back wall.
+  workaround: >
+    The galaxy keeps every chart object in one `plot` group and, in the 2D steps, squashes it along z
+    about the back-wall plane (plot.scale.z → 0.04, tweened; instant under reduced motion). Labels
+    follow via `object: plot`, picking and label layout use plot→world converted positions, and the
+    lit star instances are counter-scaled so they stay round.
+  proposal: >
+    If another scatter scene needs the same "3D → 2D chart" move, an `Axes3D.group`-level helper
+    `setDepth(k, pivot = 'back')` plus a `toWorld(v)` converter would cover it.
+

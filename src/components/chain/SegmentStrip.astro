@@ -1,0 +1,227 @@
+---
+/**
+ * The 14 segments as a strip grouped and coloured by layer (chain order: 能源 → 應用).
+ *   <SegmentStrip counts={{ 'foundry-packaging': 38 }} />          (home)
+ *   <SegmentStrip current="memory-storage" compact />                (segment page: 「在產業鏈中的位置」)
+ * Wide containers show the five layers side by side (widths proportional to their segment counts);
+ * narrow ones stack the layers. Every cell links to its segment page.
+ */
+import { segmentHref } from '../../lib/paths';
+import type { SegmentId } from '../../lib/collections';
+import { layersWithSegments } from './chain-data';
+
+interface Props {
+  current?: SegmentId | string | undefined;
+  /** company count per segment, shown under the label */
+  counts?: Record<string, number> | undefined;
+  /** smaller cells, no counts */
+  compact?: boolean | undefined;
+  /** accessible name of the list */
+  label?: string | undefined;
+  class?: string | undefined;
+}
+const { current, counts, compact = false, label = 'AI 產業鏈的 5 層 14 個環節', class: className } = Astro.props;
+const layers = layersWithSegments();
+const cols = layers.map((l) => `${l.segs.length}fr`).join(' ');
+// Narrow cells: split a label into words at spaces and before 「／」, and keep short words whole, so
+// 「設計工具／IP」 wraps as 「設計工具」「／IP」 instead of 「設計工」「具／IP」.
+const words = (label: string): Array<{ t: string; keep: boolean }> =>
+  label
+    .split(/(\s+|(?=／))/)
+    .filter((t) => !!t)
+    .map((t) => ({ t, keep: !/^\s+$/.test(t) && [...t].length <= 4 }));
+---
+
+<div class:list={['strip', { 'strip--compact': compact }, className]} style={`--strip-cols: ${cols}`} data-pagefind-ignore>
+  <ol class="strip__layers" aria-label={label}>
+    {
+      layers.map((l) => (
+        <li class="strip__layer" style={`--lc: ${l.color}`}>
+          <span class="strip__layer-name">
+            <span class="strip__layer-dot" aria-hidden="true" />
+            {l.title}
+          </span>
+          <ol class="strip__segs" style={`--n: ${l.segs.length}`}>
+            {l.segs.map((s) => {
+              const isCur = s.id === current;
+              const n = counts?.[s.id];
+              return (
+                <li>
+                  <a
+                    class:list={['strip__seg', { 'is-current': isCur }]}
+                    href={segmentHref(s.id)}
+                    aria-current={isCur ? 'page' : undefined}
+                    title={s.title}
+                  >
+                    <span class="strip__n" aria-hidden="true">
+                      {String(s.order).padStart(2, '0')}
+                    </span>
+                    <span class="strip__label">
+                      <span class="sr-only">第 {s.order} 環：</span>
+                      {words(s.short).map((w) => (w.keep ? <span class="strip__w">{w.t}</span> : w.t))}
+                    </span>
+                    {!compact && n != null && <span class="strip__count">{n} 家</span>}
+                  </a>
+                </li>
+              );
+            })}
+          </ol>
+        </li>
+      ))
+    }
+  </ol>
+</div>
+
+<style>
+  .strip {
+    container-type: inline-size;
+  }
+  .strip__layers,
+  .strip__segs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .strip__layers {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .strip__layer {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+  .strip__layer-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-muted);
+  }
+  .strip__layer-dot {
+    inline-size: 0.7em;
+    block-size: 0.7em;
+    border-radius: 3px;
+    background: var(--lc);
+  }
+  /* Narrow (phones): three cells per row from ~350px, two below, so the 14 cells stay compact. */
+  .strip__segs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 6.5rem), 1fr));
+    gap: 6px;
+  }
+  .strip__seg {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 2px;
+    block-size: 100%;
+    min-block-size: var(--tap);
+    padding: var(--space-2) var(--space-3) var(--space-3);
+    border-radius: var(--radius-m);
+    border: 1px solid color-mix(in srgb, var(--lc) 26%, var(--c-border));
+    border-block-start: 3px solid var(--lc);
+    background: color-mix(in srgb, var(--lc) 9%, var(--c-bg-elev));
+    color: var(--c-fg);
+    text-decoration: none;
+    transition:
+      background var(--dur-2) ease,
+      transform var(--dur-2) var(--ease-out),
+      box-shadow var(--dur-2) ease;
+  }
+  .strip__seg:hover {
+    background: color-mix(in srgb, var(--lc) 18%, var(--c-bg-elev));
+    color: var(--c-fg);
+    box-shadow: var(--shadow-1);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .strip__seg:hover {
+      transform: translateY(-1px);
+    }
+  }
+  /* The current cell is filled with the layer colour pulled toward the text colour, so the light
+     (or, in dark mode, dark) label keeps ≥ 4.5:1 contrast whatever the layer hue. */
+  .strip__seg.is-current {
+    --cur-bg: color-mix(in srgb, var(--lc) 62%, var(--c-fg));
+    background: var(--cur-bg);
+    border-color: var(--cur-bg);
+    color: var(--c-bg);
+  }
+  .strip__seg.is-current:hover {
+    background: var(--cur-bg);
+    color: var(--c-bg);
+  }
+  .strip__seg.is-current .strip__n,
+  .strip__seg.is-current .strip__count {
+    color: inherit;
+  }
+  .strip__n {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+    color: color-mix(in srgb, var(--lc) 80%, var(--c-fg));
+    letter-spacing: 0.04em;
+  }
+  .strip__label {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    line-height: 1.35;
+    text-wrap: balance;
+  }
+  .strip__w {
+    display: inline-block;
+  }
+  .strip__count {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Wide: five layers side by side, each cell one column */
+  @container (min-width: 60rem) {
+    .strip__layers {
+      grid-template-columns: var(--strip-cols);
+      gap: var(--space-2);
+      align-items: stretch;
+    }
+    .strip__layer {
+      grid-template-rows: auto 1fr;
+    }
+    .strip__segs {
+      grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+      gap: 4px;
+    }
+    .strip__seg {
+      padding-inline: var(--space-2);
+    }
+  }
+  /* Medium: layer name on the left, its segments in a row */
+  @container (min-width: 34rem) and (max-width: 59.99rem) {
+    .strip__layer {
+      grid-template-columns: 7.5rem minmax(0, 1fr);
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .strip__segs {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  .strip--compact .strip__seg {
+    padding: 6px var(--space-2);
+    min-block-size: 0;
+  }
+  .strip--compact .strip__label {
+    font-size: var(--fs-xs);
+  }
+  .strip--compact .strip__segs {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 6.5rem), 1fr));
+  }
+  @container (min-width: 60rem) {
+    .strip--compact .strip__segs {
+      grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    }
+  }
+</style>

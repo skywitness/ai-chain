@@ -1,0 +1,507 @@
+---
+/**
+ * /trends/ 「未來趨勢：硬體、軟體、市場與政策」
+ * Roadmap-tunnel scene (autoload visible) → category overview → filterable trend cards → 「關鍵時間軸」
+ * (the HTML equivalent of the tunnel) → how to read the badges.
+ * Driven by src/data/trends-index.yaml; content entries add horizon, confidence, impact and milestones.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Scene3D from '../../components/scene/Scene3D.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Icon from '../../components/ui/Icon.astro';
+import TrendCard from '../../components/trend/TrendCard.astro';
+import TrendSoonList from '../../components/trend/TrendSoonList.astro';
+import TrendFilters from '../../components/trend/TrendFilters.astro';
+import TrendTimeline from '../../components/trend/TrendTimeline.astro';
+import HorizonBar from '../../components/trend/HorizonBar.astro';
+import {
+  CATEGORY_META,
+  CONFIDENCE_META,
+  HORIZON_META,
+  IMPACT_META,
+  MILESTONE_STATUS_META,
+  TREND_CATEGORIES,
+  getTrendViews,
+  horizonAxis,
+} from '../../components/trend/trend-meta';
+import { buildTrendsSceneData } from '../../lib/scene-data/trends';
+import { sectionHref, withBase } from '../../lib/paths';
+import { DATA_DATE, DISCLAIMER } from '../../lib/seo';
+
+const views = await getTrendViews();
+const axis = horizonAxis(views);
+const sceneData = buildTrendsSceneData(views);
+const written = views.filter((v) => v.hasEntry).length;
+const milestoneCount = views.reduce((n, v) => n + v.milestones.length, 0);
+const lastVerified = views
+  .map((v) => v.lastVerified)
+  .filter((d): d is string => !!d)
+  .sort()
+  .at(-1);
+
+// Within a category: written articles first, then by horizon (near → long), confidence, registry order.
+const rank = (v: (typeof views)[number]) => [
+  v.hasEntry ? 0 : 1,
+  v.horizon ? HORIZON_META[v.horizon].order : 9,
+  v.impact ? IMPACT_META[v.impact].order : 9,
+  v.confidence ? CONFIDENCE_META[v.confidence].order : 9,
+  v.order,
+];
+const cmp = (a: (typeof views)[number], b: (typeof views)[number]) => {
+  const ra = rank(a);
+  const rb = rank(b);
+  for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i]! - rb[i]!;
+  return 0;
+};
+const groups = TREND_CATEGORIES.map((c) => {
+  const trends = views.filter((v) => v.category === c).sort(cmp);
+  // written articles get full cards; registered trends still being written collapse into a compact list
+  return { meta: CATEGORY_META[c], trends, ready: trends.filter((v) => v.hasEntry), soon: trends.filter((v) => !v.hasEntry) };
+});
+
+const title = '未來趨勢：硬體、軟體、市場與政策';
+const description =
+  '從 2 奈米、HBM4、CPO 到推理模型、Agent、資本支出與出口管制：整理 AI 產業鏈未來五年的關鍵趨勢，附時間範圍、信心程度、觀察指標與反方觀點。';
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  breadcrumbs={[{ label: '未來趨勢' }]}
+  pagefind={false}
+  section="trends"
+>
+  <div class="container">
+    <header class="page-head trends-head" data-pagefind-body>
+      <span hidden data-pagefind-filter="類型:趨勢"></span>
+      <p class="page-head__kicker">未來趨勢 · 2024 → 2031</p>
+      <h1 data-pagefind-weight="10">{title}</h1>
+      <p class="page-head__lede">
+        AI 產業鏈的下一步，取決於製程與封裝能不能跟上、模型與應用怎麼演進、資金與電力撐不撐得住，以及各國政策怎麼畫線。這裡把 {views.length} 個趨勢分成四類，每一篇都標出時間範圍、信心程度與影響大小，並列出可以追蹤的觀察指標與反方觀點。
+      </p>
+      <div class="trends-head__meta">
+        <span class="trends-head__fact"><Icon name="layers" /> {views.length} 個趨勢</span>
+        <span class="trends-head__fact"><Icon name="calendar" /> {milestoneCount > 0 ? `${milestoneCount} 個里程碑` : '里程碑整理中'}</span>
+        {written < views.length && <span class="trends-head__fact trends-head__fact--muted">已上線 {written}／{views.length} 篇</span>}
+        <DataAsOf date={lastVerified ?? DATA_DATE} />
+      </div>
+    </header>
+  </div>
+
+  <div class="container trends-scene">
+    <Scene3D
+      id="roadmap-tunnel"
+      variant="tunnel"
+      height="hero"
+      autoload="visible"
+      data={sceneData}
+      caption="技術時光隧道：四條軌道是硬體、軟體、市場與政策，沿著時間排列各趨勢的里程碑。實心是已發生，空心是預期，虛線是推測。"
+    />
+    <p class="trends-scene__alt">
+      <Icon name="info" class="trends-scene__alt-icon" />
+      不方便操作 3D 嗎？下方的<a href="#timeline">「關鍵時間軸」</a>以文字列出同樣的里程碑。
+    </p>
+  </div>
+
+  <section class="container section" aria-labelledby="cats-h">
+    <h2 id="cats-h" class="sr-only">四大類別</h2>
+    <ul class="cats" role="list">
+      {
+        groups.map(({ meta, trends, ready }) => (
+          <li class="cat" style={`--cc: ${meta.color}`}>
+            <a class="cat__link" href={`#cat-${meta.id}`}>
+              <span class="cat__top">
+                <span class="cat__dot" aria-hidden="true" />
+                <span class="cat__name">{meta.label}</span>
+                <span class="cat__en" lang="en">{meta.en}</span>
+                <span class="cat__n">
+                  {trends.length}
+                  <span class="sr-only"> 則趨勢</span>
+                </span>
+              </span>
+              <span class="cat__blurb">{meta.blurb}</span>
+              <span class="cat__ready">{ready.length > 0 ? `已上線 ${ready.length} 篇` : '文章整理中'}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="container section trends-list" id="list" aria-labelledby="list-h">
+    <div class="sec-head">
+      <h2 id="list-h">趨勢一覽</h2>
+      <p class="sec-head__lede">
+        用類別、時間範圍與信心程度篩選，條件會同時套用到下方的關鍵時間軸。各個標示的意思，請見<a href="#howto">如何閱讀這些標示</a>。
+      </p>
+    </div>
+    <TrendFilters trends={views} />
+
+    {
+      groups.map(({ meta, trends, ready, soon }) => (
+        <section class="tgroup" id={`cat-${meta.id}`} data-trend-group style={`--cc: ${meta.color}`} aria-labelledby={`cat-${meta.id}-h`}>
+          <header class="tgroup__head">
+            <h3 id={`cat-${meta.id}-h`} class="tgroup__title">
+              <span class="tgroup__dot" aria-hidden="true" />
+              {meta.label}
+              <span class="tgroup__n">{trends.length} 則</span>
+            </h3>
+            <p class="tgroup__blurb">{meta.blurb}</p>
+          </header>
+          {ready.length > 0 && (
+            <ul class="tgroup__grid" role="list">
+              {ready.map((t) => (
+                <TrendCard trend={t} axis={axis} headingLevel={4} showCategory={false} />
+              ))}
+            </ul>
+          )}
+          <TrendSoonList
+            trends={soon}
+            label={ready.length > 0 ? '整理中的其他趨勢' : '文章整理中'}
+            class:list={['tgroup__soon', { 'tgroup__soon--after': ready.length > 0 }]}
+          />
+        </section>
+      ))
+    }
+    <p class="trends-empty" data-trend-empty hidden>
+      沒有符合篩選條件的趨勢。<button type="button" class="trends-empty__btn" data-trend-clear>清除篩選</button>
+    </p>
+  </section>
+
+  <section class="container section" id="timeline" aria-labelledby="timeline-h">
+    <div class="sec-head">
+      <h2 id="timeline-h">關鍵時間軸</h2>
+      <p class="sec-head__lede">
+        把所有趨勢的里程碑依年份排成四條軌道，和上方 3D 時光隧道的內容相同。已發生的事件以實心圓標示，公司或機構公布的時程以空心圓標示，業界推測以虛線圓標示。
+      </p>
+    </div>
+    <TrendTimeline trends={views} perLane={3} />
+  </section>
+
+  <section class="container section" id="howto" aria-labelledby="howto-h">
+    <div class="howto">
+      <h2 id="howto-h" class="howto__title">如何閱讀這些標示</h2>
+      <dl class="howto__grid">
+        <div class="howto__item">
+          <dt>時間範圍</dt>
+          <dd>
+            <ul class="howto__list" role="list">
+              {(['near', 'mid', 'long'] as const).map((h) => (
+                <li><strong>{HORIZON_META[h].label}</strong>：{HORIZON_META[h].range}</li>
+              ))}
+            </ul>
+            <HorizonBar years={[2026, 2027]} axis={axis} class="howto__bar" />
+            <p class="howto__note">色條是趨勢主要發生的年份，細直線是資料基準日。</p>
+          </dd>
+        </div>
+        <div class="howto__item">
+          <dt>信心程度</dt>
+          <dd>
+            <ul class="howto__list" role="list">
+              {(['high', 'medium', 'low'] as const).map((c) => (
+                <li><strong>{CONFIDENCE_META[c].label}</strong>：{CONFIDENCE_META[c].hint}</li>
+              ))}
+            </ul>
+            <p class="howto__note">每篇文章都會寫出判斷信心的理由。</p>
+          </dd>
+        </div>
+        <div class="howto__item">
+          <dt>影響程度</dt>
+          <dd>
+            <p>這個趨勢一旦成真，對產業鏈上下游的營收結構、技術路線或競爭格局會造成多大的改變。</p>
+          </dd>
+        </div>
+        <div class="howto__item">
+          <dt>里程碑狀態</dt>
+          <dd>
+            <ul class="howto__list" role="list">
+              {(['done', 'expected', 'speculative'] as const).map((s) => (
+                <li><strong>{MILESTONE_STATUS_META[s].label}</strong>：{MILESTONE_STATUS_META[s].hint}</li>
+              ))}
+            </ul>
+          </dd>
+        </div>
+      </dl>
+      <p class="howto__disclaimer">
+        趨勢判斷整理自公開資訊，時程可能隨技術與市場變化而調整。{DISCLAIMER}。想了解每個環節的基本知識，可以從<a href={sectionHref('learn')}>學習路徑</a>或<a href={sectionHref('chain')}>產業鏈總覽</a>開始；台灣廠商的位置請見<a href={withBase('/taiwan/')}>台灣 AI 供應鏈</a>。
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-trend-clear]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const form = document.querySelector<HTMLFormElement>('form[data-trend-filter]');
+      if (!form) return;
+      form.reset();
+      form.querySelector<HTMLInputElement>('input')?.focus();
+    }),
+  );
+</script>
+
+<style>
+  .trends-head {
+    padding-block-end: var(--space-5);
+  }
+  .trends-head__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-5);
+    margin-block-start: var(--space-2);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .trends-head__fact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-variant-numeric: tabular-nums;
+  }
+  .trends-head__fact--muted {
+    color: var(--c-fg-subtle);
+  }
+
+  .trends-scene {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .trends-scene__alt {
+    margin: 0;
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+
+  .trends-scene__alt :global(.trends-scene__alt-icon) {
+    vertical-align: -0.15em;
+    margin-inline-end: 0.3em;
+  }
+  .cats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 900px) {
+    .cats {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+  }
+  .cat__link {
+    display: grid;
+    align-content: start;
+    grid-template-rows: auto 1fr auto;
+    gap: var(--space-2);
+    block-size: 100%;
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--c-border);
+    border-block-start: 3px solid var(--cc);
+    border-radius: var(--radius-l);
+    background: color-mix(in srgb, var(--cc) 5%, var(--c-bg-elev));
+    color: var(--c-fg);
+    text-decoration: none;
+    transition:
+      border-color var(--dur-2) ease,
+      box-shadow var(--dur-2) ease;
+  }
+  .cat__link:hover {
+    border-color: color-mix(in srgb, var(--cc) 50%, var(--c-border));
+    border-block-start-color: var(--cc);
+    box-shadow: var(--shadow-2);
+    color: var(--c-fg);
+  }
+  .cat__top {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  .cat__dot {
+    align-self: center;
+    inline-size: 0.7rem;
+    block-size: 0.7rem;
+    border-radius: 50%;
+    background: var(--cc);
+  }
+  .cat__name {
+    font-size: var(--fs-l);
+    font-weight: var(--fw-bold);
+  }
+  .cat__en {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+  }
+  .cat__n {
+    margin-inline-start: auto;
+    font-size: var(--fs-xl);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .cat__blurb {
+    font-size: var(--fs-s);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+  }
+  .cat__ready {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 599px) {
+    .cat__blurb,
+    .cat__en {
+      display: none;
+    }
+    .cat__link {
+      grid-template-rows: auto auto;
+    }
+    .cat__link {
+      padding: var(--space-3) var(--space-4);
+    }
+  }
+
+  .sec-head {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-end: var(--space-5);
+  }
+  .sec-head h2 {
+    font-size: var(--fs-2xl);
+  }
+  .sec-head__lede {
+    margin: 0;
+    max-width: var(--measure);
+    color: var(--c-fg-muted);
+  }
+
+  #howto {
+    scroll-margin-block-start: calc(var(--header-h) + var(--space-4));
+  }
+  .tgroup {
+    margin-block-start: var(--space-7);
+    scroll-margin-block-start: calc(var(--header-h) + var(--space-4));
+  }
+  .tgroup__head {
+    display: grid;
+    gap: var(--space-1);
+    margin-block-end: var(--space-4);
+    padding-block-end: var(--space-3);
+    border-block-end: 1px solid var(--c-border);
+  }
+  .tgroup__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: var(--fs-xl);
+  }
+  .tgroup__dot {
+    inline-size: 0.8rem;
+    block-size: 0.8rem;
+    border-radius: 50%;
+    background: var(--cc);
+  }
+  .tgroup__n {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .tgroup__blurb {
+    margin: 0;
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .tgroup__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tgroup :global(.tgroup__soon--after) {
+    margin-block-start: var(--space-5);
+  }
+  .trends-empty {
+    margin-block-start: var(--space-6);
+    padding: var(--space-5);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    color: var(--c-fg-muted);
+    text-align: center;
+  }
+  .trends-empty__btn {
+    min-block-size: var(--tap);
+    margin-inline-start: var(--space-2);
+    padding: 0 1em;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-elev);
+    color: var(--c-link);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .howto {
+    padding: var(--space-6) var(--space-5);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-sunken);
+  }
+  .howto__title {
+    font-size: var(--fs-xl);
+    margin-block-end: var(--space-5);
+  }
+  .howto__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: var(--space-5) var(--space-6);
+    margin: 0;
+  }
+  .howto__item dt {
+    font-weight: var(--fw-bold);
+    margin-block-end: var(--space-2);
+  }
+  .howto__item dd {
+    margin: 0;
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--fs-s);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+  }
+  .howto__item dd p {
+    margin: 0;
+  }
+  .howto__list {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .howto__list strong {
+    color: var(--c-fg);
+  }
+  .howto__item :global(.howto__bar) {
+    max-width: 16rem;
+    margin-block-start: var(--space-2);
+  }
+  .howto__note {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .howto__disclaimer {
+    margin: var(--space-6) 0 0;
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--c-border);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    max-width: 52rem;
+  }
+</style>

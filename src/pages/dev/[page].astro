@@ -1,0 +1,19 @@
+---
+/**
+ * Dev-only reference pages: /dev/charts/ (chart & finance-library gallery, ./_charts.astro) and
+ * /dev/components/ (living style guide, ./_components.astro). Like the scene sandbox
+ * (dev/scenes/[id].astro), getStaticPaths returns [] in production, so `astro build` emits no
+ * /dev/ pages; `astro dev` serves them as before. The `_` prefix keeps the two files out of routing.
+ */
+import Charts from './_charts.astro';
+import Components from './_components.astro';
+
+export function getStaticPaths() {
+  if (import.meta.env.PROD) return [];
+  return [{ params: { page: 'charts' } }, { params: { page: 'components' } }];
+}
+
+const { page } = Astro.params as { page: 'charts' | 'components' };
+---
+
+{page === 'charts' ? <Charts /> : <Components />}

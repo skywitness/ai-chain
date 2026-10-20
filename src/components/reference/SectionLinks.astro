@@ -1,0 +1,152 @@
+---
+/**
+ * Grid of the site's main sections (used by /404 and /about/).
+ *   <SectionLinks />                       all sections
+ *   <SectionLinks only={['learn', 'chain']} headingLevel={3} />
+ */
+import Icon from '../ui/Icon.astro';
+import type { IconName } from '../ui/icons';
+import { sectionHref, type RouteKey } from '../../lib/paths';
+
+interface Item {
+  key: RouteKey;
+  title: string;
+  text: string;
+  icon: IconName;
+  color: string;
+}
+const ITEMS: readonly Item[] = [
+  { key: 'learn', title: '學習路徑', text: '由淺入深的入門、進階、深入文章，從什麼是 AI 讀起。', icon: 'book', color: 'var(--level-1)' },
+  { key: 'chain', title: '產業鏈總覽', text: '五層十四個環節：從電力、晶片到雲端、模型與應用。', icon: 'layers', color: 'var(--layer-silicon)' },
+  { key: 'companies', title: '公司資料庫', text: '產業鏈上的主要公司：產品、技術與營收表現。', icon: 'data', color: 'var(--layer-systems)' },
+  { key: 'models', title: '大模型', text: '各家大型語言模型的特性、版本、價格與評測。', icon: 'compare', color: 'var(--layer-cloud-models)' },
+  { key: 'trends', title: '未來趨勢', text: '硬體、軟體、市場與政策的觀察重點與時間表。', icon: 'arrow-up-right', color: 'var(--layer-applications)' },
+  { key: 'taiwan', title: '台灣供應鏈', text: '從晶圓、封裝到伺服器，台灣在 AI 鏈中的角色。', icon: 'globe', color: 'var(--scene-tw-accent)' },
+  { key: 'glossary', title: '名詞解釋', text: 'HBM、CoWoS、Token 等術語的白話說明。', icon: 'info', color: 'var(--level-2)' },
+  { key: 'sources', title: '資料來源與研究方法', text: '每個數字從哪裡來、怎麼換算與查核。', icon: 'source', color: 'var(--c-fg-muted)' },
+  { key: 'about', title: '關於本站', text: '網站目的、編輯流程與免責聲明。', icon: 'tip', color: 'var(--c-fg-muted)' },
+];
+
+interface Props {
+  only?: readonly RouteKey[] | undefined;
+  exclude?: readonly RouteKey[] | undefined;
+  headingLevel?: 2 | 3 | undefined;
+  class?: string | undefined;
+}
+const { only, exclude = [], headingLevel = 3, class: className } = Astro.props;
+const H = `h${headingLevel}` as 'h2' | 'h3';
+const items = (only ? ITEMS.filter((i) => only.includes(i.key)) : ITEMS).filter((i) => !exclude.includes(i.key));
+---
+
+<ul class:list={['sl', className]} role="list">
+  {
+    items.map((i) => (
+      <li class="sl__item" style={`--sl: ${i.color}`}>
+        <span class="sl__icon" aria-hidden="true">
+          <Icon name={i.icon} size="20px" />
+        </span>
+        <H class="sl__title">
+          <a href={sectionHref(i.key)} class="sl__link">
+            {i.title}
+          </a>
+        </H>
+        <p class="sl__text">{i.text}</p>
+        <span class="sl__arrow" aria-hidden="true">
+          <Icon name="arrow-right" size="16px" />
+        </span>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  @layer components {
+    .sl {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+      gap: var(--space-3);
+      margin: 0;
+      padding: 0;
+    }
+    .sl__item {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        'icon title arrow'
+        'icon text arrow';
+      /* rows stay at the top when a grid row stretches the card (cards in one row share a height) */
+      grid-template-rows: auto 1fr;
+      align-items: start;
+      gap: 0.15rem var(--space-3);
+      padding: var(--space-4);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      transition:
+        border-color var(--dur-2) ease,
+        box-shadow var(--dur-2) ease,
+        transform var(--dur-2) var(--ease-out);
+    }
+    .sl__item:hover {
+      border-color: var(--c-border-strong);
+      box-shadow: var(--shadow-2);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .sl__item:hover {
+        transform: translateY(-1px);
+      }
+    }
+    .sl__item:has(.sl__link:focus-visible) {
+      outline: 2px solid var(--c-focus);
+      outline-offset: 2px;
+    }
+    .sl__icon {
+      grid-area: icon;
+      align-self: start;
+      display: grid;
+      place-items: center;
+      inline-size: 2.5rem;
+      block-size: 2.5rem;
+      border-radius: var(--radius-m);
+      background: color-mix(in srgb, var(--sl) 12%, transparent);
+      color: var(--sl);
+    }
+    .sl__title {
+      grid-area: title;
+      font-size: var(--fs-m);
+      line-height: 1.4;
+    }
+    .sl__link {
+      color: var(--c-fg);
+      text-decoration: none;
+    }
+    .sl__link:focus-visible {
+      outline: none;
+    }
+    .sl__link::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+    }
+    .sl__text {
+      grid-area: text;
+      font-size: var(--fs-s);
+      line-height: 1.6;
+      color: var(--c-fg-muted);
+    }
+    .sl__arrow {
+      grid-area: arrow;
+      align-self: center;
+      color: var(--c-fg-subtle);
+      transition:
+        color var(--dur-1) ease,
+        transform var(--dur-2) var(--ease-out);
+    }
+    .sl__item:hover .sl__arrow {
+      color: var(--c-link);
+      transform: translateX(2px);
+    }
+  }
+</style>

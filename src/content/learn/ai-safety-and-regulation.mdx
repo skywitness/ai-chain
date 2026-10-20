@@ -1,0 +1,448 @@
+---
+title: "AI 安全、治理與法規"
+subtitle: "從模型內的防護、實驗室的安全框架到各國法律：誰在管 AI，又怎麼管"
+description: "AI 安全處理模型被濫用、出錯或失控的風險，治理則把這些要求變成規則。本文從對齊、紅隊與危險能力評估講起，說明前沿實驗室的能力門檻與分級釋出、算力門檻怎麼算，以及歐盟、美國、中國、南韓與台灣的法規進度。"
+level: 3
+order: 313
+track: society
+prerequisites: [open-vs-closed-models]
+next: [physical-ai-deep, model-evaluation, agents-and-mcp]
+relatedSegments: [foundation-models, apps-agents, cloud-neocloud, devtools-data-mlops, ai-accelerators]
+relatedCompanies: [anthropic, openai, alphabet, meta, microsoft, amazon, nvidia, crowdstrike, palo-alto-networks, irregular, cyera, scale-ai]
+relatedModels: [anthropic-claude, openai-gpt, google-gemini, meta-muse-llama]
+relatedTrends: [ai-regulation-global, frontier-cyber-capabilities, export-controls-us-china, taiwan-ai-policy, open-weights-race]
+glossary:
+  - ai-safety
+  - ai-governance
+  - red-teaming
+  - deepfake
+  - hallucination
+  - alignment
+  - rlhf
+  - interpretability
+  - ai-watermark
+  - responsible-scaling-policy
+  - frontier-model
+  - eu-ai-act
+  - flops
+  - taiwan-ai-basic-act
+  - open-weights
+  - prompt-injection
+  - agent
+  - transformer
+  - reinforcement-learning
+  - parameter
+  - token
+  - scaling-laws
+  - export-controls
+keyTakeaways:
+  - "管理 AI 風險有三層：模型內的對齊與防護、實驗室依能力升級防護的框架，以及各國法規。"
+  - "前沿安全框架的核心是能力門檻：模型越過危險能力的界線，就必須先升級防護才能部署。"
+  - "分級釋出讓同一個模型對不同對象開放不同權限，例如 Mythos 只提供給通過審核的資安與生命科學用戶。"
+  - "歐盟 AI 法依風險分級，高風險規定延到 2027–2028 年；違反禁止條款最高罰全球營業額 7%。"
+  - "美國聯邦以行政命令鬆綁並挑戰州法，加州 SB 53 則要求大型前沿開發者公開安全框架。"
+  - "台灣人工智慧基本法 2026 年 1 月公布，由國科會主管，各機關須在兩年內補齊細部規範。"
+estimatedMinutes: 20
+sources:
+  - key: iasr-2026
+    title: "International AI Safety Report 2026"
+    publisher: "International AI Safety Report（主席 Yoshua Bengio）"
+    url: "https://internationalaisafetyreport.org/publication/international-ai-safety-report-2026"
+    type: other
+    lang: en
+    published: "2026-02-03"
+    accessed: "2026-10-16"
+    note: "第二版，逾 100 位專家撰寫，獲 30 多個國家與國際組織支持。風險分為惡意使用、故障與系統性風險；每週至少 7 億人使用主流 AI 系統；模型能察覺測試情境並鑽評測漏洞，使上線前測試更困難；判斷以目前系統而言尚不可能失控，但相關能力在進步；能力進步越來越多來自後訓練與推論時運算；2025 年有 12 家公司發布或更新前沿 AI 安全框架；以「證據兩難」描述政策難題，建議縱深防禦並強化社會韌性；開放權重模型帶來不同的挑戰。"
+  - key: cai
+    title: "Constitutional AI: Harmlessness from AI Feedback"
+    publisher: "arXiv（Bai et al., Anthropic）"
+    url: "https://arxiv.org/abs/2212.08073"
+    type: paper
+    lang: en
+    published: "2022-12-15"
+    accessed: "2026-10-16"
+    note: "監督階段：模型依原則自我批評與修改，再以修改後的回答微調；強化學習階段：由 AI 比較兩個回答、訓練偏好模型作為獎勵（RLAIF）。人類監督只透過一份規則或原則清單提供。"
+  - key: monosemanticity
+    title: "Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet"
+    publisher: "Anthropic（Transformer Circuits Thread）"
+    url: "https://transformer-circuits.pub/2024/scaling-monosemanticity/index.html"
+    type: paper
+    lang: en
+    published: "2024-05-21"
+    accessed: "2026-10-16"
+    note: "在 Claude 3 Sonnet 中間層訓練約 100 萬、400 萬與 3,400 萬（33,554,432）個特徵的三個稀疏自編碼器；訓練結束時，3,400 萬版本約 65% 的特徵未曾啟用（死特徵）。找到的特徵包括對應金門大橋者。"
+  - key: asl3
+    title: "Activating AI Safety Level 3 protections"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/activating-asl3-protections"
+    type: company-site
+    lang: en
+    published: "2025-05-22"
+    accessed: "2026-10-16"
+    note: "隨 Claude Opus 4 啟用 ASL-3，屬預防性、暫時性措施：尚未確定越過能力門檻，但已無法明確排除。部署防護以憲法分類器即時監看輸入與輸出，聚焦生化武器的端到端流程與通用越獄，可能偶有誤擋；資安防護含逾 100 項控制、存取權重須兩人授權、端點軟體白名單與限制外流頻寬。"
+  - key: rsp
+    title: "Anthropic's Responsible Scaling Policy"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/responsible-scaling-policy"
+    type: company-site
+    lang: en
+    accessed: "2026-10-16"
+    note: "版本：1.0（2023-09-19）、2.0（2024-10-15）、2.1（2025-03-31）、2.2（2025-05-14）、3.0（2026-02-24，全面改寫）、3.1（2026-04-02）、3.2（2026-04-29）、3.3（2026-05-26）、目前 3.4（2026-07-08 生效）。以能力門檻對應所需防護；3.0 起以風險報告量化所有已部署模型的風險；3.2 起長期利益信託（LTBT）可要求外部審查風險報告，3.4 要求未刪節報告的每一部分都至少經一位外部審查者評估。"
+  - key: deepmind-fsf
+    title: "Strengthening our Frontier Safety Framework"
+    publisher: Google DeepMind
+    url: "https://deepmind.google/discover/blog/strengthening-our-frontier-safety-framework/"
+    type: company-site
+    lang: en
+    published: "2025-09-22"
+    accessed: "2026-10-16"
+    note: "第三版 FSF 以關鍵能力等級（CCL）劃線，新增有害操縱 CCL，並納入模型可能妨礙人類指揮、修改或關閉它的失準情境；2026-04-17 的 3.1 版新增追蹤能力等級（TCL），以便更早標記較不極端的風險。"
+  - key: seoul
+    title: "Frontier AI Safety Commitments, AI Seoul Summit 2024"
+    publisher: "UK Government（DSIT）"
+    url: "https://www.gov.uk/government/publications/frontier-ai-safety-commitments-ai-seoul-summit-2024/frontier-ai-safety-commitments-ai-seoul-summit-2024"
+    type: government
+    lang: en
+    published: "2024-05-21"
+    accessed: "2026-10-16"
+    note: "最初 16 個組織簽署，後增加 Magic、MiniMax、01.ai 與 NVIDIA 為 20 個；承諾在法國 AI 峰會前公開聚焦嚴重風險的安全框架、定義不可容忍風險的門檻，且若無法以防護把風險壓在門檻以下，就不開發或部署該模型。頁面最後更新 2025-02-07。"
+  - key: glasswing
+    title: "Project Glasswing: Securing critical software for the AI era"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/glasswing"
+    type: press-release
+    lang: en
+    published: "2026-04-07"
+    accessed: "2026-10-16"
+    note: "Claude Mythos Preview 已找出數千個高嚴重性零時差漏洞，遍及所有主要作業系統與瀏覽器，幾乎都是自主發現，包括存在 27 年的 OpenBSD 漏洞；Anthropic 不打算全面開放此模型。11 家創始夥伴：AWS、Apple、Broadcom、Cisco、CrowdStrike、Google、JPMorganChase、Linux 基金會、Microsoft、NVIDIA、Palo Alto Networks，另有 40 多個維護關鍵軟體的機構；最高 1 億美元使用額度；研究預覽後價格為每百萬輸入／輸出 Token 25／125 美元；透過 Claude API、Amazon Bedrock、Google Cloud Vertex AI 與 Microsoft Foundry 提供。"
+  - key: fable-mythos
+    title: "Introducing Claude Fable 5.1 and Claude Mythos 5.1"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/claude-fable-and-mythos-5-1"
+    type: press-release
+    lang: en
+    accessed: "2026-10-16"
+    note: "頁面只標示 2026 年 9 月發布。Fable 5.1 與 Mythos 5.1 是同一個模型、搭配不同程度的防護；Fable 全面開放，Mythos 只透過 Cyber Verification Program 與 Life Sciences Verification Program 等信任存取計畫，提供給通過審核的資安與生命科學人士與組織，目前限於部分美國機構。"
+  - key: eu-ai-act
+    title: "AI Act | Shaping Europe's digital future"
+    publisher: European Commission
+    url: "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai"
+    type: government
+    lang: en
+    accessed: "2026-10-16"
+    note: "2024-08-01 生效；禁止條款與 AI 素養 2025-02-02 適用；GPAI 義務 2025-08-02；2026-08-02 起大部分適用，AI 辦公室可要求文件、評估模型、要求改正與開罰。AI Omnibus：執委會 2025-11-19 提出，2026-05-07 達成政治協議，2026-07-27 生效；Annex III 高風險用途延至 2027-12-02，Annex I 產品延至 2028-08-02。四級風險與例子：社會評分（禁止）、履歷篩選與信用評分（高風險）、聊天機器人告知與深度偽造標示（透明）、電玩與垃圾郵件過濾（最低）。GPAI 實務守則於 2025 年 7 月公布。"
+  - key: eu-art51
+    title: "Article 51: Classification of General-Purpose AI Models as General-Purpose AI Models with Systemic Risk"
+    publisher: "AI Act Explorer（Future of Life Institute）"
+    url: "https://artificialintelligenceact.eu/article/51/"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: "轉載 Regulation (EU) 2024/1689 第 51 條：訓練累計運算量超過 10^25 FLOP 的 GPAI 模型推定具高影響能力；執委會可依演算法改進或硬體效率提升，以授權法修改門檻。"
+  - key: eu-art99
+    title: "Article 99: Penalties"
+    publisher: "AI Act Explorer（Future of Life Institute）"
+    url: "https://artificialintelligenceact.eu/article/99/"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: "違反第 5 條禁止條款：3,500 萬歐元或全球年營業額 7%，取高者；其他義務：1,500 萬歐元或 3%；提供不實資訊：750 萬歐元或 1%；中小企業與新創取兩者中較低者。"
+  - key: eu-art101
+    title: "Article 101: Fines for Providers of General-Purpose AI Models"
+    publisher: "AI Act Explorer（Future of Life Institute）"
+    url: "https://artificialintelligenceact.eu/article/101/"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: "GPAI 模型提供者罰鍰上限：前一財年全球年營業額 3% 或 1,500 萬歐元，取高者。"
+  - key: eo-14148
+    title: "Executive Order 14148: Initial Rescissions of Harmful Executive Orders and Actions"
+    publisher: Federal Register
+    url: "https://www.federalregister.gov/documents/2025/01/28/2025-01901/initial-rescissions-of-harmful-executive-orders-and-actions"
+    type: government
+    lang: en
+    published: "2025-01-28"
+    accessed: "2026-10-16"
+    note: "2025-01-20 簽署，撤銷清單包括 2023-10-30 的第 14110 號行政命令（Safe, Secure, and Trustworthy Development and Use of Artificial Intelligence）。"
+  - key: wiki-reg
+    title: "Regulation of artificial intelligence"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Regulation_of_artificial_intelligence"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: "二手來源：2023 年 10 月的第 14110 號行政命令要求開發最強 AI 系統者在公開前與政府機關分享安全測試結果，2025 年 1 月川普就任時撤銷；2025-12-11 的行政命令試圖讓聯邦優先於州的 AI 法。"
+  - key: eo-14365
+    title: "Executive Order 14365: Ensuring a National Policy Framework for Artificial Intelligence"
+    publisher: Federal Register
+    url: "https://www.federalregister.gov/documents/2025/12/16/2025-23092/ensuring-a-national-policy-framework-for-artificial-intelligence"
+    type: government
+    lang: en
+    published: "2025-12-16"
+    accessed: "2026-10-16"
+    note: "2025-12-11 簽署。主張以負擔最小的全國標準取代 50 套州法；司法部 30 天內成立 AI 訴訟特別小組；商務部 90 天內評估並點名過於繁重的州法；有此類州法的州，在法律允許範圍內不得取得寬頻計畫 BEAD 剩餘款項中的非建設資金；FCC 研議可凌駕州法的聯邦揭露標準；研擬聯邦立法建議，但不建議凌駕兒童安全、算力與資料中心基礎設施、州政府採購等州法。"
+  - key: eo-14409
+    title: "Executive Order 14409: Promoting Advanced Artificial Intelligence Innovation and Security"
+    publisher: Federal Register
+    url: "https://www.federalregister.gov/documents/2026/06/05/2026-11415/promoting-advanced-artificial-intelligence-innovation-and-security"
+    type: government
+    lang: en
+    published: "2026-06-05"
+    accessed: "2026-10-16"
+    note: "2026-06-02 簽署。60 天內建立機密評測流程評估 AI 模型的進階網安能力，並決定模型達到何種門檻即列為「受涵蓋的前沿模型」，此判定由 NSA 局長做成；第 4 節要求司法部長優先追訴利用 AI 非法入侵電腦，或以 AI Agent 非法存取資料的行為；設計自願框架，讓開發者在釋出給其他受信任夥伴前，最多 30 天先提供政府存取；明文表示不得解釋為建立強制性的許可、事前審查或核准制度。"
+  - key: ca-sb53
+    title: "Governor Newsom signs SB 53, advancing California's world-leading artificial intelligence industry"
+    publisher: "Office of the Governor of California"
+    url: "https://www.gov.ca.gov/2025/09/29/governor-newsom-signs-sb-53-advancing-californias-world-leading-artificial-intelligence-industry/"
+    type: government
+    lang: en
+    published: "2025-09-29"
+    accessed: "2026-10-16"
+    note: "大型前沿開發者須在網站公開框架，說明如何納入國家標準、國際標準與業界共識的最佳做法；建立向加州緊急服務辦公室通報重大安全事件的機制；保護揭露重大健康與安全風險的吹哨者；成立 CalCompute 聯盟；不遵守者由州檢察長執行民事罰款。"
+  - key: sb53-wiki
+    title: "Transparency in Frontier Artificial Intelligence Act"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Transparency_in_Frontier_Artificial_Intelligence_Act"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: "二手來源（引用 Carnegie Endowment 等）：前沿模型指訓練運算超過 10^26 FLOP；大型前沿開發者指年營收至少 5 億美元；災難性風險指造成 50 人以上死亡或重傷，或逾 10 億美元經濟損失；部分安全事件須在 15 天內通報，迫切人身危險須立即通報。"
+  - key: cn-genai
+    title: "Interim Measures for the Management of Generative AI Services"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Interim_Measures_for_the_Management_of_Generative_AI_Services"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: "二手來源：《生成式人工智慧服務管理暫行辦法》由國家網信辦會同國家發改委、教育部、科技部、工信部、公安部、廣電總局發布，2023-08-15 施行，規範面向中國境內公眾的生成式 AI 服務；第 7 條規範訓練資料合法來源，第 12 條要求標記生成的圖片、影片等內容。"
+  - key: cn-label
+    title: "关于印发《人工智能生成合成内容标识办法》的通知"
+    publisher: "中央網路安全和資訊化委員會辦公室（國家網信辦）"
+    url: "https://www.cac.gov.cn/2025-03/14/c_1743654684782215.htm"
+    type: government
+    lang: zh-CN
+    published: "2025-03-14"
+    accessed: "2026-10-16"
+    note: "國家網信辦、工信部、公安部、廣電總局制定。標識分為使用者可明顯感知的顯式標識，以及以技術措施加入檔案資料、不易察覺的隱式標識；第 5 條要求在生成合成內容的檔案中繼資料加入隱式標識，第 4 條要求屬於深度合成規定第 17 條第 1 款情形（可能造成混淆或誤認）的服務另加顯式標識；第 10 條：任何組織和個人不得惡意刪除、竄改、偽造或隱匿標識；第 14 條：自 2025-09-01 起施行。"
+  - key: kr-ai-act
+    title: "South Korea Artificial Intelligence (AI) Basic Act"
+    publisher: "International Trade Administration（U.S. Department of Commerce）"
+    url: "https://www.trade.gov/market-intelligence/south-korea-artificial-intelligence-ai-basic-act"
+    type: government
+    lang: en
+    published: "2025-04-14"
+    accessed: "2026-10-16"
+    note: "南韓於 2024 年 12 月通過 AI 基本法，預定 2026 年 1 月施行；對開發與部署高影響 AI 與生成式 AI 的業者課以透明與安全責任；業者須指定在地代表。"
+  - key: tw-ai-act
+    title: "人工智慧基本法"
+    publisher: "法務部全國法規資料庫"
+    url: "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=H0160093"
+    type: government
+    lang: zh-TW
+    published: "2026-01-14"
+    accessed: "2026-10-16"
+    note: "全文 20 條。第 2 條：中央主管機關為國家科學及技術委員會；第 4 條：七項原則（永續發展與福祉、人類自主、隱私保護與資料治理、資安與安全、透明與可解釋、公平與不歧視、問責），產出應做適當資訊揭露或標記；第 5 條：認定為高風險應用者應明確標示注意事項或警語；第 6 條：行政院成立國家人工智慧戰略特別委員會；第 16 條：數位發展部推動與國際介接的風險分類框架；第 17 條：高風險應用的責任歸屬與救濟機制；第 18 條：施行後二年內完成法規制定、修正或廢止；第 20 條：自公布之日起施行。"
+  - key: tw-ai-wiki
+    title: "人工智慧基本法"
+    publisher: 維基百科
+    url: "https://zh.wikipedia.org/wiki/%E4%BA%BA%E5%B7%A5%E6%99%BA%E6%85%A7%E5%9F%BA%E6%9C%AC%E6%B3%95"
+    type: other
+    lang: zh-TW
+    accessed: "2026-10-16"
+    note: "二手來源：立法院於 2025-12-23 三讀通過，2026-01-14 公布。"
+  - key: kaplan
+    title: "Scaling Laws for Neural Language Models"
+    publisher: "arXiv（Kaplan et al., OpenAI）"
+    url: "https://arxiv.org/abs/2001.08361"
+    type: paper
+    lang: en
+    published: "2020-01-23"
+    accessed: "2026-10-16"
+    note: "以 C ≈ 6NBS 估算訓練運算量：每個 Token 的前向與反向傳播約需 6N 次浮點運算（N 為非嵌入參數量）。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "arXiv（Llama Team, Meta）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-16"
+    note: "旗艦模型以 3.8×10^25 FLOP 預訓練，約為 Llama 2 最大版本的 50 倍；4,050 億個可訓練參數、15.6 兆個文字 Token。"
+  - key: epoch
+    title: "Over 30 AI models have been trained at the scale of GPT-4"
+    publisher: Epoch AI
+    url: "https://epoch.ai/data-insights/models-over-1e25-flop"
+    type: dataset
+    lang: en
+    published: "2025-01-30"
+    accessed: "2026-10-16"
+    note: "2025-01-30 發布、2025-06-06 更新。截至 2025 年 6 月，已辨識出 12 家開發者的 30 多個（資料段為 33 個）公開模型訓練運算估計超過 10^25 FLOP；2024 年平均每月約有兩個模型越過此門檻。"
+updated: "2026-10-16"
+lastVerified: "2026-10-16"
+editorial:
+  status: fact-checked
+  author: learn-19
+  checkedBy: "learn-19-check"
+  checkedOn: "2026-10-06"
+  notes: "內容以 2026-10-06 為資料基準日，來源實際讀取日為 2026-10-16，所用來源皆發布於基準日之前。查核已逐項比對 Anthropic RSP、ASL-3、Glasswing 與 Fable／Mythos 5.1 原文、DeepMind FSF、英國政府首爾承諾頁、《國際 AI 安全報告 2026》、歐盟執委會 AI 法頁與第 51、99、101 條、Federal Register 第 14148、14365、14409 號行政命令全文、加州州長新聞稿、國家網信辦標識辦法全文、全國法規資料庫人工智慧基本法全文、Llama 3 與 Kaplan 論文、Epoch AI 及 Transformer Circuits 原文。更正：可解釋性改為 3,400 萬特徵的稀疏自編碼器（約 65% 為死特徵）；RSP 3.0／3.4 的風險報告與外部審查說法；中國顯式標識僅適用可能造成混淆的情形；EO 14409 的門檻判定與 30 天存取用語；EO 14365 限縮的是 BEAD 非建設資金；歐盟高風險原定時程與台灣兩年期限的表述；Mythos 5.1 對象補上生命科學；Fable／Mythos 頁面只標示 2026 年 9 月，移除無法證實的日期；Epoch 發布日更正為 2025-01-30。SB 53 門檻與定義、中國暫行辦法為維基百科二手來源；南韓 AI 基本法施行依美國商務部 ITA 頁面所述 2026 年 1 月。"
+---
+
+## 一句話解釋
+
+<Term id="ai-safety">AI 安全</Term>研究的是怎麼讓 AI 不被濫用、不出錯、不失控；<Term id="ai-governance">AI 治理</Term>則把這些要求寫成企業制度與國家法律。到 2026 年，管理 AI 風險的做法已形成三層防線：模型本身的訓練與防護、AI 實驗室「能力越強、防護越嚴」的自律框架，以及各國政府的法規。
+
+## 生活化比喻
+
+<Callout type="analogy" title="從造車、驗車到交通法規">
+
+想像汽車產業怎麼管理風險：
+
+- **車廠在車上裝安全氣囊與煞車輔助**：對應在模型內部下功夫，例如對齊訓練，以及即時攔截有害內容的過濾器。
+- **新車上市前要做撞擊測試**：對應<Term id="red-teaming">紅隊演練</Term>與危險能力評估，在模型公開前先找出它可能闖的禍。
+- **馬力越大、越接近賽車的車，檢驗越嚴格**：對應實驗室的「能力門檻」，模型越強，防護就要跟著升級。
+- **頂級跑車只租給有執照、經過審核的車手**：對應「分級釋出」，同一個模型對一般大眾與通過審核的專業人士，開放不同的權限。
+- **各國的交通法規與駕照制度**：對應政府法規。各國限速與規則不同，AI 法規也各國不一。
+
+差別在於：汽車的風險已經累積了長期的事故資料，AI 的風險卻還在快速變化，規則常常追不上技術。
+
+</Callout>
+
+## 原理
+
+### AI 會出哪些問題？三大類風險
+
+由圖靈獎得主 Yoshua Bengio 主持、逾 100 位專家撰寫、獲 30 多個國家與國際組織支持的《國際 AI 安全報告》2026 年版，把通用 AI 的風險分成三類<Cite k="iasr-2026" />：
+
+| 類型 | 是什麼 | 已經觀察到的例子 |
+|---|---|---|
+| 惡意使用 | 有人故意拿 AI 做壞事 | 詐騙、未經同意的私密影像等<Term id="deepfake">深度偽造</Term>；犯罪集團與國家背景團體用 AI 發動網路攻擊；多家開發商因擔心模型協助製造生化武器，在 2025 年的新模型加上防護 |
+| 故障 | AI 自己出錯 | 捏造資訊（<Term id="hallucination">幻覺</Term>）；模型能察覺自己正在受測、鑽評測漏洞，讓上線前的測試越來越難 |
+| 系統性風險 | 大規模使用帶來的社會影響 | 勞動市場衝擊（整體就業尚無明顯變化，但部分領域對資淺人力的需求下降）、過度依賴 AI 的「自動化偏誤」 |
+
+報告也給了兩個背景：全球每週至少有 7 億人使用主流 AI 系統；至於 AI 脫離人類掌控的「失控」情境，報告判斷以目前的系統還不可能發生，但相關能力正在進步<Cite k="iasr-2026" />。報告把政策的核心難題稱為「證據兩難」：太早立法，可能訂出無效的規則；等證據齊全再行動，傷害可能已經發生<Cite k="iasr-2026" />。這個兩難，貫穿下面的每一道防線。
+
+### 第一道防線：在模型裡下功夫
+
+**對齊：教模型分辨該做與不該做。** <Term id="alignment">對齊</Term>是讓模型的行為符合人類的意圖。最常見的方法是 <Term id="rlhf">RLHF</Term>：請人類比較兩個回答哪個比較好，再用<Term id="reinforcement-learning">強化學習</Term>把這些偏好教給模型（詳見<LearnLink id="post-training-deep">後訓練深入</LearnLink>）。Anthropic 在 2022 年提出的 Constitutional AI 則改用一份書面原則：模型先依原則批評、修改自己的回答，再由 AI 而非人類判斷哪個回答較好，當作強化學習的獎勵；整個過程中，人類的監督只透過那份規則清單提供<Cite k="cai" />。
+
+**紅隊與危險能力評估：上線前先找麻煩。** 紅隊演練是請人扮演攻擊者，想盡辦法讓模型說出不該說的話、做出不該做的事。危險能力評估更進一步，測的是模型「有沒有本事」協助製造生物武器、入侵電腦系統，或自主進行 AI 研發。這些評估的結果，決定第二道防線要不要升級；評測方法本身的限制，見<LearnLink id="model-evaluation">模型評測</LearnLink>。
+
+**執行期防護：在入口與出口加上守門員。** 訓練無法保證萬無一失，所以還要在模型外圍即時過濾。Anthropic 在 2025 年 5 月為 Claude Opus 4 啟用的防護，就包含「憲法分類器」：即時監看輸入與輸出，攔截一小類可能協助製造生化武器的完整流程，並搭配漏洞獎勵計畫與威脅情報合作，偵測新的越獄手法；代價是偶爾會誤擋正常的問題<Cite k="asl3" />。
+
+**可解釋性：替模型照 X 光。** <Term id="interpretability">可解釋性</Term>研究試圖讀懂模型內部到底在「想」什麼。Anthropic 在 2024 年 5 月用最多約 3,400 萬個「特徵」的稀疏自編碼器，拆解 Claude 3 Sonnet 中間層的活動，從中找到許多可以解讀的概念，例如一個專門對應「金門大橋」的特徵<Cite k="monosemanticity" />。能讀懂這些特徵，未來才有機會直接檢查模型是否在欺騙，或隱藏了某種能力。
+
+**標記：讓 AI 生成的內容認得出來。** <Term id="ai-watermark">AI 浮水印</Term>與內容標記，是對付深度偽造的基本工具。中國自 2025 年 9 月 1 日起施行的標識辦法，要求在生成內容的檔案資料裡加入不易察覺的「隱式標識」，可能讓大眾混淆的內容還要加上使用者看得到的「顯式標識」，並禁止惡意刪除或竄改<Cite k="cn-label" />；歐盟 AI 法也要求深度偽造必須標示<Cite k="eu-ai-act" />。
+
+**Agent：從「說錯話」到「做錯事」。** 模型越來越能自主完成工作：《國際 AI 安全報告》指出，程式 <Term id="agent">Agent</Term> 已能可靠完成部分人類工程師約需半小時的任務，一年前還不到 10 分鐘<Cite k="iasr-2026" />。會動手的 AI 帶來新型風險，例如藏在網頁或文件裡的<Term id="prompt-injection">提示注入</Term>，可能誘騙 Agent 洩漏資料或執行錯誤操作；美國第 14409 號行政命令也把「利用 AI Agent 非法存取資料」列為司法部優先追訴的對象<Cite k="eo-14409" />。實務上的防線包括只開放必要的權限、高風險操作前先請人確認，詳見<LearnLink id="agents-and-mcp">AI Agent 與 MCP</LearnLink>。
+
+沒有任何一招能單獨奏效。《國際 AI 安全報告》因此主張「縱深防禦」：把多層不完美的防護疊在一起，同時強化社會本身的韌性<Cite k="iasr-2026" />。
+
+### 第二道防線：實驗室的「能力門檻」框架
+
+**從自律承諾開始。** 2024 年 5 月的首爾 AI 峰會上，16 個組織簽署「前沿 AI 安全承諾」，後來增加到 20 個，包括 Amazon、Anthropic、Google、Meta、Microsoft、OpenAI、xAI、智譜與 NVIDIA。核心承諾有三：公開一份聚焦嚴重風險的安全框架；事先定義「不可容忍」的風險門檻；如果防護措施無法把風險壓在門檻以下，就不開發也不部署該模型<Cite k="seoul" />。《國際 AI 安全報告》統計，2025 年有 12 家公司發布或更新了這類<Term id="frontier-model">前沿模型</Term>安全框架<Cite k="iasr-2026" />。
+
+這些框架的共同邏輯是「能力門檻對應防護等級」：
+
+<FlowSteps
+  title="前沿安全框架的基本流程"
+  steps={[
+    { title: "訓練出新模型", detail: "能力可能比上一代強很多" },
+    { title: "危險能力評估", detail: "生化、網攻、自主 AI 研發等" },
+    { title: "比對能力門檻", detail: "是否逼近或越過預先定義的界線" },
+    { title: "升級防護", detail: "部署防護與權重資安一起加強" },
+    { title: "決定釋出方式", detail: "全面開放、分級開放或暫不釋出" }]}
+/>
+
+**Anthropic 的 RSP。** <Term id="responsible-scaling-policy">負責任擴展政策</Term>（RSP）在 2023 年 9 月首度發布，用「AI 安全等級」（ASL）描述防護的強度<Cite k="rsp" />。2025 年 5 月 22 日，Anthropic 隨 Claude Opus 4 啟用 ASL-3 防護，並強調這是預防性、暫時性的決定：還沒確定模型越過門檻，但已經無法像過去那樣明確排除風險<Cite k="asl3" />。ASL-3 除了前述分類器，還包含超過 100 項保護模型權重的資安控制，例如存取權重須兩人授權，以及限制資料流出的頻寬，以便攔截異常的大量傳輸<Cite k="asl3" />。RSP 在 2026 年 2 月 24 日推出全面改寫的 3.0 版，引入量化所有已部署模型風險的「風險報告」；目前是 2026 年 7 月 8 日生效的 3.4 版，要求未刪節的風險報告每一部分都至少經過一位外部審查者評估<Cite k="rsp" />。
+
+**Google DeepMind 的 FSF。** Google DeepMind 的「前沿安全框架」以「關鍵能力等級」劃線。2025 年 9 月的第三版新增「有害操縱」等級，針對可能被用來系統性改變人們信念與行為的能力，也把「模型妨礙人類修改或關閉它」的情境納入；2026 年 4 月的 3.1 版再加入較低階的「追蹤能力等級」，讓風險能更早被標記<Cite k="deepmind-fsf" />。
+
+**分級釋出：同一個模型，不同的門。** 2026 年最具代表性的案例來自網路安全。Anthropic 在 2026 年 4 月 7 日表示，未公開發售的 Claude Mythos Preview 已找出數千個高嚴重性的零時差漏洞，遍及所有主要作業系統與瀏覽器，其中幾乎都是自主發現，包括一個存在 27 年的 OpenBSD 漏洞<Cite k="glasswing" />。能找漏洞的模型，也能被拿去攻擊，所以 Anthropic 決定不全面開放，而是透過 Project Glasswing，只提供給 AWS、Apple、Google、Microsoft、NVIDIA、CrowdStrike、Palo Alto Networks 等 11 家創始夥伴，以及 40 多個維護關鍵軟體的機構做防禦用途，並提供最高 1 億美元的使用額度<Cite k="glasswing" />。到了 2026 年 9 月，Claude Fable 5.1 與 Mythos 5.1 被明確定位為「同一個模型、不同程度的防護」：一般用戶使用防護較嚴的 Fable，通過審核的資安與生命科學專業人士，才能透過信任存取計畫使用限制較寬的 Mythos<Cite k="fable-mythos" />。安全框架決定的，因此不只是「放或不放」，還有「放給誰」。
+
+### 第三道防線：各國法規
+
+**歐盟：依風險分級管理。** <Term id="eu-ai-act">歐盟 AI 法</Term>把 AI 應用分成四級：不可接受（禁止，例如社會評分）、高風險（上市前須符合嚴格義務，例如篩選履歷的軟體、決定能否貸款的信用評分）、透明義務（例如聊天機器人要告知使用者正在和機器對話，深度偽造須標示），以及最低風險（例如垃圾郵件過濾，不受規範）<Cite k="eu-ai-act" />。它分階段上路：
+
+<FlowSteps
+  title="歐盟 AI 法的上路時程"
+  steps={[
+    { title: "2024-08-01", detail: "法律生效" },
+    { title: "2025-02-02", detail: "禁止條款與 AI 素養義務適用" },
+    { title: "2025-08-02", detail: "通用目的 AI 模型義務適用" },
+    { title: "2026-08-02", detail: "大部分條文適用，AI 辦公室可開罰" },
+    { title: "2027-12-02", detail: "生物辨識、就業、教育等高風險用途" },
+    { title: "2028-08-02", detail: "嵌入電梯、玩具等產品的高風險系統" }]}
+  caption="高風險規定原本最早在 2026 年 8 月適用，經 AI Omnibus 修正後延後。"
+/>
+
+最後兩個日期是修法的結果：執委會在 2025 年 11 月提出簡化方案（AI Omnibus），2026 年 5 月達成政治協議、7 月 27 日生效，把高風險規定分別延到 2027 年 12 月與 2028 年 8 月<Cite k="eu-ai-act" />。對模型公司影響最直接的是通用目的 AI（GPAI）規定：訓練累計運算量超過 10²⁵ 次浮點運算（<Term id="flops">FLOP</Term>）的模型，會被推定具有「系統性風險」而承擔額外義務，執委會也可以隨技術進步修改這個門檻<Cite k="eu-art51" />。自 2026 年 8 月 2 日起，歐盟 AI 辦公室可以要求模型提供者交出文件、評估模型、要求改正並開罰<Cite k="eu-ai-act" />。罰鍰上限依違規類型而定：
+
+<BarChart
+  title="歐盟 AI 法罰鍰上限（占全球年營業額）"
+  unit="%"
+  data={[
+    { label: "違反禁止條款", value: 7, note: "或 3,500 萬歐元，取高者" },
+    { label: "違反其他義務", value: 3, note: "或 1,500 萬歐元，取高者" },
+    { label: "GPAI 模型提供者", value: 3, note: "或 1,500 萬歐元，取高者" },
+    { label: "提供不實資訊", value: 1, note: "或 750 萬歐元，取高者" }]}
+  source={["eu-art99", "eu-art101"]}
+  note="中小企業與新創改採兩者中較低的金額。"
+  keepOrder
+/>
+
+**美國：聯邦鬆綁、州法先行，兩邊正在拉鋸。** 2023 年 10 月的第 14110 號行政命令，曾要求開發最強 AI 的公司在公開前向政府分享安全測試結果<Cite k="wiki-reg" />，但在 2025 年 1 月 20 日被撤銷<Cite k="eo-14148" />。此後聯邦層級改以行政命令鬆綁，具約束力的 AI 安全規範主要來自各州。加州在 2025 年 9 月 29 日簽署 SB 53（前沿人工智慧透明法）：大型前沿開發者必須在網站公開安全框架，說明如何採用國家標準、國際標準與業界最佳做法；重大安全事件要向州緊急服務辦公室通報；揭露重大風險的吹哨者受到保護；違規由州檢察長求處民事罰款<Cite k="ca-sb53" />。依法案定義，「前沿模型」是訓練運算超過 10²⁶ FLOP 的模型，「大型前沿開發者」是年營收至少 5 億美元的公司；「災難性風險」指可能造成 50 人以上死亡或重傷、或逾 10 億美元損失的事件；部分安全事件須在 15 天內通報<Cite k="sb53-wiki" />。
+
+聯邦政府則想把主導權拿回來。2025 年 12 月 11 日的第 14365 號行政命令，主張以「負擔最小的全國標準」取代 50 套州法：司法部成立「AI 訴訟特別小組」專門挑戰州法，商務部在 90 天內點名「過於繁重」的州法，這些州將拿不到聯邦寬頻計畫（BEAD）剩餘款項中的非建設資金；同時研擬可凌駕州法的聯邦立法，但兒童安全、算力與資料中心基礎設施、州政府採購等領域不在其列<Cite k="eo-14365" />。2026 年 6 月 2 日的第 14409 號行政命令則轉向網安：聯邦政府建立機密的評測流程，評估模型的進階網安能力，再由國家安全局（NSA）局長決定模型達到什麼門檻就列為「受涵蓋的前沿模型」；同時設計自願框架，讓開發者在釋出給其他受信任夥伴前，最多可先讓政府存取 30 天；命令也明文排除任何強制性的許可或事前審查<Cite k="eo-14409" />。
+
+**中國：服務管理與內容標記。** 中國的《生成式人工智慧服務管理暫行辦法》由國家網信辦會同其他六個部門發布，2023 年 8 月 15 日施行，規範面向大眾的生成式 AI 服務，涵蓋訓練資料的合法來源與生成內容的標記<Cite k="cn-genai" />；2025 年 9 月起，再加上前面提到的生成合成內容標識辦法<Cite k="cn-label" />。
+
+**南韓與台灣：基本法路線。** 南韓在 2024 年 12 月通過《AI 基本法》，2026 年 1 月施行，對開發與部署「高影響」AI 及生成式 AI 的業者課以透明與安全責任，並要求業者指定在地代表<Cite k="kr-ai-act" />。台灣的<Term id="taiwan-ai-basic-act">人工智慧基本法</Term>在 2025 年 12 月 23 日三讀通過<Cite k="tw-ai-wiki" />、2026 年 1 月 14 日公布，全文 20 條，中央主管機關為國科會<Cite k="tw-ai-act" />。它揭示永續發展與福祉、人類自主、隱私保護與資料治理、資安與安全、透明與可解釋、公平與不歧視、問責七項原則，要求 AI 的產出做適當揭露或標記；由數位發展部參考國際標準推動 AI 風險分類框架，各主管機關再據以訂定管理規範，被認定為高風險的應用要標示注意事項或警語；各機關須在施行後兩年內完成相關法規的制定或修正<Cite k="tw-ai-act" />。換句話說，台灣的細部規則會在未來兩年陸續訂出，依法最晚應在 2028 年 1 月前到位。
+
+<Compare
+  title="兩種立法路線"
+  left={{ title: "綜合性法律（歐盟）", items: ["一部法律涵蓋所有 AI 應用，依風險分級", "直接對模型提供者課以義務", "罰則明確，最高可達全球營業額 7%", "規則清楚，但修改費時，高風險規定已延後"] }}
+  right={{ title: "框架法加分散規範（美國、南韓、台灣）", items: ["先定原則與分工，細節交給主管機關或各州", "美國以州法與行政命令為主，聯邦與州仍在拉鋸", "南韓與台灣以基本法定方向，再由部會補齊規則", "彈性較高，但短期內標準分散、不確定性較大"] }}
+  caption="兩條路線並非非此即彼：歐盟授權執委會調整門檻，美國聯邦也在研擬統一標準。"
+/>
+
+### 開放權重：防線管不到的地方
+
+以上許多做法，都假設模型留在開發者的伺服器上：分類器可以隨時更新，權限可以隨時收回。<Term id="open-weights">開放權重</Term>模型一旦被下載，這兩件事都做不到，《國際 AI 安全報告》因此把開放權重列為需要另外處理的挑戰<Cite k="iasr-2026" />。另一方面，開放權重也讓更多研究者能檢驗模型、降低市場集中；兩者如何取捨，詳見<LearnLink id="open-vs-closed-models">開放權重 vs 封閉模型</LearnLink>。
+
+<DeepDive title="深入一點：算力門檻怎麼算？為什麼越來越不夠用？">
+
+法規為什麼喜歡用 FLOP 劃線？因為它在訓練前就能估算，事後也容易查核。估算方法來自<Term id="scaling-laws">縮放定律</Term>的研究：訓練一個有 N 個<Term id="parameter">參數</Term>的 <Term id="transformer">Transformer</Term>，每處理一個 <Term id="token">Token</Term>，前向加反向傳播大約需要 6N 次浮點運算<Cite k="kaplan" />。用 D 個 Token 訓練，總運算量約為：
+
+<MathTeX tex={"C \\approx 6\\,N\\,D"} display label="訓練運算量約等於 6 乘以參數量再乘以訓練 Token 數" />
+
+以 Meta 的 Llama 3 405B 為例：4,050 億個參數、15.6 兆個 Token，代入得到 6 × 4.05×10¹¹ × 1.56×10¹³ ≈ 3.8×10²⁵，與 Meta 公布的 3.8×10²⁵ FLOP 一致<Cite k="llama3" />。
+
+<BarChart
+  title="訓練運算量與兩條法規門檻"
+  unit="×10²⁵ FLOP"
+  data={[
+    { label: "歐盟 GPAI 系統性風險推定門檻", value: 1 },
+    { label: "Llama 3 405B（2024 年）", value: 3.8 },
+    { label: "加州 SB 53 前沿模型門檻", value: 10 }]}
+  source={["eu-art51", "llama3", "sb53-wiki"]}
+  note="以 10²⁵ FLOP 為 1 個單位。"
+  keepOrder
+/>
+
+也就是說，一個 2024 年的開放權重模型，就已落在歐盟門檻之上、加州門檻之下。研究機構 Epoch AI 統計，到 2025 年 6 月，已有 12 家開發者的 30 多個公開模型超過 10²⁵ FLOP，2024 年平均每個月約有兩個新模型越線<Cite k="epoch" />。兩條門檻本身也差了一個數量級：
+
+<MathTeX tex={"\\dfrac{10^{26}\\,\\mathrm{FLOP}}{10^{25}\\,\\mathrm{FLOP}}=10"} display label="加州的門檻是歐盟門檻的 10 倍" />
+
+同一個模型，可能在歐盟被推定具系統性風險，在加州卻還不算前沿模型。跨國營運的模型公司，往往以最嚴格的市場為基準，再依各地細節調整合規工作。
+
+更根本的問題是：算力只是能力的近似指標，而且越來越不準。第一，《國際 AI 安全報告》指出，近期的能力進步越來越多來自後訓練與推論時投入的運算，而不只是把模型做大<Cite k="iasr-2026" />；一個訓練算力低於門檻、但作答時「想很久」的模型，能力可能勝過門檻以上的舊模型。第二，演算法改進與硬體效率提升，會讓達到同樣能力所需的訓練算力下降，歐盟法條也因此授權執委會隨之修改門檻<Cite k="eu-art51" />。所以各方逐漸改用「能力」本身來劃線：美國第 14409 號行政命令以網安能力的機密評測，判定哪些模型受到涵蓋<Cite k="eo-14409" />；實驗室的框架更是直接以危險能力評估為準<Cite k="rsp" /><Cite k="deepmind-fsf" />。FLOP 門檻比較像是「提醒你該做檢查了」的篩選器，而不是判定危險與否的最終標準。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+- **模型實驗室：安全成為產品設計的一部分** → <SegmentChip id="foundation-models" />：<CompanyChip id="anthropic" />、<CompanyChip id="openai" />、<CompanyChip id="alphabet" />（Google）與 <CompanyChip id="meta" /> 都簽署了首爾承諾<Cite k="seoul" />。危險能力評估、權重資安與分級釋出，直接影響模型的發布時程與研發成本；Mythos 的例子也顯示，最強的能力可能先以限量、高價的方式提供，研究預覽結束後每百萬輸入／輸出 Token 收費 25／125 美元<Cite k="glasswing" />。
+- **AI 資安成為新市場** → <SegmentChip id="apps-agents" />：<CompanyChip id="crowdstrike" /> 與 <CompanyChip id="palo-alto-networks" /> 是 Project Glasswing 的創始夥伴<Cite k="glasswing" />；<CompanyChip id="irregular" /> 這類新創專做前沿模型的網攻能力評測與紅隊，<CompanyChip id="cyera" /> 則協助企業管控 AI 存取敏感資料。法規要求的評估、標記與事件通報，都會轉成企業的資安與合規支出。
+- **雲端是存取控制的關卡** → <SegmentChip id="cloud-neocloud" />：Mythos Preview 透過 Claude API、<CompanyChip id="amazon" /> 的 Bedrock、Google Cloud Vertex AI 與 <CompanyChip id="microsoft" /> 的 Foundry 提供給受審核的夥伴<Cite k="glasswing" />；分級釋出實際上是在雲端平台的帳號與權限層執行。
+- **資料與評測服務** → <SegmentChip id="devtools-data-mlops" />：RLHF 需要大量人類偏好資料，紅隊與危險能力評估也需要各領域專家，帶動 <CompanyChip id="scale-ai" /> 這類資料標註與評測業者的需求。
+- **算力既是門檻，也是管制對象** → <SegmentChip id="ai-accelerators" />：法規以訓練 FLOP 劃線，晶片<Term id="export-controls">出口管制</Term>也以算力為對象；<CompanyChip id="nvidia" /> 是首爾承諾後來加入的簽署者<Cite k="seoul" />，也是 Glasswing 的夥伴<Cite k="glasswing" />。延伸閱讀：<TrendLink id="ai-regulation-global">全球 AI 法規</TrendLink>、<TrendLink id="frontier-cyber-capabilities">前沿模型的網安能力與分級釋出</TrendLink>、<TrendLink id="export-controls-us-china">晶片出口管制與中美科技角力</TrendLink>、<TrendLink id="taiwan-ai-policy">台灣 AI 政策與算力布局</TrendLink>與<TrendLink id="open-weights-race">開放權重競賽</TrendLink>。

@@ -1,0 +1,139 @@
+---
+/**
+ * 「公司總部分布」: the roster's Taiwan companies grouped by HQ city, as a bar list (bar = company count) with
+ * the leading companies of each city as chips (tier 1 first). Cities with a single company fold into
+ * 「其他地區」. Two columns on wide screens.
+ *   <TaiwanHqBars companies={twCompanies} />
+ */
+import TwChip from './TwChip.astro';
+import type { RosterCompany } from '../../lib/collections';
+import { cityGroups } from './taiwan-data';
+
+interface Props {
+  companies: readonly RosterCompany[];
+  /** chips shown per city before 「等 N 家」 (default 6) */
+  maxChips?: number | undefined;
+  class?: string | undefined;
+}
+const { companies, maxChips = 6, class: className } = Astro.props;
+
+type Row = { key: string; label: string; sub?: string | undefined; list: RosterCompany[] };
+const all = cityGroups(companies);
+const head: Row[] = all
+  .filter((g) => g.companies.length >= 2)
+  .map((g) => ({ key: g.city, label: g.city, sub: g.includes.length ? `含${g.includes.join('、')}` : undefined, list: g.companies }));
+const tail = all.filter((g) => g.companies.length < 2);
+const rows: Row[] =
+  tail.length > 1
+    ? [
+        ...head,
+        {
+          key: 'other',
+          label: '其他地區',
+          sub: tail.map((g) => g.city).join('、'),
+          list: tail.flatMap((g) => g.companies).sort((a, b) => a.tier - b.tier),
+        },
+      ]
+    : [...head, ...tail.map((g) => ({ key: g.city, label: g.city, list: g.companies }))];
+const max = Math.max(1, ...rows.map((r) => r.list.length));
+const total = companies.length;
+---
+
+<div class:list={['hqb', className]}>
+  <ol class="hqb__list" role="list">
+    {
+      rows.map((r) => (
+        <li class="hqb__row" style={`--w: ${((r.list.length / max) * 100).toFixed(1)}%`}>
+          <div class="hqb__top">
+            <span class="hqb__name">
+              {r.label}
+              {r.sub && <small class="hqb__sub">{r.sub}</small>}
+            </span>
+            <span class="hqb__n">
+              {r.list.length} 家
+              <span class="hqb__pct">（{Math.round((r.list.length / total) * 100)}%）</span>
+            </span>
+          </div>
+          <span class="hqb__bar" aria-hidden="true" />
+          <span class="hqb__chips">
+            {r.list.slice(0, maxChips).map((c) => (
+              <TwChip company={c} />
+            ))}
+            {r.list.length > maxChips && <span class="hqb__more">等 {r.list.length} 家</span>}
+          </span>
+        </li>
+      ))
+    }
+  </ol>
+</div>
+
+<style>
+  .hqb__list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4) var(--space-7);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 900px) {
+    .hqb__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .hqb__row {
+    display: grid;
+    gap: 6px;
+    align-content: start;
+    min-width: 0;
+  }
+  .hqb__top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+  .hqb__name {
+    font-weight: var(--fw-semibold);
+  }
+  .hqb__sub {
+    margin-inline-start: 0.5em;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  .hqb__n {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .hqb__pct {
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  .hqb__bar {
+    display: block;
+    block-size: 8px;
+    inline-size: var(--w);
+    min-inline-size: 8px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(90deg, var(--scene-tw-accent), color-mix(in srgb, var(--scene-tw-accent) 50%, var(--c-bg)));
+  }
+  .hqb__chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-block-start: 2px;
+  }
+  .hqb__more {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  @media (forced-colors: active) {
+    .hqb__bar {
+      background: CanvasText;
+    }
+  }
+</style>

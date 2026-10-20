@@ -1,0 +1,143 @@
+---
+/**
+ * <MarginLadder title="各環節毛利率中位數" rows={[{ label: 'EDA 與矽智財', segment: 'eda-ip-design', value: 80.1, n: 6, min: 72, max: 89 }]} />
+ * Profit-pool ladder: one horizontal bar per segment at the median margin, sorted high → low,
+ * with an optional min–max (or P25–P75) range whisker. Bars wear the segment colour token;
+ * every row is labelled, so identity never relies on colour.
+ */
+import './charts.css';
+import ChartFrame from './ChartFrame.astro';
+import { fmtTick, isNum, niceTicks, pct, round, segColor, tickDigits, tip, vars } from './chart-utils';
+import { axisStep } from './chart-utils';
+import type { ChartSourceLink, LegendItem, TableSpec } from './types';
+import { formatPercent } from '../../lib/format';
+
+export interface LadderRow {
+  label: string;
+  /** median margin, percent */
+  value: number;
+  /** segment id → bar colour var(--seg-<id>) */
+  segment?: string | undefined;
+  href?: string | undefined;
+  n?: number | undefined;
+  min?: number | undefined;
+  max?: number | undefined;
+  p25?: number | undefined;
+  p75?: number | undefined;
+  sublabel?: string | undefined;
+}
+
+interface Props {
+  title: string;
+  rows: LadderRow[];
+  subtitle?: string | undefined;
+  /** e.g. 「毛利率中位數」 */
+  metricLabel?: string | undefined;
+  asOf?: string | undefined;
+  sources?: ChartSourceLink[] | undefined;
+  notes?: Array<string | null | undefined> | undefined;
+  badge?: string | undefined;
+  /** which spread to draw: min–max (default when present), interquartile, or none */
+  range?: 'minmax' | 'iqr' | 'none' | undefined;
+  sort?: boolean | undefined;
+  bare?: boolean | undefined;
+  as?: 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | undefined;
+  class?: string | undefined;
+}
+
+const { title, rows: inRows = [], subtitle, metricLabel = '毛利率中位數', asOf, sources = [], notes = [], badge, range = 'minmax', sort = true, bare, as, class: className } = Astro.props;
+const rows = inRows.filter((r) => isNum(r.value));
+if (sort) rows.sort((a, b) => b.value - a.value);
+const lo = (r: LadderRow) => (range === 'iqr' ? r.p25 : range === 'minmax' ? r.min : undefined);
+const hi = (r: LadderRow) => (range === 'iqr' ? r.p75 : range === 'minmax' ? r.max : undefined);
+const hasRange = range !== 'none' && rows.some((r) => isNum(lo(r)) && isNum(hi(r)));
+const all = rows.flatMap((r) => [r.value, lo(r), hi(r)]).filter(isNum);
+const ticks = niceTicks(Math.min(0, ...all), Math.max(10, ...all), 4);
+const tDigits = tickDigits(ticks.ticks);
+const zero = pct(0, ticks.domain);
+const hasLinks = rows.some((r) => r.href);
+const rangeName = range === 'iqr' ? '四分位距（P25–P75）' : '最低–最高';
+
+const legend: LegendItem[] = hasRange
+  ? [
+      { label: metricLabel, kind: 'bar', color: 'var(--c-fg-subtle)' },
+      { label: rangeName, kind: 'range', color: 'var(--c-fg-muted)' },
+    ]
+  : [];
+
+const aria = rows.length
+  ? `${title}，共 ${rows.length} 個環節，由高到低：` + rows.map((r) => `${r.label} ${formatPercent(r.value)}`).join('、') + '。'
+  : '';
+
+const table: TableSpec = {
+  columns: [
+    { key: 'l', label: '環節' },
+    { key: 'n', label: '公司數', numeric: true },
+    { key: 'v', label: metricLabel, numeric: true },
+    ...(hasRange ? [{ key: 'lo', label: range === 'iqr' ? 'P25' : '最低', numeric: true }, { key: 'hi', label: range === 'iqr' ? 'P75' : '最高', numeric: true }] : []),
+  ],
+  rows: rows.map((r) => ({
+    l: r.label,
+    n: r.n != null ? String(r.n) : '',
+    v: formatPercent(r.value),
+    lo: isNum(lo(r)) ? formatPercent(lo(r)!) : '',
+    hi: isNum(hi(r)) ? formatPercent(hi(r)!) : '',
+  })),
+};
+---
+
+<ChartFrame
+  title={title}
+  as={as}
+  subtitle={subtitle}
+  badge={badge}
+  asOf={asOf}
+  unit="%"
+  legend={legend}
+  notes={notes}
+  sources={sources}
+  table={table}
+  empty={rows.length === 0}
+  bare={bare}
+  class={className}
+>
+  <div class="ch-hb" role={hasLinks ? 'group' : 'img'} aria-label={aria}>
+    {
+      rows.map((r) => {
+        const p = pct(r.value, ticks.domain);
+        const l = lo(r);
+        const h = hi(r);
+        return (
+          <div class="ch-hb__row">
+            <span class="ch-hb__label">
+              {r.href ? <a href={r.href}>{r.label}</a> : r.label}
+              {(r.sublabel || r.n != null) && <small>{r.sublabel ?? `${r.n} 家公司`}</small>}
+            </span>
+            <span
+              class="ch-hb__track"
+              aria-hidden="true"
+              data-tip={tip(r.label, [
+                [metricLabel, formatPercent(r.value)],
+                isNum(l) && isNum(h) ? [rangeName, `${formatPercent(l)}–${formatPercent(h)}`] : null,
+                r.n != null ? ['公司數', `${r.n} 家`] : null,
+              ])}
+            >
+              {ticks.ticks.map((t) => (
+                <i class:list={['ch-hb__tick', t === 0 && 'ch-hb__tick--base']} style={`--x:${pct(t, ticks.domain)}%`} />
+              ))}
+              <span
+                class:list={['ch-hb__bar', r.value < 0 && 'ch-hb__bar--neg']}
+                style={vars({ '--l': `${r.value < 0 ? p : zero}%`, '--w': `${round(Math.abs(p - zero), 3)}%`, '--k': segColor(r.segment) })}
+              />
+              {hasRange && isNum(l) && isNum(h) && <span class="ch-hb__range" style={`--lo:${pct(l, ticks.domain)}%;--hi:${pct(h, ticks.domain)}%`} />}
+            </span>
+            <span class="ch-hb__val">{formatPercent(r.value)}</span>
+          </div>
+        );
+      })
+    }
+    <div class="ch-hb__axis" aria-hidden="true">
+      {ticks.ticks.map((t, k) => <span style={`--x:${pct(t, ticks.domain)}%`} hidden={k % axisStep(ticks.ticks.length) !== 0 ? true : undefined}>{fmtTick(t, { percent: true, digits: tDigits })}</span>)}
+    </div>
+  </div>
+</ChartFrame>

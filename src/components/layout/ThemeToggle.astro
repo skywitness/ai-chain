@@ -1,0 +1,101 @@
+---
+/**
+ * Theme toggle that cycles 系統 → 淺色 → 深色. Shown only when JS runs (html.js).
+ * The choice is stored in localStorage (try/catch) by src/client/theme-init.ts helpers.
+ */
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  /** Show the text label next to the icon */
+  showLabel?: boolean | undefined;
+  class?: string | undefined;
+}
+const { showLabel = false, class: className } = Astro.props;
+---
+
+<button
+  type="button"
+  class:list={['theme-toggle', 'js-only', { 'theme-toggle--label': showLabel }, className]}
+  data-theme-toggle
+  data-pref="system"
+  aria-label="切換色彩主題（目前：系統）"
+  title="色彩主題：系統"
+>
+  <span class="theme-toggle__icon theme-toggle__icon--system"><Icon name="system" size="20px" /></span>
+  <span class="theme-toggle__icon theme-toggle__icon--light"><Icon name="sun" size="20px" /></span>
+  <span class="theme-toggle__icon theme-toggle__icon--dark"><Icon name="moon" size="20px" /></span>
+  <span class="theme-toggle__label" data-theme-label aria-hidden="true">系統</span>
+</button>
+
+<script>
+  import { applyThemePref, nextThemePref, readThemePref, syncThemeColorMeta, THEME_LABELS, type ThemePref } from '../../client/theme-init';
+
+  function render(btn: HTMLElement, pref: ThemePref): void {
+    const next = nextThemePref(pref);
+    btn.dataset['pref'] = pref;
+    btn.setAttribute('aria-label', `切換色彩主題（目前：${THEME_LABELS[pref]}，按下改為${THEME_LABELS[next]}）`);
+    btn.title = `色彩主題：${THEME_LABELS[pref]}`;
+    const label = btn.querySelector('[data-theme-label]');
+    if (label) label.textContent = THEME_LABELS[pref];
+  }
+
+  const buttons = document.querySelectorAll<HTMLElement>('[data-theme-toggle]');
+  const initial = readThemePref();
+  buttons.forEach((b) => render(b, initial));
+  syncThemeColorMeta();
+
+  buttons.forEach((b) =>
+    b.addEventListener('click', () => {
+      const pref = nextThemePref((b.dataset['pref'] as ThemePref | undefined) ?? 'system');
+      applyThemePref(pref);
+      buttons.forEach((x) => render(x, pref));
+    }),
+  );
+
+  // Another tab changed the preference
+  window.addEventListener('storage', (e) => {
+    if (e.key !== null && e.key !== 'aca-theme') return;
+    const pref = readThemePref();
+    applyThemePref(pref);
+    buttons.forEach((x) => render(x, pref));
+  });
+</script>
+
+<style>
+  @layer components {
+    .theme-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4em;
+      min-width: var(--tap);
+      min-height: var(--tap);
+      padding: 0 0.6em;
+      border: 1px solid transparent;
+      border-radius: var(--radius-m);
+      background: transparent;
+      color: var(--c-fg-muted);
+      font-size: var(--fs-s);
+    }
+    .theme-toggle:hover {
+      background: var(--c-hover);
+      color: var(--c-fg);
+    }
+    .theme-toggle__icon {
+      display: none;
+      line-height: 0;
+    }
+    .theme-toggle[data-pref='system'] .theme-toggle__icon--system,
+    .theme-toggle[data-pref='light'] .theme-toggle__icon--light,
+    .theme-toggle[data-pref='dark'] .theme-toggle__icon--dark {
+      display: inline-block;
+    }
+    .theme-toggle__label {
+      display: none;
+    }
+    .theme-toggle--label .theme-toggle__label {
+      display: inline;
+    }
+  }
+</style>

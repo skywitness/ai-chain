@@ -1,0 +1,440 @@
+---
+/**
+ * The /models/compare/ tool: version pickers (JS only), preset buttons, and the comparison table.
+ * Without JS the server-rendered preset (data.defaults) is shown; with JS src/client/compare.ts
+ * takes over (?m=a,b,c, up to 4 versions) using the same renderer (compare-core.ts).
+ *
+ *   <CompareView data={buildCompareData(families)} />
+ */
+import Icon from '../ui/Icon.astro';
+import { MAX_SELECTED, renderCompareTable, resolveSelection, type CompareData } from './compare-core';
+import type { ComparePreset } from './compare-data';
+
+interface Props {
+  data: CompareData & { presets: ComparePreset[] };
+}
+const { data } = Astro.props;
+const preset = resolveSelection(data.defaults, data.versions);
+const tableHtml = renderCompareTable(preset, data.benches, data.strengths);
+const json = JSON.stringify({
+  versions: data.versions,
+  benches: data.benches,
+  defaults: data.defaults,
+  strengths: data.strengths,
+  compareHref: data.compareHref,
+}).replace(/</g, '\\u003c');
+const slots = Array.from({ length: MAX_SELECTED }, (_, i) => i);
+---
+
+<div class="cv" data-compare-root>
+  <form class="cv__form" data-compare-form aria-labelledby="cv-form-title">
+    <p class="cv__form-title" id="cv-form-title">選擇要比較的版本（2 到 4 個）</p>
+    <div class="cv__slots">
+      {
+        slots.map((i) => (
+          <label class="cv__slot">
+            <span class="cv__slot-label">
+              <span class="cv__slot-dot" style={`--k: var(--chart-${i + 1})`} aria-hidden="true" />
+              版本 {i + 1}
+              {i >= 2 && <small>（選填）</small>}
+            </span>
+            <select data-slot={String(i)} name={`m${i + 1}`}>
+              <option value="">（載入中）</option>
+            </select>
+          </label>
+        ))
+      }
+    </div>
+    {
+      data.presets.length > 0 && (
+        <div class="cv__presets" role="group" aria-label="快速組合">
+          <span class="cv__presets-label">快速組合</span>
+          {data.presets.map((p) => (
+            <button type="button" class="cv__preset" data-preset={p.keys.join(',')} aria-pressed="false">
+              {p.label}
+            </button>
+          ))}
+          <button type="button" class="cv__clear" data-compare-clear>
+            清除
+          </button>
+        </div>
+      )
+    }
+  </form>
+  <p class="sr-only" aria-live="polite" data-compare-live></p>
+
+  <noscript>
+    <p class="cv__noscript">
+      目前顯示預設的旗艦比較。啟用 JavaScript 後，可自行挑選 2 到 4 個版本並排比較。
+    </p>
+  </noscript>
+
+  <div class="cv__out" data-compare-out set:html={tableHtml} />
+
+  <div class="cv__legend">
+    <p>
+      <Icon name="warn" />
+      <span>警示符號：同一列的分數或價格日期相差超過 90 天，可能來自不同的測試版本或設定，不宜直接比較。</span>
+    </p>
+    <p>
+      <Icon name="info" />
+      <span>粗體標示所選版本中該項評測的最高分。評測分數優先採用第三方或排行榜的獨立量測，沒有時才用實驗室自評。</span>
+    </p>
+  </div>
+
+  <script type="application/json" data-compare-json set:html={json} />
+</div>
+
+<script>
+  import '../../client/compare';
+</script>
+
+<style>
+  .cv {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+  .cv__form {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  :global(html:not(.js)) .cv__form {
+    display: none;
+  }
+  .cv__form-title {
+    font-weight: var(--fw-semibold);
+  }
+  .cv__slots {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+  @media (min-width: 640px) {
+    .cv__slots {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1100px) {
+    .cv__slots {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .cv__slot {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+  .cv__slot-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    font-weight: var(--fw-semibold);
+  }
+  .cv__slot-label small {
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  .cv__slot-dot {
+    inline-size: 0.65em;
+    block-size: 0.65em;
+    border-radius: 50%;
+    background: var(--k);
+  }
+  .cv__slot select {
+    inline-size: 100%;
+    min-inline-size: 0;
+    min-block-size: 2.75rem;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-m);
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font: inherit;
+    font-size: var(--fs-s);
+  }
+  .cv__slot select:focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  .cv__presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .cv__presets-label {
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    margin-inline-end: var(--space-1);
+  }
+  .cv__preset,
+  .cv__clear {
+    min-block-size: 2.75rem;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font: inherit;
+    font-size: var(--fs-s);
+    cursor: pointer;
+  }
+  .cv__preset:hover,
+  .cv__clear:hover {
+    border-color: var(--c-border-strong);
+  }
+  .cv__preset[aria-pressed='true'] {
+    background: var(--c-accent);
+    border-color: var(--c-accent);
+    color: var(--c-accent-fg);
+  }
+  .cv__clear {
+    border-style: dashed;
+    color: var(--c-fg-muted);
+  }
+  .cv__preset:focus-visible,
+  .cv__clear:focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  .cv__noscript {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-sunken);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .cv__legend {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .cv__legend p {
+    display: flex;
+    gap: 0.5em;
+    align-items: baseline;
+  }
+  .cv__legend :global(svg) {
+    flex: none;
+    transform: translateY(0.12em);
+  }
+
+  /* ── the comparison table (markup comes from compare-core.ts, so :global) ── */
+  .cv__out {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    min-width: 0;
+  }
+  .cv__out :global(.cmp__empty) {
+    padding: var(--space-5);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    text-align: center;
+    color: var(--c-fg-muted);
+  }
+  .cv__out :global(.cmp__notice) {
+    display: flex;
+    gap: 0.5em;
+    align-items: baseline;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid color-mix(in srgb, var(--c-warn) 35%, transparent);
+    border-radius: var(--radius-m);
+    background: color-mix(in srgb, var(--c-warn) 8%, transparent);
+    font-size: var(--fs-s);
+    line-height: 1.7;
+  }
+  .cv__out :global(.cmp__notice .cmp__ico) {
+    flex: none;
+    color: var(--c-warn);
+    transform: translateY(0.12em);
+  }
+  .cv__out :global(.cmp__scroll) {
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .cv__out :global(.cmp) {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--fs-s);
+    line-height: 1.55;
+    table-layout: fixed;
+  }
+  .cv__out :global(.cmp th),
+  .cv__out :global(.cmp td) {
+    padding: var(--space-3);
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--c-border);
+    overflow-wrap: anywhere;
+  }
+  .cv__out :global(.cmp__corner),
+  .cv__out :global(.cmp__rh) {
+    width: 9.5rem;
+  }
+  .cv__out :global(.cmp thead th) {
+    background: var(--c-bg-sunken);
+    vertical-align: bottom;
+  }
+  .cv__out :global(.cmp__corner) {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-weight: var(--fw-semibold);
+  }
+  .cv__out :global(.cmp__vh) {
+    border-block-start: 3px solid var(--k);
+  }
+  .cv__out :global(.cmp__vh a) {
+    font-size: var(--fs-m);
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+    text-decoration: none;
+  }
+  .cv__out :global(.cmp__vh a:hover) {
+    color: var(--c-link-hover);
+    text-decoration: underline;
+  }
+  .cv__out :global(.cmp small) {
+    display: block;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-weight: var(--fw-regular);
+  }
+  .cv__out :global(.cmp__gh th) {
+    padding-block: var(--space-2);
+    background: color-mix(in srgb, var(--c-accent) 6%, var(--c-bg-elev));
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-accent);
+  }
+  .cv__out :global(.cmp__rh) {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .cv__out :global(.cmp__warn) {
+    display: inline-flex;
+    margin-inline-start: 0.35em;
+    color: var(--c-warn);
+    vertical-align: -0.1em;
+  }
+  .cv__out :global(tr.has-warn > td) {
+    background: color-mix(in srgb, var(--c-warn) 5%, transparent);
+  }
+  .cv__out :global(.cmp td) {
+    font-variant-numeric: tabular-nums;
+  }
+  .cv__out :global(.cmp__score) {
+    font-size: var(--fs-m);
+    font-weight: var(--fw-semibold);
+  }
+  .cv__out :global(.cmp__score.is-best) {
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+    box-shadow: inset 0 -0.35em 0 color-mix(in srgb, var(--c-pos) 25%, transparent);
+  }
+  .cv__out :global(.cmp__open) {
+    color: var(--c-pos);
+    font-weight: var(--fw-semibold);
+  }
+  .cv__out :global(.cmp__na) {
+    color: var(--c-fg-subtle);
+  }
+  .cv__out :global(.cmp ul) {
+    margin: 0;
+    padding-inline-start: 1.1em;
+    display: grid;
+    gap: var(--space-1);
+    color: var(--c-fg);
+  }
+  .cv__out :global(.cmp tbody:last-child tr:last-child > *) {
+    border-block-end: 0;
+  }
+  /* Wider screens: the fixed-layout table always fits, so let the version names stay in view while
+     the long table scrolls (a scroll container would trap position: sticky). */
+  @media (min-width: 641px) {
+    .cv__out :global(.cmp__scroll) {
+      overflow: visible;
+    }
+    .cv__out :global(.cmp thead th) {
+      position: sticky;
+      inset-block-start: var(--header-h);
+      z-index: 1;
+    }
+    .cv__out :global(.cmp thead th:first-child) {
+      border-start-start-radius: calc(var(--radius-l) - 1px);
+    }
+    .cv__out :global(.cmp thead th:last-child) {
+      border-start-end-radius: calc(var(--radius-l) - 1px);
+    }
+  }
+
+  /* Phones: stack the version columns under each attribute (no horizontal scroll needed). */
+  @media (max-width: 640px) {
+    .cv__out :global(.cmp),
+    .cv__out :global(.cmp tbody),
+    .cv__out :global(.cmp tr),
+    .cv__out :global(.cmp th),
+    .cv__out :global(.cmp td) {
+      display: block;
+      width: auto;
+    }
+    .cv__out :global(.cmp thead) {
+      display: block;
+    }
+    .cv__out :global(.cmp thead tr) {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .cv__out :global(.cmp thead th.cmp__corner) {
+      display: none;
+    }
+    .cv__out :global(.cmp thead th.cmp__vh) {
+      flex: 1 1 45%;
+      border-block-end: 1px solid var(--c-border);
+    }
+    .cv__out :global(.cmp tr:not(.cmp__gh)) {
+      border-block-end: 1px solid var(--c-border);
+      padding-block: var(--space-2);
+    }
+    .cv__out :global(.cmp tr > th),
+    .cv__out :global(.cmp tr > td) {
+      border-block-end: 0;
+      padding-block: var(--space-1);
+    }
+    .cv__out :global(.cmp td) {
+      display: grid;
+      grid-template-columns: minmax(6.5rem, 38%) minmax(0, 1fr);
+      gap: var(--space-2);
+    }
+    .cv__out :global(.cmp td::before) {
+      content: attr(data-label);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-muted);
+      padding-block-start: 0.2em;
+    }
+    .cv__out :global(.cmp__c) {
+      min-width: 0;
+    }
+    .cv__out :global(.cmp__rh) {
+      color: var(--c-fg);
+    }
+    .cv__out :global(.cmp__rh small) {
+      display: inline;
+      margin-inline-start: 0.5em;
+    }
+  }
+</style>

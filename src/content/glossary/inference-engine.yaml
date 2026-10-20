@@ -1,0 +1,40 @@
+term: "推論引擎"
+zh: "推論引擎"
+en: "Inference Engine"
+aliases:
+  - "推論框架"
+  - "推論伺服器"
+  - "Serving Engine"
+  - "Inference Server"
+  - "LLM Serving Framework"
+category: inference
+level: 2
+short: >-
+  負責把模型載入 GPU、有效率處理大量請求的軟體，例如 vLLM、SGLang、TensorRT-LLM。
+definition: >-
+  推論引擎是介於模型與硬體之間的軟體層，負責載入權重、管理 KV Cache 記憶體、排程與批次處理請求、套用量化與各種加速核心（kernel），並對外提供 API。常見的開源引擎包括 vLLM、SGLang 與 NVIDIA 的 TensorRT-LLM，在個人電腦上則常用 llama.cpp。引擎的好壞直接決定同一批 GPU 能服務多少使用者：vLLM 論文以 PagedAttention 管理 KV Cache，在相同延遲下吞吐量比既有系統高 2–4 倍；SGLang 論文以 RadixAttention 重用 KV Cache，在多種工作上最高可達 6.4 倍吞吐量。對雲端、新雲與模型公司來說，推論引擎和晶片的軟體生態（例如 CUDA）同樣是競爭力的一部分。
+example: >-
+  像餐廳廚房的出菜系統：同樣的廚師與爐具（GPU），排程得好的廚房，每小時能多出好幾倍的菜。
+related: [kv-cache, batching, quantization, cuda, mlops]
+learnMore: [inference-optimization, training-vs-inference-economics]
+segments: [devtools-data-mlops, cloud-neocloud]
+sources:
+  - title: "Efficient Memory Management for Large Language Model Serving with PagedAttention"
+    publisher: "arXiv（SOSP 2023）"
+    url: "https://arxiv.org/abs/2309.06180"
+    type: paper
+    lang: en
+    published: "2023-09-12"
+    accessed: "2026-10-06"
+  - title: "SGLang: Efficient Execution of Structured Language Model Programs"
+    publisher: "arXiv"
+    url: "https://arxiv.org/abs/2312.07104"
+    type: paper
+    lang: en
+    published: "2023-12-12"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-inference
+  checkedBy: "gloss-inference-check"
+  checkedOn: "2026-10-06"

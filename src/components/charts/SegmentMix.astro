@@ -1,0 +1,173 @@
+---
+/**
+ * <SegmentMix financials={entry.data} group="platform" company="台積電" />
+ * Revenue mix as horizontal stacked bars, one row per period (latest on top).
+ * Share-basis snapshots render as 100% stacks; value-basis as absolute stacks scaled to the
+ * largest period. Up to 7 named items keep their own colour (fixed order from the latest
+ * period); the tail folds into 「其他」.
+ */
+import './charts.css';
+import ChartFrame from './ChartFrame.astro';
+import { round, slot, tip, vars } from './chart-utils';
+import type { LegendItem, TableSpec } from './types';
+import { type FinancialsInput, type MixSnapshotOut, mixGroups, mixSnapshots, sourcesFor } from '../../lib/financial-metrics';
+import { formatAmount, formatMoney, formatNumber, formatPercent, moneyUnitLabel, pickAxisUnit, scaleMillions } from '../../lib/format';
+import { fiscalShortLabel, parsePeriod } from '../../lib/fiscal';
+
+interface Props {
+  financials: FinancialsInput;
+  /** mix group (business-segment | platform | product | node | region | customer); default: first */
+  group?: string | undefined;
+  /** force 100% ('share') or absolute ('value') stacks; default follows the data basis */
+  mode?: 'auto' | 'share' | 'value' | undefined;
+  /** periods shown (default 6) */
+  count?: number | undefined;
+  company?: string | undefined;
+  title?: string | undefined;
+  subtitle?: string | undefined;
+  notes?: string[] | undefined;
+  badge?: string | undefined;
+  bare?: boolean | undefined;
+  titleHidden?: boolean | undefined;
+  as?: 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | undefined;
+  class?: string | undefined;
+}
+
+const { financials: fin, mode = 'auto', count = 6, company = '', subtitle, notes = [], badge, bare, titleHidden, as, class: className } = Astro.props;
+const groups = mixGroups(fin);
+const group = Astro.props.group ?? groups[0]?.group;
+const snaps: MixSnapshotOut[] = group ? mixSnapshots(fin, group).slice(-count) : [];
+const groupZh = snaps[0]?.groupZh ?? groups.find((g) => g.group === group)?.groupZh ?? '';
+const title = Astro.props.title ?? `${company}營收組成${groupZh ? `（依${groupZh}）` : ''}`;
+const basis = snaps.at(-1)?.basis ?? 'share';
+const asShare = mode === 'share' || (mode === 'auto' && basis === 'share');
+const calendarFy = fin.fiscalYear.endMonth === 12 && fin.fiscalYear.naming === 'end-year';
+
+function periodName(period: string): string {
+  const p = parsePeriod(period);
+  if (!p) return period;
+  if (calendarFy && p.kind !== 'month') {
+    if (p.kind === 'quarter') return `${p.fy} Q${p.quarter}`;
+    if (p.kind === 'half') return `${p.fy} H${p.half}`;
+    return `${p.fy} 年`;
+  }
+  return fiscalShortLabel(period);
+}
+
+// series identity: order by the latest snapshot, keep 7, fold the tail into 其他
+const OTHER = /^(other|others|其他)$/i;
+const latest = snaps.at(-1);
+const order: string[] = [];
+if (latest) {
+  for (const it of [...latest.items].sort((a, b) => b.value - a.value)) if (!OTHER.test(it.name) && !OTHER.test(it.nameZh)) order.push(it.name);
+}
+for (const s of snaps) for (const it of s.items) if (!order.includes(it.name) && !OTHER.test(it.name) && !OTHER.test(it.nameZh)) order.push(it.name);
+const named = order.slice(0, 7);
+const zhName = new Map<string, string>();
+for (const s of snaps) for (const it of s.items) zhName.set(it.name, it.nameZh);
+const keys = [...named, ...(order.length > named.length || snaps.some((s) => s.items.some((i) => OTHER.test(i.name) || OTHER.test(i.nameZh))) ? ['__other'] : [])];
+const color = (k: string) => (k === '__other' ? 'var(--c-fg-subtle)' : slot(named.indexOf(k)));
+const label = (k: string) => (k === '__other' ? '其他' : zhName.get(k) ?? k);
+
+const rows = [...snaps].reverse().map((s) => {
+  const vals = new Map<string, number>();
+  for (const it of s.items) {
+    const k = named.includes(it.name) ? it.name : '__other';
+    vals.set(k, (vals.get(k) ?? 0) + it.value);
+  }
+  return { s, vals };
+});
+const currency = rows[0]?.s.currency ?? fin.reportingCurrency;
+const maxTotal = Math.max(1, ...rows.map((r) => r.s.total));
+const unit = pickAxisUnit(maxTotal);
+
+const legend: LegendItem[] = keys.map((k) => {
+  const v = rows[0]?.vals.get(k);
+  const share = v != null && rows[0] ? (v / rows[0].s.total) * 100 : null;
+  return { label: label(k), kind: 'bar', color: color(k), value: share != null ? formatPercent(share, share < 10 ? 1 : 0) : undefined };
+});
+
+const fmtVal = (s: MixSnapshotOut, v: number) => (s.basis === 'share' ? formatPercent(v, 1) : formatMoney(v, currency));
+const aria = latest
+  ? `${title}堆疊長條圖，共 ${rows.length} 期。最新一期 ${periodName(latest.period)}：` +
+    keys
+      .slice(0, 4)
+      .map((k) => {
+        const v = rows[0]!.vals.get(k);
+        return v == null ? '' : `${label(k)}佔 ${formatPercent((v / rows[0]!.s.total) * 100, 0)}`;
+      })
+      .filter(Boolean)
+      .join('、') +
+    '。'
+  : '';
+
+const table: TableSpec = {
+  columns: [{ key: 'item', label: groupZh || '項目' }, ...rows.map((r, i) => ({ key: `p${i}`, label: periodName(r.s.period), numeric: true }))],
+  rows: keys.map((k) => {
+    const row: Record<string, string> = { item: label(k) };
+    rows.forEach((r, i) => {
+      const v = r.vals.get(k);
+      row[`p${i}`] = v == null ? '' : r.s.basis === 'share' ? formatPercent(v, 1) : `${formatNumber(scaleMillions(v, unit), { digits: 1 })}（${formatPercent((v / r.s.total) * 100, 1)}）`;
+    });
+    return row;
+  }),
+};
+const sources = sourcesFor(fin, snaps.map((s) => s.src)).map((x) => ({ title: x.title, url: x.url, publisher: x.publisher }));
+const unitText = asShare ? '佔營收比重（%）' : moneyUnitLabel(unit, currency);
+const allNotes = [
+  asShare && basis === 'value' ? '依各期金額換算為佔比。' : null,
+  !asShare ? '長條長度依各期營收總額；資料表括號內為佔比。' : null,
+  ...notes,
+];
+---
+
+<ChartFrame
+  title={title}
+  titleHidden={titleHidden}
+  as={as}
+  subtitle={subtitle}
+  badge={badge}
+  asOf={fin.lastVerified}
+  unit={unitText}
+  legend={legend}
+  notes={allNotes}
+  sources={sources}
+  table={table}
+  empty={rows.length === 0}
+  bare={bare}
+  class={className}
+>
+  <div class:list={['ch-hb', asShare && 'ch-hb--2']} role="img" aria-label={aria}>
+    {
+      rows.map((r) => (
+        <div class="ch-hb__row">
+          <span class="ch-hb__label" aria-hidden="true">{periodName(r.s.period)}</span>
+          <span class="ch-hb__track" aria-hidden="true">
+            <span class="ch-stk" style={vars({ '--len': asShare ? '100%' : `${round((r.s.total / maxTotal) * 100, 2)}%` })}>
+              {keys.map((k) => {
+                const v = r.vals.get(k);
+                if (v == null || v <= 0) return null;
+                const share = (v / r.s.total) * 100;
+                return (
+                  <span
+                    class="ch-stk__seg"
+                    style={vars({ '--f': round(share, 3), '--k': color(k) })}
+                    data-tip={tip(`${periodName(r.s.period)}・${label(k)}`, [
+                      ['佔比', formatPercent(share, 1)],
+                      r.s.basis === 'value' ? ['金額', fmtVal(r.s, v)] : null,
+                    ])}
+                  />
+                );
+              })}
+            </span>
+          </span>
+          {!asShare && (
+            <span class="ch-hb__val" aria-hidden="true">
+              {formatAmount(r.s.total)}
+            </span>
+          )}
+        </div>
+      ))
+    }
+  </div>
+</ChartFrame>

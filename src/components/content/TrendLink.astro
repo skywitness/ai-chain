@@ -1,0 +1,32 @@
+---
+/**
+ * Link to a trend article.  <TrendLink id="co-packaged-optics">CPO 量產</TrendLink>
+ * Without children the trends-index title is used. Unknown slugs render as plain text.
+ */
+import { getTrendIndexEntry, safeEntry, TREND_CATEGORY_LABELS } from '../../lib/collections';
+import { trendHref } from '../../lib/paths';
+
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+const entry = await safeEntry('trends', id);
+const idx = getTrendIndexEntry(id);
+const titleText = entry ? (entry.data as { title: string }).title : idx?.title;
+const exists = !!(entry || idx);
+if (!exists && import.meta.env.DEV) console.warn(`[TrendLink] unknown trend slug "${id}" on ${Astro.url.pathname}`);
+const cat = idx ? TREND_CATEGORY_LABELS[idx.category] : undefined;
+const hasSlot = Astro.slots.has('default');
+---
+
+{
+  exists ? (
+    <a class="trend-link" href={trendHref(id)} title={`未來趨勢${cat ? `（${cat}）` : ''}：${titleText ?? id}`}>
+      {hasSlot ? <slot /> : titleText}
+    </a>
+  ) : hasSlot ? (
+    <slot />
+  ) : (
+    <span>{id}</span>
+  )
+}

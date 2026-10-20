@@ -1,0 +1,175 @@
+{
+  "id": "gpu-scale",
+  "title": "從晶片到超級機櫃",
+  "description": "這個場景說明一顆 GPU 如何一層層組成 AI 叢集，共有三個版本。「晶片到叢集」版以接近真實比例的機房模型逐級放大：GPU 封裝（以 Blackwell 世代為例，兩顆運算晶粒與 8 顆 HBM 記憶體堆疊以 CoWoS 先進封裝放在中介層上，上方有液冷冷板）；超級晶片主機板（1 顆 CPU 與 2 顆 GPU，以 NVLink-C2C 相連）；1U 運算托盤（2 片主機板，共 4 顆 GPU、2 顆 CPU，冷板與液冷管、前端網路卡、後端 NVLink 與電源接頭）；NVL72 機櫃（上方 10 個、下方 8 個運算托盤，中間 9 個 NVLink 交換托盤，上下有電源架，背面有 NVLink 線纜匣、匯流排與液冷分歧管，72 顆 GPU 組成一個 NVLink 網域；此時托盤變成半透明，露出背面的線纜匣與 NVLink 流量）；以及由多座機櫃、網路機櫃與 CDU 組成、以光纖連接的叢集。「機櫃拆解」版把機櫃依功能分組拉開，從背面看電源架經匯流排供電、冷卻液由 CDU 經分歧管送進冷板再流回，並標出整櫃組裝、散熱、電源、滑軌、線纜等供應鏈分工（示意）。「晶粒內部」版打開一顆 GPU 晶粒：大量重複的 SM 組成 GPC，每個 SM 有 4 個 Tensor Core；中央是 L2 快取；邊緣是 HBM 實體層、NVLink 介面與通往另一顆晶粒的晶粒互連；HBM 由多層 DRAM 晶粒疊在基底晶粒上，以矽穿孔（TSV）垂直相連。光點代表資料、電力與冷卻液的流向。圖中的機櫃數量、電源架數量、SM 數量與 HBM 層數皆為示意。",
+  "variants": ["chip", "die", "rack"],
+  "defaultVariant": "chip",
+  "steps": [
+    {
+      "id": "overview",
+      "title": "總覽",
+      "caption": "AI 算力是一層一層組起來的：GPU 封裝 → 超級晶片主機板 → 運算托盤 → NVL72 機櫃 → 叢集。導覽先由小到大走過這五層，再拆開機櫃，最後深入晶粒內部。"
+    },
+    {
+      "id": "package",
+      "title": "GPU 封裝",
+      "caption": "兩顆運算晶粒與 8 顆 HBM 記憶體堆疊，以 CoWoS 先進封裝並排在中介層上，再接到封裝載板（以 Blackwell 世代為例）。上方的液冷冷板此處先掀開。",
+      "variant": "chip"
+    },
+    {
+      "id": "superchip",
+      "title": "超級晶片",
+      "caption": "一片超級晶片主機板放 1 顆 CPU 與 2 顆 GPU（以 GB200 為例）。CPU 與 GPU 之間用 NVLink-C2C 高速互連，GPU 也能直接存取 CPU 旁的 LPDDR5X 記憶體。",
+      "variant": "chip"
+    },
+    {
+      "id": "tray",
+      "title": "運算托盤",
+      "caption": "1U 高的運算托盤裝 2 片超級晶片主機板，也就是 4 顆 GPU＋2 顆 CPU。冷板與液冷管直接貼在晶片上散熱；前端是對外網路卡，後端接 NVLink、電源與冷卻液。",
+      "variant": "chip"
+    },
+    {
+      "id": "rack",
+      "title": "NVL72 機櫃",
+      "caption": "18 個運算托盤（上 10、下 8）夾著 9 個 NVLink 交換托盤。托盤在此變成半透明，露出背面的線纜匣：它把 72 顆 GPU 全部互連，讓整櫃像一顆巨大的 GPU，這就是 scale-up。",
+      "variant": "chip"
+    },
+    {
+      "id": "pod",
+      "title": "AI 叢集",
+      "caption": "多座機櫃再經由網路機櫃裡的交換器與光纖連成叢集（scale-out），CDU 則替整排機櫃供應冷卻液。機櫃數量與排列為示意。",
+      "variant": "chip"
+    },
+    {
+      "id": "rack-explode",
+      "title": "機櫃拆解",
+      "caption": "把機櫃依功能拉開：上下是電源架，中間依序是運算托盤、NVLink 交換托盤、運算托盤；左邊的機櫃框架與滑軌讓托盤能抽換維修，背面另有線纜匣、匯流排與分歧管。",
+      "variant": "rack"
+    },
+    {
+      "id": "power-cooling",
+      "title": "供電與液冷",
+      "caption": "從背面看：電源架把交流電轉成直流，經垂直的匯流排送到每個托盤；冷卻液由 CDU 經分歧管送進各托盤的冷板，吸熱後再流回 CDU。",
+      "variant": "rack"
+    },
+    {
+      "id": "supply-chain",
+      "title": "誰做什麼",
+      "caption": "一座整櫃系統由許多廠商分工：ODM 負責整櫃組裝與測試（L11），另有散熱、電源、滑軌、線纜連接器與主機板等零組件廠。分工標示為示意。",
+      "variant": "rack"
+    },
+    {
+      "id": "die",
+      "title": "晶粒平面圖",
+      "caption": "打開一顆 GPU 運算晶粒：大部分面積是重複排列的 SM（串流多處理器），中央是 L2 快取，邊緣是連接 HBM 的實體層與 NVLink 等 I/O。SM 數量為示意。",
+      "variant": "die"
+    },
+    {
+      "id": "sm",
+      "title": "Tensor Core",
+      "caption": "放大一個 SM：它分成 4 個處理區塊，各有一個專做矩陣乘加的 Tensor Core，另有 CUDA 核心、暫存器檔案與共用的 L1／共享記憶體。AI 的大部分運算都在 Tensor Core 完成。",
+      "variant": "die"
+    },
+    {
+      "id": "hbm-io",
+      "title": "HBM 與 I/O",
+      "caption": "HBM 把多層 DRAM 晶粒疊在基底晶粒上，以矽穿孔（TSV）垂直傳輸資料，經實體層與 L2 送進 SM。晶粒之間有高速晶粒互連，NVLink 則把資料送往其他 GPU。",
+      "variant": "die"
+    }
+  ],
+  "hotspots": [
+    {
+      "id": "gpu-package",
+      "label": "GPU 封裝",
+      "detail": "以 Blackwell 世代為例（示意）：兩顆接近光罩尺寸上限的運算晶粒，與 8 顆 HBM 堆疊一起放在中介層上（CoWoS 先進封裝），再接到封裝載板。兩顆晶粒以高速介面相連，對軟體來說就像一顆 GPU。",
+      "glossary": "cowos"
+    },
+    {
+      "id": "superchip",
+      "label": "超級晶片主機板",
+      "detail": "GB200 超級晶片把 1 顆 Grace CPU 與 2 顆 Blackwell GPU 放在同一片主機板上，以 NVLink-C2C 互連；CPU 負責資料前處理與排程，GPU 負責大量平行運算。",
+      "glossary": "gpu"
+    },
+    {
+      "id": "compute-tray",
+      "label": "運算托盤",
+      "detail": "1U 高的運算托盤裝 2 片超級晶片主機板（4 顆 GPU、2 顆 CPU），以冷板直接液冷；前端有對外網路卡與固態硬碟，後端以盲插接頭連到 NVLink 線纜、匯流排與冷卻液分歧管。",
+      "glossary": "ai-server"
+    },
+    {
+      "id": "nvlink-switch",
+      "label": "NVLink 交換托盤",
+      "detail": "機櫃中段的 9 個交換托盤各有 2 顆 NVLink 交換晶片。每顆 GPU 都連到所有交換晶片，所以 72 顆 GPU 任兩顆之間都能以 NVLink 全速通訊。",
+      "glossary": "nvlink"
+    },
+    {
+      "id": "nvl72-rack",
+      "label": "NVL72 機櫃",
+      "detail": "一座機櫃裝 18 個運算托盤與 9 個交換托盤，共 72 顆 GPU、36 顆 CPU，組成一個 NVLink 網域（scale-up）。整櫃在工廠組裝、通水與測試後出貨，採液冷設計。",
+      "glossary": "nvl72"
+    },
+    {
+      "id": "ai-pod",
+      "label": "AI 叢集",
+      "detail": "多座機櫃以 InfiniBand 或乙太網路交換器與光纖連成叢集（scale-out），用來訓練或服務超大型模型。圖中的機櫃數量與排列為示意。",
+      "glossary": "scale-out"
+    },
+    {
+      "id": "sm-array",
+      "label": "SM 陣列",
+      "detail": "SM（Streaming Multiprocessor，串流多處理器）是 GPU 的基本運算單元。多個 SM 組成 GPC，在晶粒上大量重複排列，占去大部分面積。圖中的 SM 數量為示意。",
+      "glossary": "gpu"
+    },
+    {
+      "id": "tensor-core",
+      "label": "Tensor Core",
+      "detail": "專門做矩陣乘加的運算單元，每個 SM 有 4 個。神經網路的計算大多是矩陣乘法，Tensor Core 也支援 FP8、FP4 等低精度格式來提高吞吐量。",
+      "glossary": "tensor-core"
+    },
+    {
+      "id": "l2-cache",
+      "label": "L2 快取",
+      "detail": "晶粒中央的大塊 SRAM，由所有 SM 共用，暫存從 HBM 讀進來的資料，減少重複存取外部記憶體。",
+      "glossary": "sram"
+    },
+    {
+      "id": "hbm",
+      "label": "HBM 堆疊",
+      "detail": "高頻寬記憶體：多層 DRAM 晶粒疊在一顆基底晶粒上，以數千個矽穿孔（TSV）垂直連接，緊貼在 GPU 旁提供極寬的資料通道。圖中層數為示意（常見 8 層或 12 層）。",
+      "glossary": "hbm"
+    },
+    {
+      "id": "nvlink-io",
+      "label": "NVLink 與晶粒互連",
+      "detail": "晶粒邊緣的高速 SerDes 負責 NVLink，把資料送往交換晶片與其他 GPU；兩顆運算晶粒之間另有超寬的晶粒對晶粒介面，讓它們像一顆晶片般運作。",
+      "glossary": "serdes"
+    },
+    {
+      "id": "power",
+      "label": "電源架與匯流排",
+      "detail": "電源架把機房送來的交流電轉成直流，經機櫃背面的垂直匯流排（busbar）送到每個托盤。電源架數量為示意；新一代設計正朝更高電壓的直流供電（例如 800V DC）發展。",
+      "glossary": "psu"
+    },
+    {
+      "id": "liquid-cooling",
+      "label": "液冷：冷板、分歧管與 CDU",
+      "detail": "冷卻液從 CDU 經機櫃背面的分歧管與快接頭送進每個托盤，流過貼在 GPU、CPU 上的冷板吸熱，再流回 CDU，由 CDU 把熱交給機房的設施水。",
+      "glossary": "cdu"
+    },
+    {
+      "id": "cable-spine",
+      "label": "NVLink 線纜匣",
+      "detail": "垂直裝在機櫃背面的線纜匣內有數千條銅纜，把每個運算托盤接到所有交換托盤。機櫃內距離短，用銅纜可以省下光模組的功耗與成本。",
+      "glossary": "nvlink"
+    },
+    {
+      "id": "rack-integration",
+      "label": "整櫃組裝與零組件（示意）",
+      "detail": "ODM 在工廠完成整櫃組裝、配線、通水與測試（L10／L11）後整櫃出貨。周邊零組件包括散熱模組、電源、滑軌、線纜連接器與主機板等。台灣常見參與者（示意，非完整名單）：鴻海、廣達、緯創與緯穎（組裝），台達電、光寶科（電源），奇鋐、雙鴻（散熱），川湖（滑軌）。",
+      "glossary": "l10-l11"
+    }
+  ],
+  "data": "none",
+  "loop": "continuous",
+  "budgetKB": 40
+}

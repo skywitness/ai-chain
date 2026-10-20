@@ -1,0 +1,43 @@
+# Proposals from the embedding-space scene agent (scene-embedding-space), 2026-10-16.
+# Nothing here blocks the scene: each item has a local workaround in src/three/scenes/embedding-space/.
+
+- id: arcribbons-backface-culling
+  target: src/three/kit/ArcRibbons.ts
+  severity: bug (same finding as proposals/scene-attention.yaml and scene-agent-loop.yaml)
+  problem: >
+    Straight ArcRibbons (height 0) used for neighbour links and the vector-arithmetic arrows drew
+    nothing for every arc that runs left → right on screen (FrontSide culling of the strip), so the
+    parallelograms of step 3 showed arrow heads without shafts.
+  proposal: >
+    `side: DoubleSide` + `forceSinglePass: true` on the ArcRibbons material, as already proposed.
+  workaround: >
+    The scene no longer uses ArcRibbons; see `kit-links` below.
+
+- id: kit-links
+  target: src/three/kit/ (new module, e.g. Links.ts)
+  severity: enhancement
+  problem: >
+    Diagram scenes need many short straight connectors and arrows that read as solid "diorama rods"
+    (with a cone head, a draw-on progress and trimming so they stop at a sphere's surface). Camera-
+    facing ribbons have no head and look flat next to lit geometry.
+  proposal: >
+    `new Links(ctx, capacity)` → `{ group, set(i, a, b, { radius, color, head, progress, trimStart,
+    trimEnd }), hide(i), hideAll(), commit() }`: one InstancedMesh of unit cylinders plus one of
+    cones (2 draw calls for any number of links), unlit diagram colours, no per-frame allocation.
+  workaround: >
+    Implemented locally as `Links` in src/three/scenes/embedding-space/common.ts (≈ 1.3 KB min).
+
+- id: labels-set-noop
+  target: src/three/core/labels.ts
+  severity: enhancement (affects every scene that updates labels from update())
+  problem: >
+    `LabelHandle.set()` always calls `invalidate()`, and re-renders the element whenever the patch
+    contains `swatch` or `kind`, even when nothing changed. A scene that sets label positions or
+    visibility from `update()` therefore keeps a demand loop awake forever (the reduced-motion test
+    fails: frames keep increasing) and churns DOM every frame.
+  proposal: >
+    In `set()`, compare each patched key with the stored spec (positions / offsets by value) and
+    return early when nothing changed; only re-render when `text`, `swatch` or `kind` really changed.
+  workaround: >
+    `LabelSet` in src/three/scenes/embedding-space/common.ts caches each label's spec and forwards
+    only the keys that changed.

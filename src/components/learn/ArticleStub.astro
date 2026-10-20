@@ -1,0 +1,205 @@
+---
+/**
+ * Body for a learning article whose MDX file does not exist yet: a calm 「內容整理中」 card, the
+ * article's 3D scene when the curriculum lists a built one, and what to read meanwhile (finished
+ * articles nearby, back to the path). The page adds related segments, NextSteps and prev/next.
+ *
+ *   <ArticleStub item={item} items={items} />
+ */
+import Icon from '../ui/Icon.astro';
+import LearnScene from './LearnScene.astro';
+import { levelMeta } from '../../lib/collections';
+import { learnHref, sectionHref } from '../../lib/paths';
+import type { LearnItem } from './learn-data';
+
+interface Props {
+  item: LearnItem;
+  items: readonly LearnItem[];
+}
+const { item, items } = Astro.props;
+const lv = levelMeta(item.level);
+const nth = items.filter((i) => i.level === item.level).findIndex((i) => i.slug === item.slug) + 1;
+const ofLevel = items.filter((i) => i.level === item.level).length;
+// Finished articles to read meanwhile, most relevant first: the prerequisite chain (direct prerequisites,
+// then theirs, nearest first), then earlier articles of the same track, then the same level, then easier.
+const bySlug = new Map(items.map((i) => [i.slug, i]));
+const ancestors: LearnItem[] = [];
+{
+  const seen = new Set<string>([item.slug]);
+  let frontier = item.prereqs;
+  while (frontier.length) {
+    const nextFrontier: string[] = [];
+    for (const s of frontier) {
+      const it = bySlug.get(s);
+      if (!it || seen.has(s)) continue;
+      seen.add(s);
+      ancestors.push(it);
+      nextFrontier.push(...it.prereqs);
+    }
+    frontier = nextFrontier;
+  }
+}
+const ready = items.filter((i) => i.entry && i.slug !== item.slug);
+const pick: LearnItem[] = [];
+const add = (xs: LearnItem[]) => {
+  for (const x of xs) if (pick.length < 4 && x.entry && x.slug !== item.slug && !pick.includes(x)) pick.push(x);
+};
+add(ancestors);
+add(ready.filter((i) => i.track === item.track && i.order < item.order).reverse());
+add(ready.filter((i) => i.level === item.level));
+add(ready.filter((i) => i.level < item.level).reverse());
+---
+
+<div class="stub" data-pagefind-ignore>
+  <div class="stub__card">
+    <div class="stub__head">
+      <span class="stub__icon" aria-hidden="true"><Icon name="book" size="1.25rem" /></span>
+      <h2 class="stub__title">內容整理中</h2>
+    </div>
+    <p class="stub__text">
+      這是{lv.label}階段的第 {nth}／{ofLevel} 篇，正在撰寫與查證。完成後，這裡會有一句話解釋、生活化比喻、原理說明、重點整理與資料來源。
+    </p>
+  </div>
+
+  {
+    item.scene && (
+      <div class="stub__scene">
+        <LearnScene id={item.scene.id} variant={item.scene.variant} caption={`本篇的互動場景：${item.shortTitle}`} fallback="none" />
+      </div>
+    )
+  }
+
+  <div class="stub__meanwhile">
+    {
+      pick.length > 0 && (
+        <>
+          <h2 class="stub__sub">這篇完成前，可以先讀這些已完成的文章</h2>
+          <ul class="stub__links" role="list">
+            {pick.map((p) => (
+              <li>
+                <a href={learnHref(p.slug)} style={`--c: ${levelMeta(p.level).color}`}>
+                  <span class="stub__lv">{levelMeta(p.level).label}</span>
+                  <span>{p.title}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )
+    }
+    <a class="stub__back" href={sectionHref('learn')}>
+      <Icon name="arrow-left" />
+      回到學習路徑總覽，挑一篇開始讀
+    </a>
+  </div>
+</div>
+
+<style>
+  @layer components {
+    .stub {
+      display: grid;
+      gap: var(--space-6);
+    }
+    .stub__card {
+      display: grid;
+      gap: var(--space-3);
+      padding: var(--space-5);
+      border: 1px dashed var(--c-border-strong);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      max-width: calc(var(--measure) + 2.5rem);
+    }
+    .stub__head {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .stub__icon {
+      flex: none;
+      display: grid;
+      place-items: center;
+      inline-size: 2.5rem;
+      block-size: 2.5rem;
+      border-radius: 50%;
+      background: var(--c-accent-soft);
+      color: var(--c-accent);
+    }
+    .stub .stub__title {
+      margin: 0;
+      padding: 0;
+      font-size: var(--fs-xl);
+      line-height: 1.35;
+    }
+    .stub .stub__title::before {
+      display: none;
+    }
+    .stub__text {
+      margin: 0;
+      color: var(--c-fg-muted);
+      font-size: var(--fs-m);
+      line-height: 1.8;
+    }
+    .stub__meanwhile {
+      display: grid;
+      gap: var(--space-3);
+      margin: 0;
+    }
+    .stub .stub__sub {
+      margin: 0;
+      padding: 0;
+      font-size: var(--fs-l);
+    }
+    .stub .stub__sub::before {
+      display: none;
+    }
+    .stub__links {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+      gap: var(--space-2);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      max-width: none;
+    }
+    .stub__links li {
+      margin: 0;
+    }
+    .stub__links a {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-2);
+      height: 100%;
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--c-border);
+      border-inline-start: 3px solid var(--c);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      text-decoration: none;
+      font-size: var(--fs-s);
+      line-height: 1.55;
+    }
+    .stub__links a:hover {
+      border-color: var(--c-border-strong);
+      border-inline-start-color: var(--c);
+      box-shadow: var(--shadow-1);
+    }
+    .stub__lv {
+      flex: none;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      color: var(--c);
+    }
+    .stub__back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+      min-height: var(--tap);
+      font-weight: var(--fw-semibold);
+      width: fit-content;
+    }
+    .stub__scene :global(.scene) {
+      margin: 0;
+    }
+  }
+</style>

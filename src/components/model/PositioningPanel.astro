@@ -1,0 +1,165 @@
+---
+/**
+ * The family's coordinates in the model galaxy (capability, cost index, openness) as three meters,
+ * with the method (computed / editorial), the date and the editors' note in a disclosure.
+ *
+ *   <PositioningPanel positioning={data.positioning} kind={data.kind} />
+ *   <PositioningPanel … layout="row" galaxyHref="/models/#galaxy" />   three meters side by side (main column)
+ */
+import { formatNumber } from '../../lib/format';
+import { OPENNESS_LABELS, opennessClass, type ModelData } from './model-data';
+
+interface Props {
+  positioning: ModelData['positioning'];
+  kind?: string | undefined;
+  /** stack: sidebar panel · row: three meters across (from 40rem) */
+  layout?: 'stack' | 'row' | undefined;
+  /** link to the galaxy scene, shown next to the method line */
+  galaxyHref?: string | undefined;
+}
+const { positioning: p, kind = 'llm', layout = 'stack', galaxyHref } = Astro.props;
+const meters = [
+  { label: '綜合能力', value: p.capability, max: 100, text: formatNumber(p.capability), hint: '0–100，越高越強' },
+  { label: '成本指數', value: p.costIndex, max: 100, text: formatNumber(p.costIndex), hint: '0–100，越高越貴' },
+  { label: '開放程度', value: p.openness * 100, max: 100, text: OPENNESS_LABELS[opennessClass(p.openness)], hint: `${formatNumber(p.openness, { digits: 1 })}（0 封閉、1 完全開源）` },
+];
+---
+
+<section class:list={['pos', `pos--${layout}`]} aria-labelledby="pos-title">
+  <h2 class="pos__title" id="pos-title">在模型星系中的位置</h2>
+  <ul class="pos__list" role="list">
+    {
+      meters.map((m) => (
+        <li class="pos__row">
+          <span class="pos__label">{m.label}</span>
+          <span class="pos__val">{m.text}</span>
+          <span class="pos__track" aria-hidden="true">
+            <span class="pos__fill" style={`--w: ${Math.max(2, Math.min(100, (m.value / m.max) * 100))}%`} />
+          </span>
+          <span class="pos__hint">{m.hint}</span>
+        </li>
+      ))
+    }
+  </ul>
+  <div class="pos__foot">
+    <p class="pos__meta">
+      <span>{p.method === 'computed' ? '依公開資料計算' : '編輯判斷'}・{p.asOf}</span>
+      {kind !== 'llm' && <span class="pos__warn">非語言模型的能力分數不宜與語言模型直接比較</span>}
+    </p>
+    {galaxyHref && <a class="pos__galaxy" href={galaxyHref}>在模型星系中查看</a>}
+  </div>
+  <details class="pos__note">
+    <summary>計算方式</summary>
+    <p>{p.note}</p>
+  </details>
+</section>
+
+<style>
+  @layer components {
+    .pos {
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      padding: var(--space-4) var(--space-5);
+    }
+    .pos__title {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--c-fg-subtle);
+      margin-block-end: var(--space-3);
+    }
+    .pos__list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: var(--space-3);
+    }
+    .pos__row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.2rem var(--space-2);
+      align-items: baseline;
+    }
+    .pos__label {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+    .pos__val {
+      font-weight: var(--fw-semibold);
+      font-variant-numeric: tabular-nums;
+      font-size: var(--fs-s);
+    }
+    .pos__track {
+      grid-column: 1 / -1;
+      block-size: 0.45rem;
+      border-radius: var(--radius-pill);
+      background: var(--c-bg-sunken);
+      overflow: hidden;
+    }
+    .pos__fill {
+      display: block;
+      inline-size: var(--w);
+      block-size: 100%;
+      border-radius: inherit;
+      background: var(--profile-accent, var(--c-accent));
+    }
+    .pos__hint {
+      grid-column: 1 / -1;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .pos__meta {
+      margin-block-start: var(--space-3);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      display: grid;
+      gap: var(--space-1);
+    }
+    .pos__warn {
+      color: color-mix(in srgb, var(--c-warn) 60%, var(--c-fg));
+    }
+    .pos__foot {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-1) var(--space-4);
+    }
+    .pos__galaxy {
+      display: inline-flex;
+      align-items: center;
+      min-block-size: 2.75rem;
+      font-size: var(--fs-xs);
+      margin-block-start: var(--space-1);
+    }
+    @media (min-width: 40rem) {
+      .pos--row .pos__list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-3) var(--space-6);
+      }
+    }
+    .pos--row {
+      padding: var(--space-4) var(--space-5) var(--space-2);
+    }
+    .pos--row .pos__note {
+      margin-block-start: 0;
+    }
+    .pos__note {
+      margin-block-start: var(--space-2);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-muted);
+    }
+    .pos__note > summary {
+      cursor: pointer;
+      color: var(--c-link);
+      min-block-size: 2.75rem;
+      display: flex;
+      align-items: center;
+    }
+    .pos__note p {
+      line-height: 1.7;
+    }
+  }
+</style>

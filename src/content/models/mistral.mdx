@@ -1,0 +1,710 @@
+---
+title: "Mistral 系列"
+family: "Mistral"
+kind: "llm"
+lab: "mistral-ai"
+labName: "Mistral AI"
+origin: "EU"
+summary: "法國 Mistral AI 的大型語言模型系列，以開放權重與歐洲主權 AI 為主軸。2026-10-06 公開預覽的旗艦 Mistral Large 4 總參數約 1.05 兆、每個 token 啟用 520 億，AA 綜合智慧指數 38 分，官方預計 10 月底釋出權重；中階 Medium 3.5（1,280 億參數稠密模型）與小型 Small 4（Apache 2.0）則把指令、推理與程式能力合併為單一模型。強項是授權寬鬆、可自建部署與價格，與美國頂尖閉源模型仍有明顯差距。"
+strengths:
+  - "Large 4 預覽版 AA 綜合智慧指數 v4.3.2 為 38.4，是 Mistral 歷來最高，也高於 DeepSeek V4 Pro 0813（36.0）（2026-10-06）"
+  - "授權寬鬆：Small 4、Large 3、Ministral 3 採 Apache 2.0，可商用、微調與離線部署"
+  - "價格低：Small 4 每百萬 tokens 輸入 0.15、輸出 0.6 美元；Large 4 預覽版為 1.36／4.18 美元，上市期間官方模型頁再打 5 折"
+  - "主權與多語言：Large 4 在 Mistral 位於歐洲的自有資料中心訓練與服務，訓練資料涵蓋 160 種以上語言"
+  - "Medium 3.5 為 1,280 億參數稠密模型，官方稱最少 4 張 GPU 即可自建，SWE-bench Verified 77.6%（官方自報）"
+weaknesses:
+  - "與美國前沿模型差距明顯：AA 智慧指數 Large 4 預覽版 38.4，Claude Opus 5.5 為 57.6；在開放權重陣營也落後 MiMo-V2.6-Pro（46.3）、GLM-5.3（44.8）、Kimi K3（43.6）等多個中國模型"
+  - "旗艦 Large 4 仍是預覽版，權重尚未釋出、授權條款未公布；AA 量測它跑完智慧指數用了約 2 億個輸出 tokens，屬於非常冗長"
+  - "中小型號的長程 Agent 能力弱：AA 量測 Medium 3.5、Small 4、Large 3 的 Terminal-Bench 4.0 皆為 0%"
+  - "版本汰換快：Medium 3、Medium 3.1、Magistral、Devstral 2 等在 2026 年 7–8 月相繼自 API 下架，整合者需頻繁遷移"
+bestFor:
+  - "重視資料主權、需要在歐盟境內或自有機房部署的企業與公部門"
+  - "成本敏感的大量文字處理、客服與文件理解（Small 4、Ministral 3）"
+  - "程式代理與長流程工作（Medium 3.5 搭配 Mistral Vibe）"
+  - "需要自訂拒答政策的資安研究與防禦工作（官方主打 Large 4 的資安能力）"
+positioning:
+  capability: 38
+  costIndex: 49
+  openness: 0.5
+  method: "computed"
+  asOf: "2026-10-06"
+  note: "以旗艦 Mistral Large 4 預覽版計算。capability 取 AA 綜合智慧指數 v4.3.2 的 38.4（2026-10-06）。costIndex 以官方定價輸入 1.36、輸出 4.18 美元依 3:1 混合為 2.065 美元／百萬 tokens，套用 0.05 美元 → 0、100 美元 → 100 的對數換算約 49（上市 5 折期間約 40）。openness 為編輯判斷：Large 4 預覽期權重未釋出、授權未公布，嚴格計算應為 0；但官方已承諾月底開放權重，系列主力 Small 4、Large 3 為 Apache 2.0（0.8），Medium 3.5 為修改版 MIT，因此取 0.5。"
+versions:
+  - id: "mistral-large-4-preview"
+    name: "Mistral Large 4（預覽版）"
+    released: "2026-10-06"
+    status: "preview"
+    tier: "flagship"
+    weights: "closed"
+    license: "未公布（官方預計 2026 年 10 月底釋出開放權重）"
+    architecture: "moe"
+    params:
+      totalB: 1050
+      activeB: 52
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 1000000
+    reasoning: "hybrid"
+    availability:
+      - "api"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1.36
+        outputPerMTok: 4.18
+        cachedInputPerMTok: 0.14
+        currency: "USD"
+        tierNote: "官方標準價；上市優惠期間模型頁顯示 5 折（輸入 0.68、輸出 2.09、快取 0.07 美元）；Batch 另享半價"
+        source:
+          title: "Mistral Large 4 | Mistral Docs"
+          publisher: "Mistral AI"
+          url: "https://docs.mistral.ai/models/mistral-large-4-0"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 38.4
+        setting: "v4.3.2，推理模式，預覽版"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Mistral Large 4 Preview - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/mistral-large-4"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 26.8
+        setting: "Terminal-Bench 4.0，AA 實測"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Mistral Large 4 Preview - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/mistral-large-4"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 28.3
+        setting: "Terminal-Bench 4.0，官方自報"
+        reportedBy: "lab"
+        date: "2026-10-06"
+        source:
+          title: "Introducing Mistral Large 4"
+          publisher: "Mistral AI"
+          url: "https://mistral.ai/news/mistral-large-4/"
+          type: "company-site"
+          lang: "en"
+          published: "2026-10-06"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 35.0
+        setting: "AA 實測"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Mistral Large 4 Preview - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/mistral-large-4"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "以 3,800 顆 NVIDIA Grace Blackwell GPU 在 Mistral 歐洲自有資料中心從頭訓練；內含 16 億參數視覺編碼器。官方模型頁列總參數 1.05 兆、啟用 520 億（發表文寫約 1 兆、啟用 520 億），AA 頁面則列啟用 490 億，此處以官方為準。官方模型頁標示上下文 1M，AA 列為 524K。"
+  - id: "mistral-medium-3-5"
+    name: "Mistral Medium 3.5"
+    released: "2026-04-28"
+    status: "ga"
+    tier: "mid"
+    weights: "open-weights"
+    license: "Modified MIT"
+    architecture: "dense"
+    params:
+      totalB: 128
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 256000
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "chat-app"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1.5
+        outputPerMTok: 7.5
+        currency: "USD"
+        source:
+          title: "Mistral Medium 3.5 | Mistral Docs"
+          publisher: "Mistral AI"
+          url: "https://docs.mistral.ai/models/mistral-medium-3-5-26-04"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 77.6
+        setting: "官方自報"
+        reportedBy: "lab"
+        date: "2026-05-22"
+        source:
+          title: "Remote agents in Vibe. Powered by Mistral Medium 3.5."
+          publisher: "Mistral AI"
+          url: "https://mistral.ai/news/vibe-remote-agents-mistral-medium-3-5/"
+          type: "company-site"
+          lang: "en"
+          published: "2026-05-22"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 14.2
+        setting: "v4.3.2，推理模式"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Mistral Medium 3.5 - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/mistral-medium-3-5"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 94.2
+        setting: "Telecom 情境，AA 實測"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Mistral Medium 3.5 - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/mistral-medium-3-5"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1427
+        setting: "Overall，±6，第 115 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+    notes: "官方模型頁標示 2026-04-28 發布；2026-05-22 起成為 Le Chat 與 Mistral Vibe 的預設模型，並在 API 上取代 Medium 3.1、Magistral Medium 與 Devstral 2。官方稱最少 4 張 GPU 可自建。"
+  - id: "mistral-small-4"
+    name: "Mistral Small 4"
+    released: "2026-03-16"
+    status: "ga"
+    tier: "small"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    params:
+      totalB: 119
+      activeB: 6.5
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 256000
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.15
+        outputPerMTok: 0.6
+        currency: "USD"
+        source:
+          title: "Mistral Small 4 | Mistral Docs"
+          publisher: "Mistral AI"
+          url: "https://docs.mistral.ai/models/mistral-small-4-0-26-03"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 11.3
+        setting: "v4.3.2，推理模式（非推理模式為 9.0）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Mistral Small 4 (Reasoning) - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/mistral-small-4"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 41.2
+        setting: "Telecom 情境，AA 實測"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Mistral Small 4 (Reasoning) - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/mistral-small-4"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "128 個專家、每個 token 啟用 4 個（官方部落格稱啟用 60 億、含嵌入與輸出層約 80 億，模型頁列 65 億）。合併 Magistral（推理）、Pixtral（視覺）與 Devstral（程式），以 reasoning_effort 參數切換快答或深度推理。"
+  - id: "mistral-large-3"
+    name: "Mistral Large 3"
+    released: "2025-12-02"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    params:
+      totalB: 675
+      activeB: 41
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 256000
+    reasoning: "none"
+    availability:
+      - "api"
+      - "self-host"
+      - "cloud-marketplace"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.5
+        outputPerMTok: 1.5
+        currency: "USD"
+        source:
+          title: "Mistral Large 3 | Mistral Docs"
+          publisher: "Mistral AI"
+          url: "https://docs.mistral.ai/models/mistral-large-3-25-12"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 9.3
+        setting: "v4.3.2，非推理模型"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Mistral Large 3 - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/mistral-large-3"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1414
+        setting: "Overall，±3，第 141 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+    notes: "以 3,000 顆 NVIDIA H200 從頭訓練，是 Mixtral 之後 Mistral 第一個 MoE 模型；同時釋出 base 與 instruct 權重，另有 NVFP4 版本可在單一 8×H100 節點執行。發布時在 LMArena 開放權重非推理類排第 2。"
+  - id: "ministral-3-14b"
+    name: "Ministral 3 14B"
+    released: "2025-12-02"
+    status: "ga"
+    tier: "small"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "dense"
+    params:
+      totalB: 14
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 256000
+    reasoning: "none"
+    availability:
+      - "api"
+      - "self-host"
+      - "on-device"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.2
+        outputPerMTok: 0.2
+        currency: "USD"
+        source:
+          title: "Ministral 3 14B | Mistral Docs"
+          publisher: "Mistral AI"
+          url: "https://docs.mistral.ai/models/ministral-3-14b-25-12"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aime-2025"
+        score: 85
+        setting: "Reasoning 變體，官方自報"
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Introducing Mistral 3"
+          publisher: "Mistral AI"
+          url: "https://mistral.ai/news/mistral-3/"
+          type: "company-site"
+          lang: "en"
+          published: "2025-12-02"
+          accessed: "2026-10-06"
+    notes: "Ministral 3 另有 3B 與 8B；每個尺寸都有 base、instruct、reasoning 三種權重並支援影像輸入，主打邊緣與本機部署。"
+  - id: "devstral-2"
+    name: "Devstral 2"
+    released: "2025-12-09"
+    status: "retired"
+    tier: "specialized"
+    weights: "open-weights"
+    license: "Modified MIT"
+    architecture: "dense"
+    params:
+      totalB: 123
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 256000
+    reasoning: "none"
+    availability:
+      - "self-host"
+    pricing:
+      - asOf: "2025-12-09"
+        inputPerMTok: 0.4
+        outputPerMTok: 2
+        currency: "USD"
+        tierNote: "發布時公告的免費期結束後 API 價格；API 已於 2026-07-31 下架"
+        source:
+          title: "Introducing: Devstral 2 and Mistral Vibe CLI."
+          publisher: "Mistral AI"
+          url: "https://mistral.ai/news/devstral-2-vibe-cli/"
+          type: "company-site"
+          lang: "en"
+          published: "2025-12-09"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 72.2
+        setting: "官方自報"
+        reportedBy: "lab"
+        date: "2025-12-09"
+        source:
+          title: "Introducing: Devstral 2 and Mistral Vibe CLI."
+          publisher: "Mistral AI"
+          url: "https://mistral.ai/news/devstral-2-vibe-cli/"
+          type: "company-site"
+          lang: "en"
+          published: "2025-12-09"
+          accessed: "2026-10-06"
+    notes: "程式代理專用模型，與命令列工具 Mistral Vibe CLI 同時推出；小型版 Devstral Small 2（240 億參數、Apache 2.0）官方自報 SWE-bench Verified 68.0%。API 於 2026-05-22 棄用、07-31 下架，由 Medium 3.5 取代。"
+  - id: "magistral-medium-1-2"
+    name: "Magistral Medium 1.2"
+    released: "2025-09-18"
+    status: "retired"
+    tier: "reasoning"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 128000
+    reasoning: "always"
+    availability:
+      - "api"
+      - "chat-app"
+    notes: "Magistral 是 Mistral 第一個推理模型系列，1.0 版於 2025-06-10 推出（另有 240 億參數的開放權重版 Magistral Small）；1.2 版加入影像輸入。2026-05-22 棄用、07-31 下架，由 Medium 3.5 取代。"
+  - id: "mistral-medium-3-1"
+    name: "Mistral Medium 3.1"
+    released: "2025-08-12"
+    status: "retired"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 128000
+    reasoning: "none"
+    availability:
+      - "api"
+      - "chat-app"
+    benchmarks:
+      - benchmark: "lmarena-text"
+        score: 1408
+        setting: "Overall，±3，第 151 名（mistral-medium-2508）"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+    notes: "2026-05-22 棄用、08-31 下架，由 Medium 3.5 取代。"
+  - id: "mistral-medium-3"
+    name: "Mistral Medium 3"
+    released: "2025-05-07"
+    status: "retired"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 128000
+    reasoning: "none"
+    availability:
+      - "api"
+      - "cloud-marketplace"
+    pricing:
+      - asOf: "2025-05-07"
+        inputPerMTok: 0.4
+        outputPerMTok: 2
+        currency: "USD"
+        tierNote: "發布時價格；API 已於 2026-08-31 下架"
+        source:
+          title: "Medium is the new large."
+          publisher: "Mistral AI"
+          url: "https://mistral.ai/news/mistral-medium-3/"
+          type: "company-site"
+          lang: "en"
+          published: "2025-05-07"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "lmarena-text"
+        score: 1388
+        setting: "Overall，±5，第 177 名（mistral-medium-2505）"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+    notes: "主打以約 8 分之 1 成本達到前沿等級效能，可部署在 4 張 GPU 以上的自有環境；2026-05-22 棄用、08-31 下架。"
+flagshipVersion: "mistral-large-4-preview"
+relatedLearn:
+  - "open-vs-closed-models"
+  - "mixture-of-experts"
+  - "reasoning-models"
+  - "model-evaluation"
+glossary:
+  - "open-weights"
+  - "moe"
+  - "active-parameters"
+  - "dense-model"
+  - "reasoning-model"
+  - "context-window"
+  - "sovereign-ai"
+  - "elo-rating"
+  - "agent"
+sources:
+  - key: "ml4"
+    title: "Introducing Mistral Large 4"
+    publisher: "Mistral AI"
+    url: "https://mistral.ai/news/mistral-large-4/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-10-06"
+    accessed: "2026-10-06"
+  - key: "ml4-card"
+    title: "Mistral Large 4 | Mistral Docs"
+    publisher: "Mistral AI"
+    url: "https://docs.mistral.ai/models/mistral-large-4-0"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "mm35"
+    title: "Remote agents in Vibe. Powered by Mistral Medium 3.5."
+    publisher: "Mistral AI"
+    url: "https://mistral.ai/news/vibe-remote-agents-mistral-medium-3-5/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-05-22"
+    accessed: "2026-10-06"
+  - key: "ms4"
+    title: "Introducing Mistral Small 4"
+    publisher: "Mistral AI"
+    url: "https://mistral.ai/news/mistral-small-4/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-03-16"
+    accessed: "2026-10-06"
+  - key: "m3"
+    title: "Introducing Mistral 3"
+    publisher: "Mistral AI"
+    url: "https://mistral.ai/news/mistral-3/"
+    type: "company-site"
+    lang: "en"
+    published: "2025-12-02"
+    accessed: "2026-10-06"
+  - key: "devstral2"
+    title: "Introducing: Devstral 2 and Mistral Vibe CLI."
+    publisher: "Mistral AI"
+    url: "https://mistral.ai/news/devstral-2-vibe-cli/"
+    type: "company-site"
+    lang: "en"
+    published: "2025-12-09"
+    accessed: "2026-10-06"
+  - key: "magistral"
+    title: "Magistral"
+    publisher: "Mistral AI"
+    url: "https://mistral.ai/news/magistral/"
+    type: "company-site"
+    lang: "en"
+    published: "2025-06-10"
+    accessed: "2026-10-06"
+  - key: "mistral-models"
+    title: "Models Overview（含 Deprecated & retired models 列表）| Mistral Docs"
+    publisher: "Mistral AI"
+    url: "https://docs.mistral.ai/models"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "mistral-pricing"
+    title: "Pricing | Mistral"
+    publisher: "Mistral AI"
+    url: "https://mistral.ai/pricing/"
+    type: "company-site"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-ml4"
+    title: "Mistral Large 4 Preview - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/mistral-large-4"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-mistral"
+    title: "Mistral: Models Intelligence, Performance & Price"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/providers/mistral"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-lb"
+    title: "LLM Leaderboard - Comparison of AI Models"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "arena-text"
+    title: "Text Arena Leaderboard (Overall)"
+    publisher: "LMArena"
+    url: "https://arena.ai/leaderboard/text"
+    type: "leaderboard"
+    lang: "en"
+    published: "2026-10-02"
+    accessed: "2026-10-06"
+    note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-08"
+  checkedBy: "models-08-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+Mistral 是法國 <CompanyChip id="mistral-ai">Mistral AI</CompanyChip> 的大型語言模型系列。這家公司從 Mistral 7B 起家，一路以<Term id="open-weights">開放權重</Term>模型累積開發者社群，近兩年則把重點放在「歐洲主權 AI」：讓政府與企業能在自己掌控的環境裡部署模型，不必依賴美國雲端業者（參見<Term id="sovereign-ai">主權 AI</Term>）。
+
+截至 2026-10-06，產品線可分成三層：旗艦 **Mistral Large 4**（當天才以公開預覽推出）、中階 **Medium 3.5**，以及小型 **Small 4** 與邊緣用的 **Ministral 3**<Cite k="mistral-models" />。2026 年的共同方向是「合併」：過去分開發行的推理（Magistral）、視覺（Pixtral）與程式（Devstral）模型，陸續被併進同一組權重，用參數切換要不要深度思考<Cite k="ms4" />。
+
+## 特性分析
+
+**旗艦走向超大型 MoE。** Large 4 採<Term id="moe">混合專家（MoE）</Term>架構，總參數約 1.05 兆，每個 token 只啟用約 520 億個<Term id="active-parameters">啟用參數</Term>，另含 16 億參數的視覺編碼器<Cite k="ml4-card" />。它在 Mistral 位於歐洲的自有資料中心、用 3,800 顆 NVIDIA Grace Blackwell GPU 從頭訓練，訓練資料涵蓋 160 種以上語言。官方表示權重將在 10 月底釋出，目前先與資安業者、合作夥伴與政府單位做實戰紅隊測試<Cite k="ml4" />。
+
+**中階改走稠密模型。** Medium 3.5 是 1,280 億參數的<Term id="dense-model">稠密模型</Term>，<Term id="context-window">上下文長度</Term> 256K，以修改版 MIT 授權開放權重，官方稱最少 4 張 GPU 就能自建；它也是 Le Chat 與程式代理工具 Mistral Vibe 的預設模型，用來跑雲端非同步的程式<Term id="agent">Agent</Term><Cite k="mm35" />。
+
+**小模型主打效率。** Small 4 是 1,190 億總參數、每個 token 啟用約 65 億的 MoE，Apache 2.0 授權，可用 reasoning_effort 參數在快答與深度推理間切換。官方稱與 Small 3 相比，延遲最佳化設定下的端到端完成時間縮短 40%，吞吐最佳化設定下每秒可處理的請求數為 3 倍<Cite k="ms4" />。
+
+**價格。** 官方 API 每百萬 tokens：Small 4 為 0.15／0.6 美元、Large 3 為 0.5／1.5 美元、Medium 3.5 為 1.5／7.5 美元、Large 4 預覽版為 1.36／4.18 美元（上市期間打 5 折）。官方定價頁說明 Batch 半價，快取輸入最多可省 90%<Cite k="mistral-pricing" />。
+
+## 適合與不適合的用途
+
+適合：
+
+- **資料主權優先的部署**：歐洲企業與公部門、需要離線或私有雲的單位，可選擇開放權重自建。
+- **大量、成本敏感的工作**：客服、摘要、文件理解，用 Small 4 或 Ministral 3 就有不錯的性價比。
+- **程式代理**：Medium 3.5 官方自報 SWE-bench Verified 77.6%，並與 Vibe 的雲端代理整合<Cite k="mm35" />。
+- **多語言與資安研究**：Large 4 主打多語言與資安，官方稱封閉模型常因安全過濾而拒絕漏洞驗證類工作，而開放權重可自訂政策<Cite k="ml4" />。
+
+不適合：
+
+- **需要頂尖推理或長程 Agent 的任務**：AA 智慧指數上，Large 4 預覽版 38.4，仍落後 Claude Opus 5.5 的 57.6<Cite k="aa-lb" />。
+- **需要穩定版本長期不動的系統**：多個 2025 年版本已在 2026 年夏天下架。
+- **馬上要用 Large 4 權重的人**：截至 2026-10-06 權重與授權條款都還沒公布。
+
+## 版本演進
+
+| 發布日 | 版本 | 重點 | 狀態（2026-10-06） |
+|---|---|---|---|
+| 2025-05-07 | Medium 3 | 主打約 8 分之 1 的成本 | 已下架（2026-08-31） |
+| 2025-06-10 | Magistral 1.0 | 首個推理模型，Small 版開放權重 | 已下架 |
+| 2025-08-12 | Medium 3.1 | 改善語氣與效能 | 已下架（2026-08-31） |
+| 2025-09-18 | Magistral 1.2 | 推理模型加入影像輸入 | 已下架（2026-07-31） |
+| 2025-12-02 | Large 3、Ministral 3 | 675B MoE，全系列 Apache 2.0 | 提供中 |
+| 2025-12-09 | Devstral 2 | 123B 程式代理模型 | API 已下架（2026-07-31） |
+| 2026-03-16 | Small 4 | 推理、視覺、程式合一 | 提供中 |
+| 2026-04-28 | Medium 3.5 | 128B 稠密、可調推理強度 | 提供中 |
+| 2026-10-06 | Large 4 預覽版 | 約 1 兆參數 MoE | 預覽中 |
+
+棄用與下架日期取自官方文件的模型列表<Cite k="mistral-models" />。Mistral 的節奏是每隔幾個月就合併一次產品線：2026 年 5 月 22 日一口氣把 Medium 3、3.1、Magistral Medium 與 Devstral 2 標為棄用，統一由 Medium 3.5 接手。
+
+## 評測解讀
+
+<Callout type="info" title="先看日期與版本">以下數字讀取於 2026-10-06。Artificial Analysis（AA）綜合智慧指數 v4.3.2 涵蓋 Terminal-Bench 4.0、HLE、GDPval-AA 等 10 項偏重 Agent 與專業工作的評測，數值和舊版指數不能直接比較<Cite k="aa-ml4" />。</Callout>
+
+| 模型 | AA 智慧指數 | Terminal-Bench 4.0（AA） | LMArena 文字榜 |
+|---|---|---|---|
+| Large 4 預覽版 | 38.4 | 26.8% | 尚未上榜 |
+| Medium 3.5 | 14.2 | 0% | 1427（第 115 名） |
+| Small 4（推理） | 11.3 | 0% | 尚未上榜 |
+| Large 3 | 9.3 | 0% | 1414（第 141 名） |
+
+AA 數值取自各模型頁與 Mistral 彙整頁<Cite k="aa-mistral" />，LMArena 取自 2026-10-02 更新的文字榜<Cite k="arena-text" />。解讀時有幾點要注意：
+
+- **世代跳躍很大**：Large 4 預覽版從 Medium 3.5 的 14.2 跳到 38.4，主要來自 Agent 類評測；但 AA 也指出它跑完指數用了約 2 億個輸出 tokens，是同級模型中位數的兩倍以上，實際成本會被冗長輸出拉高<Cite k="aa-ml4" />。
+- **自報與第三方會有落差**：官方自報 Terminal-Bench 4.0 為 28.3%，AA 實測為 26.8%，方向一致但數字不同；Medium 3.5 的 SWE-bench Verified 77.6% 則尚無第三方重測。
+- **開放權重陣營的位置**：官方稱 Large 4 能與全球最強的開源模型競爭，並明顯領先美國與歐洲開發的開放權重模型<Cite k="ml4" />。在 AA 指數上，它高於 DeepSeek V4 Pro 0813（36.0），但仍低於 MiMo-V2.6-Pro（46.3）、GLM-5.3（44.8）、Step 5 預覽版（43.7）與 Kimi K3（43.6）等多個中國開放權重模型<Cite k="aa-lb" />。
+- **預覽版會變**：官方表示強化學習訓練仍在進行，權重釋出時的版本可能和現在的分數不同，建議以正式版重新評估。

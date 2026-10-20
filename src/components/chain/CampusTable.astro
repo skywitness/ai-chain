@@ -1,0 +1,458 @@
+---
+/**
+ * 全球大型 AI 園區 (cloud-neocloud page): totals computed from src/data/campuses.yaml, then a table of
+ * the largest campuses (planned IT capacity, capacity already online, status, operator), the rest in
+ * a disclosure, and the registry's sources. Renders nothing when the registry is missing.
+ *   <CampusTable rows={rows} asOf={asOf} />
+ */
+import Icon from '../ui/Icon.astro';
+import { formatNumber } from '../../lib/format';
+import { companyHref } from '../../lib/paths';
+import type { CampusRow } from '../../lib/scene-data/campuses';
+
+interface Props {
+  rows: readonly CampusRow[];
+  asOf?: string | undefined;
+  /** rows shown before the 「其餘園區」 disclosure */
+  top?: number | undefined;
+}
+const { rows, asOf, top = 12 } = Astro.props;
+
+const STATUS: Record<string, { label: string; tone: string }> = {
+  operating: { label: '營運中', tone: 'on' },
+  construction: { label: '興建中', tone: 'build' },
+  planned: { label: '規劃中', tone: 'plan' },
+};
+const COUNTRY: Record<string, string> = {
+  US: '美國', CN: '中國', AE: '阿聯', SA: '沙烏地', MY: '馬來西亞', PT: '葡萄牙', FI: '芬蘭', NO: '挪威',
+  GB: '英國', SE: '瑞典', KR: '韓國', JP: '日本', IN: '印度', TW: '台灣', DE: '德國', FR: '法國', CA: '加拿大',
+};
+const countryName = (c: string | undefined): string => {
+  if (!c) return '';
+  if (COUNTRY[c]) return COUNTRY[c];
+  try {
+    return new Intl.DisplayNames(['zh-TW'], { type: 'region' }).of(c) ?? c;
+  } catch {
+    return c;
+  }
+};
+
+const totalMw = rows.reduce((a, r) => a + (r.mw ?? 0), 0);
+const totalNow = rows.reduce((a, r) => a + (r.mwNow ?? 0), 0);
+const operating = rows.filter((r) => r.status === 'operating').length;
+const gw = (mw: number) => formatNumber(mw / 1000, { digits: 1 });
+const mwText = (mw: number | null) => (mw == null ? '—' : formatNumber(mw, { digits: 0 }));
+const maxMw = Math.max(1, ...rows.map((r) => r.mw ?? 0));
+
+const shown = rows.slice(0, top);
+const rest = rows.slice(top);
+
+const seen = new Set<string>();
+const sources = rows
+  .map((r) => r.source)
+  .filter((s): s is NonNullable<typeof s> => !!s && !seen.has(s.url) && (seen.add(s.url), true));
+const epoch = rows.filter((r) => r.source?.publisher === 'Epoch AI').length;
+const caption = `全球大型 AI 資料中心園區（依規劃 IT 電力排序${asOf ? `，資料截至 ${asOf}` : ''}）`;
+---
+
+{
+  rows.length > 0 && (
+    <div class="cp">
+      <ul class="cp__stats" role="list">
+        <li>
+          <span class="cp__stat-n">{rows.length}</span>
+          <span class="cp__stat-l">座園區（{operating} 座已有容量運轉）</span>
+        </li>
+        <li>
+          <span class="cp__stat-n">約 {gw(totalMw)} GW</span>
+          <span class="cp__stat-l">規劃完成後的 IT 電力合計</span>
+        </li>
+        <li>
+          <span class="cp__stat-n">約 {gw(totalNow)} GW</span>
+          <span class="cp__stat-l">目前估計已上線</span>
+        </li>
+      </ul>
+
+      {[{ list: shown, id: 'top' }, ...(rest.length ? [{ list: rest, id: 'rest' }] : [])].map(({ list, id }) => {
+        const table = (
+          <div class="cp__scroll scroll-x">
+            <table class="cp__table" role="table">
+              <caption class="sr-only">{id === 'top' ? caption : `${caption}：其餘 ${rest.length} 座`}</caption>
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th scope="col" role="columnheader">園區</th>
+                  <th scope="col" role="columnheader">業者</th>
+                  <th scope="col" role="columnheader" class="num">規劃（MW）</th>
+                  <th scope="col" role="columnheader" class="num">已上線（MW）</th>
+                  <th scope="col" class="cp__bar-h" aria-hidden="true">
+                    <span class="cp__key cp__key--now" />上線
+                    <span class="cp__key cp__key--plan" />規劃
+                  </th>
+                  <th scope="col" role="columnheader">狀態</th>
+                </tr>
+              </thead>
+              <tbody role="rowgroup">
+                {list.map((r) => {
+                  const st = STATUS[r.status] ?? { label: r.status, tone: 'plan' };
+                  const planW = ((r.mw ?? 0) / maxMw) * 100;
+                  const nowW = r.mw ? Math.min(1, (r.mwNow ?? 0) / r.mw) * 100 : 0;
+                  return (
+                    <tr role="row">
+                      <th scope="row" role="rowheader" class="cp__name">
+                        <span class="cp__name-zh" title={r.note}>{r.name}</span>
+                        <span class="cp__country">{countryName(r.country)}</span>
+                      </th>
+                      <td role="cell" class="cp__op" data-label="業者">
+                        {r.operatorId ? <a href={companyHref(r.operatorId)}>{r.operator}</a> : r.operator || '—'}
+                      </td>
+                      <td role="cell" class="num cp__plan" data-label="規劃">
+                        {mwText(r.mw)}
+                        <span class="cp__unit"> MW</span>
+                      </td>
+                      <td role="cell" class="num cp__now" data-label="已上線">
+                        {mwText(r.mwNow)}
+                        <span class="cp__unit"> MW</span>
+                      </td>
+                      <td class="cp__bar-cell" aria-hidden="true">
+                        <span class="cp__bar" style={`--plan: ${planW}%`}>
+                          <span class="cp__bar-now" style={`--now: ${nowW}%`} />
+                        </span>
+                      </td>
+                      <td role="cell" class="cp__st">
+                        <span class:list={['cp__status', `cp__status--${st.tone}`]}>{st.label}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        );
+        return id === 'top' ? (
+          table
+        ) : (
+          <details class="cp__more">
+            <summary>
+              <Icon name="chevron-down" class="cp__chev" />
+              其餘 {rest.length} 座園區
+            </summary>
+            {table}
+          </details>
+        );
+      })}
+
+      <div class="cp__notes">
+        <p>
+          MW 指 IT 設備電力；園區總用電通常再高 20–50%（冷卻等）。{epoch > 0 && <>其中 {epoch} 座的容量與上線進度為 Epoch AI 依衛星影像、許可文件與公開資訊所做的估計，不是公司公告值；</>}
+          其餘為公司公告或媒體報導的規劃規模。座標與容量為約略值，也是上方 3D 地球儀的資料。
+        </p>
+        <p class="cp__src">
+          資料來源：
+          {sources.slice(0, 6).map((s, i) => (
+            <>
+              {i > 0 && '；'}
+              <a href={s.url} rel="noopener noreferrer">
+                {s.publisher ? `${s.publisher}〈${s.title}〉` : s.title}
+              </a>
+            </>
+          ))}
+          {sources.length > 6 && `等 ${sources.length} 項`}
+          {asOf && `（資料截至 ${asOf}）`}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+<style>
+  .cp {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .cp__stats {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--space-3);
+  }
+  .cp__stats li {
+    display: grid;
+    gap: 2px;
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--c-border);
+    border-inline-start: 4px solid var(--seg-cloud-neocloud);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-elev);
+  }
+  .cp__stat-n {
+    font-size: var(--fs-xl);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+  }
+  .cp__stat-l {
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .cp__scroll {
+    overflow-x: auto;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .cp__table {
+    inline-size: 100%;
+    min-inline-size: 44rem;
+    border-collapse: collapse;
+    font-size: var(--fs-s);
+    line-height: 1.5;
+  }
+  .cp__table th,
+  .cp__table td {
+    padding: var(--space-2) var(--space-3);
+    text-align: start;
+    vertical-align: middle;
+    border-block-end: 1px solid var(--c-border);
+  }
+  .cp__table tbody tr:last-child > * {
+    border-block-end: 0;
+  }
+  .cp__table thead th {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-subtle);
+    white-space: nowrap;
+    background: var(--c-bg-sunken);
+  }
+  .cp__table .num {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .cp__name {
+    font-weight: var(--fw-semibold);
+    min-inline-size: 13rem;
+  }
+  .cp__name-zh {
+    display: block;
+  }
+  .cp__country {
+    display: block;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  .cp__op {
+    white-space: nowrap;
+  }
+  .cp__bar-h {
+    font-weight: var(--fw-regular) !important;
+  }
+  .cp__key {
+    display: inline-block;
+    inline-size: 0.8em;
+    block-size: 0.55em;
+    margin-inline: 0.5em 0.25em;
+    border-radius: 2px;
+    vertical-align: middle;
+  }
+  .cp__key--now {
+    margin-inline-start: 0;
+    background: var(--seg-cloud-neocloud);
+  }
+  .cp__key--plan {
+    border: 1px solid color-mix(in srgb, var(--seg-cloud-neocloud) 60%, var(--c-border));
+    background: color-mix(in srgb, var(--seg-cloud-neocloud) 14%, transparent);
+  }
+  .cp__bar-cell {
+    inline-size: 26%;
+    min-inline-size: 8rem;
+  }
+  .cp__bar {
+    position: relative;
+    display: block;
+    block-size: 10px;
+    inline-size: max(var(--plan), 3px);
+    border-radius: 3px;
+    border: 1px solid color-mix(in srgb, var(--seg-cloud-neocloud) 60%, var(--c-border));
+    background: color-mix(in srgb, var(--seg-cloud-neocloud) 14%, transparent);
+    overflow: hidden;
+  }
+  .cp__bar-now {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: var(--now);
+    background: var(--seg-cloud-neocloud);
+  }
+  .cp__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    white-space: nowrap;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+  }
+  .cp__status::before {
+    content: '';
+    inline-size: 0.6em;
+    block-size: 0.6em;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+  }
+  .cp__status--on {
+    color: var(--c-pos);
+  }
+  .cp__status--on::before {
+    background: currentColor;
+  }
+  .cp__status--build {
+    color: var(--c-warn);
+  }
+  .cp__status--build::before {
+    background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+  }
+  .cp__status--plan {
+    color: var(--c-fg-subtle);
+  }
+  .cp__unit {
+    display: none;
+  }
+
+  /* Narrow screens: every campus becomes a compact two-column row (no sideways scrolling). */
+  @media (max-width: 639px) {
+    .cp__stats {
+      gap: var(--space-2);
+    }
+    .cp__stats li {
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: baseline;
+      column-gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+    }
+    .cp__stat-n {
+      font-size: var(--fs-l);
+      white-space: nowrap;
+    }
+    .cp__scroll {
+      overflow: visible;
+    }
+    .cp__table {
+      min-inline-size: 0;
+    }
+    .cp__table,
+    .cp__table tbody {
+      display: block;
+    }
+    .cp__table thead {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .cp__table tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'name name'
+        'op st'
+        'plan now'
+        'bar bar';
+      gap: 2px var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-block-end: 1px solid var(--c-border);
+    }
+    .cp__table tbody tr:last-child {
+      border-block-end: 0;
+    }
+    .cp__table th,
+    .cp__table td {
+      padding: 0;
+      border: 0;
+    }
+    .cp__name {
+      grid-area: name;
+      min-inline-size: 0;
+    }
+    .cp__name .cp__name-zh,
+    .cp__name .cp__country {
+      display: inline;
+    }
+    .cp__name .cp__country {
+      margin-inline-start: var(--space-2);
+      white-space: nowrap;
+    }
+    .cp__op {
+      grid-area: op;
+      white-space: normal;
+      font-size: var(--fs-xs);
+    }
+    .cp__st {
+      grid-area: st;
+      text-align: end;
+    }
+    .cp__plan {
+      grid-area: plan;
+      text-align: start !important;
+    }
+    .cp__now {
+      grid-area: now;
+    }
+    .cp__plan,
+    .cp__now {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-muted);
+    }
+    .cp__plan::before,
+    .cp__now::before {
+      content: attr(data-label) ' ';
+      color: var(--c-fg-subtle);
+    }
+    .cp__unit {
+      display: inline;
+    }
+    .cp__bar-cell {
+      grid-area: bar;
+      inline-size: auto;
+      min-inline-size: 0;
+      padding-block-start: var(--space-1) !important;
+    }
+  }
+  .cp__more summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--tap);
+    cursor: pointer;
+    font-weight: var(--fw-semibold);
+    color: var(--c-link);
+    list-style: none;
+  }
+  .cp__more summary::-webkit-details-marker {
+    display: none;
+  }
+  .cp__more :global(.cp__chev) {
+    transition: transform var(--dur-2) ease;
+  }
+  .cp__more[open] :global(.cp__chev) {
+    transform: rotate(180deg);
+  }
+  .cp__more[open] > .cp__scroll {
+    margin-block-start: var(--space-2);
+  }
+  .cp__notes {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--fs-xs);
+    line-height: 1.75;
+    color: var(--c-fg-subtle);
+    max-inline-size: 60rem;
+  }
+  .cp__src a {
+    color: var(--c-link);
+  }
+</style>

@@ -1,0 +1,369 @@
+---
+title: "製程節點：從 7 奈米到 2 奈米代表什麼"
+subtitle: "節點數字早已不是尺寸：密度、速度、功耗與電晶體結構如何一代代前進"
+description: "「7 奈米」「2 奈米」早已不是晶片上任何實際尺寸，而是製程世代的名稱。本文說明節點數字的由來、每一代在密度、速度與功耗上換到什麼、從 FinFET 到 GAA 的結構轉變，以及為什麼每一代越來越難、越來越貴。"
+level: 2
+order: 211
+track: hardware
+prerequisites: [how-chips-are-made]
+next: [advanced-packaging-intro, transistor-evolution, lithography-euv-high-na]
+relatedSegments: [foundry-packaging, semi-equipment-materials, ai-accelerators, eda-ip-design]
+relatedCompanies: [tsmc, samsung-electronics, intel, smic, rapidus, asml, applied-materials, lam-research, tokyo-electron, kla, synopsys, cadence, nvidia, amd]
+relatedModels: []
+relatedTrends: [process-roadmap-2nm-and-beyond, export-controls-us-china, china-self-sufficiency, ai-chip-design-eda]
+glossary:
+  - process-node
+  - transistor
+  - moores-law
+  - finfet
+  - gaa
+  - bspdn
+  - cfet
+  - lithography
+  - duv
+  - euv
+  - multi-patterning
+  - high-na-euv
+  - sram
+  - chiplet
+  - eda
+scenes:
+  - { id: wafer-transistor, variant: transistor }
+keyTakeaways:
+  - "「N 奈米」是製程世代的名稱，1990 年代中期以後就不再等於閘極長度等實際尺寸。"
+  - "每進一代，大致換到更高的電晶體密度，以及同功耗跑更快，或同速度更省電。"
+  - "電晶體結構從平面、FinFET 走到 GAA 奈米片，讓閘極把電流「握」得更緊。"
+  - "每代的進步幅度在縮小，建廠與研發成本卻持續上升，先進封裝因此成為另一條路。"
+  - "2026 年第二季，台積電 7 奈米以下製程佔其晶圓營收 77%，2 奈米首度貢獻 3%。"
+estimatedMinutes: 15
+sources:
+  - key: ieee-spectrum-lmc
+    title: "A Better Way to Measure Progress in Semiconductors"
+    publisher: IEEE Spectrum
+    url: "https://spectrum.ieee.org/a-better-way-to-measure-progress-in-semiconductors"
+    type: news
+    lang: en
+    published: "2020-07-21"
+    accessed: "2026-10-06"
+    note: "Samuel K. Moore 撰文。節點名稱在 1990 年代中期與閘極長度脫鉤；2011 年英特爾 22 奈米節點採 FinFET，閘極長度 26 奈米、半間距 40 奈米；IRDS 主席 Paolo Gargini 提議以「GxxMxxTx」標示製程，依當時路線圖，即將問世的 5 奈米晶片為接觸閘極間距 48 奈米、金屬間距 36 奈米、單層（G48M36T1）；TSMC SoIC 系統的互連密度達每平方毫米 12,000 個"
+  - key: wiki-2nm
+    title: "2 nm process"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/2_nm_process"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "次要來源。「2 奈米」與閘極長度、金屬間距等實際尺寸無關；引述 IEEE IRDS 2021 年 More Moore 推估：7／5／3／2 奈米標籤對應接觸閘極間距 60／51／48／45 奈米、最小金屬間距 40／30／24／20 奈米；三星 2025 年量產 SF2；英特爾 18A 於 2025 年底進入大量生產；IMEC 藍圖沿用每代除以根號 2 的命名規則；英特爾、三星、台積電皆已展示 CFET"
+  - key: wiki-7nm
+    title: "7 nm process"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/7_nm_process"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "次要來源。英特爾於 2021-07-26 將 10nm Enhanced SuperFin 更名為 Intel 7，大致相當於台積電 N7；台積電第一代 7 奈米（N7）採 DUV 浸潤式微影"
+  - key: wiki-5nm
+    title: "5 nm process"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/5_nm_process"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "次要來源。台積電 N5 最多在 14 層使用 EUV；TechInsights 2025-12-11 指出華為 Kirin 9030 採中芯國際 N+3 製程，在未使用 EUV 的情況下逼近 5 奈米等級"
+  - key: wiki-multigate
+    title: "Multigate device"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Multigate_device"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "次要來源。英特爾 2002 年首度發表三閘極（tri-gate）電晶體研究，2011 年 5 月宣布用於 22 奈米製程，2012 年 4 月推出首款採用的 Ivy Bridge 處理器"
+  - key: wiki-dennard
+    title: "Dennard scaling"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Dennard_scaling"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "次要來源。每代尺寸縮為 0.7 倍時，單一電晶體面積約減半、電容與電壓各降三成、頻率約提高四成，動態功率約減半，單位面積功率不變；約 2005–2007 年因漏電流與臨界電壓無法再降而失靈，此後時脈停在 4–6 GHz"
+  - key: wiki-mp
+    title: "Multiple patterning"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Multiple_patterning"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "標準曝光場為 26 × 33 毫米；High-NA EUV 單次曝光的場域只有標準尺寸的一半"
+  - key: tsmc-n5-2019
+    title: "TSMC and OIP Ecosystem Partners Deliver Industry's First Complete Design Infrastructure for 5nm Process Technology"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/1987"
+    type: press-release
+    lang: en
+    published: "2019-04-03"
+    accessed: "2026-10-06"
+    note: "5 奈米相較 7 奈米，邏輯密度 1.8 倍，Arm Cortex-A72 核心速度提升 15%；受惠於 EUV 帶來的製程簡化"
+  - key: tsmc-n3-2022
+    title: "TSMC Holds 3nm Volume Production and Capacity Expansion Ceremony, Marking a Key Milestone for Advanced Manufacturing"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/2986"
+    type: press-release
+    lang: en
+    published: "2022-12-29"
+    accessed: "2026-10-06"
+    note: "3 奈米相較 5 奈米，邏輯密度最高 1.6 倍，同速度下功耗降低 30–35%"
+  - key: tsmc-n3-page
+    title: "3nm Technology"
+    publisher: TSMC
+    url: "https://www.tsmc.com/english/dedicatedFoundry/technology/logic/l_3nm"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "台積電 2022 年率先將 3 奈米 FinFET（N3）技術導入大量生產，稱其為業界最先進的 FinFET 技術"
+  - key: tsmc-2q24-call
+    title: "TSMC 2Q24 Earnings Conference Call Transcript"
+    publisher: TSMC
+    url: "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2024-08/5122725a56670882d777a8e8bfe0ed247cc55330/TSMC%202Q24%20Transcript.pdf"
+    type: earnings-call
+    lang: en
+    published: "2024-07-18"
+    accessed: "2026-10-06"
+    note: "N2 相較 N3E：同功耗速度提升 10–15%，或同速度功耗降低 25–30%，晶片密度增加 15% 以上；A16 相較 N2P：速度再提升 8–10%，或功耗再降 15–20%，晶片密度再增 7–10%，適合訊號繞線複雜、供電網路密集的特定 HPC 產品"
+  - key: tsmc-4q25-call
+    title: "TSMC 4Q25 Earnings Conference Call Transcript"
+    publisher: TSMC
+    url: "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-01/51d09df96cd89ac19d65af39032b038dc2896a24/TSMC%204Q25%20Transcript.pdf"
+    type: earnings-call
+    lang: en
+    published: "2026-01-15"
+    accessed: "2026-10-06"
+    note: "N2 於 2025 年第四季在新竹與高雄進入大量生產且良率良好；建置每千片月產能的資本支出，N2 明顯高於 N3，A14 還會更高；N2P 預定 2026 下半年量產，A16 當時表示 2026 下半年量產進度如期"
+  - key: tsmc-2q26-call
+    title: "TSMC 2Q26 Earnings Conference Call Transcript"
+    publisher: TSMC
+    url: "https://investor.tsmc.com/english/encrypt/files/encrypt_file/reports/2026-08/3e494f0c14dd0890f897aa044415e21d93486cc4/TSMC%202Q26%20Transcript.pdf"
+    type: earnings-call
+    lang: en
+    published: "2026-07-16"
+    accessed: "2026-10-06"
+    note: "A14 為第二代奈米片電晶體，相較 N2 同功耗速度提升 10–15%，或同速度功耗降低 25–30%，晶片密度增加近 20%；2027 年風險試產、2028 年量產；A13 以 97% 光學微縮換到超過 6% 的晶粒面積節省，設計規則與 A14 相容；一項新技術從開發、建置產能到量產爬坡需 5 到 7 年；2 奈米快速放量預計稀釋下半年毛利率約 3 到 4 個百分點；本次法說會未提及 A16 時程"
+  - key: tsmc-2q26
+    title: "TSMC Reports Second Quarter EPS of NT$27.25"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3326"
+    type: press-release
+    lang: en
+    published: "2026-07-16"
+    accessed: "2026-10-06"
+    note: "第二季營收 402.0 億美元；晶圓營收中 2 奈米 3%、3 奈米 30%、5 奈米 33%、7 奈米 11%，7 奈米以下合計 77%"
+  - key: tsmc-n2
+    title: "2nm Technology"
+    publisher: TSMC
+    url: "https://www.tsmc.com/english/dedicatedFoundry/technology/logic/l_2nm"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "N2 採第一代奈米片電晶體，已於 2025 年第四季如期量產；A14 相較 N2 同功耗速度提升 10–15%，或同速度功耗降低 25–30%，邏輯密度增加 20% 以上，預定 2028 年量產"
+  - key: tsmc-symposium-2024
+    title: "TSMC Celebrates 30th North America Technology Symposium with Innovations Powering AI with Silicon Leadership"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3136"
+    type: press-release
+    lang: en
+    published: "2024-04-24"
+    accessed: "2026-10-06"
+    note: "A16 結合 Super Power Rail 背面供電與奈米片電晶體；相較 N2P，同 Vdd 速度提升 8–10%，同速度功耗降低 15–20%，資料中心產品晶片密度最高提升 1.10 倍"
+  - key: tsmc-symposium-2026
+    title: "TSMC Debuts A13 Technology at 2026 North America Technology Symposium"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3302"
+    type: press-release
+    lang: en
+    published: "2026-04-23"
+    accessed: "2026-10-06"
+    note: "N2U 相較 N2P 速度提升 3–4% 或功耗降低 8–10%，邏輯密度提升 1.02–1.03 倍，預定 2028 年量產；A13 相較 A14 面積節省 6%，2029 年量產"
+  - key: trendforce-a16
+    title: "[News] TSMC Latest Roadmap: A12, A13 for 2029 Without High-NA EUV; A16 Volume Production Delayed to 2027"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/news/2026/04/23/news-tsmc-unveils-latest-roadmap-a12-a13-set-for-2029-without-high-na-euv-a16-volume-production-delayed-to-2027/"
+    type: news
+    lang: en
+    published: "2026-04-23"
+    accessed: "2026-10-06"
+    note: "引述 Tom's Hardware 報導：A16 量產時程由 2026 年延至 2027 年；A13、A12 預期不需使用 High-NA EUV。屬媒體報導"
+  - key: samsung-3nm
+    title: "Samsung Begins Chip Production Using 3nm Process Technology With GAA Architecture"
+    publisher: Samsung Electronics
+    url: "https://news.samsung.com/global/samsung-begins-chip-production-using-3nm-process-technology-with-gaa-architecture"
+    type: press-release
+    lang: en
+    published: "2022-06-30"
+    accessed: "2026-10-06"
+    note: "全球首個採 GAA（三星稱 MBCFET）的 3 奈米製程開始量產；第一代 3 奈米相較 5 奈米，功耗最多降低 45%、效能提升 23%、面積減少 16%"
+  - key: intel-2q26
+    title: "Intel Reports Second-Quarter 2026 Financial Results (Form 8-K Exhibit 99.1)"
+    publisher: Intel
+    url: "https://www.sec.gov/Archives/edgar/data/50863/000005086326000155/q226earningsrelease.htm"
+    type: filing
+    lang: en
+    published: "2026-07-23"
+    accessed: "2026-10-06"
+    note: "Intel 18A-P 進入風險試產；Xeon 6+ 為英特爾首款採 Intel 18A 的伺服器產品；部分 Panther Lake 處理器已使用 ASML EXE High-NA EUV 進入大量生產"
+  - key: toms-sram
+    title: "SRAM scaling isn't dead after all — TSMC's 2nm process tech claims major improvements"
+    publisher: Tom's Hardware
+    url: "https://www.tomshardware.com/tech-industry/sram-scaling-isnt-dead-after-all-tsmcs-2nm-process-tech-claims-major-improvements"
+    type: news
+    lang: en
+    published: "2024-10-31"
+    accessed: "2026-10-06"
+    note: "依台積電 IEDM 2024 論文：N3E 的高密度 SRAM 位元單元為 0.021 平方微米，與 N5 相同；N2 縮小到約 0.0175 平方微米，SRAM 密度約每平方毫米 38 Mb"
+  - key: nvidia-blackwell
+    title: "NVIDIA Blackwell Architecture"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "Blackwell GPU 有 2,080 億個電晶體，採台積電客製 4NP 製程；由兩顆達光罩極限的晶粒以每秒 10 TB 的晶片間互連組成"
+  - key: amd-mi355x
+    title: "AMD Instinct MI355X GPU Product Brief"
+    publisher: AMD
+    url: "https://www.amd.com/content/dam/amd/en/documents/instinct-tech-docs/product-briefs/amd-instinct-mi355x-gpu-brochure.pdf"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "微影製程標示為 TSMC 3nm／6nm FinFET；288 GB HBM3E，記憶體頻寬每秒 8 TB"
+  - key: tf-foundry-2q26
+    title: "Global Foundry Revenue Approaches US$53.49 Billion in 2Q26 as SMIC Narrows Market Share Gap with Samsung, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260909-13225.html"
+    type: analyst
+    lang: en
+    published: "2026-09-09"
+    accessed: "2026-10-06"
+    note: "2026 年第二季前十大晶圓代工營收約 534.9 億美元；台積電市占 72.5%、三星 5.9%、中芯國際 5.4%；AI 伺服器 GPU 與 XPU 需求使台積電 5／4 奈米與 3 奈米產能滿載"
+  - key: wiki-rapidus
+    title: "Rapidus"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Rapidus"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "次要來源。2025 年 7 月展示首批 2 奈米原型晶圓；2 奈米晶圓預計 2027 年底開始量產"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial: { status: fact-checked, author: learn-11, checkedBy: "learn-11-check", checkedOn: "2026-10-06", notes: "已逐項比對台積電新聞稿、2Q24／4Q25／2Q26 法說會逐字稿、三星與英特爾公告及各來源頁面。A16 量產時程：台積電 2026 年 1 月稱 2026 下半年，2026 年 4 月媒體報導延至 2027 年，2026 年 7 月法說會未提及，內文並陳並標示為媒體報導。" }
+---
+
+## 一句話解釋
+
+**<Term id="process-node">製程節點</Term>是晶圓廠替每一代製造技術取的「世代名稱」。** 「7 奈米」「3 奈米」「2 奈米」的數字越小，代表越新的一代：同樣面積能放進更多<Term id="transistor">電晶體</Term>，同樣耗電能跑得更快，或同樣速度更省電。不過要特別注意，這個數字早就不是晶片上任何部位的實際尺寸<Cite k="wiki-2nm" />。把它當成「第幾代」來理解，比當成「幾奈米寬」準確得多。
+
+## 生活化比喻
+
+<Callout type="analogy" title="社區的「期數」，不是巷子的寬度">
+
+把一顆晶片想成一座城市：電晶體是住戶，金屬導線是道路。
+
+早年，都市計畫用「巷子寬度」替每一期新社區命名，「1 米巷社區」的巷子真的就是 1 米寬。每推出新的一期，巷子都縮窄約三成，同一塊地就能多住一倍的人。
+
+後來巷子很難再縮窄了，規劃單位改用別的方法塞進更多住戶：把平房改成高樓（FinFET）、把每棟樓包得更緊實（GAA），甚至把水電管線改走地下（背面供電）。新社區仍照「每期縮小三成」的老習慣，依序命名為「7 號」「5 號」「3 號」「2 號」，但實際的巷寬，早就不是 7、5、3、2 了。
+
+所以比較兩座城市，不該只看名字，而要看三件事：每公頃住多少戶（密度）、通勤多快（速度），以及水電費多少（功耗）。
+
+</Callout>
+
+## 原理：節點數字從哪裡來
+
+### 從「真實尺寸」變成「世代代號」
+
+1990 年代中期以前，節點名稱大致等於電晶體的閘極長度，也就是控制電流開關的那段長度；此後兩者開始脫鉤。到了 2011 年，英特爾的 22 奈米節點，閘極長度其實是 26 奈米<Cite k="ieee-spectrum-lmc" />。
+
+那麼「7、5、3、2」這串數字是怎麼來的？它延續了一條老規則：每一代把線寬縮小到約 0.7 倍（約等於除以根號 2），面積就變成約一半，同面積可放的電晶體約加倍<Cite k="wiki-dennard" />。7 乘以 0.7 約是 5，5 乘以 0.7 約是 3.5，3 乘以 0.7 約是 2.1。業界的技術藍圖至今仍沿用這種命名節奏<Cite k="wiki-2nm" />。這套「每代密度約加倍」的節奏，也正是支撐<Term id="moores-law">摩爾定律</Term>的基礎。
+
+真正能量的尺寸，主要是兩種間距：電晶體閘極之間的距離（接觸閘極間距），以及最密金屬導線之間的距離（金屬間距）。IEEE 國際元件與系統路線圖（IRDS）2021 年的推估如下<Cite k="wiki-2nm" />：
+
+| 節點名稱 | 接觸閘極間距 | 最小金屬間距 | 約當年份 |
+|---|---|---|---|
+| 7 奈米 | 60 奈米 | 40 奈米 | 2018 |
+| 5 奈米 | 51 奈米 | 30 奈米 | 2020 |
+| 3 奈米 | 48 奈米 | 24 奈米 | 2022 |
+| 2 奈米 | 45 奈米 | 20 奈米 | 2025 |
+
+從 7 奈米到 2 奈米，名稱縮小了七成，閘極間距卻只縮了四分之一，金屬間距則剛好減半。所以 IRDS 主席 Paolo Gargini 曾提議乾脆改用實際間距來標示，例如依 2020 年的路線圖，即將問世的 5 奈米晶片可記為「G48M36T1」：接觸閘極間距 48 奈米、金屬間距 36 奈米、單層電晶體<Cite k="ieee-spectrum-lmc" />。這組數字和上表 2021 年版的推估略有出入，也說明路線圖本身會隨時間修正。
+
+另一個要小心的地方是：**不同公司的同名節點，不能直接比較。** 英特爾在 2021 年 7 月把「10 奈米 Enhanced SuperFin」改名為「Intel 7」，新名稱反映它大致與台積電的 N7 處在同一個世代<Cite k="wiki-7nm" />。之後英特爾改用埃米（Å，0.1 奈米）命名，例如 Intel 18A；台積電 2 奈米之後的節點也改稱 A16、A14，「A16」意即 16 埃米，也就是 1.6 奈米級。
+
+### 每一代換到什麼：PPA
+
+晶圓廠介紹新節點時，一定會用 PPA 這三個字母：**效能（Performance）、功耗（Power）、面積（Area）**。要注意，「速度提升」與「功耗降低」通常是**二選一**：同樣耗電時跑得更快，或者同樣速度時更省電，不是兩者同時達到最大值。
+
+以下是台積電官方公布的各代比較：
+
+| 比較 | 密度 | 同功耗下的速度 | 同速度下的功耗 |
+|---|---|---|---|
+| 5 奈米 vs 7 奈米 | 邏輯密度 1.8 倍<Cite k="tsmc-n5-2019" /> | 速度提升 15%（Cortex-A72 核心，新聞稿未註明功耗條件） | 該新聞稿未列 |
+| 3 奈米 vs 5 奈米 | 邏輯密度最高 1.6 倍<Cite k="tsmc-n3-2022" /> | 該新聞稿未列 | 降低 30–35% |
+| N2 vs N3E | 晶片密度增加 15% 以上<Cite k="tsmc-2q24-call" /> | 提升 10–15% | 降低 25–30% |
+| A16 vs N2P | 晶片密度再增 7–10%<Cite k="tsmc-2q24-call" /> | 提升 8–10% | 降低 15–20% |
+| A14 vs N2 | 晶片密度增加近 20%<Cite k="tsmc-2q26-call" />；邏輯密度增加 20% 以上<Cite k="tsmc-n2" /> | 提升 10–15% | 降低 25–30% |
+
+表格透露兩個重點。第一，「邏輯密度」只算邏輯電路，「晶片密度」則把<Term id="sram">SRAM</Term>（晶片上的快取記憶體）與類比電路一起算進去；後兩者比較難縮小，所以晶片密度的倍數通常比較低（原因見下方「深入一點」）。第二，密度的躍進正在放緩：5 奈米相較 7 奈米，邏輯密度還有 1.8 倍；到了 2 奈米與 A14 世代，官方公布的增幅只剩一到兩成。各代採用的密度口徑不完全相同，但放緩的趨勢很明顯。
+
+### 全節點與強化版：讀懂節點家族
+
+新聞上常見 N3E、N2P、N2U 這類帶字母的名字，它們屬於同一個節點家族的強化版。可以把「全節點」想成換新的建築工法，「強化版」則是在同一套工法上微調材料與配置。以 2 奈米家族為例，台積電稱 N2 帶來「全節點」等級的效能與功耗改善；N2P 在 N2 之上，同功耗再快約 5%，或同速度再省電 5–10%<Cite k="tsmc-2q24-call" />；預定 2028 年量產的 N2U，相較 N2P 速度再提升 3–4%，或功耗再降 8–10%，邏輯密度只多 2–3%<Cite k="tsmc-symposium-2026" />。另一種常見手法是「光學微縮」：A13 把 A14 的線路尺寸等比例縮成 97%，換到超過 6% 的晶粒面積節省，設計規則與 A14 相容，客戶能沿用既有的設計<Cite k="tsmc-2q26-call" />。
+
+<StatGrid title="2 奈米世代的幾個關鍵時間點" items={[{ label: "台積電 N2 大量生產", value: "2025 Q4", note: "新竹與高雄" }, { label: "N2 佔台積電晶圓營收", value: "3%", note: "2026 年第二季首度貢獻" }, { label: "A14 量產", value: "2028 年", note: "2027 年風險試產" }, { label: "新製程開發到量產", value: "5–7 年", note: "台積電說法" }]} caption="資料來源：台積電 2025 年第四季與 2026 年第二季法說會、2026 年第二季財報新聞稿。" />
+
+### 電晶體結構：從平面到 FinFET，再到 GAA
+
+為什麼名字可以繼續縮，結構卻要一直改？因為電晶體越小，閘極越難把電流「關乾淨」，關閉時仍會漏電。漏電讓晶片在待機時也發熱，這是大約 2005 年後時脈停止上升的主因之一<Cite k="wiki-dennard" />。解法是讓閘極從更多面包住電流通道：
+
+- **平面電晶體**：閘極只蓋在通道上方，像只用一根手指按住水管。
+- **<Term id="finfet">FinFET</Term>（鰭式電晶體）**：把通道立起來變成一片「鰭」，閘極從三面包覆，台積電直到 3 奈米都還使用 FinFET<Cite k="tsmc-n3-page" />。英特爾在 2011 年 5 月宣布把這種三閘極（tri-gate）電晶體用在 22 奈米製程，並在 2012 年 4 月推出首款採用的 Ivy Bridge 處理器<Cite k="wiki-multigate" />。
+- **<Term id="gaa">GAA</Term>（環繞式閘極）**：把通道切成幾片水平疊放的奈米片，閘極從四面完全包住。三星在 2022 年 6 月率先以 GAA 量產 3 奈米<Cite k="samsung-3nm" />；台積電的 N2 是它第一代奈米片電晶體，已在 2025 年第四季於新竹與高雄進入大量生產<Cite k="tsmc-4q25-call" /><Cite k="tsmc-n2" />。英特爾的 Intel 18A 同樣採用 GAA<Cite k="wiki-2nm" />，並已用在 Xeon 6+ 伺服器處理器上<Cite k="intel-2q26" />。
+
+<Scene3D id="wafer-transistor" variant="transistor" caption="電晶體的形變：從平面、FinFET 到 GAA 奈米片，閘極包覆通道的面越來越多。可切換導覽步驟，比較每一代的結構差異。" />
+
+<Compare title="FinFET 與 GAA 奈米片的差別" left={{ title: "FinFET（約 2011 年起）", items: ["通道是直立的鰭片", "閘極包覆三個面", "要調整驅動電流，只能增減鰭片數目", "台積電 3 奈米仍採用 FinFET"] }} right={{ title: "GAA 奈米片（約 2022 年起）", items: ["通道是水平疊放的奈米片", "閘極包覆四個面，漏電更容易控制", "奈米片寬度可調，設計更有彈性", "三星 3 奈米、台積電 N2、Intel 18A 採用"] }} />
+
+下一步還有兩個方向。一是<Term id="bspdn">背面供電</Term>：把供電線路搬到晶圓背面，讓正面專心走訊號，台積電稱為 Super Power Rail，用在 A16 上<Cite k="tsmc-symposium-2024" />。二是 <Term id="cfet">CFET</Term>：把兩種電晶體上下疊在一起，英特爾、三星與台積電都已展示過<Cite k="wiki-2nm" />。詳細原理可以接著讀<LearnLink id="transistor-evolution">電晶體演進</LearnLink>。
+
+### 為什麼越做越難、越做越貴
+
+**印得更細，需要更短的光。** 台積電第一代 7 奈米仍使用<Term id="duv">DUV</Term>（深紫外光）浸潤式微影<Cite k="wiki-7nm" />，要印出比光波長還細的圖案，只能把一層拆成好幾次曝光，也就是<Term id="multi-patterning">多重曝光</Term>，步驟多、成本高。到了 5 奈米，台積電最多在 14 層改用 <Term id="euv">EUV</Term><Cite k="wiki-5nm" />，用一次曝光取代多次。下一代 <Term id="high-na-euv">High-NA EUV</Term> 能印得更細，但單次曝光的面積只有標準 26 × 33 毫米的一半<Cite k="wiki-mp" />。英特爾已用 High-NA EUV 量產部分處理器<Cite k="intel-2q26" />；據 TrendForce 引述媒體報導，台積電規劃 2029 年的 A13 與 A12 預期不需要 High-NA EUV<Cite k="trendforce-a16" />。
+
+**工廠越來越貴，時間越拉越長。** 台積電表示，建置每千片月產能所需的資本支出，N2 明顯高於 N3，A14 還會更高<Cite k="tsmc-4q25-call" />；一項新製程從開發、蓋產能到量產爬坡，現在要 5 到 7 年<Cite k="tsmc-2q26-call" />。即使是龍頭，新節點剛上量時也會拉低獲利：台積電預估 2 奈米快速放量，將稀釋 2026 年下半年毛利率約 3 到 4 個百分點<Cite k="tsmc-2q26-call" />。時程也可能變動。以 A16 為例，台積電在 2026 年 1 月的法說會上仍表示將於 2026 年下半年量產<Cite k="tsmc-4q25-call" />；同年 4 月技術論壇之後，有媒體報導其藍圖已把 A16 量產延到 2027 年<Cite k="trendforce-a16" />；7 月的法說會則沒有再提 A16 的時程<Cite k="tsmc-2q26-call" />。
+
+<DeepDive title="深入一點：縮小電晶體為什麼能同時變快又省電？後來又為什麼失靈？">
+
+晶片的耗電主要來自電晶體開開關關時，對電容反覆充放電。這部分的動態功率可以寫成：
+
+<MathTeX tex={"P_{\\mathrm{dyn}}=\\alpha\\,C\\,V^{2}f"} display label="動態功率等於活動率乘以電容、電壓平方與頻率" />
+
+其中 α 是電路同時切換的比例，C 是電容，V 是電壓，f 是時脈頻率。1974 年提出的登納德縮放（Dennard scaling）指出：當所有尺寸縮成 0.7 倍，電容和電壓也各降三成，延遲變短，頻率可提高約四成<Cite k="wiki-dennard" />。代入公式：
+
+<MathTeX tex={"\\frac{P'}{P}=0.7\\times0.7^{2}\\times1.4\\approx0.48"} display label="新一代單顆電晶體的功率約為舊一代的 0.48 倍" />
+
+單顆電晶體的功率約減半，而它佔的面積也約減半，所以**同樣面積的耗電不變，電晶體數量卻加倍、速度還更快**。這套理想化的規則，大致說明了 2000 年代中期以前，晶片為什麼能一代代變快，又不必更耗電。
+
+問題出在電壓。電壓降到某個程度後，電晶體的臨界電壓與漏電流不再跟著縮小，電壓就降不下去了。從公式可以看出，電壓卡住，功率就無法跟著減半，單位面積的發熱開始上升。約在 2005 到 2007 年，登納德縮放失靈，處理器時脈從此停在 4 到 6 GHz，業界轉向多核心與平行運算<Cite k="wiki-dennard" />。這也間接解釋了為什麼 AI 運算轉向成千上萬個平行核心的 GPU，而且每一代製程最被重視的指標，常常是「同樣效能省多少電」。
+
+SRAM 是另一個縮小的難題。SRAM 是晶片內建的高速快取，每個位元由幾顆電晶體組成，對尺寸變異特別敏感。台積電 N3E 的高密度 SRAM 位元單元是 0.021 平方微米，和 N5 一模一樣，等於兩代沒有縮小；直到 N2 改用 GAA，才縮到約 0.0175 平方微米，密度達每平方毫米約 38 Mb<Cite k="toms-sram" />。AI 晶片大量使用 SRAM 當快取，SRAM 縮不下去，正是「晶片密度」倍數比「邏輯密度」低的主要原因之一，也讓設計公司更傾向把不同功能拆成 <Term id="chiplet">Chiplet</Term>，各自用最合適的製程生產。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+先進製程是 AI 晶片的地基，也是全球集中度最高的環節之一。
+
+- **晶圓代工**（<SegmentChip id="foundry-packaging" />）：2026 年第二季，<CompanyChip id="tsmc">台積電（TSMC）</CompanyChip>拿下全球前十大晶圓代工營收的 72.5%，<CompanyChip id="samsung-electronics">三星電子</CompanyChip>佔 5.9%、<CompanyChip id="smic">中芯國際</CompanyChip>佔 5.4%；AI 伺服器 GPU 與客製晶片的需求，讓台積電 5／4 奈米與 3 奈米產能滿載<Cite k="tf-foundry-2q26" />。同一季，台積電 7 奈米以下製程佔其晶圓營收 77%，2 奈米首度貢獻 3%<Cite k="tsmc-2q26" />。三星已在 2025 年量產 SF2 製程<Cite k="wiki-2nm" />；<CompanyChip id="intel">英特爾</CompanyChip>的 Intel 18A-P 已進入風險試產<Cite k="intel-2q26" />；日本 <CompanyChip id="rapidus">Rapidus</CompanyChip> 目標 2027 年底量產 2 奈米<Cite k="wiki-rapidus" />。中芯國際則在無法取得 EUV 的情況下，據 TechInsights 分析，已用 N+3 製程逼近 5 奈米等級<Cite k="wiki-5nm" />。
+- **設備與材料**（<SegmentChip id="semi-equipment-materials" />）：每往前一代，<Term id="lithography">微影</Term>、沉積、蝕刻與量測的難度都同步升高。EUV 曝光機只有<CompanyChip id="asml">艾司摩爾（ASML）</CompanyChip>能供應；GAA 與背面供電需要的新沉積、蝕刻步驟，則來自<CompanyChip id="applied-materials">應用材料</CompanyChip>、<CompanyChip id="lam-research">科林研發</CompanyChip>與<CompanyChip id="tokyo-electron">東京威力科創</CompanyChip>，越來越嚴苛的缺陷檢測則倚重<CompanyChip id="kla">科磊</CompanyChip>。台積電也指出，機台越來越貴、製程越來越複雜，是每千片產能資本支出一路墊高的原因<Cite k="tsmc-4q25-call" />。
+- **設計工具**（<SegmentChip id="eda-ip-design" />）：每個新節點都要搭配新的設計規則與元件模型，晶片公司得透過<CompanyChip id="synopsys">新思科技</CompanyChip>、<CompanyChip id="cadence">益華電腦</CompanyChip>等 <Term id="eda">EDA</Term> 工具，才能把設計搬上新製程。
+- **AI 晶片**（<SegmentChip id="ai-accelerators" />）：<CompanyChip id="nvidia">輝達</CompanyChip>的 Blackwell GPU 有 2,080 億個電晶體，採台積電客製的 4NP 製程<Cite k="nvidia-blackwell" />；<CompanyChip id="amd">超微</CompanyChip>的 MI355X 則同時使用台積電 3 奈米與 6 奈米<Cite k="amd-mi355x" />。同一顆產品混用兩種製程，靠的就是把晶片拆成多顆晶粒，再用先進封裝接起來。
+
+<BarChart title="台積電 2026 年第二季晶圓營收：各製程占比" unit="%" data={[{ label: "2 奈米", value: 3 }, { label: "3 奈米", value: 30 }, { label: "5 奈米", value: 33 }, { label: "7 奈米", value: 11 }, { label: "16 奈米及更成熟製程", value: 23 }]} source="tsmc-2q26" keepOrder note="「16 奈米及更成熟製程」為 100% 減去 7 奈米以下合計 77% 的差額。" />
+
+換句話說，當微縮帶來的密度增幅從接近兩倍降到一到兩成，晶片業者就得在製程之外另找出路。下一篇<LearnLink id="advanced-packaging-intro">先進封裝入門：CoWoS 與 Chiplet</LearnLink>會說明，如何把多顆晶粒「拼」成一顆超級晶片。想追蹤 2 奈米之後的時程，可以看<TrendLink id="process-roadmap-2nm-and-beyond">2 奈米之後的製程藍圖</TrendLink>；想了解為什麼 EUV 與先進製程成為國際角力的焦點，可以看<TrendLink id="export-controls-us-china">晶片出口管制與中美科技角力</TrendLink>。

@@ -1,0 +1,33 @@
+---
+/**
+ * Embed a static diagram from src/components/diagrams/<id>.astro without an import (MDX authors cannot
+ * import). Wrapped in <Figure> when a caption is given.
+ *   <Diagram id="cowos-stack" caption="CoWoS-S 剖面示意" source="TSMC" />
+ */
+import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
+import Figure from './Figure.astro';
+
+interface Props {
+  id: string;
+  caption?: string | undefined;
+  source?: string | undefined;
+  [key: string]: unknown;
+}
+const { id, caption, source, ...rest } = Astro.props;
+const mods = import.meta.glob<{ default: AstroComponentFactory }>('../diagrams/*.astro', { eager: true });
+const mod = mods[`../diagrams/${id}.astro`];
+if (!mod && import.meta.env.DEV) console.warn(`[Diagram] src/components/diagrams/${id}.astro not found`);
+const Cmp = mod?.default;
+---
+
+{
+  Cmp ? (
+    caption || source ? (
+      <Figure caption={caption} source={source}>
+        <Cmp {...rest} />
+      </Figure>
+    ) : (
+      <Cmp {...rest} />
+    )
+  ) : null
+}

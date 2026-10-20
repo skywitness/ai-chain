@@ -1,0 +1,138 @@
+---
+/**
+ * Simple MDX bar chart (docs/CONTENT-GUIDE.md §3):
+ *   <BarChart title="…" unit="十億美元" data={[{ label: "2024", value: 230 }, { label: "2026", value: 410, estimate: true }]} source="key" note="…" />
+ *
+ * Short labels (≤ 8 bars) render as columns, otherwise as horizontal bars. Estimates are
+ * hatched and marked 「估計」 in the table. Every bar carries its value (few bars, exact values).
+ */
+import './charts.css';
+import ChartFrame from './ChartFrame.astro';
+import BarsPlot, { type BarSlot } from './BarsPlot.astro';
+import { fmtTick, niceTicks, pct, round, textWidthCh, tickDigits, tip, vars } from './chart-utils';
+import { axisStep } from './chart-utils';
+import { pageSources, resolveSources, type SourceInput } from './sources';
+import type { LegendItem, SourceLike, TableSpec } from './types';
+import { formatNumber } from '../../lib/format';
+
+interface Props {
+  title: string;
+  unit: string;
+  data: ReadonlyArray<{ label: string; value: number; estimate?: boolean | undefined; note?: string | undefined }>;
+  source?: SourceInput;
+  note?: string | undefined;
+  /** list to resolve `source` keys against (default: the page's registered sources) */
+  sources?: SourceLike[] | undefined;
+  asOf?: string | undefined;
+  subtitle?: string | undefined;
+  orientation?: 'auto' | 'vertical' | 'horizontal' | undefined;
+  /** label of the bar to emphasise (others are muted) */
+  highlight?: string | undefined;
+  format?: 'number' | 'percent' | undefined;
+  digits?: number | undefined;
+  /** keep the given order instead of sorting horizontal bars by value */
+  keepOrder?: boolean | undefined;
+}
+
+const { title, unit, data = [], source, note, sources, asOf, subtitle, orientation = 'auto', highlight, format, keepOrder = false } = Astro.props;
+const percent = format === 'percent' || unit === '%';
+const vals = data.map((d) => d.value).filter(Number.isFinite);
+const digits = Astro.props.digits ?? (vals.every((v) => Number.isInteger(v)) ? 0 : vals.some((v) => Math.abs(v) < 10) ? 1 : 1);
+const fmt = (v: number) => `${formatNumber(v, { digits })}${percent ? '%' : ''}`;
+const vertical = orientation === 'vertical' || (orientation === 'auto' && data.length <= 8 && data.every((d) => textWidthCh(d.label) <= 9));
+const resolved = resolveSources(source, sources ?? pageSources(Astro));
+const anyEst = data.some((d) => d.estimate);
+const unitLine = percent ? '%' : unit;
+
+const rows = vertical || keepOrder || data.every((d, i) => i === 0 || /^\d{4}/.test(d.label)) ? [...data] : [...data].sort((a, b) => b.value - a.value);
+const max = rows.length ? rows.reduce((a, b) => (b.value > a.value ? b : a)) : null;
+const min = rows.length ? rows.reduce((a, b) => (b.value < a.value ? b : a)) : null;
+const aria = rows.length
+  ? `${title}長條圖，共 ${rows.length} 項（單位：${unitLine}）。` +
+    rows
+      .slice(0, 8)
+      .map((d) => `${d.label} ${fmt(d.value)}${d.estimate ? '（估計）' : ''}`)
+      .join('、') +
+    (rows.length > 8 ? `等；最高為 ${max!.label}，最低為 ${min!.label}。` : '。')
+  : '';
+
+const slots: BarSlot[] = rows.map((d) => ({
+  value: d.value,
+  estimate: d.estimate,
+  dim: !!highlight && d.label !== highlight,
+  label: d.label,
+  valueLabel: fmt(d.value),
+  tip: tip(d.label, [
+    [unitLine === '%' ? '數值' : unitLine, fmt(d.value)],
+    d.estimate ? ['狀態', '估計'] : null,
+    d.note ? ['附註', d.note] : null,
+  ]),
+}));
+
+// horizontal layout
+const hTicks = niceTicks(Math.min(0, ...vals), Math.max(0, ...vals, 0), 4);
+const hDigits = tickDigits(hTicks.ticks);
+const zero = pct(0, hTicks.domain);
+
+const legend: LegendItem[] = anyEst ? [{ label: '實際值', kind: 'bar' }, { label: '估計值', kind: 'estimate' }] : [];
+const table: TableSpec = {
+  columns: [
+    { key: 'l', label: '項目' },
+    { key: 'v', label: unitLine === '%' ? '數值（%）' : `數值（${unitLine}）`, numeric: true },
+    ...(anyEst ? [{ key: 's', label: '備註' }] : []),
+  ],
+  rows: rows.map((d) => ({ l: d.label, v: formatNumber(d.value, { digits }), s: [d.estimate ? '估計' : '', d.note ?? ''].filter(Boolean).join('；') })),
+};
+---
+
+<ChartFrame
+  title={title}
+  subtitle={subtitle}
+  asOf={asOf}
+  unit={unitLine}
+  legend={legend}
+  notes={[note]}
+  sources={resolved}
+  table={table}
+  empty={rows.length === 0}
+>
+  {
+    vertical ? (
+      <BarsPlot slots={slots} ariaLabel={aria} height={200} />
+    ) : (
+      <div class="ch-hb" role="img" aria-label={aria}>
+        {rows.map((d) => {
+          const p = pct(d.value, hTicks.domain);
+          const neg = d.value < 0;
+          return (
+            <div class="ch-hb__row">
+              <span class="ch-hb__label" aria-hidden="true">
+                {d.label}
+              </span>
+              <span class="ch-hb__track" aria-hidden="true" data-tip={tip(d.label, [[unitLine, fmt(d.value)], d.estimate ? ['狀態', '估計'] : null])}>
+                {hTicks.ticks.map((t) => (
+                  <i class:list={['ch-hb__tick', t === 0 && 'ch-hb__tick--base']} style={`--x:${pct(t, hTicks.domain)}%`} />
+                ))}
+                <span
+                  class:list={['ch-hb__bar', neg && 'ch-hb__bar--neg', d.estimate && 'ch-hb__bar--est', highlight && d.label !== highlight && 'ch-bar--dim']}
+                  style={vars({ '--l': `${neg ? p : zero}%`, '--w': `${round(Math.abs(p - zero), 3)}%` })}
+                />
+              </span>
+              <span class="ch-hb__val" aria-hidden="true">
+                {fmt(d.value)}
+                {d.estimate && <small>（估計）</small>}
+              </span>
+            </div>
+          );
+        })}
+        <div class="ch-hb__axis" aria-hidden="true">
+          {hTicks.ticks.map((t, k) => (
+            <span style={`--x:${pct(t, hTicks.domain)}%`} hidden={k % axisStep(hTicks.ticks.length) !== 0 ? true : undefined}>
+              {fmtTick(t, { percent, digits: hDigits })}
+            </span>
+          ))}
+        </div>
+      </div>
+    )
+  }
+</ChartFrame>

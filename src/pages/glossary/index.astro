@@ -1,0 +1,573 @@
+---
+/**
+ * /glossary/ 名詞解釋：AI 與半導體術語，依分類分組並標示難度。
+ * - Every term in src/data/glossary-index/*.yaml gets a block with anchor #<id> (Term popovers link here);
+ *   collection entries add definition, example, related terms, learnMore and sources.
+ * - Backlinks 「出現在…」 come from frontmatter glossary lists and <Term id> in MDX bodies (build time).
+ * - Each term shows its one-line summary; the full explanation is one click away (「完整解釋」), so the
+ *   page scans 由淺入深. A 「展開全部解釋」 toggle, a category scroll spy and (below 1100 px) a floating
+ *   「篩選與分類」 button help on this long page.
+ * - Client filter (text, category, level) via GlossaryFilter; without JS everything is visible.
+ * - Pagefind: data-pagefind-body on each term block (not on <main>), so hits land on #<id>.
+ * Owner: pages-reference agent.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Icon from '../../components/ui/Icon.astro';
+import TermEntry from '../../components/reference/TermEntry.astro';
+import GlossaryFilter from '../../components/reference/GlossaryFilter.astro';
+import { getGlossaryTerms, groupTerms } from '../../components/reference/reference-data';
+import { LEVELS } from '../../lib/collections';
+import { sectionHref } from '../../lib/paths';
+import { DATA_DATE, definedTermSetJsonLd, ogImageFor } from '../../lib/seo';
+
+const terms = await getGlossaryTerms();
+const groups = groupTerms(terms);
+const total = terms.length;
+const levelCounts = LEVELS.map((l) => ({ ...l, count: terms.filter((t) => t.level === l.level).length }));
+const withDefinition = terms.filter((t) => t.hasEntry).length;
+
+const jsonLd = definedTermSetJsonLd(
+  terms.map((t) => ({
+    id: t.id,
+    name: t.term,
+    alternateName: [t.zh, t.en].filter((x): x is string => !!x && x !== t.term),
+    description: t.short ?? t.zh ?? t.term,
+    site: Astro.site,
+  })),
+  Astro.site,
+);
+// ~300 terms: keep @id, name and alternateName only. The definitions are already in the visible HTML,
+// and repeating them here (plus termCode/url/inDefinedTermSet) would add ~25 KB gz to the page.
+if (Array.isArray(jsonLd['hasDefinedTerm'])) {
+  jsonLd['hasDefinedTerm'] = (jsonLd['hasDefinedTerm'] as Array<Record<string, unknown>>).map(
+    ({ termCode: _c, url: _u, inDefinedTermSet: _s, description: _d, ...rest }) => rest,
+  );
+}
+
+const PAGE_TITLE = '名詞解釋：AI 與半導體術語';
+const description =
+  'AI 與半導體常見術語的白話解釋：依主題分類並標示入門、進階、深入三種難度，附例子、相關名詞與延伸閱讀，從 Token、HBM 到 CoWoS 一次查清楚。';
+---
+
+<BaseLayout
+  title={PAGE_TITLE}
+  description={description}
+  breadcrumbs={[{ label: '名詞解釋' }]}
+  section="glossary"
+  pagefind={false}
+  image={ogImageFor('glossary')}
+  imageAlt={PAGE_TITLE}
+  jsonLd={jsonLd}
+>
+  <div class="container gl">
+    <header class="page-head gl-head">
+      <p class="page-head__kicker">參考資料</p>
+      <h1>名詞解釋</h1>
+      <p class="page-head__lede">
+        讀文章時遇到看不懂的詞，來這裡查。每個名詞都先用一句話說明，再給完整解釋與例子，並標示難度：從「入門」開始，循序往「進階」「深入」。
+      </p>
+      <dl class="gl-stats">
+        <div class="gl-stats__item">
+          <dt>收錄名詞</dt>
+          <dd><span class="num">{total}</span> 個</dd>
+        </div>
+        <div class="gl-stats__item">
+          <dt>主題分類</dt>
+          <dd><span class="num">{groups.length}</span> 類</dd>
+        </div>
+        <div class="gl-stats__item gl-stats__item--levels">
+          <dt>難度分布</dt>
+          <dd class="gl-stats__levels">
+            {
+              levelCounts.map((l) => (
+                <span class="gl-stats__lv">
+                  <Badge level={l.level} />
+                  <span class="num">{l.count}</span>
+                </span>
+              ))
+            }
+          </dd>
+        </div>
+      </dl>
+    </header>
+
+    <div class="gl-layout">
+      <aside class="gl-aside" id="gl-tools" aria-label="篩選與分類" data-gl-aside>
+        <div class="gl-aside__inner">
+          <GlossaryFilter categories={groups.map((g) => ({ id: g.id, zh: g.zh, count: g.terms.length }))} total={total} />
+
+          <details class="gl-nav" data-gl-nav>
+            <summary class="gl-nav__title">
+              <span>依分類瀏覽</span>
+              <span class="gl-nav__n">{groups.length} 類</span>
+              <Icon name="chevron-down" size="16px" class="gl-nav__chev" />
+            </summary>
+            <nav aria-label="名詞分類">
+              <ol class="gl-nav__list" role="list">
+                {
+                  groups.map((g) => (
+                    <li>
+                      <a href={`#cat-${g.id}`} class="gl-nav__link" data-cat-link>
+                        <span>{g.zh}</span>
+                        <span class="gl-nav__count num" data-cat-count={g.id}>
+                          {g.terms.length}
+                        </span>
+                      </a>
+                    </li>
+                  ))
+                }
+              </ol>
+            </nav>
+          </details>
+        </div>
+      </aside>
+
+      <div class="gl-main">
+        <div class="gl-howto js-only">
+          <p>每個名詞先看一句話說明；想知道更多，點「完整解釋」展開定義、例子與相關連結。</p>
+          <button type="button" class="gl-howto__btn" data-gl-expand>展開全部解釋</button>
+        </div>
+
+        <div class="gl-empty" data-gl-empty hidden role="status">
+          <Icon name="search" size="28px" />
+          <p class="gl-empty__title">沒有符合條件的名詞</p>
+          <p>試試換個關鍵字、改用中文或英文全名，或清除篩選條件。</p>
+          <button type="button" class="gl-empty__btn" data-gl-clear>清除篩選</button>
+        </div>
+
+        {
+          groups.map((g, gi) => (
+            <section class="gl-group" id={`cat-${g.id}`} data-term-group aria-labelledby={`cat-${g.id}-h`}>
+              <header class="gl-group__head">
+                <h2 id={`cat-${g.id}-h`} class="gl-group__title">
+                  {g.zh}
+                </h2>
+                <p class="gl-group__meta">
+                  <span lang="en">{g.en}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>
+                    <span class="num">{g.terms.length}</span> 個名詞
+                  </span>
+                </p>
+                <p class="gl-group__blurb">{g.blurb}</p>
+              </header>
+              <div class="gl-group__list">
+                {g.terms.map((t, ti) => (
+                  <TermEntry term={t} pagefindPage={gi === 0 && ti === 0 ? { filter: '類型:名詞', title: PAGE_TITLE } : undefined} />
+                ))}
+              </div>
+            </section>
+          ))
+        }
+
+        <aside class="gl-foot" aria-label="關於名詞解釋">
+          <p>
+            名詞解釋共 {total} 個，其中 {withDefinition} 個已有完整解釋。資料基準日 <time datetime={DATA_DATE}>{DATA_DATE}</time>。
+            想從頭建立觀念，可以先走一趟<a href={sectionHref('learn')}>學習路徑</a>；查資料出處與研究方法，請看<a href={sectionHref('sources')}>資料來源與研究方法</a>。
+          </p>
+        </aside>
+      </div>
+    </div>
+
+    <a href="#gl-tools" class="gl-fab js-only" data-gl-fab hidden>
+      <Icon name="search" size="18px" />
+      篩選與分類
+    </a>
+  </div>
+</BaseLayout>
+
+<script>
+  // The category list starts collapsed so phones reach the terms quickly; the desktop sidebar opens it.
+  const wide = window.matchMedia('(min-width: 1100px)');
+  const nav = document.querySelector<HTMLDetailsElement>('[data-gl-nav]');
+  if (nav && wide.matches) nav.open = true;
+
+  // Scroll spy: mark the category in view in the list (aria-current) and keep it visible in the
+  // sidebar, which scrolls on its own when the viewport is short. The page itself is never scrolled.
+  const links = new Map(
+    [...document.querySelectorAll<HTMLAnchorElement>('[data-cat-link]')].map((a) => [a.hash.slice(1), a]),
+  );
+  const sections = [...document.querySelectorAll<HTMLElement>('[data-term-group]')];
+  let current = '';
+  const mark = () => {
+    const line = window.innerHeight * 0.3;
+    let id = '';
+    for (const s of sections) {
+      if (s.hidden) continue;
+      if (s.getBoundingClientRect().top <= line) id = s.id;
+      else break;
+    }
+    if (id === current) return;
+    current = id;
+    links.forEach((a, key) => (key === id ? a.setAttribute('aria-current', 'location') : a.removeAttribute('aria-current')));
+    const a = links.get(id);
+    const box = nav;
+    if (a && box && wide.matches && box.scrollHeight > box.clientHeight) {
+      const top = a.offsetTop; // .gl-nav is the offsetParent (position: relative)
+      if (top < box.scrollTop + 48 || top + a.offsetHeight > box.scrollTop + box.clientHeight - 8) {
+        box.scrollTop = top - box.clientHeight / 2;
+      }
+    }
+  };
+
+  // Phones and tablets: a floating 「篩選與分類」 button once the filter has scrolled out of view.
+  const fab = document.querySelector<HTMLElement>('[data-gl-fab]');
+  const aside = document.querySelector<HTMLElement>('[data-gl-aside]');
+  const footer = document.querySelector<HTMLElement>('.site-footer');
+  let pastAside = false;
+  let atFooter = false;
+  const syncFab = () => {
+    if (fab) fab.hidden = wide.matches || !pastAside || atFooter;
+  };
+  if ('IntersectionObserver' in window) {
+    if (aside) {
+      new IntersectionObserver(([e]) => {
+        pastAside = !!e && !e.isIntersecting && e.boundingClientRect.top < 0;
+        syncFab();
+      }).observe(aside);
+    }
+    if (footer) {
+      new IntersectionObserver(([e]) => {
+        atFooter = !!e?.isIntersecting;
+        syncFab();
+      }).observe(footer);
+    }
+  }
+  wide.addEventListener('change', syncFab);
+
+  let raf = 0;
+  const onScroll = () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      mark();
+    });
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+  mark();
+</script>
+
+<style>
+  @layer components {
+    .gl-head {
+      padding-block-end: var(--space-6);
+    }
+    .gl-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3) var(--space-7);
+      margin: var(--space-3) 0 0;
+    }
+    .gl-stats__item {
+      display: grid;
+      gap: 2px;
+    }
+    .gl-stats__item dt {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--c-fg-subtle);
+    }
+    .gl-stats__item dd {
+      margin: 0;
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+    .gl-stats__item dd > .num {
+      font-size: var(--fs-xl);
+      font-weight: var(--fw-bold);
+      color: var(--c-fg);
+      margin-inline-end: 0.15em;
+    }
+    .gl-stats__levels {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-2) var(--space-4);
+      min-height: 2.1rem;
+    }
+    .gl-stats__lv {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45em;
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+    }
+
+    .gl-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-6);
+    }
+    .gl-aside__inner {
+      display: grid;
+      gap: var(--space-4);
+    }
+    @media (min-width: 1100px) {
+      .gl-layout {
+        grid-template-columns: 18.5rem minmax(0, 50rem);
+        gap: clamp(var(--space-6), 4vw, var(--space-8));
+        align-items: start;
+      }
+      /* The aside never cuts a card off: the filter keeps its height and the category list scrolls
+         inside its own card when the viewport is short (the aside scrolls only below ~36rem). */
+      .gl-aside {
+        position: sticky;
+        inset-block-start: calc(var(--header-h) + var(--space-4));
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - var(--header-h) - var(--space-6));
+        max-height: calc(100dvh - var(--header-h) - var(--space-6));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+      }
+      .gl-aside__inner {
+        display: flex;
+        flex-direction: column;
+        flex: 0 1 auto;
+        min-height: 0;
+        gap: var(--space-4);
+        padding-block-end: var(--space-2);
+      }
+      .gl-aside__inner > :global(*) {
+        flex: none;
+      }
+      .gl-aside__inner > .gl-nav {
+        flex: 0 1 auto;
+        min-height: 12rem;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+      }
+    }
+
+    .gl-nav {
+      position: relative;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+    }
+    .gl-nav__title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-height: var(--tap);
+      padding: var(--space-2) var(--space-5);
+      cursor: pointer;
+      list-style: none;
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+    }
+    .gl-nav__title::-webkit-details-marker {
+      display: none;
+    }
+    .gl-nav__n {
+      font-weight: var(--fw-regular);
+      color: var(--c-fg-subtle);
+      font-size: var(--fs-xs);
+    }
+    .gl-nav__title :global(.gl-nav__chev) {
+      margin-inline-start: auto;
+      color: var(--c-fg-subtle);
+      transition: transform var(--dur-2) var(--ease-out);
+    }
+    .gl-nav:not([open]) .gl-nav__title :global(.gl-nav__chev) {
+      transform: rotate(-90deg);
+    }
+    .gl-nav__list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+      gap: 2px var(--space-2);
+      margin: 0;
+      padding: 0 var(--space-3) var(--space-3);
+    }
+    @media (min-width: 1100px) {
+      .gl-nav__list {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    .gl-nav__link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      min-height: 2.5rem;
+      padding: 0 var(--space-3);
+      border-radius: var(--radius-m);
+      color: var(--c-fg-muted);
+      font-size: var(--fs-s);
+      text-decoration: none;
+    }
+    .gl-nav__link:hover {
+      background: var(--c-hover);
+      color: var(--c-fg);
+    }
+    .gl-nav__link[aria-current] {
+      background: var(--c-accent-soft);
+      color: var(--c-fg);
+      font-weight: var(--fw-semibold);
+    }
+    .gl-nav__link[aria-current] .gl-nav__count {
+      background: var(--c-bg-elev);
+      color: var(--c-fg-muted);
+    }
+    @media (min-width: 1100px) {
+      .gl-nav__link {
+        min-height: 2.25rem;
+      }
+    }
+    .gl-nav__link[data-empty] {
+      opacity: 0.45;
+    }
+    .gl-nav__count {
+      min-inline-size: 2em;
+      padding: 0 0.5em;
+      border-radius: var(--radius-pill);
+      background: var(--c-bg-sunken);
+      color: var(--c-fg-subtle);
+      font-size: var(--fs-xs);
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .gl-main {
+      display: grid;
+      gap: var(--space-8);
+      min-width: 0;
+    }
+    .gl-group {
+      display: grid;
+      gap: var(--space-5);
+      scroll-margin-top: var(--space-2); /* html scroll-padding-top already clears the header */
+    }
+    .gl-group__head {
+      display: grid;
+      gap: var(--space-1);
+      padding-block-end: var(--space-3);
+      border-block-end: 1px solid var(--c-border);
+    }
+    .gl-group__title {
+      font-size: var(--fs-2xl);
+    }
+    .gl-group__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5em;
+      font-size: var(--fs-s);
+      color: var(--c-fg-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+    .gl-group__blurb {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+    .gl-group__list {
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .gl-empty {
+      display: grid;
+      justify-items: center;
+      gap: var(--space-2);
+      padding: var(--space-8) var(--space-5);
+      border: 1px dashed var(--c-border-strong);
+      border-radius: var(--radius-l);
+      text-align: center;
+      color: var(--c-fg-muted);
+    }
+    .gl-empty__title {
+      font-size: var(--fs-l);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+    }
+    .gl-empty__btn {
+      margin-block-start: var(--space-3);
+      min-height: var(--tap);
+      padding: 0 1.2em;
+      border: 1px solid var(--c-border-strong);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      font-size: var(--fs-s);
+    }
+    .gl-empty__btn:hover {
+      background: var(--c-hover);
+    }
+
+    .gl-howto {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2) var(--space-5);
+      margin-block-end: calc(-1 * var(--space-5));
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-sunken);
+      font-size: var(--fs-s);
+      line-height: 1.7;
+      color: var(--c-fg-muted);
+    }
+    .gl-howto p {
+      flex: 1 1 18rem;
+      max-width: none;
+    }
+    .gl-howto__btn {
+      flex: none;
+      min-height: 2.5rem;
+      padding: 0 1em;
+      border: 1px solid var(--c-border-strong);
+      border-radius: var(--radius-pill);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+    }
+    .gl-howto__btn:hover {
+      border-color: var(--c-accent);
+      background: var(--c-accent-soft);
+    }
+
+    .gl-fab {
+      position: fixed;
+      inset-inline-end: max(var(--space-4), env(safe-area-inset-right));
+      inset-block-end: max(var(--space-4), env(safe-area-inset-bottom));
+      z-index: 20;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+      min-height: var(--tap);
+      padding: 0 1.1em;
+      border-radius: var(--radius-pill);
+      background: var(--c-accent);
+      color: var(--c-accent-fg);
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      text-decoration: none;
+      box-shadow: var(--shadow-2);
+    }
+    .gl-fab:hover {
+      color: var(--c-accent-fg);
+      filter: brightness(1.08);
+    }
+    @media (min-width: 1100px) {
+      .gl-fab {
+        display: none;
+      }
+    }
+
+    .gl-foot {
+      padding: var(--space-5);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-sunken);
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      line-height: 1.8;
+    }
+  }
+</style>

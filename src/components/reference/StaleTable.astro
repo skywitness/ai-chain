@@ -1,0 +1,90 @@
+---
+/**
+ * Table of entries whose lastVerified is older than STALE_DAYS (used by FreshnessPanel).
+ *   <StaleTable rows={report.stale} caption="超過 180 天未查核的條目" />
+ */
+import Badge from '../ui/Badge.astro';
+import { PAGE_KIND_LABELS, STALE_DAYS, type FreshnessRow } from './reference-data';
+
+interface Props {
+  rows: readonly FreshnessRow[];
+  caption: string;
+}
+const { rows, caption } = Astro.props;
+const fmt = (n: number) => n.toLocaleString('zh-TW');
+---
+
+<div class="scroll-x stt">
+  <table class="stt__table">
+    <caption class="sr-only">{caption}</caption>
+    <thead>
+      <tr>
+        <th scope="col">條目</th>
+        <th scope="col">類型</th>
+        <th scope="col">最後查核</th>
+        <th scope="col" class="stt__num">距今</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((r) => (
+          <tr>
+            <th scope="row">
+              <a href={r.link.href}>{r.link.label}</a>
+            </th>
+            <td>{PAGE_KIND_LABELS[r.link.kind]}</td>
+            <td class="num">
+              <time datetime={r.lastVerified}>{r.lastVerified}</time>
+            </td>
+            <td class="stt__num num">
+              <Badge tone="neg" title={`超過 ${STALE_DAYS} 天`}>
+                {fmt(r.age)} 天
+              </Badge>
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+
+<style>
+  @layer components {
+    .stt {
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+    }
+    .stt__table {
+      display: table;
+      inline-size: 100%;
+      margin: 0;
+      font-size: var(--fs-s);
+    }
+    .stt__table th,
+    .stt__table td {
+      text-align: start;
+      padding: 0.6em 1em;
+      min-width: 0;
+      max-width: none;
+      vertical-align: baseline;
+    }
+    .stt__table tbody th {
+      font-weight: var(--fw-regular);
+      min-width: 10em;
+    }
+    .stt__table td {
+      white-space: nowrap;
+      color: var(--c-fg-muted);
+    }
+    .stt__table thead th {
+      background: var(--c-bg-sunken);
+    }
+    .stt__table tbody tr:last-child > * {
+      border-block-end: 0;
+    }
+    .stt__table .stt__num {
+      text-align: end;
+    }
+  }
+</style>

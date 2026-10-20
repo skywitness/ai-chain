@@ -1,0 +1,46 @@
+term: "FlashAttention"
+zh: "注意力加速演算法"
+en: "FlashAttention"
+aliases:
+  - "Flash Attention"
+  - "FlashAttention-2"
+  - "FlashAttention-3"
+  - "IO 感知注意力"
+category: inference
+level: 3
+short: >-
+  一種重新安排 GPU 記憶體讀寫的注意力計算方法，結果與原本完全相同，但更快、更省記憶體。
+definition: >-
+  標準的注意力運算要把與序列長度平方成正比的中間矩陣寫進 GPU 的 HBM 再讀回來，序列一長就又慢又佔記憶體。FlashAttention 由 Tri Dao 等人在 2022 年提出，採「IO 感知」設計：把計算切成小塊，在晶片上的高速 SRAM 內完成相乘與 softmax，大幅減少 HBM 讀寫，結果與標準注意力完全一致，記憶體用量也從平方成長降為線性成長。第一代比當時最佳化的基準快 2–4 倍；FlashAttention-2 再快約 2 倍，在 A100 上達理論峰值的 50–73%；針對 H100 的 FlashAttention-3 以 FP16 達到每秒 740 兆次浮點運算，約 75% 使用率。它是長上下文模型能夠實用的關鍵之一，也說明軟體最佳化能讓同樣的硬體發揮更多效能。
+example: >-
+  像在廚房做菜：與其每切一樣食材就跑去冰箱（HBM）放好再拿回來，不如在流理台（SRAM）上一次處理完一小批，來回跑的次數少了，出菜就快很多。
+related: [attention, sram, hbm, context-window, memory-wall]
+learnMore: [transformer-and-attention, inference-optimization]
+segments: [devtools-data-mlops, ai-accelerators]
+sources:
+  - title: "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness"
+    publisher: "arXiv（NeurIPS 2022）"
+    url: "https://arxiv.org/abs/2205.14135"
+    type: paper
+    lang: en
+    published: "2022-05-27"
+    accessed: "2026-10-06"
+  - title: "FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning"
+    publisher: "arXiv"
+    url: "https://arxiv.org/abs/2307.08691"
+    type: paper
+    lang: en
+    published: "2023-07-17"
+    accessed: "2026-10-06"
+  - title: "FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision"
+    publisher: "arXiv"
+    url: "https://arxiv.org/abs/2407.08608"
+    type: paper
+    lang: en
+    published: "2024-07-11"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-inference
+  checkedBy: "gloss-inference-check"
+  checkedOn: "2026-10-06"

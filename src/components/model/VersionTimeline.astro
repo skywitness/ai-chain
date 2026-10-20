@@ -1,0 +1,225 @@
+---
+/**
+ * Version timeline of one model family (newest first). The flagship is highlighted; retired and
+ * deprecated versions are muted. Each item shows the release date, tier, status and the key specs.
+ *
+ *   <VersionTimeline versions={family.versions} flagship={family.flagship?.id} />
+ */
+import { formatDate } from '../../lib/format';
+import {
+  REASONING_LABELS,
+  STATUS_LABELS,
+  TIER_LABELS,
+  WEIGHTS_LABELS,
+  formatPricePair,
+  formatTokens,
+  latestPrice,
+  type ModelVersion,
+} from './model-data';
+
+interface Props {
+  versions: ModelVersion[];
+  flagship?: string | undefined;
+  /** show at most N items, the rest behind a disclosure */
+  initial?: number | undefined;
+}
+const { versions, flagship, initial = 8 } = Astro.props;
+const first = versions.slice(0, initial);
+const rest = versions.slice(initial);
+
+const facts = (v: ModelVersion) => {
+  const out: string[] = [];
+  if (v.contextTokens) out.push(`上下文 ${formatTokens(v.contextTokens)} tokens`);
+  const p = latestPrice(v);
+  if (p) out.push(`API ${formatPricePair(p)}`);
+  out.push(WEIGHTS_LABELS[v.weights] ?? v.weights);
+  if (v.reasoning !== 'none') out.push(REASONING_LABELS[v.reasoning] ?? v.reasoning);
+  return out;
+};
+const groups = rest.length ? [first, rest] : [first];
+---
+
+<div class="vt">
+  {
+    groups.map((list, gi) => {
+      const items = (
+        <ol class="vt__list" role="list">
+          {list.map((v) => (
+            <li class:list={['vt__item', `is-${v.status}`, { 'is-flagship': v.id === flagship }]}>
+              <span class="vt__dot" aria-hidden="true" />
+              <div class="vt__date">
+                <time datetime={v.released}>{formatDate(v.released, 'short')}</time>
+              </div>
+              <div class="vt__body">
+                <p class="vt__name">
+                  <strong>{v.name}</strong>
+                  {v.id === flagship && <span class="vt__tag vt__tag--flag">目前旗艦</span>}
+                  <span class="vt__tag">{TIER_LABELS[v.tier] ?? v.tier}</span>
+                  <span class:list={['vt__tag', `vt__status--${v.status}`]}>{STATUS_LABELS[v.status] ?? v.status}</span>
+                </p>
+                <p class="vt__facts">{facts(v).join('・')}</p>
+                {v.notes && <p class="vt__note">{v.notes}</p>}
+              </div>
+            </li>
+          ))}
+        </ol>
+      );
+      return gi === 0 ? (
+        items
+      ) : (
+        <details class="vt__more">
+          <summary>顯示較早的 {list.length} 個版本</summary>
+          {items}
+        </details>
+      );
+    })
+  }
+</div>
+
+<style>
+  @layer components {
+    .vt__list {
+      position: relative;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+    }
+    .vt__item {
+      position: relative;
+      display: grid;
+      grid-template-columns: 6.5rem minmax(0, 1fr);
+      gap: var(--space-4);
+      padding-block: var(--space-3);
+      padding-inline-start: var(--space-5);
+    }
+    .vt__item::before {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 0.35rem;
+      inline-size: 2px;
+      background: var(--c-border);
+    }
+    .vt__list > .vt__item:first-child::before {
+      inset-block-start: 1.5rem;
+    }
+    .vt__list > .vt__item:last-child::before {
+      inset-block-end: calc(100% - 1.5rem);
+    }
+    .vt__dot {
+      position: absolute;
+      inset-inline-start: 0;
+      inset-block-start: 1.05rem;
+      inline-size: 0.8rem;
+      block-size: 0.8rem;
+      border-radius: 50%;
+      border: 2px solid var(--c-border-strong);
+      background: var(--c-bg-elev);
+      z-index: 1;
+    }
+    .vt__item.is-flagship .vt__dot {
+      border-color: var(--profile-accent, var(--c-accent));
+      background: var(--profile-accent, var(--c-accent));
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--profile-accent, var(--c-accent)) 20%, transparent);
+    }
+    .vt__date {
+      display: grid;
+      align-content: start;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.4;
+      padding-block-start: 0.15rem;
+    }
+    .vt__date time {
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+    }
+    .vt__day {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .vt__body {
+      display: grid;
+      gap: var(--space-1);
+      min-width: 0;
+    }
+    .vt__name {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-1) var(--space-2);
+    }
+    .vt__name strong {
+      font-size: var(--fs-m);
+    }
+    .vt__tag {
+      padding: 0 0.55em;
+      border-radius: var(--radius-s);
+      border: 1px solid var(--c-border);
+      background: var(--c-bg-sunken);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-muted);
+      line-height: 1.7;
+      white-space: nowrap;
+    }
+    .vt__tag--flag {
+      border-color: color-mix(in srgb, var(--profile-accent, var(--c-accent)) 40%, transparent);
+      background: color-mix(in srgb, var(--profile-accent, var(--c-accent)) 12%, transparent);
+      color: var(--c-fg);
+      font-weight: var(--fw-semibold);
+    }
+    .vt__status--preview,
+    .vt__status--announced {
+      color: var(--c-accent);
+    }
+    .vt__status--deprecated,
+    .vt__status--retired {
+      color: var(--c-warn);
+    }
+    .vt__facts {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .vt__note {
+      font-size: var(--fs-s);
+      line-height: 1.7;
+      color: var(--c-fg-muted);
+      max-width: var(--measure);
+    }
+    .vt__item.is-retired .vt__name strong,
+    .vt__item.is-deprecated .vt__name strong {
+      color: var(--c-fg-muted);
+    }
+    .vt__more {
+      margin-block-start: var(--space-2);
+    }
+    .vt__more > summary {
+      display: inline-flex;
+      align-items: center;
+      min-block-size: 2.75rem;
+      padding-inline: var(--space-4);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-pill);
+      background: var(--c-bg-elev);
+      font-size: var(--fs-s);
+      color: var(--c-link);
+      cursor: pointer;
+    }
+    .vt__more[open] > summary {
+      margin-block-end: var(--space-2);
+    }
+    @media (max-width: 479px) {
+      .vt__item {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-1);
+      }
+      .vt__date {
+        display: flex;
+        gap: var(--space-2);
+        align-items: baseline;
+      }
+    }
+  }
+</style>

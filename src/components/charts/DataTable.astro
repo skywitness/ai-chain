@@ -1,0 +1,42 @@
+---
+/**
+ * <DataTable> — the accessible table twin of a chart (also usable on its own).
+ * Cells are pre-formatted strings; numeric columns are right-aligned with tabular figures.
+ */
+import './charts.css';
+import type { TableSpec } from './types';
+
+interface Props extends TableSpec {
+  /** render the caption visibly (default: visually hidden) */
+  showCaption?: boolean;
+  class?: string;
+}
+
+const { columns, rows, caption, rowHeaderKey, showCaption = false, class: className } = Astro.props;
+const headKey = rowHeaderKey ?? columns[0]?.key;
+const show = (v: unknown) => (v == null || v === '' ? '—' : String(v));
+---
+
+<table class:list={['ch-table', className]}>
+  {caption && <caption class={showCaption ? 'ch-table__caption' : 'ch-sr'}>{caption}</caption>}
+  <thead>
+    <tr>
+      {columns.map((c) => <th scope="col" class={c.numeric ? 'num' : undefined}>{c.label}</th>)}
+    </tr>
+  </thead>
+  <tbody>
+    {
+      rows.map((r) => (
+        <tr>
+          {columns.map((c) =>
+            c.key === headKey ? (
+              <th scope="row" class={c.numeric ? 'num' : undefined}>{show(r[c.key])}</th>
+            ) : (
+              <td class={c.numeric ? 'num' : undefined}>{show(r[c.key])}</td>
+            ),
+          )}
+        </tr>
+      ))
+    }
+  </tbody>
+</table>

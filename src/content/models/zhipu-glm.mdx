@@ -1,0 +1,1296 @@
+---
+title: "智譜 GLM 系列"
+family: "GLM"
+kind: "llm"
+lab: "zhipu-ai"
+labName: "智譜（Z.ai）"
+origin: "CN"
+summary: "智譜（Z.ai）的開放權重大型語言模型系列，主打程式與長程 Agent。2026-08-18 推出的旗艦 GLM-5.3 約 7,530 億參數、100 萬 tokens 上下文，Artificial Analysis 綜合智慧指數 45 分，在開放權重模型中排第二；8 月 26 日另推出原生多模態、價格約九分之一的 GLM-5.3-Flash。GLM-5.3 改採自訂授權，GLM-5.2 以前與 Flash 版仍為 MIT。"
+strengths:
+  - "AA 綜合智慧指數 v4.3.2 得 45 分，開放權重模型中僅次於 MiMo-V2.6-Pro（46 分）"
+  - "程式與長程 Agent 能力強：官方 Terminal-Bench 2.1 為 88.2%，Terminal-Bench 3.0 由 GLM-5.2 的 4.6% 提升到 28.3%"
+  - "權重公開、可自建部署，模型卡列出 SGLang、vLLM 等框架，也支援華為昇騰 NPU"
+  - "GLM-5.3-Flash 原生支援圖片與影片輸入，每百萬 tokens 輸入 0.15、輸出 0.50 美元"
+  - "版本迭代快：2025-07 到 2026-08 推出七個旗艦版本，並提供 Anthropic 與 OpenAI 相容的 API 端點"
+weaknesses:
+  - "GLM-5.3 只接受文字輸入，且一律開啟推理，無法關閉思考以換取速度"
+  - "偏冗長：AA 跑完指數測試時 GLM-5.3（max）產生 2.1 億 tokens，比中位數 1.4 億多約五成；輸出速度約每秒 73 tokens，與平均相當（2026-10-06 量測）"
+  - "GLM-5.3 授權要求集團年營收逾 100 億美元、經營模型 API 服務的業者商用前先通過 Z.ai 安全審查，不再是純 MIT"
+  - "與封閉前沿仍有距離：AA 指數第一名 Claude Opus 5.5 為 58 分"
+bestFor:
+  - "以開放權重模型打造程式 Agent、終端機自動化與長時間工作流程"
+  - "資料需留在自家機房、又需要接近前沿能力的企業內部部署"
+  - "大量呼叫、在意成本的多模態工作（GLM-5.3-Flash）"
+  - "資安團隊的白箱程式碼審查與漏洞挖掘輔助"
+positioning:
+  capability: 45
+  costIndex: 49.5
+  openness: 0.5
+  method: "computed"
+  asOf: "2026-10-06"
+  note: "capability 取 GLM-5.3（max）的 AA 綜合智慧指數 v4.3.2（44.8）；costIndex 以官方定價每百萬 tokens 輸入 1.4、輸出 4.4 美元，按 3:1 混合為 2.15 美元，依對數換算（0.05 美元 = 0、100 美元 = 100）得 49.5；openness 取 0.5，因 GLM-5.3 權重公開但授權對大型模型服務商設有審查條件，若改看 MIT 授權的 GLM-5.3-Flash 或 GLM-5.2 則為 0.8。"
+versions:
+  - id: "glm-5-3"
+    name: "GLM-5.3"
+    released: "2026-08-18"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "GLM-5.3 License"
+    architecture: "moe"
+    params:
+      totalB: 753
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 1000000
+    maxOutputTokens: 131072
+    reasoning: "always"
+    availability:
+      - "api"
+      - "self-host"
+      - "cloud-marketplace"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1.4
+        outputPerMTok: 4.4
+        cachedInputPerMTok: 0.26
+        currency: "USD"
+        tierNote: "標準 API 價格；快取儲存限時免費"
+        source:
+          title: "Pricing"
+          publisher: "Z.ai Developer Docs"
+          url: "https://docs.z.ai/guides/overview/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 44.8
+        setting: "v4.3.2，max 推理強度"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-5.3 (Max) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-5-3"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 91.7
+        setting: "AA 獨立測試，max"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-5.3 (Max) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-5-3"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 42.3
+        setting: "AA 獨立測試，無工具，max"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-5.3 (Max) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-5-3"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 62.5
+        setting: "官方，含工具、30 萬 tokens 上下文管理；官方未註明題組範圍（階躍星辰 Step 5 Preview 發布頁引用此數字時標為純文字子集）"
+        reportedBy: "lab"
+        date: "2026-08-25"
+        source:
+          title: "zai-org/GLM-5.3 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5.3"
+          type: "docs"
+          lang: "en"
+          published: "2026-08-25"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 88.2
+        setting: "官方，Terminal-Bench 2.1，Claude Code 框架"
+        reportedBy: "lab"
+        date: "2026-08-25"
+        source:
+          title: "zai-org/GLM-5.3 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5.3"
+          type: "docs"
+          lang: "en"
+          published: "2026-08-25"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 28.3
+        setting: "官方，Terminal-Bench 3.0，三次平均"
+        reportedBy: "lab"
+        date: "2026-08-25"
+        source:
+          title: "zai-org/GLM-5.3 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5.3"
+          type: "docs"
+          lang: "en"
+          published: "2026-08-25"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 83.9
+        setting: "AA 獨立測試，Terminal-Bench 2.1"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-5.3 (Max) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-5-3"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 41.9
+        setting: "AA 獨立測試，Terminal-Bench 4.0"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-5.3 (Max) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-5-3"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1478.5
+        setting: "顯示名稱 glm-5.3-max，第 27 名，17,857 票"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "與 GLM-5.2 共用基礎模型，進步全部來自後訓練；API 於 2026-08-18 上線，權重 2026-08-25 上架 Hugging Face。參數量依 Hugging Face 權重檔計數（約 7,533 億）；GLM-5 官方公布 7,440 億，但其權重檔計數約 7,539 億，差異應來自計數口徑不同。AA 標示每個 token 啟用約 400 億。只能開啟推理，推理強度分 low、high、max。"
+  - id: "glm-5-3-flash"
+    name: "GLM-5.3-Flash／FlashX"
+    released: "2026-08-26"
+    status: "ga"
+    tier: "mid"
+    weights: "open-weights"
+    license: "MIT"
+    architecture: "moe"
+    params:
+      totalB: 320
+      activeB: 18
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+      - "video"
+    modalitiesOut:
+      - "text"
+    contextTokens: 1000000
+    maxOutputTokens: 131072
+    reasoning: "always"
+    availability:
+      - "api"
+      - "self-host"
+      - "cloud-marketplace"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.15
+        outputPerMTok: 0.5
+        cachedInputPerMTok: 0.03
+        currency: "USD"
+        tierNote: "GLM-5.3-Flash 標準版"
+        source:
+          title: "Pricing"
+          publisher: "Z.ai Developer Docs"
+          url: "https://docs.z.ai/guides/overview/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.37
+        outputPerMTok: 1.25
+        cachedInputPerMTok: 0.075
+        currency: "USD"
+        tierNote: "GLM-5.3-FlashX 高速版（官方稱約每秒 200 tokens）"
+        source:
+          title: "Pricing"
+          publisher: "Z.ai Developer Docs"
+          url: "https://docs.z.ai/guides/overview/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 41.8
+        setting: "v4.3.2"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-5.3-Flash Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-5-3-flash"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 91.2
+        setting: "AA 獨立測試"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-5.3-Flash Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-5-3-flash"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 39.9
+        setting: "AA 獨立測試，無工具"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-5.3-Flash Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-5-3-flash"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 55.3
+        setting: "官方，含工具（官方標示為完整題組）"
+        reportedBy: "lab"
+        date: "2026-08-26"
+        source:
+          title: "zai-org/GLM-5.3-Flash model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5.3-Flash"
+          type: "docs"
+          lang: "en"
+          published: "2026-08-25"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 84.3
+        setting: "官方，Terminal-Bench 2.1"
+        reportedBy: "lab"
+        date: "2026-08-26"
+        source:
+          title: "zai-org/GLM-5.3-Flash model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5.3-Flash"
+          type: "docs"
+          lang: "en"
+          published: "2026-08-25"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 32.8
+        setting: "AA 獨立測試，Terminal-Bench 4.0"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-5.3-Flash Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-5-3-flash"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1473
+        setting: "第 41 名，22,971 票"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "GLM-5 系列第一個原生多模態模型，採全新訓練的基礎模型，也是 GLM 系列首度採用稀疏與線性注意力的混合架構；官方稱注意力運算與 KV cache 分別比 GLM-5.3 少 3.01 倍與 4.44 倍。2026-08-26 的官方更新公告只提到 Flash；高速版 GLM-5.3-FlashX（官方稱約每秒 200 tokens）另行上線，官方未公布確切日期。"
+  - id: "glm-5-2"
+    name: "GLM-5.2"
+    released: "2026-06-16"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "MIT"
+    architecture: "moe"
+    params:
+      totalB: 753
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 1000000
+    maxOutputTokens: 131072
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1.4
+        outputPerMTok: 4.4
+        cachedInputPerMTok: 0.26
+        currency: "USD"
+        tierNote: "與 GLM-5.3 同價"
+        source:
+          title: "Pricing"
+          publisher: "Z.ai Developer Docs"
+          url: "https://docs.z.ai/guides/overview/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "swe-bench-pro"
+        score: 62.1
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-06-16"
+        source:
+          title: "zai-org/GLM-5.2 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5.2"
+          type: "docs"
+          lang: "en"
+          published: "2026-06-16"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 91.2
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-06-16"
+        source:
+          title: "zai-org/GLM-5.2 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5.2"
+          type: "docs"
+          lang: "en"
+          published: "2026-06-16"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 40.5
+        setting: "官方，無工具（純文字子集）"
+        reportedBy: "lab"
+        date: "2026-06-16"
+        source:
+          title: "zai-org/GLM-5.2 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5.2"
+          type: "docs"
+          lang: "en"
+          published: "2026-06-16"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 81
+        setting: "官方，Terminal-Bench 2.1，Terminus-2 框架"
+        reportedBy: "lab"
+        date: "2026-06-16"
+        source:
+          title: "zai-org/GLM-5.2 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5.2"
+          type: "docs"
+          lang: "en"
+          published: "2026-06-16"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 33.7
+        setting: "v4.3.2，max 推理強度"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-5.2 (Max) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-5-2"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1475.8
+        setting: "顯示名稱 glm-5.2-max，第 32 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "首度提供 100 萬 tokens 上下文；提出 IndexShare，每四層稀疏注意力共用一個索引器，官方稱 100 萬上下文下每 token 運算量降低 2.9 倍。"
+  - id: "glm-5-1"
+    name: "GLM-5.1"
+    released: "2026-04-07"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "MIT"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 200000
+    maxOutputTokens: 131072
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1.4
+        outputPerMTok: 4.4
+        cachedInputPerMTok: 0.26
+        currency: "USD"
+        source:
+          title: "Pricing"
+          publisher: "Z.ai Developer Docs"
+          url: "https://docs.z.ai/guides/overview/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "swe-bench-pro"
+        score: 58.4
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-04-07"
+        source:
+          title: "zai-org/GLM-5.1 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5.1"
+          type: "docs"
+          lang: "en"
+          published: "2026-04-07"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 86.2
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-04-07"
+        source:
+          title: "zai-org/GLM-5.1 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5.1"
+          type: "docs"
+          lang: "en"
+          published: "2026-04-07"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 31
+        setting: "官方，無工具"
+        reportedBy: "lab"
+        date: "2026-04-07"
+        source:
+          title: "zai-org/GLM-5.1 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5.1"
+          type: "docs"
+          lang: "en"
+          published: "2026-04-07"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 26.1
+        setting: "v4.3.2，推理模式"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-5.1 (Reasoning) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-5-1"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1464.6
+        setting: "第 55 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "官方定位為長程任務模型，單次可自主工作最長 8 小時。官方未另行公布參數；Hugging Face 權重檔的參數計數與 GLM-5 完全相同，應沿用 GLM-5 架構。"
+  - id: "glm-5"
+    name: "GLM-5"
+    released: "2026-02-12"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "MIT"
+    architecture: "moe"
+    params:
+      totalB: 744
+      activeB: 40
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 200000
+    maxOutputTokens: 131072
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1
+        outputPerMTok: 3.2
+        cachedInputPerMTok: 0.2
+        currency: "USD"
+        source:
+          title: "Pricing"
+          publisher: "Z.ai Developer Docs"
+          url: "https://docs.z.ai/guides/overview/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 77.8
+        setting: "官方，OpenHands 框架"
+        reportedBy: "lab"
+        date: "2026-02-12"
+        source:
+          title: "zai-org/GLM-5 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5"
+          type: "docs"
+          lang: "en"
+          published: "2026-02-11"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 86
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-02-12"
+        source:
+          title: "zai-org/GLM-5 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5"
+          type: "docs"
+          lang: "en"
+          published: "2026-02-11"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 30.5
+        setting: "官方，無工具（純文字子集）"
+        reportedBy: "lab"
+        date: "2026-02-12"
+        source:
+          title: "zai-org/GLM-5 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5"
+          type: "docs"
+          lang: "en"
+          published: "2026-02-11"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 89.7
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2026-02-12"
+        source:
+          title: "zai-org/GLM-5 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5"
+          type: "docs"
+          lang: "en"
+          published: "2026-02-11"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 56.2
+        setting: "官方，Terminal-Bench 2.0，Terminus 2 框架"
+        reportedBy: "lab"
+        date: "2026-02-12"
+        source:
+          title: "zai-org/GLM-5 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-5"
+          type: "docs"
+          lang: "en"
+          published: "2026-02-11"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 27.9
+        setting: "v4.3.2，推理模式（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-5 (Reasoning) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-5"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1457.6
+        setting: "第 63 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "總參數由 GLM-4.5 的 3,550 億（啟用 320 億）擴大到 7,440 億（啟用 400 億），預訓練資料由 23 兆增至 28.5 兆 tokens，並導入 DeepSeek 稀疏注意力（DSA）。"
+  - id: "glm-4-7"
+    name: "GLM-4.7"
+    released: "2025-12-22"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "MIT"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 200000
+    maxOutputTokens: 131072
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.6
+        outputPerMTok: 2.2
+        cachedInputPerMTok: 0.11
+        currency: "USD"
+        source:
+          title: "Pricing"
+          publisher: "Z.ai Developer Docs"
+          url: "https://docs.z.ai/guides/overview/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 73.8
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2025-12-22"
+        source:
+          title: "zai-org/GLM-4.7 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-4.7"
+          type: "docs"
+          lang: "en"
+          published: "2025-12-22"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 85.7
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2025-12-22"
+        source:
+          title: "zai-org/GLM-4.7 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-4.7"
+          type: "docs"
+          lang: "en"
+          published: "2025-12-22"
+          accessed: "2026-10-06"
+      - benchmark: "aime-2025"
+        score: 95.7
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2025-12-22"
+        source:
+          title: "zai-org/GLM-4.7 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-4.7"
+          type: "docs"
+          lang: "en"
+          published: "2025-12-22"
+          accessed: "2026-10-06"
+      - benchmark: "livecodebench"
+        score: 84.9
+        setting: "官方，LiveCodeBench v6"
+        reportedBy: "lab"
+        date: "2025-12-22"
+        source:
+          title: "zai-org/GLM-4.7 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-4.7"
+          type: "docs"
+          lang: "en"
+          published: "2025-12-22"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 87.4
+        setting: "官方"
+        reportedBy: "lab"
+        date: "2025-12-22"
+        source:
+          title: "zai-org/GLM-4.7 model card"
+          publisher: "Hugging Face"
+          url: "https://huggingface.co/zai-org/GLM-4.7"
+          type: "docs"
+          lang: "en"
+          published: "2025-12-22"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 22.2
+        setting: "v4.3.2，推理模式（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-4.7 (Reasoning) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-4-7"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1441.5
+        setting: "第 93 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "官方未另行公布參數；Hugging Face 權重檔的參數計數與 GLM-4.5 完全相同，應沿用同一架構（GLM-4.5 為 3,550 億參數、啟用 320 億）。"
+  - id: "glm-4-7-flash"
+    name: "GLM-4.7-Flash"
+    released: "2026-01-19"
+    status: "ga"
+    tier: "small"
+    weights: "open-weights"
+    license: "MIT"
+    architecture: "moe"
+    params:
+      totalB: 30
+      activeB: 3
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 200000
+    maxOutputTokens: 131072
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0
+        outputPerMTok: 0
+        cachedInputPerMTok: 0
+        currency: "USD"
+        tierNote: "官方 API 免費；另有付費高速版 GLM-4.7-FlashX（輸入 0.07、輸出 0.4 美元）"
+        source:
+          title: "Pricing"
+          publisher: "Z.ai Developer Docs"
+          url: "https://docs.z.ai/guides/overview/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 14.9
+        setting: "v4.3.2，推理模式（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-4.7-Flash (Reasoning) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-4-7-flash"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "GLM-4.7 的免費輕量版，官方模型卡標示為 30B-A3B 的 MoE（總參數約 300 億、每個 token 啟用約 30 億；Hugging Face 權重檔計數約 312 億），上下文 20 萬 tokens。"
+  - id: "glm-4-6"
+    name: "GLM-4.6"
+    released: "2025-09-30"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "MIT"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 200000
+    maxOutputTokens: 131072
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.6
+        outputPerMTok: 2.2
+        cachedInputPerMTok: 0.11
+        currency: "USD"
+        source:
+          title: "Pricing"
+          publisher: "Z.ai Developer Docs"
+          url: "https://docs.z.ai/guides/overview/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 18.5
+        setting: "v4.3.2，推理模式（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-4.6 (Reasoning) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-4-6-reasoning"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1424.1
+        setting: "第 123 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "上下文由 12.8 萬擴大到 20 萬 tokens，官方定位為程式旗艦。"
+  - id: "glm-4-5"
+    name: "GLM-4.5／GLM-4.5-Air"
+    released: "2025-07-28"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "MIT"
+    architecture: "moe"
+    params:
+      totalB: 355
+      activeB: 32
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 131072
+    maxOutputTokens: 98304
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.6
+        outputPerMTok: 2.2
+        cachedInputPerMTok: 0.11
+        currency: "USD"
+        tierNote: "GLM-4.5"
+        source:
+          title: "Pricing"
+          publisher: "Z.ai Developer Docs"
+          url: "https://docs.z.ai/guides/overview/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.2
+        outputPerMTok: 1.1
+        cachedInputPerMTok: 0.03
+        currency: "USD"
+        tierNote: "GLM-4.5-Air（1,060 億參數、啟用 120 億）"
+        source:
+          title: "Pricing"
+          publisher: "Z.ai Developer Docs"
+          url: "https://docs.z.ai/guides/overview/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 12.8
+        setting: "v4.3.2，推理模式（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "GLM-4.5 (Reasoning) Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/glm-4.5"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "lmarena-text"
+        score: 1411.3
+        setting: "第 146 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena Leaderboard"
+          publisher: "LMArena"
+          url: "https://lmarena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Leaderboard last updated 2026-10-02"
+    notes: "官方定位為 Agent 應用的基礎模型，預訓練 15 兆 tokens 通用資料後再針對程式、推理與 Agent 微調；可接入 Claude Code、Roo Code 等程式 Agent 工具。"
+flagshipVersion: "glm-5-3"
+relatedLearn:
+  - "open-vs-closed-models"
+  - "mixture-of-experts"
+  - "reasoning-models"
+  - "agents-and-mcp"
+  - "model-evaluation"
+glossary:
+  - "open-weights"
+  - "moe"
+  - "active-parameters"
+  - "context-window"
+  - "reasoning-model"
+  - "sparse-attention"
+  - "agent"
+  - "kv-cache"
+  - "multimodal"
+  - "elo-rating"
+sources:
+  - key: "zai-release"
+    title: "New Released"
+    publisher: "Z.ai Developer Docs"
+    url: "https://docs.z.ai/release-notes/new-released"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "zai-pricing"
+    title: "Pricing"
+    publisher: "Z.ai Developer Docs"
+    url: "https://docs.z.ai/guides/overview/pricing"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "zai-glm53-doc"
+    title: "GLM-5.3"
+    publisher: "Z.ai Developer Docs"
+    url: "https://docs.z.ai/guides/llm/glm-5.3"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "zai-glm53flash-doc"
+    title: "GLM-5.3-Flash/FlashX"
+    publisher: "Z.ai Developer Docs"
+    url: "https://docs.z.ai/guides/vlm/glm-5.3-flash"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "zai-glm52-doc"
+    title: "GLM-5.2"
+    publisher: "Z.ai Developer Docs"
+    url: "https://docs.z.ai/guides/llm/glm-5.2"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "zai-glm5-doc"
+    title: "GLM-5"
+    publisher: "Z.ai Developer Docs"
+    url: "https://docs.z.ai/guides/llm/glm-5"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "zai-glm51-doc"
+    title: "GLM-5.1"
+    publisher: "Z.ai Developer Docs"
+    url: "https://docs.z.ai/guides/llm/glm-5.1"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "zai-glm45-doc"
+    title: "GLM-4.5"
+    publisher: "Z.ai Developer Docs"
+    url: "https://docs.z.ai/guides/llm/glm-4.5"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "zai-glm46-doc"
+    title: "GLM-4.6"
+    publisher: "Z.ai Developer Docs"
+    url: "https://docs.z.ai/guides/llm/glm-4.6"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "zai-glm47-doc"
+    title: "GLM-4.7"
+    publisher: "Z.ai Developer Docs"
+    url: "https://docs.z.ai/guides/llm/glm-4.7"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-glm53"
+    title: "zai-org/GLM-5.3 model card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/zai-org/GLM-5.3"
+    type: "docs"
+    lang: "en"
+    published: "2026-08-25"
+    accessed: "2026-10-06"
+  - key: "hf-glm53-license"
+    title: "GLM-5.3 License"
+    publisher: "Z.ai (Hugging Face)"
+    url: "https://huggingface.co/zai-org/GLM-5.3/blob/main/LICENSE"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-glm53flash"
+    title: "zai-org/GLM-5.3-Flash model card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/zai-org/GLM-5.3-Flash"
+    type: "docs"
+    lang: "en"
+    published: "2026-08-25"
+    accessed: "2026-10-06"
+  - key: "hf-glm52"
+    title: "zai-org/GLM-5.2 model card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/zai-org/GLM-5.2"
+    type: "docs"
+    lang: "en"
+    published: "2026-06-16"
+    accessed: "2026-10-06"
+  - key: "hf-glm51"
+    title: "zai-org/GLM-5.1 model card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/zai-org/GLM-5.1"
+    type: "docs"
+    lang: "en"
+    published: "2026-04-07"
+    accessed: "2026-10-06"
+  - key: "hf-glm5"
+    title: "zai-org/GLM-5 model card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/zai-org/GLM-5"
+    type: "docs"
+    lang: "en"
+    published: "2026-02-11"
+    accessed: "2026-10-06"
+  - key: "hf-glm47"
+    title: "zai-org/GLM-4.7 model card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/zai-org/GLM-4.7"
+    type: "docs"
+    lang: "en"
+    published: "2025-12-22"
+    accessed: "2026-10-06"
+  - key: "hf-glm47flash"
+    title: "zai-org/GLM-4.7-Flash model card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/zai-org/GLM-4.7-Flash"
+    type: "docs"
+    lang: "en"
+    published: "2026-01-19"
+    accessed: "2026-10-06"
+  - key: "hf-glm45"
+    title: "zai-org/GLM-4.5 model card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/zai-org/GLM-4.5"
+    type: "docs"
+    lang: "en"
+    published: "2025-07-28"
+    accessed: "2026-10-06"
+  - key: "glm5-paper"
+    title: "GLM-5: from Vibe Coding to Agentic Engineering"
+    publisher: "GLM-5 Team (arXiv)"
+    url: "https://arxiv.org/abs/2602.15763"
+    type: "paper"
+    lang: "en"
+    published: "2026-02-17"
+    accessed: "2026-10-06"
+  - key: "aa-glm53"
+    title: "GLM-5.3 (Max) Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/glm-5-3"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-glm53flash"
+    title: "GLM-5.3-Flash Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/glm-5-3-flash"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-glm52"
+    title: "GLM-5.2 (Max) Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/glm-5-2"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-glm51"
+    title: "GLM-5.1 (Reasoning) Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/glm-5-1"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-glm5"
+    title: "GLM-5 (Reasoning) Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/glm-5"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-glm47"
+    title: "GLM-4.7 (Reasoning) Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/glm-4-7"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-glm47flash"
+    title: "GLM-4.7-Flash (Reasoning) Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/glm-4-7-flash"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-glm46"
+    title: "GLM-4.6 (Reasoning) Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/glm-4-6-reasoning"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-glm45"
+    title: "GLM-4.5 (Reasoning) Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/glm-4.5"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-leaderboard"
+    title: "LLM Leaderboard: Comparison of AI Models"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "lmarena-text"
+    title: "Text Arena Leaderboard"
+    publisher: "LMArena"
+    url: "https://lmarena.ai/leaderboard/text"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "Leaderboard last updated 2026-10-02"
+  - key: "step5-page"
+    title: "Step 5 Preview：向前一步，智能效率的新一代「帕累托前沿」"
+    publisher: "StepFun 階躍星辰"
+    url: "https://www.stepfun.com/step-5-preview"
+    type: "press-release"
+    lang: "zh-CN"
+    published: "2026-09-20"
+    accessed: "2026-10-17"
+    note: "評測表註腳：HLE w/ tools 中 Step 5 Preview 與 GLM-5.3（Max）以純文字子集評測"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-11"
+  checkedBy: "models-11-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+GLM 是<CompanyChip id="zhipu-ai">智譜（Zhipu AI，國際品牌 Z.ai）</CompanyChip>的大型語言模型系列。2025 年中以後，智譜大約每兩個月推出一個新旗艦，而且多半同步在 Hugging Face 公開權重：GLM-4.5（2025-07）、GLM-4.6（2025-09）、GLM-4.7（2025-12）、GLM-5（2026-02）、GLM-5.1（2026-04）、GLM-5.2（2026-06），以及截至 2026-10-06 最新的 GLM-5.3（2026-08-18）與 GLM-5.3-Flash（2026-08-26）<Cite k="zai-release" />。
+
+GLM-5.3 沿用 GLM-5.2 的基礎模型，進步全部來自後訓練。它只接受文字輸入，<Term id="context-window">上下文視窗</Term>為 100 萬 tokens、最大輸出 12.8 萬 tokens，而且是一律開啟推理的<Term id="reasoning-model">推理模型</Term>，只能在 low、high、max 三段強度之間切換<Cite k="zai-glm53-doc" />。在 Artificial Analysis（AA）綜合智慧指數 v4.3.2 中，GLM-5.3（max）得 45 分，<Term id="open-weights">開放權重</Term>模型裡僅次於小米 MiMo-V2.6-Pro 的 46 分<Cite k="aa-glm53" />。
+
+## 特性分析
+
+**以程式與長程 Agent 為主軸。** GLM-5 把參數從 GLM-4.5 的 3,550 億（<Term id="active-parameters">啟用參數</Term> 320 億）擴大到 7,440 億（啟用 400 億），並導入 DeepSeek 的<Term id="sparse-attention">稀疏注意力</Term>來降低長上下文成本<Cite k="zai-glm5-doc" />。之後 GLM-5.1 主打單次自主工作 8 小時，GLM-5.2 把可用上下文推到 100 萬 tokens<Cite k="zai-release" />。GLM-5.3 官方稱在自家 Z.ai Code Bench 比 GLM-5.2 進步 50%，較難的 Terminal-Bench 3.0 則從 4.6% 提升到 28.3%<Cite k="zai-glm53-doc" />。
+
+**資安能力是兩面刃。** GLM-5.3 在漏洞挖掘評測 CyberGym 得 84.5%；智譜也說與多個資安團隊合作，在 269 個專案中確認 2,436 個漏洞，其中 1,097 個屬中高風險<Cite k="zai-glm53-doc" />。防守方多了工具，濫用風險也同步升高。
+
+**旗艦與 Flash 兩條線。** GLM-5.3-Flash 是 GLM-5 系列第一個原生<Term id="multimodal">多模態</Term>模型，採全新訓練的基礎模型，總參數 3,200 億、每個 token 啟用 180 億，混合線性與稀疏注意力，注意力運算與 <Term id="kv-cache">KV cache</Term> 分別比 GLM-5.3 少 3.01 倍與 4.44 倍，可輸入圖片、影片與檔案<Cite k="zai-glm53flash-doc" />。API 價格為每百萬 tokens 輸入 0.15、輸出 0.50 美元，約是 GLM-5.3（1.4／4.4 美元）的九分之一<Cite k="zai-pricing" />。
+
+**授權開始分歧。** GLM-5 到 GLM-5.2，以及 GLM-5.3-Flash，都採 MIT 授權；GLM-5.3 改用自訂授權，條款大致寬鬆，但規定經營「模型即服務」、且集團年營收超過 100 億美元的業者，商用前須通過 Z.ai 的安全審查<Cite k="hf-glm53-license" />。
+
+## 適合與不適合的用途
+
+適合：
+
+- **程式 Agent 與終端機自動化**：官方提供 OpenAI 與 Anthropic 相容的 API 端點，可直接接入 Claude Code 等工具<Cite k="zai-glm53-doc" />。
+- **自建部署**：模型卡列出 SGLang、vLLM、Transformers 等推論框架，也支援華為昇騰 NPU<Cite k="hf-glm53" />，適合資料不能離開機房的企業。
+- **大量、在意成本的多模態工作**：GLM-5.3-Flash 能看圖片與影片，價格又低。
+
+不適合：
+
+- **需要圖片或影片輸入，卻想用旗艦版**：GLM-5.3 只接受文字。
+- **對延遲敏感的即時互動**：GLM-5.3 無法關閉推理，回答前一定先「想」一段。AA 量測（2026-10-06）其輸出速度約每秒 73 tokens，與平均的 75 相當，但跑完整套指數測試產生 2.1 億 tokens，比中位數 1.4 億多約五成，等待時間與費用都會跟著拉長<Cite k="aa-glm53" />。
+- **大型雲端模型服務商**：集團年營收超過 100 億美元、又經營模型 API 服務的業者，商用前須先通過授權審查<Cite k="hf-glm53-license" />。
+
+## 版本演進
+
+| 發布日 | 版本 | 重點 |
+|---|---|---|
+| 2025-07-28 | GLM-4.5、GLM-4.5-Air | 3,550 億／1,060 億參數 <Term id="moe">MoE</Term>，MIT 授權 |
+| 2025-09-30 | GLM-4.6 | 上下文擴大到 20 萬 tokens |
+| 2025-12-22 | GLM-4.7 | 強化程式與 Agent；2026-01 推出免費版 GLM-4.7-Flash |
+| 2026-02-12 | GLM-5 | 7,440 億參數，導入稀疏注意力 |
+| 2026-04-07 | GLM-5.1 | 長程任務，可連續工作 8 小時 |
+| 2026-06-16 | GLM-5.2 | 100 萬 tokens 上下文 |
+| 2026-08-18 | GLM-5.3 | 同一基座、後訓練強化程式與資安；8 月 25 日公開權重 |
+| 2026-08-26 | GLM-5.3-Flash | 新基座、原生多模態、低價；之後另推高速版 FlashX |
+
+舊版仍列在官方價目表上，可繼續透過 API 呼叫<Cite k="zai-pricing" />。這種「每兩個月一版」的節奏，讓 GLM 的評測數字很快過時，引用時務必註明版本。
+
+## 評測解讀
+
+<Callout type="warn" title="同一個評測，設定可能不同">官方數字多在 Claude Code 等 Agent 框架、最高推理強度下測得；AA 與 LMArena 是第三方，讀取日為 2026-10-06（LMArena 文字榜更新於 2026-10-02）。</Callout>
+
+| 評測 | GLM-5.3 | GLM-5.3-Flash | 來源 |
+|---|---|---|---|
+| AA 綜合智慧指數 v4.3.2 | 45 | 42 | AA |
+| GPQA Diamond | 91.7% | 91.2% | AA |
+| HLE（無工具） | 42.3% | 39.9% | AA |
+| HLE（含工具） | 62.5%（題組未註明） | 55.3%（完整題組） | 官方 |
+| Terminal-Bench 2.1 | 88.2%（官方）／83.9%（AA） | 84.3%（官方） | 官方、AA |
+| Terminal-Bench 4.0 | 41.9% | 32.8% | AA |
+| LMArena 文字競技場 | 1,479（第 27 名） | 1,473（第 41 名） | LMArena |
+
+- **官方數字大致可重現**：Terminal-Bench 2.1 官方 88.2%、AA 自測 83.9%，差距約 4 個百分點；官方用 Claude Code 框架並給每題 6 小時，與 AA 的測試環境不同，落差可能來自這些設定<Cite k="hf-glm53" /><Cite k="aa-glm53" />。
+- **含工具的 HLE 不宜直接比**：GLM-5.3-Flash 的 55.3% 官方標示為完整題組；GLM-5.3 的 62.5% 官方未註明題組，階躍星辰引用時則標為純文字子集<Cite k="hf-glm53flash" /><Cite k="hf-glm53" /><Cite k="step5-page" />。兩個數字的差距不能全部看成能力差距。
+- **舊題目已接近飽和**：Terminal-Bench 2.1 上多個模型都超過 85%，鑑別力下降；更難的 3.0 版，GLM-5.3 為 28.3%，官方對照表中 GPT-5.6 Sol 為 34.6%<Cite k="hf-glm53" />。
+- **與封閉前沿仍有差距**：AA 指數第一名 Claude Opus 5.5 為 58 分，比 GLM-5.3 高 13 分<Cite k="aa-leaderboard" />。
+- **Flash 的成本效益最突出**：AA 指數只比 GLM-5.3 低 3 分，API 價格卻約九分之一<Cite k="aa-glm53flash" /><Cite k="zai-pricing" />。
+- **人類偏好與任務能力不同**：LMArena 是盲測投票的 <Term id="elo-rating">Elo 分數</Term>，反映回答風格與偏好；GLM-5.3 排第 27 名、GLM-5.3-Flash 第 41 名，分數只差約 5.5 分，而且兩者的信賴區間重疊，人類偏好上幾乎分不出高下<Cite k="lmarena-text" />。

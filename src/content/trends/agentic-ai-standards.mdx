@@ -1,0 +1,270 @@
+---
+title: "Agent 生態與標準化：MCP、A2A 與 AGENTS.md"
+description: "Agent 要接上工具、彼此協作，需要共同的接頭規格。MCP 從 2024 年 11 月開源到 2026 年中一級 SDK 月下載近 5 億次，A2A 與 AGENTS.md 也歸入 Linux 基金會的 AAIF；安全、身分與支付標準則仍在競爭。"
+category: software
+horizon: near
+horizonYears: [2025, 2028]
+confidence: high
+confidenceRationale: "Anthropic、OpenAI、Google、微軟、AWS 都已加入 Linux 基金會旗下的 AAIF，MCP 與 A2A 也獲主要雲端與 SaaS 平台原生支援，底層協定收斂的方向相當明確；較不確定的是上層：Agent 身分、授權與支付仍有多套方案競爭，MCP 規格本身也在 2026 年做了不相容的改版。"
+impact: high
+milestones:
+  - { date: "2024-11", label: "Anthropic 開源 MCP（模型上下文協定）", status: done }
+  - { date: "2025-03", label: "MCP 規格加入以 OAuth 2.1 為基礎的授權架構與 Streamable HTTP 傳輸", status: done }
+  - { date: "2025-04", label: "Google 發表 A2A，首發獲 50 多家技術夥伴支持", status: done }
+  - { date: "2025-06", label: "A2A 移交 Linux 基金會，支持者逾 100 家", status: done }
+  - { date: "2025-08", label: "OpenAI 發布 AGENTS.md，給程式 Agent 的專案說明格式", status: done }
+  - { date: "2025-09", label: "Google 發表 Agent 支付協定 AP2，逾 60 個組織參與", status: done }
+  - { date: "2025-12", label: "Linux 基金會成立 AAIF，接收 MCP、goose 與 AGENTS.md", status: done }
+  - { date: "2026-02", label: "美國 NIST 啟動 AI Agent 標準計畫，聚焦安全、身分與互通", status: done }
+  - { date: "2026-03", label: "A2A 發布 1.0 穩定版規格", status: done }
+  - { date: "2026-07", label: "MCP 2026-07-28 版改為無狀態協定；一級 SDK 月下載近 5 億次", status: done }
+  - { date: "2026-08", label: "A2A 加入 AAIF，獲逾 150 個組織支持", status: done }
+  - { date: "2027-07", label: "MCP 的 Roots、Sampling、Logging 至少保留到此時，之後才可能移除", status: expected }
+signals:
+  - text: "MCP 2026-07-28 版規格發布時，一級 SDK 合計每月下載將近 5 億次，TypeScript 與 Python SDK 的累計下載各超過 10 億次。"
+    date: "2026-07-28"
+    source: { title: "The 2026-07-28 Specification", publisher: Model Context Protocol Blog, url: "https://blog.modelcontextprotocol.io/posts/2026-07-28/", type: company-site, lang: en, published: "2026-07-28", accessed: "2026-10-16" }
+  - text: "A2A 以成長階段專案加入 AAIF，獲逾 150 個組織支持；Google Cloud、AWS Bedrock AgentCore Runtime 與 Azure AI Foundry 原生支援，ServiceNow、Salesforce、Atlassian、SAP 以它串接工作流程。"
+    date: "2026-08-27"
+    source: { title: "A New Chapter for A2A: Joining the Agentic AI Foundation", publisher: A2A Protocol, url: "https://a2a-protocol.org/latest/blog/2026/08/27/a-new-chapter-for-a2a-joining-the-agentic-ai-foundation/", type: company-site, lang: en, published: "2026-08-27", accessed: "2026-10-16" }
+  - text: "AAIF 成立時，公開運作的 MCP 伺服器逾 1 萬個，Python 與 TypeScript SDK 每月下載逾 9,700 萬次；ChatGPT、Cursor、Gemini、Microsoft Copilot、VS Code 等產品已採用 MCP。"
+    date: "2025-12-09"
+    source: { title: "Donating the Model Context Protocol and establishing the Agentic AI Foundation", publisher: Anthropic, url: "https://www.anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation", type: press-release, lang: en, published: "2025-12-09", accessed: "2026-10-16" }
+  - text: "AGENTS.md 已被逾 6 萬個開源專案與 Agent 框架採用，包括 Codex、Cursor、Devin、Gemini CLI、GitHub Copilot、Jules 與 VS Code。"
+    date: "2025-12-09"
+    source: { title: "Linux Foundation Announces the Formation of the Agentic AI Foundation (AAIF)", publisher: The Linux Foundation, url: "https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation", type: press-release, lang: en, published: "2025-12-09", accessed: "2026-10-16" }
+  - text: "NIST 旗下的 CAISI 啟動 AI Agent 標準計畫，三大方向為推動產業主導的標準、支持社群主導的開放協定、研究 Agent 安全與身分，並徵求 Agent 安全的公眾意見。"
+    date: "2026-02-17"
+    source: { title: "Announcing the \"AI Agent Standards Initiative\" for Interoperable and Secure Innovation", publisher: NIST, url: "https://www.nist.gov/news-events/news/2026/02/announcing-ai-agent-standards-initiative-interoperable-and-secure", type: government, lang: en, published: "2026-02-17", accessed: "2026-10-16" }
+counterpoints:
+  - "安全風險隨互通性放大：同時能讀取私密資料、接觸不可信內容、又能對外傳訊的 Agent，很容易被提示注入誘導外洩資料；MCP 讓使用者自由混搭不同來源的工具，更容易在不知情下湊齊這三項條件。"
+  - "規格仍在快速變動：MCP 2026-07-28 版移除了初始化握手與工作階段，並把 Roots、Sampling、Logging 列為不建議使用，既有實作必須遷移；標準尚未穩定前，企業的整合成本可能反覆發生。"
+  - "上下文成本：Agent 接上數千個工具時，光是讀取工具定義就可能要處理數十萬個 Token；在 Anthropic 的範例中，改以程式碼按需載入工具後，Token 用量從 15 萬個降到 2,000 個，代表直接呼叫工具的做法仍有效率問題。"
+  - "支付與商務層尚未統一：Google 主導的 AP2 與 Stripe、OpenAI 開發的 ACP 都在爭取成為 Agent 購物的標準，商家可能要同時支援多套協定。"
+relatedSegments: [apps-agents, devtools-data-mlops, foundation-models, cloud-neocloud]
+relatedCompanies: [anthropic, openai, alphabet, microsoft, amazon, cloudflare, salesforce, servicenow, sap, atlassian, stripe, langchain, anysphere, ibm]
+relatedModels: [anthropic-claude, openai-gpt, google-gemini]
+relatedLearn: [agents-and-mcp, ai-apps-and-agents-101, ai-safety-and-regulation]
+glossary: [agent, mcp, a2a, function-calling, api, prompt-injection, token, context-window]
+sources:
+  - key: mcp-launch
+    title: "Introducing the Model Context Protocol"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/model-context-protocol"
+    type: press-release
+    lang: en
+    published: "2024-11-25"
+    accessed: "2026-10-16"
+  - key: mcp-0326
+    title: "Key Changes (Protocol Revision 2025-03-26)"
+    publisher: Model Context Protocol
+    url: "https://modelcontextprotocol.io/specification/2025-03-26/changelog"
+    type: standard
+    lang: en
+    accessed: "2026-10-16"
+    note: "相對於 2024-11-05 版：新增以 OAuth 2.1 為基礎的授權架構；以 Streamable HTTP 取代 HTTP+SSE 傳輸"
+  - key: a2a-launch
+    title: "Announcing the Agent2Agent Protocol (A2A)"
+    publisher: Google Developers Blog
+    url: "https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability/"
+    type: company-site
+    lang: en
+    published: "2025-04-09"
+    accessed: "2026-10-16"
+  - key: lf-a2a
+    title: "Linux Foundation Launches the Agent2Agent Protocol Project to Enable Secure, Intelligent Communication Between AI Agents"
+    publisher: The Linux Foundation
+    url: "https://www.linuxfoundation.org/press/linux-foundation-launches-the-agent2agent-protocol-project-to-enable-secure-intelligent-communication-between-ai-agents"
+    type: press-release
+    lang: en
+    published: "2025-06-23"
+    accessed: "2026-10-16"
+    note: "A2A 由 Google 於 4 月推出，此時獲逾 100 家科技公司支持"
+  - key: simon-trifecta
+    title: "The lethal trifecta for AI agents: private data, untrusted content, and external communication"
+    publisher: "Simon Willison's Weblog"
+    url: "https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/"
+    type: other
+    lang: en
+    published: "2025-06-16"
+    accessed: "2026-10-16"
+  - key: ap2
+    title: "Powering AI commerce with the new Agent Payments Protocol (AP2)"
+    publisher: Google Cloud Blog
+    url: "https://cloud.google.com/blog/products/ai-machine-learning/announcing-agents-to-payments-ap2-protocol"
+    type: company-site
+    lang: en
+    published: "2025-09-16"
+    accessed: "2026-10-16"
+    note: "可作為 A2A 與 MCP 的擴充；逾 60 個組織參與，包括 Adyen、American Express、Mastercard、PayPal 等"
+  - key: acp
+    title: "Agentic Commerce Protocol"
+    publisher: Agentic Commerce Protocol
+    url: "https://www.agenticcommerce.dev/"
+    type: standard
+    lang: en
+    accessed: "2026-10-16"
+    note: "由 Stripe 與 OpenAI 開發，Apache 2.0 開源；OpenAI 是第一個以 ChatGPT 實作的 AI 平台，Stripe 是第一個相容的金流業者"
+  - key: code-exec
+    title: "Code execution with MCP: Building more efficient agents"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/engineering/code-execution-with-mcp"
+    type: company-site
+    lang: en
+    published: "2025-11-04"
+    accessed: "2026-10-16"
+  - key: aaif-anthropic
+    title: "Donating the Model Context Protocol and establishing the Agentic AI Foundation"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation"
+    type: press-release
+    lang: en
+    published: "2025-12-09"
+    accessed: "2026-10-16"
+  - key: lf-aaif
+    title: "Linux Foundation Announces the Formation of the Agentic AI Foundation (AAIF), Anchored by New Project Contributions Including Model Context Protocol (MCP), goose and AGENTS.md"
+    publisher: The Linux Foundation
+    url: "https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation"
+    type: press-release
+    lang: en
+    published: "2025-12-09"
+    accessed: "2026-10-16"
+    note: "白金會員：AWS、Anthropic、Block、Bloomberg、Cloudflare、Google、微軟、OpenAI；AGENTS.md 於 2025 年 8 月由 OpenAI 發布，逾 6 萬個開源專案採用"
+  - key: nist-agents
+    title: "Announcing the \"AI Agent Standards Initiative\" for Interoperable and Secure Innovation"
+    publisher: NIST
+    url: "https://www.nist.gov/news-events/news/2026/02/announcing-ai-agent-standards-initiative-interoperable-and-secure"
+    type: government
+    lang: en
+    published: "2026-02-17"
+    accessed: "2026-10-16"
+  - key: a2a-v1
+    title: "A2A Protocol Ships v1.0: Production-Ready Standard for Agent-to-Agent Communication"
+    publisher: A2A Protocol
+    url: "https://a2a-protocol.org/latest/blog/2026/03/12/a2a-protocol-ships-v10-production-ready-standard-for-agent-to-agent-communication/"
+    type: company-site
+    lang: en
+    published: "2026-03-12"
+    accessed: "2026-10-16"
+  - key: mcp-2026
+    title: "The 2026-07-28 Specification"
+    publisher: Model Context Protocol Blog
+    url: "https://blog.modelcontextprotocol.io/posts/2026-07-28/"
+    type: company-site
+    lang: en
+    published: "2026-07-28"
+    accessed: "2026-10-16"
+    note: "一級 SDK 每月下載「將近 5 億次」；Roots、Sampling、Logging 列為不建議使用，至少再運作 12 個月；舊 HTTP+SSE 傳輸有一年的過渡期"
+  - key: mcp-changelog-2026
+    title: "Key Changes (Protocol Revision 2026-07-28)"
+    publisher: Model Context Protocol
+    url: "https://modelcontextprotocol.io/specification/2026-07-28/changelog"
+    type: standard
+    lang: en
+    published: "2026-07-28"
+    accessed: "2026-10-16"
+    note: "相對於 2025-11-25 版：移除協定層級的工作階段與 Mcp-Session-Id 標頭；移除 initialize 握手，每個請求自帶協定版本與用戶端能力"
+  - key: a2a-aaif
+    title: "A New Chapter for A2A: Joining the Agentic AI Foundation"
+    publisher: A2A Protocol
+    url: "https://a2a-protocol.org/latest/blog/2026/08/27/a-new-chapter-for-a2a-joining-the-agentic-ai-foundation/"
+    type: company-site
+    lang: en
+    published: "2026-08-27"
+    accessed: "2026-10-16"
+  - key: agents-md
+    title: "AGENTS.md"
+    publisher: Agentic AI Foundation
+    url: "https://agents.md/"
+    type: standard
+    lang: en
+    accessed: "2026-10-16"
+    note: "網站標示逾 6 萬個開源專案使用"
+published: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: trends-06
+  checkedBy: "trends-06-check"
+  checkedOn: "2026-10-06"
+  notes: "資料基準日 2026-10-06，來源實際讀取日為 2026-10-16。MCP SDK 下載量的兩個時間點統計範圍不同（2025-12 為 Python 與 TypeScript 合計，2026-07 為全部一級 SDK），內文分開敘述、未畫成同一條趨勢線。A2A 支持者數量皆為「逾」的下限值。AP2 發表日期依 Google Cloud 頁面的結構化資料為 2025-09-16（頁面顯示 9 月 17 日）。查核（trends-06-check）：MCP 發表日、2025-03-26 與 2026-07-28 兩版規格變更、近 5 億次月下載與 TypeScript／Python 各逾 10 億次累計下載、12 個月棄用期、AAIF 成立日與白金會員、逾 1 萬個 MCP 伺服器與 9,700 萬次月下載、AGENTS.md 逾 6 萬個專案、A2A 三個時間點的支持者數、A2A 1.0 與加入 AAIF 的日期、NIST 計畫三大方向、AP2 逾 60 個組織、ACP 由 Stripe 與 OpenAI 開發等，皆以原始來源核對無誤。修正：上下文成本一段原寫「接上數十個 MCP 伺服器」，來源為「接上數千個工具」，15 萬降到 2,000 個 Token 是 Anthropic 的單一範例，已改寫；補上 A2A 官方列出的 IBM BeeAI。"
+---
+
+## 趨勢摘要
+
+一句話：要讓 <Term id="agent">AI Agent</Term> 真正替人做事，它得接上各種工具、資料與其他 Agent。過去每一種組合都要客製整合，現在產業正收斂到幾個開放標準：連接工具與資料的 <Term id="mcp">MCP</Term>、讓 Agent 彼此協作的 <Term id="a2a">A2A</Term>，以及告訴程式 Agent 專案規矩的 AGENTS.md。
+
+**已發生的事實**：<CompanyChip id="anthropic">Anthropic</CompanyChip> 在 2024 年 11 月開源 MCP<Cite k="mcp-launch" />，2025 年 12 月把它捐給 Linux 基金會旗下新成立的 Agentic AI Foundation（AAIF），共同創辦者還有 Block 與 <CompanyChip id="openai">OpenAI</CompanyChip><Cite k="aaif-anthropic" />；<CompanyChip id="alphabet">Google</CompanyChip> 發起的 A2A 也在 2026 年 8 月加入 AAIF<Cite k="a2a-aaif" />。
+
+**仍未定案的部分**：Agent 的身分驗證、授權與支付仍有多套方案並行，哪一套會勝出，目前只能觀察。
+
+<StatGrid items={[{ label: "MCP 一級 SDK 月下載", value: "近 5 億次", asOf: "2026-07" }, { label: "公開運作的 MCP 伺服器", value: "逾 1 萬個", asOf: "2025-12" }, { label: "A2A 支持組織", value: "逾 150 個", asOf: "2026-08" }, { label: "採用 AGENTS.md 的開源專案", value: "逾 6 萬個", asOf: "2025-12" }]} caption="來源：MCP 官方部落格、Anthropic、A2A 官方部落格、Linux 基金會。" />
+
+## 為什麼重要
+
+Anthropic 發表 MCP 時指出，每接一個新資料來源都要寫一套客製實作，系統很難擴大<Cite k="mcp-launch" />。有了共同協定，工具只要包成一個 MCP 伺服器，就能被所有支援 MCP 的 AI 應用使用；原本 M 個應用乘以 N 個工具的整合工作，變成 M 加 N。標準由誰管理也很重要：Anthropic 表示，把 MCP 交給基金會是為了讓它維持開源、由社群驅動且不偏向特定廠商<Cite k="aaif-anthropic" />。協定保持中立，Agent 生態就比較不會被綁在單一業者的模型或雲端上。
+
+<Callout type="analogy" title="生活化比喻">
+MCP 像 USB-C 接頭：週邊廠商只要做一種接頭，任何電腦都插得上。A2A 像電子郵件的通訊規格，不同公司的 Agent 能互相找到彼此、交辦工作。AGENTS.md 則像新人到職時拿到的工作手冊，寫著這個專案怎麼建置、怎麼測試。
+</Callout>
+
+## 關鍵驅動力
+
+**一、主要對手一起站台。** AAIF 的白金會員包括 AWS、Anthropic、Block、Bloomberg、<CompanyChip id="cloudflare" />、Google、<CompanyChip id="microsoft">微軟</CompanyChip>與 OpenAI<Cite k="lf-aaif" />。在成立時，公開運作的 MCP 伺服器已逾 1 萬個，ChatGPT、Cursor、Gemini、Microsoft Copilot、VS Code 等產品都已採用<Cite k="aaif-anthropic" />。
+
+**二、分層分工逐漸清楚。**
+
+| 層次 | 標準 | 發起者 | 現況 |
+|---|---|---|---|
+| Agent 連接工具與資料 | MCP | Anthropic | 2026 年 7 月改為無狀態協定<Cite k="mcp-changelog-2026" /> |
+| Agent 之間協作 | A2A | Google | 2026 年 3 月發布 1.0<Cite k="a2a-v1" /> |
+| 程式 Agent 的專案說明 | AGENTS.md | OpenAI | 逾 6 萬個開源專案採用<Cite k="lf-aaif" /> |
+| Agent 付款 | AP2、ACP | Google；OpenAI 與 <CompanyChip id="stripe" /> | 多套並行<Cite k="ap2" /><Cite k="acp" /> |
+
+A2A 官方的說法是：MCP 是連接內部工具與資料庫的「垂直層」，A2A 是 Agent 對等協作的「水平層」<Cite k="a2a-aaif" />。其中 MCP 等於把模型的<Term id="function-calling">函式呼叫</Term>能力標準化：工具的名稱、參數與回傳格式都有共同規格，任何應用都能用同一套 <Term id="api">API</Term> 格式呼叫。
+
+**三、規格朝大規模部署調整。** MCP 在 2025 年 3 月加入以 OAuth 2.1 為基礎的授權架構<Cite k="mcp-0326" />；2026 年 7 月的新版移除初始化握手與工作階段，任何請求都能送到負載平衡器後的任一台伺服器處理，一級 SDK 每月下載已將近 5 億次<Cite k="mcp-2026" />。A2A 的支持者也持續增加：
+
+<BarChart title="A2A 協定的支持組織數" unit="個組織（下限）" data={[{ label: "2025-04 發表", value: 50 }, { label: "2025-06 移交 Linux 基金會", value: 100 }, { label: "2026-08 加入 AAIF", value: 150 }]} source={["a2a-launch", "lf-a2a", "a2a-aaif"]} keepOrder note="三個數字原文皆為「逾」或「超過」，代表下限。" />
+
+<DeepDive title="深入一點：Agent 的身分與授權">
+當 Agent 代替使用者呼叫工具，系統要回答兩個問題：這個請求是誰發出的？它被允許做什麼？MCP 在 2025 年 3 月採用 OAuth 2.1 作為授權基礎<Cite k="mcp-0326" />；2026 年 7 月的新版再強化授權流程，例如要求驗證授權伺服器的發行者（RFC 9207），並從動態用戶端註冊轉向以用戶端中繼資料文件識別應用程式<Cite k="mcp-2026" />。NIST 也把 Agent 身分列為研究重點，除了徵求 Agent 安全的公眾意見，還發表了 Agent 身分與授權的概念文件徵求回饋<Cite k="nist-agents" />。簡單說，目標是讓 Agent 的權限可以被追蹤、限制與撤銷，而不是拿著使用者的帳號密碼到處登入。
+</DeepDive>
+
+**四、政府開始參與標準。** 美國 NIST 在 2026 年 2 月 17 日啟動 AI Agent 標準計畫，方向包括推動產業主導的標準、支持社群主導的開放協定，以及研究 Agent 的安全與身分<Cite k="nist-agents" />。
+
+## 時間表與里程碑
+
+| 時間 | 事件 | 性質 |
+|---|---|---|
+| 2024 年 11 月 | MCP 開源<Cite k="mcp-launch" /> | 已發生 |
+| 2025 年 4–6 月 | A2A 發表並移交 Linux 基金會<Cite k="a2a-launch" /><Cite k="lf-a2a" /> | 已發生 |
+| 2025 年 12 月 | AAIF 成立，接收 MCP、goose 與 AGENTS.md<Cite k="lf-aaif" /> | 已發生 |
+| 2026 年 3–8 月 | A2A 1.0 發布、加入 AAIF；MCP 改為無狀態<Cite k="a2a-v1" /><Cite k="mcp-2026" /> | 已發生 |
+| 2027 年 7 月以後 | MCP 的 Roots、Sampling、Logging 至少保留 12 個月，之後才可能移除<Cite k="mcp-2026" /> | 依規格政策推估 |
+
+## 受影響的環節與公司
+
+<Scene3D id="agent-loop" variant="loop" caption="Agent 規劃、透過 MCP 伺服器呼叫工具、觀察結果再決定下一步" />
+
+- <SegmentChip id="apps-agents" />：<CompanyChip id="servicenow" />、<CompanyChip id="salesforce" />、<CompanyChip id="atlassian" />、<CompanyChip id="sap" /> 以 A2A 串接跨產品的工作流程<Cite k="a2a-aaif" />，跨廠商整合的門檻因此降低。
+- <SegmentChip id="cloud-neocloud" />：Google Cloud、<CompanyChip id="amazon">AWS</CompanyChip> Bedrock AgentCore Runtime 與 Azure AI Foundry 都原生支援 A2A<Cite k="a2a-aaif" />，Agent 的部署與治理正成為雲端服務的一部分。
+- <SegmentChip id="devtools-data-mlops" />：<CompanyChip id="langchain" /> 的 LangGraph、<CompanyChip id="ibm" /> 的 BeeAI 等框架支援 A2A<Cite k="a2a-aaif" />，Cursor（<CompanyChip id="anysphere" />）等程式 Agent 讀取 AGENTS.md<Cite k="lf-aaif" />。
+- <SegmentChip id="foundation-models" />：協定中立後，<ModelChip id="anthropic-claude" />、<ModelChip id="openai-gpt" />、<ModelChip id="google-gemini" /> 都能接上同一批工具，理論上降低了客戶更換模型的成本。
+
+## 反方觀點與風險
+
+- **互通性放大安全風險**：同時能讀取私密資料、接觸不可信內容、又能對外傳訊的 Agent，很容易被<Term id="prompt-injection">提示注入</Term>誘導外洩資料；MCP 鼓勵使用者混搭工具，更容易在不知情下湊齊這三項條件<Cite k="simon-trifecta" />。
+- **規格仍在變動**：MCP 2026 年 7 月的新版移除了初始化握手與工作階段，並把 Roots、Sampling、Logging 列為不建議使用<Cite k="mcp-changelog-2026" />，既有實作必須遷移。
+- **上下文成本**：Agent 接上數千個工具時，光是工具定義就可能佔掉數十萬個 <Term id="token">Token</Term> 的<Term id="context-window">上下文視窗</Term>；在 Anthropic 的範例中，改以程式碼按需載入工具後，Token 用量從 15 萬個降到 2,000 個<Cite k="code-exec" />。
+- **支付層尚未統一**：Google 的 AP2 有逾 60 個組織參與<Cite k="ap2" />，Stripe 與 OpenAI 開發的 ACP 則率先在 ChatGPT 上線<Cite k="acp" />，商家可能要同時支援多套協定。
+
+## 觀察指標
+
+- MCP 一級 SDK 的月下載量（2026 年 7 月將近 5 億次）與公開伺服器數量<Cite k="mcp-2026" />。
+- A2A 1.0 之後的支持組織數，以及跨雲端、跨 SaaS 的實際生產案例。
+- NIST 計畫後續發布的 Agent 安全與身分指引<Cite k="nist-agents" />。
+- AP2 與 ACP 是否整合，或由某一套成為主流。
+- MCP 舊功能在 2027 年 7 月之後的移除進度，以及 SDK 對新舊版本的相容策略。
+
+延伸閱讀：<LearnLink id="agents-and-mcp">AI Agent 與 MCP</LearnLink>、<TrendLink id="ai-coding">AI 寫程式</TrendLink>、<TrendLink id="reasoning-test-time-compute">推理模型與推論時運算</TrendLink>。

@@ -1,0 +1,436 @@
+---
+title: "縮放定律與運算最適化"
+subtitle: "用小實驗預測大模型：參數、資料與算力該怎麼分配"
+description: "縮放定律指出，模型損失會隨參數量、資料量與算力以冪次律穩定下降。本文從 Kaplan 與 Chinchilla 兩套配方講起，說明「每個參數約 20 個 Token」的運算最適法則、業界為何刻意過度訓練小模型，以及資料牆與強化學習等新的縮放方向。"
+level: 3
+order: 301
+track: models
+prerequisites: [pretraining-to-chat, training-vs-inference-economics]
+next: [post-training-deep, mixture-of-experts, ai-capex-economics]
+relatedSegments: [foundation-models, ai-accelerators, foundry-packaging, memory-storage, datacenter-infra, energy-power, cloud-neocloud, devtools-data-mlops]
+relatedCompanies: [openai, alphabet, meta, anthropic, deepseek, alibaba, baidu, hugging-face, nvidia, tsmc, sk-hynix]
+relatedModels: [openai-gpt, google-gemma, meta-muse-llama, deepseek, alibaba-qwen, xai-grok]
+relatedTrends: [hyperscaler-capex, inference-demand, small-models-distillation, copyright-data-licensing, reasoning-test-time-compute]
+glossary:
+  - scaling-laws
+  - loss-function
+  - token
+  - parameter
+  - compute-optimal
+  - flops
+  - pretraining
+  - dense-model
+  - training-data
+  - inference
+  - moe
+  - active-parameters
+  - synthetic-data
+  - distillation
+  - benchmark
+  - reinforcement-learning
+  - test-time-compute
+  - reasoning-model
+  - gpu
+  - hbm
+  - capex
+scenes:
+  - { id: scaling-surface, variant: default }
+keyTakeaways:
+  - "縮放定律：損失隨參數、資料與算力以冪次律平滑下降，因此能用小模型實驗預測大模型。"
+  - "Kaplan（2020）主張優先放大模型；Chinchilla（2022）發現參數與資料應等比例成長。"
+  - "運算最適約為每個參數配 20 個 Token：700 億參數的 Chinchilla 勝過 2,800 億參數的 Gopher。"
+  - "考慮推論成本後，業界刻意過度訓練小模型，Llama 3.1 8B 每個參數讀了約 1,900 個 Token。"
+  - "訓練資料量預估在 2026 到 2032 年間追上公開人類文字的總量，重複資料、合成資料與蒸餾成為對策。"
+  - "強化學習與推論時運算是新的縮放軸：o3 把強化學習算力再推進約一個數量級，Grok 4 則超過一個數量級。"
+estimatedMinutes: 20
+sources:
+  - key: hestness
+    title: "Deep Learning Scaling is Predictable, Empirically"
+    publisher: "Baidu Research（arXiv）"
+    url: "https://arxiv.org/abs/1712.00409"
+    type: paper
+    lang: en
+    published: "2017-12-01"
+    accessed: "2026-10-15"
+    note: "在機器翻譯、語言模型、影像處理與語音辨識四個領域，泛化誤差隨訓練資料量呈冪次律下降；模型改進只會平移誤差，似乎不影響冪次律指數；模型大小隨資料量次線性成長。"
+  - key: kaplan
+    title: "Scaling Laws for Neural Language Models"
+    publisher: "OpenAI（arXiv）"
+    url: "https://arxiv.org/abs/2001.08361"
+    type: paper
+    lang: en
+    published: "2020-01-23"
+    accessed: "2026-10-15"
+    note: "損失對模型大小、資料量與訓練算力呈冪次律，部分趨勢橫跨七個數量級以上；寬度、深度等架構細節在大範圍內影響很小。式 1.1–1.3：alpha_N 約 0.076（N_c 約 8.8 × 10^13 個非嵌入參數）、alpha_D 約 0.095（D_c 約 5.4 × 10^13 個 Token）、alpha_C^min 約 0.050。最適分配 N 隨 C_min 的 0.73 次方、D 隨 0.27 次方成長；模型放大 8 倍，資料只需增加約 5 倍；最省算力的做法是訓練很大的模型並在收斂前停止。"
+  - key: chinchilla
+    title: "Training Compute-Optimal Large Language Models"
+    publisher: "DeepMind（arXiv）"
+    url: "https://arxiv.org/abs/2203.15556"
+    type: paper
+    lang: en
+    published: "2022-03-29"
+    accessed: "2026-10-15"
+    note: "訓練逾 400 個模型（7,000 萬到 160 億以上參數、50 億到 5,000 億個 Token）；模型大小與訓練 Token 數應等比例放大。Kaplan 的建議相當於算力增加 10 倍時模型放大 5.5 倍、Token 只增加 1.8 倍。表 1：GPT-3 為 1,750 億參數、3,000 億 Token，Gopher 為 2,800 億參數、3,000 億 Token。表 2：三種方法估得參數指數 0.50、0.49、0.46。Chinchilla 為 700 億參數、1.4 兆 Token，與 Gopher 算力相同（5.76 × 10^23 FLOPs）、資料多 4 倍，全面勝過 Gopher、GPT-3、Jurassic-1 與 MT-NLG，MMLU 平均 67.5%，比 Gopher 高 7 個百分點以上。表 3（方法一）：10 億參數需 1.21e20 FLOPs、202 億 Token；100 億需 1.23e22、2,051 億；670 億需 5.76e23、1.5 兆；1,750 億需 3.85e24、3.7 兆；1 兆需 1.27e26、21.2 兆。式 10：E = 1.69、A = 406.4、B = 410.7、alpha = 0.34、beta = 0.28。"
+  - key: epoch-replication
+    title: "Chinchilla Scaling: A replication attempt"
+    publisher: "Epoch AI（arXiv）"
+    url: "https://arxiv.org/abs/2404.10102"
+    type: paper
+    lang: en
+    published: "2024-04-15"
+    accessed: "2026-10-15"
+    note: "依 v2（2024-05-15）。重建 Chinchilla 方法三的資料後發現：論文公布的估計值與方法一、二不一致、擬合不佳，信賴區間窄到需要超過 60 萬次實驗，而作者可能只做了不到 500 次；原因是最佳化器因損失尺度不當而提早停止，以及論文內文的參數經過四捨五入。論文原本係數隱含的最適配比約為每個參數 70 個 Token，與 Chinchilla 實際採用的 20 個不符。重新擬合為 L = 1.8172 + 482.01/N^0.3478 + 2085.43/D^0.3658，隱含約每個參數 20 個 Token，與方法一、二一致。文中也引述 Bi 等人（2024）：最適配比對資料品質敏感，資料品質越高，最適的每參數 Token 數越低。"
+  - key: porian
+    title: "Resolving Discrepancies in Compute-Optimal Scaling of Language Models"
+    publisher: "Porian et al.（arXiv，NeurIPS 2024）"
+    url: "https://arxiv.org/abs/2406.19146"
+    type: paper
+    lang: en
+    published: "2024-06-27"
+    accessed: "2026-10-15"
+    note: "重現 Kaplan 的縮放定律，找出造成與 Chinchilla 差異的三個因素：最後一層的運算成本、暖身（warmup）長度，以及隨規模調整的最佳化器設定；修正後與 Chinchilla 縮放定律高度吻合。"
+  - key: gpt4
+    title: "GPT-4 Technical Report"
+    publisher: "OpenAI（arXiv）"
+    url: "https://arxiv.org/abs/2303.08774"
+    type: paper
+    lang: en
+    published: "2023-03-15"
+    accessed: "2026-10-15"
+    note: "第 3 節：GPT-4 專案的重點之一是打造可預測縮放的深度學習堆疊；以算力少 1,000 到 10,000 倍的小模型可靠預測 GPT-4 的部分表現。以帶不可約項的縮放定律 L(C) = aC^b + c，從算力最多少 10,000 倍的模型預測 GPT-4 在內部程式碼資料上的最終損失，預測在訓練開始後不久做出且相當準確；HumanEval 子集通過率以算力少 1,000 倍的模型外推預測。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "Meta AI（arXiv）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-15"
+    note: "第 3.2.1 節：以 6 × 10^18 到 10^22 FLOPs 的預算、4,000 萬到 160 億參數的模型建立 IsoFLOPs 曲線，以二次多項式擬合找出各預算的最低點；最適 Token 數 N*(C) = A C^alpha，(alpha, A) = (0.53, 0.29)；外推到 3.8 × 10^25 FLOPs 建議以 4,020 億參數訓練 16.55 兆個 Token；預算越大 IsoFLOPs 曲線底部越平，最後選擇 4,050 億參數。兩階段預測：先把下游任務的負對數似然與訓練 FLOPs 線性關聯，再以 sigmoid 關聯到準確率（含 Llama 2 模型），外推四個數量級，只略為低估旗艦模型。摘要：旗艦模型約為運算最適，較小模型則訓練得遠超過運算最適，在相同推論預算下表現優於運算最適模型。405B 以 15.6 兆個文字 Token 預訓練。"
+  - key: llama31-card
+    title: "Llama 3.1 Model Card"
+    publisher: "Meta（GitHub meta-llama/llama-models）"
+    url: "https://github.com/meta-llama/llama-models/blob/main/models/llama3_1/MODEL_CARD.md"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "8B、70B、405B 的預訓練資料欄皆為 15T+；Llama 3.1 以約 15 兆個 Token 的公開資料預訓練。"
+  - key: anthropic-wiki
+    title: "Anthropic"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Anthropic"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "2021 年 1 月由七位前 OpenAI 員工創立；資訊框列出的創辦人包括 Dario Amodei、Daniela Amodei、Jared Kaplan、Jack Clark、Chris Olah、Ben Mann、Sam McCandlish、Tom Brown。"
+  - key: sardana
+    title: "Beyond Chinchilla-Optimal: Accounting for Inference in Language Model Scaling Laws"
+    publisher: "Sardana et al.（arXiv，ICML 2024）"
+    url: "https://arxiv.org/abs/2401.00448"
+    type: paper
+    lang: en
+    published: "2023-12-31"
+    accessed: "2026-10-15"
+    note: "修改 Chinchilla 縮放定律以納入推論成本；預期推論需求相當大（約 10 億次請求）時，應訓練比 Chinchilla 最適更小、更久的模型；訓練 47 個模型驗證，每個參數的 Token 數擴大到極端的 10,000，模型品質仍持續提升。"
+  - key: gemma2
+    title: "Gemma 2: Improving Open Language Models at a Practical Size"
+    publisher: "Google DeepMind（arXiv）"
+    url: "https://arxiv.org/abs/2408.00118"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-15"
+    note: "2B 與 9B 模型以知識蒸餾取代預測下一個 Token 訓練，訓練 Token 數超過理論運算最適量的 50 倍；27B 以 13 兆、9B 以 8 兆、2B 以 2 兆個 Token 訓練。"
+  - key: qwen3
+    title: "Qwen3 Technical Report"
+    publisher: "Qwen Team（arXiv）"
+    url: "https://arxiv.org/abs/2505.09388"
+    type: paper
+    lang: en
+    published: "2025-05-14"
+    accessed: "2026-10-15"
+    note: "預訓練資料約 36 兆個 Token、涵蓋 119 種語言與方言；為擴充資料，以 Qwen2.5-VL 從大量 PDF 擷取文字，並以 Qwen2.5-Math 與 Qwen2.5-Coder 生成數學與程式合成資料。第一階段所有 Qwen3 模型都以超過 30 兆個 Token 訓練，第二階段再以約 5 兆個較高品質 Token 加強推理。"
+  - key: deepseek-v3
+    title: "DeepSeek-V3 Technical Report"
+    publisher: "DeepSeek-AI（arXiv）"
+    url: "https://arxiv.org/abs/2412.19437"
+    type: paper
+    lang: en
+    published: "2024-12-27"
+    accessed: "2026-10-15"
+    note: "MoE 模型，總參數 6,710 億、每個 Token 啟用 370 億；以 14.8 兆個 Token 預訓練；完整訓練 278.8 萬 H800 GPU 小時。"
+  - key: deepseek-v4
+    title: "DeepSeek-V4-Pro model card"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-15"
+    note: "DeepSeek-V4-Pro 為 1.6 兆參數（啟用 490 億）的 MoE 模型，V4-Flash 為 2,840 億參數（啟用 130 億）；兩者皆以超過 32 兆個 Token 預訓練。"
+  - key: villalobos
+    title: "Will we run out of data? Limits of LLM scaling based on human-generated data"
+    publisher: "Epoch AI（arXiv）"
+    url: "https://arxiv.org/abs/2211.04325"
+    type: paper
+    lang: en
+    published: "2024-06-04"
+    accessed: "2026-10-15"
+    note: "依 v2（2024-06-04；v1 為 2022-10-26）。表 1：可索引網頁的文字存量中位數約 510 兆個 Token（95% 信賴區間 130 兆到 2,100 兆）。若現行趨勢延續，模型的訓練資料量將在 2026 到 2032 年間達到公開人類文字的總存量，若過度訓練則更早；圖 1 中位數年份為 2028 年，有效存量約 4 × 10^14 個 Token。合成資料、從資料豐富的領域遷移學習與提高資料效率可能支撐後續進展。"
+  - key: muennighoff
+    title: "Scaling Data-Constrained Language Models"
+    publisher: "Hugging Face 等（arXiv，NeurIPS 2023）"
+    url: "https://arxiv.org/abs/2305.16264"
+    type: paper
+    lang: en
+    published: "2023-05-25"
+    accessed: "2026-10-15"
+    note: "實驗規模最多 9,000 億個訓練 Token、90 億參數，共 400 次訓練；算力固定、資料有限時，重複最多 4 個 epoch 的效果與全新資料幾乎相同；重複更多次，增加算力的價值最後會降到零（圖 1：約 40 個 epoch 時重複已幾乎沒有價值）；提出考慮重複資料價值遞減的縮放定律。"
+  - key: mirage
+    title: "Are Emergent Abilities of Large Language Models a Mirage?"
+    publisher: "Stanford University（arXiv，NeurIPS 2023）"
+    url: "https://arxiv.org/abs/2304.15004"
+    type: paper
+    lang: en
+    published: "2023-04-28"
+    accessed: "2026-10-15"
+    note: "所謂湧現能力，可能來自研究者選用的評分方式：非線性或不連續的指標會產生看似突然出現的能力，線性或連續的指標則呈現平滑、可預測的變化；以 InstructGPT／GPT-3 系列與 BIG-Bench 的後設分析驗證。"
+  - key: o1
+    title: "Learning to Reason with LLMs"
+    publisher: OpenAI
+    url: "https://openai.com/index/learning-to-reason-with-llms/"
+    type: company-site
+    lang: en
+    published: "2024-09-12"
+    accessed: "2026-10-15"
+    archiveUrl: "https://web.archive.org/web/20240912185410/https://openai.com/index/learning-to-reason-with-llms/"
+    note: "o1 的表現隨更多強化學習（訓練時運算）與更長的思考時間（推論時運算）而持續提升。"
+  - key: o3
+    title: "Introducing OpenAI o3 and o4-mini"
+    publisher: OpenAI
+    url: "https://openai.com/index/introducing-o3-and-o4-mini/"
+    type: company-site
+    lang: en
+    published: "2025-04-16"
+    accessed: "2026-10-15"
+    archiveUrl: "https://web.archive.org/web/2025/https://openai.com/index/introducing-o3-and-o4-mini/"
+    note: "開發 o3 期間觀察到大規模強化學習呈現與 GPT 系列預訓練相同的「算力越多、表現越好」趨勢；在強化學習上重走縮放之路，訓練算力與推論時推理都再推進一個數量級，表現仍明顯提升。"
+  - key: grok4
+    title: "Grok 4"
+    publisher: xAI
+    url: "https://x.ai/news/grok-4"
+    type: company-site
+    lang: en
+    published: "2025-07-09"
+    accessed: "2026-10-15"
+    note: "以擁有 20 萬顆 GPU 的 Colossus 叢集執行強化學習訓練，以預訓練等級的規模精進推理能力；訓練所用算力比先前多出一個數量級以上。"
+  - key: scalerl
+    title: "The Art of Scaling Reinforcement Learning Compute for LLMs"
+    publisher: "Meta 等（arXiv）"
+    url: "https://arxiv.org/abs/2510.13786"
+    type: paper
+    lang: en
+    published: "2025-10-15"
+    accessed: "2026-10-15"
+    note: "首個大規模系統性研究，總計超過 40 萬 GPU 小時；強化學習的算力與表現呈 sigmoid 曲線；並非所有配方都有相同的漸近上限，損失彙總、正規化等細節主要影響運算效率；穩定的配方可從小規模外推，單次訓練擴大到 10 萬 GPU 小時並成功預測。前言引述：DeepSeek-R1-Zero 的強化學習用了 10 萬 H800 GPU 小時，約為預訓練算力的 3.75%。"
+  - key: snell
+    title: "Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters"
+    publisher: "UC Berkeley／Google DeepMind（arXiv）"
+    url: "https://arxiv.org/abs/2408.03314"
+    type: paper
+    lang: en
+    published: "2024-08-06"
+    accessed: "2026-10-15"
+    note: "依題目難度分配推論時運算的策略，效率比 best-of-N 基準高約 4 倍；在 FLOPs 相同的比較中，對小模型已有一定成功率的題目，推論時運算可勝過大 14 倍的模型。"
+  - key: epoch-growth
+    title: "Training compute of frontier AI models grows by 4-5x per year"
+    publisher: Epoch AI
+    url: "https://epoch.ai/blog/training-compute-of-frontier-ai-models-grows-by-4-5x-per-year"
+    type: analyst
+    lang: en
+    published: "2024-05-28"
+    accessed: "2026-10-15"
+    note: "知名模型的訓練算力在 2010 年到 2024 年 5 月間每年成長約 4.1 倍（90% 信賴區間 3.7 到 4.6 倍）；前沿模型、OpenAI／Meta／Google DeepMind 的頂尖模型也都約為每年 4 到 5 倍；估計過去十年語言模型表現進步約三分之二來自規模擴大。"
+  - key: epoch-1e25
+    title: "Over 30 AI models have been trained at the scale of GPT-4"
+    publisher: Epoch AI
+    url: "https://epoch.ai/data-insights/models-over-1e25-flop"
+    type: analyst
+    lang: en
+    published: "2025-01-30"
+    accessed: "2026-10-15"
+    note: "2025-06-06 更新：最大型模型的訓練算力超過 10^25 FLOP，第一個達到此規模的是 2023 年 3 月的 GPT-4；截至 2025 年 6 月，已有 12 家開發者公開的 30 多個模型被認為超過此門檻。"
+updated: "2026-10-15"
+lastVerified: "2026-10-15"
+editorial:
+  status: fact-checked
+  author: learn-13
+  checkedBy: "learn-13-check"
+  checkedOn: "2026-10-06"
+  notes: "已逐項比對各論文 PDF（Hestness、Kaplan、Chinchilla、Epoch 重新擬合、Porian、GPT-4、Llama 3、Sardana、Gemma 2、Qwen3、DeepSeek-V3、Villalobos、Muennighoff、Schaeffer、ScaleRL、Snell）與 OpenAI o1／o3、xAI Grok 4、Epoch AI、Hugging Face DeepSeek-V4-Pro 等官方頁面。U 形曲線、每參數 Token 數與重新擬合的最適解為本文換算值，已於內文標示。資料基準日 2026-10-06，實際讀取日 2026-10-15。"
+---
+
+## 一句話解釋
+
+<Term id="scaling-laws">縮放定律</Term>是一組經驗規律：語言模型的<Term id="loss-function">損失</Term>（預測下一個 <Term id="token">Token</Term> 時的平均錯誤程度），會隨著<Term id="parameter">參數量</Term>、訓練資料量與訓練算力，以「冪次律」平滑地下降。因為曲線夠穩定，研究者可以先用小模型做實驗，再預測花大錢訓練的大模型會表現多好。<Term id="compute-optimal">運算最適化</Term>則是回答下一個問題：算力預算固定時，模型該做多大、該讀多少資料，損失才會最低。
+
+## 生活化比喻
+
+<Callout type="analogy" title="固定的練習時數，要分給多聰明的學生、多少本題庫？">
+
+想像你是教練，手上只有固定的總練習時數（算力），要訓練一位學生去考試。你可以挑一位腦容量很大、但每做一題都比較慢的學生（大模型），也可以挑一位腦容量較小、做題很快的學生（小模型）；題庫（訓練資料）則可以多買幾本。
+
+- **2020 年的看法**：腦容量最重要。挑最大的學生，題庫做一部分就好，不必刷到滾瓜爛熟。
+- **2022 年的修正**：學生和題庫要一起長大。腦容量加倍，題目也要加倍，否則再聰明也練不出來。
+- **考慮畢業之後**：如果這位學生畢業後每天要替上百萬人解題，每解一題都要付薪水，那寧可挑小一點的學生、讓他把題庫多刷好幾遍，日後省下的薪水更多。
+- **題庫快印完了**：世界上的好題目有限，教練開始自己出題、請學長帶學弟，或讓學生自己做題、對答案。
+
+這四個階段，正好對應本文要講的 Kaplan 定律、Chinchilla 法則、過度訓練與資料牆。
+
+</Callout>
+
+## 原理
+
+### 冪次律：每放大 10 倍，換來固定比例的進步
+
+2017 年，<CompanyChip id="baidu" /> 研究院的團隊在機器翻譯、語言模型、影像與語音辨識四個領域都觀察到同一件事：誤差隨訓練資料量增加，以冪次律下降；改良模型架構只會讓整條曲線平移，斜率卻幾乎不變<Cite k="hestness" />。2020 年，<CompanyChip id="openai" /> 的 Kaplan 等人把這件事系統化：語言模型的損失對參數量 N、資料量 D 與算力 C 都呈冪次律，有些趨勢橫跨七個數量級以上，而網路寬度、深度等架構細節在很大範圍內影響很小<Cite k="kaplan" />。以參數量為例：
+
+<MathTeX tex={"L(N)=\\left(\\frac{N_c}{N}\\right)^{\\alpha_N},\\quad\\alpha_N\\approx 0.076"} display label="損失等於 N_c 除以 N 的 alpha_N 次方，alpha_N 約為 0.076" />
+
+冪次律畫在「雙對數座標」上是一條直線，意思是：參數每放大 10 倍，損失就乘上一個固定的比例。把 Kaplan 擬合的三個指數換算成直覺的數字<Cite k="kaplan" />：
+
+<StatGrid
+  title="Kaplan 等人（2020）擬合的冪次律指數"
+  items={[
+    { label: "參數量 N", value: "0.076", note: "放大 10 倍，損失約降為原本的 84%" },
+    { label: "資料量 D", value: "0.095", note: "放大 10 倍，損失約降為原本的 80%" },
+    { label: "算力 C（最佳分配下）", value: "0.050", note: "放大 10 倍，損失約降為原本的 89%" }]}
+  caption="損失下降比例由指數換算（10 的負指數次方），只適用於該論文的資料與設定。"
+/>
+
+每次進步的比例固定，代表絕對進步越來越小：想讓損失再降同樣的比例，算力就得再乘以 10。這是 AI 訓練算力需求持續快速攀升的重要原因之一。
+
+縮放定律真正的價值在於「可預測」。OpenAI 在 GPT-4 技術報告中說明，他們特地打造了能穩定放大的訓練堆疊：用算力最多少 10,000 倍的小模型擬合縮放曲線，在 GPT-4 開訓後不久就準確預測了它的最終損失；程式題 HumanEval 部分題目的通過率，也能從算力少 1,000 倍的模型外推<Cite k="gpt4" />。<CompanyChip id="meta" /> 訓練 Llama 3 時，同樣先用小模型預測旗艦模型在<Term id="benchmark">評測</Term>上的分數，外推了四個數量級，結果只略為低估<Cite k="llama3" />。附帶一提，Kaplan 論文的作者群中，Jared Kaplan、Sam McCandlish、Tom Brown 與 Dario Amodei 後來都名列 <CompanyChip id="anthropic" /> 的創辦人<Cite k="anthropic-wiki" />。
+
+### 固定預算怎麼分：Kaplan 與 Chinchilla 的兩套配方
+
+<LearnLink id="training-vs-inference-economics">訓練與推論的經濟學</LearnLink>介紹過，訓練一個<Term id="dense-model">稠密模型</Term>的運算量約為 C ≈ 6ND（以 <Term id="flops">FLOPs</Term> 計）。算力固定時，N 和 D 此消彼長：模型大一倍，能讀的 Token 就少一半。問題是：該怎麼分？
+
+Kaplan 等人的答案是「優先放大模型」。他們發現大模型的樣本效率較高，最省算力的做法是訓練很大的模型，並在收斂之前就停下來；最適模型大小隨算力的 0.73 次方成長，資料量只隨 0.27 次方成長<Cite k="kaplan" />。換句話說，算力多 10 倍，模型應放大約 5.5 倍，資料只增加約 1.8 倍<Cite k="chinchilla" />。受這套配方影響，當時的大模型多半只訓練約 3,000 億個 Token：1,750 億參數的 GPT-3 與 2,800 億參數的 Gopher 都是如此<Cite k="chinchilla" />。
+
+2022 年，<CompanyChip id="alphabet" /> 旗下 DeepMind 的 Hoffmann 等人重新做了一次大規模實驗：訓練 400 多個模型，參數從 7,000 萬到 160 億以上、資料從 50 億到 5,000 億個 Token，再用三種不同方法估計最適配置。三種方法的結論一致：參數量與 Token 數應該「等比例」成長，模型大一倍，資料也要多一倍<Cite k="chinchilla" />。為了驗證，他們用與 Gopher 相同的算力，訓練了 700 億參數、讀 1.4 兆個 Token 的 Chinchilla。它的參數只有 Gopher 的四分之一、資料卻多 4 倍，結果在大量下游任務上全面勝過 Gopher、GPT-3 等更大的模型，MMLU 平均準確率 67.5%，比 Gopher 高出 7 個百分點以上；模型較小，推論也更便宜<Cite k="chinchilla" />。
+
+<Compare
+  title="兩套運算最適配方"
+  left={{ title: "Kaplan 等人（2020）", items: ["算力多 10 倍：模型約 ×5.5、資料約 ×1.8", "最適模型 ∝ C^0.73，資料 ∝ C^0.27", "優先放大模型，不必訓練到收斂", "代表：GPT-3（1,750 億參數、3,000 億 Token）"] }}
+  right={{ title: "Chinchilla（2022）", items: ["算力多 10 倍：模型與資料各約 ×3.2", "模型與資料都約 ∝ C^0.5", "參數與資料等比例成長", "代表：Chinchilla（700 億參數、1.4 兆 Token）"] }}
+  caption="Chinchilla 欄的 ×3.2 由指數 0.5 換算（10 的 0.5 次方）。"
+/>
+
+Chinchilla 論文也列出各種模型大小對應的運算最適資料量<Cite k="chinchilla" />：
+
+| 模型參數量 | 所需算力（FLOPs） | 運算最適的訓練 Token 數 |
+|---|---|---|
+| 10 億 | 1.21 × 10²⁰ | 202 億 |
+| 100 億 | 1.23 × 10²² | 2,051 億 |
+| 670 億 | 5.76 × 10²³ | 1.5 兆 |
+| 1,750 億 | 3.85 × 10²⁴ | 3.7 兆 |
+| 1 兆 | 1.27 × 10²⁶ | 21.2 兆 |
+
+把右欄除以左欄，大約都是 20。這就是業界常說的「Chinchilla 法則」：運算最適的訓練，大約每個參數配 20 個 Token。
+
+兩篇論文為什麼會得到不同結論？2024 年 Porian 等人重做了 Kaplan 的實驗，找出三個關鍵差異：Kaplan 沒有把最後一層的運算量算進去、小模型的暖身期設得太長，以及最佳化器的超參數沒有隨模型規模調整；修正之後，結果與 Chinchilla 高度吻合<Cite k="porian" />。<Term id="training-data">訓練資料</Term>的品質也會影響配比：Epoch AI 的論文引述 DeepSeek 團隊（Bi 等人，2024）的發現，資料品質越高，最適的「每參數 Token 數」反而越低<Cite k="epoch-replication" />。
+
+### 固定預算下的 U 形曲線
+
+運算最適的概念，可以用一條曲線看清楚。把算力固定在 Chinchilla 與 Gopher 用的 5.76 × 10²³ FLOPs，讓模型從 100 億參數一路放大到 5,600 億參數，資料量則依 C ≈ 6ND 跟著縮小。代入 Epoch AI 重新擬合的 Chinchilla 公式<Cite k="epoch-replication" />，損失會呈現一條 U 形曲線：
+
+<LineChart
+  title="同一筆算力、不同模型大小的損失（示意）"
+  unit="損失值"
+  series={[{ name: "算力固定為 5.76 × 10²³ FLOPs", points: [{ x: "100 億", y: 2.015 }, { x: "200 億", y: 1.991 }, { x: "350 億", y: 1.980 }, { x: "700 億", y: 1.975 }, { x: "1,400 億", y: 1.979 }, { x: "2,800 億", y: 1.993 }, { x: "5,600 億", y: 2.019 }] }]}
+  source="epoch-replication"
+  note="x 軸為參數量；訓練 Token 數以 C ≈ 6ND 反推。以 Epoch AI 重新擬合的公式計算，數值只用來說明趨勢。"
+/>
+
+模型太小，腦容量不夠，讀再多資料也學不進去；模型太大，分到的資料太少，還沒學會就用完預算。U 形的最低點落在 700 億參數附近，正是 Chinchilla 的選擇。把每一筆預算的最低點連起來，就得到「運算最適脊線」：
+
+<Scene3D id="scaling-surface" variant="default" caption="縮放定律曲面：兩個水平軸是參數量與訓練 Token 數（對數刻度），高度是損失。導覽依序呈現冪次律下降、固定算力的 U 形剖面、連接各預算最低點的運算最適脊線，以及過度訓練與推論時縮放。曲面依 Chinchilla 的函數形式繪製，數值皆為示意。" />
+
+實務上，各實驗室會用自己的資料重做這條曲線。Meta 在 6 × 10¹⁸ 到 10²² FLOPs 之間訓練了 4,000 萬到 160 億參數的小模型，畫出各預算的 U 形曲線，外推到 Llama 3 的 3.8 × 10²⁵ FLOPs 預算，得到「4,020 億參數、16.55 兆個 Token」的建議。他們也發現預算越大，U 形底部越平，模型大小稍微偏離最適點影響不大，最後選擇了 4,050 億參數，實際讀了 15.6 兆個 Token<Cite k="llama3" />。
+
+### 訓練最適，不等於部署最適
+
+Chinchilla 只問「怎樣訓練最劃算」，沒有考慮模型上線之後的事。每產生一個 Token，<Term id="inference">推論</Term>都要再花約 2N 次運算<Cite k="kaplan" />；模型要服務的請求越多，參數量的影響就越大。Sardana 等人把推論成本加進縮放定律後發現：預期推論需求相當大（約 10 億次請求）時，應該訓練比 Chinchilla 最適更小、讀更久的模型；他們把每個參數的 Token 數一路推到 10,000，模型品質仍持續改善<Cite k="sardana" />。
+
+這就是業界所說的「過度訓練」（overtraining）：多花一些訓練算力，換來更小、更便宜的模型。Meta 明白寫出了這個策略：Llama 3 旗艦模型大致符合運算最適，較小的模型則刻意訓練得遠超過最適點，在相同的推論預算下表現更好<Cite k="llama3" />。Google 的 Gemma 2 更進一步，2B 與 9B 模型的訓練 Token 數超過理論最適量的 50 倍，並以大模型當老師做<Term id="distillation">蒸餾</Term>，讓小模型從老師給出的機率分布學習<Cite k="gemma2" />。
+
+| 模型 | 發表 | 參數量 | 訓練 Token | 每個參數讀的 Token |
+|---|---|---|---|---|
+| GPT-3 | 2020 | 1,750 億 | 3,000 億 | 約 1.7 |
+| Gopher | 2021 | 2,800 億 | 3,000 億 | 約 1.1 |
+| Chinchilla | 2022 | 700 億 | 1.4 兆 | 約 20 |
+| Llama 3.1 405B | 2024 | 4,050 億 | 15.6 兆 | 約 39 |
+| Llama 3.1 8B | 2024 | 80 億 | 約 15 兆 | 約 1,900 |
+| Qwen3-0.6B | 2025 | 約 6 億 | 超過 30 兆 | 超過 5 萬 |
+| DeepSeek-V3（MoE） | 2024 | 總 6,710 億，啟用 370 億 | 14.8 兆 | 約 400（以啟用參數計） |
+| DeepSeek-V4-Pro（MoE） | 2026 | 總 1.6 兆，啟用 490 億 | 超過 32 兆 | 超過 650（以啟用參數計） |
+
+上表的參數與 Token 數取自各技術報告，最後一欄為換算值<Cite k="chinchilla" /><Cite k="llama3" /><Cite k="llama31-card" /><Cite k="qwen3" /><Cite k="deepseek-v3" /><Cite k="deepseek-v4" />。趨勢很清楚：2020 年的模型「讀太少」，2022 年的運算最適模型提高到每個參數約 20 個 Token，2024 年起的小模型則刻意讀到每個參數上千、甚至上萬個 Token。要注意的是，<Term id="moe">MoE</Term>（混合專家）模型每個 Token 只動用一部分參數，也就是<Term id="active-parameters">啟用參數</Term>，Chinchilla 針對稠密模型的配比不能直接套用，詳見<LearnLink id="mixture-of-experts">混合專家模型（MoE）深入</LearnLink>。
+
+### 資料牆：網路上的好文字快用完了
+
+縮放定律假設資料可以無限供應，現實卻不是如此。Epoch AI 估計，可被搜尋引擎索引的網頁文字存量中位數約 510 兆個 Token（95% 信賴區間 130 兆到 2,100 兆）；若現行趨勢延續，模型的訓練資料量將在 2026 到 2032 年間追上公開人類文字的總存量，中位數落在 2028 年，若普遍過度訓練還會更早<Cite k="villalobos" />。
+
+資料不夠時，能不能把同一份資料多讀幾遍？<CompanyChip id="hugging-face" /> 等機構的 Muennighoff 等人做了 400 次訓練來回答：算力固定、資料有限時，同一份資料重複讀最多 4 遍，效果和全新資料幾乎一樣；重複次數再增加，多投入算力的價值就會快速遞減，到約 40 遍時幾乎沒有幫助<Cite k="muennighoff" />。
+
+各實驗室因此另闢資料來源。以 <CompanyChip id="alibaba" /> 的 Qwen3 為例，團隊用視覺語言模型從大量 PDF 文件擷取文字，並用自家的數學與程式模型生成<Term id="synthetic-data">合成資料</Term>，把<Term id="pretraining">預訓練</Term>資料擴充到約 36 兆個 Token<Cite k="qwen3" />。蒸餾、合成資料與後面會談到的強化學習，都是繞過資料牆的方法；資料授權本身也成了一門生意，見<TrendLink id="copyright-data-licensing">著作權訴訟與資料授權市場</TrendLink>。
+
+### 損失平滑，能力卻像突然「湧現」？
+
+如果損失是平滑下降的，為什麼常聽到某些能力「到某個規模突然出現」？史丹佛大學的 Schaeffer 等人指出，許多所謂的湧現能力，其實來自評分方式：像「整題全對才給分」這種不連續的指標，會把平滑的進步顯示成突然跳升；改用連續的指標（例如每個 Token 的正確機率），進步就變得平滑、可預測<Cite k="mirage" />。Llama 3 的下游預測也採用類似思路，分成兩階段：先預測模型在正確答案上的對數似然（連續指標），再把它換算成準確率<Cite k="llama3" />。
+
+### 新的縮放軸：強化學習與推論時運算
+
+預訓練不再是唯一可以轉動的旋鈕。2024 年，OpenAI 發表 o1 時指出，模型表現會隨更多<Term id="reinforcement-learning">強化學習</Term>（訓練時運算）與更長的思考時間（<Term id="test-time-compute">推論時運算</Term>）持續提升<Cite k="o1" />。2025 年 4 月推出 o3 時，OpenAI 進一步表示，大規模強化學習呈現與 GPT 系列預訓練相同的「算力越多、表現越好」趨勢，這次在強化學習訓練算力與推論時推理上都再推進了一個數量級<Cite k="o3" />。同年 7 月，xAI 的 Grok 4（<ModelChip id="xai-grok" />）在擁有 20 萬顆 <Term id="gpu">GPU</Term> 的 Colossus 叢集上做強化學習，稱之為「預訓練等級」的規模，算力比先前多出一個數量級以上<Cite k="grok4" />。
+
+強化學習能不能像預訓練一樣被預測？Meta 等機構的研究者在 2025 年 10 月發表了超過 40 萬 GPU 小時的系統性實驗：強化學習的算力與表現呈 S 形（sigmoid）曲線，會逐漸趨近上限；穩定的訓練配方可以從小規模外推，他們把單次訓練放大到 10 萬 GPU 小時，結果與預測吻合<Cite k="scalerl" />。推論端也有類似規律：依題目難度分配思考運算，比單純多取樣再挑最好的答案有效率約 4 倍；在總運算量相同時，對小模型已有一定成功率的題目，多想一下甚至能勝過大 14 倍的模型<Cite k="snell" />。
+
+<FlowSteps
+  title="三條縮放軸"
+  steps={[
+    { title: "預訓練縮放", detail: "加大參數與資料，損失以冪次律下降；受資料存量與訓練叢集規模限制" },
+    { title: "強化學習縮放", detail: "在可自動驗證的題目與環境中反覆練習；o3 把這部分算力再推進約一個數量級，Grok 4 則超過一個數量級" },
+    { title: "推論時縮放", detail: "回答時多想一下，用每次推論的運算換取準確度，成本隨使用量累積" }]}
+  caption="三者並非互相取代：強化學習與推論時運算都建立在預訓練打下的基礎上。"
+/>
+
+這兩條新軸線分別在<LearnLink id="reasoning-models">推理模型：讓 AI 先想再答</LearnLink>與<LearnLink id="post-training-deep">後訓練深入：RLHF、DPO、RLVR 與蒸餾</LearnLink>中有更多說明，它們也是<Term id="reasoning-model">推理模型</Term>能快速進步的主因。
+
+<DeepDive title="深入一點：Chinchilla 公式、最適解與一次重新擬合">
+
+**三項式的意義。** Chinchilla 的方法三把損失寫成三項相加<Cite k="chinchilla" />：
+
+<MathTeX tex={"L(N,D)=E+\\frac{A}{N^{\\alpha}}+\\frac{B}{D^{\\beta}}"} display label="損失等於 E 加上 A 除以 N 的 alpha 次方，再加上 B 除以 D 的 beta 次方" />
+
+E 是「不可約損失」，代表自然語言本身的不確定性，模型再大、資料再多也消除不了；第二項是模型容量有限造成的損失；第三項是資料不足、訓練不夠造成的損失。論文公布的數值是 E = 1.69、A = 406.4、B = 410.7、α = 0.34、β = 0.28<Cite k="chinchilla" />。
+
+**求最適解。** 在 C = 6ND 的限制下讓 L 最小，可以解出：
+
+<MathTeX tex={"N_{\\mathrm{opt}}=G\\left(\\frac{C}{6}\\right)^{\\frac{\\beta}{\\alpha+\\beta}},\\quad D_{\\mathrm{opt}}=G^{-1}\\left(\\frac{C}{6}\\right)^{\\frac{\\alpha}{\\alpha+\\beta}},\\quad G=\\left(\\frac{\\alpha A}{\\beta B}\\right)^{\\frac{1}{\\alpha+\\beta}}"} display label="最適參數量等於 G 乘以 C 除以 6 的 beta 除以 alpha 加 beta 次方；最適資料量等於 G 的倒數乘以 C 除以 6 的 alpha 除以 alpha 加 beta 次方" />
+
+只要 α 與 β 接近，兩個指數就都接近 0.5，也就是「參數與資料等比例成長」。Kaplan 的配方相當於參數指數 0.73，所以偏向大模型。
+
+**一次重要的重新擬合。** 2024 年，Epoch AI 從 Chinchilla 論文的圖表重建資料，重做方法三，發現論文公布的係數有問題：它和方法一、二的結論不一致，擬合效果不佳，信賴區間也窄得不合理（要有超過 60 萬次實驗才可能那麼窄，作者大概只做了不到 500 次）。原因是最佳化器因損失尺度設定不當而提早停止，加上公布的數值經過四捨五入。按論文原本公布的係數推算，最適配比約為每個參數 70 個 Token，和 Chinchilla 實際採用的約 20 個並不相符；重新擬合後得到 E = 1.8172、A = 482.01、B = 2085.43、α = 0.3478、β = 0.3658，隱含約每個參數 20 個 Token，反而與方法一、二一致<Cite k="epoch-replication" />。
+
+**代入看看。** 用重新擬合的係數代入上式（本文自行換算）：在 Gopher 的 5.76 × 10²³ FLOPs 預算下，最適參數量約 720 億、每個參數約 18 個 Token，與 Chinchilla 的實際選擇相當接近；若代入 Llama 3 的 3.8 × 10²⁵ FLOPs，會得到約 6,200 億參數、10 兆個 Token，而 Meta 用自家資料擬合的結果是 4,020 億參數、16.55 兆個 Token<Cite k="llama3" />。差異說明了一件事：縮放定律的係數會隨資料配方、分詞器與模型架構而改變，所以每個實驗室都得用自己的設定重新量一次。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+- **可預測，才敢下重本** → <SegmentChip id="ai-accelerators" />、<SegmentChip id="foundry-packaging" />、<SegmentChip id="memory-storage" />：縮放定律讓「投入 10 倍算力能換到多少進步」變得可以估算。Epoch AI 統計，知名模型的訓練算力在 2010 年到 2024 年 5 月間每年成長 4 到 5 倍<Cite k="epoch-growth" />；截至 2025 年 6 月，已有 12 家開發者的 30 多個模型用超過 10²⁵ FLOP 訓練，也就是 GPT-4 的等級<Cite k="epoch-1e25" />。每往曲線下方走一步，都需要更多 <CompanyChip id="nvidia" /> 等廠商的加速器、<CompanyChip id="tsmc" /> 的先進製程與封裝產能，以及 <CompanyChip id="sk-hynix" /> 等廠商供應的 <Term id="hbm">HBM</Term>，這也是超大規模業者大舉提高<Term id="capex">資本支出</Term>的技術背景，見<TrendLink id="hyperscaler-capex">超大規模業者的 AI 資本支出</TrendLink>。不過縮放定律描述的是損失，不是營收，投資能否回收是另一個問題，見<LearnLink id="ai-capex-economics">AI 資本支出與雲端經濟學</LearnLink>。
+- **叢集越大，電力與機房越吃緊** → <SegmentChip id="datacenter-infra" />、<SegmentChip id="energy-power" />：訓練算力每年成長 4 到 5 倍，除了靠更快的晶片，也需要更大的訓練叢集，以及相應的電力與散熱設施；Grok 4 的強化學習就動用了 20 萬顆 GPU 的叢集<Cite k="grok4" />。
+- **過度訓練把成本推向推論** → <SegmentChip id="cloud-neocloud" />：Llama 3 與 Gemma 2 的小模型刻意多讀資料，換取更便宜的推論<Cite k="llama3" /><Cite k="gemma2" />。模型越常被使用，推論在總成本中的比重越高，見<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>與<TrendLink id="small-models-distillation">小模型與蒸餾：端側 AI 的崛起</TrendLink>。
+- **資料成為稀缺資源** → <SegmentChip id="devtools-data-mlops" />：模型的訓練資料量預估在 2026 到 2032 年間追上公開人類文字的總量<Cite k="villalobos" />，資料清理、合成資料、專家標註與資料授權的價值隨之上升。
+- **新縮放軸改變算力用途** → <SegmentChip id="foundation-models" />：<CompanyChip id="openai" />（<ModelChip id="openai-gpt" />）、<CompanyChip id="alphabet" />（<ModelChip id="google-gemma" />）、<CompanyChip id="meta" />（<ModelChip id="meta-muse-llama" />）、<CompanyChip id="deepseek" />（<ModelChip id="deepseek" />）與 <CompanyChip id="alibaba" />（<ModelChip id="alibaba-qwen" />）都公開過各自的縮放經驗。強化學習與推論時運算把大量算力從「讀資料」轉向「生成答案」，見<TrendLink id="reasoning-test-time-compute">推理模型與推論時運算</TrendLink>。

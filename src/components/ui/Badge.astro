@@ -1,0 +1,112 @@
+---
+/**
+ * Small status label.
+ *
+ *   <Badge>上市</Badge>
+ *   <Badge tone="accent">一線</Badge>
+ *   <Badge tone="estimate">估計</Badge>          (hatched, for estimated figures)
+ *   <Badge level={2} />                           → 「進階」 with the level colour
+ *   <Badge segment="foundry-packaging">代工封裝</Badge>   (segment colour dot)
+ */
+import { levelMeta, type SegmentId } from '../../lib/collections';
+
+export type BadgeTone = 'neutral' | 'accent' | 'pos' | 'neg' | 'warn' | 'estimate' | 'info';
+
+interface Props {
+  tone?: BadgeTone | undefined;
+  /** 1 入門 / 2 進階 / 3 深入. Renders the label when the slot is empty. */
+  level?: 1 | 2 | 3 | undefined;
+  /** Adds a segment colour dot */
+  segment?: SegmentId | string | undefined;
+  size?: 's' | 'm' | undefined;
+  /** Accessible prefix read before the text, e.g. 「難度：」 */
+  srPrefix?: string | undefined;
+  title?: string | undefined;
+  class?: string | undefined;
+}
+
+const { tone = 'neutral', level, segment, size = 's', srPrefix, title, class: className } = Astro.props;
+const lv = level ? levelMeta(level) : undefined;
+const hasSlot = Astro.slots.has('default');
+const style = lv ? `--badge-c: ${lv.color}` : segment ? `--badge-dot: var(--seg-${segment})` : undefined;
+---
+
+<span
+  class:list={['badge', `badge--${lv ? 'level' : tone}`, `badge--${size}`, className]}
+  data-level={lv?.level}
+  style={style}
+  title={title}
+>
+  {(lv || segment) && <span class="badge__dot" aria-hidden="true" />}
+  {srPrefix && <span class="sr-only">{srPrefix}</span>}
+  {hasSlot ? <slot /> : lv?.label}
+</span>
+
+<style>
+  @layer components {
+    .badge {
+      --badge-c: var(--c-fg-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+      padding: 0.1em 0.6em;
+      border-radius: var(--radius-s);
+      border: 1px solid color-mix(in srgb, var(--badge-c) 30%, transparent);
+      background: color-mix(in srgb, var(--badge-c) 9%, transparent);
+      color: var(--badge-c);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      line-height: 1.6;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      vertical-align: middle;
+      font-variant-numeric: tabular-nums;
+    }
+    .badge--m {
+      font-size: var(--fs-s);
+      padding: 0.15em 0.7em;
+    }
+    .badge--neutral {
+      --badge-c: var(--c-fg-muted);
+      background: var(--c-bg-sunken);
+      border-color: var(--c-border);
+    }
+    .badge--accent,
+    .badge--info {
+      --badge-c: var(--c-accent);
+    }
+    .badge--pos {
+      --badge-c: var(--c-pos);
+    }
+    .badge--neg {
+      --badge-c: var(--c-neg);
+    }
+    .badge--warn {
+      --badge-c: var(--c-warn);
+    }
+    .badge--estimate {
+      --badge-c: var(--c-estimate);
+      border-style: dashed;
+      background: repeating-linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--c-estimate) 16%, transparent) 0 2px,
+        transparent 2px 6px
+      );
+    }
+    .badge__dot {
+      inline-size: 0.55em;
+      block-size: 0.55em;
+      border-radius: 50%;
+      background: var(--badge-dot, var(--badge-c));
+      flex: none;
+    }
+    .badge--level {
+      background: color-mix(in srgb, var(--badge-c) 10%, transparent);
+    }
+    @media (forced-colors: active) {
+      .badge {
+        border: 1px solid CanvasText;
+      }
+    }
+  }
+</style>

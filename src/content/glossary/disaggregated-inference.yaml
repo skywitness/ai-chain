@@ -1,0 +1,40 @@
+term: "分離式推論"
+zh: "分離式推論"
+en: "Disaggregated Inference"
+aliases:
+  - "PD 分離"
+  - "Prefill／Decode 分離"
+  - "分離式服務"
+  - "Disaggregated Serving"
+  - "P/D Disaggregation"
+category: inference
+level: 3
+short: >-
+  把推論的 Prefill 與 Decode 兩個階段拆到不同 GPU 或不同硬體上執行，各自最佳化以提高效率。
+definition: >-
+  傳統做法讓同一組 GPU 同時處理 Prefill 與 Decode，但前者運算密集、後者受記憶體頻寬限制，混在一起會互相干擾，資源也難以各自調整。分離式推論把兩個階段分配給不同的 GPU 群組，甚至不同型號的硬體，Prefill 算出的 KV Cache 再透過高速網路傳給負責 Decode 的機器。2024 年的 DistServe 論文顯示，在符合首 token 延遲與每 token 延遲要求的前提下，相較當時最先進的系統，可服務的請求量最多提高 7.4 倍。NVIDIA 在 2025 年 3 月發表的開源推論框架 Dynamo，也把分離式服務列為主要功能。這個趨勢讓 KV Cache 的傳輸與儲存、機櫃內外的高速互連，以及專為單一階段設計的推論晶片變得更加重要。
+example: >-
+  像餐廳把備料區與出餐區分開：備料需要大量人手一次處理，出餐講求快速穩定，各自配置合適的人力，整間店的效率更高。
+related: [prefill, decode, kv-cache, rdma, scale-out]
+learnMore: [inference-optimization]
+segments: [cloud-neocloud, ai-accelerators, networking-optics]
+sources:
+  - title: "DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving"
+    publisher: "arXiv（OSDI 2024）"
+    url: "https://arxiv.org/abs/2401.09670"
+    type: paper
+    lang: en
+    published: "2024-01-18"
+    accessed: "2026-10-06"
+  - title: "NVIDIA Dynamo Open-Source Library Accelerates and Scales AI Reasoning Models"
+    publisher: "NVIDIA Newsroom"
+    url: "https://nvidianews.nvidia.com/news/nvidia-dynamo-open-source-library-accelerates-and-scales-ai-reasoning-models"
+    type: press-release
+    lang: en
+    published: "2025-03-18"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-inference
+  checkedBy: "gloss-inference-check"
+  checkedOn: "2026-10-06"

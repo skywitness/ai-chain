@@ -1,0 +1,439 @@
+---
+title: "實體 AI 深入：機器人、自駕與世界模型"
+subtitle: "從感知、決策到動作：VLA、動作區塊、世界模型與機器人的資料荒"
+description: "實體 AI 讓模型在真實世界感知與行動。本文拆解機器人的感知—決策—動作迴圈、VLA 如何輸出動作、資料金字塔與模擬、世界模型、Robotaxi 的兩條技術路線，以及人形機器人量產的瓶頸。"
+level: 3
+order: 314
+track: society
+prerequisites: [multimodal-models, agents-and-mcp]
+next: [ai-safety-and-regulation, inference-optimization, gpu-architecture]
+relatedSegments: [physical-ai, ai-accelerators, foundation-models, cloud-neocloud]
+relatedCompanies: [nvidia, tesla, alphabet, physical-intelligence, pony-ai, uber, hesai, harmonic-drive, hiwin, advantech, techman-robot, unitree, figure-ai, boston-dynamics]
+relatedModels: [physical-intelligence-pi, nvidia-gr00t, gemini-robotics, nvidia-cosmos, google-genie]
+relatedTrends: [physical-ai-commercialization, world-models-spatial-intelligence, edge-ai-devices, small-models-distillation]
+glossary:
+  - physical-ai
+  - lidar
+  - vla
+  - world-model
+  - imitation-learning
+  - sim-to-real
+  - token
+  - actuator
+  - harmonic-reducer
+  - edge-ai
+  - fp4
+  - latency
+  - multimodal
+  - transformer
+  - digital-twin
+  - autonomous-driving
+  - sae-autonomy-levels
+  - adas
+  - robotaxi
+  - end-to-end-driving
+  - industrial-robot
+  - humanoid-robot
+  - diffusion-model
+  - kv-cache
+  - agent
+  - reinforcement-learning
+scenes:
+  - { id: physical-ai, variant: robot }
+keyTakeaways:
+  - "實體 AI 是每秒數十次的感知—決策—動作迴圈，難在即時、不可逆與資料稀少三件事。"
+  - "VLA 把動作當成另一種輸出：看影像、讀指令，直接產生一段連續的關節動作。"
+  - "機器人資料以萬小時計，遠少於文字的兆級 Token，業界靠示範、模擬、影片與世界模型補足。"
+  - "動作區塊讓慢速的大模型控制快速的機器人：π0 一次推論約 73 毫秒，可產生 50 Hz 下 1 秒的動作。"
+  - "Waymo 全自駕里程已逾 2.7 億英里；2025 年全尺寸人形機器人只賣出約 7,000 台，仍在起步。"
+estimatedMinutes: 20
+sources:
+  - key: moravec
+    title: "Moravec's paradox"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Moravec%27s_paradox"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: "Hans Moravec 在 1988 年的 Mind Children 寫道：讓電腦在智力測驗或下跳棋上表現出成人水準相對容易，要讓它具備一歲小孩的感知與移動能力卻很困難甚至不可能。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "arXiv（Llama Team, Meta）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-16"
+    note: "旗艦模型 4,050 億參數，以 15.6 兆個文字 Token 預訓練。"
+  - key: oxe
+    title: "Open X-Embodiment: Robotic Learning Datasets and RT-X Models"
+    publisher: "arXiv（Open X-Embodiment Collaboration）"
+    url: "https://arxiv.org/abs/2310.08864"
+    type: paper
+    lang: en
+    published: "2023-10-13"
+    accessed: "2026-10-16"
+    note: "傳統機器人學習為每個應用、每台機器人甚至每個環境訓練不同模型；本資料集由 21 個機構合作，涵蓋 22 種機器人、527 種技能（160,266 個任務），以此訓練的 RT-X 展現跨機器人的正向遷移。"
+  - key: rt2
+    title: "RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control"
+    publisher: "arXiv（Google DeepMind）"
+    url: "https://arxiv.org/abs/2307.15818"
+    type: paper
+    lang: en
+    published: "2023-07-28"
+    accessed: "2026-10-16"
+    note: "把機器人動作表示成文字 Token，與網路規模的視覺語言資料一起微調視覺語言模型，並將這類模型命名為視覺語言動作模型（VLA）；6,000 次評估試驗顯示能泛化到新物體、理解訓練資料中沒有的指令，並能做簡單推理，例如挑石頭當臨時鐵鎚、替疲倦的人選能量飲料。"
+  - key: openvla
+    title: "OpenVLA: An Open-Source Vision-Language-Action Model"
+    publisher: "arXiv（Stanford University 等）"
+    url: "https://arxiv.org/abs/2406.09246"
+    type: paper
+    lang: en
+    published: "2024-06-13"
+    accessed: "2026-10-16"
+    note: "70 億參數的開源 VLA，以 97 萬筆真實機器人示範訓練；在 29 項任務與多種機器人上，絕對任務成功率比 550 億參數的 RT-2-X 高 16.5 個百分點，參數量只有其七分之一。"
+  - key: pi0
+    title: "π0: A Vision-Language-Action Flow Model for General Robot Control"
+    publisher: "arXiv（Physical Intelligence）"
+    url: "https://arxiv.org/abs/2410.24164"
+    type: paper
+    lang: en
+    published: "2024-10-31"
+    accessed: "2026-10-16"
+    note: "以 30 億參數的 PaliGemma 為骨幹，加上 3 億參數的動作專家，合計 33 億參數；以 flow matching（擴散的一種變體）產生動作區塊，H = 50，最高以 50 Hz 控制機器人。預訓練資料逾 1 萬小時，來自 7 種機器人配置、68 項任務，另加整個 Open X-Embodiment。推論以前向尤拉法積分 10 步（δ = 0.1），觀測部分的鍵值可快取。RTX 4090、3 張影像下：影像編碼 14 毫秒、觀測前向 32 毫秒、10 步 flow 27 毫秒，機上推論合計 73 毫秒，離機推論（Wi-Fi）另加 13 毫秒網路延遲共 86 毫秒；50 Hz 任務每執行 25 個動作（0.5 秒）推論一次。"
+  - key: groot-n1
+    title: "GR00T N1: An Open Foundation Model for Generalist Humanoid Robots"
+    publisher: "arXiv（NVIDIA）"
+    url: "https://arxiv.org/abs/2503.14734"
+    type: paper
+    lang: en
+    published: "2025-03-18"
+    accessed: "2026-10-16"
+    note: "雙系統架構，靈感來自 Kahneman《快思慢想》：System 2 為視覺語言模型，在 NVIDIA L40 上以 10 Hz 執行；System 1 為以 flow matching 訓練的擴散 Transformer，以 120 Hz 產生閉迴路動作。公開的 GR00T-N1-2B 共 22 億參數（VLM 13.4 億），在 L40 上產生 16 個動作的區塊需 63.9 毫秒。訓練資料組成「資料金字塔」：底層是網路資料與人類影片，中層是物理模擬或神經模型生成的合成資料，頂層是真實機器人資料；並以潛在動作與逆動力學模型替沒有動作標記的影片推斷偽動作。"
+  - key: pi07
+    title: "π0.7: a Steerable Generalist Robotic Foundation Model with Emergent Capabilities"
+    publisher: "arXiv（Physical Intelligence）"
+    url: "https://arxiv.org/abs/2604.15483"
+    type: paper
+    lang: en
+    published: "2026-04-16"
+    accessed: "2026-10-16"
+    note: "提示中除了語言指令，還加入任務表現的後設資料與子目標圖片等多模態情境，因此能使用示範、包含失敗的自主執行資料與非機器人資料；可零樣本跨機體轉移（讓沒看過摺衣任務的機器人摺衣服），操作濃縮咖啡機的表現可比肩以強化學習微調的專用模型。"
+  - key: gemini-robotics-2
+    title: "Gemini Robotics 2 brings whole-body intelligence to robots"
+    publisher: Google DeepMind
+    url: "https://deepmind.google/blog/gemini-robotics-2-brings-whole-body-intelligence-to-robots"
+    type: company-site
+    lang: en
+    published: "2026-07-30"
+    accessed: "2026-10-16"
+    note: "官方稱這是該系列模型首次能控制人形機器人全身（Apptronik Apollo 2 依指令走到桌前拿起澆水壺，再放進架子底層的綠色箱子），可驅動 22 個自由度的 SharpaWave 五指手；同一檢查點控制三種機體。Gemini Robotics ER 2 擔任高層大腦，負責理解指令、規劃步驟、協調 VLA 與追蹤進度。原廠圖表成功率：從桌上拿起 68.4%、從地上 45.7%、從架上 76.3%；多指任務從 32%（畚箕）到 92%（轉下燈泡）；官方承認動作速度與多指靈巧操作仍待改進。VLA 與 On-Device 模型僅提供早期合作夥伴。On-Device 2 原生支援多機體，通常以不到 200 筆示範、數小時即可適應新的雙臂機器人。ER 2 能偵測附近的人並讓機器人安全停止；新推出的 ASIMOV-Agentic 評測檢查 ER Agent 是否拒絕不安全的 VLA 工具呼叫、在不確定時是否請求人類協助。"
+  - key: cosmos
+    title: "Cosmos World Foundation Model Platform for Physical AI"
+    publisher: "arXiv（NVIDIA）"
+    url: "https://arxiv.org/abs/2501.03575"
+    type: paper
+    lang: en
+    published: "2025-01-07"
+    accessed: "2026-10-16"
+    note: "實體 AI 需要先在數位世界訓練：需要自身的數位分身（策略模型）與世界的數位分身（世界模型）。累積約 2,000 萬小時、720p 到 4K 的原始影片，篩出約 1 億段 2 到 60 秒的片段；論文中所有世界模型以 10,000 張 NVIDIA H100 在三個月內訓練完成；模型以寬鬆授權開放權重。"
+  - key: genie3
+    title: "Genie 3: A new frontier for world models"
+    publisher: Google DeepMind
+    url: "https://deepmind.google/blog/genie-3-a-new-frontier-for-world-models/"
+    type: company-site
+    lang: en
+    published: "2025-08-05"
+    accessed: "2026-10-16"
+    note: "依文字描述與使用者操作，逐格自回歸地即時生成可互動的世界，720p、每秒 24 格；環境可維持數分鐘的一致性，視覺記憶最遠回溯約 1 分鐘；曾生成虛擬世界，讓新版 SIMA 通用 Agent 在其中執行目標任務。限制：Agent 的動作空間有限、多個獨立 Agent 的互動仍是難題、互動只能持續數分鐘。"
+  - key: domain-rand
+    title: "Domain Randomization for Transferring Deep Neural Networks from Simulation to the Real World"
+    publisher: "arXiv（Tobin et al., OpenAI 與 UC Berkeley）"
+    url: "https://arxiv.org/abs/1703.06907"
+    type: paper
+    lang: en
+    published: "2017-03-20"
+    accessed: "2026-10-16"
+    note: "在模擬器中隨機改變渲染（例如不真實的隨機紋理），讓真實世界看起來只是另一種變化；只用模擬影像訓練的物體偵測器在真實世界準確到 1.5 公分，並可用於雜亂環境中的抓取，作者稱是首次只用模擬 RGB 影像訓練的深度網路成功轉移到真實機器人控制。"
+  - key: jetson-thor
+    title: "NVIDIA Jetson Thor"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-thor/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-16"
+    note: "Jetson Thor 系列模組最高 2,070 FP4 TFLOPS（稀疏）AI 算力與 128 GB 記憶體（LPDDR5X，273 GB/s），功耗 40–130 W，效能為 AGX Orin 的 7.5 倍、能源效率 3.5 倍；T4000 為 1,200 FP4 TFLOPS。"
+  - key: self-driving-wiki
+    title: "Self-driving car"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Self-driving_car"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: "二手來源：ADAS 自動化特定駕駛功能，仍需人類駕駛處理其不支援的工作；相對地，自動駕駛系統（ADS）在 SAE J3016 中屬第 3 級以上。"
+  - key: waymo-driver
+    title: "The Waymo Driver"
+    publisher: Waymo
+    url: "https://waymo.com/waymo-driver/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-16"
+    note: "Waymo Driver 結合光達（向各方向發射數百萬個雷射脈衝建立 3D 影像）、相機（Jaguar I-PACE 上有 29 顆，提供 360 度視野）與雷達（毫米波，在雨、霧、雪中仍有效）。"
+  - key: tesla-wiki
+    title: "Tesla Autopilot"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Tesla_Autopilot"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: "二手來源：特斯拉 2021 年開始改用純相機的 Tesla Vision，2022 年後製造的車輛不再配備雷達與超音波感測器，並刻意不用光達；FSD 第 12 版起採用端到端神經網路，把相機影像直接轉成駕駛決策，取代過去較依賴人工設計、以規則為主的分段架構。特斯拉以 600 萬名以上車主的駕駛行為訓練神經網路；相較之下，Waymo 另仰賴公分級的高精度 3D 地圖與光達。"
+  - key: waymo-safety
+    title: "From the road: Across Waymo's 270 million autonomous miles"
+    publisher: Waymo
+    url: "https://waymo.com/blog/shorts/safetydata-september26/"
+    type: company-site
+    lang: en
+    published: "2026-09-24"
+    accessed: "2026-10-16"
+    note: "截至 2026 年 6 月底，全自駕營運逾 2.7 億英里；在亞特蘭大、奧斯汀、洛杉磯、鳳凰城與舊金山，相較人類駕駛基準，造成受傷的事故減少 82%、嚴重受傷以上減少 95%，涉及行人的受傷事故減少 93%、自行車 86%、機車 82%（Waymo 自行分析）。"
+  - key: tesla-q2-2026
+    title: "Tesla Q2 2026 Update (Exhibit 99.1)"
+    publisher: Tesla（SEC EDGAR）
+    url: "https://www.sec.gov/Archives/edgar/data/0001318605/000162828026049213/exhibit991.htm"
+    type: filing
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-16"
+    note: "2026-07-22 發布時，Robotaxi 已在美國 7 個主要都會區上線（舊金山灣區仍有安全駕駛），其中奧斯汀、達拉斯、休士頓與 7 月新開的邁阿密、奧蘭多、坦帕 6 個正擴大無人監督營運；Cybercab 已在德州超級工廠投產（裝機年產能逾 12.5 萬輛）；FSD（監督版）有效用戶（含買斷與月訂閱、不含免費試用）148 萬，年增 56%；已拆除 Fremont 的 Model S／X 產線、正安裝第一代 Optimus 產線，預計 2026 年投產，初期機器人用於 Optimus Academy 收集訓練資料；Cortex 1 逾 90 MW、Cortex 2 逾 115 MW，2026 年上半年德州廠內算力（以 MW 計）增加一倍以上。"
+  - key: pony-q2-2026
+    title: "PONY AI Inc. Reports Second Quarter 2026 Financial Results"
+    publisher: Pony.ai（SEC EDGAR）
+    url: "https://www.sec.gov/Archives/edgar/data/1969302/000110465926098113/tm2623382d1_ex99-1.htm"
+    type: press-release
+    lang: en
+    published: "2026-08-18"
+    accessed: "2026-10-16"
+    note: "2026-06-30 Robotaxi 車隊 1,975 輛，目標年底超過 3,500 輛；2026 年第二季 Robotaxi 營收 1,210 萬美元，年增 691.2%；Uber 已簽約在歐洲部署逾 2,000 輛。"
+  - key: ifr-wr2026
+    title: "Five Million Robots now Operate in Factories Globally"
+    publisher: International Federation of Robotics
+    url: "https://ifr.org/ifr-press-releases/news/five-million-robots-now-operate-in-factories-globally"
+    type: press-release
+    lang: en
+    published: "2026-09-24"
+    accessed: "2026-10-16"
+    note: "2025 年全球運作中的工業機器人增加 9%，達創紀錄的 500 萬台；新安裝逾 60 萬台，年增 11%。中國安裝 35.4 萬台（占全球 59%）、美國近 3.85 萬台、日本 36,219 台、南韓 3 萬台、德國不到 2.5 萬台（第五）、印度近 1.05 萬台（第六）；預測 2026 年 65.5 萬台、2029 年 80.6 萬台。"
+  - key: ifr-sr2026
+    title: "Global Sales of Professional Service Robots Surge 24%"
+    publisher: International Federation of Robotics
+    url: "https://ifr.org/ifr-press-releases/news/global-sales-of-professional-service-robots-surge-24-percent"
+    type: press-release
+    lang: en
+    published: "2026-09-30"
+    accessed: "2026-10-16"
+    note: "2025 年全球售出約 7,000 台全尺寸（身高 140 公分以上）、用於研發與娛樂以外商業及專業用途的人形機器人；挑戰包括安全標準、高昂的訓練與維護成本，以及缺乏有力的商業案例（特別是工業場域）。專業服務機器人售出近 25 萬台（年增 24%）；機器人即服務（RaaS）在美國已是主流商業模式。"
+updated: "2026-10-16"
+lastVerified: "2026-10-16"
+editorial:
+  status: fact-checked
+  author: learn-19
+  checkedBy: "learn-19-check"
+  checkedOn: "2026-10-06"
+  notes: "內容以 2026-10-06 為資料基準日，來源實際讀取日為 2026-10-16，所用來源皆發布於基準日之前。查核已逐項比對 π0、GR00T N1、Cosmos、Llama 3 論文全文（推論時間表、參數、資料量、10,000 張 H100）、RT-2、OpenVLA、Open X-Embodiment、π0.7 與領域隨機化摘要、Google DeepMind Gemini Robotics 2 與 Genie 3 原文、NVIDIA Jetson Thor 規格頁、Waymo Driver 與安全資料頁、特斯拉與小馬智行 2026 年第二季 SEC 附件、IFR 兩篇新聞稿。更正：Gemini Robotics 2 為「該系列首次」控制全身，而非業界第一；特斯拉 7 個都會區為 2026 年 7 月財報發布時的狀態（佛州三城 7 月才上線），FSD 148 萬含買斷；工業機器人圖表改為前四大市場（原圖漏列第五大的德國）；人形機器人 7,000 台補上全尺寸與商業用途的定義；Genie 3 與 SIMA 的關係、Jetson Thor 算力為稀疏運算、莫拉維克原文為跳棋；刪去「最大的機器人資料」等無法證實的最高級說法。Waymo 安全數字為 Waymo 自行分析；特斯拉純視覺與 FSD v12 端到端的說明來自維基百科二手來源。"
+---
+
+## 一句話解釋
+
+<Term id="physical-ai">實體 AI</Term>是讓 AI 透過相機、<Term id="lidar">光達</Term>等感測器理解真實世界，再透過馬達、關節或方向盤去改變它。它的核心是一個每秒執行數十次的「感知—決策—動作」迴圈；機器人與自駕車的「大腦」，正從工程師手寫的規則，轉向從資料中學習的 <Term id="vla">VLA</Term>（視覺語言動作模型）與<Term id="world-model">世界模型</Term>。
+
+## 生活化比喻
+
+<Callout type="analogy" title="讀完所有騎車教學，還是不會騎腳踏車">
+
+大型語言模型像一個讀遍網路的人：腳踏車的物理原理、平衡技巧，它都說得頭頭是道；但真的讓它騎上車，第一次一定會摔。
+
+- **經驗只能親身累積**：在真實世界一次次嘗試，就是機器人的真實資料，昂貴又緩慢。
+- **教練扶著車尾一起騎**：由真人遙控機器人示範動作、讓模型照著學，就是<Term id="imitation-learning">模仿學習</Term>。
+- **先在電玩裡練習**：在模擬器裡摔一萬次再上路，就是 <Term id="sim-to-real">Sim-to-Real</Term>（從模擬轉移到真實）。
+- **在腦中想像轉彎會不會倒**：先預演下一秒會發生什麼，就是世界模型。
+- **騎車時不會每踩一下都在思考**：「要去便利商店」是大腦慢慢想的，維持平衡則是小腦每一瞬間的反射。新一代機器人也把慢速的規劃與快速的控制分成兩層。
+
+</Callout>
+
+## 原理
+
+### 為什麼「動手」比「動腦」難？
+
+機器人學家 Hans Moravec 在 1988 年就點出一個反直覺的現象：讓電腦在智力測驗或下跳棋上表現得像成人相對容易，要讓它擁有一歲小孩的感知與行動能力，卻困難甚至不可能<Cite k="moravec" />。這個「莫拉維克悖論」至今仍適用，原因有三：
+
+1. **即時**：聊天機器人晚一秒回答無妨，機械手臂晚一點反應，杯子可能已經掉到地上。
+2. **不可逆**：說錯話可以重說，撞到人、摔壞東西卻收不回來。
+3. **資料稀少**：網路上有海量文字，卻幾乎沒有「手指如何施力拿起一顆雞蛋」的紀錄。
+
+第三點最關鍵。比較一下不同 AI 的「教材」量級：
+
+<StatGrid
+  title="文字模型與機器人模型的訓練資料"
+  items={[
+    { label: "Llama 3 405B 的文字預訓練", value: "15.6 兆 Token", note: "Meta，2024 年" },
+    { label: "π0 的機器人預訓練資料", value: "逾 1 萬小時", note: "約等於一人每天操作 8 小時、連續 3.4 年" },
+    { label: "Open X-Embodiment 資料集", value: "22 種機器人", note: "21 個機構合作、527 種技能" },
+    { label: "Cosmos 世界模型的原始影片", value: "約 2,000 萬小時", note: "約等於 2,283 年不間斷的影片" }]}
+/>
+
+文字模型的教材以兆個 <Term id="token">Token</Term> 計<Cite k="llama3" />；像 π0 這樣的機器人模型，真實操作資料卻只有上萬小時<Cite k="pi0" />，而且散落在各機構、各種外型不同的機器人上<Cite k="oxe" />。影片很多<Cite k="cosmos" />，但影片裡沒有記錄「每個關節用了多少力」。怎麼把影片、模擬與少量真實資料拼成足夠的教材，是這個領域最核心的問題，後面會再回來談。
+
+### 感知—決策—動作迴圈
+
+不論是人形機器人、機械手臂還是自駕車，運作方式都是同一個迴圈：
+
+<FlowSteps
+  title="實體 AI 的控制迴圈"
+  steps={[
+    { title: "感知", detail: "相機、光達、力感測器、關節角度" },
+    { title: "理解", detail: "辨識物體、位置與自身姿勢" },
+    { title: "決策", detail: "模型依指令產生接下來的動作" },
+    { title: "控制", detail: "關節控制器以更高頻率追蹤目標" },
+    { title: "致動", detail: "馬達與減速機產生力與位移" }]}
+  caption="執行完一小段動作後，感測器看到新的結果，迴圈重新開始。"
+/>
+
+**身體。** 每個關節都需要一組<Term id="actuator">致動器</Term>：電動馬達轉得快但力氣小，要靠<Term id="harmonic-reducer">諧波減速機</Term>等減速機構把轉速換成扭矩，再由編碼器回報角度，讓控制器隨時修正。
+
+**小腦。** 機器人不能每個動作都等雲端回覆，模型必須在機身上的電腦執行，也就是<Term id="edge-ai">邊緣 AI</Term>。以輝達為機器人推出的 Jetson Thor 為例，模組最高提供 2,070 TFLOPS 的 <Term id="fp4">FP4</Term> 算力（稀疏運算）與 128 GB 記憶體，功耗 40 到 130 瓦，效能是上一代 AGX Orin 的 7.5 倍<Cite k="jetson-thor" />。功耗與散熱受限於機身，是邊緣運算和資料中心最大的不同。
+
+<Scene3D id="physical-ai" variant="robot" caption="人形機器人依語言指令把方塊放進托盤：頭部與手腕相機、力感測器負責感知，旁邊的 VLA 模型輸出一段「動作區塊」（紫色的未來夾爪位置），各關節的致動器再以更高頻率閉迴路追蹤。切換導覽步驟可看到感知、VLA、致動與模擬到真實；數量與位置皆為示意。" />
+
+### VLA：把動作也當成一種語言
+
+傳統機器人學習的做法，是為每個應用、每台機器人，甚至每個環境各訓練一個模型<Cite k="oxe" />。VLA 的想法是：既然<Term id="multimodal">多模態</Term>模型已經能看圖、讀字（見<LearnLink id="multimodal-models">多模態模型</LearnLink>），何不讓它再多學一種「語言」，也就是動作？
+
+**RT-2：讓動作變成 Token。** Google DeepMind 在 2023 年 7 月發表的 RT-2，把機械手臂的動作編碼成文字 Token，和網路上的圖文問答資料一起微調視覺語言模型，並把這類模型命名為「視覺語言動作模型」（VLA）<Cite k="rt2" />。好處是網路知識能直接轉移到動作上：RT-2 能處理沒見過的物體、理解機器人資料裡從未出現的指令，還能做簡單推理，例如要臨時找把鐵鎚時挑起石頭<Cite k="rt2" />。
+
+**OpenVLA：開源追上。** 2024 年 6 月的 OpenVLA 只有 70 億參數，以 97 萬筆真實示範訓練；在 29 項任務上，絕對成功率比 550 億參數的 RT-2-X 高出 16.5 個百分點<Cite k="openvla" />。
+
+**π0：連續動作與高頻控制。** 把動作切成離散 Token 有個缺點：手部動作是連續而細膩的。Physical Intelligence 在 2024 年 10 月發表的 π0，以 30 億參數的視覺語言模型為骨幹，加上 3 億參數的「動作專家」，用 flow matching（<Term id="diffusion-model">擴散模型</Term>的一種變體）直接產生連續動作，最高可以 50 Hz 控制機器人，完成摺衣服、組紙箱等靈巧任務<Cite k="pi0" />。
+
+**雙系統：快思與慢想。** 輝達 2025 年 3 月的 GR00T N1 把模型拆成兩層，靈感來自心理學家 Kahneman 的《快思慢想》：負責理解畫面與指令的視覺語言模型（System 2）以每秒 10 次執行，負責動作的擴散 <Term id="transformer">Transformer</Term>（System 1）則以每秒 120 次產生閉迴路動作<Cite k="groot-n1" />。這正對應前面比喻中的大腦與小腦。
+
+**跨機體：一個大腦，多種身體。** 機器人的外型千差萬別：手臂有六軸也有七軸，夾爪有兩指也有五指。Open X-Embodiment 的實驗發現，把 22 種機器人的資料混在一起訓練，模型能借用其他機器人的經驗，提升多種機器人的能力<Cite k="oxe" />。這讓「一個通用大腦配上不同身體」逐漸可行：Gemini Robotics 的本機版 On-Device 2，通常只要不到 200 筆示範、幾個小時，就能適應一款新的雙臂機器人<Cite k="gemini-robotics-2" />。部分模型公司與硬體廠因此開始分工，前者專心做大腦，後者專心做身體；但也有業者兩者都自己做，例如特斯拉既建 Optimus 產線，也用自家算力開發人形機器人的自主軟體<Cite k="tesla-q2-2026" />。
+
+<Compare
+  title="聊天用的多模態模型與 VLA"
+  left={{ title: "多模態聊天模型", items: ["輸入：文字與圖片", "輸出：文字 Token", "回應時間以秒計也能接受", "答錯可以重來", "教材：網路上兆級的 Token"] }}
+  right={{ title: "VLA 機器人模型", items: ["輸入：多視角影像、語言指令與關節狀態", "輸出：一段連續的關節動作", "每秒要更新數十到上百次", "碰撞與損壞無法復原", "教材：真人示範、模擬與影片拼湊而成"] }}
+  caption="VLA 沿用語言模型的骨幹與網路知識，但輸出端與時間尺度完全不同。"
+/>
+
+**2026 年走到哪裡？** 兩個例子可以說明進展與差距。Physical Intelligence 在 2026 年 4 月發表的 π0.7，在提示中除了語言指令，還能放入描述「這次表現如何」的後設資料與子目標圖片，因此連失敗的執行紀錄與非機器人資料都能拿來學；它能把摺衣服的技能轉移到從沒學過這項任務的機器人上，操作濃縮咖啡機的表現則可比肩經過<Term id="reinforcement-learning">強化學習</Term>專門微調的模型<Cite k="pi07" />。Google DeepMind 在 2026 年 7 月推出的 Gemini Robotics 2，官方表示這是該系列模型首次能控制人形機器人的全身：依指令走到桌前拿起澆水壺，再走到架子邊放進底層的箱子；同一個模型可控制三種不同機體，另由 Gemini Robotics ER 2 擔任負責規劃與追蹤進度的「大腦」<Cite k="gemini-robotics-2" />。但原廠公布的成功率也顯示，離可靠還有距離：
+
+<BarChart
+  title="Gemini Robotics 2 的任務成功率（原廠評測）"
+  unit="%"
+  data={[
+    { label: "從架上拿起物品", value: 76.3 },
+    { label: "從桌上拿起物品", value: 68.4 },
+    { label: "從地上拿起物品", value: 45.7 },
+    { label: "多指手：轉下燈泡", value: 92 },
+    { label: "多指手：使用畚箕", value: 32 }]}
+  source="gemini-robotics-2"
+  note="Google DeepMind 2026 年 7 月公布的自家評測；官方也表示動作速度與多指靈巧操作仍待改進。"
+  keepOrder
+/>
+
+### 資料從哪裡來？資料金字塔
+
+GR00T N1 的論文把機器人的教材整理成一座「資料金字塔」<Cite k="groot-n1" />：
+
+| 層級 | 資料 | 優點 | 缺點 |
+|---|---|---|---|
+| 底層 | 網路資料與人類操作影片 | 數量龐大，涵蓋各種物體與情境 | 沒有記錄動作，也不是機器人的身體 |
+| 中層 | 物理模擬或神經網路生成的合成資料 | 可以大量、平行、安全地產生 | 與真實世界有落差 |
+| 頂層 | 真實機器人上收集的資料 | 最準確，直接對應機器人的身體 | 昂貴、緩慢，難以擴大 |
+
+底層的影片要怎麼用？論文的做法之一是訓練一個「逆動力學模型」，看前後兩個畫面推測中間做了什麼動作，替影片補上「偽動作」標記，把人類影片當成另一種機器人來學<Cite k="groot-n1" />。
+
+頂層的真實資料主要靠真人遙控示範，也就是模仿學習，而機器人本身也能成為資料來源。例如特斯拉表示，Fremont 工廠第一代 Optimus 產線初期生產的機器人，將先在「Optimus Academy」用來收集訓練資料<Cite k="tesla-q2-2026" />。
+
+中層的模擬則有一個經典技巧：「領域隨機化」。2017 年一篇論文在模擬器裡把物體貼上各種不真實的隨機花紋，只用這些模擬影像訓練的物體偵測器，在真實世界的定位誤差只有 1.5 公分，還能用來在雜亂環境中抓取物品；作者的直覺是，模擬的變化夠多，真實世界對模型來說就只是「又一種變化」<Cite k="domain-rand" />。替工廠、倉庫建立完整的虛擬複本，也就是<Term id="digital-twin">數位孿生</Term>，則讓這類模擬能貼近真實場域。
+
+### 世界模型：在腦中先演一遍
+
+世界模型的任務是預測「如果我這樣做，世界接下來會變成什麼樣子」。輝達在 2025 年 1 月發表 Cosmos 時開宗明義地說：實體 AI 必須先在數位世界訓練，它需要一個自己的數位分身（策略模型），也需要一個世界的數位分身（世界模型）<Cite k="cosmos" />。為此，輝達累積約 2,000 萬小時的原始影片，篩出約 1 億段 2 到 60 秒的片段，用 1 萬張 H100 在三個月內訓練出一系列模型，並以寬鬆授權開放權重<Cite k="cosmos" />。
+
+Google DeepMind 在 2025 年 8 月發表的 Genie 3 則展示了另一種形態：只要輸入一段文字描述，它就能逐格即時生成一個可以在其中走動、互動的虛擬世界，解析度 720p、每秒 24 格，環境可維持數分鐘的一致性。DeepMind 已用它生成虛擬世界，讓 SIMA 通用 <Term id="agent">Agent</Term> 在其中執行指定目標，但互動仍只能持續幾分鐘，多個獨立角色的互動也還是難題<Cite k="genie3" />。
+
+世界模型對機器人有三種用途：大量生成金字塔中層的合成資料；在「想像中」先測試一個策略，省下真實試錯的成本；以及在執行前預演目標畫面。π0.7 就能接受子目標圖片作為提示，告訴模型「做完這一步，畫面應該長這樣」<Cite k="pi07" />；這類目標畫面，正是世界模型擅長生成的內容。
+
+### 自駕：已經上路營運的實體 AI
+
+<Term id="autonomous-driving">自動駕駛</Term>是少數已經在城市道路上收費營運的實體 AI。依 <Term id="sae-autonomy-levels">SAE 自駕等級</Term>，市售車上常見的 <Term id="adas">ADAS</Term> 只自動化部分駕駛功能，仍需人類駕駛隨時接手；第 3 級以上才算由系統負責駕駛的自動駕駛系統<Cite k="self-driving-wiki" />。在限定區域內完全無人駕駛的 <Term id="robotaxi">Robotaxi</Term>，則分成兩條技術路線：
+
+<Compare
+  title="Robotaxi 的兩條路線"
+  left={{ title: "多感測器融合（Waymo）", items: ["光達向各方向發射數百萬個雷射脈衝，建立 3D 影像", "Jaguar I-PACE 車上有 29 顆相機，另配雷達應付雨霧雪", "仰賴公分級的高精度 3D 地圖，在選定城市逐步擴展", "截至 2026 年 6 月，全自駕里程逾 2.7 億英里"] }}
+  right={{ title: "純視覺端到端（特斯拉）", items: ["2021 年起改用純相機，2022 年後的新車不再配備雷達與超音波感測器", "FSD 第 12 版起以端到端神經網路，把影像直接轉成駕駛決策", "刻意不用光達，以數百萬名車主的駕駛行為訓練", "截至 2026 年 7 月，Robotaxi 已在美國 7 個都會區上線"] }}
+  caption="資料來源：Waymo 官網與安全報告、特斯拉 2026 年第二季財報、維基百科。"
+/>
+
+兩條路線的差異，一在感測器，二在「把多少判斷交給學習」。Waymo 的車同時使用光達、相機與雷達<Cite k="waymo-driver" />，並搭配公分級的高精度 3D 地圖；特斯拉則刻意不用光達，以數百萬名車主的駕駛行為訓練神經網路<Cite k="tesla-wiki" />。架構上，傳統做法把感知、預測、規劃、控制分成獨立模組；<Term id="end-to-end-driving">端到端自駕</Term>則用一個整體訓練的網路，從影像直接輸出駕駛決策<Cite k="tesla-wiki" />。
+
+成績方面，Waymo 公布截至 2026 年 6 月底累計逾 2.7 億英里的全自駕里程；在亞特蘭大、奧斯汀、洛杉磯、鳳凰城與舊金山，與人類駕駛基準相比，造成受傷的事故少 82%，嚴重受傷以上的事故少 95%<Cite k="waymo-safety" />。這是 Waymo 自行分析的結果，但樣本規模已相當可觀。特斯拉在 2026 年 7 月的第二季財報中表示，Robotaxi 已在美國 7 個都會區上線，其中 6 個正擴大無人監督營運，專用車 Cybercab 也已在德州超級工廠投產；需要駕駛監督的 FSD 有效用戶（含買斷與月訂閱）達 148 萬，年增 56%<Cite k="tesla-q2-2026" />。中國業者同樣加速，小馬智行的 Robotaxi 車隊在 2026 年 6 月底達 1,975 輛，目標年底超過 3,500 輛，第二季 Robotaxi 營收 1,210 萬美元，年增 691%<Cite k="pony-q2-2026" />。
+
+### 從示範走向量產：人形機器人還在起點
+
+成熟的<Term id="industrial-robot">工業機器人</Term>市場提供了對照。2025 年全球工廠裡運作中的工業機器人達 500 萬台，當年新安裝逾 60 萬台，年增 11%；國際機器人聯合會（IFR）預測 2026 年安裝 65.5 萬台、2029 年 80.6 萬台<Cite k="ifr-wr2026" />。安裝量高度集中在中國：
+
+<BarChart
+  title="2025 年工業機器人新安裝量（前四大市場）"
+  unit="千台"
+  data={[
+    { label: "中國", value: 354 },
+    { label: "美國", value: 38.5 },
+    { label: "日本", value: 36.2 },
+    { label: "南韓", value: 30 }]}
+  source="ifr-wr2026"
+  note="中國占全球安裝量的 59%。美國為「近 3.85 萬台」；第五大的德國不到 2.5 萬台，印度近 1.05 萬台排第六。"
+/>
+
+相比之下，<Term id="humanoid-robot">人形機器人</Term>還在起點：2025 年全球只賣出約 7,000 台用於商業與專業用途的全尺寸（身高 140 公分以上）人形機器人，大約是工業機器人年安裝量的 1%<Cite k="ifr-sr2026" /><Cite k="ifr-wr2026" />。IFR 點出三大障礙：安全標準尚未完備、訓練與維護成本高昂，以及缺乏有說服力的商業案例，在工業場域尤其明顯<Cite k="ifr-sr2026" />。換句話說，人形機器人的瓶頸不只是模型聰不聰明，還包括它能不能安全地在人旁邊工作，以及算下來是否比既有的自動化設備更省錢。
+
+安全也逐漸變成模型本身的功能。Google DeepMind 表示，Gemini Robotics ER 2 能偵測附近的人並讓機器人安全停止；它還推出 ASIMOV-Agentic 評測，檢查負責規劃的模型會不會拒絕下達不安全的動作指令，以及在不確定時會不會主動向人求助<Cite k="gemini-robotics-2" />。這和語言模型的安全框架一脈相承，只是出錯的後果從「說錯話」變成「撞到人」。
+
+<DeepDive title="深入一點：動作區塊與控制頻率，機器人的延遲預算">
+
+**問題：大模型太慢，機器人太快。** 以 π0 為例，它要以 50 Hz 控制機器人，也就是每 20 毫秒就要給出一個新動作；但在一張 RTX 4090 上，處理 3 張相機影像跑完一次推論要 73 毫秒<Cite k="pi0" />。每一步都重新推論，根本來不及。
+
+**解法：一次規劃一小段。** π0 每次推論不是只輸出下一個動作，而是一段連續 H 個動作的「動作區塊」，論文中 H = 50<Cite k="pi0" />。一段區塊涵蓋的時間是：
+
+<MathTeX tex={"T_{\\mathrm{chunk}}=\\frac{H}{f}=\\frac{50}{50\\,\\mathrm{Hz}}=1\\,\\mathrm{s}"} display label="動作區塊的時間長度等於區塊動作數除以控制頻率，50 除以每秒 50 次等於 1 秒" />
+
+實際執行時，機器人做完 25 個動作（0.5 秒）就重新推論一次，用新的觀測產生下一段區塊<Cite k="pi0" />。區塊越長，越能掩蓋推論延遲，但機器人「閉著眼睛」執行的時間也越長，遇到意外的反應就越慢；0.5 秒重新規劃一次，是兩者之間的折衷。
+
+**一次推論花在哪裡？** π0 用 flow matching 產生動作：先從隨機雜訊出發，再沿著模型學到的「速度場」走 10 小步，逐步把雜訊推成一段合理的動作<Cite k="pi0" />：
+
+<MathTeX tex={"\\mathbf{A}_t^{\\tau+\\delta}=\\mathbf{A}_t^{\\tau}+\\delta\\,\\mathbf{v}_\\theta\\!\\left(\\mathbf{A}_t^{\\tau},\\mathbf{o}_t\\right),\\quad\\delta=0.1"} display label="下一步的動作區塊等於目前的動作區塊，加上步長乘以模型預測的速度，步長 0.1，共 10 步" />
+
+其中 o 是觀測（影像、指令與關節狀態）。觀測只需要算一次，存進 <Term id="kv-cache">KV Cache</Term> 重複使用，10 個小步只需重算動作那一段<Cite k="pi0" />。實測的時間預算如下：
+
+| 步驟 | 時間 |
+|---|---|
+| 影像編碼 | 14 毫秒 |
+| 觀測的前向運算 | 32 毫秒 |
+| 10 步 flow matching | 27 毫秒 |
+| 機上推論合計 | 73 毫秒 |
+| 改在機外推論（經 Wi-Fi） | 86 毫秒（多 13 毫秒網路<Term id="latency">延遲</Term>） |
+
+**雙系統的另一種解法。** GR00T N1 把慢的部分與快的部分拆開：視覺語言模型每秒更新 10 次「該做什麼」，動作模組每秒產生 120 次閉迴路動作；公開的 22 億參數版本在 L40 上產生一段 16 個動作的區塊需要 63.9 毫秒<Cite k="groot-n1" />。
+
+**這對硬體意味著什麼？** 延遲預算決定了模型能有多大。參數加倍，推論時間大致跟著拉長，區塊就得更長，反應也更慢；改到雲端推論，又要多付網路延遲與斷線的風險。這就是為什麼機器人需要像 Jetson Thor 這樣在 130 瓦以內提供高 FP4 算力的機上電腦<Cite k="jetson-thor" />，也是模型<LearnLink id="inference-optimization">推論最佳化</LearnLink>技術在機器人身上特別重要的原因。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+- **機器人的「小腦」與「大腦」都要晶片** → <SegmentChip id="ai-accelerators" />：<CompanyChip id="nvidia" /> 同時提供機上電腦 Jetson Thor<Cite k="jetson-thor" />、世界模型 <ModelChip id="nvidia-cosmos" /><Cite k="cosmos" /> 與人形機器人模型 <ModelChip id="nvidia-gr00t" /><Cite k="groot-n1" />，從訓練到部署形成完整平台。
+- **訓練在雲端，算力需求跟著放大** → <SegmentChip id="cloud-neocloud" />：Cosmos 的世界模型用了 1 萬張 H100 訓練三個月<Cite k="cosmos" />；<CompanyChip id="tesla" /> 的 Cortex 1 與 Cortex 2 訓練叢集分別超過 90 與 115 MW，2026 年上半年德州廠內算力增加一倍以上，用於車輛與人形機器人的自主軟體<Cite k="tesla-q2-2026" />。
+- **模型實驗室走進實體世界** → <SegmentChip id="foundation-models" />：<CompanyChip id="alphabet" /> 旗下的 Google DeepMind 有 <ModelChip id="gemini-robotics" /> 與 <ModelChip id="google-genie" />，Waymo 也是其子公司；新創 <CompanyChip id="physical-intelligence" /> 則以 <ModelChip id="physical-intelligence-pi" /> 系列專攻通用機器人模型<Cite k="pi07" />。
+- **整機、車隊與零組件** → <SegmentChip id="physical-ai" />：Robotaxi 由 Waymo、特斯拉與 <CompanyChip id="pony-ai" /> 等業者推進，<CompanyChip id="uber" /> 則扮演車隊需求平台，已與小馬智行簽約在歐洲部署逾 2,000 輛<Cite k="pony-q2-2026" />；人形機器人整機有 <CompanyChip id="tesla" />、<CompanyChip id="figure-ai" />、<CompanyChip id="unitree" /> 等，光達有 <CompanyChip id="hesai" />，關節減速機有日本的 <CompanyChip id="harmonic-drive" />。
+- **台灣的位置** → 台灣的強項在身體的零件與機上的電腦：<CompanyChip id="hiwin" /> 生產滾珠螺桿、線性滑軌與諧波減速機，<CompanyChip id="advantech" /> 以 Jetson 等平台打造邊緣 AI 電腦，廣達集團的 <CompanyChip id="techman-robot" /> 生產內建視覺的協作手臂。延伸閱讀：<TrendLink id="physical-ai-commercialization">人形機器人與 Robotaxi 商業化</TrendLink>、<TrendLink id="world-models-spatial-intelligence">世界模型與空間智慧</TrendLink>、<TrendLink id="edge-ai-devices">邊緣 AI 裝置</TrendLink>；實體 AI 的安全與法規議題，見<LearnLink id="ai-safety-and-regulation">AI 安全、治理與法規</LearnLink>。

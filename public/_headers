@@ -1,0 +1,41 @@
+# Cache and security headers for Cloudflare Pages / Workers static assets (architecture §7.7).
+# GitHub Pages ignores this file; the same rules are mirrored in vercel.json for Vercel (HTML there already defaults to max-age=0, must-revalidate).
+
+# Hashed build output never changes: cache for a year.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Pagefind index and UI: rebuilt on every deploy, file names are not all hashed.
+/pagefind/*
+  Cache-Control: public, max-age=3600
+
+# Social images (public/og/*.png) and the /sources/ bibliography data: short shared cache.
+/og/*
+  Cache-Control: public, max-age=86400
+/sources/bibliography.json
+  Cache-Control: public, max-age=3600
+
+# Crawler files change with every deploy.
+/robots.txt
+  Cache-Control: public, max-age=3600
+/sitemap-index.xml
+  Cache-Control: public, max-age=3600
+/sitemap-0.xml
+  Cache-Control: public, max-age=3600
+
+# HTML pages (directory URLs ending in "/") always revalidate.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/:section/
+  Cache-Control: public, max-age=0, must-revalidate
+/:section/:page/
+  Cache-Control: public, max-age=0, must-revalidate
+/:section/:page/:sub/
+  Cache-Control: public, max-age=0, must-revalidate
+/404.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Everywhere
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

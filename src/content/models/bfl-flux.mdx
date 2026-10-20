@@ -1,0 +1,499 @@
+---
+title: "Black Forest Labs FLUX"
+family: "FLUX"
+kind: "image"
+lab: "black-forest-labs"
+labName: "Black Forest Labs"
+origin: "EU"
+summary: "德國 Black Forest Labs（黑森林實驗室）的圖像生成模型系列，採「開放核心」策略：商用 API 與開放權重並行。2025-11 推出的 FLUX.2 結合 Mistral 的 240 億參數視覺語言模型與整流流 Transformer，支援最多 10 張參考圖與 4MP 輸出；2026-07 發表的 FLUX 3 則是同時學習圖像、影片與音訊的多模態基礎模型，已陸續推出 FLUX 3 Video、開放權重的機器人模型 FLUX 3 Action，以及 2026-10-01 上線的 FLUX 3 Image。"
+strengths:
+  - "開放權重選擇多：FLUX.2 [klein] 4B 採 Apache 2.0；FLUX.2 [dev]（320 億參數）、[klein] 9B 與 FLUX 3 Action 也提供權重下載，但為非商用或社群授權"
+  - "單張成本低：FLUX 3 Image 1K 每張 0.048 美元（2026-10-01 至 10-08 上市期間半價），FLUX.2 [pro] 首百萬像素 0.03 美元；AA 估算 GPT Image 2.5 每千張約 211 美元"
+  - "編輯控制細：FLUX.2 起支援最多 10 張參考圖、4MP 輸出與 HEX 色碼；FLUX 3 Image 可在提示中加入邊界框，指定元素位置或只改局部"
+  - "多模態延伸：同一個 FLUX 3 骨幹衍生出影片（含同步音訊）、圖像與機器人動作模型；FLUX 3 在 AA 文生影片（含音訊）榜以 Elo 1128 排第 6（2026-10-06）"
+weaknesses:
+  - "FLUX.2 在 AA 文生圖榜落後頂尖閉源模型：排名最高的 FLUX.2 [flex] 為 1028（第 22 名），GPT Image 2.5 Sunburst 為 1197（2026-10-06）"
+  - "最新的 FLUX 3 Image 尚未出現在 AA 文生圖榜；FLUX 3 影片相關的勝率數字多為官方自家評測"
+  - "能力較強的開放權重（FLUX.2 [dev]、[klein] 9B）採 FLUX 非商用授權，商用需另購授權方案"
+  - "產品線多、汰換快：官方建議新專案以 FLUX.2 取代 FLUX.1 Kontext，FLUX Pro 1.0 端點與微調 API 已於 2025-10-31 停用"
+bestFor:
+  - "電商商品圖、行銷素材等需要大量、低單價出圖的應用"
+  - "需要多張參考圖保持角色、商品或品牌一致的修圖工作"
+  - "想在自家 GPU 或筆電上本機執行圖像模型的開發者（FLUX.2 [klein]）"
+  - "需要精確版面配置的海報與設計稿（FLUX 3 Image 邊界框）"
+positioning:
+  capability: 57
+  costIndex: 51
+  openness: 0.5
+  method: "editorial"
+  asOf: "2026-10-06"
+  note: "圖像模型沒有 AA 智慧指數，三項皆為編輯判斷。capability：旗艦 FLUX 3 Image（2026-10-01）尚未出現在 AA 文生圖榜，改以已評測、排名最高的 FLUX.2 [flex]（AA-Image-T2I v2.0 Elo 1028）依 800 → 0、1200 → 100 線性換算約 57。costIndex：FLUX 按張或百萬像素計價，無法套用每百萬 tokens 的對數公式；以 GPT Image 頁面的 71（AA 估每千張約 211 美元）為錨點，依相同對數斜率（價格每差 10 倍約差 30 分）換算 FLUX 3 Image 1K 每千張 48 美元，約為 51。openness：旗艦 FLUX 3 Image 為閉源，但系列同時提供 Apache 2.0（klein 4B）與非商用授權的開放權重，取 0.5。"
+versions:
+  - id: "flux-3-image"
+    name: "FLUX 3 Image"
+    released: "2026-10-01"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "diffusion"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "image"
+    availability:
+      - "api"
+    notes: "按解析度計價：768px 每張 0.041、1K 0.048、2K 0.100、4K 0.607 美元，2026-10-01 至 10-08 上市優惠 5 折。單一端點同時處理生成與編輯，支援最多 10 張參考圖、15 種長寬比、最高約 1,600 萬像素，並可在提示中用邊界框指定元素位置。架構為多模態流匹配（flow matching）模型，此處歸入擴散類。"
+  - id: "flux-3-video"
+    name: "FLUX 3 Video"
+    released: "2026-08-04"
+    status: "ga"
+    tier: "specialized"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "diffusion"
+    modalitiesIn:
+      - "text"
+      - "image"
+      - "video"
+      - "audio"
+    modalitiesOut:
+      - "video"
+      - "audio"
+    availability:
+      - "api"
+    benchmarks:
+      - benchmark: "aa-text-to-video-elo"
+        score: 1128
+        setting: "AA-Video-T2V v2.0（含音訊），±9，第 6 名（排名區間 5–6）"
+        reportedBy: "leaderboard"
+        date: "2026-10-06"
+        source:
+          title: "Text to Video Leaderboard (AA-Video-T2V v2.0)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/video/leaderboard/text-to-video"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aa-text-to-video-elo"
+        score: 1092
+        setting: "AA-Video-T2V-Silent v2.0（不含音訊），第 5 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-06"
+        source:
+          title: "Text to Video Leaderboard (AA-Video-T2V v2.0)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/video/leaderboard/text-to-video"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "單次最長 20 秒、24 fps，畫面與對白、音效同步生成，支援多語言對嘴；按秒計價（2026 年 10 月初官網價格），文字或圖片生成影片 HD 每秒 0.17、FHD 0.29、2K 0.40、4K 0.80 美元，草稿模式 HD 每秒 0.06 美元。官方部落格稱已全面開放，文件更新紀錄則以預覽版描述；2026-09-10 起可直接輸出 2K 與 4K。"
+  - id: "flux-3-action"
+    name: "FLUX 3 Action"
+    released: "2026-09-22"
+    status: "ga"
+    tier: "specialized"
+    weights: "open-weights"
+    license: "FLUX Kommunity License v1.0"
+    architecture: "diffusion"
+    params:
+      totalB: 7
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+      - "video"
+    modalitiesOut:
+      - "action"
+      - "video"
+    availability:
+      - "self-host"
+    notes: "由 FLUX 3 骨幹衍生的 70 億參數世界動作模型（World Action Model），輸入相機畫面、機器人狀態與文字指令，同時去噪產生下一段動作與影格。官方稱在 RoboLab-120 排行榜以不到前一名開放模型一半的參數創下最高成功率，速度最多快 3.95 倍；文字編碼器為 Apache 2.0 授權的 Qwen3-VL-4B-Instruct。"
+  - id: "flux-2-max"
+    name: "FLUX.2 [max]"
+    released: "2025-12-16"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "diffusion"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "image"
+    availability:
+      - "api"
+    benchmarks:
+      - benchmark: "aa-text-to-image-elo"
+        score: 1020
+        setting: "AA-Image-T2I v2.0，±8，第 28 名（排名區間 22–34）"
+        reportedBy: "leaderboard"
+        date: "2026-10-06"
+        source:
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "FLUX.2 最高品質版本，可連網搜尋，把即時天氣、新聞等資訊畫進圖中；首百萬像素 0.07 美元，其後每百萬像素 0.03 美元。"
+  - id: "flux-2-flex"
+    name: "FLUX.2 [flex]"
+    released: "2025-11-25"
+    status: "ga"
+    tier: "specialized"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "diffusion"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "image"
+    availability:
+      - "api"
+    benchmarks:
+      - benchmark: "aa-text-to-image-elo"
+        score: 1028
+        setting: "AA-Image-T2I v2.0，±9，第 22 名（排名區間 18–30），FLUX 系列最高"
+        reportedBy: "leaderboard"
+        date: "2026-10-06"
+        source:
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "可自行調整推論步數（最多 50）與引導強度，主打文字排版與細節保留；每百萬像素 0.05 美元。"
+  - id: "flux-2-pro"
+    name: "FLUX.2 [pro]"
+    released: "2025-11-25"
+    status: "ga"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "diffusion"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "image"
+    availability:
+      - "api"
+    benchmarks:
+      - benchmark: "aa-text-to-image-elo"
+        score: 1004
+        setting: "AA-Image-T2I v2.0，±8，第 41 名（排名區間 36–47）"
+        reportedBy: "leaderboard"
+        date: "2026-10-06"
+        source:
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "官方建議的預設生成與編輯模型；首百萬像素 0.03 美元，其後每百萬像素 0.015 美元。2026-03-03 起速度約提升 2 倍、價格不變。"
+  - id: "flux-2-dev"
+    name: "FLUX.2 [dev]"
+    released: "2025-11-25"
+    status: "ga"
+    tier: "mid"
+    weights: "open-weights"
+    license: "FLUX Non-Commercial License"
+    architecture: "diffusion"
+    params:
+      totalB: 32
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "image"
+    availability:
+      - "self-host"
+    benchmarks:
+      - benchmark: "aa-text-to-image-elo"
+        score: 1000
+        setting: "AA-Image-T2I v2.0 的固定基準點（第 42 名）"
+        reportedBy: "leaderboard"
+        date: "2026-10-06"
+        source:
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "由 FLUX.2 基礎模型衍生的 320 億參數開放權重版本，同一個權重可做文生圖與多參考圖編輯；商用需購買 BFL 授權方案。AA 以它的 Elo 固定為 1000 作為整個榜的基準。"
+  - id: "flux-2-klein-9b"
+    name: "FLUX.2 [klein] 9B"
+    released: "2026-01-15"
+    status: "ga"
+    tier: "small"
+    weights: "open-weights"
+    license: "FLUX Non-Commercial License"
+    architecture: "diffusion"
+    params:
+      totalB: 9
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "image"
+    availability:
+      - "api"
+      - "self-host"
+      - "on-device"
+    benchmarks:
+      - benchmark: "aa-text-to-image-elo"
+        score: 941
+        setting: "AA-Image-T2I v2.0，±8，第 82 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-06"
+        source:
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "主打次秒級生成，搭配 80 億參數的 Qwen3 文字編碼器；API 首百萬像素 0.015 美元，其後每百萬像素 0.002 美元。"
+  - id: "flux-2-klein-4b"
+    name: "FLUX.2 [klein] 4B"
+    released: "2026-01-15"
+    status: "ga"
+    tier: "small"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "diffusion"
+    params:
+      totalB: 4
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "image"
+    availability:
+      - "api"
+      - "self-host"
+      - "on-device"
+    benchmarks:
+      - benchmark: "aa-text-to-image-elo"
+        score: 863
+        setting: "AA-Image-T2I v2.0，±9，第 123 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-06"
+        source:
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "FLUX 系列最小、最快的版本，可商用的 Apache 2.0 授權，官方稱最低約 13GB 顯示記憶體即可執行；API 首百萬像素 0.014 美元，其後每百萬像素 0.001 美元。"
+  - id: "flux-1-kontext-pro"
+    name: "FLUX.1 Kontext [pro]"
+    released: "2025-05-29"
+    status: "ga"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "diffusion"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "image"
+    availability:
+      - "api"
+    benchmarks:
+      - benchmark: "aa-text-to-image-elo"
+        score: 909
+        setting: "AA-Image-T2I v2.0，±7，第 98 名"
+        reportedBy: "leaderboard"
+        date: "2026-10-06"
+        source:
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "首個同時接受文字與圖片輸入、可多輪連續修圖的 FLUX 模型，每張 0.04 美元；同時推出的 Kontext [max] 每張 0.08 美元、Elo 933。官方文件現建議新專案改用 FLUX.2。"
+flagshipVersion: "flux-3-image"
+relatedLearn:
+  - "multimodal-models"
+  - "open-vs-closed-models"
+  - "model-evaluation"
+  - "physical-ai-deep"
+glossary:
+  - "generative-ai"
+  - "diffusion-model"
+  - "multimodal"
+  - "open-weights"
+  - "elo-rating"
+  - "world-model"
+  - "physical-ai"
+sources:
+  - key: "bfl-flux3"
+    title: "FLUX 3 - Real World Models: Towards Multimodal Flow Models as the Backbone of Visual Intelligence."
+    publisher: "Black Forest Labs"
+    url: "https://bfl.ai/blog/flux-3"
+    type: "company-site"
+    lang: "en"
+    published: "2026-07-23"
+    accessed: "2026-10-06"
+  - key: "bfl-flux3-video"
+    title: "FLUX 3 Video, Part 1: Generation"
+    publisher: "Black Forest Labs"
+    url: "https://bfl.ai/blog/flux-3-video"
+    type: "company-site"
+    lang: "en"
+    published: "2026-08-04"
+    accessed: "2026-10-06"
+  - key: "bfl-flux3-action"
+    title: "FLUX 3 Action: A 7B World Action Model for Robot Control"
+    publisher: "Black Forest Labs"
+    url: "https://bfl.ai/models/flux-3-action"
+    type: "paper"
+    lang: "en"
+    published: "2026-09-22"
+    accessed: "2026-10-06"
+  - key: "bfl-flux2"
+    title: "FLUX.2: Frontier Visual Intelligence"
+    publisher: "Black Forest Labs"
+    url: "https://bfl.ai/blog/flux-2"
+    type: "company-site"
+    lang: "en"
+    published: "2025-11-25"
+    accessed: "2026-10-06"
+  - key: "bfl-kontext"
+    title: "Introducing FLUX.1 Kontext and the BFL Playground"
+    publisher: "Black Forest Labs"
+    url: "https://bfl.ai/blog/flux-1-kontext"
+    type: "company-site"
+    lang: "en"
+    published: "2025-05-29"
+    accessed: "2026-10-06"
+  - key: "bfl-rn"
+    title: "Release Notes | BFL API Documentation"
+    publisher: "Black Forest Labs"
+    url: "https://docs.bfl.ai/release-notes"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "bfl-pricing"
+    title: "Pricing | Black Forest Labs"
+    publisher: "Black Forest Labs"
+    url: "https://bfl.ai/pricing"
+    type: "company-site"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-bfl"
+    title: "black-forest-labs (Hugging Face organization)"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/black-forest-labs"
+    type: "other"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-f3a"
+    title: "FLUX 3 Action Base model card"
+    publisher: "Black Forest Labs (Hugging Face)"
+    url: "https://huggingface.co/black-forest-labs/flux-3-action-base"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-t2i"
+    title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-t2v"
+    title: "Text to Video Leaderboard (AA-Video-T2V v2.0)"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/video/leaderboard/text-to-video"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-08"
+  checkedBy: "models-08-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+FLUX 是德國 <CompanyChip id="black-forest-labs">Black Forest Labs</CompanyChip>（BFL，黑森林實驗室）的<Term id="generative-ai">生成式 AI</Term>圖像模型系列。BFL 自稱採「開放核心」路線：一方面推出可下載的<Term id="open-weights">開放權重</Term>模型讓社群研究與改作，一方面以 API 銷售品質更高的商用版本，客戶包括 Adobe 與 Meta 等<Cite k="bfl-flux2" />。
+
+截至 2026-10-06，系列有兩代並行。**FLUX.2**（2025-11 起）是目前最完整的圖像產品線，從閉源的 [max]、[pro]、[flex] 到開放權重的 [dev] 與 [klein] 都有；**FLUX 3**（2026-07-23 發表）則是一個同時學習圖像、影片與音訊的<Term id="multimodal">多模態</Term>基礎模型，BFL 依序推出 FLUX 3 Video、FLUX 3 Action，以及 2026-10-01 上線的 FLUX 3 Image<Cite k="bfl-rn" />。
+
+## 特性分析
+
+**架構：視覺語言模型加上流匹配。** FLUX 系列採潛空間流匹配（flow matching），屬於<Term id="diffusion-model">擴散模型</Term>的延伸。FLUX.2 把 <ModelChip id="mistral">Mistral</ModelChip> 的 240 億參數視覺語言模型（官方稱 Mistral-3 24B）接上整流流 Transformer：前者提供世界知識與語意理解，後者負責空間關係與材質，並重新訓練了潛空間編碼器<Cite k="bfl-flux2" />。FLUX 3 則以自家的 Self-Flow 方法，在同一個架構中同時訓練生成與理解<Cite k="bfl-flux3" />。
+
+**編輯能力是主軸。** FLUX.2 可同時參考最多 10 張圖，維持角色、商品或風格一致，輸出最高 4MP，並能以 HEX 色碼指定品牌色<Cite k="bfl-flux2" />。FLUX 3 Image 更進一步，允許在提示詞後面加上一串邊界框，指定標題、人物或格子的位置，再逐框改色、移動或刪除，其他部分維持不變<Cite k="bfl-rn" />。
+
+**按張計價、價格分層。** FLUX 不以 token 計價：FLUX 3 Image 1K 每張 0.048 美元、4K 每張 0.607 美元；FLUX.2 [pro] 首百萬像素 0.03 美元，[klein] 4B 只要 0.014 美元；FLUX 3 Video 則按秒收費，FHD 每秒 0.29 美元<Cite k="bfl-pricing" />。
+
+**跨進物理 AI。** FLUX 3 Action 是 70 億參數的開放權重<Term id="world-model">世界動作模型</Term>，輸入相機畫面、機器人狀態與文字指令，同時預測下一段動作與畫面；BFL 稱它在 RoboLab-120 排行榜創下新的最高成功率（38.3%，先前最佳的開放模型 Cosmos 3 Nano 為 36.8%），參數量卻不到後者的一半<Cite k="bfl-flux3-action" />。這讓圖像公司直接接上<Term id="physical-ai">實體 AI</Term>與機器人的需求。
+
+## 適合與不適合的用途
+
+適合：
+
+- **大量出圖的商業應用**：電商、行銷素材、廣告變體，單張成本遠低於 GPT Image 等閉源模型。
+- **多參考圖編輯**：同一角色、同一商品在不同場景間保持一致。
+- **本機或自建部署**：FLUX.2 [klein] 4B 為 Apache 2.0，官方稱約 13GB 顯示記憶體即可執行<Cite k="bfl-rn" />。
+- **精確排版的設計稿**：FLUX 3 Image 的邊界框可控制每個元素的位置。
+
+不適合：
+
+- **追求人類偏好評比第一名**：AA 文生圖榜前幾名由 GPT Image、Grok Imagine、MAI-Image 等占據，FLUX.2 最高排第 22 名<Cite k="aa-t2i" />。
+- **想免費商用中高階開放權重**：FLUX.2 [dev] 與 [klein] 9B 為非商用授權，需另購方案。
+- **需要長期固定的 API 版本**：舊端點汰換快，FLUX Pro 1.0 與微調 API 已在 2025-10-31 停用。
+
+## 版本演進
+
+| 發布日 | 版本 | 重點 | 狀態（2026-10-06） |
+|---|---|---|---|
+| 2025-05-29 | FLUX.1 Kontext [pro]／[max] | 首度支援文字加圖片輸入、多輪修圖 | 提供中，官方建議改用 FLUX.2 |
+| 2025-10-31 | FLUX Pro 1.0 端點、微調 API | 停用 | 已停用 |
+| 2025-11-25 | FLUX.2 [pro]、[flex]、[dev] | 10 張參考圖、4MP、[dev] 開放 320 億參數權重 | 提供中 |
+| 2025-12-16 | FLUX.2 [max] | 最高品質，支援連網搜尋 | 提供中 |
+| 2026-01-15 | FLUX.2 [klein] 4B／9B | 次秒級生成，4B 為 Apache 2.0 | 提供中 |
+| 2026-07-23 | FLUX 3 發表 | 圖像、影片、音訊聯合訓練 | 分階段開放 |
+| 2026-08-04 | FLUX 3 Video | 20 秒影片含同步音訊 | 提供中 |
+| 2026-09-22 | FLUX 3 Action | 70 億參數開放權重機器人模型 | 提供中 |
+| 2026-10-01 | FLUX 3 Image | 邊界框排版、最高 4K | 主力版本 |
+
+日期取自官方更新紀錄、部落格與 Hugging Face 頁面<Cite k="hf-bfl" />。BFL 在 FLUX 3 發表時也預告，之後會推出可下載的多模態骨幹 FLUX 3 Dev<Cite k="bfl-flux3" />。
+
+## 評測解讀
+
+<Callout type="info" title="圖像與影片模型怎麼比">Artificial Analysis 讓評審在不知道模型名稱的情況下，比較同一個提示產生的兩張圖或兩段影片，再換算成 <Term id="elo-rating">Elo</Term> 分數。文生圖榜以 FLUX.2 [dev] 固定為 1000 分當作基準點，所以其他分數都是「相對 FLUX.2 [dev] 的偏好程度」<Cite k="aa-t2i" />。</Callout>
+
+| 模型 | 榜單 | Elo | 名次 | AA 估計成本 |
+|---|---|---|---|---|
+| FLUX 3 | 文生影片（含音訊） | 1128 ±9 | 6 | 每分鐘 17.4 美元 |
+| FLUX.2 [flex] | 文生圖 | 1028 ±9 | 22 | 每千張 60 美元 |
+| FLUX.2 [max] | 文生圖 | 1020 ±8 | 28 | 每千張 70 美元 |
+| FLUX.2 [pro] | 文生圖 | 1004 ±8 | 41 | 每千張 30 美元 |
+| FLUX.2 [dev] | 文生圖 | 1000（基準） | 42 | 每千張 12 美元 |
+| FLUX.2 [klein] 9B | 文生圖 | 941 ±8 | 82 | 每千張 15 美元 |
+
+資料讀取於 2026-10-06<Cite k="aa-t2v" />。解讀時要注意：
+
+- **FLUX 3 Image 還沒被評**：它 10 月 1 日才上線，表中的文生圖分數都是上一代 FLUX.2，不能代表 BFL 目前的最佳水準。
+- **影片的成績較亮眼**：FLUX 3 在含音訊的文生影片榜排第 6，與第 1 名 Wan 3.0（1156）相差 28 分；官方早期自家評測則稱 FLUX 3 對所列競品的偏好勝率在 52% 到 93% 之間，但這屬於自報數字<Cite k="bfl-flux3" />。
+- **偏好分數不是全部**：Elo 反映評審覺得哪張好看、較符合提示，不直接衡量多參考圖一致性、邊界框排版等 FLUX 主打的編輯能力。
+- **性價比要一起看**：FLUX.2 [pro] 每千張約 30 美元，分數與 [dev] 接近；大量生成時，價格往往比幾十分的 Elo 差距更關鍵。

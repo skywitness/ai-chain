@@ -1,0 +1,351 @@
+---
+title: "GPU 與 AI 加速器架構"
+subtitle: "從 SM、Tensor Core 到記憶體階層：拆開一顆 AI 晶片，看它怎麼算、怎麼餵資料"
+description: "一顆 AI 晶片由上百個運算單元、好幾層記憶體與高速 I/O 組成。本文拆解 GPU 的 SM、Tensor Core 與記憶體階層，用屋頂線模型說明算力與頻寬的取捨，並比較 TPU、推論 ASIC 與晶圓級晶片的不同設計。"
+level: 2
+order: 209
+track: hardware
+prerequisites: [why-gpus]
+next: [memory-and-hbm, networking-for-ai, training-vs-inference-economics]
+relatedSegments: [ai-accelerators, foundry-packaging, memory-storage, eda-ip-design, networking-optics]
+relatedCompanies: [nvidia, amd, alphabet, microsoft, broadcom, openai, cerebras, tsmc, sk-hynix, samsung-electronics, micron, alchip, guc]
+relatedModels: []
+relatedTrends: [gpu-roadmap-rubin-feynman, custom-asic-rise, inference-chips-new-paradigms, hbm4-custom-base-die, rack-scale-systems, scale-up-fabric-wars]
+glossary:
+  - gpu
+  - tensor-core
+  - hbm
+  - ai-accelerator
+  - parallel-computing
+  - cpu
+  - die
+  - transistor
+  - yield
+  - cuda
+  - matrix-multiplication
+  - flops
+  - fp8
+  - fp4
+  - sram
+  - memory-hierarchy
+  - bandwidth
+  - nvlink
+  - memory-wall
+  - training
+  - systolic-array
+  - asic
+  - tpu
+  - wafer-scale-engine
+  - decode
+  - batching
+  - reticle-limit
+  - xpu
+  - asic-design-service
+  - cowos
+  - scale-up
+scenes:
+  - id: gpu-scale
+    variant: die
+keyTakeaways:
+  - "GPU 由大量重複的 SM 組成：H100 有 132 個 SM，每個 SM 有 128 個 CUDA 核心與 4 個 Tensor Core。"
+  - "AI 運算主要靠 Tensor Core：H100 的 16 位元 Tensor Core 算力約是一般 FP32 核心的 15 倍。"
+  - "記憶體分好幾層，越靠近運算單元越快也越小：H100 晶片上的 SRAM 合計約 0.1 GB，HBM 有 80 GB。"
+  - "屋頂線模型：每從 HBM 讀進 1 位元組要做約 300 次運算，H100 的 Tensor Core 才不會閒著。"
+  - "TPU 的脈動陣列、推論 ASIC 的大容量 SRAM、晶圓級晶片，都是在算力、頻寬與彈性之間的不同取捨。"
+  - "架構選擇決定了採購清單：先進製程、CoWoS 封裝、HBM 與高速互連，各自對應產業鏈上的供應商。"
+estimatedMinutes: 15
+sources:
+  - key: nvidia-hopper
+    title: "NVIDIA Hopper Architecture In-Depth"
+    publisher: NVIDIA Technical Blog
+    url: "https://developer.nvidia.com/blog/nvidia-hopper-architecture-in-depth/"
+    type: docs
+    lang: en
+    published: "2022-03-22"
+    accessed: "2026-10-15"
+    note: "完整 GH100：8 個 GPC、72 個 TPC、144 個 SM、60 MB L2；H100 SXM5：132 個 SM，每個 SM 有 128 個 FP32 CUDA 核心與 4 個第四代 Tensor Core（全晶片 16,896 個與 528 個）、50 MB L2、80 GB HBM3（5 疊）；每個 SM 有 256 KB 暫存器檔案與 256 KB 合併的 L1／共享記憶體；每個 warp 32 個執行緒；800 億個電晶體、晶粒面積 814 mm²、台積電 4N 製程；NVLink 總頻寬 900 GB/s；新增 Tensor Memory Accelerator（TMA）在全域記憶體與共享記憶體之間搬移大塊資料。"
+  - key: nvidia-h100
+    title: "NVIDIA H100 Tensor Core GPU"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/h100/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "H100 SXM：FP32 67 TFLOPS；BF16／FP16 Tensor Core 1,979 TFLOPS、FP8 3,958 TFLOPS（皆含稀疏加速，稠密值為一半）；80 GB；記憶體頻寬 3.35 TB/s；NVLink 900 GB/s；TDP 最高 700W。"
+  - key: cuda-intro
+    title: "CUDA Programming Guide: 1.1 Introduction"
+    publisher: NVIDIA
+    url: "https://docs.nvidia.com/cuda/cuda-programming-guide/01-introduction/introduction.html"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "GPU 以較低的單執行緒效能換取更高的總吞吐量，把更多電晶體用在資料處理單元；CPU 則把更多電晶體用在快取與流程控制。"
+  - key: cuda-model
+    title: "CUDA Programming Guide: 1.2 Programming Model"
+    publisher: NVIDIA
+    url: "https://docs.nvidia.com/cuda/cuda-programming-guide/01-introduction/programming-model.html"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "GPU 可視為由許多 SM 組成，SM 再分組為 GPC；每個 SM 有暫存器檔案、資料快取與多個運算單元；執行緒以 32 個為一組（warp），以單指令多執行緒（SIMT）方式執行。"
+  - key: nvidia-blackwell
+    title: "NVIDIA Blackwell Architecture"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "2,080 億個電晶體、客製化台積電 4NP 製程；兩顆達光罩尺寸上限的晶粒以 10 TB/s 晶片間互連組成單一 GPU；第二代 Transformer Engine 以「微張量縮放」支援 4 位元浮點（FP4）運算。"
+  - key: nvidia-vera-rubin
+    title: "NVIDIA Vera Rubin NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "每顆 Rubin GPU：FP32 130 TFLOPS；TF32 2 PFLOPS、FP16／BF16 4 PFLOPS、FP8／FP6 訓練 17.5 PFLOPS、NVFP4 訓練 35 PFLOPS（以上為稠密規格）；NVFP4 推論 50 PFLOPS（稀疏規格）；288 GB HBM4、19.2 TB/s；第六代 NVLink 每顆 GPU 3 TB/s。整櫃 72 顆 GPU、36 顆 Vera CPU。"
+  - key: amd-mi355x
+    title: "AMD Instinct MI355X GPU"
+    publisher: AMD
+    url: "https://www.amd.com/en/products/accelerators/instinct/mi350/mi355x.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "256 個運算單元（CU）、1,024 個 Matrix Core、16,384 個串流處理器；FP16／BF16 矩陣稠密 2.5 PFLOPS（結構化稀疏 5 PFLOPS）、FP8 稠密 5 PFLOPS、MXFP4 10.1 PFLOPS；288 GB HBM3E、8 TB/s；末級快取（Infinity Cache）256 MB；1,850 億個電晶體；典型板卡功耗 1,400W。"
+  - key: google-tpu-arch
+    title: "TPU architecture"
+    publisher: Google Cloud Documentation
+    url: "https://docs.cloud.google.com/tpu/docs/system-architecture-tpu-vm"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "TPU 晶片含一或多個 TensorCore，各有矩陣乘法單元（MXU）、向量單元與純量單元；MXU 在 v6e 之前為 128 × 128，v6e 與 TPU7x 為 256 × 256 個乘加器；乘加器彼此直接相連成脈動陣列，矩陣乘法過程中不需存取記憶體。"
+  - key: google-ironwood
+    title: "TPU7x (Ironwood)"
+    publisher: Google Cloud Documentation
+    url: "https://docs.cloud.google.com/tpu/docs/tpu7x"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "每顆晶片：BF16 峰值 2,307 TFLOPS、FP8 4,614 TFLOPS；192 GiB HBM、頻寬 7,380 GB/s；2 個 TensorCore、4 個 SparseCore；每個 pod 9,216 顆晶片，以 3D 環面（torus）互連。"
+  - key: google-cloud-tpu
+    title: "Tensor Processing Units (TPUs)"
+    publisher: Google Cloud
+    url: "https://cloud.google.com/tpu"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "TPU 8t 為大規模預訓練打造，單一 superpod 9,600 顆晶片；TPU 8i 針對後訓練與推論最佳化；兩者標示為即將推出。Ironwood 每個 pod 9,216 顆液冷晶片，已全面上市。"
+  - key: tpu-v1
+    title: "In-Datacenter Performance Analysis of a Tensor Processing Unit"
+    publisher: "Jouppi et al.（arXiv）"
+    url: "https://arxiv.org/abs/1704.04760"
+    type: paper
+    lang: en
+    published: "2017-04-16"
+    accessed: "2026-10-15"
+    note: "第一代 TPU 的核心是 65,536 個 8 位元乘加器組成的矩陣乘法單元，峰值 92 TOPS，搭配 28 MiB 軟體管理的晶片上記憶體；平均比同期 GPU 或 CPU 快 15–30 倍，每瓦效能高 30–80 倍。"
+  - key: roofline
+    title: "Roofline: An Insightful Visual Performance Model for Floating-Point Programs and Multicore Architectures"
+    publisher: "UC Berkeley EECS（Williams, Waterman, Patterson）"
+    url: "https://www2.eecs.berkeley.edu/Pubs/TechRpts/2008/EECS-2008-134.html"
+    type: paper
+    lang: en
+    published: "2008-10-17"
+    accessed: "2026-10-15"
+    note: "提出屋頂線（Roofline）視覺化效能模型，以運算強度連結峰值算力與記憶體頻寬；後以同名論文刊於 Communications of the ACM（2009）。"
+  - key: ms-maia200
+    title: "Maia 200: The AI accelerator built for inference"
+    publisher: Microsoft
+    url: "https://blogs.microsoft.com/blog/2026/01/26/maia-200-the-ai-accelerator-built-for-inference/"
+    type: press-release
+    lang: en
+    published: "2026-01-26"
+    accessed: "2026-10-15"
+    note: "台積電 3 奈米製程、逾 1,400 億個電晶體；216 GB HBM3e、7 TB/s；272 MB 晶片上 SRAM；FP4 逾 10 PFLOPS、FP8 逾 5 PFLOPS；SoC 功耗 750W；每美元效能比微軟機群中最新一代硬體高 30%。"
+  - key: cerebras-wse3
+    title: "Cerebras Systems Unveils World's Fastest AI Chip with Whopping 4 Trillion Transistors"
+    publisher: Cerebras Systems
+    url: "https://www.cerebras.ai/press-release/cerebras-announces-third-generation-wafer-scale-engine"
+    type: press-release
+    lang: en
+    published: "2024-03-13"
+    accessed: "2026-10-15"
+    note: "WSE-3：4 兆個電晶體、90 萬個 AI 核心、峰值 AI 算力 125 PFLOPS（未註明精度）、44 GB 晶片上 SRAM、台積電 5 奈米製程；CS-3 系統外接記憶體 1.5 TB、12 TB 或 1.2 PB。"
+  - key: openai-broadcom
+    title: "OpenAI and Broadcom announce strategic collaboration to deploy 10 gigawatts of OpenAI-designed AI accelerators"
+    publisher: OpenAI
+    url: "https://openai.com/index/openai-and-broadcom-announce-strategic-collaboration/"
+    type: press-release
+    lang: en
+    published: "2025-10-13"
+    accessed: "2026-10-15"
+    note: "OpenAI 設計加速器與系統，與博通共同開發與部署，共 10 GW；系統採用博通的乙太網路做 scale-up 與 scale-out；目標 2026 年下半年開始部署機櫃，2029 年底前完成。"
+updated: "2026-10-15"
+lastVerified: "2026-10-15"
+editorial:
+  status: fact-checked
+  author: learn-10
+  checkedBy: "learn-10-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：所有規格已於 2026-10-15 對照輝達、超微、Google Cloud、微軟、Cerebras、OpenAI 官方頁面與原始論文；脊點、SRAM 合計等換算值已重算。修正低精度算力「一路翻倍」的說法（Rubin 的 FP8 為 16 位元的 4 倍多），補上 WSE-3 的官方峰值算力與外接記憶體範圍。"
+---
+
+## 一句話解釋
+
+一顆 <Term id="gpu">GPU</Term> 是由上百個重複的「運算工作站」（SM）組成的晶片：每個 SM 裡有一般運算核心、專做矩陣乘法的 <Term id="tensor-core">Tensor Core</Term>，以及小而快的記憶體；晶片中央有一大塊共用快取，旁邊再接好幾疊 <Term id="hbm">HBM</Term>。各種 <Term id="ai-accelerator">AI 加速器</Term>的設計，說穿了就是在「算得多快」、「資料餵得多快」與「能做多少種工作」三件事之間取捨。
+
+## 生活化比喻
+
+<Callout type="analogy" title="一棟中央廚房大樓">
+
+把一顆 AI 晶片想成一棟專做便當的中央廚房大樓：
+
+- **SM 是一間間工作站**：每站有一百多位廚師（CUDA 核心），還有幾台專門大量切菜的機器（Tensor Core）。整棟樓有上百個一模一樣的工作站，同時開工。
+- **記憶體是一層層的儲藏空間**：廚師手邊的砧板（暫存器）、工作站裡的小冰箱（共享記憶體）、整層樓共用的冷藏室（L2 快取），以及大樓旁邊的大倉庫（HBM），中間靠輸送帶運貨（頻寬）。
+- **NVLink 是通往其他大樓的專用道路**：一棟樓做不完的訂單，可以拆給隔壁幾棟一起做。
+
+這棟樓最怕的不是切菜機不夠快，而是倉庫的貨送不過來。切菜機再快，食材沒到也只能空轉。另一種設計思路是 Google 的 TPU：它更像一條自動化產線，食材在一整排機器之間直接傳遞，不必每一步都回冰箱拿。
+
+</Callout>
+
+## 原理
+
+### 由大到小，拆開一顆 GPU
+
+<LearnLink id="why-gpus">為什麼 AI 需要 GPU</LearnLink>提到，GPU 靠大量核心<Term id="parallel-computing">平行運算</Term>。輝達的 CUDA 程式設計指南這樣說明兩者的設計差異：<Term id="cpu">CPU</Term> 把較多電晶體用在快取與流程控制，GPU 則犧牲單一執行緒的速度，把更多電晶體用在資料處理單元，換取更高的總吞吐量<Cite k="cuda-intro" />。
+
+實際打開一顆 GPU，會看到清楚的階層：整顆<Term id="die">晶粒</Term>分成幾個 GPC（圖形處理叢集），每個 GPC 由許多 SM（Streaming Multiprocessor，串流多處理器）組成，SM 裡面才是真正做運算的單元<Cite k="cuda-model" />。以輝達（NVIDIA）H100 為例：
+
+<StatGrid
+  title="H100（SXM5）的組成"
+  items={[
+    { label: "SM 數量", value: "132 個", note: "完整晶片設計為 144 個" },
+    { label: "CUDA 核心", value: "16,896 個", note: "每個 SM 128 個" },
+    { label: "Tensor Core", value: "528 個", note: "每個 SM 4 個" },
+    { label: "L2 快取", value: "50 MB", note: "全部 SM 共用" },
+    { label: "HBM3 記憶體", value: "80 GB", note: "頻寬 3.35 TB/s" },
+    { label: "電晶體", value: "800 億個", note: "晶粒 814 mm²，台積電 4N" }]}
+  caption="資料來源：輝達 Hopper 架構技術文章與 H100 產品頁。"
+/>
+
+這些數字來自輝達的 Hopper 架構技術文章<Cite k="nvidia-hopper" />與產品頁<Cite k="nvidia-h100" />。值得注意的是，完整的 GH100 晶片設計有 144 個 SM，但 H100 產品只啟用 132 個<Cite k="nvidia-hopper" />。<Term id="transistor">電晶體</Term>多達 800 億個、面積 814 mm² 的大晶片，很難做到完全沒有瑕疵。大晶片常見的做法是預留一些重複單元：有小缺陷的晶粒只要關掉出問題的單元，仍能當成正常產品出貨，等於提高可用的<Term id="yield">良率</Term>。
+
+<Scene3D id="gpu-scale" variant="die" caption="打開一顆 GPU 運算晶粒：重複排列的 SM 組成 GPC，中央是 L2 快取，邊緣是連接 HBM 的實體層與 NVLink 等 I/O。按「下一步」放大一個 SM，可以看到 4 個 Tensor Core 與暫存器、共享記憶體。SM 數量與比例為示意。" />
+
+### SIMT：一個指令，32 個人一起做
+
+GPU 的上萬個核心不是各做各的。<Term id="cuda">CUDA</Term> 把執行緒以 32 個為一組，稱為 warp；同一個 warp 的 32 個執行緒執行同一段程式，只是各自處理不同的資料，這種方式叫做 SIMT（單指令多執行緒）<Cite k="cuda-model" />。就像一位班長喊口令，32 位廚師同時切自己面前的那盤菜。
+
+這種設計省下大量控制電路，把面積留給運算單元。代價是：如果同一組裡有人要走不同的分支（例如有的要切丁、有的要切片），就得分兩輪做，效率下降。神經網路的運算幾乎沒有這種分岔，所以特別適合 GPU。另一個關鍵技巧是「輪流上場」：一個 SM 同時掛著許多組 warp，某一組在等記憶體資料時，排程器就換另一組上來算，讓運算單元盡量不空轉。
+
+### Tensor Core：把力氣花在矩陣乘法
+
+一般的 CUDA 核心每次做一個乘加，Tensor Core 則一口氣完成一小塊<Term id="matrix-multiplication">矩陣乘法</Term>。差距有多大？H100 的一般 FP32 運算是 67 TFLOPS，16 位元（BF16）Tensor Core 的稠密算力則是約 989 TFLOPS，大約 15 倍<Cite k="nvidia-h100" />。到了 2026 年開始量產的 Rubin，一般 FP32 為 130 TFLOPS，16 位元 Tensor Core 為 4 PFLOPS，差距拉大到約 31 倍<Cite k="nvidia-vera-rubin" />。換句話說，AI 晶片的算力幾乎都來自 Tensor Core 這類矩陣單元。
+
+另一個趨勢是**用更少的位元表示數字**。位元數減半，資料量就減半，同樣的晶片面積通常也能多做至少一倍的運算。下圖是同一顆 Rubin GPU 在不同精度下的稠密算力：
+
+<BarChart
+  title="Rubin GPU 在不同數值格式下的稠密算力"
+  unit="TFLOPS"
+  data={[
+    { label: "FP32", value: 130 },
+    { label: "TF32", value: 2000 },
+    { label: "BF16", value: 4000 },
+    { label: "FP8", value: 17500 },
+    { label: "NVFP4", value: 35000 }]}
+  source="nvidia-vera-rubin"
+  note="FP32 為一般核心算力；其餘為 Tensor Core 稠密規格，NVFP4 取訓練用的稠密數值。官方另列 NVFP4 推論 50 PFLOPS，為稀疏規格，不能直接比較。"
+/>
+
+<Term id="flops">FLOPS</Term> 是每秒浮點運算次數，1 TFLOPS 等於每秒 1 兆次，1 PFLOPS 等於 1,000 TFLOPS。從 16 位元降到 <Term id="fp8">FP8</Term>，再降到 <Term id="fp4">FP4</Term>，算力至少一路翻倍；以 Rubin 為例，FP8 的稠密算力是 16 位元的 4 倍多，NVFP4 又是 FP8 的 2 倍，可見新一代晶片把更多電路資源押在低精度格式上。4 位元只有 16 種組合，精度很粗，所以 Blackwell 加入「微張量縮放」：把數字分成很小的區塊，每塊共用一個縮放係數，讓 4 位元格式也能用於 AI 運算<Cite k="nvidia-blackwell" />。
+
+### 記憶體階層：越近越快，也越小
+
+算力只是一半的故事。運算單元需要的資料，存放在好幾層<Term id="memory-hierarchy">記憶體階層</Term>裡：
+
+| 層級 | 位置 | H100 的容量 | 比喻 |
+|---|---|---|---|
+| 暫存器 | 每個 SM 內 | 每 SM 256 KB，全晶片約 33 MB | 廚師手邊的砧板 |
+| L1／共享記憶體 | 每個 SM 內 | 每 SM 256 KB，全晶片約 33 MB | 工作站裡的小冰箱 |
+| L2 快取 | 晶粒中央，全部 SM 共用 | 50 MB | 整層樓共用的冷藏室 |
+| HBM3 | 同一封裝內、晶粒旁 | 80 GB，頻寬 3.35 TB/s | 大樓旁的大倉庫 |
+| 其他 GPU | 經 NVLink 連線 | 頻寬 900 GB/s | 隔壁的其他大樓 |
+
+表中的每 SM 容量、L2 與 NVLink 數字來自輝達技術文章<Cite k="nvidia-hopper" />，HBM 頻寬來自產品頁<Cite k="nvidia-h100" />，全晶片合計為本站以 132 個 SM 換算。前三層都是做在晶粒上的 <Term id="sram">SRAM</Term>，速度最快，但很占面積：H100 晶片上的 SRAM 合計約 0.1 GB，還不到 HBM 容量的六百分之一。
+
+所以晶片設計師花很多心思在「搬資料」：先把一塊資料從 HBM 搬進共享記憶體，讓它在 SM 裡被重複使用很多次，再換下一塊。Hopper 甚至加了一個專門搬運大塊資料的硬體單元 TMA（Tensor Memory Accelerator），讓搬運和運算可以同時進行<Cite k="nvidia-hopper" />。HBM 之外是 <Term id="nvlink">NVLink</Term>，讓好幾顆 GPU 互相讀取彼此的記憶體，詳見<LearnLink id="networking-for-ai">AI 叢集網路</LearnLink>。
+
+### 屋頂線模型：算力與頻寬，誰先撞牆？
+
+要判斷一個工作會卡在算力還是卡在<Term id="bandwidth">頻寬</Term>，業界常用柏克萊大學研究者提出的「屋頂線」（Roofline）模型<Cite k="roofline" />。關鍵是「運算強度」I：每從記憶體讀進 1 位元組，要做幾次運算。晶片實際能達到的效能 P，受兩個上限限制：
+
+<MathTeX tex="P = \min(\pi,\ \beta \times I)" display label="可達效能 P 等於峰值算力 π，與記憶體頻寬 β 乘以運算強度 I，兩者中較小的那一個" />
+
+其中 π 是峰值算力，β 是記憶體頻寬。運算強度太低時，效能受頻寬限制，是一條斜線；運算強度夠高時，才會碰到算力的「屋頂」。兩者的交點叫做脊點，等於 π 除以 β。以 H100 為例，989 TFLOPS 除以每秒 3.35 TB，約為每位元組 295 次運算：每讀進 1 位元組，至少要用它做將近 300 次運算，Tensor Core 才不會閒著。
+
+<BarChart
+  title="16 位元稠密運算的屋頂線脊點"
+  unit="次運算／位元組"
+  data={[
+    { label: "H100", value: 295 },
+    { label: "MI355X", value: 313 },
+    { label: "Ironwood", value: 313 },
+    { label: "Rubin", value: 208 }]}
+  source={["nvidia-h100", "amd-mi355x", "google-ironwood", "nvidia-vera-rubin"]}
+  note="本站以官方規格換算：16 位元稠密峰值算力除以 HBM 頻寬。數字越高，代表要把算力用滿，每位元組資料就得被重複使用越多次。"
+/>
+
+四顆晶片的脊點都落在每位元組 200 到 300 多次運算。大型矩陣相乘能輕鬆達到這個強度，所以<Term id="training">訓練</Term>通常受算力限制；但大型語言模型逐字產生回答時，若一次只服務一位使用者，運算強度只有每位元組約 1 次，算力幾乎全部閒置。這就是<Term id="memory-wall">記憶體牆</Term>，也是 HBM 頻寬年年拉高、晶片上 SRAM 越做越大的原因。
+
+### 不同的加速器，不同的取捨
+
+GPU 為了「什麼都能算」，保留了大量通用核心與控制邏輯。其他加速器則各自押注不同的方向：
+
+<Compare
+  title="通用 GPU 與客製化 ASIC"
+  left={{ title: "GPU（通用加速器）", items: ["保留通用核心與 SIMT 架構，各種模型與演算法都能跑", "軟體生態成熟，CUDA 的工具與函式庫最完整", "可以買來自用，也能在各家雲端租用", "代表：輝達 H100／Rubin、超微 MI355X"] }}
+  right={{ title: "ASIC（客製化加速器）", items: ["針對特定運算（主要是矩陣乘法）把電路做到極致", "依自家工作負載決定記憶體、精度與互連", "需要自建編譯器與軟體堆疊，開發門檻高", "代表：Google TPU、微軟 Maia、OpenAI 與博通合作的加速器"] }}
+/>
+
+**TPU：脈動陣列。** Google 的 <Term id="tpu">TPU</Term> 是雲端業者自研 <Term id="asic">ASIC</Term> 的代表。它的矩陣乘法單元（MXU）是一大片彼此直接相連的乘加器，稱為<Term id="systolic-array">脈動陣列</Term>：權重先載入陣列，資料像心跳一樣一拍一拍流過，每個乘加器把結果直接傳給下一個，整個矩陣乘法過程不必存取記憶體<Cite k="google-tpu-arch" />。2017 年公開的第一代 TPU 論文顯示，它的核心就是 65,536 個 8 位元乘加器，峰值每秒 92 兆次運算<Cite k="tpu-v1" />。MXU 在 v6e 之前是 128 × 128，v6e 與第七代 Ironwood 擴大為 256 × 256<Cite k="google-tpu-arch" />。
+
+**推論 ASIC：把 SRAM 做大。** 微軟在 2026 年 1 月發表的 Maia 200 是專為推論設計的晶片，除了 216 GB 的 HBM3e，還在晶粒上放了 272 MB 的 SRAM，FP4 算力逾 10 PFLOPS；微軟表示，它的每美元效能比自家機群中最新一代硬體高 30%<Cite k="ms-maia200" />。超微 MI355X 也有 256 MB 的末級快取<Cite k="amd-mi355x" />。
+
+**晶圓級晶片：整片晶圓就是一顆晶片。** 一般晶片的面積受限於<Term id="reticle-limit">光罩尺寸極限</Term>，Blackwell 因此把兩顆達到上限的晶粒拼成一顆 GPU<Cite k="nvidia-blackwell" />。Cerebras 則走極端：<Term id="wafer-scale-engine">晶圓級晶片</Term> WSE-3 用一整片晶圓做成，有 4 兆個電晶體、90 萬個核心與 44 GB 的晶片上 SRAM<Cite k="cerebras-wse3" />，SRAM 容量約是 H100 L2 快取的 880 倍。
+
+| 晶片 | 類型 | 16 位元稠密算力 | 晶片外記憶體與頻寬 | 晶片上大型 SRAM |
+|---|---|---|---|---|
+| 輝達 H100 | GPU | 989 TFLOPS | 80 GB HBM3，3.35 TB/s | L2 快取 50 MB |
+| 超微 MI355X | GPU | 2.5 PFLOPS | 288 GB HBM3E，8 TB/s | 末級快取 256 MB |
+| 輝達 Rubin | GPU | 4 PFLOPS | 288 GB HBM4，19.2 TB/s | 官方未列 |
+| Google Ironwood | ASIC（TPU） | 2,307 TFLOPS | 192 GiB HBM，7.38 TB/s | 官方未列 |
+| 微軟 Maia 200 | 推論 ASIC | 官方未列（FP8 逾 5 PFLOPS） | 216 GB HBM3e，7 TB/s | 272 MB |
+| Cerebras WSE-3 | 晶圓級晶片 | 官方未列（峰值 AI 算力 125 PFLOPS，未註明精度） | 系統外接記憶體 1.5 TB 至 1.2 PB | 44 GB |
+
+表中規格分別取自各公司官方頁面與文件<Cite k="nvidia-h100" /><Cite k="amd-mi355x" /><Cite k="nvidia-vera-rubin" /><Cite k="google-ironwood" /><Cite k="ms-maia200" /><Cite k="cerebras-wse3" />。各家的量測方式不盡相同，只適合看數量級，不宜逐項比高低。真正的效能還取決於軟體：同一顆晶片，編譯器與推論引擎寫得好不好，實際速度可以差上好幾倍。
+
+<DeepDive title="深入一點：矩陣要多大，Tensor Core 才吃得飽？">
+
+用屋頂線模型可以算出一個很實用的結論。假設要把兩個 n × n 的矩陣相乘，資料都用 16 位元（每個數字 2 位元組）：
+
+- 運算量：每個輸出元素要做 n 次乘法與 n 次加法，共 n² 個輸出，所以是 2n³ 次運算。
+- 資料量：最少要讀進兩個矩陣、寫出一個矩陣，共 3 × 2n² 位元組。
+
+<MathTeX tex="I = 2n^3 / (3 \times 2n^2) = n / 3" display label="n 乘 n 矩陣相乘的運算強度約為 n 除以 3" />
+
+H100 的脊點約為每位元組 295 次運算<Cite k="nvidia-h100" />，所以 n 要大到約 885 以上，矩陣乘法才會由算力決定速度。實務上，程式會把大矩陣切成小塊（tiling），先搬進 SM 的共享記憶體反覆使用，讓每一塊資料在離開晶片前被用上很多次。
+
+再看大型語言模型逐字產生回答的 <Term id="decode">Decode</Term> 階段。每產生一個 Token，每個參數都要讀進來一次（2 位元組），只做一次乘法和一次加法（2 次運算），運算強度約為每位元組 1 次。如果把 B 位使用者的請求排在一起做<Term id="batching">批次處理</Term>，讀一次權重就能替 B 個人各算一個 Token，運算強度就提高到約 B。照這個簡化的估算，H100 要同時服務約 300 個請求，算力才會開始吃緊；實際上還要讀取每個請求的 KV Cache，情況更複雜。這也說明了推論的成本為什麼高度依賴批次大小，詳見<LearnLink id="training-vs-inference-economics">訓練與推論的經濟學</LearnLink>與<LearnLink id="inference-optimization">推論最佳化</LearnLink>。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+晶片架構的每一個選擇，最後都會變成一張採購清單：
+
+- **晶片設計** → <SegmentChip id="ai-accelerators" />：<CompanyChip id="nvidia" /> 與 <CompanyChip id="amd" /> 提供通用 GPU；<CompanyChip id="alphabet" /> 的 TPU、<CompanyChip id="microsoft" /> 的 Maia 屬於雲端業者自研的 <Term id="xpu">XPU</Term>。<CompanyChip id="openai" /> 也在 2025 年 10 月宣布自行設計加速器，與 <CompanyChip id="broadcom" /> 合作開發與部署共 10 GW 的系統，目標 2026 年下半年開始部署<Cite k="openai-broadcom" />。<CompanyChip id="cerebras" /> 則代表另闢蹊徑的新架構。延伸閱讀：<TrendLink id="custom-asic-rise">客製化 ASIC 崛起</TrendLink>、<TrendLink id="inference-chips-new-paradigms">推論專用晶片</TrendLink>。
+- **設計工具與設計服務** → <SegmentChip id="eda-ip-design" />：自研晶片的公司多半需要<Term id="asic-design-service">ASIC 設計服務</Term>夥伴協助實體設計與量產，台灣的 <CompanyChip id="alchip" />、<CompanyChip id="guc" /> 都在這個環節。
+- **製造與封裝** → <SegmentChip id="foundry-packaging" />：H100 採用 <CompanyChip id="tsmc" /> 的 4N 製程<Cite k="nvidia-hopper" />，Blackwell 用 4NP<Cite k="nvidia-blackwell" />，Maia 200 用 3 奈米<Cite k="ms-maia200" />，WSE-3 用 5 奈米<Cite k="cerebras-wse3" />。運算晶粒與 HBM 還要靠 <Term id="cowos">CoWoS</Term> 等先進封裝組在一起，見<LearnLink id="advanced-packaging-intro">先進封裝入門</LearnLink>。
+- **記憶體** → <SegmentChip id="memory-storage" />：記憶體牆讓 HBM 成為 AI 晶片最關鍵的零件之一，由 <CompanyChip id="sk-hynix" />、<CompanyChip id="samsung-electronics" />、<CompanyChip id="micron" /> 供應；從 H100 的 3.35 TB/s 到 Rubin 的 19.2 TB/s，頻寬一路往上拉<Cite k="nvidia-h100" /><Cite k="nvidia-vera-rubin" />。見<LearnLink id="memory-and-hbm">記憶體牆與 HBM</LearnLink>與<TrendLink id="hbm4-custom-base-die">HBM4 與客製化記憶體</TrendLink>。
+- **互連** → <SegmentChip id="networking-optics" />：單顆晶片再強也不夠，<Term id="scale-up">Scale-up</Term> 互連決定多少顆晶片能像一顆一樣協同工作。Rubin 每顆 GPU 的 NVLink 頻寬為 3 TB/s，72 顆組成一座機櫃<Cite k="nvidia-vera-rubin" />；Ironwood 則以 3D 環面網路把 9,216 顆晶片連成一個 pod<Cite k="google-ironwood" />。延伸閱讀：<TrendLink id="scale-up-fabric-wars">Scale-up 互連標準之爭</TrendLink>、<TrendLink id="rack-scale-systems">機櫃即電腦</TrendLink>、<TrendLink id="gpu-roadmap-rubin-feynman">GPU 藍圖</TrendLink>。

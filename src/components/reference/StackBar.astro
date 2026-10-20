@@ -1,0 +1,111 @@
+---
+/**
+ * Thin horizontal 100% stacked bar for small part-of-whole summaries (editorial status, data age).
+ * Segments sit on a 2px surface gap; each carries a data-tip for the shared chart tooltip, and the
+ * whole bar has an aria-label that spells out every part, so colour never carries meaning alone.
+ * Pair it with <StackLegend> and a table or visible counts.
+ *
+ *   <StackBar label="公司檔案" parts={[{ id: 'fc', label: '已查核', value: 12, color: 'var(--c-pos)' }]} />
+ */
+import '../charts/charts.css';
+
+export interface StackPart {
+  id: string;
+  label: string;
+  value: number;
+  color: string;
+  /** hatched fill (e.g. stale / not yet checked) */
+  hatched?: boolean | undefined;
+}
+interface Props {
+  /** What the bar describes, used in the tooltip title and aria-label */
+  label: string;
+  parts: readonly StackPart[];
+  unit?: string | undefined;
+  size?: 's' | 'm' | undefined;
+  class?: string | undefined;
+}
+const { label, parts, unit = '筆', size = 'm', class: className } = Astro.props;
+const total = parts.reduce((a, p) => a + p.value, 0);
+const shown = parts.filter((p) => p.value > 0);
+const pct = (v: number) => (total ? (v / total) * 100 : 0);
+const fmtPct = (v: number) => `${pct(v) < 1 && v > 0 ? '<1' : Math.round(pct(v))}%`;
+const aria = total
+  ? `${label}：共 ${total.toLocaleString('zh-TW')} ${unit}，${shown.map((p) => `${p.label} ${p.value.toLocaleString('zh-TW')} ${unit}（${fmtPct(p.value)}）`).join('、')}`
+  : `${label}：尚無資料`;
+---
+
+<div class:list={['sbar', `sbar--${size}`, className]} role="img" aria-label={aria}>
+  {
+    total === 0 ? (
+      <span class="sbar__empty" aria-hidden="true" />
+    ) : (
+      shown.map((p) => (
+        <span
+          class:list={['sbar__seg', { 'sbar__seg--hatched': p.hatched }]}
+          style={`--w: ${pct(p.value).toFixed(3)}%; --c: ${p.color}`}
+          data-tip={`${label}\n${p.label}\t${p.value.toLocaleString('zh-TW')} ${unit}（${fmtPct(p.value)}）`}
+        />
+      ))
+    )
+  }
+</div>
+
+<script>
+  import '../charts/chart-tooltip.ts';
+</script>
+
+<style>
+  @layer components {
+    .sbar {
+      display: flex;
+      gap: 2px;
+      inline-size: 100%;
+      block-size: 0.75rem;
+      min-width: 0;
+    }
+    .sbar--s {
+      block-size: 0.5rem;
+    }
+    .sbar__seg {
+      flex: 0 0 auto;
+      inline-size: max(3px, calc(var(--w) - 2px));
+      background: var(--c);
+      border-radius: 2px;
+      cursor: default;
+      transition: filter var(--dur-1) ease;
+    }
+    .sbar__seg:first-child {
+      border-start-start-radius: 4px;
+      border-end-start-radius: 4px;
+    }
+    .sbar__seg:last-child {
+      border-start-end-radius: 4px;
+      border-end-end-radius: 4px;
+      flex: 1 1 auto;
+    }
+    .sbar__seg--hatched {
+      background: repeating-linear-gradient(
+        135deg,
+        var(--c) 0 2px,
+        color-mix(in srgb, var(--c) 35%, transparent) 2px 5px
+      );
+    }
+    .sbar__seg:hover,
+    .sbar__seg:global(.is-hot) {
+      filter: brightness(1.12) saturate(1.1);
+    }
+    .sbar__empty {
+      flex: 1;
+      border-radius: 4px;
+      /* an outlined empty slot: a sunken fill reads as a heavy black bar on dark cards */
+      background: transparent;
+      border: 1px dashed var(--c-border-strong);
+    }
+    @media (forced-colors: active) {
+      .sbar__seg {
+        border: 1px solid CanvasText;
+      }
+    }
+  }
+</style>

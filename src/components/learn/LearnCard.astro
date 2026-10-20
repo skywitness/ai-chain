@@ -1,0 +1,309 @@
+---
+/**
+ * One article card on the /learn/ board: order number, title (stretched link), track, reading time
+ * and prerequisite chips. The ✓ read mark is filled in by the board script (localStorage).
+ *
+ *   <LearnCard item={item} byslug={map} headingLevel={4} />
+ */
+import Icon from '../ui/Icon.astro';
+import { learnHref } from '../../lib/paths';
+import { levelMeta } from '../../lib/collections';
+import { TRACK_COLORS, type LearnItem } from './learn-data';
+
+interface Props {
+  item: LearnItem;
+  /** slug → item, to label prerequisite chips */
+  byslug: Map<string, LearnItem>;
+  headingLevel?: 3 | 4 | undefined;
+}
+const { item, byslug, headingLevel = 4 } = Astro.props;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+const lv = levelMeta(item.level);
+const pre = item.prereqs.map((s) => byslug.get(s)).filter((x): x is LearnItem => !!x);
+const titleId = `lc-${item.slug}`;
+const ready = !!item.entry;
+---
+
+<li
+  class:list={['lc', { 'lc--pending': !ready }]}
+  data-slug={item.slug}
+  data-track={item.track}
+  data-level={item.level}
+  data-order={item.order}
+  data-short={item.shortTitle}
+  data-prereqs={item.prereqs.join(' ')}
+  style={`--lc-level: ${lv.color}; --lc-track: ${TRACK_COLORS[item.track]}`}
+>
+  <div class="lc__top">
+    <p class="lc__meta">
+      <span class="lc__order" aria-hidden="true">{item.order}</span>
+      <span class="lc__track"><span class="lc__dot" aria-hidden="true"></span>{item.trackLabel}</span>
+      {
+        ready && item.minutes ? (
+          <span class="lc__time">
+            <Icon name="clock" />約 {item.minutes} 分鐘
+          </span>
+        ) : (
+          <span class="lc__time lc__time--pending">內容整理中</span>
+        )
+      }
+    </p>
+    <span class="lc__read" data-read-mark hidden>
+      <Icon name="check" strokeWidth={2.5} />
+      已讀
+    </span>
+  </div>
+  <H class="lc__title" id={titleId}>
+    <a class="lc__link" href={learnHref(item.slug)}>
+      <span class="sr-only">{`第 ${item.order} 篇，${lv.label}：`}</span>{item.title}<span class="sr-only" data-read-sr hidden>（已讀）</span>
+    </a>
+  </H>
+  {
+    pre.length > 0 && (
+      <div class="lc__pre">
+        <span class="lc__pre-label">先讀</span>
+        <ul class="lc__pre-list" role="list" aria-label={`《${item.shortTitle}》的建議先讀文章`}>
+          {pre.map((p) => (
+            <li>
+              <a class="lc__chip" href={learnHref(p.slug)} style={`--chip-c: ${levelMeta(p.level).color}`} title={p.title}>
+                <span class="lc__chip-n" aria-hidden="true">
+                  {p.order}
+                </span>
+                {p.shortTitle}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+</li>
+
+<style>
+  @layer components {
+    .lc {
+      position: relative;
+      display: grid;
+      gap: var(--space-2);
+      align-content: start;
+      padding: var(--space-3) var(--space-4) var(--space-4);
+      border: 1px solid var(--c-border);
+      border-inline-start: 3px solid var(--lc-level);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+      box-shadow: var(--shadow-1);
+      list-style: none;
+      margin: 0;
+      transition:
+        border-color var(--dur-2) ease,
+        box-shadow var(--dur-2) ease,
+        opacity var(--dur-2) ease,
+        transform var(--dur-2) var(--ease-out);
+    }
+    .lc:hover {
+      border-color: var(--c-border-strong);
+      border-inline-start-color: var(--lc-level);
+      box-shadow: var(--shadow-2);
+    }
+    .lc:has(.lc__link:focus-visible) {
+      outline: 2px solid var(--c-focus);
+      outline-offset: 2px;
+    }
+    .lc__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      min-height: 1.5rem;
+    }
+    .lc__order {
+      margin-inline-end: 0.15em;
+      font-family: var(--font-mono);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: 0.04em;
+      color: var(--lc-level);
+      font-variant-numeric: tabular-nums;
+    }
+    .lc__read {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3em;
+      padding: 0.05em 0.6em;
+      border-radius: var(--radius-pill);
+      background: color-mix(in srgb, var(--c-pos) 14%, transparent);
+      color: var(--c-pos);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      line-height: 1.7;
+    }
+    .lc__read[hidden] {
+      display: none;
+    }
+    .lc__title {
+      font-size: var(--fs-m);
+      font-weight: var(--fw-bold);
+      line-height: 1.5;
+      letter-spacing: 0.01em;
+      margin: 0;
+      text-wrap: pretty;
+      /* /learn/#lc-<slug> (linked from each article header) lands below the sticky header and filter */
+      scroll-margin-block-start: calc(var(--header-h) + 7rem);
+    }
+    /* the card a reader arrived at from an article's 「學習路徑第 n 篇」 link */
+    .lc:has(.lc__title:target) {
+      border-color: var(--lc-level);
+      box-shadow:
+        0 0 0 2px color-mix(in srgb, var(--lc-level) 45%, transparent),
+        var(--shadow-2);
+    }
+    .lc__link {
+      color: var(--c-fg);
+      text-decoration: none;
+    }
+    .lc__link:hover {
+      color: var(--c-fg);
+    }
+    .lc__link:focus-visible {
+      outline: none;
+    }
+    .lc__link::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      border-radius: inherit;
+    }
+    .lc__meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-1) var(--space-3);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-muted);
+      line-height: 1.5;
+    }
+    .lc__track,
+    .lc__time {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+    }
+    .lc__dot {
+      inline-size: 0.6em;
+      block-size: 0.6em;
+      border-radius: 2px;
+      background: var(--lc-track);
+      flex: none;
+    }
+    .lc__time {
+      font-variant-numeric: tabular-nums;
+    }
+    .lc__time--pending {
+      color: var(--c-fg-subtle);
+      font-style: normal;
+    }
+    .lc__time--pending::before {
+      content: '';
+      inline-size: 0.55em;
+      block-size: 0.55em;
+      border-radius: 50%;
+      border: 1.5px dashed currentColor;
+    }
+    .lc__pre {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: start;
+      gap: var(--space-2);
+      padding-block-start: var(--space-2);
+      border-block-start: 1px dashed var(--c-border);
+    }
+    .lc__pre-label {
+      /* lines up with the first row of chips */
+      line-height: 1.75rem;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      font-weight: var(--fw-semibold);
+    }
+    .lc__pre-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      min-width: 0;
+    }
+    .lc__pre-list li {
+      margin: 0;
+      min-width: 0;
+    }
+    .lc__chip {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35em;
+      max-width: 100%;
+      min-height: 1.75rem;
+      padding: 0.1em 0.55em;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-pill);
+      background: var(--c-bg);
+      color: var(--c-fg-muted);
+      font-size: var(--fs-xs);
+      line-height: 1.4;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+    }
+    .lc__chip:hover {
+      border-color: var(--chip-c);
+      color: var(--c-fg);
+      background: color-mix(in srgb, var(--chip-c) 8%, var(--c-bg));
+    }
+    .lc__chip-n {
+      font-family: var(--font-mono);
+      font-size: 0.92em;
+      color: var(--chip-c);
+      font-weight: var(--fw-semibold);
+    }
+
+    /* pending article (MDX not written yet): calmer card */
+    .lc--pending {
+      background: color-mix(in srgb, var(--c-bg-elev) 55%, var(--c-bg));
+      box-shadow: none;
+    }
+
+    /* read */
+    .lc[data-read] {
+      background: color-mix(in srgb, var(--c-pos) 4%, var(--c-bg-elev));
+    }
+    .lc[data-read] .lc__link {
+      color: var(--c-fg-muted);
+    }
+
+    /* prerequisite tracing (board script sets data-trace while a card is hovered or focused) */
+    :global(.lb[data-tracing]) .lc:not([data-trace]) {
+      opacity: 0.38;
+    }
+    .lc[data-trace='self'] {
+      border-color: var(--lc-level);
+      box-shadow: 0 0 0 1px var(--lc-level), var(--shadow-2);
+    }
+    .lc[data-trace='pre'] {
+      border-color: var(--c-accent);
+      border-inline-start-color: var(--lc-level);
+    }
+    .lc[data-trace='post'] {
+      border-style: dashed;
+      border-inline-start-style: solid;
+      border-color: var(--c-accent);
+      border-inline-start-color: var(--lc-level);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .lc:hover {
+        transform: translateY(-1px);
+      }
+    }
+  }
+</style>

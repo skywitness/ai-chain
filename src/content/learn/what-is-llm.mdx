@@ -1,0 +1,314 @@
+---
+title: "大型語言模型是什麼：從「預測下一個字」開始"
+subtitle: "把文字切成 Token、一次猜一個字，再經過後訓練變成對話助理"
+description: "大型語言模型（LLM）是讀過海量文字的神經網路，核心本領是預測下一個 Token。本文用文字接龍的比喻，說明 Token、Transformer、預訓練與後訓練，以及幻覺、上下文視窗與每個 Token 的運算成本。"
+level: 1
+order: 105
+track: models
+prerequisites: [neural-networks-101]
+next: [tokens-and-embeddings, transformer-and-attention, ai-apps-and-agents-101]
+relatedSegments: [foundation-models, cloud-neocloud, ai-accelerators, memory-storage, apps-agents]
+relatedCompanies: [openai, anthropic, alphabet, meta, deepseek, alibaba, mediatek, nvidia, sk-hynix, microsoft, amazon]
+relatedModels: [openai-gpt, anthropic-claude, google-gemini, meta-muse-llama, deepseek, alibaba-qwen, taide, mediatek-breeze]
+relatedTrends: [open-weights-race, long-context-memory, inference-demand, ai-monetization]
+glossary:
+  - llm
+  - neural-network
+  - token
+  - parameter
+  - tokenizer
+  - embedding
+  - softmax
+  - inference
+  - transformer
+  - attention
+  - pretraining
+  - post-training
+  - sft
+  - rlhf
+  - context-window
+  - open-weights
+  - moe
+  - active-parameters
+  - hallucination
+  - gpu
+  - hbm
+  - token-pricing
+scenes: []
+keyTakeaways:
+  - "LLM 是讀過海量文字的大型神經網路，核心本領是根據前文預測下一個 Token。"
+  - "文字會先切成 Token：Gemini 約 4 個英文字元算 1 個，DeepSeek 估計 1 個中文字約 0.6 個。"
+  - "回答是一個 Token 接一個 Token 產生的，每多產生一個，整個網路就要再算一次。"
+  - "先以預訓練大量閱讀，再經 SFT 與 RLHF 等後訓練，才從接龍高手變成對話助理。"
+  - "規模快速放大：2026 年的 DeepSeek-V4-Pro 有 1.6 兆參數，預訓練資料逾 32 兆個 Token。"
+  - "LLM 會產生幻覺，重要資訊要查證；它的普及也帶動 GPU、HBM 與雲端算力需求。"
+estimatedMinutes: 12
+sources:
+  - key: 3b1b-llm
+    title: "Large Language Models explained briefly"
+    publisher: 3Blue1Brown
+    url: "https://www.3blue1brown.com/lessons/mini-llm"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "LLM 是預測下一個字的數學函數；一般人不眠不休也要讀超過 2,600 年才讀得完 GPT-3 的訓練文字；模型有時會挑機率較低的字，讓文字更自然；2017 年以前多數語言模型一次處理一個字。"
+  - key: 3b1b-gpt
+    title: "Transformers, the tech behind LLMs (Deep Learning Chapter 5)"
+    publisher: 3Blue1Brown
+    url: "https://www.3blue1brown.com/lessons/gpt"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "GPT-3 詞彙表有 50,257 個 token；Softmax 加入溫度 T，T 越大分布越平均，T 為 0 時全部權重落在最大值。"
+  - key: gemini-tokens
+    title: "Understand and count tokens"
+    publisher: Google AI for Developers
+    url: "https://ai.google.dev/gemini-api/docs/tokens"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "對 Gemini 模型而言，1 個 token 約等於 4 個字元，100 個 token 約為 60–80 個英文單字；Gemini 4 的輸入、思考與輸出共用 1,048,576 個 token 的上下文視窗，Gemini 3 與 2.5 的輸入上限同為 1,048,576 個 token。"
+  - key: deepseek-tokens
+    title: "Token & Token Usage"
+    publisher: DeepSeek API Docs
+    url: "https://api-docs.deepseek.com/quick_start/token_usage"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "1 個英文字元約 0.3 個 token，1 個中文字約 0.6 個 token；不同模型的分詞方式不同，比例會有差異。"
+  - key: deepseek-pricing
+    title: "Models & Pricing"
+    publisher: DeepSeek API Docs
+    url: "https://api-docs.deepseek.com/quick_start/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "API 模型名稱 deepseek-v4-pro（對應 DeepSeek-V4-Pro-0813）尖峰時段每 100 萬個 token：輸入（未命中快取）1.32 美元、輸出 3.96 美元；離峰時段半價。"
+  - key: transformer-2017
+    title: "Attention Is All You Need"
+    publisher: "arXiv（Vaswani et al., Google）"
+    url: "https://arxiv.org/abs/1706.03762"
+    type: paper
+    lang: en
+    published: "2017-06-12"
+    accessed: "2026-10-06"
+  - key: gpt3
+    title: "Language Models are Few-Shot Learners"
+    publisher: OpenAI（arXiv）
+    url: "https://arxiv.org/abs/2005.14165"
+    type: paper
+    lang: en
+    published: "2020-05-28"
+    accessed: "2026-10-06"
+    note: "GPT-3 有 1,750 億個參數；所有模型都訓練 3,000 億個 token（Table 2.1）；上下文視窗 nctx = 2048。"
+  - key: llama2
+    title: "Llama 2: Open Foundation and Fine-Tuned Chat Models"
+    publisher: Meta AI（arXiv）
+    url: "https://arxiv.org/abs/2307.09288"
+    type: paper
+    lang: en
+    published: "2023-07-18"
+    accessed: "2026-10-06"
+    note: "第 2.1 節：以 2 兆個 token 的資料訓練。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: Meta AI（arXiv）
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-06"
+    note: "405B 旗艦模型以 15.6 兆個文字 token 預訓練；最多使用 1.6 萬顆 H100 GPU 訓練。"
+  - key: qwen3
+    title: "Qwen3 Technical Report"
+    publisher: Qwen Team（arXiv）
+    url: "https://arxiv.org/abs/2505.09388"
+    type: paper
+    lang: en
+    published: "2025-05-14"
+    accessed: "2026-10-06"
+    note: "預訓練資料約 36 兆個 token，涵蓋 119 種語言與方言。"
+  - key: deepseek-v4
+    title: "DeepSeek-V4-Pro model card"
+    publisher: DeepSeek（Hugging Face）
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-06"
+    note: "DeepSeek-V4 系列預覽版，2026-04-24 隨 API 更新發表。MoE 架構，總參數 1.6T、啟用 49B；支援 100 萬個 token 的上下文；以逾 32T 個 token 預訓練；MIT 授權。"
+  - key: gpt4
+    title: "GPT-4 Technical Report"
+    publisher: OpenAI（arXiv）
+    url: "https://arxiv.org/abs/2303.08774"
+    type: paper
+    lang: en
+    published: "2023-03-15"
+    accessed: "2026-10-06"
+    note: "基於競爭與安全考量，不公開模型大小等架構細節。"
+  - key: instructgpt
+    title: "Training language models to follow instructions with human feedback"
+    publisher: OpenAI（arXiv）
+    url: "https://arxiv.org/abs/2203.02155"
+    type: paper
+    lang: en
+    published: "2022-03-04"
+    accessed: "2026-10-06"
+    note: "先以示範資料做監督式微調，再以人類排名做 RLHF；13 億參數的 InstructGPT 輸出比 1,750 億參數的 GPT-3 更受偏好。"
+  - key: chatgpt-launch
+    title: "ChatGPT: Optimizing Language Models for Dialogue"
+    publisher: OpenAI
+    url: "https://openai.com/index/chatgpt/"
+    type: company-site
+    lang: en
+    published: "2022-11-30"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20221130190543/https://openai.com/blog/chatgpt/"
+  - key: hallucination
+    title: "Why Language Models Hallucinate"
+    publisher: "arXiv（Kalai, Nachum, Vempala, Zhang）"
+    url: "https://arxiv.org/abs/2509.04664"
+    type: paper
+    lang: en
+    published: "2025-09-04"
+    accessed: "2026-10-06"
+    note: "作者中三位任職 OpenAI、一位任職喬治亞理工學院。要求模型「知道才回答」第一作者 Adam Tauman Kalai 的生日，開放權重模型 DeepSeek-V3 三次給出三個不同的錯誤日期；論文認為訓練與評測方式獎勵猜測而非承認不確定。"
+  - key: eleuther
+    title: "Transformer Math 101"
+    publisher: EleutherAI
+    url: "https://blog.eleuther.ai/transformer-math/"
+    type: other
+    lang: en
+    published: "2023-04-18"
+    accessed: "2026-10-06"
+    note: "前向傳播約 2 × 參數量 × token 數次浮點運算。"
+  - key: alphabet-q2-2026
+    title: "Alphabet earnings call Q2 2026: Sundar Pichai remarks"
+    publisher: Google
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/"
+    type: earnings-call
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-06"
+    note: "執行長 Sundar Pichai 法說會講稿：模型 API 每分鐘處理約 220 億個 token，前一季為 160 億個。"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: learn-03
+  checkedBy: "learn-03-check"
+  checkedOn: "2026-10-06"
+---
+
+## 一句話解釋
+
+<Term id="llm">大型語言模型</Term>（Large Language Model，LLM）是一個讀過海量文字的超大型<Term id="neural-network">神經網路</Term>。它的核心本領只有一個：**根據前面的文字，預測下一個 <Term id="token">Token</Term>（字詞片段）最可能是什麼**。把這個動作重複幾百、幾千次，就能寫出文章、回答問題，甚至寫程式。ChatGPT、Claude、Gemini 這些聊天服務，背後都是 LLM。
+
+## 生活化比喻
+
+<Callout type="analogy" title="一位讀遍整座圖書館的文字接龍高手">
+
+手機輸入法打出「謝謝」，下一個字常會跳出「你」或「大家」，這是依據你平常怎麼打字來猜。LLM 做的是同一件事的超級加強版：
+
+- **讀過的文字多到難以想像**：3Blue1Brown 估算，一般人若想讀完 GPT-3 訓練用的文字，就算一天 24 小時不停地讀，也要讀超過 2,600 年<Cite k="3b1b-llm" />。
+- **不是背答案，而是記住「語感」**：它沒有一個可以查詢的資料庫，而是把讀到的規律壓縮進數千億個<Term id="parameter">參數</Term>裡。就像一位博覽群書的人憑印象說話，大部分時候頭頭是道，偶爾也會把記錯的事講得斬釘截鐵。
+
+所以，LLM 比較像「很會接話的人」，而不是「百科全書」。記住這個差別，就能理解它的強項與弱點。
+
+</Callout>
+
+## 原理
+
+### 第一步：把文字切成 Token
+
+模型不是一個字一個字地讀，而是先用<Term id="tokenizer">分詞器</Term>把文字切成 Token。一個 Token 可能是一個英文單字、單字的一部分、一個標點，或是一兩個中文字。Google 的開發文件指出，對 Gemini 模型來說，1 個 Token 大約等於 4 個英文字元，100 個 Token 約是 60 到 80 個英文單字<Cite k="gemini-tokens" />；DeepSeek 則估計，1 個中文字約等於 0.6 個 Token<Cite k="deepseek-tokens" />。每個模型的切法不同，比例也不一樣。
+
+每個模型都有一份固定的詞彙表，例如 GPT-3 的詞彙表有 50,257 個 Token<Cite k="3b1b-gpt" />。切好的每個 Token 會換成一長串數字，也就是<Term id="embedding">嵌入向量</Term>，神經網路才能計算。Token 同時是 AI 服務計費與計算容量的單位，細節見<LearnLink id="tokens-and-embeddings">Token 與嵌入向量</LearnLink>。
+
+### 第二步：預測下一個 Token
+
+輸入「台灣最高的山是」，模型不會只給一個答案，而是替詞彙表裡**每一個** Token 打分數，再用 <Term id="softmax">Softmax</Term> 換成機率。舉例來說（數字僅為示意）：「玉」可能占九成以上，「雪」占幾個百分點，其他成千上萬個 Token 分掉剩下的一點點。
+
+接著模型挑出一個 Token 接在句子後面，再把加長的句子整段送回去，預測下一個。3Blue1Brown 指出，模型不一定每次都選機率最高的字，偶爾挑機率較低的字，寫出來的文字反而比較自然<Cite k="3b1b-llm" />。
+
+<FlowSteps
+  title="LLM 一次產生一個 Token"
+  steps={[
+    { title: "輸入提示", detail: "使用者的問題，加上先前的對話內容" },
+    { title: "切成 Token", detail: "分詞器把文字切塊，再轉成數字" },
+    { title: "神經網路計算", detail: "跑完整個網路，替每個候選 Token 打分數" },
+    { title: "挑一個 Token", detail: "依機率選出下一個字詞片段" },
+    { title: "接回去重來", detail: "把新 Token 加進輸入，直到回答結束" }]}
+/>
+
+這就是聊天機器人的回答總是「一個字一個字冒出來」的原因：每多產生一個 Token，整個網路就要再算一次。這個使用模型的過程叫做<Term id="inference">推論</Term>，也是 AI 晶片最主要的工作之一。
+
+### Transformer：一次看懂整段話
+
+要猜得準，模型必須理解上下文。「蘋果發表新手機」和「這顆蘋果很甜」裡的「蘋果」，意思完全不同。2017 年 Google 研究人員提出的 <Term id="transformer">Transformer</Term> 架構<Cite k="transformer-2017" />，靠<Term id="attention">注意力機制</Term>讓每個 Token 都能回頭看句子裡的其他 Token，判斷哪些字和自己最相關。在此之前，多數語言模型一次只處理一個字；Transformer 則能同時處理整段文字<Cite k="3b1b-llm" />，非常適合交給 GPU 平行計算，模型才得以一路放大。今天主流的 LLM 大多建立在這個架構上，詳見<LearnLink id="transformer-and-attention">Transformer 與注意力機制</LearnLink>。
+
+### 從「接龍高手」到「對話助理」
+
+LLM 的養成分成兩大階段。
+
+**第一階段是預訓練：大量閱讀。**<Term id="pretraining">預訓練</Term>時，模型拿海量文字做「猜下一個字」的練習：給它一段文字、讓它猜接下來的字，猜錯就用反向傳播微調所有參數，讓正確答案的機率高一點<Cite k="3b1b-llm" />。這個練習重複數兆次，模型就從語法、常識一路學到寫程式。預訓練用的資料量成長得非常快：
+
+<BarChart
+  title="預訓練資料量"
+  unit="兆個 Token"
+  data={[
+    { label: "GPT-3", value: 0.3 },
+    { label: "Llama 2", value: 2 },
+    { label: "Llama 3", value: 15.6 },
+    { label: "Qwen3", value: 36 },
+    { label: "DeepSeek-V4", value: 32, note: "官方稱逾 32 兆" }]}
+  source={["gpt3", "llama2", "llama3", "qwen3", "deepseek-v4"]}
+  note="依各模型論文或模型卡揭露。GPT-3 發表於 2020 年、Llama 2 於 2023 年、Llama 3 於 2024 年、Qwen3 於 2025 年、DeepSeek-V4 於 2026 年；Llama 3 為 405B 旗艦版的數字。"
+/>
+
+**第二階段是後訓練：學會當助理。**只做過預訓練的模型很會接話，卻不一定會好好回答問題。<Term id="post-training">後訓練</Term>先用人類寫好的示範對話做<Term id="sft">監督式微調（SFT）</Term>，再請人替模型的多個回答排名，用<Term id="rlhf">人類回饋強化學習（RLHF）</Term>調整模型。OpenAI 在 2022 年發表的研究發現，經過這套流程、只有 13 億參數的 InstructGPT，回答比 1,750 億參數的 GPT-3 更受評分者青睞<Cite k="instructgpt" />。同年 11 月 30 日，OpenAI 推出 ChatGPT<Cite k="chatgpt-launch" />，讓 LLM 走進大眾生活。
+
+### 「大」到底有多大
+
+「大型」指的是參數多、訓練資料多，以及一次能讀進的內容多，後者稱為<Term id="context-window">上下文視窗</Term>。比較 2020 年的 GPT-3 與 2026 年的<Term id="open-weights">開放權重</Term>模型 DeepSeek-V4-Pro：
+
+| 項目 | GPT-3（2020） | DeepSeek-V4-Pro（2026） |
+|---|---|---|
+| 參數量 | 1,750 億 | 1.6 兆（每個 Token 只啟用 490 億） |
+| 預訓練資料 | 3,000 億個 Token | 逾 32 兆個 Token |
+| 上下文視窗 | 2,048 個 Token | 100 萬個 Token |
+
+表中數字來自 GPT-3 論文<Cite k="gpt3" />與 DeepSeek 官方模型卡<Cite k="deepseek-v4" />，後者是 DeepSeek 在 2026 年 4 月發表的 V4 系列預覽版。DeepSeek-V4-Pro 採用 <Term id="moe">MoE</Term>（混合專家）架構，每個 Token 只動用一小部分的<Term id="active-parameters">啟用參數</Term>。100 萬個 Token 依 DeepSeek 的比例換算，約是 167 萬個中文字；Google 文件也顯示，Gemini 模型的上下文視窗達 1,048,576 個 Token<Cite k="gemini-tokens" />。不過，並非每家公司都公開這些數字，例如 OpenAI 在 GPT-4 技術報告中就表明不公開模型大小<Cite k="gpt4" />。
+
+### 擅長與不擅長的事
+
+<Compare
+  title="LLM 的強項與限制"
+  left={{ title: "擅長", items: ["摘要、翻譯、改寫與潤稿", "依照指示寫文章、寫程式", "從大量文字中整理重點", "用自然語言與人來回對話"] }}
+  right={{ title: "要小心", items: ["幻覺：把錯的事講得很有自信", "知識停在訓練資料的截止時間", "一次能讀的內容受上下文視窗限制", "同一個問題每次回答可能不同"] }}
+/>
+
+最需要留意的是<Term id="hallucination">幻覺</Term>。2025 年一篇由 OpenAI 研究人員參與的論文舉例：研究者問開放權重模型 DeepSeek-V3「論文第一作者的生日是哪天」，並要求「知道才回答」，結果模型三次給了三個不同的錯誤日期。論文認為，原因之一是訓練與評測方式都在獎勵「不確定也要猜」，而不是坦承不知道<Cite k="hallucination" />。所以，LLM 給的事實、數字與引用，重要時一定要查證。
+
+<DeepDive title="深入一點：分數怎麼變成機率？每個 Token 又要花多少運算？">
+
+模型最後會替詞彙表中的每個 Token i 算出一個分數 zᵢ，Softmax 再把這些分數轉成加總為 1 的機率：
+
+<MathTeX tex="p_i = \exp(z_i / T) \;/\; \sum_j \exp(z_j / T)" display label="第 i 個 Token 的機率，等於 e 的 z_i 除以 T 次方，再除以所有 Token 同樣數值的總和" />
+
+分數越高，機率越大，但其他 Token 仍保有一點機會。公式中的 T 叫做「溫度」：T 越大，機率分布越平均，回答越多變；T 越小，最高分的 Token 越占優勢；T 等於 0 時，模型每次都選最高分的那一個<Cite k="3b1b-gpt" />。這就是有些 AI 服務提供溫度設定的原因：查資料、寫程式時調低，寫故事、發想點子時調高。
+
+**每個 Token 的運算成本。** EleutherAI 整理的經驗法則是，模型每處理一個 Token，大約需要「2 × 參數量」次浮點運算<Cite k="eleuther" />；MoE 模型則以啟用參數計算。以 DeepSeek-V4-Pro 為例，粗估每個 Token 約需 2 × 490 億 ≈ 980 億次運算（未計入注意力機制本身的額外運算，上下文越長，這部分越多）。一篇 1,000 字的中文回答，依 DeepSeek 的比例約 600 個 Token，合計約 59 兆次運算。
+
+**每個 Token 的價格。** 模型以 API 提供時，多半依 <Term id="token-pricing">Token 計價</Term>。DeepSeek 官方定價頁列出，V4-Pro 在尖峰時段每 100 萬個輸出 Token 收 3.96 美元，輸入（未命中快取）收 1.32 美元<Cite k="deepseek-pricing" />。換算下來，上面那篇 600 個 Token 的回答，輸出費用約 0.24 美分。單次很便宜，但用量極大：Alphabet 執行長在 2026 年 7 月的法說會上表示，光是 Google 的模型 API，每分鐘就要處理約 220 億個 Token，高於前一季的 160 億個<Cite k="alphabet-q2-2026" />。累積起來，就是龐大的算力需求。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+LLM 位在產業鏈的「雲端與模型」層，往下牽動晶片與資料中心，往上撐起各種應用：
+
+- **誰在做模型** → <SegmentChip id="foundation-models" />：<CompanyChip id="openai" />（<ModelChip id="openai-gpt" />）、<CompanyChip id="anthropic" />（<ModelChip id="anthropic-claude" />）、<CompanyChip id="alphabet" /> 旗下的 Google DeepMind（<ModelChip id="google-gemini" />）、<CompanyChip id="meta" />（<ModelChip id="meta-muse-llama" />），以及中國的 <CompanyChip id="deepseek" />（<ModelChip id="deepseek" />）與 <CompanyChip id="alibaba" />（<ModelChip id="alibaba-qwen" />）。台灣也有國科會推動的 <ModelChip id="taide" />，以及 <CompanyChip id="mediatek" /> 旗下聯發創新基地的 <ModelChip id="mediatek-breeze" /> 等強化繁體中文能力的模型。開放權重與封閉模型的競爭，見<TrendLink id="open-weights-race">開放權重競賽</TrendLink>；上下文視窗越拉越長的發展，見<TrendLink id="long-context-memory">長上下文與模型記憶</TrendLink>。
+- **算力從哪裡來** → <SegmentChip id="ai-accelerators" />、<SegmentChip id="memory-storage" />：預訓練要動用上萬顆 <Term id="gpu">GPU</Term>，例如 Meta 訓練 Llama 3 405B 時最多用了 1.6 萬顆輝達（NVIDIA）H100<Cite k="llama3" />；推論時每產生一個 Token，都要把用到的模型權重從 <Term id="hbm">HBM</Term>（高頻寬記憶體）讀進運算單元一次，記憶體的速度因此和算力一樣重要。因此 <CompanyChip id="nvidia" /> 的 GPU 與 <CompanyChip id="sk-hynix" /> 等廠商的 HBM 成了關鍵零件，原因見<LearnLink id="why-gpus">為什麼 AI 需要 GPU？</LearnLink>。
+- **怎麼賣給客戶** → <SegmentChip id="cloud-neocloud" />：模型多半透過雲端以 API 提供、依 Token 收費，<CompanyChip id="microsoft" />、<CompanyChip id="amazon" />、<CompanyChip id="alphabet" /> 的雲端平台也代為提供模型服務。推論用量快速成長，見<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>與<TrendLink id="ai-monetization">AI 營收化</TrendLink>。
+- **用在哪裡** → <SegmentChip id="apps-agents" />：聊天助理、寫程式工具、客服與 Agent 都建立在 LLM 之上，下一步可以讀<LearnLink id="ai-apps-and-agents-101">AI 能做什麼？</LearnLink>。

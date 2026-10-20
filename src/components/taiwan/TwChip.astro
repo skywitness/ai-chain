@@ -1,0 +1,81 @@
+---
+/**
+ * Compact Taiwan-company link chip (roster data only, no async lookups) for dense grids such as the
+ * segment × company matrix. Tier 1 chips are emphasised; `muted` renders a secondary-segment chip.
+ *   <TwChip company={rosterEntry} />   <TwChip company={c} muted />
+ */
+import { segmentMeta, TIER_LABELS, type RosterCompany } from '../../lib/collections';
+import { companyHref } from '../../lib/paths';
+
+interface Props {
+  company: RosterCompany;
+  muted?: boolean | undefined;
+  class?: string | undefined;
+}
+const { company: c, muted = false, class: className } = Astro.props;
+const seg = segmentMeta(c.segment);
+const title = `${c.nameZh}${c.name && c.name !== c.nameZh ? `（${c.name}）` : ''} · ${TIER_LABELS[c.tier as 1 | 2 | 3]} · ${c.role}`;
+---
+
+<a
+  class:list={['twc', `twc--t${c.tier}`, { 'twc--muted': muted }, className]}
+  href={companyHref(c.id)}
+  title={title}
+  style={seg ? `--twc: ${seg.color}` : undefined}
+  ><span class="twc__dot" aria-hidden="true"></span>{c.nameZh}</a
+>
+
+<style>
+  .twc {
+    --twc: var(--c-accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-block-size: 1.9rem;
+    padding: 0.1em 0.6em;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-s);
+    background: var(--c-bg-elev);
+    color: var(--c-fg);
+    font-size: var(--fs-s);
+    line-height: 1.35;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      border-color var(--dur-1) ease,
+      background-color var(--dur-1) ease;
+  }
+  .twc:hover {
+    border-color: color-mix(in srgb, var(--twc) 60%, var(--c-border));
+    background: color-mix(in srgb, var(--twc) 9%, var(--c-bg-elev));
+    color: var(--c-fg);
+  }
+  .twc__dot {
+    flex: none;
+    inline-size: 0.5em;
+    block-size: 0.5em;
+    border-radius: 50%;
+    background: var(--twc);
+  }
+  .twc--t1 {
+    border-color: color-mix(in srgb, var(--twc) 45%, var(--c-border));
+    background: color-mix(in srgb, var(--twc) 7%, var(--c-bg-elev));
+    font-weight: var(--fw-semibold);
+  }
+  .twc--t3 {
+    background: transparent;
+    color: var(--c-fg-muted);
+  }
+  .twc--muted {
+    border-style: dashed;
+    border-color: color-mix(in srgb, var(--twc) 35%, var(--c-border-strong));
+    background: transparent;
+    color: var(--c-fg-muted);
+    font-weight: var(--fw-regular);
+  }
+  @media (forced-colors: active) {
+    .twc__dot {
+      background: CanvasText;
+    }
+  }
+</style>

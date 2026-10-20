@@ -1,0 +1,212 @@
+---
+/**
+ * 「資料來源」 list. Each item gets id="src-<key>" (or "src-<n>" without a key) so <Cite k> links land here.
+ * Numbering follows the array order, matching Cite numbers when the layout registered the same list.
+ *   <SourcesList sources={entry.data.sources} />
+ */
+import type { SourceT } from '../../schemas/common';
+import Icon from '../ui/Icon.astro';
+import { registerSources, sourceAnchor } from './page-state';
+
+interface Props {
+  sources: readonly SourceT[];
+  title?: string | undefined;
+  id?: string | undefined;
+  headingLevel?: 2 | 3 | undefined;
+  /** Line under the heading */
+  note?: string | undefined;
+  class?: string | undefined;
+}
+const {
+  sources,
+  title = '資料來源',
+  id = 'sources',
+  headingLevel = 2,
+  note = '數字與事實以下列來源為準；括號內為讀取日期。',
+  class: className,
+} = Astro.props;
+registerSources(Astro, sources);
+const H = `h${headingLevel}` as 'h2' | 'h3';
+
+const TYPE_LABELS: Record<string, string> = {
+  filing: '監理申報',
+  'annual-report': '年報',
+  'ir-presentation': '法說簡報',
+  'earnings-call': '法說會',
+  'press-release': '新聞稿',
+  'monthly-revenue': '月營收公告',
+  'company-site': '公司網站',
+  paper: '論文',
+  docs: '官方文件',
+  standard: '標準文件',
+  government: '政府文件',
+  dataset: '資料集',
+  leaderboard: '排行榜',
+  news: '新聞',
+  analyst: '研究報告',
+  book: '書籍',
+  other: '其他',
+};
+const LANG_LABELS: Record<string, string> = {
+  en: '英文',
+  'zh-CN': '簡體中文',
+  ja: '日文',
+  ko: '韓文',
+  de: '德文',
+  fr: '法文',
+  other: '其他語言',
+};
+const hostOf = (u: string) => {
+  try {
+    return new URL(u).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+};
+---
+
+{
+  sources.length > 0 && (
+    <section class:list={['sources', className]} aria-labelledby={id}>
+      <H class="sources__title" id={id}>
+        {title}
+      </H>
+      {note && <p class="sources__note">{note}</p>}
+      <ol class="sources__list" role="list">
+        {sources.map((s, i) => {
+          const anchor = s.key ? sourceAnchor(s.key) : `src-${i + 1}`;
+          const lang = s.lang && s.lang !== 'zh-TW' ? LANG_LABELS[s.lang] : undefined;
+          return (
+            <li id={anchor} class="sources__item">
+              <span class="sources__n" aria-hidden="true">
+                {i + 1}
+              </span>
+              <div class="sources__body">
+                <p class="sources__main">
+                  <span class="sources__pub">{s.publisher}</span>
+                  <a class="sources__link" href={s.url} rel="noopener noreferrer" lang={s.lang === 'other' ? undefined : s.lang}>
+                    {s.title}
+                    <Icon name="external" size="0.85em" class="sources__ext" />
+                  </a>
+                </p>
+                <p class="sources__meta">
+                  <span>{TYPE_LABELS[s.type] ?? s.type}</span>
+                  {lang && <span>{lang}</span>}
+                  {s.published && (
+                    <span>
+                      發布 <time datetime={s.published}>{s.published}</time>
+                    </span>
+                  )}
+                  <span>
+                    讀取 <time datetime={s.accessed}>{s.accessed}</time>
+                  </span>
+                  {hostOf(s.url) && <span class="sources__host">{hostOf(s.url)}</span>}
+                  {s.archiveUrl && (
+                    <a href={s.archiveUrl} rel="noopener noreferrer">
+                      封存版本
+                    </a>
+                  )}
+                </p>
+                {s.note && <p class="sources__extra">{s.note}</p>}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  )
+}
+
+<style>
+  @layer components {
+    .sources {
+      margin-block-start: var(--space-8);
+      padding-block-start: var(--space-5);
+      border-block-start: 1px solid var(--c-border);
+    }
+    .sources__title {
+      font-size: var(--fs-xl);
+      margin: 0 0 var(--space-1);
+      padding: 0;
+    }
+    .sources__title::before {
+      display: none;
+    }
+    .sources__note {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      margin-block-end: var(--space-4);
+    }
+    .sources__list {
+      display: grid;
+      gap: var(--space-1);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: var(--fs-s);
+      line-height: 1.6;
+    }
+    .sources__item {
+      display: grid;
+      grid-template-columns: 2rem minmax(0, 1fr);
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-2) var(--space-2) 0;
+      border-radius: var(--radius-m);
+      margin: 0;
+      scroll-margin-top: calc(var(--header-h) + var(--space-5));
+    }
+    .sources__item:target {
+      background: color-mix(in srgb, var(--c-accent) 10%, transparent);
+      box-shadow: inset 3px 0 0 var(--c-accent);
+    }
+    .sources__n {
+      justify-self: end;
+      padding-inline-end: 0.2em;
+      color: var(--c-fg-subtle);
+      font-weight: var(--fw-semibold);
+      font-variant-numeric: tabular-nums;
+    }
+    .sources__n::before {
+      content: '[';
+    }
+    .sources__n::after {
+      content: ']';
+    }
+    .sources__body {
+      min-width: 0;
+    }
+    .sources__main {
+      overflow-wrap: anywhere;
+    }
+    .sources__pub {
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+      margin-inline-end: 0.5em;
+    }
+    .sources__link :global(.sources__ext) {
+      display: inline;
+      margin-inline-start: 0.2em;
+      vertical-align: -0.05em;
+      opacity: 0.7;
+    }
+    .sources__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 0.9em;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+    .sources__host {
+      font-family: var(--font-mono);
+      font-size: 0.95em;
+      /* Long hostnames (no break opportunity) must not widen the page at 320 px. */
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .sources__extra {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-muted);
+    }
+  }
+</style>

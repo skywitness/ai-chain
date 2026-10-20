@@ -1,0 +1,113 @@
+# Proposals from the company-globe scene agent (scene-company-globe), 2026-10-15.
+# Nothing here blocks the scene: each item has a local workaround in src/three/scenes/company-globe/.
+
+- id: globe-oblique-pose
+  target: src/three/kit/Globe.ts
+  severity: enhancement (same request as proposals/scene-cloud-globe.yaml → globe-oblique-pose)
+  problem: >
+    `Globe.poseFor(lat, lon, d)` looks straight down the radius, so the city columns at the focus
+    point are seen end-on and their height (= number of companies) disappears.
+  proposal: >
+    `globe.obliquePose(lat, lon, { distance, elevation = 40, azimuth = 0, lift = 0 })` returning a
+    CameraPose whose target is `lift` above the surface point and whose camera sits `elevation`°
+    above the local horizon, `azimuth`° east of due south (local frame: n = normal,
+    east = up × n, north = n × east). Keep azimuth near 0: camera.up is world +Y, so other
+    azimuths tilt the horizon.
+  workaround: index.ts → `obliquePose()` (same maths), used by the 城市聚落 and 矽谷 steps and the hub hotspots.
+
+- id: globe-horizon-occluder
+  target: src/three/kit/Globe.ts
+  severity: bug-ish
+  problem: >
+    `globe.isBehind(world, camera)` tests the point's own normal against the view direction, so the
+    top of a tall column that sticks out past the limb (plainly visible against the sky) counts as
+    hidden: its label and its pick point disappear.
+  proposal: >
+    `globe.isOccluded(world, camera)`: a ray–sphere test on the segment camera → point (hidden only
+    when the segment enters the sphere first). Same cost, correct for anything above the surface.
+  workaround: index.ts → `hiddenByGlobe()`; passed to `ctx.labels.setOccluder` and the picker cull.
+
+- id: globe-optional-markers
+  target: src/three/kit/Globe.ts
+  severity: enhancement
+  problem: >
+    `Globe.create` always builds its marker InstancedMesh (one draw call even when empty in some
+    drivers, plus a buffer). Scenes that draw their own markers have to find and hide it.
+  proposal: "`markerCapacity: 0` (or `markers: false`) skips creating the marker mesh."
+  workaround: >
+    index.ts passes `markerCapacity: 1` and hides the kit's InstancedMesh whose geometry is a
+    CylinderGeometry (relies on kit internals; breaks silently if the kit changes its geometry).
+
+- id: globe-style-setters
+  target: src/three/kit/Globe.ts
+  severity: enhancement
+  problem: >
+    The ocean colour, the atmosphere strength and the land-dot opacity are fixed inside the kit. A
+    calm data globe wants a quieter ocean, a softer rim, and land dots that fade in close-ups (where
+    one dot is as big as a marker and competes with the data).
+  proposal: >
+    `globe.setOceanTint((p: Palette) => Color)`, `globe.setAtmosphere(strength)`,
+    `globe.setLandOpacity(o)` (land material transparent from the start) and
+    `globe.setLandDotScale(k)` (a uniform that scales each dot about its own centre: up close one
+    dot is a puck-sized hexagon tile and the coastline turns into a mosaic).
+  workaround: >
+    index.ts walks `globe.group.children` by geometry type: binds the ocean colour with
+    `materials.bind` (after the kit's own binding, so it wins on theme changes), writes the
+    atmosphere `uStrength` uniform, makes the land-dot material transparent, and patches its
+    vertex shader (`onBeforeCompile`, `transformed.xy *= uDotScale`) to shrink the dots in close-ups.
+
+- id: globe-column-stacks
+  target: src/three/kit/Globe.ts
+  severity: enhancement
+  problem: >
+    `setMarkers` stacks markers that share a 0.25° bucket along the normal with one colour each, but
+    a company globe needs (1) metro areas merged into one column (台北・新北, the South Bay towns →
+    矽谷), (2) ordered, per-instance coloured layers inside the column, (3) neighbouring columns
+    pushed apart on the sphere so they do not overlap at orbit distance, with a leader line to the
+    true position, and (4) semantic zoom (tall thin needles from orbit, short wide stacks up close).
+  proposal: >
+    A pure helper `spreadOnSphere(items: { n: Vector3; radius: number; weight: number }[], opts)`
+    exported from the kit (iterative pairwise push on the unit sphere with a weak spring to the true
+    position), so cloud-globe, company-globe and taiwan-map can share it.
+  workaround: data.ts → `buildCities()` + `spread()`; index.ts draws the pucks as one InstancedMesh.
+
+- id: labels-fallback-alignment
+  target: src/three/core/labels.ts
+  severity: enhancement
+  problem: >
+    A label whose preferred alignment collides is simply hidden. Two tall columns close together
+    (舊金山 next to 矽谷) lose one name even though there is room beside the column top.
+  proposal: "`align` accepts a list (e.g. `['above', 'left', 'right']`); the first placement that fits wins."
+  workaround: >
+    index.ts → `alignOf()`: a column with a taller neighbour within 3.2° puts its name on the side
+    away from that neighbour.
+
+- id: pose-cut-min-distance
+  target: src/three/core/host.ts (setPose)
+  severity: bug-ish
+  problem: >
+    Under reduced motion `ctx.setPose` cuts to the pose, and on the next frame OrbitControls clamps
+    the new camera–target distance to the *old* `minDistance` (a global view's limit), so a
+    close-up pose lands far from its target.
+  proposal: >
+    `CameraPose` gains optional `minDistance` / `maxDistance` that setPose applies to the controls
+    before the cut (and at the start of a tween).
+  workaround: >
+    meta.camera.minDistance is small (0.12); update() enforces the global-view limit itself only
+    while no camera move runs and the orbit target is at the globe centre.
+
+- id: labels-occluder-anchor
+  target: src/three/core/labels.ts
+  severity: enhancement
+  problem: >
+    The occluder callback only receives the label's world position. A label on top of a tall
+    column should be hidden when the column's foot is behind the globe (otherwise 匹茲堡 floats
+    beside the Bay Area), and labels should stay clear of a scene's own HTML controls.
+  proposal: >
+    `ctx.labels.add({ ..., occludeAt?: Vec3Like })` (test this point instead of the label
+    position) and `ctx.labels.setInsets({ top, left, right, bottom } | rects[])` for overlay
+    controls the placement must avoid.
+  workaround: >
+    index.ts's occluder tests the label position projected onto the globe surface (every label in
+    this scene sits on a radial column) and rejects anchors under the filter chips, measured by
+    overlay.ts → `chipsBox()` on resize.

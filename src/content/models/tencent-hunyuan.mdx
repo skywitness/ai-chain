@@ -1,0 +1,356 @@
+---
+title: "騰訊混元 Hunyuan 系列"
+family: "Hunyuan／Hy"
+kind: llm
+lab: tencent
+labName: "騰訊混元（Tencent Hy）團隊"
+origin: CN
+summary: "騰訊於 2023 年 9 月首度發表的大型語言模型家族，2026 年起國際品牌由 Hunyuan 縮短為 Hy，中國市場仍沿用混元。騰訊在 2026 年初重建預訓練與強化學習基礎設施後，相繼推出 Hy3 preview（4 月）、Hy3（7 月 6 日，總參數 295B、啟用 21B）與 Hy4 preview（8 月 28 日，總參數 770B、啟用 49B、上下文約 100 萬 tokens）。Hy3 與 Hy4 preview 以 Apache 2.0 開放權重，並整合進元寶、CodeBuddy、WorkBuddy 與微信生態。"
+strengths:
+  - "開放權重且授權轉為寬鬆：Hy3 與 Hy4 preview 改用 Apache 2.0，取代 Hy3 preview 時期排除歐盟、英國與南韓的社群授權。"
+  - "性價比高：Artificial Analysis 給 Hy3 綜合智慧指數 25，明顯高於同級模型的中位數（約 18 至 19），供應商中位價僅每百萬 tokens 輸入 0.14、輸出 0.55 美元（2026-10-06）。"
+  - "Hy4 preview 規模與上下文大幅提升：總參數 770B、啟用 49B，上下文約 100 萬 tokens，採 Gated DSA 稀疏注意力並內建 MTP 層做推測解碼。"
+  - "產品整合深：Hy3 已用於 WorkBuddy／CodeBuddy、元寶、ima 等騰訊產品與微信公眾號客服；騰訊稱 Hy3 上線一週內登上 OpenRouter 全球用量榜第一。"
+weaknesses:
+  - "綜合能力仍落後第一梯隊：Hy3 的 AA 智慧指數 25，遠低於榜首 Claude Opus 5.5 的約 58；Hy4 preview 尚無第三方綜合評測。"
+  - "最新旗艦仍是預覽版：騰訊坦言 Hy4 preview 有推理時間過長、過度自我驗證等已知問題。"
+  - "Hy3 與 Hy4 preview 只支援文字輸入與輸出，圖片與影片理解需另用其他模型。"
+  - "自行部署門檻高：官方建議以 8 張 H20-3e 等級 GPU 部署 Hy3，Hy4 preview 參數更達 770B。"
+bestFor:
+  - "需要自行部署、可商用的開放權重程式與 Agent 模型"
+  - "成本敏感的長上下文工作（Hy3 256K、Hy4 preview 約 100 萬 tokens）"
+  - "整合微信、元寶、騰訊雲等騰訊生態的應用"
+  - "研究大型 MoE 與稀疏注意力架構的團隊"
+positioning:
+  capability: 38
+  costIndex: 42
+  openness: 0.8
+  method: editorial
+  asOf: "2026-10-06"
+  note: "旗艦 Hy4 preview 尚未列入 Artificial Analysis 智慧指數（2026-10-06 查核），capability 為編輯估計：騰訊模型卡同表中，Hy4 preview 與 DeepSeek V4 Pro 0813（AA 指數 36）、GLM-5.3（45）、Kimi K3（44）、Qwen 3.8 Max（45）互有勝負，且數字多為原廠自測，故取 36 至 45 區間偏下緣的 38；已列入 AA 的 Hy3 為 25.3。costIndex 以騰訊公布的 Hy4 preview 價格（輸入 0.834、輸出 2.501 美元／百萬 tokens）按輸入：輸出 3：1 混合為 1.25 美元，依對數換算（0.05 美元 = 0、100 美元 = 100）約 42。Hy4 preview 與 Hy3 為 Apache 2.0 開放權重、未公開訓練資料，openness = 0.8。"
+versions:
+  - id: hunyuan-a13b
+    name: "Hunyuan-A13B"
+    released: "2025-06-27"
+    status: ga
+    tier: mid
+    weights: open-weights
+    license: "Tencent Hunyuan Community License (A13B)"
+    architecture: moe
+    params: { totalB: 80, activeB: 13, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    reasoning: hybrid
+    availability: [api, self-host]
+    benchmarks:
+      - benchmark: aime-2025
+        score: 76.8
+        setting: "原廠自測，Hunyuan-A13B-Instruct"
+        reportedBy: lab
+        date: "2025-06-27"
+        source: { title: "tencent/Hunyuan-A13B-Instruct", publisher: "Hugging Face", url: "https://huggingface.co/tencent/Hunyuan-A13B-Instruct", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: gpqa-diamond
+        score: 71.2
+        setting: "原廠自測，Hunyuan-A13B-Instruct"
+        reportedBy: lab
+        date: "2025-06-27"
+        source: { title: "tencent/Hunyuan-A13B-Instruct", publisher: "Hugging Face", url: "https://huggingface.co/tencent/Hunyuan-A13B-Instruct", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: livecodebench
+        score: 63.9
+        setting: "原廠自測，Hunyuan-A13B-Instruct"
+        reportedBy: lab
+        date: "2025-06-27"
+        source: { title: "tencent/Hunyuan-A13B-Instruct", publisher: "Hugging Face", url: "https://huggingface.co/tencent/Hunyuan-A13B-Instruct", type: docs, lang: en, accessed: "2026-10-06" }
+    notes: "2025-06-27 開源 Pretrain、Instruct 與 FP8、GPTQ-Int4 量化版。騰訊雲文件稱其為混元第一個混合推理模型、hunyuan-standard-256K 的升級版，預設慢思考，可用參數或指令切換快慢思考；原生 256K 上下文。授權為騰訊自訂的社群授權，同樣不適用於歐盟、英國與南韓。"
+  - id: hy3-preview
+    name: "Hy3 preview"
+    released: "2026-04-23"
+    status: deprecated
+    tier: flagship
+    weights: open-weights
+    license: "Tencent Hy Community License"
+    architecture: moe
+    params: { totalB: 295, activeB: 21, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    reasoning: hybrid
+    availability: [api, chat-app, self-host]
+    pricing:
+      - asOf: "2026-04-24"
+        inputPerMTok: 0.18
+        outputPerMTok: 0.59
+        cachedInputPerMTok: 0.06
+        currency: USD
+        tierNote: "騰訊發布新聞稿公布的騰訊雲 TokenHub 價格；已由 Hy3 取代。"
+        source: { title: "Tencent Unveils Hy3 preview; Model Enhances Agent Capabilities and Real-World Usability", publisher: "Tencent", url: "https://www.tencent.com/en-us/articles/2202320.html", type: press-release, lang: en, published: "2026-04-24", accessed: "2026-10-06" }
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 22.7
+        setting: "Hy3-preview（Reasoning）；智慧指數 v4.3，AA 標示為估計值"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Hy3-preview — Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/hy3-preview", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1409
+        setting: "hunyuan-hy3-preview；文字總榜，投票截至 2026-10-02；6,874 票"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "重建預訓練與強化學習基礎設施後的第一個模型：總參數 295B、啟用 21B，另有 3.8B 的 MTP 層，192 個專家選 8 個，上下文 256K。權重 2026-04-23 上架 Hugging Face，騰訊新聞稿日期為 2026-04-24。授權明定不適用於歐盟、英國與南韓，月活躍使用者逾 1 億的業者須另向騰訊申請。AA 已標示為淘汰版本。"
+  - id: hy3
+    name: "Hy3"
+    released: "2026-07-06"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: moe
+    params: { totalB: 295, activeB: 21, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    reasoning: hybrid
+    availability: [api, chat-app, self-host]
+    pricing:
+      - asOf: "2026-08-05"
+        inputPerMTok: 0.1288
+        outputPerMTok: 0.5336
+        currency: USD
+        tierNote: "騰訊 2026-08-05 新聞稿所列 OpenRouter 起價；Artificial Analysis 於 2026-10-06 彙整的供應商中位價為輸入 0.14、輸出 0.55 美元。"
+        source: { title: "Tencent Hy3 Now Available Globally, Extending Practical AI Across Products, Workflows and Cloud Services", publisher: "Tencent", url: "https://www.tencent.com/tencent-hy3-now-available-globally-extending-practical-ai-across-products-workflows-and-cloud-services/", type: press-release, lang: en, published: "2026-08-05", accessed: "2026-10-06" }
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 25.3
+        setting: "智慧指數 v4.3，推理模式"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Hy3 — Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/hy3", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: gpqa-diamond
+        score: 89.7
+        setting: "Artificial Analysis 獨立測試"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Hy3 — Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/hy3", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: hle
+        score: 33.5
+        setting: "Artificial Analysis 獨立測試"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Hy3 — Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/hy3", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: swe-bench-pro
+        score: 57.9
+        setting: "原廠於 Hy4 preview 模型卡重測，swe-agent 框架"
+        reportedBy: lab
+        date: "2026-08-28"
+        source: { title: "tencent/Hy4-preview", publisher: "Hugging Face", url: "https://huggingface.co/tencent/Hy4-preview", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: terminal-bench
+        score: 70.8
+        setting: "原廠於 Hy4 preview 模型卡重測，Terminal-Bench 2.1，Claude Code 框架"
+        reportedBy: lab
+        date: "2026-08-28"
+        source: { title: "tencent/Hy4-preview", publisher: "Hugging Face", url: "https://huggingface.co/tencent/Hy4-preview", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1456
+        setting: "hy3；文字總榜，投票截至 2026-10-02；依分數排第 67（共 413 個模型），10,476 票"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "架構與 Hy3 preview 相同，依 50 多個產品的回饋擴大強化學習與後訓練；騰訊稱內部評測幻覺率由 12.5% 降至 5.4%。推理強度可設為 no_think（預設）、low 或 high。2026-08-05 起透過 WorkBuddy、騰訊雲 TokenHub、OpenRouter 等全球上架。"
+  - id: hy4-preview
+    name: "Hy4 preview"
+    released: "2026-08-28"
+    status: preview
+    tier: flagship
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: moe
+    params: { totalB: 770, activeB: 49, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    reasoning: hybrid
+    availability: [api, chat-app, self-host]
+    pricing:
+      - asOf: "2026-08-28"
+        inputPerMTok: 0.834
+        outputPerMTok: 2.501
+        cachedInputPerMTok: 0.042
+        currency: USD
+        tierNote: "騰訊新聞稿公布的 API 價格（可經騰訊雲 TokenHub 與 OpenRouter 呼叫）；OpenRouter 另在每日 UTC 16:00 至 24:00 的離峰時段降為輸入約 0.75、輸出約 2.25 美元。"
+        source: { title: "Tencent Releases and Open-Sources Tencent Hy4 Preview", publisher: "Tencent", url: "https://www.tencent.com/tencent-releases-and-open-sources-tencent-hy4-preview/", type: press-release, lang: en, published: "2026-08-28", accessed: "2026-10-06" }
+    benchmarks:
+      - benchmark: gpqa-diamond
+        score: 92.3
+        setting: "原廠自測，最高推理設定"
+        reportedBy: lab
+        date: "2026-08-28"
+        source: { title: "tencent/Hy4-preview", publisher: "Hugging Face", url: "https://huggingface.co/tencent/Hy4-preview", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: hle
+        score: 43.4
+        setting: "原廠自測，不使用工具、僅文字題"
+        reportedBy: lab
+        date: "2026-08-28"
+        source: { title: "tencent/Hy4-preview", publisher: "Hugging Face", url: "https://huggingface.co/tencent/Hy4-preview", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: swe-bench-pro
+        score: 65.7
+        setting: "原廠自測，swe-agent 框架"
+        reportedBy: lab
+        date: "2026-08-28"
+        source: { title: "tencent/Hy4-preview", publisher: "Hugging Face", url: "https://huggingface.co/tencent/Hy4-preview", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: terminal-bench
+        score: 85.4
+        setting: "原廠自測，Terminal-Bench 2.1，Claude Code 框架，每題最多 500 輪、12 小時"
+        reportedBy: lab
+        date: "2026-08-28"
+        source: { title: "tencent/Hy4-preview", publisher: "Hugging Face", url: "https://huggingface.co/tencent/Hy4-preview", type: docs, lang: en, accessed: "2026-10-06" }
+    notes: "78 層骨幹，第 1 層為密集 FFN，其餘 77 層為 MoE（256 個路由專家加 1 個共享專家，每個 token 啟用 8 個）；注意力採 Gated DSA 搭配 IndexCache，另有 1 個 MTP 層（10B，啟用 0.7B）用於推測解碼。推理模式預設 high，可切換為 no_think。騰訊稱這是首次讓模型參與訓練方法、資料策略與評測框架的自動最佳化。已知問題包括推理時間過長與過度自我驗證。"
+flagshipVersion: hy4-preview
+relatedLearn: [mixture-of-experts, open-vs-closed-models, reasoning-models, model-evaluation, inference-optimization]
+glossary: [moe, active-parameters, sparse-attention, speculative-decoding, open-weights, context-window, reasoning-model, benchmark]
+sources:
+  - key: wiki-hy
+    title: "Tencent Hy"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Tencent_Hy"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "品牌更名、2023 年首發與 OpenRouter 用量排名，引用 Reuters、OpenRouter 等；條目標示部分來源可靠性待改善"
+  - key: tc-hy3p
+    title: "Tencent Unveils Hy3 preview; Model Enhances Agent Capabilities and Real-World Usability"
+    publisher: "Tencent"
+    url: "https://www.tencent.com/en-us/articles/2202320.html"
+    type: press-release
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-06"
+  - key: tc-hy3
+    title: "Tencent Hunyuan Officially Releases Hy3, Advancing Agent Capabilities and Deeper Product Integration"
+    publisher: "Tencent"
+    url: "https://www.tencent.com/tencent-hunyuan-officially-releases-hy3-advancing-agent-capabilities-and-deeper-product-integration/"
+    type: press-release
+    lang: en
+    published: "2026-07-06"
+    accessed: "2026-10-06"
+  - key: tc-hy3-global
+    title: "Tencent Hy3 Now Available Globally, Extending Practical AI Across Products, Workflows and Cloud Services"
+    publisher: "Tencent"
+    url: "https://www.tencent.com/tencent-hy3-now-available-globally-extending-practical-ai-across-products-workflows-and-cloud-services/"
+    type: press-release
+    lang: en
+    published: "2026-08-05"
+    accessed: "2026-10-06"
+  - key: tc-hy4
+    title: "Tencent Releases and Open-Sources Tencent Hy4 Preview"
+    publisher: "Tencent"
+    url: "https://www.tencent.com/tencent-releases-and-open-sources-tencent-hy4-preview/"
+    type: press-release
+    lang: en
+    published: "2026-08-28"
+    accessed: "2026-10-06"
+  - key: hf-hy4
+    title: "tencent/Hy4-preview"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/tencent/Hy4-preview"
+    type: docs
+    lang: en
+    published: "2026-08-28"
+    accessed: "2026-10-06"
+  - key: hf-hy3
+    title: "tencent/Hy3"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/tencent/Hy3"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: hf-hy3p
+    title: "tencent/Hy3-preview（含 LICENSE）"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/tencent/Hy3-preview"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: hf-a13b
+    title: "tencent/Hunyuan-A13B-Instruct"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/tencent/Hunyuan-A13B-Instruct"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: tc-cloud-models
+    title: "腾讯混元大模型 产品概述"
+    publisher: "騰訊雲（Tencent Cloud）"
+    url: "https://cloud.tencent.com/document/product/1729/104753"
+    type: docs
+    lang: zh-CN
+    accessed: "2026-10-06"
+  - key: gh-org
+    title: "Tencent-Hunyuan"
+    publisher: "GitHub"
+    url: "https://github.com/Tencent-Hunyuan"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: aa-hy3
+    title: "Hy3 — Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/hy3"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "智慧指數 v4.3；同頁資料含其他模型指數"
+  - key: arena-text
+    title: "Text Arena Leaderboard"
+    publisher: "Arena (LMArena)"
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "lmarena.ai 轉址至 arena.ai；投票截至 2026-10-02，413 個模型"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: models-12
+  checkedBy: "models-12-check"
+  checkedOn: "2026-10-06"
+  notes: "查核修正：Terminal-Bench 2.1 比較改依模型卡附錄區分原廠公布值與騰訊重測值（Hy4 preview 85.4% 以騰訊重測值領先 DeepSeek V4 Pro 80.3%）；OpenRouter 0.75／2.25 美元為離峰時段價而非最低供應商價；A13B 授權名稱更正並補充地區限制；AA 同級中位數改為概數；新聞稿網址改為正式網址。"
+---
+
+## 系列概覽
+
+混元是<CompanyChip id="tencent">騰訊（Tencent）</CompanyChip>的基礎模型家族，2023 年 9 月首度透過騰訊雲提供給企業客戶<Cite k="wiki-hy" />。騰訊也持續釋出開放權重模型，例如 2025-06-27 開源的 Hunyuan-A13B（總參數 800 億、啟用 130 億），騰訊雲稱它是混元第一個可切換快慢思考的混合推理模型<Cite k="hf-a13b" /><Cite k="tc-cloud-models" />。2026 年起國際品牌縮短為 Hy，中國市場仍沿用混元之名<Cite k="wiki-hy" />。
+
+真正的轉折在 2026 年：騰訊表示從年初起重建預訓練與強化學習基礎設施（Hy3 preview 新聞稿寫 2 月起，Hy3 新聞稿則寫 1 月底），4 月推出的 Hy3 preview 就是新設施產出的第一個模型<Cite k="tc-hy3p" /><Cite k="tc-hy3" />。Hy3 於 2026-07-06 正式發布<Cite k="tc-hy3" />，Hy4 preview 於 2026-08-28 開源，總參數由 2,950 億擴大到 7,700 億<Cite k="tc-hy4" />。同一個 GitHub 組織下還有 HunyuanImage、HunyuanVideo、Hunyuan3D、HY-World 等生成模型與翻譯模型 Hy-MT<Cite k="gh-org" />，本頁聚焦語言模型。
+
+## 特性分析
+
+- **大型 <Term id="moe">MoE</Term>，啟用參數小**：Hy3 總參數 295B，每個 token 只啟用 21B（192 個專家選 8 個），另有 3.8B 的 MTP 層<Cite k="hf-hy3" />。Hy4 preview 擴大到 770B 總參數、49B <Term id="active-parameters">啟用參數</Term>，78 層中有 77 層為 MoE，每層 256 個路由專家加 1 個共享專家<Cite k="hf-hy4" />。
+- **長上下文與稀疏注意力**：Hy3 支援 256K <Term id="context-window">上下文</Term>；Hy4 preview 借鏡 DeepSeek 與 GLM，採 Gated DSA <Term id="sparse-attention">稀疏注意力</Term>，上下文約 100 萬 tokens，並內建 MTP 層做<Term id="speculative-decoding">推測解碼</Term><Cite k="hf-hy4" />。
+- **快慢思考可切換**：兩代都是混合型<Term id="reasoning-model">推理模型</Term>。Hy3 預設直接回答，可把推理強度設為 low 或 high；Hy4 preview 預設 high，也能切換成不思考模式<Cite k="hf-hy3" /><Cite k="hf-hy4" />。
+- **授權轉向寬鬆**：Hy3 preview 採騰訊社群授權，明定不適用於歐盟、英國與南韓，月活躍使用者逾 1 億的業者須另行申請<Cite k="hf-hy3p" />；Hy3 與 Hy4 preview 改為 Apache 2.0<Cite k="tc-hy3" /><Cite k="hf-hy4" />。
+- **產品驅動的後訓練**：騰訊稱 Hy3 依 50 多個產品的回饋擴大後訓練，內部評測的幻覺率從 12.5% 降到 5.4%<Cite k="hf-hy3" />；Hy3 已用於 WorkBuddy／CodeBuddy、元寶、ima 與微信公眾號客服<Cite k="tc-hy3" />。
+
+## 適合與不適合的用途
+
+**適合**：需要自行部署、可商用的<Term id="open-weights">開放權重</Term>模型來做程式 Agent、辦公文件處理或金融分析；成本敏感的長文件工作；以及已在騰訊雲、微信生態中的應用。價格方面，騰訊公布 Hy3 在 OpenRouter 的起價為每百萬 tokens 輸入 0.1288、輸出 0.5336 美元<Cite k="tc-hy3-global" />，Hy4 preview 為 0.834／2.501 美元<Cite k="tc-hy4" />。
+
+**不適合**：需要圖片、音訊或影片理解的工作——Hy3 只處理文字輸入與輸出<Cite k="aa-hy3" />；追求最高綜合能力的關鍵任務——Hy4 preview 仍是預覽版，騰訊自己列出推理時間過長、過度自我驗證等已知問題<Cite k="hf-hy4" />；以及缺乏多 GPU 伺服器的團隊——官方建議以 8 張 H20-3e 等級的 GPU 部署 Hy3<Cite k="hf-hy3" />。
+
+## 版本演進
+
+| 版本 | 時間 | 重點 |
+|---|---|---|
+| Hunyuan-A13B | 2025-06-27 | 80B（啟用 13B）MoE、256K、快慢思考，開放權重 |
+| Hy3 preview | 2026-04-23 | 重建基礎設施後首個模型，295B（啟用 21B），社群授權 |
+| Hy3 | 2026-07-06 | 擴大強化學習與後訓練，改採 Apache 2.0 |
+| Hy4 preview | 2026-08-28 | 770B（啟用 49B）、約 100 萬 tokens 上下文、Gated DSA |
+
+從 A13B 到 Hy4，騰訊的路線是「先開源預覽版、收集產品回饋、再推正式版」。騰訊稱 Hy3 preview 上線後日均 token 用量成長 20 倍<Cite k="tc-hy3" />；維基百科引用 OpenRouter 資料指出，截至 2026-09-06 的 7 天內，Hy4 preview 以 14.7 兆 tokens 居該平台用量第一<Cite k="wiki-hy" />。不過 OpenRouter 用量只反映單一平台，且常受免費或低價推廣影響，不能等同於模型品質。
+
+## 評測解讀
+
+第三方評測資料目前只涵蓋 Hy3。Artificial Analysis 智慧指數 v4.3 給 Hy3 打 25 分，明顯高於同級模型的中位數（約 18 至 19），但與榜首 Claude Opus 5.5 的約 58 分差距明顯；其 GPQA Diamond 為 89.7%、Humanity's Last Exam 為 33.5%<Cite k="aa-hy3" />。LMArena 文字榜（投票截至 2026-10-02）上，Hy3 以 1,456 分與字節跳動 <ModelChip id="bytedance-seed">Seed 2.0 Pro</ModelChip> 幾乎同分，比 Hy3 preview 的 1,409 分高約 47 分，顯示正式版的改進確實反映在使用者偏好上<Cite k="arena-text" />。
+
+Hy4 preview 尚未進入 AA 指數，現有<Term id="benchmark">評測</Term>數字都來自騰訊模型卡：GPQA Diamond 92.3%、HLE（不用工具）43.4%、SWE-bench Pro 65.7%、Terminal-Bench 2.1 85.4%，相對 Hy3 的 90.9%、34.4%、57.9%、70.8% 進步明顯<Cite k="hf-hy4" />。解讀時要注意三點：第一，騰訊在同表中重測了 Hy3，部分分數與先前公布的不同；第二，Terminal-Bench 2.1 使用 Claude Code 框架、每題最多 500 輪與 12 小時，設定相當寬鬆；第三，表中其他模型的數字大多由騰訊自行測得，部分欄位同時列出原廠公布值與騰訊重測值，兩者可能差距不小。在這份表格裡，Hy4 preview 與 <ModelChip id="deepseek">DeepSeek V4 Pro</ModelChip>、<ModelChip id="zhipu-glm">GLM-5.3</ModelChip>、<ModelChip id="moonshot-kimi">Kimi K3</ModelChip>、<ModelChip id="alibaba-qwen">Qwen 3.8 Max</ModelChip> 互有勝負，差距多在幾個百分點內。以 Terminal-Bench 2.1 為例，Hy4 preview 的 85.4% 低於這四家原廠公布的 86.6% 至 88.3%；改用騰訊重測值，則只領先 DeepSeek V4 Pro（80.3%），仍低於另外三者（85.7% 至 88.3%）。因此本站把它的能力座標估在中國開放權重第一梯隊的下緣，待第三方評測公布後再更新。

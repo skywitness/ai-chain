@@ -1,0 +1,544 @@
+---
+title: 能源與電力
+titleEn: Energy & Power
+order: 1
+layer: foundation
+tagline: AI 的地基：發電廠、電網與變壓器，決定算力能蓋多快
+description: AI 資料中心用電快速攀升，電力已成為算力擴張最難突破的瓶頸。本章從發電、電網與重電設備談起，解析燃氣渦輪、核能與 SMR、併網排隊、電網投資規模，以及台灣重電廠與台電的角色。
+upstream: []
+downstream: [datacenter-infra, cloud-neocloud, foundry-packaging]
+scene: { id: energy, variant: grid }
+scope:
+  includes:
+    - 發電：燃氣渦輪與燃氣電廠、核能（既有電廠延役與重啟、SMR 與先進核能）、再生能源、核融合新創
+    - 輸配電設備：電力變壓器、高壓開關與 GIS、HVDC、高壓與海底電纜
+    - 電力公用事業與獨立發電業者、長期購售電合約（PPA）
+    - 表後供電：燃料電池、往復式發電機組、中小型燃氣渦輪與電網級儲能
+    - 電網與變電站工程、核燃料供應
+    - 台灣重電廠（華城、士電、中興電、亞力）與台電
+  excludes:
+    - 機房內 UPS、開關設備、PDU 與 800V 直流配電（歸資料中心環節）
+    - 伺服器電源供應器（PSU）與 BBU（歸伺服器與系統環節）
+    - 機房散熱與冷卻設備（歸資料中心環節）
+concentration: oligopoly
+bottleneck:
+  level: 5
+  note: 電力是 2026 年 AI 擴張最主要的限制之一：美國併網排隊從申請到商轉中位數逾 5 年（LBNL），GE Vernova 燃氣設備在手訂單加產能預留（116 GW）約為其 2026 年第三季目標年產能（20 GW）的 5.8 倍，IEA 也指出變壓器與電纜的等待時間在 2022–2025 年間加倍。
+keyMetrics:
+  - label: 全球資料中心用電（2024）
+    value: "約 415 TWh（約佔全球用電 1.5%）"
+    asOf: "2025-04-10"
+    note: 美國佔 45%、中國 25%、歐洲 15%。
+    source:
+      title: "Energy and AI – Executive summary"
+      publisher: International Energy Agency
+      url: "https://www.iea.org/reports/energy-and-ai/executive-summary"
+      type: government
+      lang: en
+      published: "2025-04-10"
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20251229195231/https://www.iea.org/reports/energy-and-ai/executive-summary"
+  - label: 全球資料中心用電年增率（2025）
+    value: "17%"
+    asOf: "2026-04-16"
+    note: 同期全球總用電成長約 3%。
+    source:
+      title: "Data centre electricity use surged in 2025, even with tightening bottlenecks driving a scramble for solutions"
+      publisher: International Energy Agency
+      url: "https://www.iea.org/news/data-centre-electricity-use-surged-in-2025-even-with-tightening-bottlenecks-driving-a-scramble-for-solutions"
+      type: press-release
+      lang: en
+      published: "2026-04-16"
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20260603014834/https://www.iea.org/news/data-centre-electricity-use-surged-in-2025-even-with-tightening-bottlenecks-driving-a-scramble-for-solutions"
+  - label: 2030 年全球資料中心用電預估
+    value: "約 945 TWh"
+    asOf: "2025-04-10"
+    note: IEA 基準情境，約為 2024 年的兩倍以上，略高於日本目前全國用電量。
+    source:
+      title: "Energy and AI – Executive summary"
+      publisher: International Energy Agency
+      url: "https://www.iea.org/reports/energy-and-ai/executive-summary"
+      type: government
+      lang: en
+      published: "2025-04-10"
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20251229195231/https://www.iea.org/reports/energy-and-ai/executive-summary"
+  - label: 美國併網排隊中的發電與儲能容量
+    value: "逾 2,060 GW"
+    asOf: "2025-12-31"
+    note: 2025 年完工專案從申請到商轉的中位數逾 5 年；燃氣容量 253 GW，一年增加 86%。
+    source:
+      title: "Queued Up: 2026 Edition, Characteristics of Power Plants Seeking Transmission Interconnection As of the End of 2025"
+      publisher: Lawrence Berkeley National Laboratory
+      url: "https://emp.lbl.gov/queues"
+      type: dataset
+      lang: en
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20260926081320/https://emp.lbl.gov/queues"
+  - label: GE Vernova 燃氣設備在手訂單與產能預留
+    value: "116 GW"
+    asOf: "2026-06-30"
+    note: 第一季底為 100 GW；公司預期 2026 年底至少 125 GW。燃機年產能目標為 2026 年第三季 20 GW、2028 年 24 GW、2030 年 30 GW。
+    source:
+      title: "GE Vernova reports second quarter 2026 financial results and raises 2026 financial guidance"
+      publisher: GE Vernova
+      url: "https://www.gevernova.com/news/press-releases/ge-vernova-reports-second-quarter-2026-financial-results-raises-2026-financial"
+      type: press-release
+      lang: en
+      published: "2026-07-22"
+      accessed: "2026-10-06"
+  - label: 資料中心與 SMR 專案的有條件購電協議
+    value: "約 45 GW"
+    asOf: "2026-04-16"
+    note: IEA 統計的資料中心業者與 SMR 專案有條件承購協議總量；2024 年底約 25 GW。
+    source:
+      title: "Data centre electricity use surged in 2025, even with tightening bottlenecks driving a scramble for solutions"
+      publisher: International Energy Agency
+      url: "https://www.iea.org/news/data-centre-electricity-use-surged-in-2025-even-with-tightening-bottlenecks-driving-a-scramble-for-solutions"
+      type: press-release
+      lang: en
+      published: "2026-04-16"
+      accessed: "2026-10-06"
+  - label: 全球電網投資（2026 年預估）
+    value: "接近 5,500 億美元"
+    asOf: "2026-05-28"
+    note: 年增近 20%；電池儲能投資預估逾 1,000 億美元。
+    source:
+      title: "Impacts of Middle East conflict set to reshape energy investment plans as disruptions put focus on security"
+      publisher: International Energy Agency
+      url: "https://www.iea.org/news/impacts-of-middle-east-conflict-set-to-reshape-energy-investment-plans-as-disruptions-put-focus-on-security"
+      type: press-release
+      lang: en
+      published: "2026-05-28"
+      accessed: "2026-10-06"
+  - label: 台灣 AI 相關用電需求預估
+    value: "2023 年 24 萬瓩 → 2028 年 224 萬瓩"
+    asOf: "2024-07-15"
+    note: 經濟部 112 年度全國電力資源供需報告；同期全國用電年均成長約 2.5%。
+    source:
+      title: "經濟部估未來十年用電年均成長2.8%，將應AI需求推動儲能等三項建設"
+      publisher: Reccessary
+      url: "https://www.reccessary.com/zh-tw/news/world-market/the-ministry-of-economic-affairs-releases-power-supply-and-demand-report"
+      type: news
+      lang: zh-TW
+      published: "2024-07-15"
+      accessed: "2026-10-06"
+marketSize:
+  - year: 2024
+    value: 400
+    unit: billion
+    currency: USD
+    status: estimate
+    definition: 全球電網（輸配電）年度投資；IEA World Energy Investment 2024 年版估計。
+    source:
+      title: "Investment in clean energy this year is set to be twice the amount going to fossil fuels"
+      publisher: International Energy Agency
+      url: "https://www.iea.org/news/investment-in-clean-energy-this-year-is-set-to-be-twice-the-amount-going-to-fossil-fuels"
+      type: press-release
+      lang: en
+      published: "2024-06-06"
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20241230102308/https://www.iea.org/news/investment-in-clean-energy-this-year-is-set-to-be-twice-the-amount-going-to-fossil-fuels"
+  - year: 2025
+    value: 460
+    unit: billion
+    currency: USD
+    status: estimate
+    definition: 全球電網（輸配電）年度投資；本站依 IEA World Energy Investment 2026 年版「2026 年接近 5,500 億美元、年增近 20%」回推，約 4,600 億美元（概略推算，非 IEA 公布值）。IEA 2025 年版當時的估計為每年約 4,000 億美元。
+    source:
+      title: "Impacts of Middle East conflict set to reshape energy investment plans as disruptions put focus on security"
+      publisher: International Energy Agency
+      url: "https://www.iea.org/news/impacts-of-middle-east-conflict-set-to-reshape-energy-investment-plans-as-disruptions-put-focus-on-security"
+      type: press-release
+      lang: en
+      published: "2026-05-28"
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20260528115309/https://www.iea.org/news/impacts-of-middle-east-conflict-set-to-reshape-energy-investment-plans-as-disruptions-put-focus-on-security"
+      note: 2025 年數值為本站由 2026 年預估值與年增率回推
+  - year: 2026
+    value: 550
+    unit: billion
+    currency: USD
+    status: forecast
+    definition: 全球電網（輸配電）年度投資；IEA World Energy Investment 2026 年版預估「接近 5,500 億美元、年增近 20%」。
+    source:
+      title: "Impacts of Middle East conflict set to reshape energy investment plans as disruptions put focus on security"
+      publisher: International Energy Agency
+      url: "https://www.iea.org/news/impacts-of-middle-east-conflict-set-to-reshape-energy-investment-plans-as-disruptions-put-focus-on-security"
+      type: press-release
+      lang: en
+      published: "2026-05-28"
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20260528115309/https://www.iea.org/news/impacts-of-middle-east-conflict-set-to-reshape-energy-investment-plans-as-disruptions-put-focus-on-security"
+featuredCompanies:
+  - ge-vernova
+  - siemens-energy
+  - mitsubishi-heavy
+  - constellation-energy
+  - vistra
+  - nextera-energy
+  - hitachi-energy
+  - bloom-energy
+  - talen-energy
+  - taipower
+  - fortune-electric
+  - oklo
+taiwanRole: 台灣同時是用電大戶與設備供應者：發電八成以上來自燃氣與燃煤、能源近 98% 仰賴進口，經濟部估計 AI 相關用電 2028 年將達 224 萬瓩，台電須兼顧晶圓廠與 AI 資料中心的供電；華城、士電、中興電、亞力等重電廠則供應變壓器、GIS 與配電設備。
+relatedLearn:
+  - datacenter-power-cooling
+  - data-centers-101
+  - ai-supply-chain-map
+  - ai-capex-economics
+relatedTrends:
+  - power-bottleneck-onsite-generation
+  - nuclear-smr-for-ai
+  - 800v-dc-power
+  - datacenter-local-impact
+  - hyperscaler-capex
+  - taiwan-ai-policy
+glossary:
+  - power-grid
+  - gigawatt
+  - power-transformer
+  - renewable-energy
+  - nuclear-power
+  - energy-storage
+  - heavy-electrical
+  - gas-turbine
+  - smr
+  - nuclear-fusion
+  - ppa
+  - behind-the-meter
+  - fuel-cell
+  - hvdc
+  - interconnection-queue
+  - flexible-load
+sources:
+  - key: iea-energy-ai
+    title: "Energy and AI – Executive summary"
+    publisher: International Energy Agency
+    url: "https://www.iea.org/reports/energy-and-ai/executive-summary"
+    type: government
+    lang: en
+    published: "2025-04-10"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20251229195231/https://www.iea.org/reports/energy-and-ai/executive-summary"
+  - key: iea-key-questions-2026
+    title: "Data centre electricity use surged in 2025, even with tightening bottlenecks driving a scramble for solutions"
+    publisher: International Energy Agency
+    url: "https://www.iea.org/news/data-centre-electricity-use-surged-in-2025-even-with-tightening-bottlenecks-driving-a-scramble-for-solutions"
+    type: press-release
+    lang: en
+    published: "2026-04-16"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20260603014834/https://www.iea.org/news/data-centre-electricity-use-surged-in-2025-even-with-tightening-bottlenecks-driving-a-scramble-for-solutions"
+  - key: iea-wei-2026
+    title: "Impacts of Middle East conflict set to reshape energy investment plans as disruptions put focus on security"
+    publisher: International Energy Agency
+    url: "https://www.iea.org/news/impacts-of-middle-east-conflict-set-to-reshape-energy-investment-plans-as-disruptions-put-focus-on-security"
+    type: press-release
+    lang: en
+    published: "2026-05-28"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20260528115309/https://www.iea.org/news/impacts-of-middle-east-conflict-set-to-reshape-energy-investment-plans-as-disruptions-put-focus-on-security"
+    note: World Energy Investment 2026 新聞稿
+  - key: iea-wei-2025
+    title: "Global energy investment set to rise to $3.3 trillion in 2025 amid economic uncertainty and energy security concerns"
+    publisher: International Energy Agency
+    url: "https://www.iea.org/news/global-energy-investment-set-to-rise-to-3-3-trillion-in-2025-amid-economic-uncertainty-and-energy-security-concerns"
+    type: press-release
+    lang: en
+    published: "2025-06-05"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20250605042536/https://www.iea.org/news/global-energy-investment-set-to-rise-to-3-3-trillion-in-2025-amid-economic-uncertainty-and-energy-security-concerns"
+  - key: iea-wei-2024
+    title: "Investment in clean energy this year is set to be twice the amount going to fossil fuels"
+    publisher: International Energy Agency
+    url: "https://www.iea.org/news/investment-in-clean-energy-this-year-is-set-to-be-twice-the-amount-going-to-fossil-fuels"
+    type: press-release
+    lang: en
+    published: "2024-06-06"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20241230102308/https://www.iea.org/news/investment-in-clean-energy-this-year-is-set-to-be-twice-the-amount-going-to-fossil-fuels"
+  - key: iea-electricity-2026
+    title: "Global electricity demand is set to grow strongly to 2030, underscoring need for investments in grids and flexibility"
+    publisher: International Energy Agency
+    url: "https://www.iea.org/news/global-electricity-demand-is-set-to-grow-strongly-to-2030-underscoring-need-for-investments-in-grids-and-flexibility"
+    type: press-release
+    lang: en
+    published: "2026-02-06"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20260904214858/https://www.iea.org/news/global-electricity-demand-is-set-to-grow-strongly-to-2030-underscoring-need-for-investments-in-grids-and-flexibility"
+  - key: lbnl-dc-2024
+    title: "Berkeley Lab Report Evaluates Increase in Electricity Demand from Data Centers"
+    publisher: Lawrence Berkeley National Laboratory
+    url: "https://newscenter.lbl.gov/2025/01/15/berkeley-lab-report-evaluates-increase-in-electricity-demand-from-data-centers/"
+    type: government
+    lang: en
+    published: "2025-01-15"
+    accessed: "2026-10-06"
+  - key: lbnl-queued-up-2026
+    title: "Queued Up: 2026 Edition, Characteristics of Power Plants Seeking Transmission Interconnection As of the End of 2025"
+    publisher: Lawrence Berkeley National Laboratory
+    url: "https://emp.lbl.gov/queues"
+    type: dataset
+    lang: en
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20260926081320/https://emp.lbl.gov/queues"
+  - key: gev-q2-2026
+    title: "GE Vernova reports second quarter 2026 financial results and raises 2026 financial guidance"
+    publisher: GE Vernova
+    url: "https://www.gevernova.com/news/press-releases/ge-vernova-reports-second-quarter-2026-financial-results-raises-2026-financial"
+    type: press-release
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-06"
+  - key: meta-nuclear-2026
+    title: "Meta Announces Nuclear Energy Projects, Unlocking Up to 6.6 GW to Power American Leadership in AI Innovation"
+    publisher: Meta
+    url: "https://about.fb.com/news/2026/01/meta-nuclear-energy-projects-power-american-ai-leadership/"
+    type: press-release
+    lang: en
+    published: "2026-01-09"
+    accessed: "2026-10-06"
+  - key: bloom-q2-2026
+    title: "Bloom Energy second quarter 2026 financial results (Exhibit 99.1)"
+    publisher: Bloom Energy / SEC EDGAR
+    url: "https://www.sec.gov/Archives/edgar/data/1664703/000162828026050150/ex991_q226financialresults.htm"
+    type: filing
+    lang: en
+    published: "2026-07-28"
+    accessed: "2026-10-06"
+  - key: wiki-tmi
+    title: "Three Mile Island Nuclear Generating Station"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Three_Mile_Island_Nuclear_Generating_Station"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: Microsoft 20 年購電合約
+  - key: ceg-q2-2026
+    title: "Constellation Reports Second Quarter 2026 Results (Exhibit 99.1)"
+    publisher: Constellation Energy / SEC EDGAR
+    url: "https://www.sec.gov/Archives/edgar/data/1868275/000186827526000097/ceg-20260806991.htm"
+    type: filing
+    lang: en
+    published: "2026-08-06"
+    accessed: "2026-10-06"
+    note: Crane Clean Energy Center 取得 NRC 燃料執照修正核准，目標 2027 年恢復運轉
+  - key: wiki-susquehanna
+    title: "Susquehanna Steam Electric Station"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Susquehanna_Steam_Electric_Station"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: Talen 與 AWS 供電協議（2024 年出售園區、2025 年擴大合約）
+  - key: wiki-duane-arnold
+    title: "Duane Arnold Energy Center"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Duane_Arnold_Energy_Center"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: 與 Google 的 25 年購電合約、2029 年重啟目標
+  - key: wiki-kairos
+    title: "Kairos Power"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Kairos_Power"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+  - key: wiki-x-energy
+    title: "X-energy"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/X-energy"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+  - key: wiki-energy-taiwan
+    title: "Energy in Taiwan"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Energy_in_Taiwan"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: 2024 年發電結構與能源進口依存度
+  - key: wnn-maanshan
+    title: "Taipower applies to restart Maanshan plant"
+    publisher: World Nuclear News
+    url: "https://world-nuclear-news.org/articles/taipower-applies-to-restart-maanshan-plant"
+    type: news
+    lang: en
+    published: "2026-03-27"
+    accessed: "2026-10-06"
+  - key: moea-power-2024
+    title: "經濟部估未來十年用電年均成長2.8%，將應AI需求推動儲能等三項建設"
+    publisher: Reccessary
+    url: "https://www.reccessary.com/zh-tw/news/world-market/the-ministry-of-economic-affairs-releases-power-supply-and-demand-report"
+    type: news
+    lang: zh-TW
+    published: "2024-07-15"
+    accessed: "2026-10-06"
+    note: 引述經濟部 112 年度全國電力資源供需報告
+  - key: udn-dc-2026
+    title: "考量用電需求 經濟部：強化資料中心整體規劃與審議機制"
+    publisher: 經濟日報（聯合新聞網）
+    url: "https://udn.com/news/story/7238/9465799"
+    type: news
+    lang: zh-TW
+    published: "2026-04-27"
+    accessed: "2026-10-06"
+  - key: yahoo-1519
+    title: "華城（1519）營收表"
+    publisher: Yahoo奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/1519.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-1503
+    title: "士電（1503）營收表"
+    publisher: Yahoo奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/1503.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-1513
+    title: "中興電（1513）營收表"
+    publisher: Yahoo奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/1513.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-1514
+    title: "亞力（1514）營收表"
+    publisher: Yahoo奇摩股市
+    url: "https://tw.stock.yahoo.com/quote/1514.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: seg-energy-power
+  checkedBy: seg-energy-power-check
+  checkedOn: "2026-10-06"
+  notes: IEA 與 LBNL 頁面直接讀取回應 403，數字以 Wayback Machine 存檔核對（見各來源 archiveUrl）。燃機三強、公用事業受管制等屬產業常識的定性描述未附數字。查核：Crane 2027 年重啟改引 Constellation 2026 年第二季財報；原引 IEA 2025 報告的「燃機延誤至 2030 年後」在來源中查無，已改寫為 IEA 2026 的供應鏈吃緊說法；2025 年電網投資改為由 IEA 2026 年版回推的推算值並註明；馬鞍山重啟改述為送審與後續 18–24 個月安全檢查。
+---
+
+<LevelSection level={1} title="這一環在做什麼">
+
+每一次模型訓練、每一次 AI 回答問題，最後都要消耗電力。能源與電力是 AI 產業鏈的最底層：把電從發電廠產生出來，經過<Term id="power-grid">電網</Term>長途輸送、層層降壓，最後送到資料中心門口。電進入機房之後的 UPS、配電與散熱，則屬於下一環 <SegmentChip id="datacenter-infra" />。
+
+這一環的參與者大致分成三類：
+
+- **發電**：燃氣電廠、<Term id="nuclear-power">核能發電</Term>、太陽能與風力等<Term id="renewable-energy">再生能源</Term>，以及搭配使用的<Term id="energy-storage">儲能</Term>。
+- **輸配電**：高壓輸電線、變電站，以及負責升壓、降壓的<Term id="power-transformer">變壓器</Term>等<Term id="heavy-electrical">重電</Term>設備。
+- **電力業者**：經營電網、向用戶售電的公用事業，以及把電長期賣給大客戶的發電業者。
+
+<FlowSteps title="電從電廠走到 AI 晶片" steps={["發電廠","升壓變電站","高壓輸電","降壓變電站","園區受電","機房配電（下一環）"]} />
+
+<Callout type="analogy" title="把 AI 園區想成一座突然冒出來的新城市">
+蓋一座 AI 資料中心，就像在郊區突然多出一座新城市。房子（機房與伺服器）相對很快就能蓋好，但城市需要的自來水，也就是電，得靠水庫（發電廠）、主幹水管（輸電線）和調壓閥（變壓器）才送得到。這些水利工程動輒好幾年，而且全國的工程隊和管材都在排隊。所以今天許多大型 AI 園區最關心的，往往不只是「買不買得到 GPU」，還有「什麼時候接得到電」。
+</Callout>
+
+規模有多大？一座 1 <Term id="gigawatt">GW</Term> 的 AI 園區若全年滿載運轉，用電約 87.6 億度（1 GW 乘以 8,760 小時），約等於台灣 2024 年總發電量約 2,880 億度的 3%<Cite k="wiki-energy-taiwan" />。
+
+根據國際能源總署（IEA），2024 年全球資料中心用電約 415 TWh（約 4,150 億度），約佔全球用電 1.5%<Cite k="iea-energy-ai" />；2025 年再成長 17%，遠高於全球總用電約 3% 的增幅<Cite k="iea-key-questions-2026" />。IEA 預估 2030 年將增至約 945 TWh，略高於日本目前的全國用電量<Cite k="iea-energy-ai" />。在美國，資料中心 2023 年用電 176 TWh、佔全美 4.4%，預估 2028 年將達 325–580 TWh、佔 6.7%–12%<Cite k="lbnl-dc-2024" />。
+
+<StatGrid items={[{ label: "全球資料中心用電", value: "415 TWh", note: "2024 年，約佔全球 1.5%（IEA）" }, { label: "2025 年用電成長", value: "17%", note: "IEA，2026-04" }, { label: "2030 年預估", value: "945 TWh", note: "IEA 基準情境", estimate: true }, { label: "美國資料中心用電佔比", value: "6.7%–12%", note: "2028 年預估（LBNL）", estimate: true }]} />
+
+</LevelSection>
+
+<LevelSection level={2} title="關鍵技術與商業模式" data-lint="level==2">
+
+### 電從哪裡來：四條路線
+
+**燃氣發電：最快能補上的穩定電力。** <Term id="gas-turbine">燃氣渦輪機</Term>電廠可以隨時調度，是美國 AI 園區新增電源的重要選項。IEA 指出，2025 年全球新燃氣電廠訂單創 25 年新高，資料中心需求是重要推手<Cite k="iea-wei-2026" />。重型燃機主要由 <CompanyChip id="ge-vernova">奇異維諾瓦（GE Vernova）</CompanyChip>、<CompanyChip id="siemens-energy">西門子能源（Siemens Energy）</CompanyChip>與 <CompanyChip id="mitsubishi-heavy">三菱重工（MHI）</CompanyChip>三家供應。GE Vernova 2026 年第二季的燃氣設備在手訂單加產能預留協議從 100 GW 增至 116 GW，預期年底至少 125 GW；燃機年產能則預計 2026 年第三季達 20 GW、2028 年 24 GW，並規劃 2030 年 30 GW<Cite k="gev-q2-2026" />。換算下來，116 GW 約是 20 GW 年產能的 5.8 倍，意味著新下單的客戶往往要等上數年才能交貨。
+
+**核能：零碳又穩定，但新建要等到 2030 年代。** 雲端巨頭先從既有電廠下手：<CompanyChip id="constellation-energy">星座能源（Constellation）</CompanyChip>重啟三哩島 1 號機並改名 Crane 清潔能源中心，Microsoft 簽下 20 年購電合約<Cite k="wiki-tmi" />；該機組 2026 年取得核管會（NRC）的燃料執照修正核准，目標 2027 年恢復運轉<Cite k="ceg-q2-2026" />；<CompanyChip id="talen-energy" /> 的 Susquehanna 核電廠供電給 AWS 的資料中心園區，2032 年起最高 1,920 MW、合約延續到 2042 年<Cite k="wiki-susquehanna" />；<CompanyChip id="nextera-energy">新紀元能源（NextEra）</CompanyChip>與 Google 協議在 2029 年重啟 615 MW 的 Duane Arnold 核電廠，Google 簽下 25 年購電合約<Cite k="wiki-duane-arnold" />。Meta 在 2026 年 1 月宣布與 <CompanyChip id="vistra" />、<CompanyChip id="terrapower">泰拉能源（TerraPower）</CompanyChip>、<CompanyChip id="oklo" /> 的協議，合計最多 6.6 GW，其中向 Vistra 的核電廠以 20 年合約購買逾 2.1 GW<Cite k="meta-nuclear-2026" />。
+
+更長期的是<Term id="smr">SMR</Term>（小型模組化反應爐）與先進核能：Google 與 <CompanyChip id="kairos-power" /> 簽下 500 MW 協議，首座目標 2030 年<Cite k="wiki-kairos" />；Amazon 與 <CompanyChip id="x-energy" /> 規劃最多 5 GW 的 Xe-100 反應爐<Cite k="wiki-x-energy" />。IEA 統計，資料中心業者與 SMR 專案之間的有條件承購協議（附帶條件的長期購電承諾），已從 2024 年底的 25 GW 增至 2026 年 4 月的 45 GW<Cite k="iea-key-questions-2026" />，但第一批 SMR 預估要到 2030 年前後才會上線<Cite k="iea-energy-ai" />。<Term id="nuclear-fusion">核融合</Term>新創（例如 <CompanyChip id="helion-energy" />、<CompanyChip id="commonwealth-fusion-systems" />）則仍在研發與示範階段，距離商轉更遠。
+
+**再生能源加儲能：增量最大，但要搭配調度。** IEA 預估全球資料中心新增用電約一半由再生能源供應<Cite k="iea-energy-ai" />；2025 年全球企業簽訂的再生能源<Term id="ppa">PPA</Term>（購售電合約）約有 40% 來自科技業<Cite k="iea-key-questions-2026" />。太陽能與風力隨天氣波動，因此常與儲能、燃氣機組搭配。
+
+**表後供電：不等電網，自己發電。** 等不及併網的園區開始採用<Term id="behind-the-meter">表後供電</Term>，在電錶後端直接設置燃氣機組或<Term id="fuel-cell">燃料電池</Term>。燃料電池業者 <CompanyChip id="bloom-energy" /> 2026 年第二季營收 10.65 億美元、年增 165.5%，全年營收財測上調至 39–42 億美元<Cite k="bloom-q2-2026" />。
+
+### 電怎麼送：電網與重電設備
+
+電廠蓋好之後，還要靠電網把電送出去。關鍵設備包括電力變壓器、氣體絕緣開關設備（GIS）、高壓與海底電纜，以及長距離大容量輸電用的 <Term id="hvdc">HVDC</Term>（高壓直流輸電）。主要供應商有 <CompanyChip id="hitachi-energy">日立能源（Hitachi Energy）</CompanyChip>、西門子能源、韓國的 <CompanyChip id="hd-hyundai-electric" /> 與 <CompanyChip id="hyosung-heavy" />、電纜大廠 <CompanyChip id="prysmian" />，施工則有電網工程商 <CompanyChip id="quanta-services" />。IEA 在 2025 年指出，先進經濟體新建輸電線需要 4–8 年，變壓器與電纜等關鍵電網設備的等待時間在過去三年內加倍<Cite k="iea-energy-ai" />。
+
+### 商業模式與成本結構
+
+- **設備商**（燃機、變壓器）：先接單、再排產，交期長達數年，「在手訂單」是觀察重點。GE Vernova 第二季訂單 242 億美元、營收 111 億美元，在手訂單達 1,760 億美元<Cite k="gev-q2-2026" />。產能吃緊時，客戶會先簽產能預留協議，搶下未來的生產時段。
+- **發電業者**：以長期 PPA（例如前述 20 年、25 年的核電合約）把電賣給雲端業者，換取穩定現金流；既有核電廠因此被重新評價。
+- **電力公用事業**：多為受管制的區域獨佔，投資電網與電廠後，依主管機關核准的報酬率回收；資料中心帶來的新增負載會直接擴大它們的投資規模。
+- **成本結構**：燃氣電廠以燃料成本為主；核電前期建造成本高、燃料成本低；再生能源幾乎沒有燃料成本，但需要額外的儲能與電網投資。
+
+### 市場規模
+
+AI 帶動的不只是發電，還有電網。IEA 估計全球電網投資 2024 年約 4,000 億美元，過去在 2015–2021 年間長期停在每年約 3,000 億美元<Cite k="iea-wei-2024" />；2025 年版仍以「每年約 4,000 億美元」描述，並警告電網投資跟不上發電與電氣化的腳步<Cite k="iea-wei-2025" />。到了 2026 年版，IEA 預估 2026 年全球電網投資將接近 5,500 億美元、年增近 20%，電池儲能投資也將超過 1,000 億美元；若把發電、電網與儲能都算進來，2026 年的電力供應與基礎設施投資將接近 1.6 兆美元<Cite k="iea-wei-2026" />。
+
+<BarChart title="全球電網年度投資" unit="十億美元" data={[{ label: "2024", value: 400, estimate: true }, { label: "2025", value: 460, estimate: true }, { label: "2026", value: 550, estimate: true }]} source={["iea-wei-2024", "iea-wei-2026"]} note="2024 年取自 IEA 2024 年版估計；2026 年為 IEA 2026 年版預估；2025 年為本站依 2026 年版「接近 5,500 億美元、年增近 20%」回推的概略值，並非 IEA 公布數字。" />
+
+### 競爭格局
+
+整體而言，關鍵設備高度集中，發電與公用事業則依地區分散：
+
+| 子領域 | 代表業者 | 競爭型態 |
+|---|---|---|
+| 重型燃氣渦輪 | GE Vernova、西門子能源、三菱重工 | 三強寡佔，交期吃緊 |
+| 變壓器與高壓設備 | 日立能源、西門子能源、HD 現代電氣、曉星重工業、華城 | 大型設備集中於少數大廠，各地另有區域業者；產能擴充中 |
+| 核電營運 | 星座能源、Vistra、Talen | 少數大型業者 |
+| 先進核能／SMR | Oklo、X-energy、Kairos Power、TerraPower | 新創競逐，尚未商轉 |
+| 電力公用事業 | NextEra、Dominion、AEP、台電 | 區域獨佔，受管制 |
+| 表後供電 | Bloom Energy、Caterpillar、Cummins、Wärtsilä | 多家競爭 |
+
+</LevelSection>
+
+<LevelSection level={3} title="深入議題" data-lint="level===3">
+
+### 瓶頸一：併網排隊
+
+在美國，新電廠要接上電網，必須先向電網營運者提出申請、排隊等待系統衝擊研究，確認電網承受得了，這就是<Term id="interconnection-queue">併網排隊</Term>；資料中心這類大型用電戶，也要經過類似的申請與研究流程。勞倫斯柏克萊國家實驗室（LBNL）統計，2025 年底仍有逾 2,060 GW 的發電與儲能容量在排隊，其中燃氣 253 GW、一年增加 86%；2025 年完工的專案從申請到商轉的中位數超過 5 年，而 2000–2020 年提出申請的容量，到 2025 年底只有 13% 真正商轉、75% 已撤案<Cite k="lbnl-queued-up-2026" />。放眼全球，IEA 估計有逾 2,500 GW 的專案（含資料中心這類大型負載）卡在併網佇列<Cite k="iea-electricity-2026" />；若問題不解決，約 20% 規劃中的資料中心專案可能延遲<Cite k="iea-energy-ai" />。
+
+### 瓶頸二：設備交期
+
+燃機與變壓器擴產的速度遠比晶片慢。GE Vernova 要到 2028 年才把燃機年產能拉到 24 GW<Cite k="gev-q2-2026" />；IEA 也指出，燃氣渦輪與變壓器等能源設備，以及先進晶片與 IT 零組件的供應鏈，在過去一年都進一步吃緊<Cite k="iea-key-questions-2026" />。美國與中東的強勁需求，更壓縮了其他地區近期能取得的燃機<Cite k="iea-wei-2026" />。
+
+### 供需新解方：儲能與彈性負載
+
+AI 資料中心的用電會在短時間內大幅擺盪，現場燃氣機組不一定跟得上，因此 IEA 認為現場電池儲能正成為新一代 AI 資料中心的關鍵技術<Cite k="iea-key-questions-2026" />。另一個方向是<Term id="flexible-load">彈性負載</Term>：在電網吃緊時讓資料中心暫時降載或改用自有電源，以換取更快併網。至於機房內改用 800V 直流供電等變化，可參考 <TrendLink id="800v-dc-power">800V 直流供電與 MW 級機櫃</TrendLink>。
+
+### 電價與社會接受度
+
+資料中心負載大、集中又成長快，常需要新建電廠與電網，因此引發電價疑慮。IEA 認為只要政策與基礎建設到位，用電成長不一定推高電價，但資料中心確實會帶來特殊的電價負擔挑戰<Cite k="iea-key-questions-2026" />。Meta 在核能協議中特別強調，它會支付資料中心用電的全部成本，不轉嫁給一般用戶<Cite k="meta-nuclear-2026" />。延伸閱讀：<TrendLink id="datacenter-local-impact">資料中心的在地影響</TrendLink>。
+
+### 地緣政治
+
+IEA 在 2026 年 5 月指出，中東衝突造成荷莫茲海峽實質關閉，正改變各國對能源風險的看法，並加速分散能源來源與運輸路線；IEA 署長比羅爾（Fatih Birol）更形容這是全球前所未見的最大能源安全危機。同一份報告也預估，2026 年全球天然氣投資將升至 3,300 億美元、為十年新高，主要來自美國與卡達的新液化天然氣出口專案<Cite k="iea-wei-2026" />。對仰賴進口液化天然氣（LNG）發電的經濟體，包括台灣，燃料價格與供應穩定度會直接反映在 AI 用電成本上。核能則被各國重新視為能源安全工具：全球每年核能投資已逾 800 億美元，15 國合計近 80 GW 的新機組正在興建<Cite k="iea-wei-2026" />。
+
+### 2026–2028 年觀察重點
+
+1. **燃機產能**：GE Vernova 2026 年底的已簽約量能否達到至少 125 GW，2028 年 24 GW 年產能能否如期<Cite k="gev-q2-2026" />。
+2. **核電重啟**：Crane 目標 2027 年恢復運轉<Cite k="ceg-q2-2026" />，Duane Arnold 預計 2029 年<Cite k="wiki-duane-arnold" />；台灣馬鞍山的重啟審查進度也值得追蹤<Cite k="wnn-maanshan" />。
+3. **SMR 示範**：Kairos Power 的 Hermes 2 等首批機組能否在 2030 年前後如期併網<Cite k="wiki-kairos" />。
+4. **併網改革**：美國 FERC 第 2023 號命令等改革正在實施，能否縮短排隊時間<Cite k="lbnl-queued-up-2026" />。
+5. **電網投資**：IEA 估計到 2030 年全球電網年投資需增加 50%<Cite k="iea-electricity-2026" />，可觀察各國電網預算與變壓器擴產進度。
+
+延伸閱讀：<TrendLink id="power-bottleneck-onsite-generation">電力瓶頸：燃氣渦輪短缺、自建電廠與彈性負載</TrendLink>、<TrendLink id="nuclear-smr-for-ai">核能、SMR 與核融合：AI 的電力來源</TrendLink>。
+
+</LevelSection>
+
+## 台灣的角色
+
+台灣在這一環同時是「用電大戶」與「設備供應者」。
+
+**用電端**：台灣近 98% 的能源仰賴進口；2024 年發電量約 288 TWh，其中燃氣 42.4%、燃煤 39.3%、再生能源 11.6%、核能 4.2%<Cite k="wiki-energy-taiwan" />。馬鞍山核電廠兩部機組在 2024 年 7 月與 2025 年 5 月執照屆期後先後停機，台灣自此沒有運轉中的核電機組。2025 年 5 月修法後，核電廠可申請延長運轉至 60 年；台電已於 2026 年 3 月向核能安全委員會（核安會）提交馬鞍山重啟計畫，但即使計畫獲准，仍需約 18–24 個月的安全檢查，再經核安會審查、取得新的運轉執照後才能發電<Cite k="wnn-maanshan" />。需求方面，經濟部在 2024 年估計 AI 相關用電將從 2023 年的 24 萬瓩增至 2028 年的 224 萬瓩，同期全國用電年均成長約 2.5%<Cite k="moea-power-2024" />；經濟部產發署 2026 年也估計，2030 年前資料中心用電將增加約 1 GW，主要位於西部都會與產業廊帶<Cite k="udn-dc-2026" />。<CompanyChip id="taipower">台電</CompanyChip>必須同時照顧 <CompanyChip id="tsmc">台積電</CompanyChip>等晶圓廠擴產與 AI 資料中心的新增負載，電源開發、變電所更新與儲能建設缺一不可。
+
+**供應端**：<CompanyChip id="shihlin-electric">士電</CompanyChip>、<CompanyChip id="chung-hsin-electric">中興電</CompanyChip>、<CompanyChip id="fortune-electric">華城</CompanyChip>、<CompanyChip id="allis-electric">亞力</CompanyChip>四家重電廠供應變壓器、GIS 與配電設備。2023–2025 年間成長最快的是華城，營收從 2023 年的新台幣 139.0 億元增至 2024 年的 202.0 億元、2025 年的 244.2 億元；不過 2026 年 1–8 月累計 141.8 億元，較前一年同期減少 1.8%，成長暫時停頓<Cite k="yahoo-1519" />。其他三家 2025 年營收年增率為士電 6.0%、中興電 7.2%、亞力 19.6%；2026 年 1–8 月累計營收年增率則為士電 9.5%<Cite k="yahoo-1503" />、中興電 4.2%<Cite k="yahoo-1513" />、亞力 7.9%<Cite k="yahoo-1514" />。重電設備多為專案型訂單，認列時點不同，月營收起伏較大，宜以全年趨勢觀察。
+
+<BarChart title="台灣重電廠 2025 年合併營收" unit="億元新台幣" data={[{ label: "士電", value: 371.8 }, { label: "中興電", value: 274.5 }, { label: "華城", value: 244.2 }, { label: "亞力", value: 105.5 }]} source={["yahoo-1503", "yahoo-1513", "yahoo-1519", "yahoo-1514"]} keepOrder />
+
+機房端的電源與配電設備（例如 <CompanyChip id="delta-electronics">台達電</CompanyChip>）則分屬 <SegmentChip id="servers-systems" /> 與 <SegmentChip id="datacenter-infra" />。政策面的發展可參考 <TrendLink id="taiwan-ai-policy">台灣 AI 政策與算力布局</TrendLink>。

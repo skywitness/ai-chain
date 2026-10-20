@@ -1,0 +1,143 @@
+---
+/**
+ * 「從這裡出發」 — a compact guide to the site's sections with live counts from the registries
+ * (curriculum, roster, models index, trends index, glossary index). Sits beside the home intro so
+ * the wide column next to the prose is useful instead of empty.
+ *   <SiteGuide />
+ */
+import Icon from '../ui/Icon.astro';
+import type { IconName } from '../ui/icons';
+import {
+  SEGMENTS,
+  getCurriculum,
+  getGlossaryIndex,
+  getModelsIndex,
+  getRoster,
+  getTrendsIndex,
+} from '../../lib/collections';
+import { sectionHref, type RouteKey } from '../../lib/paths';
+
+interface Props {
+  title?: string | undefined;
+}
+const { title = '從這裡出發' } = Astro.props;
+
+const roster = getRoster();
+const taiwan = roster.filter((c) => c.region === 'TW').length;
+const items: Array<{ key: RouteKey; icon: IconName; label: string; count: string; blurb: string; color: string }> = [
+  { key: 'learn', icon: 'book', label: '學習路徑', count: `${getCurriculum().articles.length} 篇`, blurb: '入門、進階、深入三個程度', color: 'var(--level-1)' },
+  { key: 'chain', icon: 'layers', label: '產業鏈', count: `${SEGMENTS.length} 個環節`, blurb: '五層結構、瓶頸與利潤池', color: 'var(--layer-silicon)' },
+  { key: 'companies', icon: 'data', label: '公司資料庫', count: `${roster.length} 家`, blurb: '產品、技術與季營收', color: 'var(--layer-systems)' },
+  { key: 'models', icon: 'compare', label: '大模型', count: `${getModelsIndex().length} 個系列`, blurb: '特性、版本、價格與評測', color: 'var(--layer-cloud-models)' },
+  { key: 'trends', icon: 'steps', label: '未來趨勢', count: `${getTrendsIndex().length} 篇`, blurb: '觀察指標與反方觀點', color: 'var(--layer-applications)' },
+  { key: 'taiwan', icon: 'globe', label: '台灣供應鏈', count: `${taiwan} 家`, blurb: '從晶圓、封裝到整櫃伺服器', color: 'var(--scene-tw-accent)' },
+  { key: 'glossary', icon: 'info', label: '名詞解釋', count: `${getGlossaryIndex().length} 個`, blurb: 'AI 與半導體術語', color: 'var(--layer-foundation)' },
+];
+---
+
+<nav class="sg" aria-labelledby="sg-title">
+  <p class="sg__title" id="sg-title">{title}</p>
+  <ul class="sg__list" role="list">
+    {
+      items.map((it) => (
+        <li style={`--sg-c: ${it.color}`}>
+          <a class="sg__link" href={sectionHref(it.key)}>
+            <span class="sg__icon" aria-hidden="true">
+              <Icon name={it.icon} />
+            </span>
+            <span class="sg__text">
+              <span class="sg__label">
+                {it.label}
+                <span class="sg__count">{it.count}</span>
+              </span>
+              <span class="sg__blurb">{it.blurb}</span>
+            </span>
+            <Icon name="chevron-right" class="sg__chev" />
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<style>
+  .sg {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: var(--shadow-1);
+  }
+  .sg__title {
+    padding-inline: var(--space-2);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-subtle);
+  }
+  .sg__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+  }
+  .sg__link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-block-size: var(--tap);
+    padding: var(--space-2);
+    border-radius: var(--radius-m);
+    color: var(--c-fg);
+    text-decoration: none;
+  }
+  .sg__link:hover {
+    background: var(--c-hover);
+    color: var(--c-fg);
+  }
+  .sg__icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    border-radius: var(--radius-m);
+    font-size: 1.15rem;
+    color: color-mix(in srgb, var(--sg-c) 80%, var(--c-fg));
+    background: color-mix(in srgb, var(--sg-c) 14%, transparent);
+  }
+  .sg__text {
+    display: grid;
+    min-inline-size: 0;
+    flex: 1;
+  }
+  .sg__label {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0 var(--space-2);
+    font-weight: var(--fw-semibold);
+    line-height: 1.4;
+  }
+  .sg__count {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .sg__blurb {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    line-height: 1.5;
+  }
+  .sg :global(.sg__chev) {
+    flex: none;
+    color: var(--c-fg-subtle);
+  }
+  .sg__link:hover :global(.sg__chev) {
+    color: var(--sg-c);
+  }
+</style>

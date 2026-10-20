@@ -1,0 +1,159 @@
+---
+/**
+ * Key technologies with a maturity meter and glossary links (owner: pages-companies).
+ *
+ *   <TechList items={d.technologies} />
+ */
+import Icon from '../ui/Icon.astro';
+import { getGlossaryIndexEntry } from '../../lib/collections';
+import { findEntry } from './lookup';
+import { glossaryHref } from '../../lib/paths';
+import { MATURITY_LABELS } from './labels';
+
+interface TechLike {
+  name: string;
+  description: string;
+  maturity: string;
+  glossary?: ReadonlyArray<string | { id: string }> | undefined;
+}
+interface Props {
+  items: readonly TechLike[];
+}
+const { items } = Astro.props;
+
+const termLabel = async (ref: string | { id: string }) => {
+  const id = typeof ref === 'string' ? ref : ref.id;
+  const e = await findEntry('glossary', id);
+  if (e) {
+    const d = e.data as { term: string; zh: string };
+    return { id, label: d.term === d.zh ? d.term : `${d.term}（${d.zh}）`, known: true };
+  }
+  const idx = getGlossaryIndexEntry(id);
+  if (idx) return { id, label: idx.term && idx.zh && idx.term !== idx.zh ? `${idx.term}（${idx.zh}）` : (idx.term ?? idx.zh ?? id), known: true };
+  return { id, label: id, known: false };
+};
+const rows = await Promise.all(
+  items.map(async (t) => ({
+    ...t,
+    m: MATURITY_LABELS[t.maturity] ?? { label: t.maturity, step: 0 },
+    terms: (await Promise.all((t.glossary ?? []).map(termLabel))).filter((x) => x.known),
+  })),
+);
+---
+
+<ul class="tech" role="list">
+  {
+    rows.map((t) => (
+      <li class="tech__item">
+        <div class="tech__top">
+          <h3 class="tech__name">{t.name}</h3>
+          <span class="tech__mat" title={`成熟度：${t.m.label}`}>
+            <span class="tech__meter" aria-hidden="true">
+              {[1, 2, 3, 4].map((i) => (
+                <span class:list={{ 'is-on': i <= t.m.step }} />
+              ))}
+            </span>
+            <span class="sr-only">成熟度：</span>
+            {t.m.label}
+          </span>
+        </div>
+        <p class="tech__desc">{t.description}</p>
+        {t.terms.length > 0 && (
+          <p class="tech__terms">
+            <span class="tech__terms-label">名詞解釋</span>
+            {t.terms.map((g) => (
+              <a class="tech__term" href={glossaryHref(g.id)}>
+                <Icon name="book" />
+                {g.label}
+              </a>
+            ))}
+          </p>
+        )}
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .tech {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tech__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .tech__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-3);
+  }
+  .tech__name {
+    font-size: var(--fs-m);
+    line-height: 1.4;
+  }
+  .tech__mat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    white-space: nowrap;
+  }
+  .tech__meter {
+    display: inline-flex;
+    gap: 2px;
+  }
+  .tech__meter span {
+    inline-size: 0.55rem;
+    block-size: 0.55rem;
+    border-radius: 2px;
+    background: var(--c-border);
+  }
+  .tech__meter span.is-on {
+    background: var(--profile-accent, var(--c-accent));
+  }
+  .tech__desc {
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg);
+  }
+  .tech__terms {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+    margin-block-start: auto;
+    padding-block-start: var(--space-2);
+    font-size: var(--fs-xs);
+  }
+  .tech__terms-label {
+    color: var(--c-fg-subtle);
+    font-weight: var(--fw-semibold);
+  }
+  .tech__term {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.15rem 0.55rem;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    color: var(--c-link);
+    text-decoration: none;
+  }
+  .tech__term:hover {
+    border-color: var(--c-link);
+    background: var(--c-hover);
+  }
+</style>

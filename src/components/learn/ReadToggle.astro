@@ -1,0 +1,158 @@
+---
+/**
+ * 「標記為已讀」 toggle for a learning article. Hidden without JavaScript or when localStorage is
+ * unavailable; every instance on the page stays in sync (src/client/progress.ts).
+ * The button is a toggle (aria-pressed) with a constant accessible name 「標記為已讀」; only the visible
+ * label changes to 「已讀」, so screen readers announce the state once (pressed / not pressed).
+ *
+ *   <ReadToggle slug="what-is-ai" />                       compact, for the article header
+ *   <ReadToggle slug="what-is-ai" variant="panel" />       end-of-article prompt
+ */
+import Icon from '../ui/Icon.astro';
+import { sectionHref } from '../../lib/paths';
+
+interface Props {
+  slug: string;
+  variant?: 'inline' | 'panel' | undefined;
+  class?: string | undefined;
+}
+const { slug, variant = 'inline', class: className } = Astro.props;
+---
+
+{
+  variant === 'panel' ? (
+    <div class:list={['rt-panel', className]} data-read-toggle={slug} hidden>
+      <div class="rt-panel__text">
+        <p class="rt-panel__title">讀完了嗎？</p>
+        <p class="rt-panel__note">
+          標記後，<a href={sectionHref('learn')}>學習路徑</a>會在這篇打上勾，方便你接著往下讀。紀錄只存在這個瀏覽器裡。
+        </p>
+      </div>
+      <button type="button" class="rt" aria-pressed="false" aria-label="標記為已讀" data-read-button>
+        <Icon name="check" strokeWidth={2.25} class="rt__icon" />
+        <span data-read-label>標記為已讀</span>
+      </button>
+    </div>
+  ) : (
+    <span class:list={['rt-wrap', className]} data-read-toggle={slug} hidden>
+      <button type="button" class="rt rt--s" aria-pressed="false" aria-label="標記為已讀" data-read-button>
+        <Icon name="check" strokeWidth={2.25} class="rt__icon" />
+        <span data-read-label>標記為已讀</span>
+      </button>
+    </span>
+  )
+}
+
+<script>
+  import { isRead, onProgressChange, setRead, storageAvailable } from '../../client/progress';
+
+  const roots = [...document.querySelectorAll<HTMLElement>('[data-read-toggle]')];
+  if (roots.length && storageAvailable()) {
+    const paint = () => {
+      for (const root of roots) {
+        const slug = root.dataset['readToggle'] ?? '';
+        const on = isRead(slug);
+        const btn = root.querySelector<HTMLButtonElement>('[data-read-button]');
+        const label = root.querySelector<HTMLElement>('[data-read-label]');
+        root.hidden = false;
+        root.toggleAttribute('data-read', on);
+        if (btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        if (label) label.textContent = on ? '已讀' : '標記為已讀';
+      }
+    };
+    for (const root of roots) {
+      root.querySelector('[data-read-button]')?.addEventListener('click', () => {
+        const slug = root.dataset['readToggle'] ?? '';
+        setRead(slug, !isRead(slug));
+      });
+    }
+    paint();
+    onProgressChange(paint);
+  }
+</script>
+
+<style>
+  @layer components {
+    .rt-wrap[hidden],
+    .rt-panel[hidden] {
+      display: none;
+    }
+    .rt {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45em;
+      min-height: var(--tap);
+      padding: 0 1em;
+      border: 1px solid var(--c-border-strong);
+      border-radius: var(--radius-pill);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      font: inherit;
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      line-height: 1.2;
+      cursor: pointer;
+      white-space: nowrap;
+      transition:
+        background-color var(--dur-1) ease,
+        border-color var(--dur-1) ease,
+        color var(--dur-1) ease;
+    }
+    .rt--s {
+      min-height: 2.25rem;
+      padding: 0 0.85em;
+      font-size: var(--fs-xs);
+    }
+    @media (pointer: coarse) {
+      .rt--s {
+        min-height: var(--tap);
+      }
+    }
+    .rt:hover {
+      border-color: var(--c-pos);
+      color: var(--c-pos);
+    }
+    .rt :global(.rt__icon) {
+      opacity: 0.45;
+    }
+    .rt[aria-pressed='true'] {
+      border-color: var(--c-pos);
+      background: color-mix(in srgb, var(--c-pos) 14%, var(--c-bg-elev));
+      color: var(--c-pos);
+    }
+    .rt[aria-pressed='true'] :global(.rt__icon) {
+      opacity: 1;
+    }
+    .rt-panel {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3) var(--space-5);
+      max-width: calc(var(--measure) + 2.5rem);
+      margin-block-start: var(--space-6);
+      padding: var(--space-4) var(--space-5);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-sunken);
+    }
+    .rt-panel[data-read] {
+      border-color: color-mix(in srgb, var(--c-pos) 45%, var(--c-border));
+      background: color-mix(in srgb, var(--c-pos) 6%, var(--c-bg-sunken));
+    }
+    .rt-panel__text {
+      display: grid;
+      gap: var(--space-1);
+      flex: 1 1 18rem;
+      min-width: 0;
+    }
+    .rt-panel__title {
+      font-weight: var(--fw-bold);
+    }
+    .rt-panel__note {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      line-height: 1.6;
+    }
+  }
+</style>

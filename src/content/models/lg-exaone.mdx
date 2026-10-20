@@ -1,0 +1,772 @@
+---
+title: "LG EXAONE 系列"
+family: "EXAONE"
+kind: "llm"
+lab: "lg-ai-research"
+labName: "LG AI Research"
+origin: "KR"
+summary: "LG 集團旗下 LG AI 研究院開發的語言模型系列，近 18 個月涵蓋 EXAONE 4.0／4.5 中型模型與 K-EXAONE 大型 MoE 模型。2026-07-31 推出的旗艦 K-EXAONE 2.0 總參數 7,500 億、每個 token 啟用 370 億，支援 10 種語言與 262,144 tokens 上下文，並改採 Apache 2.0 授權，是韓國政府「主權 AI 基礎模型計畫」的成果。Artificial Analysis 智慧指數約 20 分（估計值），仍落後規模相近的中國開放權重模型。"
+strengths:
+  - "K-EXAONE 2.0 改採 Apache 2.0 授權，可商用與再散布；前代 EXAONE 4.0、4.5 為禁止商用的 NC 授權"
+  - "長上下文檢索強：官方 OpenAI-MRCR 成績 94.4，高於同表的 Qwen3.5（93.0）與 GLM-5.1（71.5），前代 K-EXAONE 只有 52.3"
+  - "韓語與在地安全評測領先：KGC-Safety 99.8、ROK-Fortress 89.5，針對韓國文化與歷史情境做對齊"
+  - "產品線完整：從 1.2B 端側模型、33B 視覺語言模型到 750B MoE；K-EXAONE 2.0 支援 MTP 與 DSpark 推測解碼，官方稱可加速約 3–5 倍"
+weaknesses:
+  - "AA 綜合智慧指數 v4.3.2 約 20 分（AA 標示為估計值），低於總參數相近的 GLM-5.1（26 分）"
+  - "官方自報 HLE 18.3%、Terminal-Bench 2.1 43.8%，在同一張比較表中落後 Qwen3.5、GLM-5.1 與 DeepSeek V4 Pro"
+  - "沒有官方按 token 計價的公開 API，AA 與 OpenRouter 也未列出託管服務；官方部署範例需要兩台各 8 張 H200 的伺服器"
+  - "支援的 10 種語言不含中文，不適合以中文為主的應用"
+bestFor:
+  - "需要韓語能力與韓國文化、法規脈絡的企業與公部門應用"
+  - "長文件檢索與長程 Agent 任務等需要 262K 上下文、又想自行部署的系統"
+  - "需要寬鬆授權大型 MoE 模型的研究機構與企業"
+  - "以 EXAONE 4.5 研究韓文與英文文件、圖表理解（非商用）"
+positioning:
+  capability: 20
+  costIndex: 48
+  openness: 0.8
+  method: "editorial"
+  asOf: "2026-10-06"
+  note: "以旗艦 K-EXAONE 2.0 計算。capability 直接取 Artificial Analysis 智慧指數 v4.3.2 的 19.7 分（AA 標示為估計值）。LG 沒有按 token 計價的官方 API，AA、OpenRouter 也沒有託管報價，因此 costIndex 為編輯估計：以規模最接近的 GLM-5.1（總參數 7,540 億、啟用 400 億）在 AA 的託管中位價（輸入 1.285、輸出 4.07 美元／百萬 tokens）按 3:1 混合約 1.98 美元，套用 0.05 美元 → 0、100 美元 → 100 的對數換算得 48。Apache 2.0 開放權重但未公開訓練資料，openness 為 0.8；若看 EXAONE 4.x 的 NC 授權則約為 0.5。"
+versions:
+  - id: "k-exaone-2-0"
+    name: "K-EXAONE 2.0（750B-A37B）"
+    released: "2026-07-31"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    params:
+      totalB: 750
+      activeB: 37
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 262144
+    reasoning: "hybrid"
+    availability:
+      - "self-host"
+      - "cloud-marketplace"
+    benchmarks:
+      - benchmark: "mmlu-pro"
+        score: 83.5
+        setting: "推理模式，BF16（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-07-31"
+        source:
+          title: "LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+          publisher: "LG AI Research（Hugging Face）"
+          url: "https://huggingface.co/LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 82.2
+        setting: "推理模式，BF16（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-07-31"
+        source:
+          title: "LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+          publisher: "LG AI Research（Hugging Face）"
+          url: "https://huggingface.co/LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 18.3
+        setting: "推理模式，BF16（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-07-31"
+        source:
+          title: "LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+          publisher: "LG AI Research（Hugging Face）"
+          url: "https://huggingface.co/LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "swe-bench-verified"
+        score: 68.2
+        setting: "推理模式，BF16（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-07-31"
+        source:
+          title: "LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+          publisher: "LG AI Research（Hugging Face）"
+          url: "https://huggingface.co/LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 43.8
+        setting: "Terminal-Bench 2.1，推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-07-31"
+        source:
+          title: "LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+          publisher: "LG AI Research（Hugging Face）"
+          url: "https://huggingface.co/LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 19.7
+        setting: "v4.3.2，推理模式；AA 標示為估計值"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "K-EXAONE 2.0 0803 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/k-exaone-2-0-0803"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 82.9
+        setting: "AA 獨立測試，推理模式"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "K-EXAONE 2.0 0803 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/k-exaone-2-0-0803"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 18.6
+        setting: "AA 獨立測試，推理模式"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "K-EXAONE 2.0 0803 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/k-exaone-2-0-0803"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "terminal-bench"
+        score: 40.4
+        setting: "AA 獨立測試，Terminal-Bench 2.1"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "K-EXAONE 2.0 0803 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/k-exaone-2-0-0803"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "由 K-EXAONE 擴建（upcycling）深度與寬度而來；78 層（2 層密集＋76 層稀疏），256 個專家中每次啟用 8 個加 1 個共享專家。知識截止 2025 年第二季。支援韓、英、西、德、日、越、法、義、波、葡 10 種語言。另有 FP8、NVFP4 量化版與 DSpark 推測解碼版本；FriendliAI 提供專屬端點部署，未公布按 token 價格。"
+  - id: "k-exaone"
+    name: "K-EXAONE（236B-A23B）"
+    released: "2025-12-31"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "K-EXAONE AI Model License"
+    architecture: "moe"
+    params:
+      totalB: 236
+      activeB: 23
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 262144
+    knowledgeCutoff: "2024-12"
+    reasoning: "hybrid"
+    availability:
+      - "self-host"
+      - "cloud-marketplace"
+    benchmarks:
+      - benchmark: "mmlu-pro"
+        score: 83.8
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-01-05"
+        source:
+          title: "K-EXAONE Technical Report"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2601.01739"
+          type: "paper"
+          published: "2026-01-05"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 79.1
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-01-05"
+        source:
+          title: "K-EXAONE Technical Report"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2601.01739"
+          type: "paper"
+          published: "2026-01-05"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aime-2025"
+        score: 92.8
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-01-05"
+        source:
+          title: "K-EXAONE Technical Report"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2601.01739"
+          type: "paper"
+          published: "2026-01-05"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "livecodebench"
+        score: 80.7
+        setting: "LiveCodeBench v6，推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-01-05"
+        source:
+          title: "K-EXAONE Technical Report"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2601.01739"
+          type: "paper"
+          published: "2026-01-05"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "swe-bench-verified"
+        score: 49.4
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-01-05"
+        source:
+          title: "K-EXAONE Technical Report"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2601.01739"
+          type: "paper"
+          published: "2026-01-05"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 73.5
+        setting: "Telecom 子集，推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-01-05"
+        source:
+          title: "K-EXAONE Technical Report"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2601.01739"
+          type: "paper"
+          published: "2026-01-05"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 14.4
+        setting: "v4.3.2，推理模式；AA 標示為估計值"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "K-EXAONE Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/k-exaone"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 78.3
+        setting: "AA 獨立測試，推理模式"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "K-EXAONE Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/k-exaone"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aime-2025"
+        score: 90.3
+        setting: "AA 獨立測試，推理模式"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "K-EXAONE Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/k-exaone"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "livecodebench"
+        score: 76.8
+        setting: "AA 獨立測試，推理模式"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "K-EXAONE Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/k-exaone"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "tau2-bench"
+        score: 74.3
+        setting: "AA 獨立測試（Telecom）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "K-EXAONE Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/k-exaone"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "韓國主權 AI 基礎模型計畫第一階段成果；48 層 MoE，128 個專家中啟用 8 個加 1 個共享專家，採 3:1 滑動視窗與全域混合注意力；支援韓、英、西、德、日、越 6 種語言。授權允許商用，但以商業目的散布或提供給第三方須另與授權方簽約，衍生模型名稱須以 K-EXAONE 開頭。LG 的 GitHub 發布紀錄與 AA 都以 2025-12-31 為發布日，LG 部落格於 2026-01-12 另文介紹。"
+  - id: "exaone-4-5-33b"
+    name: "EXAONE 4.5 33B"
+    released: "2026-04-09"
+    status: "ga"
+    tier: "mid"
+    weights: "open-weights"
+    license: "EXAONE AI Model License 1.2 - NC"
+    architecture: "dense"
+    params:
+      totalB: 33
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 262144
+    knowledgeCutoff: "2024-12"
+    reasoning: "hybrid"
+    availability:
+      - "self-host"
+    benchmarks:
+      - benchmark: "mmmu"
+        score: 78.7
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-04-09"
+        source:
+          title: "EXAONE 4.5 Technical Report"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2604.08644"
+          type: "paper"
+          published: "2026-04-09"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 80.5
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-04-09"
+        source:
+          title: "EXAONE 4.5 Technical Report"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2604.08644"
+          type: "paper"
+          published: "2026-04-09"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "mmlu-pro"
+        score: 83.3
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-04-09"
+        source:
+          title: "EXAONE 4.5 Technical Report"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2604.08644"
+          type: "paper"
+          published: "2026-04-09"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aime-2025"
+        score: 92.9
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-04-09"
+        source:
+          title: "EXAONE 4.5 Technical Report"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2604.08644"
+          type: "paper"
+          published: "2026-04-09"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 13.2
+        setting: "v4.3.2，推理模式；AA 標示為估計值"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "EXAONE 4.5 33B Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/exaone-4-5-33b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 79.4
+        setting: "AA 獨立測試，推理模式"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "EXAONE 4.5 33B Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/exaone-4-5-33b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "hle"
+        score: 12.9
+        setting: "AA 獨立測試，推理模式"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "EXAONE 4.5 33B Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/exaone-4-5-33b"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "LG 第一個開放權重視覺語言模型：語言模型 31.7B 加上 1.29B 視覺編碼器。官方稱在 CharXiv 圖表分析、OCRBench v2 等文件理解項目優於 GPT-5 mini。NC 授權禁止商用，商業使用須另簽授權。"
+  - id: "exaone-4-0-32b"
+    name: "EXAONE 4.0 32B"
+    released: "2025-07-15"
+    status: "ga"
+    tier: "mid"
+    weights: "open-weights"
+    license: "EXAONE AI Model License 1.2 - NC"
+    architecture: "dense"
+    params:
+      totalB: 32
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 131072
+    reasoning: "hybrid"
+    availability:
+      - "self-host"
+    benchmarks:
+      - benchmark: "mmlu-pro"
+        score: 81.8
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-07-15"
+        source:
+          title: "EXAONE 4.0: Unified Large Language Models Integrating Non-reasoning and Reasoning Modes"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2507.11407"
+          type: "paper"
+          published: "2025-07-15"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 75.4
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-07-15"
+        source:
+          title: "EXAONE 4.0: Unified Large Language Models Integrating Non-reasoning and Reasoning Modes"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2507.11407"
+          type: "paper"
+          published: "2025-07-15"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aime-2025"
+        score: 85.3
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-07-15"
+        source:
+          title: "EXAONE 4.0: Unified Large Language Models Integrating Non-reasoning and Reasoning Modes"
+          publisher: "LG AI Research（arXiv）"
+          url: "https://arxiv.org/abs/2507.11407"
+          type: "paper"
+          published: "2025-07-15"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 8.2
+        setting: "v4.3.2，推理模式；AA 標示為估計值"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "EXAONE 4.0 32B Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/exaone-4-0-32b-reasoning"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 73.9
+        setting: "AA 獨立測試，推理模式"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "EXAONE 4.0 32B Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/exaone-4-0-32b-reasoning"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "首度把非推理模式與推理模式整合在同一個模型，並加入工具呼叫與西班牙語。2025-07-29 另釋出 4.0.1 修正版，用來減少不當回應。"
+  - id: "exaone-4-0-1-2b"
+    name: "EXAONE 4.0 1.2B"
+    released: "2025-07-15"
+    status: "ga"
+    tier: "small"
+    weights: "open-weights"
+    license: "EXAONE AI Model License 1.2 - NC"
+    architecture: "dense"
+    params:
+      totalB: 1.28
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 65536
+    reasoning: "hybrid"
+    availability:
+      - "self-host"
+      - "on-device"
+    benchmarks:
+      - benchmark: "mmlu-pro"
+        score: 59.3
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-07-15"
+        source:
+          title: "LGAI-EXAONE/EXAONE-4.0-1.2B"
+          publisher: "LG AI Research（Hugging Face）"
+          url: "https://huggingface.co/LGAI-EXAONE/EXAONE-4.0-1.2B"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "gpqa-diamond"
+        score: 52
+        setting: "推理模式（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-07-15"
+        source:
+          title: "LGAI-EXAONE/EXAONE-4.0-1.2B"
+          publisher: "LG AI Research（Hugging Face）"
+          url: "https://huggingface.co/LGAI-EXAONE/EXAONE-4.0-1.2B"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 5.3
+        setting: "v4.3.2，推理模式；AA 標示為估計值"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "Exaone 4.0 1.2B Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/exaone-4-0-1-2b-reasoning"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+    notes: "為端側裝置設計的小模型，同樣支援推理與非推理模式。"
+flagshipVersion: "k-exaone-2-0"
+relatedLearn:
+  - "open-vs-closed-models"
+  - "mixture-of-experts"
+  - "reasoning-models"
+  - "multimodal-models"
+  - "model-evaluation"
+  - "inference-optimization"
+glossary:
+  - "sovereign-ai"
+  - "open-weights"
+  - "moe"
+  - "active-parameters"
+  - "context-window"
+  - "reasoning-model"
+  - "speculative-decoding"
+  - "multimodal"
+  - "agent"
+sources:
+  - key: "lg-kexaone2-news"
+    title: "LG AI Research Unveils K-EXAONE 2.0, Korea's Largest 750-Billion-Parameter AI Foundation Model"
+    publisher: "LG AI Research"
+    url: "https://www.lgresearch.ai/news/view?seq=678"
+    type: "press-release"
+    lang: "en"
+    published: "2026-07-31"
+    accessed: "2026-10-06"
+  - key: "hf-kexaone2"
+    title: "LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+    publisher: "LG AI Research（Hugging Face）"
+    url: "https://huggingface.co/LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "模型卡含架構、評測比較表（K-EXAONE、Qwen3.5、GLM-5.1、DeepSeek V4 Pro）與部署說明"
+  - key: "kexaone2-report"
+    title: "K-EXAONE 2.0 Technical Report"
+    publisher: "LG AI Research（arXiv）"
+    url: "https://arxiv.org/abs/2608.04505"
+    type: "paper"
+    lang: "en"
+    published: "2026-08-05"
+    accessed: "2026-10-06"
+  - key: "gh-kexaone2"
+    title: "LG-AI-EXAONE/K-EXAONE-2.0"
+    publisher: "LG AI Research（GitHub）"
+    url: "https://github.com/LG-AI-EXAONE/K-EXAONE-2.0"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "News 段落列出 EXAONE 3.5、EXAONE Deep、EXAONE 4.0、K-EXAONE、EXAONE 4.5 與 K-EXAONE 2.0 的發布日期"
+  - key: "lg-kexaone-blog"
+    title: "K-EXAONE"
+    publisher: "LG AI Research"
+    url: "https://www.lgresearch.ai/blog/view?seq=619"
+    type: "company-site"
+    lang: "en"
+    published: "2026-01-12"
+    accessed: "2026-10-06"
+  - key: "hf-kexaone"
+    title: "LGAI-EXAONE/K-EXAONE-236B-A23B"
+    publisher: "LG AI Research（Hugging Face）"
+    url: "https://huggingface.co/LGAI-EXAONE/K-EXAONE-236B-A23B"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "lg-exaone45-blog"
+    title: "EXAONE 4.5"
+    publisher: "LG AI Research"
+    url: "https://www.lgresearch.ai/blog/view?seq=641"
+    type: "company-site"
+    lang: "en"
+    published: "2026-04-09"
+    accessed: "2026-10-06"
+  - key: "hf-exaone45"
+    title: "LGAI-EXAONE/EXAONE-4.5-33B"
+    publisher: "LG AI Research（Hugging Face）"
+    url: "https://huggingface.co/LGAI-EXAONE/EXAONE-4.5-33B"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "hf-exaone40"
+    title: "LGAI-EXAONE/EXAONE-4.0-32B"
+    publisher: "LG AI Research（Hugging Face）"
+    url: "https://huggingface.co/LGAI-EXAONE/EXAONE-4.0-32B"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-kexaone2"
+    title: "K-EXAONE 2.0 0803 Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/k-exaone-2-0-0803"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "Intelligence Index v4.3.2，19.7 分標示為估計值；頁面顯示無託管服務與價格，AA 將此版本的發布日列為 2026-08-12"
+  - key: "aa-kexaone"
+    title: "K-EXAONE Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/k-exaone"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "Intelligence Index v4.3.2 為 14.4 分（估計值），頁面標示同類模型中位數為 18 分"
+  - key: "aa-glm51"
+    title: "GLM-5.1 Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/glm-5-1"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "用於 costIndex 的同級模型參考價"
+  - key: "friendli-kexaone2"
+    title: "K-EXAONE-2.0-750B-A37B on FriendliAI"
+    publisher: "FriendliAI"
+    url: "https://friendli.ai/models/LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "僅列出專屬端點與容器部署，未公布按 token 價格"
+  - key: "arena-text"
+    title: "Text Arena Leaderboard (Overall)"
+    publisher: "LMArena"
+    url: "https://arena.ai/leaderboard/text"
+    type: "leaderboard"
+    lang: "en"
+    published: "2026-10-02"
+    accessed: "2026-10-06"
+    note: "lmarena.ai 已轉址至 arena.ai；榜上未列出 EXAONE 系列"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-13"
+  checkedBy: "models-13-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+EXAONE 是韓國 LG 集團 AI 研究機構 <CompanyChip id="lg-ai-research">LG AI 研究院</CompanyChip>的語言模型品牌。近 18 個月的產品線分成兩條：一條是 32B 等級的中型模型 EXAONE 4.0 與 4.5，另一條是 2025 年底起推出的大型<Term id="moe">混合專家（MoE）</Term>模型 K-EXAONE。2026-07-31 發表的 K-EXAONE 2.0 是韓國科學技術資訊通信部「主權 AI 基礎模型計畫」的成果，總參數 7,500 億，LG 稱是韓國目前規模最大的 AI 基礎模型<Cite k="lg-kexaone2-news" />。這種由國家支持、以本國語言與文化為重點的模型，通常歸類為<Term id="sovereign-ai">主權 AI</Term>。
+
+## 特性分析
+
+**以「擴建」換規模。** K-EXAONE 2.0 不是從零訓練，而是把前代 K-EXAONE（2,360 億參數）在深度與寬度上擴建（upcycling），再做續訓、中期訓練與後訓練。每個 token 只動用約 370 億個<Term id="active-parameters">啟用參數</Term>，也就是從 256 個專家中挑 8 個，再加 1 個共享專家<Cite k="hf-kexaone2" />。
+
+**長上下文是強項。** <Term id="context-window">上下文視窗</Term>為 262,144 tokens，注意力層以短距離的滑動視窗為主，每 4 層才夾一層全域注意力，藉此節省記憶體。官方評測的 OpenAI-MRCR 長文檢索為 94.4，前代只有 52.3<Cite k="hf-kexaone2" />。
+
+**可切換的思考模式。** 預設會先推理再回答，也可以關閉以降低延遲，屬於混合式<Term id="reasoning-model">推理模型</Term>。它支援 MTP 與 DSpark 兩種<Term id="speculative-decoding">推測解碼</Term>，官方稱生成速度可提升約 3–5 倍<Cite k="hf-kexaone2" />。
+
+**授權大幅放寬。** K-EXAONE 2.0 改用 Apache 2.0，允許商用與再散布<Cite k="lg-kexaone2-news" />。前代 K-EXAONE 的自訂授權規定，以商業目的散布須另行簽約<Cite k="hf-kexaone" />；EXAONE 4.0 與 4.5 則採用禁止商用的 NC 授權<Cite k="hf-exaone45" />。
+
+## 適合與不適合的用途
+
+適合：
+
+- **韓語與韓國情境**：官方的 KGC-Safety 與 ROK-Fortress 安全評測分別為 99.8 與 89.5，兩者都針對韓國文化與歷史情境設計<Cite k="hf-kexaone2" />。
+- **長文件與長程任務**：262K 上下文適合法規、合約檢索，以及需要長時間記憶的 <Term id="agent">Agent</Term> 工作流程。
+- **自行部署的大型模型**：需要寬鬆授權、又想把資料留在自家機房的企業與研究機構，可直接下載這款<Term id="open-weights">開放權重</Term>模型。
+- **文件與圖表研究**：EXAONE 4.5 33B 是 LG 第一個開放權重的<Term id="multimodal">多模態</Term>視覺語言模型，官方稱在圖表分析與 OCR 項目優於 GPT-5 mini<Cite k="lg-exaone45-blog" />，但授權僅限非商用<Cite k="hf-exaone45" />。
+
+不適合：
+
+- **追求開放權重的最強能力**：AA 綜合智慧指數約 20 分，低於規模相近的 GLM-5.1（26 分）<Cite k="aa-kexaone2" /><Cite k="aa-glm51" />。
+- **想直接按用量付費呼叫**：LG 沒有公開的按 token 計價 API，FriendliAI 只提供專屬端點<Cite k="friendli-kexaone2" />；官方的部署範例需要兩台各 8 張 H200 GPU 的伺服器<Cite k="hf-kexaone2" />。
+- **中文為主的應用**：K-EXAONE 2.0 支援的 10 種語言沒有中文<Cite k="hf-kexaone2" />。
+
+## 版本演進
+
+| 發布日 | 版本 | 重點 |
+|---|---|---|
+| 2025-07-15 | EXAONE 4.0（32B、1.2B） | 推理與非推理模式整合在同一模型，加入工具呼叫 |
+| 2025-12-31 | K-EXAONE（236B-A23B） | 第一個 MoE 旗艦，256K 上下文、6 種語言 |
+| 2026-04-09 | EXAONE 4.5 33B | 第一個開放權重視覺語言模型 |
+| 2026-07-31 | K-EXAONE 2.0（750B-A37B） | 擴建至 7,500 億參數、10 種語言、Apache 2.0 |
+
+表中日期取自 LG AI 研究院在 GitHub 的發布紀錄<Cite k="gh-kexaone2" />。在這之前，LG 已推出 EXAONE 3.5（2024 年 12 月）與推理專用的 EXAONE Deep（2025 年 3 月），EXAONE 4.0 把兩者合而為一<Cite k="hf-exaone40" />。排名變化很快：LG 在 2026-01-12 表示 K-EXAONE 在 AA 指數的開放權重模型中排名全球第 7、韓國第 1<Cite k="lg-kexaone-blog" />；到了 2026-10-06，AA 指數已改為 v4.3.2 版，K-EXAONE 約 14 分（估計值），低於 AA 標示的同類模型中位數 18 分<Cite k="aa-kexaone" />。
+
+## 評測解讀
+
+<Callout type="warn" title="注意評測日期與方法">官方數字來自 2026-07-31 的模型卡，AA 數字讀取於 2026-10-06，且 AA 把 K-EXAONE 2.0 的綜合指數標為估計值。Terminal-Bench 使用 2.1 版，不能和 2.0 版的分數直接比較。</Callout>
+
+| 評測 | K-EXAONE 2.0 官方 | K-EXAONE 2.0 AA | 前代 K-EXAONE 官方 | GLM-5.1（LG 比較表） |
+|---|---|---|---|---|
+| GPQA Diamond | 82.2% | 82.9% | 79.1% | 86.2% |
+| Humanity's Last Exam | 18.3% | 18.6% | 13.6% | 31.0% |
+| SWE-bench Verified | 68.2% | 未測 | 49.4% | 73.6% |
+| Terminal-Bench 2.1 | 43.8% | 40.4% | 30.3% | 61.8% |
+| MMLU-Pro | 83.5% | 未測 | 83.8% | 86.0% |
+
+除了 AA 欄來自 AA 的獨立測試<Cite k="aa-kexaone2" />，其餘三欄都取自 K-EXAONE 2.0 模型卡的同一張比較表<Cite k="hf-kexaone2" />。
+
+- **官方數字可被重現**：GPQA 與 HLE 的官方值和 AA 自測相差不到 1 個百分點，Terminal-Bench 也只差 3.4 個百分點。
+- **進步集中在 Agent 與程式**：SWE-bench Verified 從 49.4% 升到 68.2%，MMLU-Pro 卻持平，表示這一代的重點是 Agent 能力，不是知識量。
+- **和中國同級模型仍有差距**：在 LG 自己挑選的比較表中，HLE 與 Terminal-Bench 都明顯落後 GLM-5.1 與 DeepSeek V4 Pro<Cite k="hf-kexaone2" />。
+- **缺少人類偏好資料**：截至 2026-10-02，Arena 文字競技場沒有列出任何 EXAONE 模型<Cite k="arena-text" />，因此無法得知一般使用者實際對話時的偏好。

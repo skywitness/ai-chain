@@ -1,0 +1,103 @@
+---
+/**
+ * Callout box.  <Callout type="analogy" title="把晶圓廠想成印刷廠">…</Callout>
+ * type: info (說明) · tip (小提醒) · warn (注意) · analogy (生活化比喻) · data (數據)
+ */
+import Icon from '../ui/Icon.astro';
+import type { IconName } from '../ui/icons';
+
+type CalloutType = 'info' | 'tip' | 'warn' | 'analogy' | 'data';
+interface Props {
+  type?: CalloutType | undefined;
+  title?: string | undefined;
+  class?: string | undefined;
+}
+const { type = 'info', title, class: className } = Astro.props;
+const META: Record<CalloutType, { label: string; icon: IconName }> = {
+  info: { label: '說明', icon: 'info' },
+  tip: { label: '小提醒', icon: 'tip' },
+  warn: { label: '注意', icon: 'warn' },
+  analogy: { label: '生活化比喻', icon: 'analogy' },
+  data: { label: '數據', icon: 'data' },
+};
+const m = META[type] ?? META.info;
+---
+
+<div class:list={['callout', `callout--${type}`, className]} role="note" aria-label={title ? `${m.label}：${title}` : m.label}>
+  <p class="callout__head">
+    <span class="callout__icon"><Icon name={m.icon} size="1.15em" /></span>
+    <span class="callout__kind">{m.label}</span>
+    {title && <span class="callout__title">{title}</span>}
+  </p>
+  <div class="callout__body">
+    <slot />
+  </div>
+</div>
+
+<style>
+  @layer components {
+    .callout {
+      --co: var(--c-accent);
+      margin-block: 1.6em;
+      padding: var(--space-4) var(--space-5);
+      border: 1px solid color-mix(in srgb, var(--co) 22%, var(--c-border));
+      border-inline-start: 3px solid var(--co);
+      border-radius: var(--radius-m);
+      background: color-mix(in srgb, var(--co) 6%, var(--c-bg-elev));
+      max-width: calc(var(--measure) + 2.5rem);
+      font-size: 0.97em;
+    }
+    .callout--tip {
+      --co: var(--level-1);
+    }
+    .callout--warn {
+      --co: var(--c-warn);
+    }
+    .callout--analogy {
+      --co: var(--layer-foundation);
+    }
+    .callout--data {
+      --co: var(--layer-systems);
+    }
+    .callout__head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.25em 0.6em;
+      margin: 0 0 0.4em;
+      line-height: 1.5;
+    }
+    .callout__icon {
+      align-self: center;
+      color: var(--co);
+      line-height: 0;
+    }
+    .callout__kind {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-bold);
+      letter-spacing: var(--tracking-wide);
+      /* pull the hue toward the text colour so small labels keep AA contrast in both themes */
+      color: color-mix(in srgb, var(--co) 72%, var(--c-fg));
+    }
+    .callout__title {
+      flex-basis: 100%;
+      font-weight: var(--fw-bold);
+      font-size: var(--fs-m);
+      color: var(--c-fg);
+    }
+    @media (min-width: 480px) {
+      .callout__title {
+        flex-basis: auto;
+      }
+    }
+    .callout__body {
+      line-height: 1.8;
+    }
+    .callout__body > :global(* + *) {
+      margin-block-start: 0.75em;
+    }
+    .callout__body :global(:where(ul, ol)) {
+      padding-inline-start: 1.3em;
+    }
+  }
+</style>

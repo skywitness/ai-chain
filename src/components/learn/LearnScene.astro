@@ -1,0 +1,86 @@
+---
+/**
+ * <Scene3D> for learning pages, with two rules on top:
+ *  1. At most one scene per page autoloads. The page names it with setSceneAutoload() (learn-data.ts):
+ *     on article pages that is the first built scene of the MDX body outside a <DeepDive>, on /learn/
+ *     the mountain. Without a hint the first built scene to render takes the slot (hero and stub
+ *     scenes). Every other scene is click-to-load, and so is any scene whose author wrote
+ *     autoload="click".
+ *  2. A scene that is not built yet (no src/three/scenes/<id>/meta.json) never renders an empty stage:
+ *     `fallback="note"` (default, for MDX bodies) shows a slim 「互動場景製作中」 note with the caption,
+ *     `fallback="none"` renders nothing. Missing scenes do not take the autoload slot.
+ *
+ *   <Content components={{ ...mdxComponents, Scene3D: LearnScene }} />
+ *   <LearnScene id="gpu-scale" variant="chip" caption="…" fallback="none" />
+ */
+import type { ComponentProps } from 'astro/types';
+import Scene3D from '../scene/Scene3D.astro';
+import Icon from '../ui/Icon.astro';
+import { claimSceneAutoload, sceneExists } from './learn-data';
+
+type Props = ComponentProps<typeof Scene3D> & { fallback?: 'note' | 'none' | undefined };
+
+const { fallback = 'note', ...props } = Astro.props;
+const ready = sceneExists(props.id);
+// Claimed synchronously, before any await.
+const auto =
+  ready && props.autoload !== 'click' && claimSceneAutoload(Astro, { id: props.id, variant: props.variant });
+const autoload = auto ? (props.autoload ?? 'visible') : 'click';
+---
+
+{
+  ready ? (
+    <Scene3D {...props} autoload={autoload} />
+  ) : (
+    fallback === 'note' && (
+      <aside class="ls-pending" aria-label="互動場景">
+        <span class="ls-pending__icon" aria-hidden="true">
+          <Icon name="layers" />
+        </span>
+        <p class="ls-pending__text">
+          <span class="ls-pending__label">互動 3D 場景製作中</span>
+          {props.caption && <span class="ls-pending__cap">{props.caption}</span>}
+        </p>
+      </aside>
+    )
+  )
+}
+
+<style>
+  @layer components {
+    .ls-pending {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      margin-block: var(--space-5);
+      padding: var(--space-3) var(--space-4);
+      border: 1px dashed var(--c-border-strong);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-sunken);
+    }
+    .ls-pending__icon {
+      flex: none;
+      display: grid;
+      place-items: center;
+      inline-size: 2rem;
+      block-size: 2rem;
+      border-radius: 50%;
+      background: var(--c-accent-soft);
+      color: var(--c-accent);
+    }
+    .ls-pending__text {
+      display: grid;
+      gap: 0.1em;
+      margin: 0;
+      font-size: var(--fs-s);
+      line-height: 1.6;
+    }
+    .ls-pending__label {
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+    }
+    .ls-pending__cap {
+      color: var(--c-fg-muted);
+    }
+  }
+</style>

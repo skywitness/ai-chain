@@ -1,0 +1,40 @@
+term: "Decode"
+zh: "解碼階段"
+en: "Decode"
+aliases:
+  - "解碼"
+  - "Decode 階段"
+  - "生成階段"
+  - "Token Generation"
+  - "Decoding"
+category: inference
+level: 3
+short: >-
+  LLM 推論的第二階段：一次產生一個 token，每一步都要從記憶體讀取模型權重，速度主要受記憶體頻寬限制。
+definition: >-
+  Prefill 完成後，模型進入 Decode 階段，以自迴歸方式一次只產生一個 token，再把它接回輸入產生下一個，直到回答結束。每一步的計算量不大，卻都要把模型權重（MoE 模型則是被選中的專家）與累積的 KV Cache 從記憶體讀出來，因此速度主要受 HBM 頻寬限制（memory-bound），而不是運算能力。粗估來看，一個 80 億參數、FP16 權重約 16 GB 的模型，放在記憶體頻寬 3.35 TB/s 的 H100 SXM 上，單一使用者的理論上限約為每秒 200 個 token（3.35 TB/s ÷ 16 GB，未計入 KV Cache 等其他讀取）。業界因此用批次處理讓一次權重讀取服務多位使用者，並以量化、推測解碼等方法加速；HBM 頻寬的提升、SRAM 型推論晶片與分離式推論，很大程度都是為了改善 Decode。
+example: >-
+  像玩文字接龍：每次只能寫下一個字，而且寫每個字之前都得把整本參考書翻一遍，翻書的速度（記憶體頻寬）決定了寫得多快。
+related: [prefill, kv-cache, hbm, memory-wall, speculative-decoding]
+learnMore: [inference-optimization, memory-and-hbm]
+segments: [memory-storage, ai-accelerators]
+sources:
+  - title: "Mastering LLM Techniques: Inference Optimization"
+    publisher: "NVIDIA Technical Blog"
+    url: "https://developer.nvidia.com/blog/mastering-llm-techniques-inference-optimization/"
+    type: company-site
+    lang: en
+    published: "2023-11-17"
+    accessed: "2026-10-06"
+  - title: "NVIDIA H100 Tensor Core GPU"
+    publisher: "NVIDIA"
+    url: "https://www.nvidia.com/en-us/data-center/h100/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "H100 SXM GPU memory bandwidth 3.35 TB/s; the 200 tokens/s figure is a derived upper-bound estimate (3.35 TB/s ÷ 16 GB)."
+editorial:
+  status: fact-checked
+  author: gloss-inference
+  checkedBy: "gloss-inference-check"
+  checkedOn: "2026-10-06"

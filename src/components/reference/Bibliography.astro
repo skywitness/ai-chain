@@ -1,0 +1,562 @@
+---
+/**
+ * 「參考文獻總覽」: every Source used across all collections, deduplicated by URL, grouped by
+ * publisher (one collapsible list each), with the pages that cite it.
+ *
+ * The publisher index (names and counts) is rendered at build time; the entries of a publisher are
+ * loaded from /sources/bibliography.json (prerendered by src/pages/sources/bibliography.json.ts) the
+ * first time its group is opened, so the HTML stays small while the bibliography grows.
+ * Excluded from the search index (data-pagefind-ignore).
+ *   <Bibliography />
+ */
+import { withBase } from '../../lib/paths';
+import { getBibliography, LANG_LABELS, SOURCE_TYPE_LABELS, type Bibliography } from './reference-data';
+
+interface Props {
+  data?: Bibliography | undefined;
+  /** cited-by links shown per source before 「等 N 頁」 */
+  citeLimit?: number | undefined;
+  /** publishers listed as quick links above the groups */
+  topPublishers?: number | undefined;
+  /** publisher groups listed before 「其餘 N 個發布者」 */
+  visible?: number | undefined;
+}
+const { data, citeLimit = 5, topPublishers = 12, visible = 30 } = Astro.props;
+const bib = data ?? (await getBibliography());
+const fmt = (n: number) => n.toLocaleString('zh-TW');
+const maxType = Math.max(1, ...bib.byType.map((t) => t.count));
+const jsonUrl = withBase('/sources/bibliography.json');
+const head = bib.groups.slice(0, visible);
+const tail = bib.groups.slice(visible);
+---
+
+<div class="bib" data-pagefind-ignore data-bib-src={jsonUrl} data-cite-limit={citeLimit}>
+  {
+    bib.totalSources === 0 ? (
+      <p class="bib__empty" role="status">
+        內容整理中。各頁面的資料來源完成後，會自動彙整在這裡。
+      </p>
+    ) : (
+      <>
+        <div class="bib__overview">
+          <div class="bib__types">
+            <h3 class="bib__h">來源類型</h3>
+            <ul class="bib__typelist" role="list">
+              {bib.byType.map((t) => (
+                <li class="bib__type">
+                  <span class="bib__type-label">{SOURCE_TYPE_LABELS[t.type] ?? t.type}</span>
+                  <span class="bib__type-bar" style={`--w: ${((t.count / maxType) * 100).toFixed(2)}%`} aria-hidden="true" />
+                  <span class="bib__type-n num">{fmt(t.count)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div class="bib__langs">
+            <h3 class="bib__h">來源語言</h3>
+            <ul class="bib__langlist" role="list">
+              {bib.byLang.map((l) => (
+                <li>
+                  <span>{LANG_LABELS[l.lang] ?? l.lang}</span>
+                  <span class="num">{fmt(l.count)}</span>
+                </li>
+              ))}
+            </ul>
+            <h3 class="bib__h">最常引用的發布者</h3>
+            <ol class="bib__top" role="list">
+              {bib.groups.slice(0, topPublishers).map((g) => (
+                <li>
+                  <a href={`#${g.anchor}`} data-bib-open={g.anchor}>
+                    {g.publisher}
+                  </a>
+                  <span class="num">{fmt(g.entries.length)}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        <div class="bib__tools js-only">
+          <label for="bib-q" class="sr-only">
+            篩選發布者
+          </label>
+          <input id="bib-q" type="search" placeholder="篩選發布者，例如：TSMC、Reuters" autocomplete="off" data-bib-q />
+          <button type="button" class="bib__btn" data-bib-toggle>
+            全部展開
+          </button>
+          <p class="bib__count" aria-live="polite" data-bib-count>
+            {fmt(bib.groups.length)} 個發布者
+          </p>
+        </div>
+
+        <div class="bib__groups">
+          {head.map((g) => (
+            <details class="bib__pub" id={g.anchor} data-bib-pub={g.publisher.normalize('NFKC').toLowerCase()}>
+              <summary class="bib__sum">
+                <span class="bib__pub-name">{g.publisher}</span>
+                <span class="bib__pub-meta num">
+                  {fmt(g.entries.length)} 筆來源・{fmt(g.citations)} 次引用
+                </span>
+              </summary>
+              <div class="bib__body" data-bib-body>
+                <p class="bib__status js-only" data-bib-status>
+                  清單載入中…
+                </p>
+                <p class="bib__status no-js-only">需要啟用 JavaScript 才能展開清單；各頁面底部的「資料來源」可直接查看。</p>
+              </div>
+            </details>
+          ))}
+        </div>
+        {
+          tail.length > 0 && (
+            <details class="bib__rest" data-bib-rest>
+              <summary class="bib__rest-sum">
+                其餘 {fmt(tail.length)} 個發布者
+                <span class="num">（{fmt(tail.reduce((a, g) => a + g.entries.length, 0))} 筆來源）</span>
+              </summary>
+              <div class="bib__groups">
+                {tail.map((g) => (
+                <details class="bib__pub" id={g.anchor} data-bib-pub={g.publisher.normalize('NFKC').toLowerCase()}>
+                  <summary class="bib__sum">
+                    <span class="bib__pub-name">{g.publisher}</span>
+                    <span class="bib__pub-meta num">
+                      {fmt(g.entries.length)} 筆來源・{fmt(g.citations)} 次引用
+                    </span>
+                  </summary>
+                  <div class="bib__body" data-bib-body>
+                    <p class="bib__status js-only" data-bib-status>
+                      清單載入中…
+                    </p>
+                    <p class="bib__status no-js-only">需要啟用 JavaScript 才能展開清單；各頁面底部的「資料來源」可直接查看。</p>
+                  </div>
+                </details>
+                ))}
+              </div>
+            </details>
+          )
+        }
+      </>
+    )
+  }
+</div>
+
+<script>
+  type CitedBy = [string, string, string];
+  type Row = [string, string, string, string, string, string, CitedBy[]];
+  type Payload = { v: 1; date: string; groups: Record<string, Row[]> };
+
+  const root = document.querySelector<HTMLElement>('.bib[data-bib-src]');
+  if (root) {
+    const src = root.dataset['bibSrc'] ?? '';
+    const citeLimit = Number(root.dataset['citeLimit'] ?? 5);
+    const q = root.querySelector<HTMLInputElement>('[data-bib-q]');
+    const toggle = root.querySelector<HTMLButtonElement>('[data-bib-toggle]');
+    const count = root.querySelector<HTMLElement>('[data-bib-count]');
+    const pubs = [...root.querySelectorAll<HTMLDetailsElement>('[data-bib-pub]')];
+    const rest = root.querySelector<HTMLDetailsElement>('[data-bib-rest]');
+    const total = pubs.length;
+    const fmt = (n: number) => n.toLocaleString('zh-TW');
+
+    let data: Promise<Payload> | null = null;
+    const load = (): Promise<Payload> =>
+      (data ??= fetch(src)
+        .then((r) => {
+          if (!r.ok) throw new Error(String(r.status));
+          return r.json() as Promise<Payload>;
+        })
+        .catch((err: unknown) => {
+          data = null; // allow a retry
+          throw err;
+        }));
+
+    const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string) => {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    };
+
+    const renderRows = (rows: Row[]) => {
+      const ol = el('ol', 'bib__list');
+      ol.setAttribute('role', 'list');
+      for (const [title, url, type, lang, published, accessed, cited] of rows) {
+        const li = el('li', 'bib__item');
+        const a = el('a', 'bib__title', title);
+        a.href = url;
+        a.rel = 'noopener external';
+        if (lang && lang !== 'zh-TW' && lang !== 'other') a.lang = lang;
+        const meta = el('p', 'bib__meta');
+        meta.append(el('span', '', type));
+        if (published) meta.append(el('span', '', `發布 ${published}`));
+        if (accessed) meta.append(el('span', '', `讀取 ${accessed}`));
+        try {
+          meta.append(el('span', 'bib__host', new URL(url).hostname.replace(/^www./, '')));
+        } catch {
+          /* ignore */
+        }
+        li.append(a, meta);
+        if (cited.length) {
+          const p = el('p', 'bib__cited');
+          p.append(el('span', 'bib__cited-k', '引用於'));
+          for (const [kind, label, href] of cited.slice(0, citeLimit)) {
+            const c = el('a');
+            c.href = href;
+            c.append(el('span', 'bib__kind', kind), document.createTextNode(label));
+            p.append(c);
+          }
+          if (cited.length > citeLimit) p.append(el('span', 'bib__more', `等 ${fmt(cited.length)} 頁`));
+          li.append(p);
+        }
+        ol.append(li);
+      }
+      return ol;
+    };
+
+    const fill = (d: HTMLDetailsElement) => {
+      if (d.dataset['state'] === 'done' || d.dataset['state'] === 'loading') return;
+      const body = d.querySelector<HTMLElement>('[data-bib-body]');
+      const status = d.querySelector<HTMLElement>('[data-bib-status]');
+      if (!body) return;
+      d.dataset['state'] = 'loading';
+      load()
+        .then((p) => {
+          const rows = p.groups[d.id] ?? [];
+          body.replaceChildren(rows.length ? renderRows(rows) : el('p', 'bib__status', '這個發布者目前沒有來源。'));
+          d.dataset['state'] = 'done';
+        })
+        .catch(() => {
+          if (status) status.textContent = '清單載入失敗，請收合後再展開一次，或重新整理頁面。';
+          delete d.dataset['state'];
+        });
+    };
+
+    pubs.forEach((d) => d.addEventListener('toggle', () => d.open && fill(d)));
+
+    if (q && count) {
+      const apply = () => {
+        const w = q.value.normalize('NFKC').toLowerCase().trim();
+        let shown = 0;
+        for (const p of pubs) {
+          const ok = !w || (p.dataset['bibPub'] ?? '').includes(w);
+          p.hidden = !ok;
+          if (ok) shown++;
+        }
+        count.textContent = w ? `顯示 ${fmt(shown)}／${fmt(total)} 個發布者` : `${fmt(total)} 個發布者`;
+        if (rest) {
+          const restHits = [...rest.querySelectorAll<HTMLDetailsElement>('[data-bib-pub]')].some((p) => !p.hidden);
+          rest.hidden = !restHits;
+          if (w && restHits) rest.open = true;
+        }
+      };
+      let t = 0;
+      q.addEventListener('input', () => {
+        window.clearTimeout(t);
+        t = window.setTimeout(apply, 120);
+      });
+    }
+
+    toggle?.addEventListener('click', () => {
+      // The label itself says what the button does (no aria-pressed: a changing label plus a pressed
+      // state would announce 「全部收合，已按下」).
+      const open = toggle.dataset['open'] !== 'true';
+      if (rest && open) rest.open = true;
+      pubs.forEach((p) => {
+        if (!p.hidden) p.open = open;
+      });
+      toggle.dataset['open'] = String(open);
+      toggle.textContent = open ? '全部收合' : '全部展開';
+    });
+
+    // Quick links and #pub-N deep links open their group
+    const openId = (id: string) => {
+      const d = document.getElementById(id);
+      if (d instanceof HTMLDetailsElement && d.dataset['bibPub'] !== undefined) {
+        d.hidden = false;
+        if (rest?.contains(d)) {
+          rest.hidden = false;
+          rest.open = true;
+        }
+        d.open = true;
+      }
+    };
+    root.querySelectorAll<HTMLAnchorElement>('[data-bib-open]').forEach((a) =>
+      a.addEventListener('click', () => openId(a.dataset['bibOpen'] ?? '')),
+    );
+    const fromHash = () => openId(decodeURIComponent(location.hash.slice(1)));
+    window.addEventListener('hashchange', fromHash);
+    fromHash();
+  }
+</script>
+
+<style>
+  @layer components {
+    .bib {
+      display: grid;
+      gap: var(--space-5);
+    }
+    .bib__overview {
+      display: grid;
+      gap: var(--space-5);
+      padding: var(--space-5);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+    }
+    @media (min-width: 760px) {
+      .bib__overview {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+        gap: var(--space-7);
+      }
+    }
+    .bib__h {
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--c-fg-muted);
+      margin-block-end: var(--space-2);
+    }
+    .bib__h:not(:first-child) {
+      margin-block-start: var(--space-5);
+    }
+    .bib__typelist {
+      display: grid;
+      gap: var(--space-2);
+      margin: 0;
+      padding: 0;
+    }
+    .bib__type {
+      display: grid;
+      grid-template-columns: 5.5em minmax(0, 1fr) 3.5em;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: var(--fs-s);
+    }
+    .bib__type-label {
+      color: var(--c-fg-muted);
+      white-space: nowrap;
+    }
+    .bib__type-bar {
+      display: block;
+      block-size: 0.6rem;
+      inline-size: max(3px, var(--w));
+      border-radius: 0 4px 4px 0;
+      background: var(--c-accent);
+      opacity: 0.85;
+    }
+    .bib__type-n {
+      text-align: end;
+      color: var(--c-fg);
+    }
+    .bib__langlist {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2) var(--space-4);
+      margin: 0;
+      padding: 0;
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+    .bib__langlist li {
+      display: inline-flex;
+      gap: 0.4em;
+    }
+    .bib__langlist .num {
+      color: var(--c-fg);
+      font-weight: var(--fw-semibold);
+    }
+    .bib__top {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+      gap: var(--space-1) var(--space-4);
+      margin: 0;
+      padding: 0;
+      font-size: var(--fs-s);
+    }
+    .bib__top li {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-2);
+      min-width: 0;
+    }
+    .bib__top a {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .bib__top .num {
+      color: var(--c-fg-subtle);
+    }
+
+    .bib__tools {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .bib__tools input {
+      flex: 1 1 16rem;
+      min-width: 0;
+      min-height: var(--tap);
+      padding: 0.4em 0.85em;
+      border: 1px solid var(--c-border-strong);
+      border-radius: var(--radius-m);
+      background: var(--c-bg);
+      color: var(--c-fg);
+      font: inherit;
+      font-size: var(--fs-s);
+    }
+    .bib__tools input::placeholder {
+      color: var(--c-fg-subtle);
+      opacity: 1;
+    }
+    .bib__tools input:focus-visible {
+      outline: 2px solid var(--c-focus);
+      outline-offset: 1px;
+    }
+    .bib__btn {
+      min-height: var(--tap);
+      padding: 0 1em;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      font-size: var(--fs-s);
+    }
+    .bib__btn:hover {
+      border-color: var(--c-border-strong);
+      background: var(--c-hover);
+    }
+    .bib__count {
+      inline-size: 100%;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+
+    .bib__rest {
+      margin-block-start: calc(-1 * var(--space-5));
+    }
+    .bib__rest-sum {
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+      min-height: var(--tap);
+      padding: var(--space-3) var(--space-2);
+      cursor: pointer;
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      color: var(--c-link);
+      border-block-end: 1px solid var(--c-border);
+    }
+    .bib__rest-sum .num {
+      font-weight: var(--fw-regular);
+      color: var(--c-fg-subtle);
+    }
+    .bib__rest[open] > .bib__rest-sum {
+      color: var(--c-fg-muted);
+    }
+    .bib__rest > .bib__groups {
+      border-block-start: 0;
+    }
+    .bib__groups {
+      border-block-start: 1px solid var(--c-border);
+    }
+    .bib__pub {
+      border-block-end: 1px solid var(--c-border);
+    }
+    .bib__sum {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.2em var(--space-4);
+      min-height: var(--tap);
+      padding: var(--space-3) var(--space-2) var(--space-3) 1.6rem;
+      position: relative;
+      cursor: pointer;
+      list-style: none;
+    }
+    .bib__sum::-webkit-details-marker {
+      display: none;
+    }
+    .bib__sum::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: 0.35rem;
+      inset-block-start: 1.35rem;
+      inline-size: 0.45rem;
+      block-size: 0.45rem;
+      border-inline-end: 1.5px solid var(--c-fg-subtle);
+      border-block-end: 1.5px solid var(--c-fg-subtle);
+      transform: rotate(-45deg);
+      transition: transform var(--dur-2) var(--ease-out);
+    }
+    .bib__pub[open] > .bib__sum::before {
+      transform: rotate(45deg);
+    }
+    .bib__sum:hover {
+      background: var(--c-hover);
+    }
+    .bib__pub-name {
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+      overflow-wrap: anywhere;
+    }
+    .bib__pub-meta {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .bib :global(.bib__list) {
+      display: grid;
+      gap: var(--space-4);
+      margin: 0;
+      padding: var(--space-2) var(--space-2) var(--space-5) 1.6rem;
+      max-width: none;
+    }
+    .bib :global(.bib__item) {
+      display: grid;
+      gap: 0.15em;
+      font-size: var(--fs-s);
+      line-height: 1.65;
+    }
+    .bib :global(.bib__title) {
+      overflow-wrap: anywhere;
+    }
+    .bib :global(.bib__meta),
+    .bib :global(.bib__cited) {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.1em 0.9em;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      max-width: none;
+    }
+    .bib :global(.bib__host) {
+      font-family: var(--font-mono);
+      font-size: 0.95em;
+    }
+    .bib :global(.bib__cited-k) {
+      font-weight: var(--fw-semibold);
+    }
+    .bib :global(.bib__cited a) {
+      color: var(--c-fg-muted);
+    }
+    .bib :global(.bib__cited a:hover) {
+      color: var(--c-link-hover);
+    }
+    .bib :global(.bib__kind) {
+      margin-inline-end: 0.3em;
+      color: var(--c-fg-subtle);
+    }
+    .bib :global(.bib__status) {
+      padding: var(--space-2) var(--space-2) var(--space-4) 1.6rem;
+      font-size: var(--fs-s);
+      color: var(--c-fg-subtle);
+    }
+    .bib__empty {
+      padding: var(--space-5);
+      border: 1px dashed var(--c-border-strong);
+      border-radius: var(--radius-l);
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+  }
+</style>

@@ -1,0 +1,761 @@
+---
+/**
+ * /models/[slug]/ — one page per family in src/data/models-index.yaml.
+ * With a content entry: lab chip, summary, strengths／weaknesses／best-for, version timeline, spec
+ * table, pricing history, benchmark dot plots (dated sources, date-spread warnings), the MDX
+ * 特性分析 body, related learning and sources. Without one: registry facts and a calm
+ * 「內容整理中」 state that links to related families.
+ */
+import type { MarkdownHeading } from 'astro';
+import { render } from 'astro:content';
+import ProfileLayout, { type Fact } from '../../layouts/ProfileLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import Icon from '../../components/ui/Icon.astro';
+import TOC from '../../components/layout/TOC.astro';
+import CompanyChip from '../../components/content/CompanyChip.astro';
+import ModelChip from '../../components/content/ModelChip.astro';
+import { mdxComponents } from '../../components/content/mdx-components';
+import BenchmarkDots from '../../components/model/BenchmarkDots.astro';
+import ModelFamilyCard from '../../components/model/ModelFamilyCard.astro';
+import PositioningPanel from '../../components/model/PositioningPanel.astro';
+import PricingHistory from '../../components/model/PricingHistory.astro';
+import SpecTable from '../../components/model/SpecTable.astro';
+import VersionTimeline from '../../components/model/VersionTimeline.astro';
+import {
+  KIND_LABELS,
+  OPENNESS_LABELS,
+  ORIGIN_LABELS,
+  REASONING_LABELS,
+  REPORTER_LABELS,
+  STATUS_LABELS,
+  WEIGHTS_LABELS,
+  benchmarkInfo,
+  benchmarkMap,
+  dateSpread,
+  formatPricePair,
+  formatScore,
+  formatTokens,
+  getFamilies,
+  getLearnLinks,
+  kindColor,
+  zh,
+} from '../../components/model/model-data';
+import { getModelsIndex, getRosterCompany, levelMeta } from '../../lib/collections';
+import { formatDate } from '../../lib/format';
+import { companyHref, learnHref, modelsCompareHref, sectionHref } from '../../lib/paths';
+import { articleJsonLd } from '../../lib/seo';
+
+export function getStaticPaths() {
+  return getModelsIndex().map((f) => ({ params: { slug: f.id } }));
+}
+
+const { slug } = Astro.params as { slug: string };
+const families = await getFamilies();
+const family = families.find((f) => f.id === slug) ?? families[0]!;
+const d = family.data;
+const fv = family.flagship;
+const rendered = family.entry ? await render(family.entry) : undefined;
+const Content = rendered?.Content;
+const mdxHeadings: MarkdownHeading[] = rendered?.headings ?? [];
+
+const kindLabel = KIND_LABELS[family.kind] ?? family.kind;
+const originLabel = ORIGIN_LABELS[family.origin] ?? family.origin;
+const accent = kindColor(family.kind);
+const segment = family.kind === 'robotics' ? 'physical-ai' : 'foundation-models';
+const labRoster = family.labId ? getRosterCompany(family.labId) : undefined;
+// 「旗下 Google DeepMind」 only when the lab name says more than the company chip already does
+// (「NVIDIA（輝達）」 and 「DeepSeek（深度求索）」 just restate the company).
+const labNames = labRoster ? [labRoster.name, labRoster.nameZh].filter(Boolean).map((n) => n.toLowerCase()) : [];
+const labParts = family.labName.split(/[（()）]/).map((x) => x.trim().toLowerCase()).filter(Boolean);
+const showUnit = !!labRoster && !labParts.every((x) => labNames.includes(x));
+const pageTitleText = `${family.title}：特性、版本與評測`;
+const description = d
+  ? d.summary
+  : `${family.title}（${family.labName}）的特性分析、版本演進與評測整理中；可先比較其他${kindLabel}系列。`;
+
+// ── facts ──
+const facts: Fact[] = [];
+facts.push({ label: '實驗室', value: family.labName, href: labRoster ? companyHref(labRoster.id) : undefined });
+facts.push({ label: '來源地', value: originLabel });
+facts.push({ label: '類型', value: kindLabel });
+if (fv) {
+  facts.push({ label: '旗艦版本', value: fv.name, note: `${formatDate(fv.released, 'iso')}・${STATUS_LABELS[fv.status] ?? fv.status}` });
+  facts.push({ label: '權重', value: WEIGHTS_LABELS[fv.weights] ?? fv.weights, note: fv.license === 'proprietary' ? '專有授權' : fv.license });
+  if (fv.contextTokens) facts.push({ label: '上下文', value: `${formatTokens(fv.contextTokens)} tokens` });
+  // The page already shows 「資料截至 {lastVerified}」; repeat the price date only when it is older.
+  if (family.price)
+    facts.push({
+      label: 'API 價格',
+      value: formatPricePair(family.price),
+      note: `輸入／輸出，每百萬 tokens${family.price.asOf !== d?.lastVerified ? `・${family.price.asOf}` : ''}`,
+    });
+  if (fv.reasoning !== 'none') facts.push({ label: '推理', value: REASONING_LABELS[fv.reasoning] ?? fv.reasoning });
+  facts.push({ label: '版本數', value: `${family.versions.length} 個`, note: '近 18 個月的重要版本' });
+}
+
+const aliases = d
+  ? [...new Set([d.family, family.labName, ...family.versions.slice(0, 10).map((v) => v.name)].filter(Boolean))]
+  : [...new Set([family.labName, labRoster?.name, labRoster?.nameZh].filter((x): x is string => !!x))];
+
+// ── benchmarks ──
+const bmap = benchmarkMap();
+const benchIds = [...new Set(family.versions.flatMap((v) => v.benchmarks.map((b) => b.benchmark)))].sort(
+  (a, b) => benchmarkInfo(a, bmap).order - benchmarkInfo(b, bmap).order,
+);
+const benchGroups = benchIds.map((id) => {
+  const entries = family.versions.flatMap((v) => v.benchmarks.filter((b) => b.benchmark === id).map((b) => ({ v, b })));
+  return { id, info: benchmarkInfo(id, bmap), entries };
+});
+const charted = benchGroups.filter((g) => g.entries.length >= 2).sort((a, b) => b.entries.length - a.entries.length || a.info.order - b.info.order);
+const chartFirst = charted.slice(0, 4);
+const chartMore = charted.slice(4);
+const singles = benchGroups.filter((g) => g.entries.length === 1);
+const allBenchDates = family.versions.flatMap((v) => v.benchmarks.map((b) => b.date));
+const benchSpread = dateSpread(allBenchDates);
+const benchItems = family.versions.map((v) => ({ version: v, label: v.name, highlight: v.id === fv?.id }));
+
+// ── compare link: flagship vs the strongest flagships of other families of the same kind ──
+const peers = families
+  .filter((f) => f.id !== family.id && f.kind === family.kind && f.data && f.flagship)
+  .sort((a, b) => b.data!.positioning.capability - a.data!.positioning.capability);
+const compareIds = fv ? [fv.id, ...peers.slice(0, 2).map((f) => f.flagship!.id)] : [];
+
+// ── related ──
+const learn = await getLearnLinks((d?.relatedLearn ?? []).map((r) => r.id));
+const sameLab = families.filter((f) => f.id !== family.id && f.labId && f.labId === family.labId);
+const sameKind = families
+  .filter((f) => f.id !== family.id && f.kind === family.kind && !sameLab.includes(f))
+  .sort((a, b) => Number(!!b.data) - Number(!!a.data))
+  .slice(0, 8);
+
+// ── table of contents ──
+const toc: MarkdownHeading[] = d
+  ? [
+      { depth: 2, slug: 'traits', text: '優勢與限制' },
+      { depth: 2, slug: 'versions', text: '版本時間軸' },
+      { depth: 2, slug: 'specs', text: '規格比較' },
+      { depth: 2, slug: 'pricing', text: 'API 價格' },
+      ...(benchGroups.length ? [{ depth: 2, slug: 'benchmarks', text: '評測分數' }] : []),
+      ...(Content ? [{ depth: 2, slug: 'analysis', text: '特性分析全文' }] : []),
+      ...mdxHeadings.filter((h) => h.depth === 2).map((h) => ({ ...h, depth: 3 })),
+      ...(learn.length || sameLab.length || sameKind.length ? [{ depth: 2, slug: 'related', text: '延伸閱讀' }] : []),
+      { depth: 2, slug: 'sources', text: '資料來源' },
+    ]
+  : [];
+
+const jsonLd = d
+  ? articleJsonLd({
+      title: pageTitleText,
+      description: d.summary,
+      path: Astro.url,
+      site: Astro.site,
+      dateModified: d.lastVerified,
+      section: '大模型',
+      keywords: aliases.slice(0, 8),
+    })
+  : undefined;
+---
+
+<ProfileLayout
+  title={pageTitleText}
+  description={description}
+  name={family.title}
+  kicker={`大模型・${kindLabel}・${originLabel}`}
+  summary={d?.summary}
+  segment={segment}
+  accent={accent}
+  aliases={aliases}
+  facts={facts}
+  factsTitle="系列資料"
+  lastVerified={d?.lastVerified}
+  sources={d?.sources ?? []}
+  breadcrumbs={[{ label: '大模型', href: sectionHref('models') }, { label: family.title }]}
+  jsonLd={jsonLd}
+  section="models"
+  searchType="模型"
+  searchFilters={{ 地區: originLabel }}
+  noindex={!d}
+>
+  <Fragment slot="badges">
+    <Badge>{kindLabel}</Badge>
+    {d && <Badge tone={family.opennessClass === 'closed' ? 'neutral' : 'pos'}>{OPENNESS_LABELS[family.opennessClass]}</Badge>}
+    {fv && fv.reasoning !== 'none' && <Badge tone="info">{REASONING_LABELS[fv.reasoning]}</Badge>}
+    {!d && <Badge tone="warn">內容整理中</Badge>}
+  </Fragment>
+
+  <Fragment slot="header">
+    <span class="lab-line">
+      <span class="lab-line__label">實驗室</span>
+      {family.labId && labRoster ? <CompanyChip id={family.labId} /> : <span class="lab-line__name">{family.labName}</span>}
+      {showUnit && <span class="lab-line__unit">旗下 {family.labName}</span>}
+    </span>
+    {
+      compareIds.length >= 2 && (
+        <Button href={modelsCompareHref(compareIds)} size="s" icon="compare">
+          與其他旗艦並排比較
+        </Button>
+      )
+    }
+  </Fragment>
+
+  {
+    toc.length > 0 && (
+      <div slot="sidebar" class="mp-toc-wide">
+        <TOC headings={toc} title="本頁內容" />
+      </div>
+    )
+  }
+
+  {
+    d ? (
+      <div class="mp">
+        {toc.length > 0 && (
+          <div class="mp-toc-narrow">
+            <TOC headings={toc} title="本頁內容" variant="disclosure" />
+          </div>
+        )}
+        <PositioningPanel positioning={d.positioning} kind={family.kind} layout="row" galaxyHref={`${sectionHref('models')}#galaxy`} />
+        <section class="mp-sec" aria-labelledby="traits">
+          <h2 id="traits">優勢與限制</h2>
+          <div class="traits">
+            <div class="trait trait--pos">
+              <h3 class="trait__title">
+                <Icon name="check" /> 優勢
+              </h3>
+              <ul>
+                {d.strengths.map((s) => (
+                  <li>{s}</li>
+                ))}
+              </ul>
+            </div>
+            <div class="trait trait--neg">
+              <h3 class="trait__title">
+                <Icon name="warn" /> 限制
+              </h3>
+              <ul>
+                {d.weaknesses.map((s) => (
+                  <li>{s}</li>
+                ))}
+              </ul>
+            </div>
+            <div class="trait trait--fit">
+              <h3 class="trait__title">
+                <Icon name="tip" /> 適合用途
+              </h3>
+              <ul>
+                {d.bestFor.map((s) => (
+                  <li>{s}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="mp-sec" aria-labelledby="versions">
+          <h2 id="versions">版本時間軸</h2>
+          <p class="mp-lede">
+            共 {family.versions.length} 個版本，由新到舊排列；實心圓點為目前旗艦 {fv?.name}。
+          </p>
+          <VersionTimeline versions={family.versions} flagship={fv?.id} />
+        </section>
+
+        <section class="mp-sec" aria-labelledby="specs">
+          <h2 id="specs">規格比較</h2>
+          <p class="mp-lede">各版本的權重開放方式、架構、輸入與輸出模態、上下文長度與取用方式。參數量只列官方公開者。</p>
+          <SpecTable versions={family.versions} flagship={fv?.id} kind={family.kind} caption={zh(family.title, '各版本規格')} />
+        </section>
+
+        <section class="mp-sec" aria-labelledby="pricing">
+          <h2 id="pricing">API 價格</h2>
+          <PricingHistory versions={family.versions} familyTitle={family.title} kind={family.kind} flagship={fv?.id} />
+        </section>
+
+        {benchGroups.length > 0 && (
+          <section class="mp-sec" aria-labelledby="benchmarks">
+            <h2 id="benchmarks">評測分數</h2>
+            <p class="mp-lede">
+              每個點是一筆公開分數，標示測試日期與來源類型（實驗室自評、第三方或排行榜）。同一版本可能同時有自評與第三方分數，兩者的測試設定不一定相同。
+            </p>
+            {benchSpread > 90 && (
+              <p class="mp-warn">
+                <Icon name="warn" />
+                <span>
+                  本頁評測日期從 {allBenchDates.sort()[0]} 到 {allBenchDates.sort().at(-1)}，相差 {benchSpread} 天。日期不同的分數可能來自不同的測試版本，請以各列日期為準。
+                </span>
+              </p>
+            )}
+            <div class="bench-list">
+              {chartFirst.map((g) => (
+                <BenchmarkDots benchmark={g.id} items={benchItems} mode="all" />
+              ))}
+            </div>
+            {chartMore.length > 0 && (
+              <details class="bench-more">
+                <summary>顯示其他 {chartMore.length} 項評測</summary>
+                <div class="bench-list">
+                  {chartMore.map((g) => (
+                    <BenchmarkDots benchmark={g.id} items={benchItems} mode="all" />
+                  ))}
+                </div>
+              </details>
+            )}
+            {singles.length > 0 && (
+              <div class="bench-single">
+                <h3 class="bench-single__title">其他單筆評測</h3>
+                <div class="scroll-x">
+                  <table class="bench-single__table">
+                    <caption class="sr-only">{zh(family.title, '其他單筆評測分數')}</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">評測</th>
+                        <th scope="col">版本</th>
+                        <th scope="col" class="num">分數</th>
+                        <th scope="col">日期</th>
+                        <th scope="col">來源</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {singles.map((g) => {
+                        const e = g.entries[0]!;
+                        return (
+                          <tr>
+                            <th scope="row">
+                              {g.info.zh}
+                              <span class="sub">{g.info.scale}</span>
+                            </th>
+                            <td>{e.v.name}</td>
+                            <td class="num">{formatScore(e.b.score, g.info)}</td>
+                            <td class="nw">{e.b.date}</td>
+                            <td>
+                              <a href={e.b.source.url} rel="noopener noreferrer">
+                                {e.b.source.publisher}
+                              </a>
+                              <span class="sub">
+                                {REPORTER_LABELS[e.b.reportedBy] ?? e.b.reportedBy}
+                                {e.b.setting ? `・${e.b.setting}` : ''}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {Content && (
+          <section class="mp-analysis" id="analysis" aria-label="特性分析全文">
+            <p class="mp-analysis__kicker">
+              <Icon name="book" /> 特性分析全文
+            </p>
+            <div class="prose">
+              <Content components={mdxComponents} />
+            </div>
+          </section>
+        )}
+
+        {(learn.length > 0 || sameLab.length > 0 || sameKind.length > 0) && (
+          <section class="mp-sec" aria-labelledby="related" data-pagefind-ignore>
+            <h2 id="related">延伸閱讀</h2>
+            {learn.length > 0 && (
+              <ul class="related-learn" role="list">
+                {learn.map((a) => (
+                  <Card as="li" href={learnHref(a.slug)} title={a.title} description={a.description} kicker={`學習路徑・${levelMeta(a.level).label}`} level={a.level} headingLevel={3} />
+                ))}
+              </ul>
+            )}
+            {sameLab.length > 0 && (
+              <div class="related-row">
+                <p class="related-row__label">{zh(family.labName, '的其他系列')}</p>
+                <p class="related-row__chips">
+                  {sameLab.map((f) => (
+                    <ModelChip id={f.id} />
+                  ))}
+                </p>
+              </div>
+            )}
+            {sameKind.length > 0 && (
+              <div class="related-row">
+                <p class="related-row__label">其他{kindLabel}系列</p>
+                <p class="related-row__chips">
+                  {sameKind.map((f) => (
+                    <ModelChip id={f.id} />
+                  ))}
+                </p>
+              </div>
+            )}
+          </section>
+        )}
+      </div>
+    ) : (
+      <div class="mp">
+        <section class="pending" aria-labelledby="pending-title">
+          <span class="pending__icon" aria-hidden="true">
+            <Icon name="clock" size="1.5em" />
+          </span>
+          <div>
+            <h2 id="pending-title" class="pending__title">
+              內容整理中
+            </h2>
+            <p>
+              {zh(family.title, '的特性分析、版本演進、價格與評測正在查證與撰寫。')}完成後這一頁會列出各版本規格、官方 API 價格與附日期的評測分數。
+            </p>
+            <p class="pending__actions">
+              <a href={sectionHref('models')}>
+                回到大模型總覽 <Icon name="arrow-right" />
+              </a>
+              <a href={modelsCompareHref()}>
+                並排比較已整理的模型 <Icon name="arrow-right" />
+              </a>
+            </p>
+          </div>
+        </section>
+        {(sameLab.length > 0 || sameKind.length > 0) && (
+          <section class="mp-sec" aria-labelledby="related" data-pagefind-ignore>
+            <h2 id="related">相關模型系列</h2>
+            <ul class="related-cards" role="list">
+              {[...sameLab, ...sameKind].slice(0, 6).map((f) => (
+                <ModelFamilyCard family={f} headingLevel={3} compact />
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+    )
+  }
+</ProfileLayout>
+
+<style>
+  .lab-line {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin-inline-end: var(--space-3);
+    font-size: var(--fs-s);
+  }
+  .lab-line__label {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-subtle);
+  }
+  .lab-line__name {
+    font-weight: var(--fw-semibold);
+  }
+  .lab-line__unit {
+    color: var(--c-fg-muted);
+  }
+
+  .mp {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+    padding-block-end: var(--space-6);
+  }
+  .mp-toc-wide {
+    display: none;
+  }
+  /* Sidebar: the facts box (as on company pages) scrolls away with the page and only the TOC sticks. Together
+     they are taller than a 900px viewport, so a sticky sidebar holding both had to clip one of them behind an
+     inner scrollbar. The sidebar column stretches over the whole profile grid (ProfileLayout), and its last row
+     takes the remaining height, so the sticky TOC travels the full length of the page. */
+  @media (min-width: 1000px) {
+    :global(.profile__side .profile__side-sticky:has(.mp-toc-wide)) {
+      position: static;
+      block-size: 100%;
+      grid-template-rows: auto 1fr;
+    }
+    .mp-toc-wide {
+      position: sticky;
+      inset-block-start: calc(var(--header-h) + var(--space-5));
+      align-self: start;
+      max-block-size: calc(100vh - var(--header-h) - 2 * var(--space-5));
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+    }
+  }
+  .mp-toc-narrow {
+    margin-block-end: calc(-1 * var(--space-5));
+  }
+  @media (min-width: 1000px) {
+    .mp-toc-wide {
+      display: block;
+    }
+    .mp-toc-narrow {
+      display: none;
+    }
+  }
+  .mp-sec {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    scroll-margin-block-start: calc(var(--header-h) + var(--space-4));
+  }
+  .mp-sec > h2 {
+    font-size: var(--fs-2xl);
+    line-height: 1.3;
+    scroll-margin-block-start: calc(var(--header-h) + var(--space-4));
+  }
+  .mp-lede {
+    max-width: var(--measure);
+    color: var(--c-fg-muted);
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    margin-block-start: calc(-1 * var(--space-2));
+  }
+  .mp-warn {
+    display: flex;
+    gap: 0.5em;
+    align-items: baseline;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-m);
+    border: 1px solid color-mix(in srgb, var(--c-warn) 35%, transparent);
+    background: color-mix(in srgb, var(--c-warn) 8%, transparent);
+    color: var(--c-fg);
+    font-size: var(--fs-s);
+    line-height: 1.7;
+  }
+  .mp-warn :global(svg) {
+    flex: none;
+    color: var(--c-warn);
+    transform: translateY(0.15em);
+  }
+
+  /* strengths / weaknesses / best for */
+  .traits {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    gap: var(--space-4);
+  }
+  .trait--fit {
+    grid-column: 1 / -1;
+  }
+  .trait.trait--fit ul {
+    display: block;
+    columns: 2 18rem;
+    column-gap: var(--space-7);
+  }
+  .trait.trait--fit li {
+    break-inside: avoid;
+    margin-block-end: var(--space-2);
+  }
+  .trait {
+    --t: var(--c-fg-muted);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--c-border);
+    border-block-start: 3px solid var(--t);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .trait--pos {
+    --t: var(--c-pos);
+  }
+  .trait--neg {
+    --t: var(--c-warn);
+  }
+  .trait--fit {
+    --t: var(--c-accent);
+  }
+  .trait__title {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    font-size: var(--fs-m);
+    margin-block-end: var(--space-2);
+  }
+  .trait__title :global(svg) {
+    color: var(--t);
+  }
+  .trait ul {
+    margin: 0;
+    padding-inline-start: 1.1em;
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg);
+  }
+  .trait li::marker {
+    color: var(--t);
+  }
+
+  /* benchmarks */
+  .bench-list {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .bench-more > summary {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+    padding-inline: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    background: var(--c-bg-elev);
+    color: var(--c-link);
+    font-size: var(--fs-s);
+    cursor: pointer;
+  }
+  .bench-more[open] > summary {
+    margin-block-end: var(--space-4);
+  }
+  .bench-single {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .bench-single__title {
+    font-size: var(--fs-m);
+  }
+  .bench-single .scroll-x {
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .bench-single__table {
+    width: 100%;
+    min-width: 36rem;
+    border-collapse: collapse;
+    font-size: var(--fs-s);
+  }
+  .bench-single__table th,
+  .bench-single__table td {
+    padding: var(--space-2) var(--space-3);
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--c-border);
+  }
+  .bench-single__table tbody tr:last-child > * {
+    border-block-end: 0;
+  }
+  .bench-single__table thead th {
+    background: var(--c-bg-sunken);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .bench-single__table tbody th {
+    font-weight: var(--fw-semibold);
+  }
+  .bench-single__table .num {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--fw-semibold);
+  }
+  .bench-single__table .nw {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .bench-single__table .sub {
+    display: block;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+
+  /* MDX analysis */
+  .mp-analysis {
+    scroll-margin-block-start: calc(var(--header-h) + var(--space-4));
+    padding-block-start: var(--space-6);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .mp-analysis__kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: color-mix(in srgb, var(--profile-accent, var(--c-accent)) 50%, var(--c-fg));
+    margin-block-end: var(--space-3);
+  }
+  .mp-analysis :global(.prose h2) {
+    scroll-margin-block-start: calc(var(--header-h) + var(--space-4));
+  }
+
+  /* related */
+  .related-learn {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+  }
+  .related-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+  }
+  .related-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+  .related-row__chips :global(.chip) {
+    max-width: 100%;
+    white-space: normal;
+  }
+  .related-row__label {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .related-row__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  /* pending state */
+  .pending {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .pending__icon {
+    display: grid;
+    place-items: center;
+    inline-size: 3rem;
+    block-size: 3rem;
+    border-radius: 50%;
+    background: var(--c-bg-sunken);
+    color: var(--c-fg-muted);
+  }
+  .pending__title {
+    font-size: var(--fs-xl);
+    margin-block-end: var(--space-2);
+  }
+  .pending p {
+    color: var(--c-fg-muted);
+    line-height: 1.75;
+    max-width: var(--measure);
+  }
+  .pending__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin-block-start: var(--space-3);
+  }
+  .pending__actions a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    min-block-size: 2.75rem;
+    font-weight: var(--fw-semibold);
+  }
+  @media (max-width: 479px) {
+    .pending {
+      grid-template-columns: minmax(0, 1fr);
+      padding: var(--space-5);
+    }
+  }
+</style>

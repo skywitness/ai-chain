@@ -1,0 +1,92 @@
+# Proposals from the cowos scene agent, 2026-10-07.
+# Nothing here blocks the scene: each capability is implemented locally in
+# src/three/scenes/cowos/ and can move to the kit / core unchanged.
+
+- id: stage-controls
+  target: src/three/kit/StageControls.ts (or a ctx.controlsPanel service in core)
+  problem: >
+    Several scenes need a small in-stage control strip: an explode / clipping slider (cowos, hbm,
+    gpu-scale, datacenter cutaways) and a segmented toggle between two sub-modes that are not worth
+    a full variant (cowos: CoWoS-S vs CoWoS-L interposer). Each scene would otherwise hand-roll DOM,
+    styling, keyboard and screen-reader semantics, and the stage's own pointer / wheel / keyboard
+    handlers must not see interaction aimed at the controls.
+  proposal: >
+    `createStageControls({ stage, signal, slider?: { label, aria, value, valueText(v), onInput(v) },
+    toggle?: { aria, options: { id, label }[], value, onChange(id) } })` returning
+    `{ setValue(v), setToggle(id), remove() }`. Real <input type="range"> (aria-valuetext) and
+    <button aria-pressed> elements, styled only with site tokens (--c-bg-elev, --c-border,
+    --c-accent, --c-accent-fg, --radius-*), pinned bottom-left above the label layer, stopping
+    pointerdown / wheel / keydown propagation to the stage, removed on dispose. A shared class
+    name would let Scene3D hide it in the poster / fallback state and in full-screen layouts.
+  workaround: src/three/scenes/cowos/ui.ts (createPanel).
+
+- id: cross-variant-hotspots
+  target: src/three/core/hotspots.ts
+  problem: >
+    A scene whose meta.json hotspots span variants (cowos: package parts live in `cowos`, the
+    hybrid-bonding demonstrator in `soic`) lists every hotspot in the HTML 「場景重點」 list, but
+    when the reader picks one that belongs to the other variant there is no way to say "switch to
+    variant X, then focus/select this hotspot".
+  proposal: >
+    Let `HotspotSpec` (or the meta.json hotspot entry) carry `variant?: string`. On list click /
+    `scene:command {type:'focus'|'select'}` for a hotspot whose variant differs from the current
+    one, the host switches variant first and replays the focus/select after the new instance's
+    `setStep` has run.
+  workaround: >
+    src/three/scenes/cowos/content.ts (switchVariant + takePending): the mounted variant registers
+    a list-only stub whose onSelect dispatches `scene:command {type:'variant'}` and stores the id
+    in a module-level slot; the new instance reads it in create() and focuses + selects it after
+    its first setStep.
+
+- id: emissive-highlight
+  target: src/three/core/materials.ts
+  problem: >
+    The default hotspot highlight (a gentle scale-up of `object`) does not work for parts that are
+    InstancedMeshes or layers inside an exploded stack (scaling moves them out of alignment).
+  proposal: >
+    `ctx.materials.highlight(id, materials[])` + `set(id, on)`: tween an emissive tint
+    (palette.highlight × 0.3 light / 0.42 dark) on the given materials, re-applied on theme change.
+  workaround: src/three/scenes/cowos/common.ts (class Heat).
+
+- id: exact-portrait-pose
+  target: src/three/core/host.ts (SceneContext.setPose / fitPose)
+  problem: >
+    On portrait stages ctx.setPose scales every pose's distance by |portrait home| / |home|. That is
+    right for landscape poses reused in portrait, but a step that already has a hand-tuned portrait
+    pose (cowos: 接合之後 in the soic variant, the layer column in 逐層拆解) has to be pre-divided by
+    that factor, which silently breaks whenever the variant's home poses are retuned.
+  proposal: >
+    `ctx.setPose(pose, { fit: false })` (or a `CameraPose.exact?: true` flag) that skips fitPose, so a
+    scene can pass a pose meant for the current stage shape as is.
+  workaround: >
+    src/three/scenes/cowos/soic.ts `unfit()` divides the pose distance by the same factor computed
+    from ctx.meta.camera before calling ctx.setPose.
+
+- id: stage-controls-compact
+  target: src/three/kit/StageControls.ts (same helper as stage-controls above)
+  problem: >
+    On phone-width stages a two-part control strip (slider + segmented toggle) wraps to two rows and
+    covers a fifth of the stage.
+  proposal: >
+    The shared helper should ship a container query on the `scene` container (≤ 480 px: hide the
+    numeric readout, which stays in aria-valuetext; narrower slider; tighter padding) so every
+    scene's controls stay on one row.
+  workaround: >
+    src/three/scenes/cowos/ui.ts (a scoped <style> with `@container scene (max-width: 480px)`).
+
+- id: camera-tween-supersede
+  target: src/three/core/tween.ts (Tweener.camera) and src/three/core/host.ts (onResize)
+  problem: >
+    Camera tweens never cancel each other. If the stage flips orientation while a step's camera
+    move is still running (a phone rotated during the first 750 ms, or a page that sizes the stage
+    after mount), the host's applyCamera() puts the portrait home pose in place, and the still-running
+    tween then overrides it on the next ticks. The camera ends on the landscape pose in a portrait
+    stage, cropped on both sides. Two quick step changes also leave two tweens writing the camera.
+  proposal: >
+    Let `Tweener.camera()` cancel the previous camera tween (a single camera slot), and let
+    `ctx.setPose` share that slot, so the newest pose always wins and the host's orientation reset
+    cannot be undone by an older move.
+  workaround: >
+    src/three/scenes/cowos/package.ts and soic.ts (moveCamera): each scene keeps the Tween returned
+    by ctx.setPose, cancels it before every new move, and re-applies the current step's pose with
+    duration 0 in onResize when the orientation flips.

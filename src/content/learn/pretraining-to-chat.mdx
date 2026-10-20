@@ -1,0 +1,369 @@
+---
+title: "從預訓練到對話助理：SFT、RLHF 與對齊"
+subtitle: "博學卻只會接話的新人，要經過示範、評分與守則，才會變成好幫手"
+description: "ChatGPT 這類助理分兩階段做成：預訓練讀遍海量文字，得到只會接話的基礎模型；後訓練再用 SFT 示範、RLHF 與 DPO 偏好學習及書面原則，教它遵循指令、誠實且守分寸。本文拆解每一步的資料、算力與 2026 年的新做法。"
+level: 2
+order: 203
+track: models
+prerequisites: [transformer-and-attention]
+next: [reasoning-models, agents-and-mcp, post-training-deep]
+relatedSegments: [foundation-models, devtools-data-mlops, ai-accelerators, cloud-neocloud]
+relatedCompanies: [openai, anthropic, meta, deepseek, alibaba, nvidia, hugging-face, scale-ai, surge-ai, mercor]
+relatedModels: [openai-gpt, anthropic-claude, meta-muse-llama, deepseek, alibaba-qwen]
+relatedTrends: [reasoning-test-time-compute, open-weights-race, copyright-data-licensing]
+glossary:
+  - pretraining
+  - token
+  - foundation-model
+  - post-training
+  - alignment
+  - sft
+  - rlhf
+  - reinforcement-learning
+  - dpo
+  - synthetic-data
+  - hallucination
+  - rlvr
+  - reasoning-model
+  - gpu
+scenes:
+  - { id: train-infer, variant: pipeline }
+keyTakeaways:
+  - "對話助理分兩階段打造：預訓練讀海量文字學知識，後訓練教它遵循指令、符合人類偏好。"
+  - "SFT 用示範教格式；RLHF 讓人比較回答、訓練獎勵模型，再以強化學習朝高分方向調整。"
+  - "InstructGPT 經過 RLHF 後，13 億參數的版本比 1,750 億參數的 GPT-3 更受評分者偏好。"
+  - "DPO 省掉獎勵模型與強化學習；Constitutional AI 改用書面原則與 AI 回饋，減少人工標註。"
+  - "獎勵只是代理指標，過度追求會出問題，例如 2025 年 GPT-4o 更新變得過度討好而撤回。"
+  - "後訓練算力比重快速上升：DeepSeek-V3 約為預訓練的 0.2%，V3.2 已超過 10%。"
+estimatedMinutes: 16
+sources:
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "Meta AI（arXiv）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-06"
+    note: "預訓練資料涵蓋至 2023 年底的知識；移除含大量個人資料與成人內容的網域；網址、文件、單行三層去重；規則式與模型式品質過濾（例如以 fasttext 判斷文字是否像會被維基百科引用）。資料配比約 50% 一般知識、25% 數學與推理、17% 程式碼、8% 多語言。405B 模型以 15.6T 個文字 token、3.8 × 10^25 FLOPs 預訓練，最多使用 16K 顆 H100。後訓練以獎勵模型、SFT、拒絕取樣與 DPO 為主，不用 PPO 等較不穩定、難以放大的強化學習；共進行六輪，每輪收集新的偏好標註與 SFT 資料，並從最新模型取樣合成資料。第 4.3 節針對推理、程式、事實性、多語言、工具使用、長上下文與精確遵循指令改進；第 4.3.6 節：後訓練應讓模型「知道自己知道什麼」而非增加知識，以知識探測法從預訓練資料抽段落出題、以原文判斷答案正確性，對一再答錯卻資訊豐富的回答產生拒答示範。"
+  - key: fineweb
+    title: "HuggingFaceFW/fineweb dataset card"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/datasets/HuggingFaceFW/fineweb"
+    type: dataset
+    lang: en
+    accessed: "2026-10-06"
+    note: "FineWeb 含超過 18.5T 個 token（最初為 15T），為清理並去重後的 CommonCrawl 英文網頁資料，涵蓋 2013 年以來的所有 CommonCrawl 存檔。"
+  - key: gpt3
+    title: "Language Models are Few-Shot Learners"
+    publisher: "OpenAI（arXiv）"
+    url: "https://arxiv.org/abs/2005.14165"
+    type: paper
+    lang: en
+    published: "2020-05-28"
+    accessed: "2026-10-06"
+    note: "表 2.1：所有模型都訓練了 3,000 億個 token。"
+  - key: qwen3
+    title: "Qwen3 Technical Report"
+    publisher: "Qwen Team（arXiv）"
+    url: "https://arxiv.org/abs/2505.09388"
+    type: paper
+    lang: en
+    published: "2025-05-14"
+    accessed: "2026-10-06"
+    note: "Qwen3 以 36 兆個 token 預訓練，涵蓋 119 種語言與方言。"
+  - key: deepseek-v4
+    title: "DeepSeek-V4-Pro model card"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-06"
+    note: "以超過 32T 個 token 預訓練；後訓練分兩階段：先以 SFT 與 GRPO 強化學習分別培養各領域專家，再以 on-policy distillation 整合成單一模型。"
+  - key: instructgpt
+    title: "Training language models to follow instructions with human feedback"
+    publisher: "OpenAI（arXiv）"
+    url: "https://arxiv.org/abs/2203.02155"
+    type: paper
+    lang: en
+    published: "2022-03-04"
+    accessed: "2026-10-06"
+    note: "語言模型「預測網頁下一個 token」的目標，與「有幫助且安全地遵循使用者指令」不同，因此稱為未對齊。約 40 位標註人員透過 Upwork 與 ScaleAI 招募；SFT 資料約 1.3 萬個提示、獎勵模型 3.3 萬個、PPO 3.1 萬個；每個提示讓標註人員排序 4 到 9 個回答；獎勵分數差代表人類偏好的對數勝算；PPO 每個 token 加上對 SFT 模型的 KL 懲罰，係數 0.02。1.3B InstructGPT 比 175B GPT-3 更受偏好；175B InstructGPT 對 175B GPT-3 的偏好率為 85 ± 3%；在 SQuAD、DROP、HellaSwag 等公開資料集出現「對齊稅」，混入預訓練梯度（PPO-ptx）可大幅減輕。175B SFT 需 4.9 petaflop/s-day、175B PPO-ptx 需 60，GPT-3 為 3,640；RLHF 讓模型對使用者更有幫助的效果，勝過把模型放大 100 倍。"
+  - key: chatgpt
+    title: "ChatGPT: Optimizing Language Models for Dialogue"
+    publisher: OpenAI
+    url: "https://openai.com/index/chatgpt/"
+    type: company-site
+    lang: en
+    published: "2022-11-30"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20221130190543/https://openai.com/blog/chatgpt/"
+    note: "ChatGPT 是 InstructGPT 的姊妹模型，以 RLHF 訓練、方法與 InstructGPT 相同，資料收集略有不同；SFT 階段由訓練人員同時扮演使用者與 AI 助理撰寫對話。"
+  - key: lima
+    title: "LIMA: Less Is More for Alignment"
+    publisher: "Meta AI 等（arXiv）"
+    url: "https://arxiv.org/abs/2305.11206"
+    type: paper
+    lang: en
+    published: "2023-05-18"
+    accessed: "2026-10-06"
+    note: "65B LLaMa 只以 1,000 筆精選提示與回答做標準監督式微調，不做強化學習；人類評估中 43% 的回答與 GPT-4 相當或更好。提出表層對齊假說：知識與能力幾乎都在預訓練學會，對齊主要教模型與使用者互動時使用哪種格式。"
+  - key: dpo
+    title: "Direct Preference Optimization: Your Language Model is Secretly a Reward Model"
+    publisher: "Stanford University（arXiv）"
+    url: "https://arxiv.org/abs/2305.18290"
+    type: paper
+    lang: en
+    published: "2023-05-29"
+    accessed: "2026-10-06"
+    note: "RLHF 流程複雜且常不穩定；DPO 以新的獎勵模型參數化取得最佳策略的封閉解，只需簡單的分類損失，不必在微調時從模型取樣；控制情緒的能力勝過 PPO，摘要與單輪對話品質相當或更好。"
+  - key: cai
+    title: "Constitutional AI: Harmlessness from AI Feedback"
+    publisher: "Anthropic（arXiv）"
+    url: "https://arxiv.org/abs/2212.08073"
+    type: paper
+    lang: en
+    published: "2022-12-15"
+    accessed: "2026-10-06"
+    note: "人類監督只透過一份規則或原則清單提供；監督式階段讓模型自我批評並修改回答後微調，強化學習階段由模型比較兩個回答、訓練偏好模型，稱為 RLAIF；能以少得多的人工標註控制 AI 行為。"
+  - key: claude-constitution
+    title: "Claude's new constitution"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/claude-new-constitution"
+    type: company-site
+    lang: en
+    published: "2026-01-22"
+    accessed: "2026-10-06"
+    note: "憲法在訓練的多個階段塑造 Claude 的行為，Claude 也用它產生合成訓練資料（回答範例與回答排名）；Claude 應整體安全、合乎倫理、遵守 Anthropic 準則、真正有幫助，衝突時大致依此順序取捨；全文以 CC0 釋出。"
+  - key: openai-sycophancy
+    title: "Sycophancy in GPT-4o: what happened and what we're doing about it"
+    publisher: OpenAI
+    url: "https://openai.com/index/sycophancy-in-gpt-4o/"
+    type: company-site
+    lang: en
+    published: "2025-04-29"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/2025/https://openai.com/index/sycophancy-in-gpt-4o/"
+    note: "OpenAI 撤回前一週的 GPT-4o 更新，因其過度奉承、附和；塑造模型行為時以 Model Spec 的基本原則為起點，並納入使用者按讚、倒讚等回饋；這次更新過度重視短期回饋。"
+  - key: deepseek-v3
+    title: "DeepSeek-V3 Technical Report"
+    publisher: "DeepSeek-AI（arXiv）"
+    url: "https://arxiv.org/abs/2412.19437"
+    type: paper
+    lang: en
+    published: "2024-12-27"
+    accessed: "2026-10-06"
+    note: "表 1：預訓練 2,664K H800 GPU 小時、上下文延長 119K、後訓練 5K，合計 2,788K；以每 GPU 小時 2 美元計約 557.6 萬美元，只含正式訓練，不含先前的研究與消融實驗；以 14.8T 個 token 預訓練；叢集為 2,048 顆 H800。"
+  - key: deepseek-v32
+    title: "DeepSeek-V3.2: Pushing the Frontier of Open Large Language Models"
+    publisher: "DeepSeek-AI（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V3.2/resolve/main/assets/paper.pdf"
+    type: paper
+    lang: en
+    published: "2025-12-01"
+    accessed: "2026-10-06"
+    note: "後訓練運算預算超過預訓練成本的 10%；為 Agent 能力合成超過 1,800 個環境與 8.5 萬個複雜提示來驅動強化學習。"
+  - key: deepseek-r1
+    title: "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning"
+    publisher: "DeepSeek-AI（arXiv；Nature 645, 633–638）"
+    url: "https://arxiv.org/abs/2501.12948"
+    type: paper
+    lang: en
+    published: "2025-01-22"
+    accessed: "2026-10-06"
+    note: "依現行 arXiv v2（2026-01-04，即《自然》期刊版）。第 2.2 節（獎勵設計）：推理任務不使用神經網路的結果或過程獎勵模型，因為它在大規模強化學習中容易遭遇 reward hacking，重新訓練又耗資源；GRPO 對每個問題取樣一組輸出、以組內分數估計基準。"
+  - key: tulu3
+    title: "Tülu 3: Pushing Frontiers in Open Language Model Post-Training"
+    publisher: "Allen Institute for AI（arXiv）"
+    url: "https://arxiv.org/abs/2411.15124"
+    type: paper
+    lang: en
+    published: "2024-11-22"
+    accessed: "2026-10-06"
+    note: "訓練演算法包含 SFT、DPO，以及作者命名的「可驗證獎勵強化學習」（RLVR）。"
+  - key: scale-wiki
+    title: "Scale AI"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Scale_AI"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "原以資料標註為主，也提供 RLHF 服務；2025 年 6 月 Meta 以超過 140 億美元取得 49% 無表決權股份，執行長 Alexandr Wang 轉任 Meta 要職。"
+  - key: surge-wiki
+    title: "Surge AI"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Surge_AI"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "專注於 RLHF、強化學習環境與語言資料標註；客戶包括 Anthropic、OpenAI、Google、Microsoft、Meta。"
+  - key: mercor-wiki
+    title: "Mercor"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Mercor"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "招募法律、醫療、銀行、工程等領域專家為 AI 模型產生訓練資料，客戶包括 OpenAI 與 Anthropic；2025 年 10 月以 100 億美元估值完成 3.5 億美元 C 輪。"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: learn-07
+  checkedBy: "learn-07-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：逐一對照 Llama 3、InstructGPT、GPT-3、LIMA、DPO、Constitutional AI、Tülu 3、Qwen3、DeepSeek-V3／V3.2／R1 論文原文，FineWeb 資料集卡、DeepSeek-V4-Pro 模型卡、Anthropic 憲法公告、OpenAI 部落格存檔（ChatGPT、GPT-4o 討好事件）與維基百科條目。修正：RLHF 步驟敘述（論文為三步驟，SFT 之後可拆四步）、ChatGPT 發布年份寫明、Llama 3 能力清單的 steerability 譯法、15.6 兆 Token 限定為 405B 旗艦模型、獎勵模型分數差為對數勝算、R1 只在推理題用規則式獎勵。"
+---
+
+## 一句話解釋
+
+ChatGPT 這類對話助理，是分兩個階段打造出來的。第一階段是<Term id="pretraining">預訓練</Term>：讓模型讀遍數兆個 <Term id="token">Token</Term> 的文字，反覆練習猜下一個 Token，得到知識淵博、卻只會「接話」的<Term id="foundation-model">基礎模型</Term>。第二階段是<Term id="post-training">後訓練</Term>：用人寫的示範、人類對回答的偏好以及書面原則，把它調教成會遵循指令、誠實又守分寸的助理。讓模型的行為符合人類意圖這件事，就叫做<Term id="alignment">對齊</Term>。
+
+## 生活化比喻
+
+<Callout type="analogy" title="把博學新人訓練成可靠的專員">
+
+想像一位新人在報到前，花了好幾年把整座圖書館讀完：百科、論壇、程式碼、小說、考古題全都讀過。他知識淵博，卻有個怪習慣：只會順著別人的話寫下去。你問他「HBM 是什麼？」，他可能接著寫出「CoWoS 是什麼？EUV 是什麼？」，因為他讀過的題目清單就長這樣。
+
+公司接著分三步訓練他：
+
+- **看範本（SFT）**：主管拿出上萬份「客人這樣問、你這樣答」的標準應對，讓他照著模仿。
+- **主管評分（RLHF）**：新人開始自己回答，主管不再逐字示範，而是把他的幾種回答排出優劣，新人慢慢摸出「什麼樣的回答比較好」。
+- **員工守則（對齊原則）**：哪些要求要婉拒、不知道時要誠實說不知道、兩個原則衝突時先顧哪一個。
+
+讀書的時間遠比職前訓練長，但少了職前訓練，這位新人就很難派上用場。
+
+</Callout>
+
+## 原理
+
+### 第一階段：預訓練，讀完一座網路圖書館
+
+預訓練的資料主要來自公開網頁，再加上書籍、論文與程式碼。原始網頁品質參差不齊，必須先清理。以 Meta 公開的 Llama 3 技術報告為例，資料處理包括<Cite k="llama3" />：
+
+- **安全與隱私過濾**：移除含大量個人資料或成人內容的網域。
+- **去除重複**：在網址、文件、單行三個層級去重，連網頁上反覆出現的選單與 cookie 提示也一併清掉。
+- **規則與模型過濾**：用規則剔除充滿重複字串的紀錄檔與錯誤訊息，再用小型分類器挑出「看起來像會被維基百科引用」的高品質文字。
+
+清理後還要決定各類資料的比例。Llama 3 最後的配方大約是一半一般知識，再加上數學與推理、程式碼與多語言資料；旗艦的 4,050 億參數版本總共讀了 15.6 兆個 Token<Cite k="llama3" />：
+
+<BarChart title="Llama 3 預訓練資料配比" unit="%" data={[{ label: "一般知識", value: 50 }, { label: "數學與推理", value: 25 }, { label: "程式碼", value: 17 }, { label: "多語言", value: 8 }]} source="llama3" note="以 Token 計，為 Meta 公布的約略比例" />
+
+開放社群也有現成的清理成果：<CompanyChip id="hugging-face" /> 釋出的 FineWeb 資料集，把 2013 年以來的 CommonCrawl 網頁存檔清理、去重，累積超過 18.5 兆個英文 Token<Cite k="fineweb" />。資料量的成長同樣驚人：2020 年的 GPT-3 訓練了 3,000 億個 Token<Cite k="gpt3" />，2025 年的 Qwen3 用了 36 兆個 Token、涵蓋 119 種語言與方言<Cite k="qwen3" />，2026 年的 DeepSeek-V4 則超過 32 兆個 Token<Cite k="deepseek-v4" />。
+
+<Scene3D id="train-infer" variant="pipeline" caption="模型開發流水線：資料收集、品質過濾、去重與分詞之後，依序進入預訓練、後訓練（SFT、RLHF）、評測與部署，上線後的回饋再回到資料端。流程與數量皆為示意。" />
+
+預訓練的目標只有一個：猜中下一個 Token。模型因此學到文法、事實與寫程式的套路，但 OpenAI 在 InstructGPT 論文中指出，「預測網頁上的下一個 Token」和「有幫助且安全地遵循使用者指令」是兩個不同的目標<Cite k="instructgpt" />。基礎模型看到一個問題，可能會續寫更多問題、編出一段論壇對話，或在半途岔開話題；它並不知道自己應該扮演「助理」。
+
+### 第二階段之一：監督式微調（SFT）
+
+最直接的辦法，是給模型看示範。<Term id="sft">監督式微調（SFT）</Term>準備大量「提示＋理想回答」的配對，用和預訓練相同的方式訓練，只是資料從網頁換成了對話。這些示範被包進固定的對話格式，標出哪段是使用者、哪段是助理，模型因此學會「輪到我說話了」，也學會何時該停。
+
+示範資料的量，遠比預訓練少。2022 年的 InstructGPT 透過 Upwork 與 <CompanyChip id="scale-ai" /> 找了約 40 位標註人員，SFT 資料只有約 1.3 萬個提示<Cite k="instructgpt" />。Meta 等機構的 LIMA 研究更極端：650 億參數的 LLaMA 只用 1,000 筆精挑細選的示範微調，人類評估中就有 43% 的回答被認為和 GPT-4 一樣好或更好。作者據此提出「表層對齊假說」：知識與能力幾乎都在預訓練時學會，對齊主要是教模型用什麼格式與風格和使用者互動<Cite k="lima" />。
+
+SFT 的限制是只會模仿。它無法告訴模型「兩個都說得通的回答，哪一個比較好」，而且請專家逐字寫出完美回答，成本很高。
+
+### 第二階段之二：從人類偏好學習（RLHF）
+
+比起自己寫出完美答案，判斷兩個答案誰比較好容易得多。<Term id="rlhf">RLHF</Term>（人類回饋強化學習）就是利用這一點。以 InstructGPT 為例，在 SFT 之後的流程可以拆成四步<Cite k="instructgpt" />：
+
+<FlowSteps
+  title="RLHF 的四個步驟（以 InstructGPT 為例）"
+  steps={[
+    { title: "產生候選回答", detail: "同一個提示，讓 SFT 模型寫出 4 到 9 個不同回答" },
+    { title: "人類排名", detail: "標註人員排出優劣，再拆成兩兩比較的資料" },
+    { title: "訓練獎勵模型", detail: "學會替任何回答打分數，兩個回答的分數差代表人類偏好前者的對數勝算" },
+    { title: "強化學習", detail: "用 PPO 讓模型寫出高分回答，並以 KL 懲罰避免偏離 SFT 模型太遠" }]}
+/>
+
+這裡的<Term id="reinforcement-learning">強化學習</Term>，是讓模型自己產生回答、拿到獎勵模型的分數，再調整參數，讓高分回答更常出現。InstructGPT 訓練獎勵模型用了約 3.3 萬個提示，強化學習階段用了約 3.1 萬個提示<Cite k="instructgpt" />。效果非常明顯：
+
+<StatGrid
+  title="InstructGPT 的成果"
+  items={[
+    { label: "小模型勝過大模型", value: "13 億 vs 1,750 億", note: "13 億參數的 InstructGPT，回答比 1,750 億參數的 GPT-3 更受偏好" },
+    { label: "同尺寸對比", value: "85%", note: "1,750 億參數的 InstructGPT 對上 GPT-3，被偏好的比例約 85%（±3%）" },
+    { label: "副作用", value: "對齊稅", note: "SQuAD、DROP 等公開評測分數下降，訓練時混入預訓練資料可大幅減輕" }]}
+  caption="資料來源：Ouyang et al.（2022），InstructGPT 論文。"
+/>
+
+而且這一切並不昂貴：1,750 億參數模型的 SFT 只用了 4.9 petaflop/s-day 的算力，強化學習用了 60，相較之下 GPT-3 預訓練用了 3,640<Cite k="instructgpt" />。後訓練的算力不到預訓練的 2%，對「好不好用」的提升，卻比把模型放大 100 倍還明顯。
+
+<BarChart title="InstructGPT 各階段訓練算力（1,750 億參數）" unit="petaflop/s-day" data={[{ label: "GPT-3 預訓練", value: 3640 }, { label: "SFT", value: 4.9 }, { label: "RLHF", value: 60 }]} source="instructgpt" note="RLHF 指混入預訓練資料的 PPO-ptx 模型" keepOrder />
+
+2022 年 11 月推出的 ChatGPT 是 InstructGPT 的「姊妹模型」，同樣以 SFT 加 RLHF 訓練，只是示範資料改成由訓練人員同時扮演使用者與助理所寫的多輪對話<Cite k="chatgpt" />。
+
+### 更簡單的替代：DPO
+
+RLHF 要另外訓練獎勵模型，再跑不太穩定的強化學習。2023 年，史丹佛大學研究者提出 <Term id="dpo">DPO</Term>（直接偏好最佳化），證明同樣的目標可以改寫成一個簡單的分類損失：直接拿「較好」與「較差」的回答配對，提高前者、壓低後者的機率，不必訓練獎勵模型，也不必在訓練中反覆讓模型產生回答。論文中，DPO 在摘要與單輪對話上的品質與 PPO 相當或更好<Cite k="dpo" />。
+
+<Compare
+  title="兩種從偏好學習的方法"
+  left={{ title: "RLHF（PPO）", items: ["先訓練獎勵模型", "訓練中不斷讓模型產生新回答再評分", "彈性大，可搭配各種獎勵", "流程複雜，調參不易"] }}
+  right={{ title: "DPO", items: ["不需要獎勵模型", "直接在固定的偏好配對上訓練", "穩定、省算力、容易實作", "只從現成的配對學習，訓練中不會探索新回答"] }}
+/>
+
+Meta 訓練 Llama 3 時就選擇了 SFT、拒絕取樣與 DPO 的組合，理由是 PPO 這類強化學習較不穩定、難以放大；整套流程重複 6 輪，每一輪都從最新的模型取樣產生<Term id="synthetic-data">合成資料</Term>，再收集新的人類偏好標註<Cite k="llama3" />。
+
+### 後訓練還教了什麼：知道自己不知道
+
+後訓練不只教禮貌與格式。Llama 3 的後訓練另外針對程式、多語言、數學與推理、長上下文、工具使用、事實正確性，以及依開發者與使用者指示調整行為的「可控性」，各自準備專門的資料<Cite k="llama3" />。其中「事實正確性」最能說明後訓練的角色。
+
+模型常常在不熟悉的領域也表現得很有把握，這是<Term id="hallucination">幻覺</Term>的來源之一。Meta 的原則是：後訓練應該讓模型「知道自己知道什麼」，而不是硬塞新知識。做法是從預訓練資料中抽出一段文字，讓模型針對它出題、自己作答，再以原文為標準判斷答案對錯；對於模型一再答錯、卻答得頭頭是道的題目，就產生「拒答」的示範，教它對沒把握的問題坦白說不確定<Cite k="llama3" />。換句話說，知識在預訓練時就已決定，後訓練調整的是模型「怎麼使用、何時承認不知道」。
+
+### 對齊：除了有用，還要誠實、守分寸
+
+偏好資料只告訴模型「人喜歡什麼」，但人喜歡的未必正確或安全。Anthropic 在 2022 年提出 Constitutional AI：人類只提供一份書面原則，模型先依原則自我批評、修改回答，再拿修改後的回答微調；強化學習階段則由 AI 依原則比較兩個回答，稱為 RLAIF（AI 回饋強化學習），大幅減少人工標註<Cite k="cai" />。2026 年 1 月，Anthropic 公開新版 Claude「憲法」，要求 Claude 整體安全、合乎倫理、遵守 Anthropic 的準則、真正有幫助，四者衝突時大致依此順序取捨，並用它產生訓練用的合成回答與排名<Cite k="claude-constitution" />。OpenAI 則以公開的 Model Spec 作為塑造模型行為的基本原則<Cite k="openai-sycophancy" />。
+
+<Callout type="warn" title="獎勵只是代理指標">
+
+2025 年 4 月，OpenAI 撤回一次 GPT-4o 更新，因為新版變得過度奉承、什麼都附和。OpenAI 事後說明，這次更新太看重使用者按讚、按倒讚這類短期回饋，沒有充分考慮使用者與 ChatGPT 的互動會隨時間改變<Cite k="openai-sycophancy" />。獎勵模型與按讚都只是「好回答」的代理指標，模型拚命追高分時，學到的可能是討好，而不是真正有幫助。
+
+</Callout>
+
+### 2025–2026 年：後訓練變成重頭戲
+
+早期的後訓練只是預訓練的零頭，近兩年比重快速上升，主要原因是用來培養推理與 Agent 能力的大規模強化學習：
+
+<StatGrid
+  title="後訓練算力占預訓練的比例"
+  items={[
+    { label: "InstructGPT（2022）", value: "約 1.8%", note: "SFT 加 RLHF 共 64.9 petaflop/s-day，GPT-3 預訓練為 3,640" },
+    { label: "DeepSeek-V3（2024）", value: "約 0.2%", note: "後訓練 5 千 GPU 小時，預訓練 266.4 萬 GPU 小時" },
+    { label: "DeepSeek-V3.2（2025）", value: "超過 10%", note: "官方表示後訓練預算已超過預訓練成本的 10%" }]}
+  caption="依各技術報告數字計算；三者的計算單位不同，只適合比較比例。"
+/>
+
+DeepSeek-V3 的後訓練只用了 5 千個 H800 GPU 小時，預訓練則用了 266.4 萬<Cite k="deepseek-v3" />；到了 2025 年 12 月的 DeepSeek-V3.2，後訓練預算已超過預訓練成本的 10%，還合成了 1,800 多個環境與 8.5 萬個複雜提示來訓練 Agent 能力<Cite k="deepseek-v32" />。2026 年的 DeepSeek-V4 則先針對各領域，分別以 SFT 與強化學習培養「專家模型」，再用同策略蒸餾（on-policy distillation）把它們的能力合併回同一個模型<Cite k="deepseek-v4" />。
+
+這類強化學習的獎勵，常常不再來自人類偏好，而是可以自動驗證的結果，例如數學答案對不對、程式能不能通過測試。Ai2 在 Tülu 3 論文中稱之為 <Term id="rlvr">RLVR</Term>（可驗證獎勵的強化學習）<Cite k="tulu3" />。它正是<Term id="reasoning-model">推理模型</Term>的核心，下一篇<LearnLink id="reasoning-models">推理模型：讓 AI 先想再答</LearnLink>會詳細說明。
+
+<DeepDive title="深入一點：獎勵模型、KL 懲罰與 DPO 的數學">
+
+**獎勵模型怎麼學。** 給定提示 x，把人類偏好的回答記為 <MathTeX tex="y_w" />，較差的記為 <MathTeX tex="y_l" />。獎勵模型 r 的訓練目標，是讓兩者的分數差越大越好<Cite k="instructgpt" />：
+
+<MathTeX tex={"\\mathcal{L}_{\\mathrm{RM}}=-\\log\\sigma\\!\\left(r(x,y_w)-r(x,y_l)\\right)"} display label="獎勵模型損失，等於負的 log sigmoid（偏好回答的分數減去較差回答的分數）" />
+
+σ 是 sigmoid 函數，所以分數差可以解讀成「人類偏好前者的勝算對數」。
+
+**強化學習要拉住韁繩。** 接著要讓模型 π 追求高分，但不能離 SFT 模型太遠：
+
+<MathTeX tex={"\\max_{\\pi}\\;\\mathbb{E}\\left[r(x,y)\\right]-\\beta\\,\\mathrm{KL}\\!\\left(\\pi\\,\\|\\,\\pi_{\\mathrm{SFT}}\\right)"} display label="最大化期望獎勵，減去 beta 乘以模型與 SFT 模型之間的 KL 散度" />
+
+KL 散度衡量兩個模型的輸出分布差多少；InstructGPT 在每個 Token 上都加了 KL 懲罰，係數 β 為 0.02<Cite k="instructgpt" />。少了這條韁繩，模型很快會找到獎勵模型的漏洞，例如寫出又長又空洞、卻剛好拿高分的回答。DeepSeek 也指出，在大規模強化學習中，神經網路獎勵模型可能被「鑽漏洞」（reward hacking），這是他們訓練推理模型時改用規則式獎勵的原因之一<Cite k="deepseek-r1" />。
+
+**DPO 的捷徑。** DPO 證明上式的最佳解可以寫成封閉形式，於是獎勵可以改用「新模型與參考模型的機率比」來表示，整個問題變成一個分類損失<Cite k="dpo" />：
+
+<MathTeX tex={"\\mathcal{L}_{\\mathrm{DPO}}=-\\log\\sigma\\!\\left(\\beta\\log\\frac{\\pi(y_w\\mid x)}{\\pi_{\\mathrm{ref}}(y_w\\mid x)}-\\beta\\log\\frac{\\pi(y_l\\mid x)}{\\pi_{\\mathrm{ref}}(y_l\\mid x)}\\right)"} display label="DPO 損失，等於負的 log sigmoid（beta 乘偏好回答的對數機率比，減去 beta 乘較差回答的對數機率比）" />
+
+直觀地說：相對於參考模型，讓好回答的機率上升得比壞回答多。這個式子和獎勵模型的損失幾乎一模一樣，只是「分數」換成了語言模型自己的機率，所以論文的副標題說：你的語言模型其實就是一個獎勵模型。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+- **預訓練是算力大戶** → <SegmentChip id="ai-accelerators" />、<SegmentChip id="cloud-neocloud" />：Llama 3 405B 的預訓練動用了 3.8 × 10²⁵ 次浮點運算，最多同時使用 1.6 萬顆 <CompanyChip id="nvidia" /> H100 <Term id="gpu">GPU</Term><Cite k="llama3" />；DeepSeek-V3 在 2,048 顆 H800 的叢集上完成訓練，共 278.8 萬個 GPU 小時，若以每小時 2 美元的租金計算約 558 萬美元，而且不含先前的研究與實驗<Cite k="deepseek-v3" />。
+- **資料與專家人力** → <SegmentChip id="devtools-data-mlops" />：後訓練需要大量專業標註與評測。<CompanyChip id="scale-ai" /> 從資料標註起家、提供 RLHF 服務，Meta 在 2025 年 6 月以超過 140 億美元取得其 49% 無表決權股份<Cite k="scale-wiki" />；<CompanyChip id="surge-ai" /> 專注於 RLHF 與強化學習環境，客戶包括 Anthropic、OpenAI 與 Google<Cite k="surge-wiki" />；<CompanyChip id="mercor" /> 招募律師、醫師、銀行家與工程師等專家替 AI 模型產生訓練資料，2025 年 10 月以 100 億美元估值完成 C 輪募資<Cite k="mercor-wiki" />。預訓練資料的來源也引發著作權爭議，見<TrendLink id="copyright-data-licensing">著作權訴訟與資料授權市場</TrendLink>。
+- **模型實驗室的看家本領** → <SegmentChip id="foundation-models" />：<CompanyChip id="openai" />（<ModelChip id="openai-gpt" />）以 InstructGPT 與 ChatGPT 把 RLHF 帶進主流；<CompanyChip id="anthropic" />（<ModelChip id="anthropic-claude" />）提出 Constitutional AI 並公開憲法；<CompanyChip id="meta" />（<ModelChip id="meta-muse-llama" />）、<CompanyChip id="deepseek" />（<ModelChip id="deepseek" />）與 <CompanyChip id="alibaba" />（<ModelChip id="alibaba-qwen" />）則公開了大量訓練細節，讓後來者能照著改良，見<TrendLink id="open-weights-race">開放權重競賽與兆級參數模型</TrendLink>。
+- **強化學習讓訓練也大量「生成」** → 強化學習要讓模型針對每個問題自行產生一組回答、評分後再更新<Cite k="deepseek-r1" />，訓練過程中包含大量類似推論的生成工作。後訓練比重上升，代表 GPU 的用途正從單純的預訓練，延伸到這類邊生成邊學習的工作，見<TrendLink id="reasoning-test-time-compute">推理模型與推論時運算</TrendLink>。

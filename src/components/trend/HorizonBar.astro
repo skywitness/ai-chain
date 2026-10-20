@@ -1,0 +1,94 @@
+---
+/**
+ * Tiny time-axis bar: the span of a trend's horizon years on a shared axis, with a 「今天」 tick.
+ *   <HorizonBar years={[2026, 2027]} axis={[2025, 2032]} color="var(--chart-1)" />
+ * Without `years` it renders the empty axis (no span).
+ */
+import { DATA_DATE } from '../../lib/seo';
+import { yearsLabel } from './trend-meta';
+
+interface Props {
+  years?: readonly [number, number] | undefined;
+  axis: readonly [number, number];
+  color?: string | undefined;
+  /** show the end-year labels under the track (default true) */
+  ticks?: boolean | undefined;
+  class?: string | undefined;
+}
+const { years, axis, color = 'var(--c-accent)', ticks = true, class: className } = Astro.props;
+const [lo, hi] = axis;
+const span = hi + 1 - lo;
+const pos = (y: number) => Math.max(0, Math.min(100, ((y - lo) / span) * 100));
+const [ty, tm, td] = DATA_DATE.split('-').map(Number) as [number, number, number];
+const today = ty + (tm - 1) / 12 + (td - 1) / 365;
+const a = years ? pos(years[0]) : 0;
+const b = years ? pos(years[1] + 1) : 0;
+const label = years ? `時間範圍 ${yearsLabel(years)} 年（軸線 ${lo}–${hi} 年）` : undefined;
+---
+
+<div
+  class:list={['hb', className]}
+  style={`--hb-c: ${color}; --a: ${a.toFixed(2)}%; --b: ${b.toFixed(2)}%; --n: ${pos(today).toFixed(2)}%`}
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+>
+  <div class="hb__track">
+    {years && <span class="hb__range"></span>}
+    <span class="hb__now" title="資料基準日"></span>
+  </div>
+  {
+    ticks && (
+      <div class="hb__ticks" aria-hidden="true">
+        <span>{lo}</span>
+        <span>{hi}</span>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .hb {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+  .hb__track {
+    position: relative;
+    block-size: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--c-bg-sunken);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-border) 80%, transparent);
+  }
+  .hb__range {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: var(--a);
+    inline-size: calc(var(--b) - var(--a));
+    border-radius: var(--radius-pill);
+    background: var(--hb-c);
+  }
+  .hb__now {
+    position: absolute;
+    inset-block: -3px;
+    inset-inline-start: var(--n);
+    inline-size: 2px;
+    border-radius: 1px;
+    background: var(--c-fg);
+    opacity: 0.55;
+  }
+  .hb__ticks {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  @media (forced-colors: active) {
+    .hb__range,
+    .hb__now {
+      background: CanvasText;
+    }
+  }
+</style>

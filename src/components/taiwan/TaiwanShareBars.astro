@@ -1,0 +1,212 @@
+---
+/**
+ * 「台灣公司在各環節的占比」: for each of the 14 segments (grouped by layer, top layer first, like the chain
+ * tower), the share of Taiwan companies among the roster's companies whose primary segment it is. Shows at a
+ * glance that Taiwan sits in the middle (silicon and systems) of the chain. Counts, not market share.
+ * Text values are always visible, so the bars are decorative.
+ *   <TaiwanShareBars layers={taiwanShareByLayer()} />
+ */
+import { segmentHref } from '../../lib/paths';
+import type { LayerShare } from './taiwan-data';
+
+interface Props {
+  layers: readonly LayerShare[];
+  title?: string | undefined;
+  headingLevel?: 2 | 3 | undefined;
+  class?: string | undefined;
+}
+const { layers, title = '台灣公司在各環節的占比', headingLevel = 3, class: className } = Astro.props;
+const H = `h${headingLevel}` as 'h2' | 'h3';
+const all = layers.reduce((n, l) => n + l.all, 0);
+const tw = layers.reduce((n, l) => n + l.tw, 0);
+const pct = (v: number | null) => (v == null ? '—' : `${Math.round(v * 100)}%`);
+// emphasise the segments where Taiwan is at least a third of the roster
+const STRONG = 1 / 3;
+---
+
+<section class:list={['tsb', className]} aria-labelledby="tsb-h">
+  <H id="tsb-h" class="tsb__title">{title}</H>
+  <p class="tsb__lede">本站名冊 {all} 家公司中有 {tw} 家來自台灣。色條是各環節名冊裡台灣公司的家數比例。</p>
+  <ol class="tsb__layers" role="list">
+    {
+      layers.map((l) => (
+        <li class="tsb__layer" style={`--lc: ${l.layer.color}`}>
+          <p class="tsb__layer-h">
+            <i aria-hidden="true" />
+            {l.layer.title}
+            <span class="tsb__layer-n">
+              {l.tw}／{l.all} 家
+            </span>
+          </p>
+          <ul class="tsb__rows" role="list">
+            {l.segments.map((s) => (
+              <li
+                class:list={['tsb__row', { 'tsb__row--strong': (s.share ?? 0) >= STRONG, 'tsb__row--zero': s.tw === 0 }]}
+                style={`--w: ${((s.share ?? 0) * 100).toFixed(1)}%; --sc: ${s.seg.color}`}
+              >
+                <a class="tsb__name" href={segmentHref(s.seg.id)} title={s.seg.title}>
+                  {s.seg.short}
+                </a>
+                <span class="tsb__track" aria-hidden="true">
+                  <span class="tsb__bar" />
+                </span>
+                <span class="tsb__val">
+                  <strong>{pct(s.share)}</strong>
+                  <small>
+                    {s.tw}／{s.all}
+                  </small>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))
+    }
+  </ol>
+  <p class="tsb__note">依本站名冊的主要環節計算，是收錄家數的比例，不是營收或市占率。</p>
+</section>
+
+<style>
+  .tsb {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border: 1px solid var(--c-border);
+    border-block-start: 3px solid var(--scene-tw-accent);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: var(--shadow-1);
+    min-width: 0;
+  }
+  .tsb p {
+    margin: 0;
+  }
+  .tsb__title {
+    margin: 0;
+    font-size: var(--fs-l);
+    line-height: 1.35;
+  }
+  .tsb__lede {
+    font-size: var(--fs-s);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+  }
+  .tsb__layers {
+    display: grid;
+    gap: var(--space-3);
+    margin: var(--space-1) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tsb__layer {
+    display: grid;
+    gap: 4px;
+  }
+  .tsb__layer + .tsb__layer {
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .tsb__layer-h {
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-muted);
+  }
+  .tsb__layer-h i {
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+    border-radius: 2px;
+    background: var(--lc);
+  }
+  .tsb__layer-n {
+    margin-inline-start: auto;
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .tsb__rows {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tsb__row {
+    display: grid;
+    grid-template-columns: 6.5em minmax(0, 1fr) 5.6em;
+    align-items: center;
+    gap: var(--space-3);
+    min-block-size: 1.9rem;
+  }
+  .tsb__name {
+    display: block;
+    line-height: 1.9rem;
+    font-size: var(--fs-s);
+    color: var(--c-fg);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tsb__name:hover {
+    color: var(--c-link);
+    text-decoration: underline;
+  }
+  .tsb__track {
+    position: relative;
+    block-size: 10px;
+    border-radius: var(--radius-pill);
+    background: var(--c-bg-sunken);
+    overflow: hidden;
+  }
+  .tsb__bar {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: var(--w);
+    min-inline-size: 3px;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--scene-tw-accent) 45%, var(--c-bg-sunken));
+  }
+  .tsb__row--strong .tsb__bar {
+    background: var(--scene-tw-accent);
+  }
+  .tsb__row--zero .tsb__bar {
+    display: none;
+  }
+  .tsb__val {
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 0.4em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .tsb__val strong {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+  }
+  .tsb__row--strong .tsb__val strong {
+    font-weight: var(--fw-bold);
+  }
+  .tsb__row--zero .tsb__val strong,
+  .tsb__row--zero .tsb__name {
+    color: var(--c-fg-subtle);
+  }
+  .tsb__val small {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .tsb__note {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  @media (forced-colors: active) {
+    .tsb__bar {
+      background: CanvasText;
+    }
+  }
+</style>

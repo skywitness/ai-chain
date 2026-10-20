@@ -1,0 +1,135 @@
+---
+/**
+ * Header search button (Ctrl/⌘+K). Loads the Pagefind Component UI on first use via
+ * src/client/search-loader.ts. In dev it opens a notice: 「搜尋需於建置後使用」.
+ * Also renders the notice <dialog> (once per page).
+ */
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  class?: string | undefined;
+}
+const { class: className } = Astro.props;
+---
+
+<button
+  type="button"
+  class:list={['search-btn', 'js-only', className]}
+  data-search-trigger
+  aria-haspopup="dialog"
+  aria-keyshortcuts="Control+K"
+>
+  <Icon name="search" size="18px" />
+  <span class="search-btn__text">搜尋</span>
+  <kbd class="search-btn__kbd" data-search-kbd aria-hidden="true">Ctrl K</kbd>
+</button>
+
+<dialog id="search-notice" class="search-notice" aria-labelledby="search-notice-title">
+  <div class="search-notice__body">
+    <h2 id="search-notice-title" class="search-notice__title">
+      <Icon name="search" size="20px" />
+      全站搜尋
+    </h2>
+    <p data-search-notice-message>搜尋需於建置後使用。</p>
+    <form method="dialog" class="search-notice__actions">
+      <button type="submit" class="search-notice__close" data-search-notice-close>知道了</button>
+    </form>
+  </div>
+</dialog>
+
+<script>
+  import '../../client/search-loader';
+</script>
+
+<style>
+  @layer components {
+    .search-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55em;
+      min-height: var(--tap);
+      min-width: var(--tap);
+      padding: 0 0.75em;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+      color: var(--c-fg-muted);
+      font-size: var(--fs-s);
+      transition:
+        border-color var(--dur-1) ease,
+        color var(--dur-1) ease;
+    }
+    .search-btn:hover {
+      border-color: var(--c-border-strong);
+      color: var(--c-fg);
+    }
+    .search-btn[aria-busy='true'] {
+      cursor: progress;
+    }
+    .search-btn__kbd {
+      font-size: 0.72rem;
+      line-height: 1.5;
+      padding-inline: 0.45em;
+      border-bottom-width: 1px;
+      background: var(--c-bg-sunken);
+    }
+    @media (max-width: 767px) {
+      .search-btn {
+        justify-content: center;
+        padding: 0;
+        border-color: transparent;
+        background: transparent;
+      }
+      .search-btn__text {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+      .search-btn__kbd {
+        display: none;
+      }
+    }
+
+    .search-notice {
+      width: min(28rem, calc(100vw - 2 * var(--space-4)));
+      padding: 0;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      box-shadow: var(--shadow-2);
+      margin: 12vh auto auto;
+    }
+    .search-notice__body {
+      display: grid;
+      gap: var(--space-3);
+      padding: var(--space-5);
+    }
+    .search-notice__title {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      font-size: var(--fs-l);
+    }
+    .search-notice p {
+      color: var(--c-fg-muted);
+      font-size: var(--fs-s);
+      line-height: 1.7;
+    }
+    .search-notice__actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .search-notice__close {
+      min-height: var(--tap);
+      padding: 0 1.2em;
+      border: 0;
+      border-radius: var(--radius-m);
+      background: var(--c-accent);
+      color: var(--c-accent-fg);
+      font-weight: var(--fw-semibold);
+      font-size: var(--fs-s);
+    }
+  }
+</style>

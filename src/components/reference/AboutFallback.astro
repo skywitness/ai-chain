@@ -1,0 +1,92 @@
+---
+/**
+ * Built-in /about/ text, shown while src/content/pages/about.mdx does not exist yet:
+ * purpose, how to use the site 由淺入深, editorial and fact-check process (the update cadence sits in
+ * the page's side card).
+ * The page itself renders the site numbers and the disclaimer around it. Render inside .prose.
+ */
+import FlowSteps from '../content/FlowSteps.astro';
+import HowToUse from './HowToUse.astro';
+import { LAYERS, SEGMENTS } from '../../lib/collections';
+import { sectionHref } from '../../lib/paths';
+---
+
+<h2 id="purpose">這個網站在做什麼</h2>
+<p>
+  一個 AI 回答的背後，需要發電廠、晶圓廠、記憶體、伺服器、資料中心、雲端平台與模型公司一起運作。AI 產業鏈全景把這條鏈拆成<strong>五層、十四個環節</strong>，整理每個環節在做什麼、關鍵技術是什麼、哪些公司是主要參與者，以及台灣在其中扮演的角色。
+</p>
+<ol class="ab-layers" role="list" aria-label="產業鏈五層（由上而下）">
+  {
+    [...LAYERS].reverse().map((l) => (
+      <li style={`--c: ${l.color}`}>
+        <span class="ab-layers__name">{l.title}</span>
+        <span class="ab-layers__segs">
+          {SEGMENTS.filter((s) => s.layer === l.id)
+            .map((s) => s.short)
+            .join('、')}
+        </span>
+      </li>
+    ))
+  }
+</ol>
+<p>
+  本站寫給對 AI 產業好奇的學生與上班族、想補足產業背景的工程師，以及需要快速查資料的研究者。內容以繁體中文撰寫，專有名詞保留英文原文並附上中文說明。
+</p>
+
+<HowToUse />
+
+<h2 id="editorial">內容怎麼產生與查核</h2>
+<FlowSteps
+  title="每一筆內容的流程"
+  steps={[
+    { title: '調研', detail: '優先蒐集財報、法說會、監理申報與官方文件，每個數字記下來源與讀取日期' },
+    { title: '撰寫', detail: '依繁體中文風格指南撰寫：先講結論，再用比喻，最後才是細節與數字' },
+    { title: '自動檢查', detail: '每次建置都檢查資料格式、引用、財報期間連續性與用字' },
+    { title: '查核', detail: '由撰寫者以外的編輯逐項比對來源，通過後才標示「已查核」' },
+  ]}
+/>
+<p>
+  本站的調研與撰寫以 AI 工具協助進行，再經過自動化規則檢查與獨立查核。因此我們要求每個數字都附上可點擊的來源，讓你可以自行核對；查不到的資料寧可留白，也不猜測。各類內容目前的查核進度，可以在<a
+    href={`${sectionHref('sources')}#editorial-status`}>查核狀態</a
+  >看到。
+</p>
+
+
+<style>
+  @layer components {
+    .ab-layers {
+      display: grid;
+      gap: 5px;
+      max-width: 36rem;
+      margin-inline: 0;
+      padding: 0;
+    }
+    .ab-layers li {
+      display: grid;
+      grid-template-columns: 8.5em minmax(0, 1fr);
+      gap: var(--space-3);
+      align-items: baseline;
+      margin: 0;
+      padding: 0.55em 0.9em;
+      border-radius: var(--radius-m);
+      border-inline-start: 4px solid var(--c);
+      background: color-mix(in srgb, var(--c) 9%, var(--c-bg-elev));
+      font-size: var(--fs-s);
+      line-height: 1.6;
+    }
+    .ab-layers__name {
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+    }
+    .ab-layers__segs {
+      color: var(--c-fg-muted);
+    }
+    @media (max-width: 479px) {
+      .ab-layers li {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+      }
+    }
+
+  }
+</style>

@@ -1,0 +1,882 @@
+---
+/**
+ * /chain/[segment]/ — one page per segment (14, driven by the static taxonomy / SEGMENT_IDS).
+ * Hero (title, tagline, layer badge, concentration, bottleneck) → segment scene (autoload visible) →
+ * levelled MDX body with a sticky TOC (由淺入深) → 關鍵數字 (keyMetrics) → 市場規模 → 關鍵公司 (tier-1 cards,
+ * then the roster grouped by tier, cross-segment participants and business units) → 台灣廠商 →
+ * 上下游 → 延伸閱讀 → 資料來源. Every block degrades to registry data or a calm 「內容整理中」 note.
+ */
+import type { MarkdownHeading } from 'astro';
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Scene3D from '../../components/scene/Scene3D.astro';
+import Badge from '../../components/ui/Badge.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Icon from '../../components/ui/Icon.astro';
+import TOC from '../../components/layout/TOC.astro';
+import StatGrid from '../../components/content/StatGrid.astro';
+import SourcesList from '../../components/content/SourcesList.astro';
+import { mdxComponents } from '../../components/content/mdx-components';
+import SectionHead from '../../components/chain/SectionHead.astro';
+import BottleneckMeter from '../../components/chain/BottleneckMeter.astro';
+import CompanyCard from '../../components/chain/CompanyCard.astro';
+import CompanyList from '../../components/chain/CompanyList.astro';
+import MarketSize from '../../components/chain/MarketSize.astro';
+import SegmentNav from '../../components/chain/SegmentNav.astro';
+import SegmentStrip from '../../components/chain/SegmentStrip.astro';
+import RelatedReading from '../../components/chain/RelatedReading.astro';
+import ChainPosition from '../../components/chain/ChainPosition.astro';
+import CampusTable from '../../components/chain/CampusTable.astro';
+import BodyScene from '../../components/chain/BodyScene.astro';
+import { registerSources } from '../../components/content/page-state';
+import {
+  CONCENTRATION,
+  getAllSegmentViews,
+  getSegmentView,
+  mergeSources,
+  splitMetricValue,
+} from '../../components/chain/chain-data';
+import { SEGMENTS, TIER_LABELS, safeCollection, type SegmentId } from '../../lib/collections';
+import { companyHref, sectionHref, segmentHref } from '../../lib/paths';
+import { articleJsonLd, DATA_DATE } from '../../lib/seo';
+import { getFinancialsMap, rankSegmentCompanies } from '../../lib/scene-data/segments';
+import { buildCampusesSceneData, getCampusRows } from '../../lib/scene-data/campuses';
+import { SEGMENT_IDS, type SceneId, type SourceT } from '../../schemas/common';
+
+// One page per registered segment id (SEGMENT_IDS, the frozen taxonomy) — whether or not its
+// `segments` entry has been written yet.
+export function getStaticPaths() {
+  return SEGMENT_IDS.map((segment) => ({ params: { segment } }));
+}
+
+const id = Astro.params.segment as SegmentId;
+const view = await getSegmentView(id);
+const meta = view.meta;
+const entry = view.entry;
+
+// MDX body (LevelSection blocks). A broken or missing body never breaks the page.
+let Content: Awaited<ReturnType<typeof render>>['Content'] | undefined;
+let bodyHeadings: MarkdownHeading[] = [];
+if (entry) {
+  try {
+    const r = await render(entry);
+    Content = r.Content;
+    bodyHeadings = r.headings;
+  } catch (err) {
+    console.warn(`[chain/${id}] could not render body: ${(err as Error).message}`);
+  }
+}
+
+// TOC: LevelSection titles (component H2s, ids level-N) merged with markdown H2s in body order.
+const body = entry?.body ?? '';
+const tocBody: Array<{ pos: number; h: MarkdownHeading }> = [];
+for (const m of body.matchAll(/<LevelSection\b[^>]*?\blevel=\{?\s*["']?(\d)["']?\s*\}?[^>]*?\btitle=["']([^"']+)["'][^>]*>/g)) {
+  const idm = /\bid=["']([^"']+)["']/.exec(m[0]);
+  tocBody.push({ pos: m.index ?? 0, h: { depth: 2, slug: idm?.[1] ?? `level-${m[1]}`, text: m[2]! } });
+}
+let cursor = 0;
+for (const h of bodyHeadings.filter((x) => x.depth === 2)) {
+  const at = body.indexOf(`## ${h.text}`, cursor);
+  if (at >= 0) cursor = at + 1;
+  tocBody.push({ pos: at >= 0 ? at : Number.MAX_SAFE_INTEGER, h });
+}
+tocBody.sort((a, b) => a.pos - b.pos);
+
+// In-body scenes are click-to-load: the hero scene is the page's only autoloading one.
+const bodyComponents = { ...mdxComponents, Scene3D: BodyScene };
+
+// Companies
+const [ranked, rankedAll, fins] = await Promise.all([
+  rankSegmentCompanies(id),
+  rankSegmentCompanies(id, { includeSecondary: true }),
+  getFinancialsMap(),
+]);
+const tier1 = ranked.filter((r) => r.company.tier === 1);
+const tierGroups = ([2, 3] as const)
+  .map((t) => ({ tier: t, items: ranked.filter((r) => r.company.tier === t) }))
+  .filter((g) => g.items.length > 0);
+const crossSegment = rankedAll.filter((r) => !r.primary && r.company.status === 'active');
+const taiwan = rankedAll.filter((r) => r.company.region === 'TW');
+
+// Business units of companies whose primary segment is elsewhere (e.g. AWS Trainium under AI 晶片)
+const companies = await safeCollection('companies');
+const units = companies.flatMap((c) => {
+  const d = c.data as {
+    nameZh: string;
+    primarySegment: { id: string };
+    units?: Array<{ id: string; name: string; nameZh: string; segment: { id: string }; description: string }>;
+  };
+  return (d.units ?? [])
+    .filter((u) => u.segment?.id === id && d.primarySegment?.id !== id)
+    .map((u) => ({ ...u, parentId: c.id, parentName: d.nameZh }));
+});
+
+// Scene (cloud-globe takes the campus registry; the other segment scenes take no page data)
+const sceneId = view.scene.id as SceneId;
+const sceneData = sceneId === 'cloud-globe' ? buildCampusesSceneData() : undefined;
+const campuses = id === 'cloud-neocloud' ? getCampusRows() : { rows: [], asOf: undefined };
+
+// Taglines of neighbours for the up/downstream cards
+const allViews = await getAllSegmentViews();
+const taglines = Object.fromEntries(allViews.map((v) => [v.id, v.tagline]));
+
+// Sources: the entry's list first (so <Cite> numbers match), then key-metric and market-size sources.
+const extraSources: SourceT[] = [
+  ...view.keyMetrics.map((m) => m.source as SourceT),
+  ...view.marketSize.map((m) => m.source as SourceT),
+];
+const campusSources = campuses.rows.map((r) => r.source).filter((x) => !!x) as SourceT[];
+const sources = mergeSources(view.sources, extraSources, campusSources);
+// Register before anything renders: the MDX body is a head-propagating component that Astro renders
+// before BaseLayout's frontmatter runs, so registering only in the layout would number <Cite> by
+// first appearance instead of by this list.
+registerSources(Astro, sources);
+
+// 「1,434 億美元，年增 43%」 → big number 「1,434 億美元」 + delta 「▲ 年增 +43%」; other qualifiers
+// move into the note so the headline never wraps mid-phrase.
+const statItems = view.keyMetrics.map((m) => {
+  const p = splitMetricValue(m.value);
+  return {
+    label: m.label,
+    value: p.value,
+    delta: p.delta,
+    deltaLabel: p.deltaLabel,
+    trend: p.trend,
+    estimate: p.estimate,
+    note: [p.detail, m.note, m.source.publisher].filter(Boolean).join('｜'),
+    asOf: m.asOf,
+  };
+});
+const statCols = statItems.length <= 4 ? Math.max(1, statItems.length) : statItems.length <= 6 ? 3 : 4;
+const statPublishers = [...new Set(view.keyMetrics.map((m) => m.source.publisher))];
+
+const conc = view.concentration ? CONCENTRATION[view.concentration] : undefined;
+const pageSections: MarkdownHeading[] = [
+  ...tocBody.map((t) => t.h),
+  ...(statItems.length ? [{ depth: 2, slug: 'key-metrics', text: '關鍵數字' }] : []),
+  ...(view.marketSize.length ? [{ depth: 2, slug: 'market-size', text: '市場規模' }] : []),
+  ...(campuses.rows.length ? [{ depth: 2, slug: 'campuses', text: '大型 AI 園區' }] : []),
+  { depth: 2, slug: 'key-companies', text: '關鍵公司' },
+  ...(taiwan.length ? [{ depth: 2, slug: 'taiwan-players', text: '台灣廠商' }] : []),
+  { depth: 2, slug: 'up-downstream', text: '上下游' },
+  { depth: 2, slug: 'related', text: '延伸閱讀' },
+  ...(sources.length ? [{ depth: 2, slug: 'sources', text: '資料來源' }] : []),
+];
+
+const crumbs = [{ label: '產業鏈', href: sectionHref('chain') }, { label: view.title }];
+const jsonLd = articleJsonLd({
+  title: view.title,
+  description: view.description,
+  path: Astro.url,
+  site: Astro.site,
+  dateModified: view.lastVerified,
+  section: '產業鏈',
+});
+const prevSeg = SEGMENTS[view.order - 2];
+const nextSeg = SEGMENTS[view.order];
+---
+
+<BaseLayout
+  title={`${view.title}｜產業鏈`}
+  description={view.description}
+  type="article"
+  breadcrumbs={crumbs}
+  sources={sources}
+  jsonLd={jsonLd}
+  modifiedTime={view.lastVerified}
+  section="chain"
+>
+  <article class="seg" style={`--seg-c: ${meta.color}; --layer-c: ${view.layer.color}`}>
+    <header class="container seg-hero">
+      <div class="seg-hero__text">
+      <span hidden data-pagefind-filter="類型:產業鏈"></span>
+      <span hidden data-pagefind-filter={`環節:${view.title}`}></span>
+      {view.lastVerified && <span hidden data-pagefind-sort={`updated:${view.lastVerified}`}></span>}
+      <p class="seg-hero__kicker">
+        <span class="seg-hero__order">第 {view.order} 環／共 14 環</span>
+        <span aria-hidden="true">·</span>
+        <span>{view.layer.title}層</span>
+      </p>
+      <h1 class="seg-hero__title" data-pagefind-weight="10">{view.title}</h1>
+      <p class="seg-hero__en" lang="en">{view.titleEn}</p>
+      <p class="seg-hero__tagline">{view.tagline}</p>
+      <div class="seg-hero__meta">
+        <Badge segment={id} size="m" srPrefix="所屬層：">{view.layer.title}</Badge>
+        {
+          conc && (
+            <span class="seg-hero__fact" title={conc.note}>
+              <span class="seg-hero__fact-label">市場結構</span>
+              <strong>{conc.label}</strong>
+            </span>
+          )
+        }
+        {
+          view.bottleneck && (
+            <span class="seg-hero__fact">
+              <BottleneckMeter level={view.bottleneck.level} label color={meta.color} />
+            </span>
+          )
+        }
+        {/* without the segment entry the page shows registry data, which is as of the site's data date */}
+        <DataAsOf date={view.lastVerified ?? DATA_DATE} />
+      </div>
+      </div>
+      <ChainPosition current={id} class="seg-hero__pos" />
+    </header>
+
+    <div class="container seg-scene" data-pagefind-ignore>
+      <Scene3D
+        id={sceneId}
+        variant={view.scene.variant}
+        data={sceneData}
+        autoload="visible"
+        caption={`${view.title}：互動 3D 導覽（由淺入深，可用「導覽」逐步看）`}
+      />
+    </div>
+
+    <div class="container seg-intro">
+      <div class="seg-intro__main">
+        <p class="seg-intro__desc">{view.description}</p>
+        {
+          view.bottleneck && (
+            <div class="seg-intro__bn">
+              <p class="seg-intro__bn-title">
+                <Icon name="warn" />
+                瓶頸在哪裡
+              </p>
+              <p>{view.bottleneck.note}</p>
+            </div>
+          )
+        }
+      </div>
+      {
+        (view.scopeIncludes.length > 0 || view.scopeExcludes.length > 0) && (
+          <div class="seg-scope">
+            <p class="seg-scope__title">這一環包含</p>
+            <ul class="seg-scope__list">
+              {view.scopeIncludes.map((s) => (
+                <li>{s}</li>
+              ))}
+            </ul>
+            {view.scopeExcludes.length > 0 && (
+              <details class="seg-scope__ex">
+                <summary>不包含（歸其他環節）</summary>
+                <ul class="seg-scope__list seg-scope__list--ex">
+                  {view.scopeExcludes.map((s) => (
+                    <li>{s}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </div>
+        )
+      }
+    </div>
+
+    <div class="container seg-body">
+      <aside class="seg-body__aside" aria-label="本頁目錄">
+        <div class="seg-body__sticky">
+          <TOC headings={pageSections} />
+        </div>
+      </aside>
+      <div class="seg-body__main">
+        <TOC headings={pageSections} variant="disclosure" class="seg-body__toc-inline" />
+        {
+          Content ? (
+            <div class="prose seg-prose">
+              <Content components={bodyComponents} />
+            </div>
+          ) : (
+            <div class="seg-pending">
+              <p class="seg-pending__title">
+                <Icon name="clock" />
+                內容整理中
+              </p>
+              <p>
+                這一環的入門、進階與深入說明正在撰寫與查核。下方先列出本站已收錄的公司與上下游關係，內容完成後會自動出現在這裡。
+              </p>
+            </div>
+          )
+        }
+      </div>
+    </div>
+
+    {/* 由淺入深: the levelled body comes first; the numbers follow, next to 市場規模. */}
+    {
+      statItems.length > 0 && (
+        <section class="container seg-section" aria-labelledby="key-metrics">
+          <SectionHead id="key-metrics" kicker="用數字看這一環" title="關鍵數字" accent={meta.color} />
+          <div class="seg-stats" style={`--cols: ${statCols}`}>
+            <StatGrid items={statItems} caption={`來源：${statPublishers.join('、')}（完整出處見本頁「資料來源」）。各數字的日期不同，請留意「資料截至」。`} />
+          </div>
+        </section>
+      )
+    }
+
+    {
+      view.marketSize.length > 0 && (
+        <section class="container seg-section" aria-labelledby="market-size">
+          <SectionHead
+            id="market-size"
+            kicker="市場有多大"
+            title="市場規模"
+            lede="不同機構的統計範圍不同，數字只能在同一口徑內比較。實心長條是已發生的實際值，斜線長條是估計或預測值。"
+            accent={meta.color}
+          />
+          <MarketSize rows={view.marketSize} segmentTitle={meta.short} asOf={view.lastVerified} />
+        </section>
+      )
+    }
+
+    {
+      campuses.rows.length > 0 && (
+        <section class="container seg-section" aria-labelledby="campuses">
+          <SectionHead
+            id="campuses"
+            kicker="算力蓋在哪裡"
+            title="全球大型 AI 園區"
+            lede="雲端與新雲的競爭，最後落在一座座吉瓦級園區：誰先拿到電力、蓋好機房，誰就能先上線算力。下表依規劃完成後的 IT 電力排序。"
+            accent={meta.color}
+          />
+          <CampusTable rows={campuses.rows} asOf={campuses.asOf} />
+        </section>
+      )
+    }
+
+    <section class="container seg-section" aria-labelledby="key-companies">
+      <SectionHead
+        id="key-companies"
+        kicker={`本站收錄 ${ranked.length} 家以此為主要環節的公司`}
+        title="關鍵公司"
+        lede="一線龍頭依近四季營收（換算美元）排序；營收僅計入已公布的實際數字，不含估計值。"
+        href={sectionHref('companies')}
+        linkLabel="公司資料庫"
+        accent={meta.color}
+      />
+      {
+        tier1.length > 0 ? (
+          <div class="seg-cards">
+            {tier1.map((r) => (
+              <CompanyCard item={r} financials={fins.get(r.company.id)} />
+            ))}
+          </div>
+        ) : (
+          <p class="seg-note">這一環目前沒有列為一線的公司。</p>
+        )
+      }
+      {
+        tierGroups.map((g) => (
+          <div class="seg-tier" data-pagefind-ignore>
+            <h3 class="seg-tier__title">
+              {TIER_LABELS[g.tier]}{' '}
+              <span class="seg-tier__count">{g.items.length} 家</span>
+            </h3>
+            <CompanyList items={g.items} limit={12} label={`${view.title}：${TIER_LABELS[g.tier]}公司`} />
+          </div>
+        ))
+      }
+      {
+        crossSegment.length > 0 && (
+          <div class="seg-tier" data-pagefind-ignore>
+            <h3 class="seg-tier__title">
+              其他環節的參與者{' '}
+              <span class="seg-tier__count">{crossSegment.length} 家</span>
+            </h3>
+            <p class="seg-tier__hint">這些公司的主要營收在其他環節，但也在這一環有重要業務。</p>
+            <CompanyList items={crossSegment} showSegment limit={9} label={`${view.title}：其他環節的參與者`} />
+          </div>
+        )
+      }
+      {
+        units.length > 0 && (
+          <div class="seg-tier">
+            <h3 class="seg-tier__title">
+              大公司旗下的相關事業{' '}
+              <span class="seg-tier__count">{units.length} 個</span>
+            </h3>
+            <ul class="seg-units" role="list">
+              {units.map((u) => (
+                <li class="seg-unit">
+                  <p class="seg-unit__name">
+                    {u.nameZh}
+                    {u.name !== u.nameZh && <span lang="en">（{u.name}）</span>}
+                  </p>
+                  <p class="seg-unit__parent">
+                    屬於 <a href={companyHref(u.parentId)}>{u.parentName}</a>
+                  </p>
+                  <p class="seg-unit__desc">{u.description}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+    </section>
+
+    {
+      taiwan.length > 0 && (
+        <section class="container seg-section" aria-labelledby="taiwan-players">
+          <SectionHead
+            id="taiwan-players"
+            kicker="台灣供應鏈"
+            title="台灣廠商"
+            lede={`本站收錄 ${taiwan.length} 家參與這一環的台灣公司（含以此為次要環節者），依層級與營收排序。`}
+            href={sectionHref('taiwan')}
+            linkLabel="台灣 AI 供應鏈"
+            accent="var(--scene-tw-accent)"
+          />
+          {view.taiwanRole && !Content && <p class="seg-tw-role">{view.taiwanRole}</p>}
+          <CompanyList items={taiwan} showTier showRegion={false} limit={12} label={`${view.title}：台灣廠商`} />
+        </section>
+      )
+    }
+
+    <section class="container seg-section" aria-labelledby="up-downstream">
+      <SectionHead
+        id="up-downstream"
+        kicker="在產業鏈中的位置"
+        title="上下游"
+        lede="AI 產業鏈由下而上：電力 → 晶片 → 系統 → 雲端與模型 → 應用。這一環向誰採購、又供應給誰？"
+        accent={meta.color}
+      />
+      <SegmentNav upstream={view.upstream} downstream={view.downstream} taglines={taglines} />
+      <div class="seg-position">
+        <p class="seg-position__label">14 個環節中的位置</p>
+        <SegmentStrip current={id} compact label="AI 產業鏈 14 個環節（目前頁面已標示）" />
+      </div>
+      <nav class="seg-pager" aria-label="依產業鏈順序瀏覽" data-pagefind-ignore>
+        {
+          prevSeg ? (
+            <a class="seg-pager__link" href={segmentHref(prevSeg.id)} rel="prev">
+              <Icon name="arrow-left" />
+              <span>
+                <span class="seg-pager__dir">上一環</span>
+                <span class="seg-pager__name">{prevSeg.title}</span>
+              </span>
+            </a>
+          ) : (
+            <a class="seg-pager__link" href={sectionHref('chain')}>
+              <Icon name="arrow-left" />
+              <span>
+                <span class="seg-pager__dir">回到</span>
+                <span class="seg-pager__name">產業鏈總覽</span>
+              </span>
+            </a>
+          )
+        }
+        {
+          nextSeg ? (
+            <a class="seg-pager__link seg-pager__link--next" href={segmentHref(nextSeg.id)} rel="next">
+              <span>
+                <span class="seg-pager__dir">下一環</span>
+                <span class="seg-pager__name">{nextSeg.title}</span>
+              </span>
+              <Icon name="arrow-right" />
+            </a>
+          ) : (
+            <a class="seg-pager__link seg-pager__link--next" href={sectionHref('chain')}>
+              <span>
+                <span class="seg-pager__dir">回到</span>
+                <span class="seg-pager__name">產業鏈總覽</span>
+              </span>
+              <Icon name="arrow-right" />
+            </a>
+          )
+        }
+      </nav>
+    </section>
+
+    <section class="container seg-section" aria-labelledby="related">
+      <SectionHead id="related" kicker="繼續探索" title="延伸閱讀" accent={meta.color} />
+      {
+        view.relatedLearn.length + view.relatedTrends.length > 0 ? (
+          <RelatedReading learn={view.relatedLearn} trends={view.relatedTrends} />
+        ) : (
+          <RelatedReading learn={['ai-supply-chain-map']} trends={[]} />
+        )
+      }
+    </section>
+
+    {
+      sources.length > 0 && (
+        <div class="container seg-sources" data-pagefind-ignore>
+          <SourcesList sources={sources} />
+        </div>
+      )
+    }
+  </article>
+</BaseLayout>
+
+<style>
+  /* Short CJK titles and headline numbers break only at punctuation and spaces; overflow-wrap still
+     breaks a run that cannot fit at all. */
+  .seg :global(:is(h1, h2, h3, h4)),
+  .seg-stats :global(.stat__num),
+  .seg-hero__tagline {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .seg-hero {
+    display: grid;
+    gap: var(--space-6);
+    padding-block: var(--space-5) var(--space-6);
+    align-items: end;
+  }
+  .seg-hero__text {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+  .seg-hero :global(.seg-hero__pos) {
+    display: none;
+  }
+  @media (min-width: 960px) {
+    .seg-hero {
+      grid-template-columns: minmax(0, 1fr) 19rem;
+    }
+    .seg-hero :global(.seg-hero__pos) {
+      display: grid;
+    }
+  }
+  .seg-hero__kicker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-muted);
+  }
+  .seg-hero__order {
+    color: color-mix(in srgb, var(--seg-c) 75%, var(--c-fg));
+  }
+  .seg-hero__title {
+    font-size: var(--fs-3xl);
+    line-height: 1.2;
+    text-wrap: balance;
+    max-width: 22em;
+  }
+  .seg-hero__en {
+    font-size: var(--fs-s);
+    color: var(--c-fg-subtle);
+    letter-spacing: 0.02em;
+  }
+  .seg-hero__tagline {
+    font-size: var(--fs-l);
+    line-height: 1.65;
+    color: var(--c-fg-muted);
+    max-width: 40em;
+    margin-block-start: var(--space-2);
+    padding-inline-start: var(--space-4);
+    border-inline-start: 4px solid var(--seg-c);
+  }
+  .seg-hero__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-5);
+    margin-block-start: var(--space-3);
+  }
+  .seg-hero__fact {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-s);
+  }
+  .seg-hero__fact-label {
+    color: var(--c-fg-muted);
+    font-weight: var(--fw-semibold);
+  }
+
+  .seg-scene {
+    margin-block-end: var(--space-6);
+  }
+
+  .seg-intro {
+    display: grid;
+    gap: var(--space-5);
+    margin-block-end: var(--space-7);
+  }
+  @media (min-width: 960px) {
+    .seg-intro {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: var(--space-7);
+      align-items: start;
+    }
+  }
+  .seg-intro__main {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .seg-intro__desc {
+    font-size: var(--fs-l);
+    line-height: 1.8;
+  }
+  .seg-intro__bn {
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-l);
+    background: color-mix(in srgb, var(--c-warn) 8%, var(--c-bg-elev));
+    border: 1px solid color-mix(in srgb, var(--c-warn) 30%, var(--c-border));
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .seg-intro__bn-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-weight: var(--fw-bold);
+    color: var(--c-warn);
+  }
+  .seg-scope {
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-sunken);
+    font-size: var(--fs-s);
+    display: grid;
+    gap: var(--space-2);
+  }
+  .seg-scope__title {
+    font-weight: var(--fw-bold);
+  }
+  .seg-scope__list {
+    margin: 0;
+    padding-inline-start: 1.1em;
+    display: grid;
+    gap: var(--space-1);
+    color: var(--c-fg-muted);
+    line-height: 1.65;
+  }
+  .seg-scope__list li::marker {
+    color: var(--seg-c);
+  }
+  .seg-scope__ex summary {
+    cursor: pointer;
+    font-weight: var(--fw-semibold);
+    min-block-size: var(--tap);
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    color: var(--c-link);
+    list-style: none;
+  }
+  /* display:flex drops the native disclosure triangle; without a marker the summary read as an empty heading. */
+  .seg-scope__ex summary::-webkit-details-marker {
+    display: none;
+  }
+  .seg-scope__ex summary::before {
+    content: '';
+    flex: none;
+    inline-size: 0.45em;
+    block-size: 0.45em;
+    border-inline-end: 1.5px solid currentColor;
+    border-block-end: 1.5px solid currentColor;
+    rotate: -45deg;
+    transition: rotate var(--dur-1) ease;
+  }
+  .seg-scope__ex[open] summary::before {
+    rotate: 45deg;
+  }
+  .seg-scope__list--ex li::marker {
+    color: var(--c-fg-subtle);
+  }
+
+  .seg-section {
+    padding-block: var(--space-7) 0;
+  }
+  .seg-stats > :global(.stat-grid) {
+    margin: 0;
+  }
+  .seg-stats :global(.stat-grid__list) {
+    grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
+  }
+  @media (max-width: 899px) {
+    .seg-stats :global(.stat-grid__list) {
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+    }
+  }
+
+  .seg-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+    padding-block-start: var(--space-6);
+  }
+  .seg-body__aside {
+    display: none;
+  }
+  .seg-body__main {
+    min-width: 0;
+    max-width: 48rem;
+  }
+  .seg-body__main > :global(.seg-body__toc-inline) {
+    margin-block-end: var(--space-5);
+  }
+  @media (min-width: 1100px) {
+    .seg-body {
+      grid-template-columns: minmax(0, 48rem) minmax(13rem, 16rem);
+      column-gap: clamp(var(--space-7), 5vw, var(--space-9));
+    }
+    .seg-body__aside {
+      display: block;
+      order: 2;
+    }
+    .seg-body__sticky {
+      position: sticky;
+      top: calc(var(--header-h) + var(--space-5));
+      max-block-size: calc(100vh - var(--header-h) - var(--space-7));
+      overflow: auto;
+    }
+    .seg-body__main > :global(.seg-body__toc-inline) {
+      display: none;
+    }
+  }
+  .seg-prose > :global(.level-section:first-child) {
+    margin-block-start: 0;
+  }
+  /* A process diagram with 5+ steps would squeeze each step to ~6 characters in the 48rem column
+     (「晶圓製／造（前／段）」): opt out of FlowSteps' container query so it keeps its vertical layout. */
+  .seg-prose :global(.flow:has(.flow__step:nth-child(5))) {
+    container-type: normal;
+  }
+  .seg-pending {
+    padding: var(--space-5);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-sunken);
+    display: grid;
+    gap: var(--space-2);
+    color: var(--c-fg-muted);
+    line-height: 1.75;
+  }
+  .seg-pending__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+  }
+
+  .seg-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 1fr));
+    gap: var(--space-4);
+  }
+  .seg-note {
+    color: var(--c-fg-muted);
+  }
+  .seg-tier {
+    margin-block-start: var(--space-6);
+  }
+  .seg-tier__title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    font-size: var(--fs-m);
+    padding-block-end: var(--space-2);
+    border-block-end: 2px solid var(--c-border);
+  }
+  .seg-tier__count {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .seg-tier__hint {
+    font-size: var(--fs-s);
+    color: var(--c-fg-subtle);
+    margin-block: var(--space-2) 0;
+  }
+  .seg-units {
+    list-style: none;
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: var(--space-3);
+  }
+  .seg-unit {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-elev);
+    display: grid;
+    gap: 2px;
+  }
+  .seg-unit__name {
+    font-weight: var(--fw-semibold);
+  }
+  .seg-unit__name span {
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+    font-size: var(--fs-s);
+  }
+  .seg-unit__parent {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .seg-unit__desc {
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    line-height: 1.65;
+    margin-block-start: var(--space-1);
+  }
+  .seg-tw-role {
+    max-width: var(--measure);
+    color: var(--c-fg-muted);
+    line-height: 1.8;
+    margin-block-end: var(--space-4);
+  }
+
+  .seg-position {
+    margin-block-start: var(--space-6);
+    display: grid;
+    gap: var(--space-3);
+  }
+  .seg-position__label {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .seg-pager {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-3);
+    margin-block-start: var(--space-6);
+  }
+  .seg-pager__link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-m);
+    color: var(--c-fg);
+    text-decoration: none;
+    min-block-size: var(--tap);
+  }
+  .seg-pager__link:hover {
+    background: var(--c-hover);
+    color: var(--c-fg);
+    border-color: var(--c-border-strong);
+  }
+  .seg-pager__link--next {
+    justify-content: flex-end;
+    text-align: end;
+  }
+  .seg-pager__link > span {
+    display: grid;
+  }
+  .seg-pager__dir {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .seg-pager__name {
+    font-weight: var(--fw-semibold);
+  }
+  .seg-sources > :global(.sources) {
+    max-width: 52rem;
+  }
+</style>

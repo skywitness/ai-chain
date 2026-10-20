@@ -1,0 +1,726 @@
+---
+/**
+ * /companies/[slug]/ — one profile per ROSTER id (owner: pages-companies).
+ * Full content entry → header, chain position, key metrics, products, technologies, revenue, relations,
+ * funding, timeline, units, MDX analysis, backlinks and sources. Missing entry → a compact page from
+ * the roster (role, HQ, listings) plus financials when present. Never throws on missing data.
+ */
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import ProfileLayout, { type Fact } from '../../layouts/ProfileLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Callout from '../../components/content/Callout.astro';
+import CompanyChip from '../../components/content/CompanyChip.astro';
+import ModelChip from '../../components/content/ModelChip.astro';
+import SegmentChip from '../../components/content/SegmentChip.astro';
+import CompanyFinancials from '../../components/charts/CompanyFinancials.astro';
+import { mdxComponents } from '../../components/content/mdx-components';
+import ProfileSection from '../../components/company/ProfileSection.astro';
+import HeaderMeta from '../../components/company/HeaderMeta.astro';
+import MiniChain from '../../components/company/MiniChain.astro';
+import ProductsTable from '../../components/company/ProductsTable.astro';
+import TechList from '../../components/company/TechList.astro';
+import KeyMetrics from '../../components/company/KeyMetrics.astro';
+import Relations from '../../components/company/Relations.astro';
+import FundingTable from '../../components/company/FundingTable.astro';
+import Timeline from '../../components/company/Timeline.astro';
+import RelatedPages from '../../components/company/RelatedPages.astro';
+import FinNotes from '../../components/company/FinNotes.astro';
+import MetricBars from '../../components/company/MetricBars.astro';
+import {
+  OWNERSHIP_LABELS,
+  REGION_LABELS,
+  STAGE_LABELS,
+  STATUS_LABELS,
+  TIER_LABELS,
+  hostOf,
+  countryLabel,
+} from '../../components/company/labels';
+import { getRoster, getRosterCompany, isSegmentId, layerMeta, segmentMeta, type SegmentId } from '../../lib/collections';
+import { findEntry } from '../../components/company/lookup';
+import { joinZh, zhConcat } from '../../lib/format';
+import { companyHref, sectionHref, segmentHref } from '../../lib/paths';
+import { DATA_DATE, clampDescription, datasetJsonLd, organizationJsonLd, type JsonLd } from '../../lib/seo';
+import type { FinancialsInput } from '../../lib/financial-metrics';
+import type { SourceT } from '../../schemas/common';
+
+// One page per ROSTER id (the registry is complete even while content entries are still being written).
+export const getStaticPaths = (() =>
+  [...new Set(getRoster().map((r) => r.id))].map((slug) => ({ params: { slug } }))) satisfies GetStaticPaths;
+
+const slug = String(Astro.params.slug ?? '');
+const roster = getRosterCompany(slug);
+const entry = await findEntry('companies', slug);
+const finEntry = await findEntry('financials', slug);
+const d = entry?.data;
+const fin = finEntry ? (finEntry.data as unknown as FinancialsInput) : undefined;
+
+const refId = (r: unknown): string | undefined =>
+  typeof r === 'string' ? r : r && typeof r === 'object' && 'id' in r ? String((r as { id: unknown }).id) : undefined;
+
+// ── identity (content entry first, roster fallback) ──
+const name = d?.name ?? roster?.name ?? slug;
+const nameZh = d?.nameZh ?? roster?.nameZh ?? name;
+/** names that differ only in width, case or spacing (「Anysphere（Cursor）」 vs 「Anysphere (Cursor)」) count as one */
+const sameName = (a: string, b: string) => a.normalize('NFKC').toLowerCase().replace(/\s+/g, '') === b.normalize('NFKC').toLowerCase().replace(/\s+/g, '');
+const twoNames = !sameName(nameZh, name);
+/** 「{nameZh}…」 with a half-width space after a Latin name (盤古之白): 「SambaNova 的…」 */
+const nz = (rest: string) => zhConcat(nameZh, rest);
+/** name prop for components that append CJK text directly (chart titles, captions) */
+const nameForCharts = /[A-Za-z0-9.)]$/.test(nameZh) ? `${nameZh} ` : nameZh;
+const primaryRaw = refId(d?.primarySegment) ?? roster?.segment;
+const primary: SegmentId = primaryRaw && isSegmentId(primaryRaw) ? primaryRaw : 'apps-agents';
+const secondary: SegmentId[] = [];
+for (const s of [...(d?.segments.map(refId) ?? []), ...(roster?.secondarySegments ?? [])]) {
+  if (s && isSegmentId(s) && s !== primary && !secondary.includes(s)) secondary.push(s);
+}
+const seg = segmentMeta(primary);
+const segEntry = await findEntry('segments', primary);
+// 「這一環在做什麼」: the segment tagline plus the first sentence of its description, unless that
+// sentence talks about the segment page itself (「本章…」「本頁…」).
+const segLead = segEntry?.data.description.split('。')[0];
+const segBlurb = segLead && !/本章|本頁|本文/.test(segLead) ? `${segLead}。` : undefined;
+const layer = seg ? layerMeta(seg.layer) : undefined;
+const tier = (roster?.tier ?? d?.tier ?? 3) as 1 | 2 | 3;
+const profile = d?.profile ?? roster?.profile ?? 'compact';
+const ownership = d?.ownership ?? roster?.ownership ?? 'private';
+const status = d?.status ?? roster?.status ?? 'active';
+const statusNote = d?.statusNote ?? roster?.statusNote;
+const region = d?.region ?? roster?.region ?? 'OTHER';
+const hq = d?.hq ?? roster?.hq ?? { city: '', cityZh: '', country: '', lat: 0, lon: 0 };
+const founded = d?.founded ?? roster?.founded;
+const website = d?.website ?? roster?.website;
+const listings = (d?.listings.length ? d.listings : (roster?.listings ?? [])).map((l) => ({
+  exchange: l.exchange,
+  ticker: String(l.ticker),
+  adr: 'adr' in l ? Boolean(l.adr) : false,
+}));
+const parentId = refId(d?.parent) ?? roster?.parent;
+const parent = parentId ? (getRosterCompany(parentId) ?? undefined) : undefined;
+const summary = d?.summary ?? roster?.role ?? '';
+const chainRole = d?.chainRole;
+// Without a written chainRole, describe the position structurally (the header already shows the role).
+const positionText =
+  chainRole ??
+  nz(
+    zhConcat(
+      `的主要業務屬於「${layer?.title ?? ''}」層的「${seg?.title ?? primary}」環節`,
+      secondary.length ? zhConcat('，也跨足', joinZh(secondary.map((s) => segmentMeta(s)?.title ?? s))) : '',
+      '。',
+    ),
+  );
+const lastVerified = d?.lastVerified ?? fin?.lastVerified ?? DATA_DATE;
+const sources: SourceT[] = d ? [...d.sources] : fin ? (Object.values(fin.sources) as SourceT[]) : [];
+
+const products = d?.products ?? [];
+const technologies = d?.technologies ?? [];
+const keyMetrics = d?.keyMetrics ?? [];
+const moat = d?.moat ?? [];
+const risks = d?.risks ?? [];
+const competitors = d?.competitors ?? [];
+const relationships = d?.relationships ?? [];
+const funding = d?.funding ?? [];
+const timeline = d?.timeline ?? [];
+const units = d?.units ?? [];
+const models = (d?.models ?? []).map(refId).filter((x): x is string => !!x);
+
+let Content: Awaited<ReturnType<typeof render>>['Content'] | null = null;
+if (entry && entry.body && entry.body.trim().length > 0) {
+  try {
+    Content = (await render(entry)).Content;
+  } catch (err) {
+    console.warn(`[companies/${slug}] could not render body: ${(err as Error).message}`);
+  }
+}
+
+// ── header bits ──
+const tickers = listings.map((l) => l.ticker);
+const aliases = [...new Set([...(d?.aliases ?? []), ...tickers])].filter((a) => !sameName(a, name) && !sameName(a, nameZh));
+// <title>: drop a trailing parenthetical from the English name so it never nests brackets
+// (「鴻海（Foxconn）」 rather than 「鴻海（Foxconn (Hon Hai Precision)）」); the h1 keeps the full name.
+const nameShort = name.replace(/\s*[（(][^（）()]*[）)]\s*$/, '') || name;
+const title = `${twoNames && !sameName(nameShort, nameZh) ? `${nameZh}（${nameShort}）` : nameZh}：${d ? '產品、技術與營收' : '公司簡介與營收'}`;
+const description = clampDescription(summary || nz('在 AI 產業鏈中的角色、產品與營收表現。'), 150);
+const kicker = `公司資料庫・${seg?.title ?? ''}`;
+const inactive = status !== 'active';
+
+const EDITORIAL: Record<string, string> = { stub: '初稿', draft: '草稿', researched: '已完成調研', 'fact-checked': '已查核' };
+const facts: Fact[] = [
+  { label: '主要環節', value: seg?.title ?? primary, href: segmentHref(primary) },
+  { label: '層級', value: TIER_LABELS[tier], note: tier === 1 ? '對 AI 鏈有決定性影響的全球龍頭' : tier === 2 ? '重要供應商或區域龍頭' : '利基廠商、三線供應商或新創' },
+  { label: '公司型態', value: `${OWNERSHIP_LABELS[ownership] ?? ownership}${d?.stage ? `・${STAGE_LABELS[d.stage] ?? d.stage}` : ''}` },
+  { label: '地區', value: REGION_LABELS[region] ?? region, note: hq.country ? `總部：${hq.cityZh || hq.city}，${countryLabel(hq.country)}` : undefined },
+  ...(parent ? [{ label: '母公司', value: parent.nameZh, href: companyHref(parent.id) }] : parentId ? [{ label: '母公司', value: parentId }] : []),
+  ...(inactive ? [{ label: '狀態', value: STATUS_LABELS[status] ?? status }] : []),
+  ...(website ? [{ label: '官方網站', value: hostOf(website), href: website }] : []),
+  { label: '資料狀態', value: d ? EDITORIAL[d.editorial.status] ?? d.editorial.status : '整理中', note: d ? `${profile === 'full' ? '完整檔案' : '精簡檔案'}，資料截至 ${lastVerified}` : fin ? '目前有名冊基本資料與財報數字' : '目前僅有名冊基本資料' },
+];
+
+// ── sections present (also feeds the in-page nav) ──
+const unitsTitle = units.length && models.length ? '旗下事業與模型' : units.length ? '旗下事業' : '旗下模型';
+const showRevenue = true;
+const toc = [
+  { id: 'position', label: '在產業鏈中的位置', on: true },
+  { id: 'metrics', label: '關鍵指標', on: keyMetrics.length > 0 },
+  { id: 'products', label: '產品', on: products.length > 0 },
+  { id: 'technologies', label: '關鍵技術', on: technologies.length > 0 },
+  { id: 'revenue', label: '營收表現', on: showRevenue },
+  { id: 'moat', label: '優勢與風險', on: moat.length + risks.length > 0 },
+  { id: 'relations', label: '競爭者與上下游', on: competitors.length + relationships.length > 0 },
+  { id: 'funding', label: '募資紀錄', on: funding.length > 0 },
+  { id: 'timeline', label: '大事記', on: timeline.length > 0 },
+  { id: 'units', label: unitsTitle, on: units.length + models.length > 0 },
+  { id: 'analysis', label: '深度分析', on: !!Content },
+  { id: 'related', label: '延伸閱讀', on: true },
+  { id: 'sources', label: '資料來源', on: sources.length > 0 },
+].filter((t) => t.on);
+
+// ── JSON-LD ──
+const jsonLd: JsonLd[] = [
+  organizationJsonLd({
+    name,
+    nameZh,
+    legalName: d?.legalName,
+    url: website,
+    path: Astro.url,
+    site: Astro.site,
+    description: summary,
+    foundingDate: founded,
+    tickers: listings.map((l) => `${l.exchange}:${l.ticker}`),
+    address: hq.country ? { city: hq.city, country: hq.country } : undefined,
+    employees: d?.employees?.value,
+  }),
+];
+if (fin) {
+  jsonLd.push(
+    datasetJsonLd({
+      name: nz('營收與財務資料'),
+      description: `${nameZh}（${name}）的季度、年度${fin.series.some((s) => s.periodType === 'month') ? '與月' : ''}營收及利潤率，以公司原幣呈現。`,
+      path: Astro.url,
+      site: Astro.site,
+      dateModified: fin.lastVerified,
+      sources: Object.values(fin.sources).map((s) => ({ title: s.title, url: s.url, publisher: s.publisher })),
+      keywords: [nameZh, name, '營收', '財報'],
+    }),
+  );
+}
+const finProfile: 'full' | 'compact' = profile === 'full' ? 'full' : 'compact';
+// Private companies may only have disclosed run-rate (arr) / backlog series: chart those instead.
+const hasRevenue = !!fin && fin.series.some((s) => s.metric === 'revenue' && s.points.length > 0);
+const revenueLede = !fin
+  ? undefined
+  : !hasRevenue
+    ? nz('沒有公開經會計師查核的財報；以下是公司揭露或媒體報導的營收規模指標，屬估計值，僅供參考。')
+    : finProfile === 'full'
+      ? '金額以公司財報的原幣呈現，可切換季、年與月資料；美元換算只供跨公司比較。'
+      : '金額以公司財報的原幣呈現；美元換算只供跨公司比較。';
+---
+
+<ProfileLayout
+  title={title}
+  description={description}
+  name={nameZh}
+  nameAlt={twoNames ? name : undefined}
+  kicker={kicker}
+  summary={summary}
+  segment={primary}
+  aliases={aliases}
+  facts={facts}
+  lastVerified={lastVerified}
+  sources={sources}
+  breadcrumbs={[{ label: '公司資料庫', href: sectionHref('companies') }, { label: nameZh }]}
+  jsonLd={jsonLd}
+  section="companies"
+  searchFilters={{ 地區: REGION_LABELS[region] ?? region }}
+>
+  <Fragment slot="badges">
+    <Badge tone={tier === 1 ? 'accent' : 'neutral'} srPrefix="層級：">{TIER_LABELS[tier]}</Badge>
+    <Badge>{OWNERSHIP_LABELS[ownership] ?? ownership}</Badge>
+    {d ? <Badge tone="info">{profile === 'full' ? '完整檔案' : '精簡檔案'}</Badge> : <Badge tone="estimate">檔案整理中</Badge>}
+    {d?.stage === 'startup' && <Badge>新創</Badge>}
+    {inactive && <Badge tone="warn">{STATUS_LABELS[status] ?? status}</Badge>}
+  </Fragment>
+  <Fragment slot="header">
+    <HeaderMeta listings={listings} hq={hq} founded={founded} employees={d?.employees} />
+  </Fragment>
+
+  <span hidden data-pagefind-sort={`updated:${lastVerified}`}></span>
+
+  {
+    toc.length > 3 && (
+      <nav class="jump" aria-label="本頁內容">
+        <span class="jump__label">本頁內容</span>
+        <ul class="jump__list" role="list">
+          {toc.map((t) => (
+            <li>
+              <a href={`#${t.id}`}>{t.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )
+  }
+
+  {
+    (statusNote || !d) && (
+      <div class="co-notes">
+        {statusNote && (
+          <Callout type={inactive ? 'warn' : 'info'} title={inactive ? '公司狀態' : '近期狀態'}>
+            <p>{statusNote}</p>
+          </Callout>
+        )}
+        {!d && (
+          <p class="co-pending">
+            <span class="co-pending__k">內容整理中</span>
+            <span>
+              這家公司的完整檔案（產品、技術、大事記與分析）正在整理，以下先列出公司名冊的基本資料{fin ? '與公開財報數字' : ''}。
+            </span>
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  <ProfileSection id="position" title="在產業鏈中的位置">
+    <div class="cpos">
+      <div class="cpos__text">
+        <p>{positionText}</p>
+        {
+          !chainRole && segEntry && (
+            <div class="cpos__seg">
+              <p class="cpos__seg-k">這一環在做什麼</p>
+              <p class="cpos__seg-tag">{segEntry.data.tagline}</p>
+              {segBlurb && <p>{segBlurb}</p>}
+              <p>
+                <a href={segmentHref(primary)}>認識「{seg?.short ?? primary}」環節</a>
+              </p>
+            </div>
+          )
+        }
+      </div>
+      <MiniChain primary={primary} secondary={secondary} name={nameZh} />
+    </div>
+  </ProfileSection>
+
+  {
+    keyMetrics.length > 0 && (
+      <ProfileSection id="metrics" title="關鍵指標" lede="幾個最能說明這家公司現況的數字，各附資料日期與來源。">
+        <KeyMetrics items={keyMetrics} />
+      </ProfileSection>
+    )
+  }
+
+  {
+    products.length > 0 && (
+      <ProfileSection id="products" title="產品" aside={`${products.length} 項`}>
+        <ProductsTable products={products} caption={nz('的主要產品與服務')} />
+      </ProfileSection>
+    )
+  }
+
+  {
+    technologies.length > 0 && (
+      <ProfileSection id="technologies" title="關鍵技術" lede="成熟度分為研究、試產／驗證、量產與成熟四級；點名詞可看白話解釋。">
+        <TechList items={technologies} />
+      </ProfileSection>
+    )
+  }
+
+  <ProfileSection
+    id="revenue"
+    title="營收表現"
+    lede={revenueLede}
+  >
+    {
+      fin && !hasRevenue ? (
+        <MetricBars financials={fin} company={nameForCharts} />
+      ) : fin ? (
+        <>
+          {finProfile === 'compact' && <FinNotes financials={fin} part="headline" />}
+          <CompanyFinancials financials={fin} profile={finProfile} company={nameForCharts} />
+          <FinNotes financials={fin} part="notes" />
+        </>
+      ) : (
+        <div class="co-empty">
+          <p class="co-empty__title">{ownership === 'listed' ? '營收資料整理中' : '未公開財報'}</p>
+          <p>
+            {ownership === 'listed'
+              ? nz('為上市公司，季度與年度營收資料正在整理，完成後會以原幣顯示並附美元換算。')
+              : ownership === 'subsidiary'
+                ? nz('為集團子公司，營收通常併入母公司財報，未單獨揭露。')
+                : nz(`尚未上市，沒有義務公開財報。${funding.length ? '可參考下方的募資與估值紀錄。' : '若有可靠的營收估計，會以「估計」標示並註明依據。'}`)}
+          </p>
+          {parent && (
+            <p>
+              母公司：<CompanyChip id={parent.id} />
+            </p>
+          )}
+        </div>
+      )
+    }
+  </ProfileSection>
+
+  {
+    moat.length + risks.length > 0 && (
+      <ProfileSection id="moat" title="優勢與風險">
+        <div class="mr">
+          {moat.length > 0 && (
+            <div class="mr__col mr__col--pos">
+              <h3 class="mr__title">競爭優勢</h3>
+              <ul class="mr__list">
+                {moat.map((m) => (
+                  <li>{m}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {risks.length > 0 && (
+            <div class="mr__col mr__col--neg">
+              <h3 class="mr__title">主要風險</h3>
+              <ul class="mr__list">
+                {risks.map((m) => (
+                  <li>{m}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </ProfileSection>
+    )
+  }
+
+  {
+    competitors.length + relationships.length > 0 && (
+      <ProfileSection id="relations" title="競爭者與上下游">
+        <Relations competitors={competitors} relationships={relationships} self={slug} />
+      </ProfileSection>
+    )
+  }
+
+  {
+    funding.length > 0 && (
+      <ProfileSection id="funding" title="募資紀錄" aside={`${funding.length} 輪`}>
+        <FundingTable rounds={funding} company={nameForCharts} />
+      </ProfileSection>
+    )
+  }
+
+  {
+    timeline.length > 0 && (
+      <ProfileSection id="timeline" title="大事記" lede="由近而遠排列；實心圓點是成立、上市、併購等里程碑。">
+        <Timeline events={timeline} />
+      </ProfileSection>
+    )
+  }
+
+  {
+    units.length + models.length > 0 && (
+      <ProfileSection id="units" title={unitsTitle}>
+        {units.length > 0 && (
+          <ul class="units" role="list">
+            {units.map((u) => (
+              <li class="units__item" style={`--sc:var(--seg-${refId(u.segment) ?? primary})`}>
+                <p class="units__name">
+                  {u.nameZh}
+                  {u.name !== u.nameZh && <span lang="en">{u.name}</span>}
+                </p>
+                <p class="units__seg">
+                  <SegmentChip id={refId(u.segment) ?? primary} short />
+                </p>
+                <p class="units__desc">{u.description}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+        {models.length > 0 && (
+          <p class="units__models">
+            <span class="units__models-label">旗下模型系列</span>
+            {models.map((m) => (
+              <ModelChip id={m} />
+            ))}
+          </p>
+        )}
+      </ProfileSection>
+    )
+  }
+
+  {
+    Content && (
+      <section class="analysis" id="analysis" aria-label="深度分析">
+        <p class="analysis__kicker">深度分析</p>
+        <div class="prose">
+          <Content components={mdxComponents} />
+        </div>
+      </section>
+    )
+  }
+
+  <ProfileSection id="related" title="延伸閱讀">
+    <RelatedPages id={slug} name={nameZh} segment={primary} />
+  </ProfileSection>
+
+</ProfileLayout>
+
+<style>
+  .co-notes {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 46rem;
+    margin-block-end: var(--space-6);
+  }
+  .co-notes > :global(*) {
+    margin-block: 0;
+    max-width: none;
+  }
+  .co-pending {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    padding: var(--space-3) var(--space-4);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-m);
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .co-pending__k {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg);
+  }
+  .co-pending__k::before {
+    content: '';
+    inline-size: 0.5em;
+    block-size: 0.5em;
+    border-radius: 50%;
+    background: var(--profile-accent, var(--c-accent));
+  }
+  .cpos {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .cpos__text {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .cpos__text p {
+    max-width: var(--measure);
+    line-height: 1.85;
+  }
+  .cpos__seg {
+    display: grid;
+    gap: 0.2rem;
+    max-width: var(--measure);
+    padding: var(--space-3) var(--space-4);
+    border-inline-start: 3px solid var(--profile-accent, var(--c-accent));
+    border-radius: 0 var(--radius-m) var(--radius-m) 0;
+    background: var(--c-bg-sunken);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .cpos__text .cpos__seg p {
+    line-height: 1.75;
+  }
+  .cpos__text .cpos__seg .cpos__seg-k {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.04em;
+    color: var(--c-fg-subtle);
+  }
+  .cpos__text .cpos__seg .cpos__seg-tag {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg);
+  }
+
+  .co-empty {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    font-size: var(--fs-s);
+    line-height: 1.8;
+    color: var(--c-fg-muted);
+  }
+  .co-empty__title {
+    font-size: var(--fs-m);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg);
+  }
+
+  .mr {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 720px) {
+    .mr {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .mr__col {
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: inset 0 3px 0 var(--mr-c);
+  }
+  .mr__col--pos {
+    --mr-c: var(--c-pos);
+  }
+  .mr__col--neg {
+    --mr-c: var(--c-warn);
+  }
+  .mr__title {
+    margin-block-end: var(--space-2);
+    font-size: var(--fs-m);
+  }
+  .mr__list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-inline-start: 1.1em;
+    font-size: var(--fs-s);
+    line-height: 1.75;
+  }
+  .mr__list li::marker {
+    color: var(--mr-c);
+  }
+
+  .units {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .units__item {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: inset 3px 0 0 var(--sc);
+  }
+  .units__name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.5em;
+    font-weight: var(--fw-bold);
+    line-height: 1.45;
+  }
+  .units__name span {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-muted);
+  }
+  .units__seg {
+    font-size: var(--fs-s);
+  }
+  .units__desc {
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .units__models {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .units + .units__models {
+    margin-block-start: var(--space-4);
+  }
+  .units__models-label {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+
+  .analysis {
+    scroll-margin-top: calc(var(--header-h, 4rem) + var(--space-4));
+    padding-block: var(--space-6);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .analysis__kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-block-end: var(--space-3);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-subtle);
+  }
+  .analysis__kicker::before {
+    content: '';
+    inline-size: 0.5em;
+    block-size: 0.5em;
+    border-radius: 50%;
+    background: var(--profile-accent, var(--c-accent));
+  }
+  .analysis .prose > :global(h2:first-child) {
+    margin-block-start: 0;
+  }
+  .analysis .prose :global(h2)::before {
+    background: var(--profile-accent, var(--c-accent));
+  }
+
+  .jump {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2) var(--space-3);
+    margin-block-end: var(--space-6);
+    padding-block-end: var(--space-4);
+    border-block-end: 1px solid var(--c-border);
+  }
+  .jump__label {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-subtle);
+  }
+  .jump__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .jump__list a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2rem;
+    padding: 0 0.7rem;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    background: var(--c-bg-elev);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    text-decoration: none;
+  }
+  .jump__list a:hover {
+    border-color: var(--profile-accent, var(--c-accent));
+    color: var(--c-fg);
+  }
+  .jump + :global(.psec),
+  .jump + .co-notes + :global(.psec) {
+    padding-block-start: 0;
+    border-block-start: 0;
+  }
+
+  /* MDX analysis H2s match the section titles above */
+  .analysis .prose :global(h2) {
+    font-size: var(--fs-xl);
+  }
+</style>

@@ -1,0 +1,320 @@
+---
+title: "Thinking Machines Inkling 系列"
+family: "Inkling"
+kind: llm
+lab: thinking-machines-lab
+labName: "Thinking Machines Lab（思考機器實驗室）"
+origin: US
+summary: "前 OpenAI 技術長 Mira Murati 創辦的 Thinking Machines Lab 在 2026 年 7 月釋出的開放權重多模態模型家族，採 Apache 2.0 授權。旗艦 Inkling 為 975B 總參數、41B 活躍的 MoE 模型，可讀文字、圖片與語音，上下文最長約 100 萬 tokens；7 月底推出的 Inkling-Small（276B，12B 活躍）成績與它相當。官方明言它不是最強的模型，定位是讓開發者透過自家 Tinker 平台微調的基底。"
+strengths:
+  - "Apache 2.0 授權的大型開放權重模型，原生支援文字、圖片與語音輸入，同時提供 BF16 與 NVFP4 兩種權重"
+  - "思考強度可在 0.2 到 0.99 之間調整；官方稱在 Terminal-Bench 2.1 上，以約三分之一的 tokens 就追平 Nemotron 3 Ultra"
+  - "與自家 Tinker 微調平台整合，也可透過 Together AI、Fireworks、Databricks、Baseten 等第三方 API 使用，或以 vLLM、SGLang 自行部署"
+  - "Inkling-Small 只用 12B 活躍參數，成績就與 Inkling 相當；Artificial Analysis 實測兩者輸出速度都約每秒 200 tokens，在同級模型中屬於快速"
+weaknesses:
+  - "綜合能力明顯落後前沿封閉模型與頂尖中國開放權重模型：Artificial Analysis 智慧指數為 25，雖高於同級開放權重模型的中位數 19，但遠低於 Claude Opus 5.5 的 58"
+  - "Inkling 官方價格為每百萬 tokens 輸入 1.00 美元、輸出 4.05 美元，Artificial Analysis 評為同尺寸開放權重模型中偏貴"
+  - "MoE 設計大致沿用 DeepSeek-V3，後訓練起步的合成資料來自 Kimi K2.5 等模型；預訓練資料內容未公開"
+  - "自行部署旗艦版門檻高：975B 參數以 BF16 儲存，光權重就接近 2 TB；Tinker 的無伺服器推論仍是 Beta，官方不建議大量正式使用"
+bestFor:
+  - "想用自有資料微調、又希望保有權重控制權的企業與研究團隊（搭配 Tinker）"
+  - "同時處理文字、圖表與錄音的 Agent、客服與文件流程"
+  - "對成本與延遲敏感的程式輔助、以模型當評分者、產生合成資料（官方建議用 Inkling-Small）"
+  - "需要模型表達信心程度的預測與問答研究"
+positioning:
+  capability: 25
+  costIndex: 47
+  openness: 0.8
+  method: computed
+  asOf: "2026-10-07"
+  note: "capability 取旗艦 Inkling（xhigh 思考強度）的 Artificial Analysis Intelligence Index v4.3.2 原始分數 25（AA 獨立實測，非估計值；Inkling-Small 為 26）。costIndex 以 Thinking Machines 官方 Tinker 無伺服器推論價格（輸入 1.00、輸出 4.05 美元／百萬 tokens）按 3:1 混合為約 1.76 美元，再依 0.05 美元 → 0、100 美元 → 100 的對數尺度換算；若改用 Inkling-Small（0.30／1.20 美元）則約為 31。openness 0.8：Apache 2.0 開放權重，但訓練資料與訓練程式未公開。"
+versions:
+  - id: inkling
+    name: "Inkling"
+    released: "2026-07-15"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: moe
+    params: { totalB: 975, activeB: 41, disclosed: true }
+    modalitiesIn: [text, image, audio]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    reasoning: hybrid
+    availability: [api, self-host]
+    pricing:
+      - asOf: "2026-10-07"
+        inputPerMTok: 1.00
+        outputPerMTok: 4.05
+        cachedInputPerMTok: 0.17
+        currency: USD
+        tierNote: "Tinker 無伺服器推論（Beta），256K 上下文、NVFP4 取樣；在 Tinker 上微調另依訓練 tokens 計價"
+        source: { title: "Models & Pricing（Tinker 文件）", publisher: "Thinking Machines Lab", url: "https://tinker-docs.thinkingmachines.ai/tinker/models/", type: docs, lang: en, accessed: "2026-10-07" }
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 25
+        setting: "v4.3.2，xhigh 思考強度；AA 實測（非估計值），高於同級大型開放權重模型的中位數 19"
+        reportedBy: third-party
+        date: "2026-10-07"
+        source: { title: "Inkling (xhigh) - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/inkling", type: leaderboard, lang: en, accessed: "2026-10-07" }
+      - benchmark: lmarena-text
+        score: 1441
+        setting: "文字競技場總榜，±5，35,204 票，第 95 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-07" }
+      - benchmark: gpqa-diamond
+        score: 87.2
+        setting: "思考強度 0.99；官方引用 Artificial Analysis 的測量值"
+        reportedBy: lab
+        date: "2026-07-15"
+        source: { title: "Inkling: Our Open-Weights Model", publisher: "Thinking Machines Lab", url: "https://thinkingmachines.ai/news/introducing-inkling/", type: press-release, lang: en, published: "2026-07-15", accessed: "2026-10-07" }
+      - benchmark: hle
+        score: 29.7
+        setting: "純文字、不用工具，思考強度 0.99；官方引用 Artificial Analysis 的測量值（可用工具時為 46.0%）"
+        reportedBy: lab
+        date: "2026-07-15"
+        source: { title: "Inkling: Our Open-Weights Model", publisher: "Thinking Machines Lab", url: "https://thinkingmachines.ai/news/introducing-inkling/", type: press-release, lang: en, published: "2026-07-15", accessed: "2026-10-07" }
+      - benchmark: swe-bench-verified
+        score: 77.6
+        setting: "僅使用 bash 的測試框架，思考強度 0.99"
+        reportedBy: lab
+        date: "2026-07-15"
+        source: { title: "Inkling: Our Open-Weights Model", publisher: "Thinking Machines Lab", url: "https://thinkingmachines.ai/news/introducing-inkling/", type: press-release, lang: en, published: "2026-07-15", accessed: "2026-10-07" }
+      - benchmark: swe-bench-pro
+        score: 54.3
+        setting: "公開題組，思考強度 0.99"
+        reportedBy: lab
+        date: "2026-07-15"
+        source: { title: "Inkling: Our Open-Weights Model", publisher: "Thinking Machines Lab", url: "https://thinkingmachines.ai/news/introducing-inkling/", type: press-release, lang: en, published: "2026-07-15", accessed: "2026-10-07" }
+      - benchmark: terminal-bench
+        score: 63.8
+        setting: "Terminal-Bench 2.1，官方內部程式框架；受網路搜尋汙染的解答改計 0 分"
+        reportedBy: lab
+        date: "2026-07-15"
+        source: { title: "Inkling: Our Open-Weights Model", publisher: "Thinking Machines Lab", url: "https://thinkingmachines.ai/news/introducing-inkling/", type: press-release, lang: en, published: "2026-07-15", accessed: "2026-10-07" }
+      - benchmark: arc-agi-2
+        score: 36.5
+        setting: "列於 Inkling-Small 發布文章的對照欄；官方標示此項採用 ARC Prize 公布的成績"
+        reportedBy: lab
+        date: "2026-07-30"
+        source: { title: "Introducing Inkling-Small", publisher: "Thinking Machines Lab", url: "https://thinkingmachines.ai/news/inkling-small/", type: press-release, lang: en, published: "2026-07-30", accessed: "2026-10-17" }
+    notes: "66 層 decoder，每層 256 個路由專家選 6 個，另有 2 個共享專家；滑動視窗與全域注意力以 5:1 交錯，位置編碼改用相對位置而非 RoPE。以 45 兆 tokens 的文字、圖片、語音與影片預訓練，在 NVIDIA GB300 NVL72 系統上訓練。官方稱上下文最長約 100 萬 tokens，Tinker 微調提供 64K 與 256K 兩種長度。"
+  - id: inkling-small
+    name: "Inkling-Small"
+    released: "2026-07-30"
+    status: ga
+    tier: mid
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: moe
+    params: { totalB: 276, activeB: 12, disclosed: true }
+    modalitiesIn: [text, image, audio]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    reasoning: hybrid
+    availability: [api, self-host]
+    pricing:
+      - asOf: "2026-10-07"
+        inputPerMTok: 0.30
+        outputPerMTok: 1.20
+        cachedInputPerMTok: 0.06
+        currency: USD
+        tierNote: "Tinker 無伺服器推論（Beta），256K 上下文、NVFP4 取樣；在 Tinker 上微調另依訓練 tokens 計價"
+        source: { title: "Models & Pricing（Tinker 文件）", publisher: "Thinking Machines Lab", url: "https://tinker-docs.thinkingmachines.ai/tinker/models/", type: docs, lang: en, accessed: "2026-10-07" }
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 26
+        setting: "v4.3.2；AA 實測（非估計值），高於同級大型開放權重模型的中位數 19"
+        reportedBy: third-party
+        date: "2026-10-07"
+        source: { title: "Inkling Small - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/inkling-small", type: leaderboard, lang: en, accessed: "2026-10-07" }
+      - benchmark: lmarena-text
+        score: 1405
+        setting: "文字競技場總榜，±5，27,070 票，第 152 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-07" }
+      - benchmark: gpqa-diamond
+        score: 89.5
+        setting: "思考強度 0.99；官方標示引用 Artificial Analysis 的測量值"
+        reportedBy: lab
+        date: "2026-07-30"
+        source: { title: "Introducing Inkling-Small", publisher: "Thinking Machines Lab", url: "https://thinkingmachines.ai/news/inkling-small/", type: press-release, lang: en, published: "2026-07-30", accessed: "2026-10-17" }
+      - benchmark: hle
+        score: 31.6
+        setting: "純文字、不用工具，思考強度 0.99；官方標示引用 Artificial Analysis 的測量值（可用工具時為 47.8%）"
+        reportedBy: lab
+        date: "2026-07-30"
+        source: { title: "Introducing Inkling-Small", publisher: "Thinking Machines Lab", url: "https://thinkingmachines.ai/news/inkling-small/", type: press-release, lang: en, published: "2026-07-30", accessed: "2026-10-17" }
+      - benchmark: swe-bench-verified
+        score: 80.2
+        setting: "僅使用 bash 的測試框架"
+        reportedBy: lab
+        date: "2026-07-30"
+        source: { title: "Inkling-Small model card", publisher: "Thinking Machines Lab（Hugging Face）", url: "https://huggingface.co/thinkingmachines/Inkling-Small", type: docs, lang: en, accessed: "2026-10-07" }
+      - benchmark: swe-bench-pro
+        score: 55.9
+        setting: "公開題組"
+        reportedBy: lab
+        date: "2026-07-30"
+        source: { title: "Inkling-Small model card", publisher: "Thinking Machines Lab（Hugging Face）", url: "https://huggingface.co/thinkingmachines/Inkling-Small", type: docs, lang: en, accessed: "2026-10-07" }
+      - benchmark: terminal-bench
+        score: 64.7
+        setting: "Terminal-Bench 2.1，官方內部程式框架"
+        reportedBy: lab
+        date: "2026-07-30"
+        source: { title: "Inkling-Small model card", publisher: "Thinking Machines Lab（Hugging Face）", url: "https://huggingface.co/thinkingmachines/Inkling-Small", type: docs, lang: en, accessed: "2026-10-07" }
+      - benchmark: arc-agi-2
+        score: 40.1
+        setting: "思考強度 0.99；官方標示此項採用 ARC Prize 公布的成績"
+        reportedBy: lab
+        date: "2026-07-30"
+        source: { title: "Introducing Inkling-Small", publisher: "Thinking Machines Lab", url: "https://thinkingmachines.ai/news/inkling-small/", type: press-release, lang: en, published: "2026-07-30", accessed: "2026-10-17" }
+    notes: "42 層，專家配置與 Inkling 相同。2026-07-15 先隨 Inkling 公布預覽版成績，7 月 30 日正式釋出權重（另有 NVFP4 版）。調整了預訓練資料配比，後訓練部分以 Inkling 為老師做 on-policy 蒸餾，再延長兩週 Agent 程式強化學習；推理與程式評測超越 Inkling，知識與事實性仍較弱（SimpleQA Verified 為 20.6%，Inkling 為 43.9%）。Artificial Analysis 列出的總參數為 266B，與官方模型卡的 276B 不同，本站採官方數字。"
+flagshipVersion: inkling
+relatedLearn: [open-vs-closed-models, mixture-of-experts, multimodal-models, reasoning-models, post-training-deep, model-evaluation]
+glossary: [open-weights, moe, active-parameters, multimodal, test-time-compute, synthetic-data, distillation, fine-tuning, fp4, benchmark-contamination]
+sources:
+  - key: tm-inkling
+    title: "Inkling: Our Open-Weights Model"
+    publisher: "Thinking Machines Lab"
+    url: "https://thinkingmachines.ai/news/introducing-inkling/"
+    type: press-release
+    lang: en
+    published: "2026-07-15"
+    accessed: "2026-10-07"
+  - key: tm-inkling-small
+    title: "Introducing Inkling-Small"
+    publisher: "Thinking Machines Lab"
+    url: "https://thinkingmachines.ai/news/inkling-small/"
+    type: press-release
+    lang: en
+    published: "2026-07-30"
+    accessed: "2026-10-07"
+  - key: hf-inkling
+    title: "Inkling model card"
+    publisher: "Thinking Machines Lab（Hugging Face）"
+    url: "https://huggingface.co/thinkingmachines/Inkling"
+    type: docs
+    lang: en
+    accessed: "2026-10-07"
+  - key: hf-inkling-small
+    title: "Inkling-Small model card"
+    publisher: "Thinking Machines Lab（Hugging Face）"
+    url: "https://huggingface.co/thinkingmachines/Inkling-Small"
+    type: docs
+    lang: en
+    accessed: "2026-10-07"
+  - key: tinker-pricing
+    title: "Models & Pricing（Tinker 文件）"
+    publisher: "Thinking Machines Lab"
+    url: "https://tinker-docs.thinkingmachines.ai/tinker/models/"
+    type: docs
+    lang: en
+    accessed: "2026-10-07"
+  - key: tm-interaction
+    title: "Interaction Models: A Scalable Approach to Human-AI Collaboration"
+    publisher: "Thinking Machines Lab"
+    url: "https://thinkingmachines.ai/blog/interaction-models/"
+    type: company-site
+    lang: en
+    published: "2026-05-11"
+    accessed: "2026-10-17"
+  - key: tm-tinker
+    title: "Announcing Tinker"
+    publisher: "Thinking Machines Lab"
+    url: "https://thinkingmachines.ai/news/announcing-tinker/"
+    type: press-release
+    lang: en
+    published: "2025-10-01"
+    accessed: "2026-10-07"
+  - key: tm-safe-open
+    title: "A Safe Path to Open Weights"
+    publisher: "Thinking Machines Lab"
+    url: "https://thinkingmachines.ai/blog/a-safe-path-to-open-weights/"
+    type: company-site
+    lang: en
+    published: "2026-07-31"
+    accessed: "2026-10-07"
+  - key: wiki-tml
+    title: "Thinking Machines Lab"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Thinking_Machines_Lab"
+    type: other
+    lang: en
+    accessed: "2026-10-07"
+  - key: aa-inkling
+    title: "Inkling (xhigh) - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/inkling"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-07"
+  - key: aa-inkling-small
+    title: "Inkling Small - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/inkling-small"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-07"
+  - key: aa-opus-5-5
+    title: "Claude Opus 5.5 - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/claude-opus-5-5"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-07"
+  - key: lmarena-text
+    title: "Text Arena Leaderboard"
+    publisher: LMArena
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-07"
+lastVerified: "2026-10-07"
+editorial: { status: fact-checked, author: models-07, checkedBy: "models-07-check", checkedOn: "2026-10-06", notes: "2026-10-17 查核：AA 排名改以同級中位數描述（排名隨收錄模型變動）；ARC-AGI 與 GPQA、HLE 的來源標示依官方 Inkling-Small 發布文章更正為引用 ARC Prize 與 Artificial Analysis。" }
+---
+
+## 系列概覽
+
+Inkling 是 <CompanyChip id="thinking-machines-lab">Thinking Machines Lab</CompanyChip> 的第一個自研模型家族。這家公司由前 OpenAI 技術長 Mira Murati 在 2025 年 2 月創立，同年 7 月以 120 億美元估值募得約 20 億美元<Cite k="wiki-tml" />，10 月先推出微調 API「Tinker」<Cite k="tm-tinker" />。2026 年 7 月 15 日，公司以 Apache 2.0 授權釋出 Inkling 的完整權重，7 月 30 日再推出較小的 Inkling-Small<Cite k="tm-inkling" /><Cite k="tm-inkling-small" />。
+
+官方說得很直接：無論與開放或封閉模型相比，Inkling 都不是目前最強的模型。它的定位是能力均衡、適合拿去微調的<Term id="open-weights">開放權重</Term>基底，商業上則把開發者帶到 Tinker 做客製化；它也被設計成公司 2026 年 5 月發表的「互動模型」研究預覽中，負責背景推理的模型<Cite k="tm-inkling" /><Cite k="tm-interaction" />。在 <SegmentChip id="foundation-models">基礎模型</SegmentChip>環節中，它是美國陣營以大型開放權重模型追趕中國模型的代表之一。
+
+<Callout type="analogy" title="生活化比喻">Inkling 比較像一台規格完整、可以自己改裝的工作車，而不是賽道上最快的跑車。原廠還附上改裝工具（Tinker），希望你依自己的用途調校，而不是拿去比圈速。</Callout>
+
+## 特性分析
+
+- **大型 MoE、原生多模態**：Inkling 有 975B 總參數，每個 token 只啟用 41B 的<Term id="active-parameters">活躍參數</Term>（<Term id="moe">MoE</Term> 架構，256 個路由專家中選 6 個，另有 2 個共享專家）。它能直接讀文字、圖片與語音並輸出文字；圖片切成 40×40 像素的小塊、語音轉成 dMel 頻譜，再與文字一起處理，是原生的<Term id="multimodal">多模態</Term>設計<Cite k="tm-inkling" /><Cite k="hf-inkling" />。
+- **可調思考強度**：開發者可在 0.2 到 0.99 之間設定思考強度，用<Term id="test-time-compute">測試時運算</Term>換取準確度。官方稱在 Terminal-Bench 2.1 上，Inkling 以約三分之一的 tokens 就追平 <ModelChip id="nvidia-nemotron">Nemotron 3 Ultra</ModelChip><Cite k="tm-inkling" />。
+- **站在別人的肩膀上**：官方坦承 MoE 設計「大致沿用 <ModelChip id="deepseek">DeepSeek-V3</ModelChip>」，後訓練起步的監督式微調使用了 <ModelChip id="moonshot-kimi">Kimi K2.5</ModelChip> 等開放權重模型生成的<Term id="synthetic-data">合成資料</Term>。不過這一步只占少量算力，大部分投入在超過 3,000 萬次嘗試（rollout）的大規模強化學習<Cite k="tm-inkling" />。
+- **訓練規模**：以 45 兆 tokens 的文字、圖片、語音與影片預訓練，在 <CompanyChip id="nvidia">輝達</CompanyChip> GB300 NVL72 系統上完成；權重另提供 <Term id="fp4">FP4</Term> 格式的 NVFP4 版本，方便在 Blackwell 平台上推論<Cite k="tm-inkling" />。
+- **校準與安全**：官方設計的獎勵讓模型在沒把握時回答「不知道」比硬猜更有利，藉此訓練它表達適當的信心程度；自評在 FORTRESS 對抗測試中，是其比較的開放權重模型裡拒答有害請求比例最高者。另一方面，它也刻意訓練模型直接回答可能受審查的議題，並建議部署時另加 Llama Guard 等外部過濾<Cite k="tm-inkling" /><Cite k="hf-inkling" />。
+
+## 適合與不適合的用途
+
+**適合**：想用自有資料<Term id="fine-tuning">微調</Term>、又要掌握權重的企業與研究團隊；同時處理文字、圖表與錄音的客服或 Agent 流程；對成本和延遲敏感的程式輔助、以模型當評分者或產生合成資料，官方建議這類工作用 Inkling-Small<Cite k="tm-inkling" />。使用管道包括 Tinker 的無伺服器推論，以及 <CompanyChip id="together-ai">Together AI</CompanyChip>、<CompanyChip id="fireworks-ai">Fireworks</CompanyChip>、<CompanyChip id="databricks">Databricks</CompanyChip>、<CompanyChip id="baseten">Baseten</CompanyChip> 等第三方 API，也可用 vLLM、SGLang 自行部署<Cite k="tm-inkling" />。
+
+**不適合**：追求前沿最高能力的任務；想用少量硬體自行架設旗艦版（975B 參數以 BF16 儲存，光權重就接近 2 TB）；醫療、法律等高風險決策，官方模型卡明確不建議在未經額外微調與人工審查下使用<Cite k="hf-inkling" />。官方標示的主要語言是英文，沒有公開繁體中文評測，台灣使用者導入前應自行驗證。Tinker 的無伺服器推論目前仍是 Beta，官方不建議用於大量正式環境<Cite k="tinker-pricing" />。
+
+## 版本演進
+
+| 版本 | 發布 | 規模（總參數／活躍） | 重點 |
+|---|---|---|---|
+| Inkling | 2026-07-15 | 975B／41B | 首個自研模型；文字、圖片、語音輸入 |
+| Inkling-Small 預覽 | 2026-07-15 | 276B／12B | 隨 Inkling 公布成績，權重尚未釋出 |
+| Inkling-Small | 2026-07-30 | 276B／12B | 調整預訓練資料、以 Inkling 為老師蒸餾 |
+
+Inkling-Small 晚於 Inkling 開始訓練，因此改良了預訓練資料配比；後訓練部分以 Inkling 為老師做<Term id="distillation">蒸餾</Term>，再延長兩週程式強化學習。結果它在推理與程式評測超越 Inkling，但知識與事實性仍較弱，SimpleQA Verified 為 20.6%，Inkling 為 43.9%<Cite k="tm-inkling-small" /><Cite k="hf-inkling-small" />。
+
+官方定價方面，Tinker 無伺服器推論的 Inkling 每百萬 tokens 輸入 1.00 美元、輸出 4.05 美元，Inkling-Small 為 0.30 美元與 1.20 美元<Cite k="tinker-pricing" />。2026 年 7 月 31 日，公司另發表〈A Safe Path to Open Weights〉，表示未來會依安全評估結果選擇開放程度，必要時分階段釋出<Cite k="tm-safe-open" />。截至 2026-10-07，官方尚未公布下一代 Inkling 的規格與時程。
+
+## 評測解讀
+
+官方在 2026-07-15 公布的自評（思考強度 0.99）為：GPQA Diamond 87.2%、SWE-bench Verified 77.6%、SWE-bench Pro 54.3%、Terminal-Bench 2.1 為 63.8%、HLE 純文字 29.7%（可用工具時 46.0%）<Cite k="tm-inkling" />。值得肯定的是，官方同時列出 GLM 5.2、Kimi K2.6、DeepSeek V4 Pro 與多個封閉模型的分數，Inkling 並非每項領先；HLE、GPQA 等項目也直接引用 Artificial Analysis 的測量值<Cite k="tm-inkling" />。
+
+第三方方面，Artificial Analysis（AA）在 2026-10-07 給 Inkling（xhigh）的智慧指數為 25、Inkling-Small 為 26，兩者都是實測而非估計值，都高於同級大型開放權重模型的中位數 19<Cite k="aa-inkling" /><Cite k="aa-inkling-small" />；同一指數下 Claude Opus 5.5 為 58<Cite k="aa-opus-5-5" />。LMArena 文字競技場（2026-10-02 更新）上，Inkling 為 1441 分、排第 95 名（共 413 個模型，約 3.5 萬票），Inkling-Small 為 1405 分、排第 152 名<Cite k="lmarena-text" />。換句話說，Inkling-Small 在考試型評測的優勢，並沒有反映在人類偏好投票上。
+
+解讀時要注意三點。第一，Inkling-Small 模型卡列出的 AA 指數是 v4.1 版的分數（Inkling 41、Inkling-Small 40），AA 現行 v4.3.2 納入更多 Agent 型任務，不同版本的數字不能直接比較<Cite k="hf-inkling-small" />。第二，SWE-bench 與 Terminal-Bench 的分數高度依賴測試框架；官方也承認發現部分解答來自網路搜尋而改計 0 分，這正是<Term id="benchmark-contamination">評測汙染</Term>的風險。第三，這些分數測的是原始模型，而 Inkling 的賣點是微調後的表現，實際價值仍要用自己的資料驗證。

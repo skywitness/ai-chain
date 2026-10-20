@@ -1,0 +1,921 @@
+---
+title: "Amazon Nova 系列"
+family: "Nova"
+kind: "llm"
+lab: "amazon"
+labName: "Amazon"
+origin: "US"
+summary: "Amazon Nova 是亞馬遜自行訓練、主要透過 Amazon Bedrock 提供的封閉權重模型家族，主打低價、可深度客製與企業信任。截至 2026-10-06，正式上市的主力是推理模型 Nova 2 Lite（1M 上下文、每百萬 token 0.30／2.50 美元），另有預覽中的 Nova 2 Pro 與全模態 Nova 2 Omni、語音模型 Nova 2.5 Sonic 與多模態嵌入模型；綜合能力仍明顯落後前沿模型。"
+strengths:
+  - "價格低：Nova 2 Lite 全球跨區推論每百萬 token 輸入 0.30 美元、輸出 2.50 美元，Nova Micro 只要 0.035／0.14 美元（官方定價頁，2026-10-06）"
+  - "Nova 2 系列提供 1M token 上下文，推理可關閉或分 low／medium／high 三段，並內建網路查證、程式直譯器與遠端 MCP 工具支援"
+  - "客製化選項完整：可在 Bedrock 與 SageMaker AI 進行預訓練、監督式微調與強化式微調等客製化，Nova Forge 還能從預訓練或中期訓練檢查點開始打造自有模型"
+  - "產品線涵蓋文字、全模態（Nova 2 Omni）、即時語音（Nova 2.5 Sonic）與多模態嵌入，官方稱有超過 5 萬家客戶使用"
+weaknesses:
+  - "綜合能力落後前沿：Artificial Analysis 智慧指數 v4.3.2 中 Nova 2.0 Lite（High）約 13、Nova 2.0 Pro Preview（Medium）約 14，同榜 Claude Opus 5.5 為 58（2026-10-06，Nova 數值由 AA 標為估計值）"
+  - "更新慢：Nova 2 Pro 與 Nova 2 Omni 自 2025-12-02 發表後，到 2026-10-06 官方定價頁仍標示為預覽；2026 年 Bedrock 上新增的 Nova 模型只有 Nova 2.5 Sonic"
+  - "封閉權重且只在 AWS 上提供，無法跨雲或自行部署"
+  - "官方評測多以 2025 年下半年的模型為對照組，與 2026 年的前沿模型缺乏直接比較"
+bestFor:
+  - "已在 AWS 上、重視成本的大量文件處理、客服對話與流程自動化"
+  - "需要用自有資料深度客製模型（微調、強化式微調或 Nova Forge）的企業"
+  - "即時語音客服 Agent（Nova 2 Sonic／Nova 2.5 Sonic）"
+  - "影片理解與跨模態檢索（搭配 Nova Multimodal Embeddings）"
+positioning:
+  capability: 13
+  costIndex: 37
+  openness: 0
+  method: "computed"
+  asOf: "2026-10-06"
+  note: "以正式上市的 Nova 2 Lite 為代表（Nova 2 Pro 與 Omni 仍為預覽）。capability 採 Artificial Analysis 智慧指數 v4.3.2 中 Nova 2.0 Lite（High）的 13.4，取 13（2026-10-06；AA 將 Nova 各版本的指數標示為估計值）。costIndex 以 3:1 輸入／輸出混合價格（(3×0.30 + 2.50)÷4 = 0.85 美元／百萬 token，全球跨區推論標準層）對數換算：0.05 美元 → 0、100 美元 → 100，得 37.3，取 37。openness 為 0（封閉權重）。"
+versions:
+  - id: "nova-micro"
+    name: "Amazon Nova Micro"
+    released: "2024-12-03"
+    status: "ga"
+    tier: "small"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 128000
+    reasoning: "none"
+    availability: [ "api" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.035
+        outputPerMTok: 0.14
+        cachedInputPerMTok: 0.00875
+        currency: "USD"
+        tierNote: "隨需標準層，美東（維吉尼亞北部）"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+    benchmarks:
+      - benchmark: "lmarena-text"
+        score: 1241
+        setting: "amazon-nova-micro-v1.0，±5"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+    notes: "第一代純文字小模型，主打最低延遲與最低價。"
+  - id: "nova-lite"
+    name: "Amazon Nova Lite"
+    released: "2024-12-03"
+    status: "ga"
+    tier: "small"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image", "video", "pdf" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 300000
+    reasoning: "none"
+    availability: [ "api" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.06
+        outputPerMTok: 0.24
+        cachedInputPerMTok: 0.015
+        currency: "USD"
+        tierNote: "隨需標準層，美東（維吉尼亞北部）"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+    benchmarks:
+      - benchmark: "lmarena-text"
+        score: 1260
+        setting: "amazon-nova-lite-v1.0，±5"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+  - id: "nova-pro"
+    name: "Amazon Nova Pro"
+    released: "2024-12-03"
+    status: "ga"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image", "video", "pdf" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 300000
+    reasoning: "none"
+    availability: [ "api" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.8
+        outputPerMTok: 3.2
+        cachedInputPerMTok: 0.2
+        currency: "USD"
+        tierNote: "隨需標準層，美東（維吉尼亞北部）"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+      - asOf: "2026-10-06"
+        inputPerMTok: 1
+        outputPerMTok: 4
+        currency: "USD"
+        tierNote: "延遲最佳化推論（latency optimized）"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+    benchmarks:
+      - benchmark: "lmarena-text"
+        score: 1290
+        setting: "amazon-nova-pro-v1.0，±5"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+  - id: "nova-canvas"
+    name: "Amazon Nova Canvas"
+    released: "2024-12-03"
+    status: "retired"
+    tier: "specialized"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "image" ]
+    reasoning: "none"
+    availability: [ "api" ]
+    notes: "文生圖與圖像編輯模型，按張計價（非 token 計價，故未列 pricing）。Bedrock 生命週期表列為 2026-03-30 進入 Legacy、EOL 日期 2026-09-30。"
+  - id: "nova-reel"
+    name: "Amazon Nova Reel"
+    released: "2024-12-03"
+    status: "retired"
+    tier: "specialized"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image" ]
+    modalitiesOut: [ "video" ]
+    reasoning: "none"
+    availability: [ "api" ]
+    notes: "影片生成模型（1280×720、每秒 24 格），按影片秒數計價；2025-04-07 推出 1.1 版。Bedrock 生命週期表列 EOL 日期為 2026-09-30。"
+  - id: "nova-sonic"
+    name: "Amazon Nova Sonic"
+    released: "2025-04-08"
+    status: "retired"
+    tier: "specialized"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "audio" ]
+    modalitiesOut: [ "audio", "text" ]
+    contextTokens: 300000
+    reasoning: "none"
+    availability: [ "api" ]
+    notes: "第一代語音對語音模型；Bedrock 生命週期表列為 2026-03-13 進入 Legacy、EOL 日期 2026-09-14，由 Nova 2 Sonic 接替。"
+  - id: "nova-premier"
+    name: "Amazon Nova Premier"
+    released: "2025-04-30"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image", "video", "pdf" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    reasoning: "none"
+    availability: [ "api" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 2.5
+        outputPerMTok: 12.5
+        currency: "USD"
+        tierNote: "隨需標準層，美東（維吉尼亞北部）"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 42.4
+        reportedBy: "lab"
+        date: "2025-04-30"
+        source:
+          title: "Amazon Nova Premier, our most capable model for complex tasks and teacher for model distillation"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/about-aws/whats-new/2025/04/amazon-nova-premier-complex-tasks-model-distillation/"
+          type: "press-release"
+          lang: "en"
+          published: "2025-04-30"
+          accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index"
+        score: 9
+        setting: "Index v4.3.2（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v4.3.2)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Intelligence Index v4.3.2; all Amazon Nova entries carry intelligenceIndexIsEstimated = true in the page data"
+    notes: "第一代最強模型，也定位為 Bedrock 模型蒸餾的教師模型；同時公布 MMLU 87.4%、BFCL 63.7%。"
+  - id: "nova-2-lite"
+    name: "Amazon Nova 2 Lite"
+    released: "2025-12-02"
+    status: "ga"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image", "video", "pdf" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    maxOutputTokens: 65536
+    reasoning: "hybrid"
+    availability: [ "api" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.3
+        outputPerMTok: 2.5
+        cachedInputPerMTok: 0.075
+        currency: "USD"
+        tierNote: "全球跨區推論（Global cross-Region）標準層；快取讀取比輸入價低 75%"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.33
+        outputPerMTok: 2.75
+        currency: "USD"
+        tierNote: "區域內或地理區跨區推論（Geo／in-region）標準層"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.15
+        outputPerMTok: 1.25
+        currency: "USD"
+        tierNote: "全球跨區推論 Flex 層與 Batch 層"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 13
+        setting: "High 推理；Index v4.3.2（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v4.3.2)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Intelligence Index v4.3.2; all Amazon Nova entries carry intelligenceIndexIsEstimated = true in the page data"
+      - benchmark: "tau2-bench"
+        score: 72.8
+        setting: "τ²-bench Telecom，High 推理，AA 測量"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v4.3.2)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Intelligence Index v4.3.2; all Amazon Nova entries carry intelligenceIndexIsEstimated = true in the page data"
+      - benchmark: "lmarena-text"
+        score: 1335
+        setting: "nova-2-lite，±6（約 12,392 票）"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          title: "Text Arena leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          lang: "en"
+          published: "2026-10-02"
+          accessed: "2026-10-06"
+          note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+      - benchmark: "gpqa-diamond"
+        score: 79.6
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Introducing Amazon Nova 2 Lite, a fast, cost-effective reasoning model"
+          publisher: "AWS News Blog"
+          url: "https://aws.amazon.com/blogs/aws/introducing-amazon-nova-2-lite-a-fast-cost-effective-reasoning-model/"
+          type: "press-release"
+          lang: "en"
+          published: "2025-12-02"
+          accessed: "2026-10-06"
+          note: "Benchmark table published as an image in the post"
+      - benchmark: "aime-2025"
+        score: 91
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Introducing Amazon Nova 2 Lite, a fast, cost-effective reasoning model"
+          publisher: "AWS News Blog"
+          url: "https://aws.amazon.com/blogs/aws/introducing-amazon-nova-2-lite-a-fast-cost-effective-reasoning-model/"
+          type: "press-release"
+          lang: "en"
+          published: "2025-12-02"
+          accessed: "2026-10-06"
+          note: "Benchmark table published as an image in the post"
+      - benchmark: "mmlu-pro"
+        score: 80.9
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Introducing Amazon Nova 2 Lite, a fast, cost-effective reasoning model"
+          publisher: "AWS News Blog"
+          url: "https://aws.amazon.com/blogs/aws/introducing-amazon-nova-2-lite-a-fast-cost-effective-reasoning-model/"
+          type: "press-release"
+          lang: "en"
+          published: "2025-12-02"
+          accessed: "2026-10-06"
+          note: "Benchmark table published as an image in the post"
+      - benchmark: "swe-bench-verified"
+        score: 64.5
+        setting: "使用推論時擴展與 Amazon 內部 Agent 框架；標準設定為 53.6%（技術報告）"
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Introducing Amazon Nova 2 Lite, a fast, cost-effective reasoning model"
+          publisher: "AWS News Blog"
+          url: "https://aws.amazon.com/blogs/aws/introducing-amazon-nova-2-lite-a-fast-cost-effective-reasoning-model/"
+          type: "press-release"
+          lang: "en"
+          published: "2025-12-02"
+          accessed: "2026-10-06"
+          note: "Benchmark table published as an image in the post"
+      - benchmark: "terminal-bench"
+        score: 32.5
+        setting: "Terminal-Bench 1.0"
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Introducing Amazon Nova 2 Lite, a fast, cost-effective reasoning model"
+          publisher: "AWS News Blog"
+          url: "https://aws.amazon.com/blogs/aws/introducing-amazon-nova-2-lite-a-fast-cost-effective-reasoning-model/"
+          type: "press-release"
+          lang: "en"
+          published: "2025-12-02"
+          accessed: "2026-10-06"
+          note: "Benchmark table published as an image in the post"
+      - benchmark: "livecodebench"
+        score: 71
+        setting: "LiveCodeBench v5（2024-07-01 至 2025-01-01 子集）"
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Introducing Amazon Nova 2 Lite, a fast, cost-effective reasoning model"
+          publisher: "AWS News Blog"
+          url: "https://aws.amazon.com/blogs/aws/introducing-amazon-nova-2-lite-a-fast-cost-effective-reasoning-model/"
+          type: "press-release"
+          lang: "en"
+          published: "2025-12-02"
+          accessed: "2026-10-06"
+          note: "Benchmark table published as an image in the post"
+    notes: "Nova 2 世代唯一正式上市的文字推理模型；延伸思考預設關閉，可選 low、medium、high 三段；內建 Web Grounding 與程式直譯器；可在 Bedrock 與 SageMaker AI 微調。"
+  - id: "nova-2-pro"
+    name: "Amazon Nova 2 Pro（Preview）"
+    released: "2025-12-02"
+    status: "preview"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image", "video", "audio", "pdf" ]
+    modalitiesOut: [ "text" ]
+    contextTokens: 1000000
+    reasoning: "hybrid"
+    availability: [ "api" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1.25
+        outputPerMTok: 10
+        cachedInputPerMTok: 0.3125
+        currency: "USD"
+        tierNote: "預覽；全球跨區推論標準層；文字、影像、影片、音訊輸入同價；快取讀取比輸入價低 75%"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+      - asOf: "2026-10-06"
+        inputPerMTok: 1.375
+        outputPerMTok: 11
+        currency: "USD"
+        tierNote: "預覽；區域內或地理區跨區推論標準層"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 14
+        setting: "Medium 推理；Index v4.3.2（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v4.3.2)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Intelligence Index v4.3.2; all Amazon Nova entries carry intelligenceIndexIsEstimated = true in the page data"
+      - benchmark: "tau2-bench"
+        score: 92.7
+        setting: "τ²-bench Telecom，Medium 推理，AA 測量"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v4.3.2)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Intelligence Index v4.3.2; all Amazon Nova entries carry intelligenceIndexIsEstimated = true in the page data"
+      - benchmark: "gpqa-diamond"
+        score: 81.4
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Amazon Nova 2: Multimodal reasoning and generation models (Technical Report and Model Card)"
+          publisher: "Amazon Artificial General Intelligence"
+          url: "https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models"
+          type: "paper"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Amazon Science lists the report year as 2025; its Nova 2 Lite figures match the 2025-12-02 launch blog"
+      - benchmark: "aime-2025"
+        score: 92.3
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Amazon Nova 2: Multimodal reasoning and generation models (Technical Report and Model Card)"
+          publisher: "Amazon Artificial General Intelligence"
+          url: "https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models"
+          type: "paper"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Amazon Science lists the report year as 2025; its Nova 2 Lite figures match the 2025-12-02 launch blog"
+      - benchmark: "mmlu-pro"
+        score: 81.6
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Amazon Nova 2: Multimodal reasoning and generation models (Technical Report and Model Card)"
+          publisher: "Amazon Artificial General Intelligence"
+          url: "https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models"
+          type: "paper"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Amazon Science lists the report year as 2025; its Nova 2 Lite figures match the 2025-12-02 launch blog"
+      - benchmark: "swe-bench-verified"
+        score: 70
+        setting: "使用推論時擴展與 Amazon 內部 Agent 框架；標準設定為 61.5%"
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Amazon Nova 2: Multimodal reasoning and generation models (Technical Report and Model Card)"
+          publisher: "Amazon Artificial General Intelligence"
+          url: "https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models"
+          type: "paper"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Amazon Science lists the report year as 2025; its Nova 2 Lite figures match the 2025-12-02 launch blog"
+      - benchmark: "terminal-bench"
+        score: 41.3
+        setting: "Terminal-Bench 1.0"
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Amazon Nova 2: Multimodal reasoning and generation models (Technical Report and Model Card)"
+          publisher: "Amazon Artificial General Intelligence"
+          url: "https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models"
+          type: "paper"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Amazon Science lists the report year as 2025; its Nova 2 Lite figures match the 2025-12-02 launch blog"
+      - benchmark: "livecodebench"
+        score: 74.6
+        setting: "LiveCodeBench v5（2024-07-01 至 2025-01-01 子集）"
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Amazon Nova 2: Multimodal reasoning and generation models (Technical Report and Model Card)"
+          publisher: "Amazon Artificial General Intelligence"
+          url: "https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models"
+          type: "paper"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Amazon Science lists the report year as 2025; its Nova 2 Lite figures match the 2025-12-02 launch blog"
+    notes: "官方稱為 Nova 最聰明的模型，適合多文件分析、影片推理與軟體遷移等複雜 Agent 任務；發表時以預覽形式提供給 Nova Forge 客戶搶先使用，2026-10-06 定價頁仍標示預覽。上下文依 AWS 公告為 1M（Artificial Analysis 列為 256K）。"
+  - id: "nova-2-omni"
+    name: "Amazon Nova 2 Omni（Preview）"
+    released: "2025-12-02"
+    status: "preview"
+    tier: "specialized"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "text", "image", "video", "audio", "pdf" ]
+    modalitiesOut: [ "text", "image" ]
+    contextTokens: 1000000
+    reasoning: "hybrid"
+    availability: [ "api" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.3
+        outputPerMTok: 2.5
+        cachedInputPerMTok: 0.075
+        currency: "USD"
+        tierNote: "預覽；全球跨區推論標準層，文字輸入與文字輸出；音訊輸入每百萬 token 1 美元、圖像輸出 40 美元"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+    benchmarks:
+      - benchmark: "aa-intelligence-index"
+        score: 14
+        setting: "Medium 推理；Index v4.3.2（AA 標示為估計值）"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v4.3.2)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Intelligence Index v4.3.2; all Amazon Nova entries carry intelligenceIndexIsEstimated = true in the page data"
+      - benchmark: "aime-2025"
+        score: 92.1
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Amazon Nova 2: Multimodal reasoning and generation models (Technical Report and Model Card)"
+          publisher: "Amazon Artificial General Intelligence"
+          url: "https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models"
+          type: "paper"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Amazon Science lists the report year as 2025; its Nova 2 Lite figures match the 2025-12-02 launch blog"
+      - benchmark: "mmlu-pro"
+        score: 80.7
+        reportedBy: "lab"
+        date: "2025-12-02"
+        source:
+          title: "Amazon Nova 2: Multimodal reasoning and generation models (Technical Report and Model Card)"
+          publisher: "Amazon Artificial General Intelligence"
+          url: "https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models"
+          type: "paper"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Amazon Science lists the report year as 2025; its Nova 2 Lite figures match the 2025-12-02 launch blog"
+    notes: "Amazon 稱為業界首個可輸入文字、影像、影片與語音，並同時輸出文字與圖像的推理模型；支援 200 多種文字語言、10 種語音輸入語言，可生成與編輯圖像。"
+  - id: "nova-2-sonic"
+    name: "Amazon Nova 2 Sonic"
+    released: "2025-12-02"
+    status: "ga"
+    tier: "specialized"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "audio", "text" ]
+    modalitiesOut: [ "audio", "text" ]
+    contextTokens: 1000000
+    reasoning: "none"
+    availability: [ "api" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 3
+        outputPerMTok: 12
+        currency: "USD"
+        tierNote: "語音 token"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.33
+        outputPerMTok: 2.75
+        currency: "USD"
+        tierNote: "文字 token（轉錄、工具呼叫、對話紀錄等）"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+    notes: "第二代語音對語音模型，新增葡萄牙語與印地語、同一聲音說多種語言（polyglot voices）、可調整的插話靈敏度、語音與文字混用及非同步工具呼叫。"
+  - id: "nova-2-5-sonic"
+    name: "Amazon Nova 2.5 Sonic"
+    released: "2026-10-05"
+    status: "ga"
+    tier: "specialized"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn: [ "audio", "text" ]
+    modalitiesOut: [ "audio", "text" ]
+    reasoning: "none"
+    availability: [ "api" ]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 3
+        outputPerMTok: 12
+        currency: "USD"
+        tierNote: "語音 token；文字 token 為 0.33／2.75 美元，與 Nova 2 Sonic 同價"
+        source:
+          title: "Amazon Nova pricing"
+          publisher: "Amazon Web Services"
+          url: "https://aws.amazon.com/nova/pricing/"
+          type: "company-site"
+          lang: "en"
+          accessed: "2026-10-06"
+          note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+    notes: "2026-10-05 正式上市，強化推理、指令遵循與工具呼叫準確度並降低延遲，支援 7 種語言。上下文長度官方說法不一：上市公告寫 256K，模型頁寫最高 1M，故未列入。"
+flagshipVersion: "nova-2-lite"
+relatedLearn: [ "multimodal-models", "reasoning-models", "post-training-deep", "rag-and-vector-search", "open-vs-closed-models", "model-evaluation", "cloud-and-ai-business" ]
+glossary: [ "hyperscaler", "reasoning-model", "context-window", "fine-tuning", "distillation", "embedding", "elo-rating", "multimodal" ]
+sources:
+  - key: "nova-models"
+    title: "Amazon Nova foundation models"
+    publisher: "Amazon Web Services"
+    url: "https://aws.amazon.com/nova/models/"
+    type: "company-site"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "nova-pricing"
+    title: "Amazon Nova pricing"
+    publisher: "Amazon Web Services"
+    url: "https://aws.amazon.com/nova/pricing/"
+    type: "company-site"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "Prices render dynamically; values resolved from the AWS price list feed the page loads (b0.p.awsstatic.com meteredUnitMaps, bedrock USD, published 2026-10-03), US East (N. Virginia)"
+  - key: "nova-launch-2024"
+    title: "Announcing Amazon Nova foundation models available today in Amazon Bedrock"
+    publisher: "Amazon Web Services"
+    url: "https://aws.amazon.com/about-aws/whats-new/2024/12/amazon-nova-foundation-models-bedrock/"
+    type: "press-release"
+    lang: "en"
+    published: "2024-12-03"
+    accessed: "2026-10-06"
+  - key: "nova-sonic-1"
+    title: "Announcing Amazon Nova Sonic, a new speech-to-speech model that brings real-time voice conversations to Amazon Bedrock"
+    publisher: "Amazon Web Services"
+    url: "https://aws.amazon.com/about-aws/whats-new/2025/04/amazon-nova-sonic-speech-to-speech-conversations-bedrock/"
+    type: "press-release"
+    lang: "en"
+    published: "2025-04-08"
+    accessed: "2026-10-06"
+  - key: "nova-premier"
+    title: "Amazon Nova Premier, our most capable model for complex tasks and teacher for model distillation"
+    publisher: "Amazon Web Services"
+    url: "https://aws.amazon.com/about-aws/whats-new/2025/04/amazon-nova-premier-complex-tasks-model-distillation/"
+    type: "press-release"
+    lang: "en"
+    published: "2025-04-30"
+    accessed: "2026-10-06"
+  - key: "nova-mme"
+    title: "Announcing Amazon Nova Multimodal Embeddings"
+    publisher: "Amazon Web Services"
+    url: "https://aws.amazon.com/about-aws/whats-new/2025/10/amazon-nova-multimodal-embeddings/"
+    type: "press-release"
+    lang: "en"
+    published: "2025-10-28"
+    accessed: "2026-10-06"
+  - key: "nova2-launch"
+    title: "Announcing Amazon Nova 2 foundation models now available in Amazon Bedrock"
+    publisher: "Amazon Web Services"
+    url: "https://aws.amazon.com/about-aws/whats-new/2025/12/nova-2-foundation-models-amazon-bedrock/"
+    type: "press-release"
+    lang: "en"
+    published: "2025-12-02"
+    accessed: "2026-10-06"
+  - key: "nova2-lite-blog"
+    title: "Introducing Amazon Nova 2 Lite, a fast, cost-effective reasoning model"
+    publisher: "AWS News Blog"
+    url: "https://aws.amazon.com/blogs/aws/introducing-amazon-nova-2-lite-a-fast-cost-effective-reasoning-model/"
+    type: "press-release"
+    lang: "en"
+    published: "2025-12-02"
+    accessed: "2026-10-06"
+  - key: "nova2-omni"
+    title: "Introducing Amazon Nova 2 Omni in Preview"
+    publisher: "Amazon Web Services"
+    url: "https://aws.amazon.com/about-aws/whats-new/2025/12/amazon-nova-2-omni-preview/"
+    type: "press-release"
+    lang: "en"
+    published: "2025-12-02"
+    accessed: "2026-10-06"
+  - key: "nova2-sonic"
+    title: "Announcing Amazon Nova 2 Sonic for real-time conversational AI"
+    publisher: "Amazon Web Services"
+    url: "https://aws.amazon.com/about-aws/whats-new/2025/12/amazon-nova-2-sonic-real-time-conversational-ai/"
+    type: "press-release"
+    lang: "en"
+    published: "2025-12-02"
+    accessed: "2026-10-06"
+  - key: "nova-forge"
+    title: "Introducing Amazon Nova Forge: Build your own frontier models using Nova"
+    publisher: "AWS News Blog"
+    url: "https://aws.amazon.com/blogs/aws/introducing-amazon-nova-forge-build-your-own-frontier-models-using-nova/"
+    type: "press-release"
+    lang: "en"
+    published: "2025-12-02"
+    accessed: "2026-10-06"
+  - key: "nova2-tr"
+    title: "Amazon Nova 2: Multimodal reasoning and generation models (Technical Report and Model Card)"
+    publisher: "Amazon Artificial General Intelligence"
+    url: "https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models"
+    type: "paper"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "Amazon Science lists the report year as 2025; PDF at cdn.amazon.science (nova-2-0-technical-report2.pdf)"
+  - key: "nova2-docs"
+    title: "What is Amazon Nova 2? (Developer Guide for Amazon Nova 2)"
+    publisher: "Amazon Web Services"
+    url: "https://docs.aws.amazon.com/nova/latest/nova2-userguide/what-is-nova-2.html"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "nova1-docs"
+    title: "What is Amazon Nova? (Amazon Nova User Guide)"
+    publisher: "Amazon Web Services"
+    url: "https://docs.aws.amazon.com/nova/latest/userguide/what-is-nova.html"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "nova25-sonic"
+    title: "Announcing Amazon Nova 2.5 Sonic with improved reasoning for voice agents"
+    publisher: "Amazon Web Services"
+    url: "https://aws.amazon.com/about-aws/whats-new/2026/10/amazon-nova-2.5-sonic/"
+    type: "press-release"
+    lang: "en"
+    published: "2026-10-05"
+    accessed: "2026-10-06"
+  - key: "bedrock-legacy"
+    title: "Model lifecycle (Legacy) - Amazon Bedrock User Guide"
+    publisher: "Amazon Web Services"
+    url: "https://docs.aws.amazon.com/bedrock/latest/userguide/model-lifecycle-legacy.html"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-leaderboard"
+    title: "LLM Leaderboard (Intelligence Index v4.3.2)"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-10-06"
+    note: "Intelligence Index v4.3.2; all Amazon Nova entries carry intelligenceIndexIsEstimated = true in the page data"
+  - key: "arena-text"
+    title: "Text Arena leaderboard (Overall)"
+    publisher: "LMArena"
+    url: "https://arena.ai/leaderboard/text"
+    type: "leaderboard"
+    lang: "en"
+    published: "2026-10-02"
+    accessed: "2026-10-06"
+    note: "Leaderboard dated Oct 2, 2026; lmarena.ai redirects to arena.ai"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-02"
+  checkedBy: "models-02-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：價格以 AWS Bedrock Price List（us-east-1）與 Nova 定價頁（Pro／Omni 快取讀取低 75% 的註記）核對；評測數字對照 Nova 2 Lite 部落格表格圖檔與 Nova 2 技術報告；生命週期日期對照 Bedrock Legacy 頁；AA 與 Arena 數字以 2026-10-07／10-05 的 Wayback 存檔核對。已修正「只在 Bedrock 提供」等措辭。"
+---
+
+## 系列概覽
+
+Amazon Nova 是 <CompanyChip id="amazon">亞馬遜（Amazon）</CompanyChip> 自行訓練的基礎模型家族。2024-12-03 首次推出 Micro、Lite、Pro 三個理解模型，以及 Canvas（圖像）與 Reel（影片）兩個生成模型<Cite k="nova-launch-2024" />。2025-12-02 的第二代 Nova 2 包含正式上市的 Nova 2 Lite 與預覽中的 Nova 2 Pro 兩個推理模型<Cite k="nova2-launch" />，另有全模態的 Nova 2 Omni 與語音對語音的 Nova 2 Sonic。截至 2026-10-06，官方模型頁主推 Nova 2 Lite、Nova 2.5 Sonic 與 Nova Multimodal Embeddings，並稱有超過 5 萬家客戶使用 Nova<Cite k="nova-models" />。
+
+Nova 主要透過 Amazon Bedrock 提供（用 SageMaker AI 客製的 Nova 模型也可部署在 SageMaker 上），官方訴求是「低成本、可客製、企業級信任」，而不是搶排行榜第一<Cite k="nova-models" />。同一個 Bedrock 平台也上架 Claude 等第三方模型<Cite k="bedrock-legacy" />，Nova 扮演的是 <Term id="hyperscaler">超大規模雲端業者</Term> 自有的低價選項，位在 <SegmentChip id="cloud-neocloud" /> 與 <SegmentChip id="foundation-models" /> 兩個環節的交會處。
+
+## 特性分析
+
+- **可調整的推理**：Nova 2 Lite 預設關閉延伸思考，以求快速、便宜；需要時可開啟並選 low、medium、high 三段預算<Cite k="nova2-lite-blog" />，是典型的 <Term id="reasoning-model">推理模型</Term> 取捨。
+- **長上下文與內建工具**：Nova 2 Lite 與 Pro 支援 1M token 的 <Term id="context-window">上下文視窗</Term>，內建網路查證與程式直譯器，並支援遠端 MCP 工具<Cite k="nova2-launch" />；單次最多輸出 65,536 token<Cite k="nova2-docs" />。
+- **客製化是核心賣點**：Nova 2 Lite 可在 Bedrock 與 SageMaker AI 進行涵蓋預訓練、監督式 <Term id="fine-tuning">微調</Term> 與強化式微調等階段的客製化<Cite k="nova-models" />。Nova Forge 採年費訂閱<Cite k="nova-pricing" />，讓企業從預訓練、中期訓練或後訓練的檢查點開始，把自有資料與 Amazon 整理的資料混合訓練，減少模型「學新忘舊」<Cite k="nova-forge" />。第一代的 Nova Premier 也被定位為 <Term id="distillation">蒸餾</Term> 用的教師模型<Cite k="nova-premier" />。
+- **<Term id="multimodal">多模態</Term>**：Amazon 稱 Nova 2 Omni 是業界首個可輸入文字、影像、影片與語音，並同時輸出文字與圖像的推理模型<Cite k="nova2-omni" />；Nova Multimodal Embeddings 則把文字、文件、影像、影片與音訊對應到同一個 <Term id="embedding">嵌入</Term> 空間<Cite k="nova-mme" />。
+- **價格**：依官方定價頁，Nova 2 Lite（全球跨區推論、標準層）每百萬 token 輸入 0.30 美元、輸出 2.50 美元，快取讀取再便宜 75%；Nova 2 Pro（預覽）為 1.25／10 美元；第一代 Nova Micro 只要 0.035／0.14 美元<Cite k="nova-pricing" />。
+
+## 適合與不適合的用途
+
+**適合**：已在 AWS 上、重視成本的大量文件處理、客服對話與流程自動化；需要用自有資料深度客製模型的團隊；即時語音客服，例如 Nova 2.5 Sonic 支援 7 種語言、可在同一段對話中混用語音與文字<Cite k="nova25-sonic" />；影片理解與跨模態檢索（延伸閱讀：<LearnLink id="multimodal-models">多模態模型</LearnLink>）。
+
+**不適合**：需要最前沿推理或長時程程式 Agent 的任務。Amazon 技術報告中，Nova 2 Pro 的 Terminal-Bench 1.0 為 41.3%，與 GPT-5（41.3%）相當，但低於 Claude Sonnet 4.5（51%）與 Gemini 3 Pro Preview（56.3%）<Cite k="nova2-tr" />，而這些對照組在 2026 年都已有後繼版本。需要跨雲或自行部署權重的情境也不適合（可參考 <LearnLink id="open-vs-closed-models">開放權重 vs 封閉模型</LearnLink>）；若要把 Nova 2 Pro 或 Omni 用在正式環境，也要留意兩者截至 2026-10-06 仍標示為預覽<Cite k="nova-pricing" />。
+
+## 版本演進
+
+1. **第一代（2024-12 至 2025）**：2024-12-03 推出 Micro、Lite、Pro、Canvas、Reel<Cite k="nova-launch-2024" />；2025-04-08 推出語音模型 Nova Sonic<Cite k="nova-sonic-1" />；2025-04-30 推出 1M 上下文的 Nova Premier，官方公布 SWE-bench Verified 為 42.4%<Cite k="nova-premier" />；2025-10-28 推出 Nova Multimodal Embeddings<Cite k="nova-mme" />。
+2. **Nova 2（2025-12-02）**：AWS re:Invent 期間同日發表 Nova 2 Lite、Nova 2 Pro（預覽）、Nova 2 Omni（預覽）與 Nova Forge<Cite k="nova2-launch" />；Nova 2 Sonic 同日上市，新增葡萄牙語與印地語，上下文擴大到 1M<Cite k="nova2-sonic" />。
+3. **2026 年**：Bedrock 生命週期表列出第一代 Nova Sonic 的 EOL 日期為 2026-09-14，Canvas 與 Reel 為 2026-09-30<Cite k="bedrock-legacy" />；2026-10-05 推出 Nova 2.5 Sonic，強化推理、指令遵循與工具呼叫並降低延遲，價格與 Nova 2 Sonic 相同<Cite k="nova25-sonic" />。文字推理模型在 2026 年則沒有新版本。
+
+## 評測解讀
+
+| 指標（日期） | Nova 2 Lite | Nova 2 Pro（預覽） | 來源性質 |
+|---|---|---|---|
+| AA 智慧指數 v4.3.2（2026-10-06） | 13（High） | 14（Medium） | 第三方，AA 標為估計值 |
+| τ²-bench Telecom（2026-10-06） | 72.8% | 92.7% | 第三方（AA 測量） |
+| Arena 文字榜 Elo（2026-10-02） | 1,335 ±6 | 未上榜 | 人類盲測投票 |
+| GPQA Diamond（2025-12） | 79.6% | 81.4% | 廠商自報 |
+| SWE-bench Verified（2025-12） | 53.6%／64.5% | 61.5%／70.0% | 廠商自報（後者含推論時擴展） |
+
+解讀時要注意：
+
+- **對照組已過時**：Amazon 在 2025-12 拿 Nova 2 Lite 比 Claude Haiku 4.5、GPT-5 Mini 與 Gemini 2.5 Flash，當時它的 AIME 2025（91.0%）與指令遵循成績確有競爭力<Cite k="nova2-lite-blog" />；但到 2026-10，前沿模型已更新好幾代。
+- **兩種 SWE-bench 數字**：公告的 64.5%（Lite）與 70.0%（Pro）使用推論時擴展與 Amazon 內部 Agent 框架，標準設定下分別是 53.6% 與 61.5%，比較時要對齊條件<Cite k="nova2-tr" />。
+- **第三方指數落差大**：AA 智慧指數 v4.3 已納入 Terminal-Bench 4.0 與 AutomationBench 等高難度 Agent 評測，Nova 各版本的指數都被標為估計值；同日榜首 Claude Opus 5.5 為 58<Cite k="aa-leaderboard" />。這個差距反映的是困難的推理與 Agent 任務，不代表客服、摘要等日常工作的品質也差這麼多；在 τ²-bench 客服工具情境中，Nova 2 Pro 的表現就相對亮眼。
+- **Arena 排名**：Nova 2 Lite 以約 1.2 萬票得到 1,335 分（<Term id="elo-rating">Elo 分數</Term>），低於多數前沿模型。Arena 上另有 Amazon 的實驗模型 amazon-nova-experimental-chat-26-02-10（1,427 分），但它不在官方模型頁與定價頁上<Cite k="arena-text" />。評測方法可參考 <LearnLink id="model-evaluation">模型評測</LearnLink>。

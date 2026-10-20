@@ -1,0 +1,221 @@
+---
+/**
+ * <BarsPlot> — low-level column plot used by RevenueBars, MonthlyRevenue and BarChart.
+ * Fixed pixel height, fluid width, zero client JS. Optional lower "strip" panel shares the
+ * x positions (e.g. the YoY % line) instead of a second y-axis on the same plot.
+ * Values must already be in display units (e.g. 億).
+ */
+import './charts.css';
+import { axisWidth, fmtTick, isNum, niceTicks, pct, round, textWidthCh, tickDigits, vars } from './chart-utils';
+
+export interface BarSlot {
+  value: number | null;
+  estimate?: boolean | undefined;
+  /** de-emphasised (e.g. context bars) */
+  dim?: boolean | undefined;
+  color?: string | undefined;
+  /** x label (first line) */
+  label?: string | undefined;
+  /** group label shown on the second line where it changes (e.g. FY27, 2026) */
+  group?: string | undefined;
+  /** hide the x label when the chart is narrow / very narrow */
+  minor?: boolean | undefined;
+  minor2?: boolean | undefined;
+  tip?: string | undefined;
+  /** direct label above the bar */
+  valueLabel?: string | undefined;
+  /** hide the direct label when the chart is narrow */
+  valueLabelMinor?: boolean | undefined;
+  /** render the direct label as a dashed 「估計」-style badge */
+  valueLabelBadge?: boolean | undefined;
+  /** range whisker in display units (guidance) */
+  whisker?: { low: number; high: number } | null | undefined;
+  /** value for the lower strip (e.g. YoY %) */
+  strip?: number | null | undefined;
+  stripEstimate?: boolean | undefined;
+}
+
+export interface StripSpec {
+  label: string;
+  color?: string | undefined;
+  height?: number | undefined;
+  /** percent tick labels (default true) */
+  percent?: boolean | undefined;
+}
+
+interface Props {
+  slots: BarSlot[];
+  ariaLabel: string;
+  height?: number | undefined;
+  color?: string | undefined;
+  /** tick formatter for the main axis */
+  yFormat?: ((v: number) => string) | undefined;
+  yTickCount?: number | undefined;
+  domain?: [number, number] | undefined;
+  strip?: StripSpec | null | undefined;
+  class?: string | undefined;
+}
+
+const { slots, ariaLabel, height = 220, color = 'var(--chart-1)', yFormat, yTickCount = 4, domain, strip, class: className } = Astro.props;
+
+const n = Math.max(1, slots.length);
+const mainVals = slots.flatMap((s) => [s.value, s.whisker?.low, s.whisker?.high]).filter(isNum);
+const main = domain
+  ? niceTicks(domain[0], domain[1], yTickCount)
+  : niceTicks(mainVals.length ? Math.min(...mainVals) : 0, mainVals.length ? Math.max(...mainVals) : 1, yTickCount);
+const mainDigits = tickDigits(main.ticks);
+const fmtMain = yFormat ?? ((v: number) => fmtTick(v, { digits: mainDigits }));
+const zero = pct(Math.max(main.domain[0], Math.min(0, main.domain[1])), main.domain);
+
+const bars = slots.map((s, i) => {
+  if (!isNum(s.value)) return { i, s, b: zero, h: 0, neg: false };
+  const p = pct(s.value, main.domain);
+  const neg = s.value < 0;
+  return { i, s, b: neg ? p : zero, h: round(Math.abs(p - zero), 3), neg };
+});
+
+// strip (lower panel)
+const stripVals = strip ? slots.map((s) => s.strip).filter(isNum) : [];
+const hasStrip = !!strip && stripVals.length > 0;
+const sNice = hasStrip ? niceTicks(Math.min(0, ...stripVals), Math.max(0, ...stripVals), 3) : null;
+// label only the ends and zero so the short panel stays calm
+const sTicks = sNice ? { domain: sNice.domain, ticks: [...new Set([sNice.domain[0], 0, sNice.domain[1]])] } : null;
+const sDigits = sTicks ? tickDigits(sTicks.ticks) : 0;
+const sFmt = (v: number) => fmtTick(v, { percent: strip?.percent !== false, digits: sDigits });
+const sZero = sTicks ? pct(0, sTicks.domain) : 0;
+const stripH = strip?.height ?? 76;
+const stripColor = strip?.color ?? 'var(--chart-2)';
+
+// strip paths: solid between actual points, dashed where an estimate is involved
+let solid = '';
+let dashed = '';
+if (sTicks) {
+  const pts = slots.map((s, i) => ({ x: round((i + 0.5) * 10, 3), y: isNum(s.strip) ? round(100 - pct(s.strip, sTicks.domain), 3) : null, est: !!s.stripEstimate }));
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1]!;
+    const b = pts[i]!;
+    if (a.y == null || b.y == null) continue;
+    const seg = `M${a.x},${a.y}L${b.x},${b.y}`;
+    if (a.est || b.est) dashed += seg;
+    else solid += seg;
+  }
+}
+const manyPoints = n > 16;
+
+const yLabels = [...main.ticks.map(fmtMain), ...(sTicks ? sTicks.ticks.map(sFmt) : [])];
+const yw = axisWidth(yLabels);
+const anyValueLabel = slots.some((s) => s.valueLabel);
+const anyGroup = slots.some((s) => s.group);
+let prevGroup: string | undefined;
+---
+
+<div
+  class:list={['ch-plot', anyValueLabel && 'ch-plot--labels', n <= 3 && 'ch-plot--few', className]}
+  role="img"
+  aria-label={ariaLabel}
+  style={vars({ '--ch-h': `${height}px`, '--ch-yw': yw, '--n': n, '--k': color })}
+>
+  <div class="ch-y" aria-hidden="true">
+    {main.ticks.map((t) => <span style={`--y:${pct(t, main.domain)}%`}>{fmtMain(t)}</span>)}
+  </div>
+  <div class="ch-area" aria-hidden="true">
+    {main.ticks.map((t) => <i class:list={['ch-gl', t === 0 && 'ch-gl--base']} style={`--y:${pct(t, main.domain)}%`} />)}
+    {!main.ticks.includes(0) && <i class="ch-gl ch-gl--base" style={`--y:${zero}%`} />}
+    {
+      bars.map(({ i, s, b, h, neg }) => (
+        <div class="ch-slot" style={vars({ '--i': i })} data-tip={s.tip || undefined}>
+          {isNum(s.value) && (
+            <span
+              class:list={['ch-bar', neg && 'ch-bar--neg', s.estimate && 'ch-bar--est', s.dim && 'ch-bar--dim']}
+              style={vars({ '--b': `${b}%`, '--h': `${h}%`, '--k': s.color })}
+            />
+          )}
+          {s.whisker && (
+            <>
+              <span class="ch-ghost" style={vars({ '--b': `${zero}%`, '--h': `${round(Math.max(0, pct(s.whisker.low, main.domain) - zero), 3)}%` })} />
+              <span
+                class="ch-whisk"
+                style={vars({ '--lo': `${pct(s.whisker.low, main.domain)}%`, '--hi': `${pct(s.whisker.high, main.domain)}%` })}
+              />
+            </>
+          )}
+          {s.valueLabel && (
+            <span
+              class:list={[
+                'ch-vl',
+                i === n - 1 && n > 8 && 'ch-vl--end',
+                slots[i + 1]?.whisker && 'ch-vl--left',
+                s.valueLabelMinor && 'ch-vl--minor',
+                s.valueLabelBadge && 'ch__est',
+              ]}
+              style={vars({
+                '--b': `${s.whisker ? pct(s.whisker.high, main.domain) : neg ? zero : b}%`,
+                '--h': `${s.whisker || neg ? 0 : h}%`,
+              })}
+            >
+              {s.valueLabel}
+            </span>
+          )}
+        </div>
+      ))
+    }
+  </div>
+  {
+    hasStrip && sTicks && (
+      <>
+        <p class="ch-cap" aria-hidden="true">
+          <span class="ch-key ch-key--line" style={`--k:${stripColor}`} />
+          {strip!.label}
+        </p>
+        <div class="ch-y" aria-hidden="true" style={`--ch-h:${stripH}px`}>
+          {sTicks.ticks.map((t) => (
+            <span style={`--y:${pct(t, sTicks.domain)}%`}>{sFmt(t)}</span>
+          ))}
+        </div>
+        <div class:list={['ch-area', manyPoints && 'ch-dots-hover']} aria-hidden="true" style={`--ch-h:${stripH}px;--k:${stripColor}`}>
+          {sTicks.ticks.map((t) => (
+            <i class:list={['ch-gl', t === 0 && 'ch-gl--base']} style={`--y:${pct(t, sTicks.domain)}%`} />
+          ))}
+          <svg class="ch-svg" viewBox={`0 0 ${n * 10} 100`} preserveAspectRatio="none" focusable="false">
+            {solid && <path d={solid} />}
+            {dashed && <path class="is-dash" d={dashed} />}
+          </svg>
+          {slots.map((s, i) => (
+            <div class="ch-slot" style={`--i:${i}`} data-tip={s.tip || undefined}>
+              {isNum(s.strip) && (
+                <span
+                  class:list={['ch-dot', s.stripEstimate && 'ch-dot--est', i === n - 1 && 'ch-dot--end']}
+                  style={`--y:${pct(s.strip, sTicks.domain)}%`}
+                />
+              )}
+            </div>
+          ))}
+          {!sTicks.ticks.includes(0) && <i class="ch-gl ch-gl--base" style={`--y:${sZero}%`} />}
+        </div>
+      </>
+    )
+  }
+  <div class:list={['ch-x', !anyGroup && 'ch-x--1']} data-collapse={anyGroup && slots.every((x) => !x.label || x.minor2 || x.minor) ? '' : undefined} aria-hidden="true">
+    {
+      slots.map((s, i) => {
+        const showGroup = s.group && s.group !== prevGroup;
+        prevGroup = s.group ?? prevGroup;
+        return (
+          <>
+            {s.label && (
+              <span class="ch-xl" style={`--i:${i}`} data-minor={s.minor ? '' : undefined} data-minor2={s.minor || s.minor2 ? '' : undefined}>
+                {s.label}
+              </span>
+            )}
+            {showGroup && <span class="ch-xt" style={`--i:${i}`} />}
+            {showGroup && (
+              <span class="ch-xg" style={`--i:${i};--gw:${round(textWidthCh(s.group!) + 1.2, 1)}ch`}>
+                {s.group}
+              </span>
+            )}
+          </>
+        );
+      })
+    }
+  </div>
+</div>

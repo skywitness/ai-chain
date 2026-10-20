@@ -1,0 +1,45 @@
+term: "專家平行"
+zh: "專家平行化"
+en: "Expert Parallelism"
+aliases:
+  - "專家並行"
+  - "EP"
+  - "Expert Parallel"
+category: training
+level: 3
+short: "把混合專家（MoE）模型的各個「專家」分散到不同 GPU，Token 依路由被送往對應的專家計算。"
+definition: "專家平行是針對混合專家（MoE）模型的平行化方式：模型中眾多的專家子網路被分配到不同 GPU，路由器替每個 Token 挑選少數專家後，系統以 All-to-All 通訊把 Token 送往對應 GPU 計算，再送回原處。Google 在 2020 年的 GShard 以此方法，在 2,048 顆 TPU v3 上用 4 天訓練出超過 6,000 億參數的翻譯模型。DeepSeek-V3（總參數 6,710 億、每個 Token 啟用 370 億）訓練時採用跨 8 個節點的 64 路專家平行，並特別開發跨節點 All-to-All 通訊核心。由於這類流量大且不規則，MoE 模型的訓練與推論效率高度取決於 NVLink 與跨節點網路的設計。"
+example: "像一間大醫院有數百位專科醫師分散在不同大樓，掛號櫃台（路由器）把每位病人分診給最適合的兩三位醫師，病人在大樓之間往返的動線就成了效率關鍵。"
+related:
+  - moe
+  - active-parameters
+  - tensor-parallelism
+  - data-parallelism
+  - scale-up
+learnMore:
+  - mixture-of-experts
+  - networking-for-ai
+segments:
+  - networking-optics
+  - foundation-models
+  - ai-accelerators
+sources:
+  - title: "GShard: Scaling Giant Models with Conditional Computation and Automatic Sharding"
+    publisher: Google
+    url: "https://arxiv.org/abs/2006.16668"
+    type: paper
+    lang: en
+    published: "2020-06-30"
+    accessed: "2026-10-06"
+  - title: "DeepSeek-V3 Technical Report"
+    publisher: DeepSeek
+    url: "https://arxiv.org/abs/2412.19437"
+    type: paper
+    lang: en
+    published: "2024-12-27"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-training
+  checkedBy: "gloss-training-check"
+  checkedOn: "2026-10-06"

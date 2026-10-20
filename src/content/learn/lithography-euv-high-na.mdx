@@ -1,0 +1,415 @@
+---
+title: "微影深入：EUV 與 High-NA EUV"
+subtitle: "用 13.5 奈米的光、錫電漿與原子級平滑的反射鏡，把電路印到晶圓上"
+description: "微影決定晶片能做多細。本文從雷利準則講起，說明 EUV 曝光機如何用錫電漿產生 13.5 奈米的光、為何只能用反射鏡，High-NA 如何把數值孔徑提高到 0.55、半場曝光對 AI 晶片的影響，以及各大廠的採用時程。"
+level: 3
+order: 307
+track: hardware
+prerequisites: [semiconductor-process-nodes]
+next: [advanced-packaging-deep, hbm-deep]
+relatedSegments: [semi-equipment-materials, foundry-packaging, memory-storage, ai-accelerators]
+relatedCompanies: [asml, zeiss-smt, trumpf, tsmc, intel, samsung-electronics, sk-hynix, nvidia, hoya, lasertec, jsr, tokyo-ohka-kogyo, shin-etsu-chemical, smic]
+relatedModels: []
+relatedTrends: [process-roadmap-2nm-and-beyond, export-controls-us-china, china-self-sufficiency]
+glossary:
+  - lithography
+  - euv
+  - high-na-euv
+  - duv
+  - photomask
+  - photoresist
+  - multi-patterning
+  - reticle-limit
+  - wafer
+  - die
+  - transistor
+  - process-node
+  - etching
+  - metrology
+  - dram
+  - foundry
+  - chiplet
+  - advanced-packaging
+  - export-controls
+scenes:
+  - { id: euv-litho, variant: euv }
+keyTakeaways:
+  - "微影解析度由雷利準則決定：CD＝k₁×λ／NA，能調的只有波長、數值孔徑與製程係數 k₁。"
+  - "EUV 每秒用雷射擊中 5 萬顆錫滴產生 13.5 奈米光，光路全在真空中，只能用多層膜反射鏡。"
+  - "High-NA 把 NA 從 0.33 提高到 0.55，解析度由 13 奈米進到 8 奈米，可少做多重曝光。"
+  - "變形光學讓 High-NA 一次只印半場（約 429 平方毫米），頂到光罩極限的 AI 晶片得拼接或拆分。"
+  - "英特爾 2026 年已用 High-NA 量產部分產品；台積電認為現階段太貴，2029 年的節點預期仍不需要。"
+estimatedMinutes: 20
+sources:
+  - key: asml-rayleigh
+    title: "The Rayleigh criterion"
+    publisher: ASML
+    url: "https://www.asml.com/en/technology/lithography-principles/rayleigh-criterion"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "CD = k1 × λ / NA；CD 為最小特徵尺寸，NA 代表光學系統能收集多少光，k1 取決於製程，物理極限為 0.25；縮短波長需要新光源、新光學與光阻材料"
+  - key: asml-light
+    title: "Light & lasers"
+    publisher: ASML
+    url: "https://www.asml.com/en/technology/lithography-principles/light-and-lasers"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "g-line 436 nm 可印 1 微米；i-line 365 nm 最小 220 nm；KrF 248 nm 現可達 80 nm；ArF 193 nm 可印 38 nm；EUV 13.5 nm，比 DUV 短 14 倍以上。LPP 光源：直徑約 25 微米的熔融錫滴以每秒 70 公尺射出，先以低強度雷射脈衝打扁，再以較強脈衝氣化成電漿，每秒重複 5 萬次"
+  - key: asml-mirrors
+    title: "Lenses & mirrors"
+    publisher: ASML
+    url: "https://www.asml.com/en/technology/lithography-principles/lenses-and-mirrors"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "1980 年代末起 ASML 所有微影機都採用 ZEISS 光學；2003 年發展浸潤式微影，DUV 的 NA 達 1.35；EUV 不能用透鏡，改用真空中的多層膜反射鏡，每面超過 100 層；若鏡面放大到德國大小，最高的起伏只有 1 毫米；最新 EUV 最大的鏡子直徑 1 公尺、平滑到數十皮米，NA 0.55；EXE 平台把 NA 從 0.33 提高到 0.55；數千個致動器補償光學元件受熱變形"
+  - key: asml-k1
+    title: "Pushing k1 further"
+    publisher: ASML
+    url: "https://www.asml.com/en/technology/lithography-principles/pushing-k1-further"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "離軸照明與瞳孔形狀控制可改善解析度；DUV 的 FlexRay 照明器有 4,000 面可個別控制的小鏡子，EUV 對應的是 FlexPupil；計算微影以光學鄰近效應修正（OPC）設計光罩圖形"
+  - key: asml-euv-systems
+    title: "EUV lithography systems"
+    publisher: ASML
+    url: "https://www.asml.com/en/products/euv-lithography-systems"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "EUV 只用來印最精細的層，其餘仍用 DUV；EXE（High NA）NA 0.55、解析度 8 nm，將在 2025–2026 年支援量產；NXE 為 NA 0.33、解析度 13 nm，用於 7、5、3 奈米節點；CO2 雷射對每顆錫滴發射兩道脈衝，每秒最多 5 萬次；多層膜反射鏡把光罩圖形縮小 4 倍；光罩是多層膜反射器；EUV 光連空氣都會吸收，光路全程需高真空；晶圓台每次曝光定位到四分之一奈米以內、每秒調整 2 萬次；ASML 17 年間在 EUV 研發投入超過 60 億歐元，並收購光源公司 Cymer；2006 年交付首批 EUV 展示機，2010 年出貨首台預量產機 NXE:3100"
+  - key: asml-nxe3600d
+    title: "TWINSCAN NXE:3600D"
+    publisher: ASML
+    url: "https://www.asml.com/en/products/euv-lithography-systems/twinscan-nxe-3600d"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "13.5 nm 光源、NA 0.33、解析度 13 nm、劑量每平方公分 30 毫焦耳時每小時 160 片以上；最大曝光場 26 × 33 毫米；用於 5、3 奈米邏輯與先進 DRAM"
+  - key: asml-nxe3800e
+    title: "TWINSCAN NXE:3800E"
+    publisher: ASML
+    url: "https://www.asml.com/en/products/euv-lithography-systems/twinscan-nxe-3800e"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "NA 0.33、解析度 13 nm、劑量 30 mJ/cm² 時每小時 220 片以上；支援 2 奈米邏輯與先進 DRAM 量產；新的底部模組與更高功率光源與 EXE 平台共用"
+  - key: asml-exe5000
+    title: "TWINSCAN EXE:5000"
+    publisher: ASML
+    url: "https://www.asml.com/en/products/euv-lithography-systems/twinscan-exe-5000"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "第一台 0.55 NA（High NA）系統，解析度 8 nm，劑量 50 mJ/cm² 時每小時 110 片以上；單次曝光可印出比 NXE 小 1.7 倍的特徵、電晶體密度高 2.9 倍；成像對比高 40%，可減少圖形缺陷並降低劑量；以單次取代多重曝光；變形（anamorphic）光學讓客戶沿用傳統尺寸光罩，但曝光場只有 NXE 的一半，因此配備更快的晶圓台與光罩台"
+  - key: asml-exe5200b
+    title: "TWINSCAN EXE:5200B"
+    publisher: ASML
+    url: "https://www.asml.com/en/products/euv-lithography-systems/twinscan-exe-5200b"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "第二款 High NA 系統，NA 0.55、解析度 8 nm，劑量 50 mJ/cm² 時每小時 175 片以上；改良光源提高產能，投影光學與 ZEISS SMT 合作開發；支援 2 奈米以下邏輯與先進 DRAM 量產"
+  - key: zeiss-highna
+    title: "High-NA-EUV lithography: the future of semiconductor lithography"
+    publisher: ZEISS SMT
+    url: "https://www.zeiss.com/semiconductor-manufacturing-technology/smt-magazine/high-na-euv-lithography.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "High-NA 投影光學由 4 萬多個零件組成、重約 12 公噸；照明系統超過 6 公噸、2.5 萬多個零件；光學整體體積與重量約為現行 EUV 的 7 倍；鏡子重達數百公斤，約為現行 EUV 鏡子的 2 倍大、10 倍重"
+  - key: trumpf-euv
+    title: "Generation of EUV radiation using a CO2 high-power laser system and tin"
+    publisher: TRUMPF
+    url: "https://www.trumpf.com/en_INT/solutions/applications/euv-lithography/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "TRUMPF 雷射系統以五級放大器把平均功率僅數瓦的 CO2 雷射脈衝放大 1 萬倍以上，峰值脈衝功率達數百萬瓦；每秒擊中錫滴 5 萬次；EUV 光學由 ZEISS 供應"
+  - key: intel-highna-2024
+    title: "With High NA EUV, Intel Foundry Opens New Frontier in Chipmaking"
+    publisher: Intel
+    url: "https://www.intel.com/content/www/us/en/newsroom/news/intel-foundry-opens-new-frontier-chipmaking.html"
+    type: press-release
+    lang: en
+    published: "2024-04-18"
+    accessed: "2026-10-15"
+    note: "業界首台商用 High NA EUV（TWINSCAN EXE:5000）在奧勒岡州 D1X 廠完成安裝並開始校正；每套系統總重超過 150 公噸（新聞稿另寫「165-ton」，應為美制短噸），以 43 個貨櫃、超過 250 個木箱運送；ASML 在實驗室印出 10 奈米密集線條；EUV 光由雷射擊中被加熱到近攝氏 22 萬度的錫滴產生；英特爾規劃 2025 年先在 Intel 18A 做產品驗證，再延續到 Intel 14A 的生產"
+  - key: skhynix-highna
+    title: "SK hynix Introduces Industry's First Commercial High NA EUV"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/sk-hynix-introduces-industrys-first-commercial-high-na-euv/"
+    type: press-release
+    lang: en
+    published: "2025-09-03"
+    accessed: "2026-10-15"
+    note: "在利川 M16 廠組裝業界首台量產用 High NA EUV（TWINSCAN EXE:5200B），用於次世代 DRAM；可印出小 1.7 倍的電晶體、密度高 2.9 倍；SK 海力士 2021 年首度在 1anm DRAM 導入 EUV"
+  - key: intel-q2-2026
+    title: "Intel Reports Second-Quarter 2026 Financial Results (Form 8-K Exhibit 99.1)"
+    publisher: Intel
+    url: "https://www.sec.gov/Archives/edgar/data/50863/000005086326000155/q226earningsrelease.htm"
+    type: filing
+    lang: en
+    published: "2026-07-23"
+    accessed: "2026-10-15"
+    note: "Intel Foundry 已使用 ASML EXE High NA EUV 技術，為部分 Core Ultra Series 3（Panther Lake）處理器進入大量生產；Intel 18A-P 進入風險試產"
+  - key: asml-q2-2026
+    title: "ASML reports €9.3 billion total net sales and €2.9 billion net income in Q2 2026 (Form 6-K Exhibit 99.1)"
+    publisher: ASML
+    url: "https://www.sec.gov/Archives/edgar/data/937966/000162828026048235/pressreleasefinancialresul.htm"
+    type: filing
+    lang: en
+    published: "2026-07-15"
+    accessed: "2026-10-15"
+    note: "第二季營收 93 億歐元、毛利率 54.0%；2026 年全年營收預估上調為 430–450 億歐元；2026 年低 NA EUV 產能約 65 台，計畫 2027 年再增 30%，並評估 2028 年再增 30%；DUV 浸潤式產能約 130 台，同樣計畫擴充 30%"
+  - key: asml-q2-2026-deck
+    title: "ASML 2026 second-quarter results (presentation, Form 6-K Exhibit)"
+    publisher: ASML
+    url: "https://www.sec.gov/Archives/edgar/data/937966/000162828026048235/presentationinvestorrela.htm"
+    type: ir-presentation
+    lang: en
+    published: "2026-07-15"
+    accessed: "2026-10-15"
+    note: "High NA EUV 達成新里程碑，首個大量生產的邏輯產品；引述英特爾晶圓代工總經理 Naga Chandrasekaran：已在部分 Intel 18A 產品層驗證 High NA EUV 製程選項"
+  - key: asml-q4-2025
+    title: "ASML reports €32.7 billion total net sales and €9.6 billion net income in 2025 (Form 6-K Exhibit 99.1)"
+    publisher: ASML
+    url: "https://www.sec.gov/Archives/edgar/data/937966/000162828026003701/pressreleasefinancialresul.htm"
+    type: filing
+    lang: en
+    published: "2026-01-28"
+    accessed: "2026-10-15"
+    note: "2025 年營收 327 億歐元、毛利率 52.8%；第四季營收 97 億歐元，包含兩台 High NA 系統認列的營收；第四季訂單 132 億歐元，其中 EUV 74 億歐元"
+  - key: asml-q4-2025-deck
+    title: "ASML 2025 fourth-quarter and full-year results (presentation, Form 6-K Exhibit 99.2)"
+    publisher: ASML
+    url: "https://www.sec.gov/Archives/edgar/data/937966/000162828026003701/a2026_01x28xpresentation.htm"
+    type: ir-presentation
+    lang: en
+    published: "2026-01-28"
+    accessed: "2026-10-15"
+    note: "2025 年 EUV 系統銷售額年增 39% 至 116 億歐元，認列 48 台 EUV 系統（NXE 與 EXE）營收；首台 EXE:5200B 完成客戶端驗收後認列營收；DUV 系統銷售 120 億歐元、279 台"
+  - key: tf-highna-feb
+    title: "[News] ASML's High-NA EUV for 2027-28: Which Giants Are Betting Big—Intel, Samsung, SK hynix or TSMC?"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/news/2026/02/16/news-asmls-high-na-euv-for-2027-28-which-giants-are-betting-big-intel-samsung-sk-hynix-or-tsmc/"
+    type: news
+    lang: en
+    published: "2026-02-16"
+    accessed: "2026-10-15"
+    note: "媒體彙整報導：ASML 執行長預期新一代 EUV 於 2027–28 年進入量產（引述日經）；每台約 3.8 億美元（引述 Forbes）；英特爾 2025 年 12 月宣布 EXE:5200B 通過驗收、將支援 14A；三星據韓國經濟日報於 2025 年底收到首台 EXE:5200B、2026 年上半年收到第二台；SK 海力士 2025 年 9 月安裝；據日經，台積電決定 1.4 奈米不採用 High-NA"
+  - key: tf-highna-may
+    title: "[News] ASML Expects First High-NA EUV Memory, Logic Products Within Months Amid TSMC's Cost-Driven Delay"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/news/2026/05/20/news-asml-expects-first-high-na-euv-memory-logic-products-within-months-amid-tsmcs-cost-driven-delay/"
+    type: news
+    lang: en
+    published: "2026-05-20"
+    accessed: "2026-10-15"
+    note: "引述路透社：ASML 執行長 Christophe Fouquet 2026-05-19 表示，預期數個月內出現首批以 High-NA 製造的記憶體與邏輯產品，承認成本高、仍需驗證，但長期可降低圖形化成本；High-NA 每台最高約 4 億美元；台積電表示現階段太貴，張曉強表示未來數代仍沿用現行 EUV；據報導三星延後到約 2027 年全面啟用"
+  - key: tf-tsmc-roadmap
+    title: "[News] TSMC Latest Roadmap: A12, A13 for 2029 Without High-NA EUV; A16 Volume Production Delayed to 2027"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/news/2026/04/23/news-tsmc-unveils-latest-roadmap-a12-a13-set-for-2029-without-high-na-euv-a16-volume-production-delayed-to-2027/"
+    type: news
+    lang: en
+    published: "2026-04-23"
+    accessed: "2026-10-15"
+    note: "引述 Tom's Hardware：台積電 2029 年的 A13 與 A12 預期不需 High-NA EUV；英特爾 14A 之後的世代預定 2027–2028 年起採用 High-NA。屬媒體報導"
+  - key: nvidia-blackwell
+    title: "NVIDIA Blackwell Architecture"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "Blackwell GPU 有 2,080 億個電晶體，採台積電客製 4NP 製程；由兩顆達光罩極限的晶粒以每秒 10 TB 的晶片間互連組成單一 GPU"
+  - key: wiki-euv
+    title: "EUV lithography"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/EUV_lithography"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "次要來源。ASML 為唯一量產 EUV 系統的公司，依荷蘭出口管制無權出貨至中國；13.5 nm 約 92 eV；雙脈衝 CO2 雷射（10.6 微米），轉換效率約 5–6%，中間焦點帶內功率約 250 W，High-NA 目標 500 W 以上；光源腔以氫氣把錫沉積轉為四氫化錫抽走；鉬／矽多層膜理論反射率約 75%，每面鏡子吸收約三成；2002–2009 年間的系統至少有 2 面聚光鏡、6 面投影鏡加上光罩，合計吸收 96% 的光；光源腔氫氣壓力約 1–10 帕；約 6 度離軸照明造成陰影效應；High NA 曝光場 26 × 16.5 毫米、一方向縮小 4 倍另一方向 8 倍；景深變淺使光阻須薄於 30 nm、隨機效應增加；電子模糊至少約 2 nm；一般 EUV 機台約 1.8 億美元、近 200 公噸；ASML 2024 年宣布開發 NA 超過 0.55（例如 0.75 或 0.85）的 Hyper-NA，報導稱每台可能約 7.2 億美元、預計 2030 年推出，偏振會降低對比；多層膜中的相位缺陷會降低反射率、影響成像；路透社 2025 年 12 月報導中國已在深圳完成 EUV 原型機，預期 2028–2030 年間才能生產可用晶片；中國也研發 SSMB 與雷射誘發放電電漿（LDP）等替代光源"
+  - key: wiki-mp
+    title: "Multiple patterning"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Multiple_patterning"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "次要來源。浸潤式微影單次曝光的最小間距約 76 nm，SAQP 可達 19 nm；ASML 在 2016 年 EUVL 研討會指出 0.33 NA 無法單次曝光 5 奈米節點預期的 11–13 nm 半間距，0.55 NA 可單次曝光，但曝光場只有標準 26 × 33 毫米的一半；NVIDIA Tesla P100 等產品會被半場切開，須以兩次曝光拼接，兩次半場掃描的加減速額外負擔是一次全場的兩倍；隨機缺陷使 20 nm 線寬仍需 EUV 雙重曝光"
+  - key: wiki-5nm
+    title: "5 nm process"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/5_nm_process"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "次要來源。台積電 N5 最多在 14 層使用 EUV，N6 與 N7++ 只有 5 或 4 層；TechInsights 2025-12-11 指出華為 Kirin 9030 採中芯國際 N+3 製程，顯示中芯正接近不使用 EUV 的「真 5 奈米等級」節點"
+updated: "2026-10-15"
+lastVerified: "2026-10-15"
+editorial: { status: fact-checked, author: learn-16, checkedBy: "learn-16-check", checkedOn: "2026-10-06", notes: "內容以 2026-10-06 為資料基準日，來源實際讀取日為 2026-10-15，未採用基準日之後發布的資料（例如 ASML 2026 年第三季財報）。查核已逐項比對 ASML 技術頁與各機型產品頁（波長、NA、解析度、產能與劑量）、ASML 2025 年第四季與 2026 年第二季 6-K、英特爾 2026 年第二季 8-K 與 2024 年新聞稿、SK 海力士新聞稿、ZEISS、TRUMPF、NVIDIA 原文，以及 TrendForce 與維基百科條目。更正：英特爾 High-NA 機台重量依新聞稿改為「每套超過 150 公噸」（165 噸為美制短噸）；TRUMPF 來源標題依頁面更正；鏡面數與 96% 吸收率標明為 2002–2009 年資料；台積電 2029 年節點改為「預期不需要」；三星第二台機台改為預計時程並註明出處。High-NA 售價、三星時程與台積電立場屬媒體報導；光子數、焦深與 k1 為示意計算。" }
+---
+
+## 一句話解釋
+
+**<Term id="lithography">微影</Term>就是用光把電路圖形「印」到<Term id="wafer">晶圓</Term>上；光的波長越短、鏡頭收光的角度越大，能印出的線條就越細。** 目前最先進的 <Term id="euv">EUV</Term>（極紫外光微影）使用波長 13.5 奈米的光，比上一代 <Term id="duv">DUV</Term>（深紫外光微影）短了 14 倍以上<Cite k="asml-light" />，全球只有<CompanyChip id="asml">艾司摩爾（ASML）</CompanyChip>能量產這種機台<Cite k="wiki-euv" />。下一代 <Term id="high-na-euv">High-NA EUV</Term> 沒有換光源，而是把鏡頭的數值孔徑（NA）從 0.33 加大到 0.55，解析度從 13 奈米推進到 8 奈米<Cite k="asml-euv-systems" />。AI 晶片能不能繼續塞進更多<Term id="transistor">電晶體</Term>，很大一部分取決於這台機器。
+
+## 生活化比喻
+
+<Callout type="analogy" title="用投影機沖洗照片">
+
+微影很像老式的照片放大：把底片放進投影機，光穿過底片、經過鏡頭縮小，照在塗了感光藥劑的相紙上，再拿去顯影。
+
+- **<Term id="photomask">光罩</Term>就是底片**，上面畫著電路圖形。不同的是，EUV 的「底片」不讓光穿透，而是像鏡子一樣把光反射出去。
+- **<Term id="photoresist">光阻</Term>就是相紙上的感光藥劑**，被照到的地方化學性質改變，顯影後留下圖形。
+- **波長像筆尖粗細**：想畫越細的線，就要越細的筆。從 DUV 換到 EUV，等於把毛筆換成針筆。
+- **數值孔徑像鏡頭口徑**：口徑越大，越能收進從圖形邊緣斜斜散出去的光，細節越清楚。High-NA 就是換上一顆大得多的鏡頭。
+- **High-NA 的變形鏡頭**像一台橫向、縱向縮小倍率不同的投影機：底片尺寸不變，但一次只能洗出半張相紙，大照片得分兩次拼起來。
+
+</Callout>
+
+## 原理
+
+### 微影在晶片製造中的位置
+
+一顆先進晶片要疊上數十層圖形，每一層都要走一輪「塗光阻、曝光、顯影、<Term id="etching">蝕刻</Term>或沉積、去除光阻」。曝光這一步決定線條能多細，也決定上下層能對得多準。
+
+<FlowSteps title="一層圖形的誕生" steps={[{ title: "塗佈光阻", detail: "在晶圓表面均勻塗上一層感光材料" }, { title: "曝光", detail: "光經過光罩，把縮小後的電路圖形投影到光阻上" }, { title: "顯影", detail: "洗掉被照到（或沒被照到）的光阻，留下圖形" }, { title: "蝕刻或沉積", detail: "依光阻圖形把材料挖掉或填上" }, { title: "去光阻與量測", detail: "清除光阻，檢查線寬與對準，再進入下一層" }]} caption="示意流程；實際晶片會重複數十輪，並穿插清洗、研磨與量測。" />
+
+曝光機把光罩上的圖形縮小 4 倍後投影到晶圓上<Cite k="asml-euv-systems" />，一個曝光場最大 26 × 33 毫米<Cite k="asml-nxe3600d" />，這也是單一<Term id="die">晶粒</Term>的<Term id="reticle-limit">光罩尺寸極限</Term>。曝光時，光罩與晶圓同步移動，讓一道狹長的光帶掃過整個場；印完一個場，晶圓台再步進到下一個位置，所以這類機台稱為「步進掃描機」。精準度要求驚人：ASML 表示，EUV 晶圓台每次曝光的定位誤差在四分之一奈米以內，每秒檢查並修正 2 萬次<Cite k="asml-euv-systems" />。
+
+要注意的是，先進晶片並不是每一層都用 EUV。EUV 只負責最精細的關鍵層，其餘各層仍由各種 DUV 機台完成，兩種技術會長期並用<Cite k="asml-euv-systems" />。
+
+### 解析度的公式：雷利準則
+
+微影能印多細，可以用一條公式概括<Cite k="asml-rayleigh" />：
+
+<MathTeX tex={"\\mathrm{CD}=k_1\\,\\frac{\\lambda}{\\mathrm{NA}}"} display label="最小特徵尺寸 CD 等於製程係數 k1 乘以波長 lambda，再除以數值孔徑 NA" />
+
+CD 是能印出的最小特徵尺寸，λ 是光的波長，NA（數值孔徑）代表光學系統能收集多少光，k₁ 則把製程裡其他所有因素打包成一個係數，物理極限是 0.25<Cite k="asml-rayleigh" />。想印得更細，只有三個旋鈕：
+
+1. **縮短波長**：進步幅度最大，但每換一次都要全新的光源、光學與光阻材料<Cite k="asml-rayleigh" />。
+2. **加大 NA**：換更大、更精密的鏡頭。DUV 在 2003 年後改在鏡頭與晶圓之間注入一層水（浸潤式微影），NA 因此突破 1，達到 1.35<Cite k="asml-mirrors" />。
+3. **壓低 k₁**：靠照明技巧與運算。例如讓光斜射光罩（離軸照明）、把照明整形成特定的瞳孔圖案，以及用電腦模擬預先修飾光罩圖形的光學鄰近效應修正（OPC）<Cite k="asml-k1" />。
+
+過去四十年，業界輪流轉動這三個旋鈕：
+
+| 光源 | 波長 | ASML 列出的最小特徵 |
+|---|---|---|
+| g-line 汞燈 | 436 奈米 | 約 1 微米<Cite k="asml-light" /> |
+| i-line 汞燈 | 365 奈米 | 220 奈米<Cite k="asml-light" /> |
+| KrF 準分子雷射 | 248 奈米 | 80 奈米<Cite k="asml-light" /> |
+| ArF 準分子雷射 | 193 奈米 | 38 奈米<Cite k="asml-light" /> |
+| EUV（NA 0.33） | 13.5 奈米 | 13 奈米<Cite k="asml-euv-systems" /> |
+| High-NA EUV（NA 0.55） | 13.5 奈米 | 8 奈米<Cite k="asml-euv-systems" /> |
+
+### 為什麼非 EUV 不可：多重曝光的代價
+
+在 EUV 量產之前，業界用 193 奈米的 ArF 浸潤式微影硬撐。單次曝光能印的最小間距約 76 奈米，要更密，就得把一層圖形拆成好幾次曝光，或用側壁間隔層把間距「對半再對半」：自對準四重曝光（SAQP）能把間距縮到 19 奈米<Cite k="wiki-mp" />。這就是<Term id="multi-patterning">多重曝光</Term>，代價是光罩、沉積、蝕刻步驟成倍增加，每多一次曝光就多一次對不準的風險。
+
+EUV 用一次曝光取代好幾次。以台積電為例，N5 最多在 14 層使用 EUV，7 奈米家族的 N7++ 與 N6 只用 4 到 5 層<Cite k="wiki-5nm" />。ASML 也強調，以單次曝光取代多重曝光能降低製程複雜度、縮短生產週期<Cite k="asml-exe5000" />。不過 DUV 多重曝光並未走到盡頭：據 TechInsights 分析，中芯國際的 N+3 製程顯示它正逼近不使用 EUV 的 5 奈米等級<Cite k="wiki-5nm" />，代價是步驟更多、成本更高。
+
+到了更細的線寬，NA 0.33 的 EUV 自己也撞牆。ASML 早在 2016 年就指出，0.33 NA 無法以單次曝光印出 5 奈米節點預期的 11 到 13 奈米半間距<Cite k="wiki-mp" />；隨機缺陷也讓 20 奈米左右的線寬仍需要 EUV 雙重曝光<Cite k="wiki-mp" />。於是，第二個旋鈕 NA 再度被轉動，這就是 High-NA。
+
+<Compare title="多重曝光與單次曝光" left={{ title: "DUV 多重曝光", items: ["沿用成熟的 193 奈米光源與機台", "一層圖形拆成 2 到 4 次曝光或間隔層製程", "光罩、沉積與蝕刻步驟成倍增加", "每多一次曝光，就多一次對準誤差"] }} right={{ title: "EUV 單次曝光", items: ["波長 13.5 奈米，關鍵層一次印出", "步驟少、生產週期短", "機台昂貴、光源功率與光阻仍是瓶頸", "最細的圖形仍可能需要雙重曝光"] }} />
+
+### EUV 的光從哪裡來：先打扁、再打爆的錫滴
+
+13.5 奈米的光在自然界存在於外太空，要在機台裡穩定產生，得另起爐灶<Cite k="asml-light" />。ASML 的做法是雷射激發電漿（LPP）光源：產生器以每秒 70 公尺的速度射出直徑約 25 微米的熔融錫滴，第一道低強度雷射脈衝先把錫滴打成薄餅狀，第二道較強的脈衝再把它氣化成電漿，電漿放出 EUV 光。為了產生足夠的光，這個過程每秒重複 5 萬次<Cite k="asml-light" />。
+
+打錫滴的是二氧化碳（CO₂）雷射<Cite k="asml-euv-systems" />。供應雷射系統的德國<CompanyChip id="trumpf">創浦（TRUMPF）</CompanyChip>表示，它用五級放大器把平均功率只有數瓦的雷射脈衝放大 1 萬倍以上，峰值功率達數百萬瓦<Cite k="trumpf-euv" />。被擊中的錫滴溫度接近攝氏 22 萬度<Cite k="intel-highna-2024" />。即使如此，雷射能量轉成可用 EUV 光的比例只有約 5% 到 6%，現役光源在中間焦點約可輸出 250 瓦，High-NA 的目標則是 500 瓦以上<Cite k="wiki-euv" />。電漿還會噴出錫碎屑，弄髒集光鏡，因此光源腔內維持低壓的氫氣環境，讓氫與沉積的錫反應成氣態的四氫化錫再抽走<Cite k="wiki-euv" />。
+
+EUV 技術花了二十多年才成熟。ASML 表示，它在 17 年間投入超過 60 億歐元研發 EUV，並收購光源公司 Cymer 加速開發；2006 年交出第一批展示機，2010 年才出貨第一台預量產機 NXE:3100<Cite k="asml-euv-systems" />。
+
+### 為什麼只能用反射鏡
+
+EUV 光幾乎會被所有物質吸收，連空氣也不例外，所以從光源到晶圓，整條光路都必須在高真空中<Cite k="asml-euv-systems" />。玻璃透鏡也會吸光，EUV 機台因此沒有任何透鏡，全部改用反射鏡。每面鏡子鍍有超過 100 層精心挑選的材料，靠層與層之間的干涉把光反射回來；鏡面拋光到比一個原子還平，ASML 的比喻是：如果鏡子有德國那麼大，最高的「山」也只有 1 毫米<Cite k="asml-mirrors" />。
+
+麻煩在於，就算是最好的鉬／矽多層膜，理論反射率也只有約 75%，每面鏡子都會吃掉約三成的光。依維基百科整理的早期（2002–2009 年）資料，EUV 系統至少有 2 面聚光鏡、6 面投影鏡，再加上同樣是反射式的光罩，合計約 96% 的光在途中被吸收<Cite k="wiki-euv" />。用簡單的乘法驗算：0.7 的 9 次方約等於 0.04，也就是只剩 4% 左右的光抵達晶圓。這解釋了為什麼光源功率一直是 EUV 產能的關鍵。被吸收的光還會變成熱：光學元件的溫度變化雖只有千分之幾度、變形只有奈米等級，仍足以造出有缺陷的晶片，所以機台要用數千個致動器即時微調鏡片與鏡子的位置和角度，補償受熱造成的變形<Cite k="asml-mirrors" />。
+
+光罩也不一樣。EUV 光罩是多層膜反射器，利用干涉反射圖形上的光<Cite k="asml-euv-systems" />；光線必須以約 6 度的角度斜射光罩，才能讓入射光與反射光錯開，但斜射也會讓圖形邊緣產生陰影，影響成像<Cite k="wiki-euv" />。
+
+<Scene3D id="euv-litho" variant="euv" caption="EUV 曝光機光路：錫滴先被 CO₂ 雷射打扁、再打成電漿，放出 13.5 奈米的光；集光鏡、照明系統、反射式光罩與投影反射鏡組依序把圖形縮小 4 倍，掃描到晶圓上。可用導覽步驟逐段觀察光源、反射鏡與光罩，也能切換到 High-NA 變體，比較 NA 0.33 與 0.55 的光錐與半場。圖中比例、角度與速度皆為示意。" />
+
+### High-NA：同樣的光，更大的鏡頭
+
+High-NA EUV（ASML 的 EXE 平台）把 NA 從 0.33 提高到 0.55。官方數字是：解析度 8 奈米，單次曝光能印出比 NXE 小 1.7 倍的特徵，電晶體密度因此可高 2.9 倍；成像對比提高 40%，能減少圖形缺陷，也讓客戶有機會降低每次曝光的劑量<Cite k="asml-exe5000" />。1.7 的平方約為 2.9，密度的提升正是線寬縮小在兩個方向上相乘的結果。
+
+代價是光學系統變得極其龐大。<CompanyChip id="zeiss-smt">蔡司半導體（ZEISS SMT）</CompanyChip>表示，High-NA 的投影光學由 4 萬多個零件組成、重約 12 公噸，照明系統也超過 6 公噸；光學整體的體積與重量約是現行 EUV 的 7 倍，單面鏡子重達數百公斤<Cite k="zeiss-highna" />。ASML 說，最大的鏡子直徑達 1 公尺，表面平滑到數十皮米<Cite k="asml-mirrors" />。英特爾表示，每套 High-NA 系統總重超過 150 公噸；它的第一台 EXE:5000 分裝在超過 250 個木箱、43 個貨櫃中運抵美國<Cite k="intel-highna-2024" />。
+
+**變形光學是 High-NA 最關鍵的設計取捨。** NA 變大，光線打在光罩上的角度範圍也跟著變大；若兩個方向都維持縮小 4 倍，反射式光罩的陰影與反射問題會更難處理，或得改用更大的光罩。ASML 的解法是「變形」（anamorphic）投影：沿用傳統尺寸的光罩，但一個方向仍縮小 4 倍、另一個方向改為縮小 8 倍<Cite k="asml-exe5000" /><Cite k="wiki-euv" />。結果是每次曝光的場只有原來的一半，從 26 × 33 毫米變成 26 × 16.5 毫米<Cite k="wiki-euv" />。曝光場變小，同一片晶圓要掃描的次數就變多，ASML 因此為 EXE 配上更快的晶圓台與光罩台，維持產能<Cite k="asml-exe5000" />。
+
+<BarChart title="ASML EUV 機型的標稱產能" unit="片／小時" data={[{ label: "NXE:3600D（NA 0.33）", value: 160 }, { label: "NXE:3800E（NA 0.33）", value: 220 }, { label: "EXE:5000（NA 0.55）", value: 110 }, { label: "EXE:5200B（NA 0.55）", value: 175 }]} source={["asml-nxe3600d", "asml-nxe3800e", "asml-exe5000", "asml-exe5200b"]} keepOrder note="皆為官方標示的最低值。NXE 機型以每平方公分 30 毫焦耳的劑量計，EXE 機型以 50 毫焦耳計，兩者並非同一基準。" />
+
+從產能也看得出兩代的差距：NA 0.33 的 NXE:3800E 每小時可處理 220 片以上晶圓，High-NA 的 EXE:5200B 為 175 片以上，而且是在較高的劑量下標示<Cite k="asml-nxe3800e" /><Cite k="asml-exe5200b" />。換句話說，High-NA 每一次曝光都比較貴，它的經濟價值在於「少曝幾次」。
+
+<Compare title="NXE 與 EXE 的差別" left={{ title: "NXE（NA 0.33）", items: ["解析度 13 奈米", "全場曝光 26 × 33 毫米", "兩個方向都縮小 4 倍", "NXE:3800E 每小時 220 片以上（30 毫焦耳）", "用於 7、5、3、2 奈米等節點的關鍵層"] }} right={{ title: "EXE（NA 0.55）", items: ["解析度 8 奈米，對比高 40%", "半場曝光 26 × 16.5 毫米", "變形光學：4 倍與 8 倍", "EXE:5200B 每小時 175 片以上（50 毫焦耳）", "鎖定 2 奈米以下邏輯與先進 DRAM"] }} caption="資料來源：ASML 產品頁；曝光場尺寸與縮小倍率另見維基百科 EUV lithography 條目。" />
+
+### 半場曝光：AI 晶片要面對的新限制
+
+半場對面積遠小於它的晶片影響有限，對 AI 晶片卻是實實在在的限制。全場面積約 858 平方毫米，半場只有約 429 平方毫米。頂級 AI 加速器的晶粒早已頂到全場上限：<CompanyChip id="nvidia">輝達</CompanyChip>的 Blackwell GPU 由兩顆「達光罩極限」的晶粒組成<Cite k="nvidia-blackwell" />。這麼大的晶粒若有某一層要用 High-NA 曝光，就得分兩個半場印，再把接縫處精準拼接。維基百科整理的資料就以輝達 Tesla P100 為例，指出這類大晶片會被半場切成兩半、必須拼接，而且兩次半場掃描的加減速額外負擔，是一次全場掃描的兩倍<Cite k="wiki-mp" />。
+
+可能的因應方式大致有三種：在關鍵層接受拼接帶來的對準難度與產能損失；把晶粒設計得小於半場，再用<Term id="advanced-packaging">先進封裝</Term>把多顆 <Term id="chiplet">Chiplet</Term>（小晶片）接回一顆大晶片；或者只在少數最關鍵的層使用 High-NA，其餘各層仍用 NA 0.33 的 EUV 與 DUV。目前的實際案例也是「只用在部分層」：英特爾表示，它已在部分 Intel 18A 產品的特定層完成 High-NA 製程選項的認證<Cite k="asml-q2-2026-deck" />。這也是為什麼微影與封裝兩條技術路線，在 AI 晶片上越來越緊密地綁在一起。
+
+### 採用現況：英特爾搶先，台積電按兵不動
+
+截至 2026 年 10 月，各家對 High-NA 的態度明顯分歧：
+
+- **2024 年 4 月**：英特爾在奧勒岡州 D1X 廠完成業界第一台商用 High-NA 機台 EXE:5000 的安裝並開始校正，規劃 2025 年先在 Intel 18A 上做產品驗證，再延續到 Intel 14A 的生產<Cite k="intel-highna-2024" />。
+- **2025 年 9 月**：<CompanyChip id="sk-hynix">SK 海力士</CompanyChip>在利川 M16 廠組裝第一台量產型 EXE:5200B，用於次世代 <Term id="dram">DRAM</Term>；它在 2021 年就已把 EUV 導入 1anm DRAM<Cite k="skhynix-highna" />。
+- **2025 年**：ASML 首台 EXE:5200B 完成客戶端驗收並認列營收，第四季營收包含兩台 High-NA 系統<Cite k="asml-q4-2025" /><Cite k="asml-q4-2025-deck" />。據 TrendForce 彙整，<CompanyChip id="intel">英特爾</CompanyChip>在 2025 年 12 月宣布 EXE:5200B 通過驗收、將支援 Intel 14A 的開發；另據韓國經濟日報報導，<CompanyChip id="samsung-electronics">三星電子</CompanyChip>在 2025 年底收到第一台 EXE:5200B，預計 2026 年上半年再收到第二台<Cite k="tf-highna-feb" />。
+- **2026 年 4 月**：據 Tom's Hardware 報導，<CompanyChip id="tsmc">台積電</CompanyChip>預定 2029 年量產的 A13 與 A12 預期都不需要 High-NA<Cite k="tf-tsmc-roadmap" />。
+- **2026 年 5 月**：據路透社報導，ASML 執行長 Christophe Fouquet 預期數個月內就會出現首批用 High-NA 生產的記憶體與邏輯產品；他也承認這項技術昂貴、仍需驗證，但認為長期能降低圖形化成本。同一報導指出，台積電認為 High-NA 現階段太貴，雖未排除採用，但表示未來數代仍沿用現行 EUV；另據韓國媒體報導，三星雖已簽下採購合約，仍把全面啟用延到約 2027 年<Cite k="tf-highna-may" />。
+- **2026 年 7 月**：英特爾宣布已使用 ASML 的 High-NA EUV，為部分 Panther Lake 處理器進入大量生產<Cite k="intel-q2-2026" />；ASML 稱之為 High-NA 首個大量生產的邏輯產品<Cite k="asml-q2-2026-deck" />。
+
+分歧的核心是成本。一般 EUV 機台約 1.8 億美元<Cite k="wiki-euv" />，High-NA 據報導每台約 3.8 億到 4 億美元<Cite k="tf-highna-feb" /><Cite k="tf-highna-may" />，產能又比較低。台積電選擇繼續用 NA 0.33 的 EUV 搭配多重曝光，並從晶片設計的創新中找效益；英特爾則被形容為最積極導入 High-NA 的業者<Cite k="tf-highna-may" />。哪一條路比較好，要看良率、產能與機台折舊在未來幾年的實際表現。
+
+### 下一步：Hyper-NA 與新光源
+
+ASML 在 2024 年宣布開發 NA 超過 0.55 的「Hyper-NA」，例如 0.75 或 0.85。媒體報導這類機台每台可能約 7.2 億美元，預計 2030 年前後推出；技術難題之一是 EUV 光的偏振會降低影像對比<Cite k="wiki-euv" />。另一方面，受<Term id="export-controls">出口管制</Term>限制，ASML 依荷蘭的規定無法把 EUV 機台出貨到中國，中國因此投入自主研發，包括以加速器產生 EUV 的穩態微聚束（SSMB）與雷射誘發放電電漿等光源路線；路透社 2025 年 12 月也報導，中國已在深圳完成一台 EUV 原型機，但預期要到 2028 到 2030 年間才可能做出可用的晶片<Cite k="wiki-euv" />。這些屬媒體報導，進度仍待觀察。
+
+<DeepDive title="深入一點：從雷利準則到光子數，算一算 High-NA 的物理帳">
+
+**一、k₁ 已經逼近極限。** 把 ASML 公布的解析度代回雷利準則，可以反推各代機台的 k₁（示意計算）：
+
+<MathTeX tex={"k_1=\\frac{\\mathrm{CD}\\cdot\\mathrm{NA}}{\\lambda}:\\quad \\frac{13\\times0.33}{13.5}\\approx0.32,\\qquad \\frac{8\\times0.55}{13.5}\\approx0.33,\\qquad \\frac{38\\times1.35}{193}\\approx0.27"} display label="k1 等於線寬乘以 NA 再除以波長：NXE 約 0.32，EXE 約 0.33，ArF 浸潤式約 0.27" />
+
+ArF 浸潤式（38 奈米、NA 1.35）的 k₁ 約 0.27，已非常接近 0.25 的物理極限<Cite k="asml-light" /><Cite k="asml-mirrors" /><Cite k="asml-rayleigh" />。EUV 的 k₁ 還有餘裕，但能壓多低，受限於下面要談的光子數與隨機效應。
+
+**二、NA 變大，景深變淺。** 焦深（DOF）與 NA 的平方成反比：
+
+<MathTeX tex={"\\mathrm{DOF}=k_2\\,\\frac{\\lambda}{\\mathrm{NA}^2},\\qquad \\left(\\frac{0.33}{0.55}\\right)^2=0.36"} display label="焦深等於 k2 乘以波長除以 NA 平方；NA 從 0.33 增為 0.55 時，焦深約剩原來的 36%" />
+
+NA 從 0.33 增為 0.55，在其他條件相同下，焦深只剩約 36%（示意計算）。焦深變淺，光阻就必須更薄，維基百科整理的研究指出要薄於 30 奈米；但光阻越薄，吸收到的光子越少，隨機誤差就越明顯<Cite k="wiki-euv" />。
+
+**三、光子太少，就會「擲骰子」。** 13.5 奈米光子的能量約 92 電子伏特<Cite k="wiki-euv" />，是 193 奈米光子（約 6.4 電子伏特）的 14 倍。同樣的劑量，EUV 的光子數只有 ArF 的十四分之一。每平方奈米入射的光子數可以這樣估算：
+
+<MathTeX tex={"N=\\frac{D\\cdot A}{hc/\\lambda},\\qquad \\frac{\\sigma_N}{N}=\\frac{1}{\\sqrt{N}}"} display label="光子數等於劑量乘以面積再除以單一光子能量；光子數的相對波動等於光子數平方根的倒數" />
+
+以每平方公分 30 毫焦耳計算，EUV 每平方奈米約有 20 個光子，ArF 則約 290 個（示意計算，指入射的光子；真正被光阻吸收的只占其中一部分，實際波動會更大）。一塊 10 × 10 奈米的區域約接收 2,000 個 EUV 光子，依泊松統計，相對波動約 2.2%；若線寬縮到 8 奈米、區域縮成 8 × 8 奈米，光子數降到約 1,300 個，波動升到約 2.8%。劑量提高到 50 毫焦耳，光子數回到約 2,200 個，波動回到約 2.1%。這些波動會表現成線邊粗糙、橋接或斷線等隨機缺陷。
+
+這也有助於理解兩個現象：ASML 標示 EXE 機型產能時採用每平方公分 50 毫焦耳，高於 NXE:3800E 的 30 毫焦耳<Cite k="asml-exe5200b" /><Cite k="asml-nxe3800e" />；而 High-NA 宣稱的 40% 成像對比提升，正好可以用來換取較低的劑量或較少的缺陷<Cite k="asml-exe5000" />。另外，光阻吸收 EUV 後產生的二次電子會四處擴散，造成至少約 2 奈米的模糊，這也會吃掉一部分 High-NA 的解析度優勢<Cite k="wiki-euv" />。
+
+**四、反射鏡的連乘。** 若每面鏡子反射約 70%，經過 n 面鏡子後剩下 0.7 的 n 次方：6 面剩約 12%，9 面剩約 4%。這就是為什麼 EUV 光源要從 250 瓦一路推向 500 瓦以上<Cite k="wiki-euv" />：多一瓦光源功率，最後到晶圓上只剩幾十分之一瓦。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+EUV 是整條 AI 供應鏈中集中度最高的環節之一：一家設備商加上少數幾家關鍵供應商，左右著全球最先進晶片能做多少、做多快。
+
+- **設備與材料**（<SegmentChip id="semi-equipment-materials" />）：ASML 是唯一的 EUV 曝光機供應商<Cite k="wiki-euv" />。2025 年它的 EUV 系統銷售額年增 39% 至 116 億歐元，共認列 48 台 EUV 系統<Cite k="asml-q4-2025-deck" />；在 AI 需求推動下，ASML 計畫把 2026 年約 65 台的低 NA EUV 產能，在 2027 年再擴充 30%，並評估 2028 年再增 30%<Cite k="asml-q2-2026" />。ASML 背後還有幾家關鍵夥伴：光學全部來自蔡司<Cite k="asml-mirrors" />，驅動雷射來自創浦<Cite k="trumpf-euv" />。光罩與材料也各有專業供應商，例如做空白光罩的<CompanyChip id="hoya">HOYA</CompanyChip>、做光罩檢測設備的<CompanyChip id="lasertec">Lasertec</CompanyChip>，以及<CompanyChip id="jsr">JSR</CompanyChip>、<CompanyChip id="tokyo-ohka-kogyo">東京應化</CompanyChip>、<CompanyChip id="shin-etsu-chemical">信越化學</CompanyChip>等光阻廠。EUV 光罩是多層膜反射器，多層膜裡的微小缺陷就會影響成像<Cite k="wiki-euv" />，光罩檢測與<Term id="metrology">量測</Term>因此成為良率的關鍵關卡。
+- **晶圓代工**（<SegmentChip id="foundry-packaging" />）：<Term id="foundry">晶圓代工</Term>與邏輯晶片廠是 EUV 最大的買家。台積電從 N5 起大量使用 EUV<Cite k="wiki-5nm" />，但對 High-NA 採取觀望<Cite k="tf-highna-may" />；英特爾則押注 High-NA，已用於部分產品的大量生產<Cite k="intel-q2-2026" />。兩種策略的成敗，會影響 2 奈米之後的<Term id="process-node">製程節點</Term>競爭。
+- **記憶體**（<SegmentChip id="memory-storage" />）：DRAM 是 EUV 的另一個主要戰場。SK 海力士 2021 年起在 DRAM 導入 EUV，2025 年率先安裝量產型 High-NA<Cite k="skhynix-highna" />；ASML 也把 EXE:5200B 定位為支援先進 DRAM 量產<Cite k="asml-exe5200b" />。AI 伺服器所需的 HBM 由 DRAM 晶粒堆疊而成，微影進步同樣影響 HBM 的密度與成本。
+- **AI 晶片**（<SegmentChip id="ai-accelerators" />）：輝達等公司的旗艦晶片已頂到光罩極限<Cite k="nvidia-blackwell" />。High-NA 的半場限制，讓「把大晶片拆成多顆晶粒、再用先進封裝接起來」更加必要。
+- **地緣政治**：EUV 機台無法出貨到中國<Cite k="wiki-euv" />，是美中科技角力的核心籌碼之一；<CompanyChip id="smic">中芯國際</CompanyChip>只能以 DUV 多重曝光推進製程<Cite k="wiki-5nm" />。
+
+<StatGrid title="EUV 的幾個關鍵數字" items={[{ label: "EUV 光波長", value: "13.5 奈米", note: "比 DUV 短 14 倍以上" }, { label: "High-NA 解析度", value: "8 奈米", note: "NA 0.55；NXE 為 13 奈米" }, { label: "2025 年 ASML EUV 系統銷售", value: "116 億歐元", note: "認列 48 台，年增 39%" }, { label: "2026 年低 NA EUV 產能", value: "約 65 台", note: "2027 年計畫再增 30%" }]} caption="資料來源：ASML 官網、2025 年第四季與 2026 年第二季財報資料。" />
+
+微影把電晶體越做越小，先進封裝則把越來越多晶粒接在一起。想了解後者如何突破光罩與半場的限制，可以接著讀<LearnLink id="advanced-packaging-deep">先進封裝深入：CoWoS-L、SoIC、混合鍵合與面板級封裝</LearnLink>；想追蹤各家製程時程，請看<TrendLink id="process-roadmap-2nm-and-beyond">2 奈米之後的製程藍圖</TrendLink>；EUV 與出口管制的關係，則可參考<TrendLink id="export-controls-us-china">晶片出口管制與中美科技角力</TrendLink>。

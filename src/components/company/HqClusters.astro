@@ -1,0 +1,203 @@
+---
+/**
+ * 「主要產業聚落」: the largest HQ clusters as an HTML list with a layer-mix bar each (owner:
+ * pages-companies). The text equivalent of the globe / map on /companies/.
+ *
+ *   <HqClusters clusters={clusters} total={710} count={8} />
+ */
+import { LAYERS } from '../../lib/collections';
+import { formatNumber } from '../../lib/format';
+import type { HqCluster } from '../../lib/scene-data/companies';
+import { countryLabel } from './labels';
+
+interface Props {
+  clusters: readonly HqCluster[];
+  total: number;
+  count?: number | undefined;
+}
+const { clusters, total, count = 8 } = Astro.props;
+const top = clusters.slice(0, count);
+const covered = top.reduce((a, c) => a + c.count, 0);
+const share = total ? Math.round((covered / total) * 100) : 0;
+const pct = (n: number, d: number) => `${Math.round((n / d) * 1000) / 10}%`;
+---
+
+<section class="hqc" aria-labelledby="hqc-title">
+  <div class="hqc__head">
+    <h3 id="hqc-title" class="hqc__title">主要產業聚落</h3>
+    <p class="hqc__lede">前 {top.length} 大都會區共有 {formatNumber(covered)} 家公司，約占全部的 {share}%。色條是各層公司的比例。</p>
+  </div>
+  <ol class="hqc__list" role="list">
+    {
+      top.map((c, i) => {
+        const mix = LAYERS.map((l) => ({ l, n: c.layers[l.id] ?? 0 })).filter((x) => x.n > 0);
+        const cities = c.cities.slice(0, 4);
+        return (
+          <li class="hqc__item">
+            <span class="hqc__rank" aria-hidden="true">
+              {i + 1}
+            </span>
+            <div class="hqc__body">
+              <p class="hqc__name">
+                {c.name}
+                <span class="hqc__country">{countryLabel(c.country)}</span>
+              </p>
+              <p class="hqc__n">
+                <strong>{c.count}</strong> 家
+              </p>
+              <span class="hqc__bar" aria-hidden="true">
+                {mix.map((x) => (
+                  <span style={`--w:${pct(x.n, c.count)};--lc:${x.l.color}`} title={`${x.l.title} ${x.n} 家`} />
+                ))}
+              </span>
+              <p class="sr-only">
+                其中{mix.map((x) => `${x.l.title} ${x.n} 家`).join('、')}。
+              </p>
+              {c.cities.length > 1 ? (
+                <p class="hqc__cities">
+                  {cities.map((x) => `${x.name} ${x.count}`).join('・')}
+                  {c.cities.length > cities.length ? ' 等' : ''}
+                </p>
+              ) : (
+                mix.length > 0 && (
+                  <p class="hqc__cities" aria-hidden="true">
+                    {[...mix]
+                      .sort((a, b) => b.n - a.n)
+                      .slice(0, 3)
+                      .map((x) => `${x.l.title} ${x.n}`)
+                      .join('・')}
+                  </p>
+                )
+              )}
+            </div>
+          </li>
+        );
+      })
+    }
+  </ol>
+</section>
+
+<style>
+  .hqc {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .hqc__head {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .hqc__title {
+    font-size: var(--fs-m);
+  }
+  .hqc__lede {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    line-height: 1.7;
+  }
+  .hqc__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    gap: var(--space-2) var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hqc__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: start;
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-3);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-elev);
+  }
+  .hqc__rank {
+    display: grid;
+    place-items: center;
+    inline-size: 1.6rem;
+    block-size: 1.6rem;
+    border-radius: 50%;
+    background: var(--c-bg-sunken);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+    color: var(--c-fg-muted);
+  }
+  .hqc__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.3rem var(--space-2);
+    min-width: 0;
+  }
+  .hqc__name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.45em;
+    font-weight: var(--fw-bold);
+    line-height: 1.45;
+    min-width: 0;
+  }
+  .hqc__country {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  .hqc__n {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    white-space: nowrap;
+  }
+  .hqc__n strong {
+    font-size: var(--fs-m);
+    color: var(--c-fg);
+    font-variant-numeric: tabular-nums;
+  }
+  .hqc__bar {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 1px;
+    block-size: 0.4rem;
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    background: var(--c-border);
+  }
+  .hqc__bar span {
+    inline-size: var(--w);
+    background: var(--lc);
+  }
+  .hqc__cities {
+    grid-column: 1 / -1;
+    font-size: 0.72rem;
+    line-height: 1.6;
+    color: var(--c-fg-subtle);
+  }
+  /* phones: one bordered list with hairline dividers instead of eight separate cards */
+  @media (max-width: 559.98px) {
+    .hqc__list {
+      gap: 0;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+      overflow: hidden;
+    }
+    .hqc__item {
+      gap: var(--space-2);
+      padding: 0.6rem var(--space-3);
+      border: 0;
+      border-radius: 0;
+      background: none;
+    }
+    .hqc__item + .hqc__item {
+      border-block-start: 1px solid var(--c-border);
+    }
+    .hqc__rank {
+      inline-size: 1.4rem;
+      block-size: 1.4rem;
+    }
+    .hqc__body {
+      gap: 0.2rem var(--space-2);
+    }
+  }
+</style>

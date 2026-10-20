@@ -1,0 +1,324 @@
+---
+/**
+ * /companies/ — 公司資料庫 (owner: pages-companies).
+ * Collapsible company-globe scene, then the server-rendered directory of every roster company with
+ * client-side filters (src/client/filters.ts). Listing page: excluded from Pagefind.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Scene3D from '../../components/scene/Scene3D.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Button from '../../components/ui/Button.astro';
+import CompanyDirectory from '../../components/company/CompanyDirectory.astro';
+import HqMap from '../../components/company/HqMap.astro';
+import HqClusters from '../../components/company/HqClusters.astro';
+import LayerLegend from '../../components/company/LayerLegend.astro';
+import { LAYERS } from '../../lib/collections';
+import { DATA_DATE } from '../../lib/seo';
+import { formatNumber } from '../../lib/format';
+import { companyGlobePoints, getCompanyRows, hqClusters } from '../../lib/scene-data/companies';
+
+const rows = await getCompanyRows();
+const total = rows.length;
+const points = companyGlobePoints(rows);
+const clusters = hqClusters(rows);
+
+// The 3D globe is used when its scene module exists (with the static 2D map of the same HQ data as
+// a collapsed alternative); without the scene the 2D map is shown directly.
+const sceneMetas = import.meta.glob('/src/three/scenes/*/meta.json');
+const hasGlobe = '/src/three/scenes/company-globe/meta.json' in sceneMetas;
+const [c1, c2, ...restClusters] = clusters;
+const concentration =
+  c1 && c2
+    ? `AI 產業鏈高度集中：${c1.name}與${c2.name}兩地就有 ${c1.count + c2.count} 家，約占全部的 ${Math.round(((c1.count + c2.count) / total) * 100)}%${
+        restClusters.length >= 3 ? `，${restClusters.slice(0, 3).map((c) => c.name).join('、')}緊追在後` : ''
+      }。`
+    : '';
+
+const countries = new Set(rows.map((r) => r.country)).size;
+const twCount = rows.filter((r) => r.region === 'TW').length;
+const listed = rows.filter((r) => r.listings.length > 0).length;
+const withRevenue = rows.filter((r) => r.revenueUsdM != null).length;
+const tier1 = rows.filter((r) => r.tier === 1).length;
+const layerCount = new Map(LAYERS.map((l) => [l.id, rows.filter((r) => r.layer === l.id).length]));
+
+const title = `公司資料庫：AI 產業鏈 ${total} 家企業`;
+const description = `收錄 ${total} 家 AI 產業鏈企業，從電力設備、半導體、伺服器到雲端、基礎模型與機器人；可依環節、地區、層級與上市與否篩選，並比較近四季營收。`;
+const stats = [
+  { value: formatNumber(total), label: '家公司' },
+  { value: '14', label: '個產業鏈環節' },
+  { value: formatNumber(countries), label: '個國家與地區' },
+  { value: formatNumber(twCount), label: '家台灣公司' },
+  { value: formatNumber(listed), label: '家上市公司' },
+  { value: formatNumber(withRevenue), label: '家有營收資料' },
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  breadcrumbs={[{ label: '公司資料庫' }]}
+  section="companies"
+  pagefind={false}
+>
+  <div class="container">
+    <header class="page-head co-head">
+      <p class="page-head__kicker">AI 產業鏈・企業名錄</p>
+      <h1>公司資料庫</h1>
+      <p class="page-head__lede">
+        從發電機、晶圓廠到雲端與機器人，這裡收錄 {total} 家在 AI 產業鏈中扮演關鍵角色的企業，其中 {tier1} 家是對 AI 鏈有決定性影響的一線龍頭。可依環節、地區與層級篩選，或依營收、年增率排序，點進公司即可看到產品、技術與營收表現。
+      </p>
+      <ul class="co-stats" role="list" aria-label="資料庫概況">
+        {
+          stats.map((s) => (
+            <li class="co-stat">
+              <span class="co-stat__v">{s.value}</span>
+              <span class="co-stat__l">{s.label}</span>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="co-head__foot">
+        <Button href="#companies-list" variant="primary" icon="search">搜尋與篩選公司</Button>
+        <DataAsOf date={DATA_DATE} note="營收依各公司最新財報" />
+      </div>
+    </header>
+
+    <section class="co-globe" aria-labelledby="globe-title">
+      <div class="co-sec-head">
+        <h2 id="globe-title">全球總部分布</h2>
+        <p>
+          {
+            hasGlobe
+              ? `每個點是一家公司的總部，顏色代表所屬的產業鏈層，同一座城市的公司聚在一起，也可以改依近四季營收（以美元換算）比較規模。${concentration}`
+              : `每個點是一家公司的總部，顏色代表所屬的產業鏈層。${concentration}`
+          }
+        </p>
+      </div>
+      <details class="globe" open>
+        <summary class="globe__toggle">
+          <span class="globe__when-open">{hasGlobe ? '收合地球儀' : '收合地圖'}</span>
+          <span class="globe__when-closed">{hasGlobe ? '展開 3D 地球儀' : '展開總部分布地圖'}</span>
+        </summary>
+        <div class="globe__body">
+          {
+            hasGlobe ? (
+              <>
+                <Scene3D
+                  id="company-globe"
+                  data={points}
+                  autoload="visible"
+                  caption={`全球 AI 產業鏈企業總部分布：${total} 家公司（資料截至 ${DATA_DATE}）`}
+                />
+                <details class="flatmap">
+                  <summary class="flatmap__toggle">
+                    <span class="flatmap__when-closed">改看平面分布圖</span>
+                    <span class="flatmap__when-open">收合平面分布圖</span>
+                  </summary>
+                  <div class="flatmap__body">
+                    <HqMap clusters={clusters} total={total} />
+                    <LayerLegend counts={layerCount} />
+                  </div>
+                </details>
+              </>
+            ) : (
+              <>
+                <HqMap clusters={clusters} total={total} />
+                <LayerLegend counts={layerCount} />
+              </>
+            )
+          }
+          <HqClusters clusters={clusters} total={total} count={8} />
+        </div>
+      </details>
+    </section>
+
+    <section class="co-dir" id="companies-list" aria-labelledby="dir-title">
+      <div class="co-sec-head">
+        <h2 id="dir-title">全部公司</h2>
+        <p>一線為全球龍頭、二線為重要供應商或區域龍頭、三線與新創則包含利基廠商與新興公司。環節篩選也會包含以該環節為次要業務的公司。</p>
+      </div>
+      <CompanyDirectory rows={rows} />
+    </section>
+
+  </div>
+</BaseLayout>
+
+<style>
+  .co-head {
+    padding-block-end: var(--space-6);
+  }
+  .co-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-border);
+    overflow: hidden;
+    max-width: 62rem;
+  }
+  @media (min-width: 640px) {
+    .co-stats {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1000px) {
+    .co-stats {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+  .co-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: var(--space-3) var(--space-4);
+    background: var(--c-bg-elev);
+  }
+  .co-stat__l {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .co-stat__v {
+    font-size: var(--fs-xl);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    color: var(--c-fg);
+  }
+  .co-head__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-5);
+    margin-block-start: var(--space-2);
+  }
+  .co-dir {
+    scroll-margin-top: calc(var(--header-h, 4rem) + var(--space-2));
+  }
+
+  .co-sec-head {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-end: var(--space-4);
+  }
+  .co-sec-head h2 {
+    font-size: var(--fs-xl);
+  }
+  .co-sec-head p {
+    max-width: var(--measure);
+    color: var(--c-fg-muted);
+    font-size: var(--fs-s);
+    line-height: 1.75;
+  }
+
+  .co-globe {
+    padding-block: var(--space-5) var(--space-6);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .globe {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .globe__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    justify-self: start;
+    min-block-size: var(--tap, 44px);
+    padding: 0 0.9rem;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    background: var(--c-bg-elev);
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+    cursor: pointer;
+    list-style: none;
+    width: fit-content;
+  }
+  .globe__toggle::-webkit-details-marker {
+    display: none;
+  }
+  .globe__toggle::before {
+    content: '';
+    inline-size: 0.45em;
+    block-size: 0.45em;
+    border-inline-end: 2px solid currentColor;
+    border-block-end: 2px solid currentColor;
+    rotate: -45deg;
+    transition: rotate var(--dur-1) ease;
+  }
+  .globe[open] > .globe__toggle::before {
+    rotate: 45deg;
+  }
+  .globe__toggle:hover {
+    color: var(--c-fg);
+    border-color: var(--c-border-strong);
+  }
+  .globe__toggle:focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  .globe[open] .globe__when-closed,
+  .globe:not([open]) .globe__when-open {
+    display: none;
+  }
+  .globe__body {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .globe__body > :global(.scene) {
+    margin-block: var(--space-2) 0;
+  }
+  .flatmap {
+    border-block-end: 1px solid var(--c-border);
+    padding-block-end: var(--space-3);
+  }
+  .flatmap__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    min-block-size: var(--tap, 44px);
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-link);
+    cursor: pointer;
+    list-style: none;
+  }
+  .flatmap__toggle::-webkit-details-marker {
+    display: none;
+  }
+  .flatmap__toggle::before {
+    content: '';
+    inline-size: 0.4em;
+    block-size: 0.4em;
+    border-inline-end: 2px solid currentColor;
+    border-block-end: 2px solid currentColor;
+    rotate: -45deg;
+    transition: rotate var(--dur-1) ease;
+  }
+  .flatmap[open] > .flatmap__toggle::before {
+    rotate: 45deg;
+  }
+  .flatmap__toggle:focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-s);
+  }
+  .flatmap[open] .flatmap__when-closed,
+  .flatmap:not([open]) .flatmap__when-open {
+    display: none;
+  }
+  .flatmap__body {
+    display: grid;
+    gap: var(--space-3);
+    padding-block-start: var(--space-2);
+  }
+  .co-dir {
+    padding-block: var(--space-5) var(--space-6);
+    border-block-start: 1px solid var(--c-border);
+  }
+</style>

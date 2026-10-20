@@ -1,0 +1,144 @@
+{
+  "id": "attention",
+  "title": "Transformer 注意力劇場",
+  "description": "這個場景用一句話「台積電為輝達生產 AI 晶片」說明 Transformer 如何讀懂文字。句子先被切成 6 個 Token（地上的方塊），每個 Token 對應詞彙表裡的一個編號，每個 Token 換成一串數字組成的嵌入向量（一排小方塊，顏色代表數值的正負與大小）；向量再乘上三個權重矩陣，分成查詢 Q、鍵 K、值 V 三排。注意力以弧線表示：某個 Token 的 Q 和前面每個 Token 的 K 比對，經 softmax 得到加總為 100% 的權重，弧線越粗代表越被注意，再依權重把各 Token 的 V 加總成輸出；語言模型使用因果遮罩，看不到後面的 Token。多頭注意力把向量分給 4 個注意力頭，各自以不同顏色的弧線呈現不同的關係。「層層堆疊」變體顯示多個 Transformer 區塊：每個 Token 沿著殘差串流往上，在注意力層和其他 Token 交換資訊、在前饋網路各自加工，最上層的輸出層算出下一個 Token 的機率。「混合專家」變體顯示路由器為每個 Token 從 8 位專家中挑出前 2 名，只有被選中的專家參與運算，並以長條顯示各專家分到的工作量。最後的 KV 快取步驟說明：逐字生成時，前面 Token 的 K、V 存進快取重複使用，新 Token 只計算自己的 Q、K、V，快取則隨上下文變長而變大。所有權重、機率與數值皆為示意。",
+  "variants": ["attention", "layers", "moe"],
+  "defaultVariant": "attention",
+  "steps": [
+    {
+      "id": "overview",
+      "title": "總覽",
+      "caption": "Transformer 先把文字切成 Token、變成向量，再用注意力決定每個 Token 該參考哪些其他 Token。弧線越粗，代表注意力權重越大。"
+    },
+    {
+      "id": "tokens",
+      "title": "切成 Token",
+      "caption": "分詞器把「台積電為輝達生產 AI 晶片」切成 6 個 Token，每個 Token 再對應到詞彙表裡的一個編號（ID）。中文常被切成單字或常見詞的片段，這裡的切法與編號都是示意。",
+      "variant": "attention"
+    },
+    {
+      "id": "embedding",
+      "title": "嵌入向量",
+      "caption": "每個 Token 查表換成一串數字（嵌入向量），顏色代表數值的正負與大小。模型也需要知道每個 Token 在句中的位置。",
+      "variant": "attention"
+    },
+    {
+      "id": "qkv",
+      "title": "Q、K、V",
+      "caption": "每個向量乘上三個權重矩陣，變成查詢 Q（我在找什麼）、鍵 K（我能提供什麼）和值 V（要傳遞的內容）。",
+      "variant": "attention"
+    },
+    {
+      "id": "weights",
+      "title": "注意力權重",
+      "caption": "「生產」的 Q 與自己和前面每個 Token 的 K 做內積、除以 √d，經 softmax 變成加總 100% 的權重，再用權重把各 Token 的 V 加總。後面的 Token 被遮罩，看不到。",
+      "variant": "attention"
+    },
+    {
+      "id": "multi-head",
+      "title": "多頭注意力",
+      "caption": "Q、K、V 被切成好幾份，交給多個注意力頭平行計算。每個頭學到不同的關係，例如語意、前一個字、主詞與對象（示意 4 個頭）。",
+      "variant": "attention"
+    },
+    {
+      "id": "layers",
+      "title": "層層堆疊",
+      "caption": "許多相同的區塊疊在一起：注意力讓 Token 互相交換資訊，前饋網路再各自加工，每一步都以殘差連接加回主幹；最上層預測下一個 Token。",
+      "variant": "layers"
+    },
+    {
+      "id": "moe",
+      "title": "混合專家",
+      "caption": "MoE 把前饋網路換成多位專家：路由器為每個 Token 挑出前 2 名，只有它們參與運算；負載平衡讓專家分工平均。",
+      "variant": "moe"
+    },
+    {
+      "id": "kv-cache",
+      "title": "KV 快取",
+      "caption": "逐字生成時，前面 Token 的 K、V 不會改變，存進快取重複使用，新 Token 只算自己的 Q、K、V。上下文越長，快取越大，占用 GPU 的 HBM 記憶體。",
+      "variant": "attention"
+    }
+  ],
+  "hotspots": [
+    {
+      "id": "tokens",
+      "label": "Token（詞元）",
+      "detail": "模型處理文字的基本單位。分詞器把句子切成 Token，中文常是單字或常見詞的片段，這裡的切法為示意。滑過或點選 Token，可以看到它在注意哪些 Token。",
+      "glossary": "token"
+    },
+    {
+      "id": "embedding",
+      "label": "嵌入向量",
+      "detail": "每個 Token 查表換成一串數字，意思相近的 Token 向量也相近。這裡只畫 8 維（示意），實際模型的向量有數千維。",
+      "glossary": "embedding",
+      "href": "/glossary/#embedding"
+    },
+    {
+      "id": "qkv",
+      "label": "Q、K、V 向量",
+      "detail": "同一個向量乘上三個不同的權重矩陣：Q（查詢）代表「我在找什麼」，K（鍵）代表「我能提供什麼」，V（值）是真正被傳遞的內容。"
+    },
+    {
+      "id": "attention-weights",
+      "label": "注意力權重",
+      "detail": "Q 與每個 K 做內積、除以 √d 後經 softmax，得到加總為 100% 的權重，再用權重把各 Token 的 V 加總成輸出。生成文字的語言模型使用因果遮罩，只能看到前面的 Token。n 個 Token 要兩兩比對，計算量約隨上下文長度的平方成長。權重為示意。",
+      "glossary": "attention",
+      "href": "/glossary/#attention"
+    },
+    {
+      "id": "multi-head",
+      "label": "多頭注意力",
+      "detail": "把 Q、K、V 切成多份，交給多個注意力頭平行計算，再把各頭的結果接起來。不同的頭會學到不同的關係，例如語意、前後順序或主詞與對象。"
+    },
+    {
+      "id": "transformer-block",
+      "label": "Transformer 區塊",
+      "detail": "一個區塊包含多頭注意力與前饋網路，兩者前面各有一道正規化，並以殘差連接相加。大型語言模型由數十個相同結構的區塊堆疊而成。",
+      "glossary": "transformer",
+      "href": "/glossary/#transformer"
+    },
+    {
+      "id": "residual",
+      "label": "殘差連接",
+      "detail": "每個子層的輸出都加回原本的向量（⊕），形成一條貫穿所有層的「殘差串流」。這讓很深的網路也能穩定訓練，資訊不會在層層傳遞中流失。"
+    },
+    {
+      "id": "ffn",
+      "label": "前饋網路（FFN）",
+      "detail": "兩層全連接網路加上啟動函數，對每個 Token 各自運算，不和其他 Token 交換資訊。一般模型的參數有很大一部分在這裡。"
+    },
+    {
+      "id": "next-token",
+      "label": "預測下一個 Token",
+      "detail": "輸出層把最後一個位置的向量轉成整個詞彙表的機率分布，選出下一個 Token 後接回句尾，再重複同樣的流程，就能逐字生成。機率為示意。",
+      "href": "/chain/foundation-models/"
+    },
+    {
+      "id": "router",
+      "label": "路由器（Router）",
+      "detail": "一個小型線性層，為每位專家打分數，經 softmax 後取分數最高的前 2 名（top-2），再把兩者的權重重新正規化，用來混合專家的輸出。"
+    },
+    {
+      "id": "experts",
+      "label": "專家（Experts）",
+      "detail": "每位專家都是一個獨立的前饋網路。模型的總參數很多，但每個 Token 只啟用少數專家，這就是「稀疏啟動」：參數規模大，每個 Token 的計算量卻小。",
+      "glossary": "moe",
+      "href": "/glossary/#moe"
+    },
+    {
+      "id": "load-balance",
+      "label": "負載平衡",
+      "detail": "如果路由器總是挑同幾位專家，它們會過載、其他專家卻閒置。訓練時加入負載平衡損失等機制，讓工作量平均；專家分散在多張 GPU 上時，這也影響 GPU 之間的 all-to-all 通訊。數量為示意。"
+    },
+    {
+      "id": "kv-cache",
+      "label": "KV 快取",
+      "detail": "生成時把每一層、每個注意力頭算過的 K、V 存起來，新 Token 只需計算自己的 Q、K、V。快取大小隨上下文長度、層數與頭數成長，通常放在 GPU 的 HBM 記憶體，是長上下文推論的主要記憶體負擔。",
+      "glossary": "kv-cache",
+      "href": "/chain/memory-storage/"
+    }
+  ],
+  "data": "none",
+  "loop": "continuous",
+  "budgetKB": 30
+}

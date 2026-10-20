@@ -1,0 +1,1078 @@
+---
+/**
+ * <Scene3D> — embeds a 3D scene from src/three/scenes/<id>/.
+ *
+ * Server-renders everything that must work without JavaScript or WebGL: the figure with a
+ * reserved aspect ratio (CLS 0), the poster (or a styled placeholder), the toolbar (導覽 steps,
+ * 重設視角, 全螢幕互動, 暫停／播放), the hotspot list, the 場景文字說明 disclosure and the JSON data.
+ * The <ai-scene> element script (~3 KB gz) lazy-loads three.js and the scene chunk.
+ *
+ *   <Scene3D id="neural-net" variant="backprop" caption="…" />
+ *   <Scene3D id="chain-panorama" variant="explore" data={segments} hotspots={[…]} height="tall" />
+ */
+import type { SceneId } from '../../schemas/common';
+import type { SceneJson } from '../../three/core/types';
+import { withBase } from '../../lib/paths';
+import { sceneUid } from './uid';
+
+// Optional props accept an explicit `undefined` (exactOptionalPropertyTypes), so pages can pass
+// e.g. variant={entry.data.scenes[0]?.variant} straight from a SceneRef.
+export interface SceneHotspotProp {
+  id: string;
+  label: string;
+  /** Site-relative path without the base, e.g. "/chain/memory-storage/". */
+  href?: string | undefined;
+  detail?: string | undefined;
+}
+
+interface Props {
+  id: SceneId;
+  variant?: string | undefined;
+  caption?: string | undefined;
+  /** Page data for data-driven scenes (shape per docs/SCENES.md). Serialised as JSON. */
+  data?: unknown;
+  /** visible (default): load near the viewport · idle: after load + idle (home hero) · click: button. */
+  autoload?: 'visible' | 'idle' | 'click' | undefined;
+  height?: 'normal' | 'tall' | 'hero' | undefined;
+  /** Extra / overriding hotspots (merged with meta.json by id). */
+  hotspots?: readonly SceneHotspotProp[] | undefined;
+  /** Initial guided step (0 = 總覽). */
+  step?: number | undefined;
+  class?: string | undefined;
+  /** Dev sandbox only: honour ?variant= and ?step= in the URL. */
+  urlOverrides?: boolean | undefined;
+}
+
+const {
+  id,
+  variant,
+  caption,
+  data,
+  autoload = 'visible',
+  height = 'normal',
+  hotspots: extraHotspots = [],
+  step = 0,
+  class: className,
+  urlOverrides = false,
+} = Astro.props;
+
+const metas = import.meta.glob<{ default: SceneJson }>('/src/three/scenes/*/meta.json', { eager: true });
+const meta: SceneJson | undefined = metas[`/src/three/scenes/${id}/meta.json`]?.default;
+if (!meta) console.warn(`[Scene3D] no meta.json for scene "${id}" — rendering a placeholder`);
+
+type Img = { src: string; width: number; height: number };
+const posterFiles = import.meta.glob<{ default: Img }>('/src/assets/scene-posters/*.{webp,avif,png,jpg}', { eager: true });
+const findPoster = (name: string): Img | undefined => {
+  for (const ext of ['webp', 'avif', 'png', 'jpg']) {
+    const hit = posterFiles[`/src/assets/scene-posters/${name}.${ext}`];
+    if (hit) return hit.default;
+  }
+  return undefined;
+};
+const posterLight = findPoster(`${id}-light`) ?? findPoster(id);
+const posterDark = findPoster(`${id}-dark`) ?? posterLight;
+
+const title = meta?.title ?? id;
+const description = meta?.description ?? '';
+const variants = meta?.variants ?? [];
+const activeVariant = variant && variants.includes(variant) ? variant : (meta?.defaultVariant ?? variant ?? '');
+if (variant && meta && !variants.includes(variant)) console.warn(`[Scene3D] scene "${id}" has no variant "${variant}"`);
+const steps = meta?.steps ?? [];
+const startStep = Math.max(0, Math.min(step, Math.max(0, steps.length - 1)));
+
+const byId = new Map<string, SceneHotspotProp>();
+for (const h of meta?.hotspots ?? []) {
+  byId.set(h.id, { id: h.id, label: h.label, ...(h.href ? { href: h.href } : {}), ...(h.detail ? { detail: h.detail } : {}) });
+}
+for (const h of extraHotspots) {
+  // An explicit `undefined` must not erase the meta.json value it overrides.
+  const own = Object.fromEntries(Object.entries(h).filter(([, v]) => v !== undefined)) as unknown as SceneHotspotProp;
+  byId.set(h.id, { ...(byId.get(h.id) ?? {}), ...own });
+}
+const hotspots = [...byId.values()];
+
+const usesFixture = !!meta && meta.data !== 'none' && data === undefined;
+const json = data === undefined ? null : JSON.stringify(data).replace(/</g, '\\u003c');
+const uid = sceneUid(id);
+const eager = autoload === 'idle';
+const curStep = steps[startStep];
+---
+
+<figure class:list={['scene', `scene--${height}`, className]} data-scene={id}>
+  <a class="scene-skip" href={`#${uid}-end`} data-pagefind-ignore>跳過 3D 場景</a>
+  {/* Controls, hotspot chips and keyboard help are UI boilerplate: kept out of the search index
+      (architecture §7.1). The caption and 場景文字說明 below stay indexed. */}
+  <ai-scene
+    id={uid}
+    data-pagefind-ignore
+    data-id={id}
+    data-variant={activeVariant}
+    data-step={String(startStep)}
+    data-autoload={autoload}
+    data-state="poster"
+    data-fixture={usesFixture ? '' : undefined}
+    data-url-overrides={urlOverrides ? '' : undefined}
+  >
+    <div class="scene-stage">
+      <div
+        class="scene-view"
+        tabindex="0"
+        role="img"
+        aria-roledescription="3D 互動場景"
+        aria-label={`${title}（3D 互動場景）`}
+        aria-describedby={`${uid}-kbd ${uid}-desc`}
+      >
+        <div class:list={['scene-poster', { 'has-image': !!posterLight }]} aria-hidden="true">
+          {
+            posterLight ? (
+              <>
+                <img
+                  class="scene-poster-img scene-poster-light"
+                  src={posterLight.src}
+                  width={posterLight.width}
+                  height={posterLight.height}
+                  alt=""
+                  loading={eager ? 'eager' : 'lazy'}
+                  fetchpriority={eager ? 'high' : 'auto'}
+                  decoding="async"
+                />
+                {posterDark && posterDark !== posterLight && (
+                  <img
+                    class="scene-poster-img scene-poster-dark"
+                    src={posterDark.src}
+                    width={posterDark.width}
+                    height={posterDark.height}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                )}
+              </>
+            ) : (
+              <div class="scene-poster-art">
+                <span class="scene-poster-kicker">3D 互動場景</span>
+                <span class="scene-poster-title">{title}</span>
+              </div>
+            )
+          }
+        </div>
+      </div>
+      <div class="scene-labels" aria-hidden="true"></div>
+      <p class="scene-status" role="status"></p>
+      <button type="button" class="scene-load" data-cmd="load">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"></path></svg>
+        載入互動 3D
+      </button>
+      <span class="scene-badge" title="此場景使用示意資料">示意資料</span>
+      <p class="scene-hint" aria-hidden="true">按住 Ctrl 並滾動以縮放</p>
+    </div>
+
+    <div class="scene-toolbar" role="group" aria-label="場景控制">
+      {
+        steps.length > 0 && (
+          <div class="scene-steps" role="group" aria-label="導覽步驟">
+            <span class="scene-steps-label" aria-hidden="true">
+              導覽
+            </span>
+            <button type="button" class="scene-btn scene-btn--icon" data-cmd="prev" aria-label="上一步" disabled={startStep === 0}>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <ol class="scene-steplist">
+              {steps.map((s, i) => (
+                <li>
+                  <button
+                    type="button"
+                    class="scene-step"
+                    data-cmd="step"
+                    data-index={String(i)}
+                    data-title={s.title}
+                    data-caption={s.caption}
+                    aria-current={i === startStep ? 'step' : undefined}
+                  >
+                    <span class="scene-step-num" aria-hidden="true">
+                      {i + 1}
+                    </span>
+                    <span class="sr-only">{`第 ${i + 1} 步：`}</span>
+                    {s.title}
+                  </button>
+                </li>
+              ))}
+            </ol>
+            <button
+              type="button"
+              class="scene-btn scene-btn--icon"
+              data-cmd="next"
+              aria-label="下一步"
+              disabled={startStep >= steps.length - 1}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="m9.5 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+        )
+      }
+      <div class="scene-actions">
+        <button type="button" class="scene-btn" data-cmd="reset" disabled>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path
+              d="M4 12a8 8 0 1 0 2.4-5.7M4 4.5v4h4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path>
+          </svg>
+          <span class="scene-btn-label">重設視角</span>
+        </button>
+        <button type="button" class="scene-btn" data-cmd="fullscreen" disabled>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path
+              d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path>
+          </svg>
+          <span class="scene-btn-label">全螢幕互動</span>
+        </button>
+        <button type="button" class="scene-btn" data-cmd="motion" disabled data-playing="true">
+          <svg class="scene-ico-pause" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path>
+          </svg>
+          <svg class="scene-ico-play" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M8 5.5v13l11-6.5z" fill="currentColor"></path>
+          </svg>
+          <span class="scene-btn-label">暫停動畫</span>
+        </button>
+      </div>
+    </div>
+
+    {
+      steps.length > 0 && (
+        <div class="scene-stepinfo" aria-live="polite">
+          <p class="scene-steptitle">{`${startStep + 1}／${steps.length}　${curStep?.title ?? ''}`}</p>
+          <p class="scene-stepcap">{curStep?.caption}</p>
+        </div>
+      )
+    }
+
+    {
+      hotspots.length > 0 && (
+        <div class="scene-hotspots-wrap">
+          <p class="scene-hotspots-title" id={`${uid}-hs`}>
+            場景重點
+          </p>
+          <ul class="scene-hotspots" aria-labelledby={`${uid}-hs`}>
+            {hotspots.map((h) => (
+              <li>
+                {h.href ? (
+                  <a
+                    class="scene-chip"
+                    href={withBase(h.href)}
+                    data-hotspot={h.id}
+                    data-label={h.label}
+                    data-detail={h.detail}
+                    data-href={h.href}
+                  >
+                    {h.label}
+                  </a>
+                ) : (
+                  <button type="button" class="scene-chip" data-hotspot={h.id} data-label={h.label} data-detail={h.detail}>
+                    {h.label}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+
+    <p class="sr-only scene-live" aria-live="polite"></p>
+    <p class="sr-only" id={`${uid}-kbd`}>
+      聚焦場景後，可用方向鍵旋轉視角、加號與減號縮放、0 重設視角；有導覽步驟時以 Page Up／Page Down 切換。場景重點清單提供相同的資訊。
+    </p>
+    {json && <script type="application/json" data-scene-data set:html={json} />}
+  </ai-scene>
+  <span class="scene-skip-target" id={`${uid}-end`} tabindex="-1"></span>
+  {caption && <figcaption class="scene-caption">{caption}</figcaption>}
+  {
+    description && (
+      <details class="scene-desc">
+        <summary>場景文字說明</summary>
+        <div id={`${uid}-desc`}>
+          <p>{description}</p>
+          {hotspots.some((h) => h.detail) && (
+            <dl>
+              {hotspots
+                .filter((h) => h.detail)
+                .map((h) => (
+                  <>
+                    <dt>{h.label}</dt>
+                    <dd>{h.detail}</dd>
+                  </>
+                ))}
+            </dl>
+          )}
+          {steps.length > 0 && (
+            <ol class="scene-desc-steps">
+              {steps.map((s) => (
+                <li>
+                  <strong>{s.title}</strong>：{s.caption}
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      </details>
+    )
+  }
+</figure>
+
+<script>
+  import '../../three/core/element';
+</script>
+
+<style is:global>
+  @layer components {
+    .scene {
+      container-type: inline-size;
+      container-name: scene;
+      margin-block: var(--space-6);
+      margin-inline: 0;
+      min-width: 0;
+    }
+
+    ai-scene {
+      display: block;
+      position: relative;
+    }
+
+    /* 「跳過 3D 場景」: first focusable element of the figure, visually hidden until focused; it jumps
+       past the stage, toolbar and hotspot list to the caption and the text description. */
+    .scene {
+      position: relative;
+    }
+    .scene-skip {
+      position: absolute;
+      inset-block-start: var(--space-2);
+      inset-inline-start: var(--space-2);
+      z-index: 5;
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-m);
+      background: var(--c-accent);
+      color: var(--c-accent-fg);
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      text-decoration: none;
+    }
+    .scene-skip:not(:focus) {
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .scene-skip:focus,
+    .scene-skip:focus-visible {
+      color: var(--c-accent-fg);
+      outline: 2px solid var(--c-focus);
+      outline-offset: 2px;
+    }
+    .scene-skip-target {
+      display: block;
+      outline: none;
+    }
+
+    /* ───────── stage ───────── */
+    .scene-stage {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      max-height: 78svh;
+      width: 100%;
+      overflow: hidden;
+      border-radius: var(--radius-l);
+      border: 1px solid var(--c-border);
+      background: var(--scene-bg);
+      isolation: isolate;
+      color: var(--scene-fg);
+    }
+    .scene--tall .scene-stage {
+      aspect-ratio: 4 / 3;
+      max-height: 86svh;
+    }
+    .scene--hero .scene-stage {
+      aspect-ratio: 2 / 1;
+      max-height: 82svh;
+    }
+    @container scene (max-width: 56rem) {
+      .scene--hero .scene-stage {
+        aspect-ratio: 16 / 10;
+      }
+    }
+    @container scene (max-width: 40rem) {
+      .scene-stage {
+        aspect-ratio: 4 / 3;
+      }
+      .scene--tall .scene-stage {
+        aspect-ratio: 4 / 5;
+      }
+      .scene--hero .scene-stage {
+        aspect-ratio: 1 / 1;
+      }
+    }
+
+    .scene-view {
+      position: absolute;
+      inset: 0;
+      outline: none;
+    }
+    .scene-view:focus-visible {
+      outline: none;
+    }
+    .scene-view:focus-visible::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: calc(var(--radius-l) - 3px);
+      box-shadow: 0 0 0 3px var(--c-focus);
+      pointer-events: none;
+      z-index: 6;
+    }
+    .scene-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: pan-y;
+    }
+
+    /* Poster: real render when available, otherwise a styled placeholder. */
+    .scene-poster {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      transition: opacity var(--dur-2, 200ms) ease;
+      pointer-events: none;
+      background:
+        radial-gradient(60% 70% at 22% 18%, color-mix(in srgb, var(--scene-flow) 16%, transparent), transparent 70%),
+        radial-gradient(55% 60% at 82% 86%, color-mix(in srgb, var(--scene-optic) 16%, transparent), transparent 70%),
+        radial-gradient(40% 50% at 70% 25%, color-mix(in srgb, var(--scene-power) 10%, transparent), transparent 70%),
+        var(--scene-bg);
+    }
+    .scene-poster-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .scene-poster-dark {
+      display: none;
+    }
+    :root[data-theme='dark'] .scene-poster-light:has(+ .scene-poster-dark) {
+      display: none;
+    }
+    :root[data-theme='dark'] .scene-poster-dark {
+      display: block;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme='light']) .scene-poster-light:has(+ .scene-poster-dark) {
+        display: none;
+      }
+      :root:not([data-theme='light']) .scene-poster-dark {
+        display: block;
+      }
+    }
+    .scene-poster-art {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      gap: var(--space-2);
+      padding: var(--space-5);
+      text-align: center;
+      background-image: radial-gradient(color-mix(in srgb, var(--scene-fg) 13%, transparent) 1px, transparent 1.5px);
+      background-size: 22px 22px;
+      background-position: center;
+      mask-image: radial-gradient(90% 90% at 50% 50%, #000 55%, transparent 100%);
+    }
+    .scene-poster-kicker {
+      font-size: var(--fs-xs);
+      letter-spacing: var(--tracking-wide, 0.06em);
+      color: var(--c-fg-muted);
+      padding: 2px 10px;
+      border: 1px solid color-mix(in srgb, var(--scene-fg) 18%, transparent);
+      border-radius: var(--radius-pill);
+      background: color-mix(in srgb, var(--scene-bg) 70%, transparent);
+    }
+    .scene-poster-title {
+      font-size: var(--fs-xl);
+      font-weight: var(--fw-semibold, 600);
+      line-height: var(--lh-tight, 1.3);
+      color: var(--scene-fg);
+      max-width: 22em;
+      text-wrap: balance;
+    }
+    ai-scene:is([data-state='running'], [data-state='paused']) .scene-poster {
+      opacity: 0;
+    }
+
+    /* Loading shimmer bar */
+    ai-scene[data-state='loading'] .scene-stage::after {
+      content: '';
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 3px;
+      z-index: 5;
+      background: linear-gradient(90deg, transparent, var(--scene-flow), transparent);
+      background-size: 40% 100%;
+      background-repeat: no-repeat;
+      animation: scene-load 1.1s linear infinite;
+    }
+    @keyframes scene-load {
+      from {
+        background-position: -40% 0;
+      }
+      to {
+        background-position: 140% 0;
+      }
+    }
+
+    .scene-status {
+      position: absolute;
+      inset: auto var(--space-3) var(--space-3) var(--space-3);
+      z-index: 4;
+      margin: 0;
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      pointer-events: none;
+    }
+    .scene-status:empty {
+      display: none;
+    }
+    ai-scene:is([data-state='fallback'], [data-state='error']) .scene-status {
+      inset: auto var(--space-3) var(--space-3) var(--space-3);
+      width: fit-content;
+      max-width: calc(100% - 2 * var(--space-3));
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-m);
+      background: color-mix(in srgb, var(--c-bg-elev) 92%, transparent);
+      border: 1px solid var(--c-border);
+      color: var(--c-fg);
+    }
+
+    .scene-load {
+      position: absolute;
+      left: 50%;
+      bottom: var(--space-5);
+      translate: -50% 0;
+      z-index: 4;
+      display: none;
+      align-items: center;
+      gap: var(--space-2);
+      min-height: 44px;
+      padding: 0 var(--space-5);
+      border-radius: var(--radius-pill);
+      border: 0;
+      background: var(--c-accent);
+      color: var(--c-accent-fg);
+      font-weight: var(--fw-semibold, 600);
+      box-shadow: var(--shadow-2);
+    }
+    ai-scene[data-armed='click']:is([data-state='poster'], [data-state='error']) .scene-load {
+      display: inline-flex;
+    }
+    .scene-load:focus-visible {
+      outline: 3px solid var(--c-focus);
+      outline-offset: 3px;
+    }
+
+    .scene-badge {
+      position: absolute;
+      top: var(--space-3);
+      right: var(--space-3);
+      z-index: 4;
+      display: none;
+      padding: 2px 10px;
+      font-size: var(--fs-xs);
+      border-radius: var(--radius-pill);
+      border: 1px dashed var(--c-border-strong);
+      background: color-mix(in srgb, var(--c-bg-elev) 88%, transparent);
+      color: var(--c-fg-muted);
+    }
+    ai-scene[data-fixture]:is([data-state='running'], [data-state='paused'], [data-state='loading']) .scene-badge {
+      display: block;
+    }
+
+    .scene-hint {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      translate: -50% -50%;
+      z-index: 5;
+      margin: 0;
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-pill);
+      background: color-mix(in srgb, var(--c-bg-elev) 94%, transparent);
+      color: var(--c-fg);
+      font-size: var(--fs-s);
+      box-shadow: var(--shadow-2);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--dur-2, 200ms) ease;
+    }
+    .scene-hint[data-show] {
+      opacity: 1;
+    }
+
+    /* ───────── labels (runtime, pooled) ───────── */
+    .scene-labels {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      overflow: hidden;
+      contain: strict;
+    }
+    .scene-label {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 9px 3px;
+      white-space: nowrap;
+      font-family: var(--font-sans);
+      font-size: clamp(11px, 0.55rem + 0.4cqi, 13px);
+      line-height: 1.35;
+      color: var(--scene-fg);
+      background: color-mix(in srgb, var(--scene-bg) 78%, transparent);
+      border: 1px solid color-mix(in srgb, var(--scene-fg) 16%, transparent);
+      border-radius: var(--radius-pill);
+      opacity: 0;
+      transition: opacity 180ms ease;
+      will-change: transform, opacity;
+      -webkit-backdrop-filter: blur(3px);
+      backdrop-filter: blur(3px);
+    }
+    .scene-label[data-on] {
+      opacity: 1;
+    }
+    .scene-label[data-kind='strong'] {
+      font-size: clamp(12px, 0.6rem + 0.5cqi, 15px);
+      font-weight: var(--fw-semibold, 600);
+      padding: 3px 11px 4px;
+      background: color-mix(in srgb, var(--scene-bg) 86%, transparent);
+    }
+    .scene-label[data-kind='muted'] {
+      color: var(--c-fg-muted);
+      border-color: transparent;
+      background: color-mix(in srgb, var(--scene-bg) 62%, transparent);
+    }
+    .scene-label[data-kind='tag'] {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      color: var(--c-fg-muted);
+      border-color: transparent;
+      background: color-mix(in srgb, var(--scene-bg) 55%, transparent);
+      padding: 1px 6px;
+    }
+    .scene-label.is-hot {
+      border-color: var(--scene-highlight);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--scene-highlight) 35%, transparent);
+      color: var(--scene-fg);
+    }
+    .scene-label-swatch {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex: none;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--scene-fg) 25%, transparent);
+    }
+
+    /* ───────── info card ───────── */
+    .scene-card {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 4;
+      width: max-content;
+      max-width: min(19rem, calc(100% - 16px));
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-m);
+      border: 1px solid var(--c-border);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      box-shadow: var(--shadow-2);
+      font-size: var(--fs-s);
+      line-height: var(--lh-snug, 1.5);
+      pointer-events: none;
+    }
+    .scene-card[hidden] {
+      display: none;
+    }
+    .scene-card.is-interactive {
+      pointer-events: auto;
+    }
+    .scene-card > * + * {
+      margin-block-start: var(--space-1);
+    }
+    .scene-card-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-weight: var(--fw-semibold, 600);
+      font-size: var(--fs-m);
+      line-height: var(--lh-tight, 1.3);
+    }
+    .scene-card-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      flex: none;
+    }
+    .scene-card-sub,
+    .scene-card-meta,
+    .scene-card-hint {
+      color: var(--c-fg-muted);
+      font-size: var(--fs-xs);
+    }
+    .scene-card-body {
+      color: var(--c-fg-muted);
+    }
+    .scene-card-items {
+      list-style: none;
+      padding: 0;
+      margin-block-start: var(--space-2) !important;
+      display: grid;
+      gap: 2px;
+    }
+    .scene-card-items li {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-3);
+    }
+    .scene-card-link {
+      display: inline-block;
+      margin-block-start: var(--space-2) !important;
+      color: var(--c-link);
+      font-weight: var(--fw-semibold, 600);
+    }
+
+    /* ───────── toolbar ───────── */
+    .scene-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2) var(--space-3);
+      margin-block-start: var(--space-3);
+      min-width: 0;
+    }
+    .scene-steps {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      min-width: 0;
+      max-width: 100%;
+      flex: 0 1 auto;
+    }
+    .scene-steps-label {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      padding-inline-end: var(--space-1);
+      flex: none;
+    }
+    .scene-steplist {
+      position: relative;
+      display: flex;
+      gap: var(--space-1);
+      list-style: none;
+      margin: 0;
+      padding: 2px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      min-width: 0;
+      flex: 0 1 auto;
+    }
+    .scene-steplist li {
+      flex: none;
+    }
+    /* Inside an MDX body the prose rule `li + li { margin-block-start: 0.4em }` reached these lists and set every
+       chip after the first 7px lower than the first. */
+    .scene-steplist > li,
+    .scene-hotspots > li,
+    .scene-desc-steps > li {
+      margin: 0;
+    }
+    .scene-step,
+    .scene-btn,
+    .scene-chip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 36px;
+      padding: 0 var(--space-3);
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--c-border);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      font-size: var(--fs-s);
+      line-height: 1.2;
+      white-space: nowrap;
+      text-decoration: none;
+      transition:
+        background-color var(--dur-1, 120ms) ease,
+        border-color var(--dur-1, 120ms) ease;
+    }
+    .scene-step:hover,
+    .scene-btn:hover:not(:disabled),
+    .scene-chip:hover {
+      border-color: var(--c-border-strong);
+      background: var(--c-hover, var(--c-bg-sunken));
+    }
+    .scene-step:focus-visible,
+    .scene-btn:focus-visible,
+    .scene-chip:focus-visible {
+      outline: 3px solid var(--c-focus);
+      outline-offset: 2px;
+    }
+    .scene-btn:disabled {
+      opacity: 0.5;
+    }
+    .scene-btn--icon {
+      width: 36px;
+      padding: 0;
+      justify-content: center;
+      flex: none;
+    }
+    .scene-step-num {
+      display: inline-grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: var(--fw-semibold, 600);
+      background: var(--c-bg-sunken);
+      color: var(--c-fg-muted);
+    }
+    .scene-step[aria-current='step'] {
+      background: var(--c-accent);
+      border-color: var(--c-accent);
+      color: var(--c-accent-fg);
+      font-weight: var(--fw-semibold, 600);
+    }
+    .scene-step[aria-current='step'] .scene-step-num {
+      background: color-mix(in srgb, var(--c-accent-fg) 22%, transparent);
+      color: var(--c-accent-fg);
+    }
+    .scene-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1);
+      margin-inline-start: auto;
+    }
+    ai-scene:is([data-state='fallback'], [data-state='error']) .scene-actions {
+      display: none;
+    }
+    .scene-btn[data-cmd='motion'] .scene-ico-play,
+    .scene-btn[data-cmd='motion'][data-playing='false'] .scene-ico-pause {
+      display: none;
+    }
+    .scene-btn[data-cmd='motion'][data-playing='false'] .scene-ico-play {
+      display: block;
+    }
+    @container scene (max-width: 34rem) {
+      .scene-actions .scene-btn {
+        width: 40px;
+        padding: 0;
+        justify-content: center;
+      }
+      .scene-actions .scene-btn-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+      .scene-steps-label {
+        display: none;
+      }
+    }
+
+    .scene-stepinfo {
+      margin-block-start: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-inline-start: 3px solid var(--c-accent);
+      background: var(--c-bg-sunken);
+      border-radius: 0 var(--radius-m) var(--radius-m) 0;
+      font-size: var(--fs-s);
+      line-height: var(--lh-snug, 1.5);
+    }
+    .scene-steptitle {
+      font-weight: var(--fw-semibold, 600);
+      color: var(--c-fg);
+    }
+    .scene-stepcap {
+      color: var(--c-fg-muted);
+      max-width: var(--measure, 38em);
+    }
+
+    /* ───────── hotspot list ───────── */
+    .scene-hotspots-wrap {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-block-start: var(--space-3);
+    }
+    .scene-hotspots-title {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      flex: none;
+    }
+    .scene-hotspots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1);
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      min-width: 0;
+    }
+    .scene-chip {
+      min-height: 32px;
+      font-size: var(--fs-xs);
+      padding: 0 var(--space-3);
+      white-space: normal;
+      text-align: start;
+    }
+    a.scene-chip {
+      color: var(--c-link);
+    }
+    .scene-chip[aria-current='true'] {
+      border-color: var(--scene-highlight);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--scene-highlight) 35%, transparent);
+    }
+
+    /* ───────── caption & description ───────── */
+    .scene-caption {
+      margin-block-start: var(--space-3);
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      line-height: var(--lh-snug, 1.5);
+    }
+    .scene-desc {
+      margin-block-start: var(--space-2);
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+    .scene-desc > summary {
+      cursor: pointer;
+      width: fit-content;
+      color: var(--c-link);
+      min-height: 24px;
+    }
+    .scene-desc > div {
+      padding: var(--space-2) 0 0;
+      display: grid;
+      gap: var(--space-2);
+      max-width: var(--measure, 38em);
+    }
+    .scene-desc dl {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: var(--space-1) var(--space-3);
+    }
+    .scene-desc dt {
+      font-weight: var(--fw-semibold, 600);
+      color: var(--c-fg);
+    }
+    .scene-desc dd {
+      margin: 0;
+    }
+    @container scene (max-width: 30rem) {
+      .scene-desc dl {
+        grid-template-columns: 1fr;
+      }
+      .scene-desc dd {
+        margin-block-end: var(--space-2);
+      }
+    }
+    .scene-desc-steps {
+      padding-inline-start: 1.4em;
+      display: grid;
+      gap: var(--space-1);
+    }
+
+    /* ───────── fullscreen & immersive (iOS fallback) ───────── */
+    ai-scene:fullscreen,
+    ai-scene.is-immersive {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      padding: var(--space-3);
+      background: var(--c-bg);
+      color: var(--c-fg);
+      overflow: auto;
+    }
+    ai-scene.is-immersive {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+    }
+    ai-scene:fullscreen .scene-stage,
+    ai-scene.is-immersive .scene-stage {
+      flex: 1 1 auto;
+      aspect-ratio: auto;
+      max-height: none;
+      min-height: 0;
+    }
+    ai-scene:fullscreen .scene-hotspots,
+    ai-scene.is-immersive .scene-hotspots {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+    html.scene-immersive-open,
+    html.scene-immersive-open body {
+      overflow: hidden;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .scene-poster,
+      .scene-label,
+      .scene-hint {
+        transition: none;
+      }
+      ai-scene[data-state='loading'] .scene-stage::after {
+        animation: none;
+        background-size: 100% 100%;
+        opacity: 0.5;
+      }
+    }
+    :root[data-motion='reduce'] :is(.scene-poster, .scene-label, .scene-hint) {
+      transition: none;
+    }
+    @media (forced-colors: active) {
+      .scene-step[aria-current='step'] {
+        outline: 2px solid Highlight;
+      }
+      .scene-label {
+        border-color: CanvasText;
+      }
+    }
+  }
+</style>

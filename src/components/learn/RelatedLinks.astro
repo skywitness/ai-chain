@@ -1,0 +1,229 @@
+---
+/**
+ * 「相關內容」 block for a learning article: segment, company and model chips plus trend links.
+ * Ids that do not resolve are skipped by the chip components themselves (or here, for trends).
+ * Renders nothing when every list is empty.
+ *
+ *   <RelatedLinks segments={[…]} companies={[…]} models={[…]} trends={[…]} />
+ */
+import CompanyChip from '../content/CompanyChip.astro';
+import ModelChip from '../content/ModelChip.astro';
+import SegmentChip from '../content/SegmentChip.astro';
+import Icon from '../ui/Icon.astro';
+import {
+  companyDisplay,
+  getModelFamily,
+  getTrendIndexEntry,
+  safeEntry,
+  segmentMeta,
+  TREND_CATEGORY_LABELS,
+} from '../../lib/collections';
+import { trendHref } from '../../lib/paths';
+
+interface Props {
+  segments?: readonly string[] | undefined;
+  companies?: readonly string[] | undefined;
+  models?: readonly string[] | undefined;
+  trends?: readonly string[] | undefined;
+  title?: string | undefined;
+  id?: string | undefined;
+}
+const { segments = [], companies = [], models = [], trends = [], title = '相關內容', id = 'related' } = Astro.props;
+
+const segs = segments.filter((s) => !!segmentMeta(s));
+const comps: string[] = [];
+for (const c of companies) if ((await companyDisplay(c)).exists) comps.push(c);
+const mods: string[] = [];
+for (const m of models) if ((await safeEntry('models', m)) || getModelFamily(m)) mods.push(m);
+const trs: Array<{ id: string; title: string; cat?: string | undefined }> = [];
+for (const t of trends) {
+  const e = await safeEntry('trends', t);
+  const idx = getTrendIndexEntry(t);
+  const titleText = (e?.data as { title?: string } | undefined)?.title ?? idx?.title;
+  if (!titleText) continue;
+  const cat = (e?.data as { category?: keyof typeof TREND_CATEGORY_LABELS } | undefined)?.category ?? idx?.category;
+  trs.push({ id: t, title: titleText, cat: cat ? TREND_CATEGORY_LABELS[cat] : undefined });
+}
+const show = segs.length + comps.length + mods.length + trs.length > 0;
+---
+
+{
+  show && (
+    <section class="rel" aria-labelledby={id} data-pagefind-ignore>
+      <h2 class="rel__title" id={id}>
+        {title}
+      </h2>
+      <dl class="rel__grid">
+        {segs.length > 0 && (
+          <div class="rel__row">
+            <dt>產業鏈環節</dt>
+            <dd>
+              <ul class="rel__chips" role="list">
+                {segs.map((s) => (
+                  <li>
+                    <SegmentChip id={s} />
+                  </li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        )}
+        {comps.length > 0 && (
+          <div class="rel__row">
+            <dt>相關公司</dt>
+            <dd>
+              <ul class="rel__chips" role="list">
+                {comps.map((c) => (
+                  <li>
+                    <CompanyChip id={c} />
+                  </li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        )}
+        {mods.length > 0 && (
+          <div class="rel__row">
+            <dt>大模型</dt>
+            <dd>
+              <ul class="rel__chips" role="list">
+                {mods.map((m) => (
+                  <li>
+                    <ModelChip id={m} />
+                  </li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        )}
+        {trs.length > 0 && (
+          <div class="rel__row">
+            <dt>未來趨勢</dt>
+            <dd>
+              <ul class="rel__trends" role="list">
+                {trs.map((t) => (
+                  <li>
+                    <a href={trendHref(t.id)}>
+                      <Icon name="arrow-up-right" class="rel__trend-icon" />
+                      <span class="rel__trend-name">{t.title}</span>
+                      {t.cat && <span class="rel__trend-cat">{t.cat}</span>}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        )}
+      </dl>
+    </section>
+  )
+}
+
+<style>
+  @layer components {
+    .rel {
+      margin-block-start: var(--space-8);
+      padding-block-start: var(--space-5);
+      border-block-start: 1px solid var(--c-border);
+    }
+    .rel__title {
+      font-size: var(--fs-xl);
+      margin: 0 0 var(--space-4);
+      padding: 0;
+    }
+    .rel__grid {
+      display: grid;
+      gap: var(--space-4);
+      margin: 0;
+    }
+    .rel__row {
+      display: grid;
+      gap: var(--space-2);
+    }
+    @media (min-width: 640px) {
+      .rel__row {
+        grid-template-columns: 7.5rem minmax(0, 1fr);
+        gap: var(--space-4);
+        align-items: start;
+      }
+    }
+    .rel__row dt {
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-muted);
+      line-height: 2.25rem;
+    }
+    .rel__row dd {
+      margin: 0;
+      min-width: 0;
+    }
+    .rel__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .rel__chips li {
+      margin: 0;
+      max-width: 100%;
+      min-width: 0;
+    }
+    .rel__chips :global(.chip) {
+      align-items: center;
+      min-height: 2.25rem;
+      padding: 0.15em 0.8em 0.15em 0.7em;
+      margin: 0;
+      border-radius: var(--radius-pill);
+      font-size: var(--fs-s);
+    }
+    @media (pointer: coarse) {
+      .rel__chips :global(.chip) {
+        min-height: var(--tap);
+      }
+    }
+    .rel__trends {
+      display: grid;
+      gap: var(--space-1);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .rel__trends li {
+      margin: 0;
+    }
+    .rel__trends a {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-height: 2.5rem;
+      padding: 0.25rem var(--space-3);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      text-decoration: none;
+      font-size: var(--fs-s);
+      line-height: 1.5;
+    }
+    .rel__trends a:hover {
+      border-color: var(--c-border-strong);
+      background: var(--c-hover);
+      color: var(--c-fg);
+    }
+    .rel__trends :global(.rel__trend-icon) {
+      flex: none;
+      color: var(--c-fg-subtle);
+    }
+    .rel__trend-name {
+      flex: 1;
+      min-width: 0;
+    }
+    .rel__trend-cat {
+      flex: none;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+  }
+</style>

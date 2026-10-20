@@ -1,0 +1,257 @@
+---
+/**
+ * 「在產業鏈中的位置」 — a mini diagram of the 5 layers × 14 segments with the company's segments
+ * highlighted (owner: pages-companies). Static SVG, two layouts (wide: one row per layer; narrow:
+ * layer label above, at most 3 segments per line) switched by a container query, plus linked chips.
+ *
+ *   <MiniChain primary="foundry-packaging" secondary={['ai-accelerators']} name="台積電" />
+ */
+import SegmentChip from '../content/SegmentChip.astro';
+import { LAYERS, segmentMeta, type SegmentId } from '../../lib/collections';
+import { joinZh, zhConcat } from '../../lib/format';
+
+interface Props {
+  primary: SegmentId;
+  secondary?: readonly SegmentId[] | undefined;
+  /** company display name for the accessible summary */
+  name: string;
+  class?: string | undefined;
+}
+const { primary, secondary = [], name, class: className } = Astro.props;
+const sec = secondary.filter((s) => s !== primary);
+const role = (s: SegmentId) => (s === primary ? 'primary' : sec.includes(s) ? 'secondary' : 'other');
+const rows = [...LAYERS].reverse(); // applications on top, energy at the bottom
+
+interface Pill {
+  id: SegmentId;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  label: string;
+  role: string;
+}
+interface LayerBox {
+  id: string;
+  title: string;
+  color: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  lx: number;
+  ly: number;
+  hit: boolean;
+}
+
+function layout(mode: 'wide' | 'narrow') {
+  const W = mode === 'wide' ? 720 : 340;
+  const pillH = 32;
+  const gap = 6;
+  const pad = 8;
+  const labelW = mode === 'wide' ? 128 : 0;
+  const labelH = mode === 'wide' ? 0 : 20;
+  const perLine = mode === 'wide' ? 5 : 3;
+  const pills: Pill[] = [];
+  const layers: LayerBox[] = [];
+  let y = 0;
+  for (const l of rows) {
+    const segs = l.segments;
+    const lines: SegmentId[][] = [];
+    for (let i = 0; i < segs.length; i += perLine) lines.push(segs.slice(i, i + perLine));
+    const innerX = labelW + pad;
+    const innerW = W - innerX - pad;
+    const h = labelH + pad * 2 + lines.length * pillH + (lines.length - 1) * gap;
+    layers.push({
+      id: l.id,
+      title: l.title,
+      color: l.color,
+      x: 0,
+      y,
+      w: W,
+      h,
+      lx: mode === 'wide' ? 14 : pad + 4,
+      ly: mode === 'wide' ? y + h / 2 : y + pad + 11,
+      hit: segs.some((s) => role(s) !== 'other'),
+    });
+    lines.forEach((line, li) => {
+      const n = mode === 'wide' ? line.length : Math.max(line.length, Math.min(perLine, segs.length));
+      const w = (innerW - (n - 1) * gap) / n;
+      line.forEach((s, i) => {
+        pills.push({
+          id: s,
+          x: innerX + i * (w + gap),
+          y: y + labelH + pad + li * (pillH + gap),
+          w,
+          h: pillH,
+          label: segmentMeta(s)?.short ?? s,
+          role: role(s),
+        });
+      });
+    });
+    y += h + (mode === 'wide' ? 6 : 8);
+  }
+  return { W, H: y - (mode === 'wide' ? 6 : 8), pills, layers };
+}
+const wide = layout('wide');
+const narrow = layout('narrow');
+
+const pTitle = segmentMeta(primary)?.title ?? primary;
+const secTitles = sec.map((s) => segmentMeta(s)?.title ?? s);
+const aria = zhConcat(name, `在 AI 產業鏈五層十四環節中的位置：主要環節為${pTitle}${secTitles.length ? `，也涉及${joinZh(secTitles)}` : ''}。`);
+const r = (n: number) => Math.round(n * 10) / 10;
+---
+
+<figure class:list={['mc', className]} style={`--mc-primary:var(--seg-${primary})`}>
+  {
+    [
+      { k: 'wide', L: wide },
+      { k: 'narrow', L: narrow },
+    ].map(({ k, L }) => (
+      <svg class={`mc__svg mc__svg--${k}`} viewBox={`0 0 ${L.W} ${L.H}`} role="img" aria-label={aria}>
+        {L.layers.map((b) => (
+          <g class:list={['mc__layer', { 'is-hit': b.hit }]} style={`--lc:${b.color}`}>
+            <rect x="0.5" y={r(b.y + 0.5)} width={b.w - 1} height={b.h - 1} rx="10" />
+            <text x={b.lx} y={r(b.ly)} dominant-baseline="central" class="mc__layer-label">
+              {b.title}
+            </text>
+          </g>
+        ))}
+        {L.pills.map((p) => (
+          <g class={`mc__pill is-${p.role}`} style={`--sc:var(--seg-${p.id})`}>
+            <rect x={r(p.x)} y={r(p.y)} width={r(p.w)} height={p.h} rx="7" />
+            <text x={r(p.x + p.w / 2)} y={r(p.y + p.h / 2)} text-anchor="middle" dominant-baseline="central">
+              {p.label}
+            </text>
+          </g>
+        ))}
+      </svg>
+    ))
+  }
+  <figcaption class="mc__legend">
+    <span class="mc__key">
+      <span class="mc__sw is-primary" aria-hidden="true"></span>
+      <span class="mc__key-label">主要環節</span>
+      <SegmentChip id={primary} />
+    </span>
+    {
+      sec.length > 0 && (
+        <span class="mc__key">
+          <span class="mc__sw is-secondary" aria-hidden="true" />
+          <span class="mc__key-label">相關環節</span>
+          {sec.map((s) => (
+            <SegmentChip id={s} short />
+          ))}
+        </span>
+      )
+    }
+    <span class="mc__hint">由下而上：下層是上層的供應鏈基礎</span>
+  </figcaption>
+</figure>
+
+<style>
+  .mc {
+    container-type: inline-size;
+    margin: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .mc__svg {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    overflow: visible;
+  }
+  @container (min-width: 520px) {
+    .mc__svg--narrow {
+      display: none;
+    }
+  }
+  @container (max-width: 519.98px) {
+    .mc__svg--wide {
+      display: none;
+    }
+  }
+  .mc__layer rect {
+    fill: color-mix(in srgb, var(--lc) 5%, var(--c-bg-elev));
+    stroke: var(--c-border);
+    stroke-width: 1;
+  }
+  .mc__layer.is-hit rect {
+    fill: color-mix(in srgb, var(--lc) 10%, var(--c-bg-elev));
+    stroke: color-mix(in srgb, var(--lc) 35%, var(--c-border));
+  }
+  .mc__layer-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    fill: var(--c-fg-subtle);
+    letter-spacing: 0.04em;
+  }
+  .mc__layer.is-hit .mc__layer-label {
+    fill: var(--c-fg);
+  }
+  .mc__pill rect {
+    fill: var(--c-bg-elev);
+    stroke: var(--c-border);
+    stroke-width: 1;
+  }
+  .mc__pill text {
+    font-size: 12.5px;
+    fill: var(--c-fg-subtle);
+  }
+  .mc__pill.is-primary rect {
+    fill: color-mix(in srgb, var(--sc) 24%, var(--c-bg-elev));
+    stroke: var(--sc);
+    stroke-width: 2;
+  }
+  .mc__pill.is-primary text {
+    fill: var(--c-fg);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .mc__pill.is-secondary rect {
+    fill: color-mix(in srgb, var(--sc) 9%, var(--c-bg-elev));
+    stroke: color-mix(in srgb, var(--sc) 70%, var(--c-border));
+    stroke-width: 1.25;
+    stroke-dasharray: 4 3;
+  }
+  .mc__pill.is-secondary text {
+    fill: var(--c-fg);
+    font-weight: 600;
+  }
+
+  .mc__legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-5);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .mc__key {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.45rem;
+  }
+  .mc__key-label {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .mc__sw {
+    inline-size: 1.4em;
+    block-size: 0.8em;
+    border-radius: 3px;
+  }
+  .mc__sw.is-primary {
+    background: color-mix(in srgb, var(--mc-primary) 24%, transparent);
+    border: 2px solid var(--mc-primary);
+  }
+  .mc__sw.is-secondary {
+    border: 1.5px dashed var(--c-fg-muted);
+  }
+  .mc__hint {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+</style>

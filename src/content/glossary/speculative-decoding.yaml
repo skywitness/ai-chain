@@ -1,0 +1,40 @@
+term: "推測解碼"
+zh: "推測解碼"
+en: "Speculative Decoding"
+aliases:
+  - "投機解碼"
+  - "推測式解碼"
+  - "推測取樣"
+  - "Speculative Sampling"
+  - "Speculative Inference"
+category: inference
+level: 3
+short: >-
+  先用小模型快速猜出接下來幾個 token，再讓大模型一次平行驗證，在不改變輸出的前提下加快生成。
+definition: >-
+  Decode 階段一次只能產生一個 token，大模型的運算單元常常用不滿。推測解碼利用這點：先由較小、較快的草稿模型連續猜出數個 token，再讓大模型一次平行檢查，接受猜對的部分，並從第一個猜錯的位置改正後繼續。搭配特殊的接受與拒絕取樣規則，最終輸出的機率分布與大模型單獨生成完全相同。Google 研究者 2022 年的論文在 T5-XXL 上達到 2–3 倍加速且輸出一致；DeepMind 2023 年在 700 億參數的 Chinchilla 上，則於分散式環境中達到 2–2.5 倍的解碼加速。這個方法不需要重新訓練大模型，主流推論引擎多已支援，對降低延遲與每個 token 的成本都有幫助。
+example: >-
+  像主管與助理合寫信件：助理先快速擬好接下來幾句，主管一次看過，同意的直接採用、不對的地方改掉再繼續，比主管自己一字一字寫快得多。
+related: [decode, latency, distillation, inference-engine, throughput]
+learnMore: [inference-optimization]
+segments: [devtools-data-mlops, ai-accelerators]
+sources:
+  - title: "Fast Inference from Transformers via Speculative Decoding"
+    publisher: "arXiv（ICML 2023）"
+    url: "https://arxiv.org/abs/2211.17192"
+    type: paper
+    lang: en
+    published: "2022-11-30"
+    accessed: "2026-10-06"
+  - title: "Accelerating Large Language Model Decoding with Speculative Sampling"
+    publisher: "arXiv"
+    url: "https://arxiv.org/abs/2302.01318"
+    type: paper
+    lang: en
+    published: "2023-02-02"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-inference
+  checkedBy: "gloss-inference-check"
+  checkedOn: "2026-10-06"

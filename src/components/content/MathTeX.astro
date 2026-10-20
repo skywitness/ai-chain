@@ -1,0 +1,67 @@
+---
+/**
+ * LaTeX → MathML at build time (temml). No client JS, no math fonts.
+ *   <MathTeX tex="R = k_1 \frac{\lambda}{NA}" display />
+ *   inline: <MathTeX tex="E = mc^2" />
+ * `label` gives screen readers a plain-language reading when the formula is complex.
+ */
+import temml from 'temml';
+
+interface Props {
+  tex: string;
+  display?: boolean | undefined;
+  /** Optional plain-language description (zh) */
+  label?: string | undefined;
+}
+const { tex, display = false, label } = Astro.props;
+let html = '';
+try {
+  html = temml.renderToString(tex, { displayMode: display, annotate: true, throwOnError: true, xml: false });
+} catch (err) {
+  if (import.meta.env.DEV) console.warn(`[MathTeX] ${(err as Error).message} in "${tex}"`);
+  html = '';
+}
+---
+
+{
+  html ? (
+    display ? (
+      <span class="math math--display" role={label ? 'group' : undefined} aria-label={label} set:html={html} />
+    ) : (
+      <span class="math math--inline" role={label ? 'group' : undefined} aria-label={label} set:html={html} />
+    )
+  ) : (
+    <code class="math math--error" title="公式無法轉換">{tex}</code>
+  )
+}
+
+<style>
+  @layer components {
+    .math {
+      font-size: 1.05em;
+    }
+    .math--display {
+      display: block;
+      margin-block: 1.2em;
+      padding: var(--space-3) var(--space-2);
+      overflow-x: auto;
+      overflow-y: hidden;
+      text-align: center;
+      max-width: var(--measure);
+    }
+    .math--display :global(math) {
+      font-size: 1.15em;
+    }
+    .math--error {
+      color: var(--c-neg);
+    }
+    .math :global(math *) {
+      border-color: currentColor;
+    }
+    .math :global(mfrac > :nth-child(2)),
+    .math :global(msqrt),
+    .math :global(mover > :first-child) {
+      math-shift: compact;
+    }
+  }
+</style>

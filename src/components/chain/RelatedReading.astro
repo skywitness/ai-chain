@@ -1,0 +1,161 @@
+---
+/**
+ * 延伸閱讀: related learning articles (curriculum titles, level badges) and trend articles
+ * (trends index titles, category). Unknown ids are dropped; trend descriptions come from the
+ * collection when the entry exists.
+ *   <RelatedReading learn={['how-chips-are-made']} trends={['co-packaged-optics']} />
+ */
+import Badge from '../ui/Badge.astro';
+import Icon from '../ui/Icon.astro';
+import {
+  getCurriculumArticle,
+  getTrendIndexEntry,
+  safeCollection,
+  TRACK_LABELS,
+  TREND_CATEGORY_LABELS,
+} from '../../lib/collections';
+import { learnHref, trendHref } from '../../lib/paths';
+
+interface Props {
+  learn: readonly string[];
+  trends: readonly string[];
+  headingLevel?: 3 | 4 | undefined;
+  maxTrends?: number | undefined;
+}
+const { learn, trends, headingLevel = 3, maxTrends = 6 } = Astro.props;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+const articles = learn
+  .map((s) => getCurriculumArticle(s))
+  .filter((a): a is NonNullable<typeof a> => !!a)
+  .sort((a, b) => a.order - b.order);
+// One collection read instead of a getEntry() per id (which logs a warning for every trend that is
+// not written yet).
+const written = new Map((await safeCollection('trends')).map((e) => [e.id, e]));
+const trendItems = [];
+for (const id of trends.slice(0, maxTrends)) {
+  const idx = getTrendIndexEntry(id);
+  const entry = written.get(id);
+  const d = entry?.data as { title: string; description: string; category: string } | undefined;
+  if (!idx && !d) continue;
+  trendItems.push({
+    id,
+    title: d?.title ?? idx!.title,
+    description: d?.description,
+    category: TREND_CATEGORY_LABELS[(d?.category ?? idx?.category) as keyof typeof TREND_CATEGORY_LABELS] ?? '',
+  });
+}
+---
+
+{
+  (articles.length > 0 || trendItems.length > 0) && (
+    <div class="rr" data-pagefind-ignore>
+      {articles.length > 0 && (
+        <div class="rr__group">
+          <H class="rr__title">
+            <Icon name="book" />
+            學習文章
+          </H>
+          <ul class="rr__list" role="list">
+            {articles.map((a) => (
+              <li>
+                <a class="rr__item" href={learnHref(a.slug)}>
+                  <span class="rr__meta">
+                    <Badge level={a.level} />
+                    <span>{TRACK_LABELS[a.track]}</span>
+                  </span>
+                  <span class="rr__name">{a.title}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {trendItems.length > 0 && (
+        <div class="rr__group">
+          <H class="rr__title">
+            <Icon name="steps" />
+            未來趨勢
+          </H>
+          <ul class="rr__list" role="list">
+            {trendItems.map((t) => (
+              <li>
+                <a class="rr__item" href={trendHref(t.id)}>
+                  <span class="rr__meta">
+                    <span class="rr__cat">{t.category}</span>
+                  </span>
+                  <span class="rr__name">{t.title}</span>
+                  {t.description && <span class="rr__desc">{t.description}</span>}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+<style>
+  .rr {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: var(--space-5) var(--space-6);
+  }
+  .rr__group {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+  }
+  .rr__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-size: var(--fs-m);
+  }
+  .rr__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .rr__item {
+    display: grid;
+    gap: 4px;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-elev);
+    color: var(--c-fg);
+    text-decoration: none;
+    transition:
+      border-color var(--dur-2) ease,
+      background var(--dur-2) ease;
+  }
+  .rr__item:hover {
+    border-color: var(--c-border-strong);
+    background: var(--c-hover);
+    color: var(--c-fg);
+  }
+  .rr__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .rr__cat {
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.04em;
+  }
+  .rr__name {
+    font-weight: var(--fw-semibold);
+    line-height: 1.5;
+  }
+  .rr__desc {
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    line-height: 1.65;
+  }
+</style>

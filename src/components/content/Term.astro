@@ -1,0 +1,271 @@
+---
+/**
+ * Glossary term with a native popover card.  <Term id="hbm">HBM</Term>
+ *
+ * - The definition comes from the `glossary` collection (getEntry), falling back to
+ *   src/data/glossary-index/*.yaml while the entry is still being written.
+ * - Only the first occurrence of an id on a page is interactive; later ones render as plain text.
+ * - Native Popover API: click/Enter opens, Esc / outside click closes, with no JS. src/client/popovers.ts
+ *   adds hover intent on fine pointers and positioning when CSS anchor positioning is unavailable.
+ * - Under 640px the card becomes a bottom sheet.
+ */
+import { getGlossaryIndexEntry, levelMeta, safeEntry } from '../../lib/collections';
+import { glossaryHref } from '../../lib/paths';
+import { pageState, uid } from './page-state';
+
+interface Props {
+  id: string;
+  /**
+   * Fallback card data, used only when neither the glossary entry nor the index row exists
+   * (style guide, or a term not yet registered). Normal MDX usage needs only `id`.
+   */
+  term?: string | undefined;
+  short?: string | undefined;
+  zh?: string | undefined;
+  en?: string | undefined;
+  level?: 1 | 2 | 3 | undefined;
+}
+const { id, term: fbTerm, short: fbShort, zh: fbZh, en: fbEn, level: fbLevel } = Astro.props;
+
+// Mark synchronously (before any await) so document order decides which occurrence is first.
+const state = pageState(Astro);
+const first = !state.terms.has(id);
+if (first) state.terms.add(id);
+
+type TermInfo = { term: string; zh?: string | undefined; en?: string | undefined; level?: 1 | 2 | 3 | undefined; short?: string | undefined };
+let info: TermInfo | undefined;
+if (first) {
+  const entry = await safeEntry('glossary', id);
+  if (entry) {
+    const d = entry.data as { term: string; zh: string; en: string; level: 1 | 2 | 3; short: string };
+    info = { term: d.term, zh: d.zh, en: d.en, level: d.level, short: d.short };
+  } else {
+    const idx = getGlossaryIndexEntry(id);
+    if (idx) info = { term: idx.term ?? idx.zh ?? idx.en ?? id, zh: idx.zh, en: idx.en, level: idx.level, short: idx.short ?? fbShort };
+  }
+  if (!info && (fbTerm || fbShort)) info = { term: fbTerm ?? id, zh: fbZh, en: fbEn, level: fbLevel, short: fbShort };
+  if (!info && import.meta.env.DEV) console.warn(`[Term] unknown glossary id "${id}" on ${Astro.url.pathname}`);
+}
+
+const pid = info ? uid(Astro, `tc-${id}`) : '';
+const anchor = `--${pid}`;
+const lv = info?.level ? levelMeta(info.level) : undefined;
+const names = info ? [info.zh, info.en].filter((x): x is string => !!x && x !== info?.term) : [];
+---
+
+{
+  info ? (
+    <span class="term-wrap">
+      <button
+        type="button"
+        class="term"
+        popovertarget={pid}
+        data-hover-popover
+        data-term={id}
+        style={`anchor-name: ${anchor}`}
+      >
+        <slot>{info.term}</slot>
+      </button>
+      <span
+        popover="auto"
+        id={pid}
+        class="term-card"
+        data-popover-card
+        role="dialog"
+        aria-labelledby={`${pid}-t`}
+        style={`position-anchor: ${anchor}`}
+        data-pagefind-ignore
+      >
+        <span class="term-card__head">
+          <span class="term-card__term" id={`${pid}-t`}>
+            {info.term}
+          </span>
+          {lv && (
+            <span class="term-card__level" style={`--lv: ${lv.color}`}>
+              <span class="sr-only">難度：</span>
+              {lv.label}
+            </span>
+          )}
+          <button
+            type="button"
+            class="term-card__close"
+            popovertarget={pid}
+            popovertargetaction="hide"
+            aria-label="關閉說明"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </span>
+        {names.length > 0 && <span class="term-card__names">{names.join('｜')}</span>}
+        {info.short && <span class="term-card__short">{info.short}</span>}
+        <a class="term-card__more" href={glossaryHref(id)}>
+          完整解釋<span aria-hidden="true">→</span>
+        </a>
+      </span>
+    </span>
+  ) : (
+    <slot />
+  )
+}
+
+<script>
+  import '../../client/popovers';
+</script>
+
+<style>
+  @layer components {
+    .term-wrap {
+      display: inline;
+    }
+    .term {
+      display: inline;
+      padding: 0;
+      margin: 0;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      line-height: inherit;
+      text-align: inherit;
+      cursor: help;
+      text-decoration-line: underline;
+      text-decoration-style: dotted;
+      text-decoration-thickness: 1.5px;
+      text-decoration-color: color-mix(in srgb, var(--c-accent) 70%, transparent);
+      text-underline-offset: 0.28em;
+      border-radius: 2px;
+      transition:
+        color var(--dur-1) ease,
+        background-color var(--dur-1) ease;
+    }
+    .term:hover,
+    .term[aria-expanded='true'] {
+      color: var(--c-link);
+      text-decoration-color: currentColor;
+      background: color-mix(in srgb, var(--c-accent) 8%, transparent);
+    }
+
+    /* Card (closed state is display:none from the UA popover rules) */
+    .term-card {
+      inline-size: min(22rem, calc(100vw - 2rem));
+      max-block-size: min(70vh, 30rem);
+      padding: var(--space-4) var(--space-4) var(--space-3);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      box-shadow: var(--shadow-2);
+      font-size: var(--fs-s);
+      font-weight: var(--fw-regular);
+      line-height: 1.7;
+      text-align: start;
+      text-indent: 0;
+      letter-spacing: normal;
+      white-space: normal;
+      overflow-y: auto;
+    }
+    .term-card:popover-open {
+      display: grid;
+      gap: var(--space-2);
+    }
+    .term-card__head {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .term-card__term {
+      font-size: var(--fs-l);
+      font-weight: var(--fw-bold);
+      line-height: 1.3;
+    }
+    .term-card__level {
+      --lv: var(--c-fg-muted);
+      padding: 0 0.5em;
+      border-radius: var(--radius-s);
+      border: 1px solid color-mix(in srgb, var(--lv) 35%, transparent);
+      background: color-mix(in srgb, var(--lv) 10%, transparent);
+      color: var(--lv);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      line-height: 1.6;
+      white-space: nowrap;
+    }
+    .term-card__close {
+      display: inline-grid;
+      place-items: center;
+      margin-inline-start: auto;
+      inline-size: 2rem;
+      block-size: 2rem;
+      border: 0;
+      border-radius: var(--radius-m);
+      background: transparent;
+      color: var(--c-fg-subtle);
+    }
+    .term-card__close:hover {
+      background: var(--c-hover);
+      color: var(--c-fg);
+    }
+    .term-card__close svg {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+    .term-card__names {
+      color: var(--c-fg-muted);
+      font-size: var(--fs-xs);
+      line-height: 1.5;
+    }
+    .term-card__short {
+      color: var(--c-fg);
+    }
+    .term-card__more {
+      justify-self: start;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3em;
+      min-height: 2rem;
+      font-weight: var(--fw-semibold);
+      text-decoration: none;
+    }
+    .term-card__more:hover {
+      text-decoration: underline;
+    }
+
+    /* Narrow screens: bottom sheet */
+    @media (max-width: 639px) {
+      .term-card {
+        inset: auto 0 0 0;
+        margin: 0;
+        inline-size: 100%;
+        max-inline-size: none;
+        border-radius: var(--radius-l) var(--radius-l) 0 0;
+        border-inline: 0;
+        border-block-end: 0;
+        padding: var(--space-5) var(--gutter) calc(var(--space-5) + env(safe-area-inset-bottom));
+      }
+      .term-card::backdrop {
+        background: var(--c-overlay);
+      }
+    }
+
+    /* Wide screens with CSS anchor positioning: attach to the term */
+    @supports (anchor-name: --a) {
+      @media (min-width: 640px) {
+        .term-card {
+          inset: auto;
+          margin: 8px 0;
+          position-area: bottom;
+          position-try-fallbacks:
+            flip-block,
+            bottom span-right,
+            bottom span-left,
+            top span-right,
+            top span-left;
+        }
+      }
+    }
+  }
+</style>

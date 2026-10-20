@@ -1,0 +1,495 @@
+---
+title: "HBM 深入：TSV、堆疊與 HBM4 客製化"
+subtitle: "在 775 微米的限高內疊出 16 層 DRAM，再把 GPU 的一部分功能搬進記憶體底層"
+description: "HBM 是一座有限高規定的記憶體大樓。本文拆解 TSV、晶粒薄化、MR-MUF 與混合鍵合，說明 HBM4 的 2,048 位元介面、散熱與良率的取捨，以及基底晶粒改用邏輯製程後，客製化 HBM 如何把記憶體控制器搬進記憶體。"
+level: 3
+order: 309
+track: hardware
+prerequisites: [memory-and-hbm, advanced-packaging-deep]
+next: [interconnect-deep, inference-optimization]
+relatedSegments: [memory-storage, foundry-packaging, semi-equipment-materials, ai-accelerators, eda-ip-design]
+relatedCompanies: [sk-hynix, samsung-electronics, micron, tsmc, nvidia, amazon, sandisk, hanmi-semiconductor, hanwha-semitech, asmpt, besi, applied-materials, disco, advantest, guc, alchip, rambus]
+relatedModels: []
+relatedTrends: [hbm4-custom-base-die, memory-supercycle, gpu-roadmap-rubin-feynman, cowos-capacity-panel-level, long-context-memory]
+glossary:
+  - hbm
+  - hbm4
+  - dram
+  - tsv
+  - base-die
+  - gpu
+  - asic
+  - memory-wall
+  - bandwidth
+  - wafer
+  - die
+  - tcb
+  - hybrid-bonding
+  - yield
+  - interposer
+  - cowos
+  - nvlink
+  - memory-hierarchy
+  - sram
+  - lpddr
+  - socamm
+  - hbf
+  - nand-flash
+  - ucie
+  - cxl
+  - moe
+  - memory-supercycle
+scenes:
+  - { id: hbm, variant: hierarchy }
+keyTakeaways:
+  - "HBM4 把介面加寬到 2,048 位元、32 個通道，三家量產品的腳位速度都已超過 JEDEC 標準的 8 Gb/s。"
+  - "HBM4 整疊高度上限 775 微米，16 層堆疊的 DRAM 晶粒要磨到約 50 微米，散熱與翹曲是主要難題。"
+  - "SK海力士以 MR-MUF 撐過多個世代，並表示混合鍵合趕不上 HBM4E，等於最快要到 HBM5 才可能導入。"
+  - "基底晶粒改用台積電或三星的邏輯製程，讓記憶體控制器等功能可以搬進 HBM，這就是客製化 HBM。"
+  - "輝達 NVHBM 宣稱頻寬比標準 HBM4E 多 30%、功耗少 15%；JEDEC 則推出可裝在有機基板上的 SPHBM4。"
+  - "同樣容量下，HBM 約耗用 DDR5 三倍的晶圓面積，2025 年每 GB 價格逾一般 DRAM 的五倍。"
+estimatedMinutes: 22
+sources:
+  - key: jedec-hbm3
+    title: "JEDEC Publishes HBM3 Update to High Bandwidth Memory (HBM) Standard"
+    publisher: JEDEC
+    url: "https://www.jedec.org/news/pressreleases/jedec-publishes-hbm3-update-high-bandwidth-memory-hbm-standard"
+    type: standard
+    lang: en
+    published: "2022-01-27"
+    accessed: "2026-10-16"
+    note: "JESD238：每腳位最高 6.4 Gb/s、每個裝置 819 GB/s；獨立通道由 HBM2 的 8 個加倍為 16 個，每通道 2 個虛擬通道；支援 4、8、12 層 TSV 堆疊（16 層為未來擴充）；每層 8Gb 至 32Gb，最大 64GB；導入晶粒上 ECC。"
+  - key: jedec-hbm4
+    title: "JEDEC and Industry Leaders Collaborate to Release JESD270-4 HBM4 Standard: Advancing Bandwidth, Efficiency, and Capacity for AI and HPC"
+    publisher: JEDEC
+    url: "https://www.jedec.org/news/pressreleases/jedec%C2%AE-and-industry-leaders-collaborate-release-jesd270-4-hbm4-standard-advancing"
+    type: standard
+    lang: en
+    published: "2025-04-16"
+    accessed: "2026-10-16"
+    note: "2,048 位元介面、每腳位最高 8 Gb/s、每疊最高 2 TB/s；獨立通道由 16 個加倍為 32 個，每通道 2 個虛擬通道；4、8、12、16 層堆疊，晶粒 24Gb 或 32Gb，單疊最大 64GB；介面可與 HBM3 控制器相容；新增 DRFM 以緩解 row hammer。"
+  - key: jedec-sphbm4
+    title: "New JEDEC SPHBM4 Standard Enables HBM4-Class Bandwidth on Organic Substrates"
+    publisher: JEDEC
+    url: "https://www.jedec.org/news/pressreleases/new-jedec%C2%AE-sphbm4-standard-enables-hbm4-class-bandwidth-organic-substrates"
+    type: standard
+    lang: en
+    published: "2026-07-13"
+    accessed: "2026-10-16"
+    note: "JESD330-4 SPHBM4：以 512 條資料訊號加上 4 比 1 序列化，達到與 HBM4 相同的總傳輸量；沿用 HBM4 的 DRAM 核心晶粒，改換新的介面基底晶粒；較寬鬆的凸塊間距可直接接到一般有機基板，而非矽基板，較長的走線可能容納更多堆疊；新聞稿未提及成本。"
+  - key: ss-hbm2-tsv
+    title: "Samsung Starts Producing 8-Gigabyte High Bandwidth Memory-2 with Highest Data Transmission Speed"
+    publisher: Samsung Electronics
+    url: "https://news.samsung.com/global/samsung-starts-producing-8-gigabyte-high-bandwidth-memory-2-with-highest-data-transmission-speed"
+    type: press-release
+    lang: en
+    published: "2018-01-11"
+    accessed: "2026-10-16"
+    note: "8GB HBM2（Aquabolt）由 8 顆 8Gb 晶粒組成，每層晶粒以超過 5,000 個 TSV 垂直互連；TSV 數量多會造成時脈偏移，三星以新的 TSV 設計與熱控制技術因應。"
+  - key: ss-hbm3e-12h
+    title: "Samsung Develops Industry-First 36GB HBM3E 12H DRAM"
+    publisher: Samsung Electronics
+    url: "https://news.samsung.com/global/samsung-develops-industry-first-36gb-hbm3e-12h-dram"
+    type: press-release
+    lang: en
+    published: "2024-02-27"
+    accessed: "2026-10-16"
+    note: "12 層 HBM3E：最高 1,280 GB/s、36GB；採用熱壓非導電膜（TC NCF），讓 12 層產品維持 8 層的高度規格；晶粒間隙縮到 7 微米；接合時訊號區用較小凸塊、需要散熱處用較大凸塊。"
+  - key: ss-hbm4
+    title: "Samsung Ships Industry-First Commercial HBM4 With Ultimate Performance for AI Computing"
+    publisher: Samsung Electronics
+    url: "https://news.samsung.com/global/samsung-ships-industry-first-commercial-hbm4-with-ultimate-performance-for-ai-computing"
+    type: press-release
+    lang: en
+    published: "2026-02-12"
+    accessed: "2026-10-16"
+    note: "HBM4 量產出貨：每腳位穩定 11.7 Gb/s，最高 13 Gb/s；每疊最高 3.3 TB/s，為 HBM3E 的 2.7 倍；12 層 24–36GB，16 層可達 48GB；採 1c DRAM 與 4 奈米邏輯基底晶粒；資料 I/O 由 1,024 加倍到 2,048 帶來功耗與散熱挑戰，以低電壓 TSV 與供電網路最佳化讓能效提升 40%，熱阻改善 10%、散熱提升 30%（相較 HBM3E）；HBM4E 預計 2026 下半年送樣，客製 HBM 樣品 2027 年送交客戶。"
+  - key: ss-hbm4e
+    title: "Samsung Electronics Begins Shipment of Industry-First HBM4E Samples"
+    publisher: Samsung Electronics
+    url: "https://semiconductor.samsung.com/news-events/news/samsung-electronics-begins-shipment-of-industry-first-hbm4e-samples"
+    type: press-release
+    lang: en
+    published: "2026-05-29"
+    accessed: "2026-10-16"
+    note: "12 層 HBM4E 樣品：每腳位穩定 14 Gb/s、可達 16 Gb/s；每疊最高 3.6 TB/s；48GB；1c DRAM 搭配三星晶圓代工 4 奈米邏輯基底晶粒；能效提升 16%、熱阻特性改善逾 14%；量產時程配合客戶。"
+  - key: skh-hbm3e-12h
+    title: "SK hynix Begins Volume Production of the World’s First 12-Layer HBM3E"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/sk-hynix-begins-volume-production-of-the-world-first-12-layer-hbm3e/"
+    type: press-release
+    lang: en
+    published: "2024-09-26"
+    accessed: "2026-10-16"
+    note: "12 層 HBM3E 量產：36GB（12 顆 3GB 晶粒），9.6 Gb/s；每顆 DRAM 晶粒比以前薄 40%，以 TSV 垂直堆疊，整體厚度與前一代 8 層產品相同；Advanced MR-MUF 的散熱表現比前一代高 10%，並強化翹曲控制。"
+  - key: skh-hbm4-dev
+    title: "SK hynix Completes World’s First HBM4 Development and Readies Mass Production"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/sk-hynix-completes-worlds-first-hbm4-development-and-readies-mass-production/"
+    type: press-release
+    lang: en
+    published: "2025-09-12"
+    accessed: "2026-10-16"
+    note: "2,048 個 I/O 端子、頻寬加倍、能效提升逾 40%；運作速度逾 10 Gb/s，超過 JEDEC 標準的 8 Gb/s；採用 Advanced MR-MUF 與 1b 奈米 DRAM。"
+  - key: skh-hbm4e
+    title: "SK hynix Ships Samples of 12-Layer Next-Gen HBM4E"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/sk-hynix-ships-samples-of-12-layer-next-gen-hbm4e-2/"
+    type: press-release
+    lang: en
+    published: "2026-06-18"
+    accessed: "2026-10-16"
+    note: "12 層 48GB HBM4E 樣品出貨：每腳位最高 16 Gb/s、能效提升逾 20%；重點摘要寫「熱阻降低 17%」，內文寫比 HBM4 改善 17%；採用 Advanced MR-MUF。"
+  - key: skh-ces26
+    title: "SK hynix Showcases Next-Generation AI Memory Innovations at CES 2026"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/sk-hynix-showcases-next-generation-ai-memory-innovations-at-ces-2026/"
+    type: press-release
+    lang: en
+    published: "2026-01-06"
+    accessed: "2026-10-16"
+    note: "首度展出 16 層 48GB HBM4；12 層 36GB HBM4 展示 11.7 Gbps；客製化 HBM（cHBM）定義為依客戶需求，把原本位於 GPU、ASIC 的部分功能整合進 HBM 基底晶粒。"
+  - key: skh-tsmc
+    title: "SK hynix Partners with TSMC to Strengthen HBM Technological Leadership"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/sk-hynix-partners-with-tsmc-to-strengthen-hbm-technological-leadership/"
+    type: press-release
+    lang: en
+    published: "2024-04-19"
+    accessed: "2026-10-16"
+    note: "SK海力士到 HBM3E 都以自家技術製造基底晶粒，HBM4 將採用台積電先進邏輯製程，以生產符合各種需求的客製化 HBM；雙方也合作最佳化 HBM 與 CoWoS 的整合；HBM4 預定 2026 年量產。"
+  - key: skh-f1
+    title: "SK hynix Inc. Registration Statement (Form F-1/A)"
+    publisher: "U.S. SEC（SK hynix）"
+    url: "https://www.sec.gov/Archives/edgar/data/0002120882/000119312526295501/d32785df1a.htm"
+    type: filing
+    lang: en
+    published: "2026-07-06"
+    accessed: "2026-10-16"
+    note: "引述 IDC：2026 年第一季 SK海力士 HBM 營收市占 56.4%。引述 Gartner：2025 年 HBM 每 GB 價格為一般 DRAM 的五倍以上；HBM 營收預估從 2025 年 330 億美元增至 2027 年 860 億美元。MR-MUF 是在堆疊晶片間注入液態保護材料再固化，散熱比在每層之間鋪膜更有效率。HBM4E 研發聚焦客製基底晶粒整合與先進堆疊技術。"
+  - key: mu-hbm4
+    title: "Micron in High-Volume Production of HBM4 Designed for NVIDIA Vera Rubin, PCIe Gen6 SSD and SOCAMM2"
+    publisher: Micron Technology
+    url: "https://investors.micron.com/news/press-release/2026/Micron-in-High-Volume-Production-of-HBM4-Designed-for-NVIDIA-Vera-Rubin-PCIe-Gen6-SSD-and-SOCAMM2-03-16-2026/default.aspx"
+    type: press-release
+    lang: en
+    published: "2026-03-16"
+    accessed: "2026-10-16"
+    note: "HBM4 36GB 12 層大量生產，每腳位逾 11 Gb/s、頻寬逾 2.8 TB/s（為自家 HBM3E 的 2.3 倍），能效提升逾 20%；48GB 16 層樣品已出貨；192GB SOCAMM2 量產，每顆 Vera CPU 最多 2TB、1.2 TB/s。"
+  - key: mu-fq3-26
+    title: "Micron Technology, Inc. Reports Record Results for the Third Quarter of Fiscal 2026 (Form 8-K Exhibit 99.1)"
+    publisher: "U.S. SEC（Micron Technology）"
+    url: "https://www.sec.gov/Archives/edgar/data/723125/000072312526000013/a2026q3ex991-pressrelease.htm"
+    type: press-release
+    lang: en
+    published: "2026-06-24"
+    accessed: "2026-10-16"
+    note: "以 1-beta 製程生產的 HBM4 已為主要客戶平台大量出貨；以 1-gamma 製程開發的 HBM4E 預計 2027 年量產。"
+  - key: tsmc-sym25
+    title: "TSMC Unveils Next-Generation A14 Process at North America Technology Symposium"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3228"
+    type: press-release
+    lang: en
+    published: "2025-04-24"
+    accessed: "2026-10-16"
+    note: "提供 HBM4 用的 N12 與 N3 邏輯基底晶粒；9.5 倍光罩尺寸的 CoWoS 預定 2027 年量產，可整合 12 疊以上 HBM。"
+  - key: tsmc-sym26
+    title: "TSMC Debuts A13 Technology at 2026 North America Technology Symposium"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3302"
+    type: press-release
+    lang: en
+    published: "2026-04-23"
+    accessed: "2026-10-16"
+    note: "目前量產 5.5 倍光罩尺寸的 CoWoS；14 倍光罩、可整合約 10 顆大型運算晶粒與 20 疊 HBM 的 CoWoS 預定 2028 年生產。"
+  - key: nvidia-nvhbm
+    title: "NVIDIA NVLink Fusion Brings NVHBM to Next-Generation AI Infrastructure"
+    publisher: NVIDIA Technical Blog
+    url: "https://developer.nvidia.com/blog/nvidia-nvlink-fusion-brings-nvhbm-to-next-generation-ai-infrastructure/"
+    type: docs
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-16"
+    note: "NVHBM 是與主要記憶體廠共同設計、驗證的客製 HBM 基底晶粒技術，透過 NVLink Fusion 提供；把記憶體控制器移入 3D HBM 堆疊並整合客製 PHY；相較標準 HBM4E，每疊頻寬最多高 30%、PHY 與周邊面積最多少 67%、HBM 功耗少 15%；主晶粒可用面積最多增加 25%（內文另寫 30%）。"
+  - key: nvidia-vera-rubin
+    title: "NVIDIA Vera Rubin NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-16"
+    note: "每顆 Rubin GPU：288 GB HBM4、19.2 TB/s；整櫃 72 顆 GPU 合計 20.7 TB HBM4、1,400 TB/s。"
+  - key: th-ss-hotchips
+    title: "Hot Chips 2026: Samsung reveals a three-phase HBM roadmap that puts logic and compute inside memory"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/tech-industry/semiconductors/hot-chips-2026-samsung-reveals-a-three-phase-hbm-roadmap-that-puts-logic-and-compute-inside-memory-zhbm-ultimately-stacks-dram-directly-on-top-of-the-processor"
+    type: news
+    lang: en
+    published: "2026-09-01"
+    accessed: "2026-10-16"
+    note: "Etiido Uko 撰，報導三星 DRAM 設計團隊 Sangwook Han 在 Hot Chips 2026 的簡報。傳統基底晶粒與核心晶粒用同一 DRAM 製程，HBM4 起三星改用 4 奈米邏輯製程，主要為降低功耗與面積；TSV 速度難提高，各代改以增加 TSV 數量提升頻寬；能量／位元改善但總功耗仍上升。第一階段：在 11 × 12.8 毫米的 HBM4 基底晶粒上，傳統 PHY 逾 8 × 4 毫米，改用晶粒對晶粒連結約 8.5 × 1.5 毫米、通道深度由 5.5 毫米縮為 2 毫米；記憶體控制器約占 XPU 面積 5–10%，移入基底晶粒後換成運算可帶來 10–20% 效能；以基底晶粒上的 SRAM 修補故障位址。第二階段：感測器與自我測試、外接第二層記憶體、在 DRAM 下方放處理單元（aHBM）。第三階段 zHBM：處理器直接疊在 DRAM 下方，I/O 功耗約比 HBM5 少 70%，因散熱只規劃約 4 層，需晶圓對晶圓與混合銅鍵合；未公布時程。"
+  - key: th-skh-hotchips
+    title: "Hot Chips 2026: SK hynix pushes hybrid bonding to HBM5 as AI memory hits 775-micron ceiling"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/tech-industry/semiconductors/sk-hynix-says-hybrid-bonding-wont-be-ready-for-hbm4e-as-ai-memory-runs-into-a-775-micron-ceiling"
+    type: news
+    lang: en
+    published: "2026-08-24"
+    accessed: "2026-10-16"
+    note: "Luke James 撰，報導 SK hynix America 封裝工程副總 Jaesik Lee 在 Hot Chips 2026 的簡報：整疊厚度上限到 HBM3E 為 720 微米，HBM4 標準放寬到 775 微米（即 12 吋邏輯晶圓厚度），因裝冷板前邏輯晶粒與記憶體堆疊都會磨到露出矽面；16 層 HBM4 核心晶粒約 50 微米、層間間隙比 12 層減半，48GB 版本在客戶驗證中；腳位速度由早期約 1 Gbps 增至 HBM4 的 8 Gbps，各代熱負擔增為 2.2 倍；MR-MUF 一次回焊接合所有晶粒，16 層的主要挑戰是在減半的縫隙中填充並控制 50 微米以下晶粒的翹曲；混合鍵合不會用於 HBM4E；業界討論 20 層改用 825–900 微米；據業界消息，SK海力士首筆量產用混合鍵合訂單為應用材料與 BESI 的整合設備（約 200 億韓元）；Counterpoint 預期混合鍵合約 2029–2030 年隨 HBM5 全面量產；20 層時混合鍵合可讓核心晶粒厚 24%、熱阻比 MR-MUF 低約 35%，凸塊間距可低於 18 微米（MR-MUF 目前 30 微米）。"
+  - key: th-mu-hotchips
+    title: "Hot Chips 2026: Micron warns HBM wafer penalty is widening with every generation"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/tech-industry/semiconductors/micron-says-the-silicon-gap-between-hbm-and-ddr5-is-widening-with-every-generation"
+    type: news
+    lang: en
+    published: "2026-08-25"
+    accessed: "2026-10-16"
+    note: "Luke James 撰，報導美光 HBM 設計架構院士 Raghu Sreeramaneni 的簡報：同容量下 HBM 約需 DDR5 三倍晶圓面積且逐代擴大；HBM4 晶粒 256 個 bank、DDR5 晶粒 32 個；一顆 HBM3E 晶粒可供 256 GB/s，一顆 DDR5 晶粒約 8 GB/s；運算效能約每 2 年 3 倍、HBM 頻寬不到 2 倍；16 層有可行路徑，16 層以上仍有很多工作；美光 HBM4E 約 2027 年推出，基底晶粒改用台積電製程；基底晶粒位於底部、負責最高速介面而最熱，散熱器在頂部，每多一層熱阻就上升。"
+  - key: th-nvhbm
+    title: "Nvidia custom 'NVHBM' promises 30% higher bandwidth, 15% lower power than commodity HBM4e"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/pc-components/dram/nvidia-custom-nvhbm-promises-30-percent-higher-bandwidth-15-percent-lower-power-than-commodity-hbm4e-custom-base-die-and-phy-will-be-available-to-nvlink-fusion-partners"
+    type: news
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-16"
+    note: "Jeffrey Kampman 撰。NVHBM 只提供給 NVLink Fusion 的客製晶片夥伴，不會用在已量產的 Rubin 機櫃；亞馬遜旗下 Annapurna Labs 是第一個 NVHBM 合作夥伴。"
+  - key: th-hbf-spec
+    title: "New HBF spec outlines tech that can give GPUs terabytes of extra memory"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/pc-components/ssds/sandisk-and-sk-hynix-unveil-hbf-spec-up-to-16-hi-nand-stacks-3-tb-s-bandwidth-ucie"
+    type: news
+    lang: en
+    published: "2026-08-04"
+    accessed: "2026-10-16"
+    note: "SanDisk 與 SK海力士透過 OCP 發表高頻寬快閃（HBF）規格：以 8 層或 16 層 NAND 堆疊做成單一封裝最大 512GB，分三個頻寬等級，約 0.4 至 3.0 TB/s（報導指出不確定是單一封裝或整個子系統的頻寬）；SK海力士表示採用 UCIe，SanDisk 則稱採用 xPU-HBF 介面；HBM4 單疊最大 64GB。"
+  - key: th-hbf-oxmiq
+    title: "Hot Chips 2026: High Bandwidth Flash promises massive bandwidth and capacity, but its usability is extremely limited"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/pc-components/ssds/hot-chips-2026-high-bandwidth-flash-promises-massive-bandwidth-and-capacity-but-its-usability-is-extremely-limited-new-memory-format-strikes-a-balance-between-hbm-and-nand-flash"
+    type: news
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-16"
+    note: "GPU IP 公司 OXMIQ Labs 的分析：HBF 能以大致相同成本提供 HBM 的 8 至 16 倍容量，但在頻寬成為瓶頸時不如 HBM；適合大而冷的資料，例如 MoE 模型中不常讀取的專家權重；結論是「整櫃用 HBM、單機用 HBF」。"
+  - key: th-nv-roadmap
+    title: "Nvidia updates data center roadmap with Rosa CPU and stacked Feynman GPUs"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/pc-components/gpus/nvidia-updates-data-center-roadmap-with-rosa-cpu-and-stacked-feynman-gpus-optical-nvlink-groq-lpus-with-nvfp4-and-nvlink-also-on-deck"
+    type: news
+    lang: en
+    published: "2026-03-17"
+    accessed: "2026-10-16"
+    note: "輝達 GTC 2026 路線圖：2027 年 Rubin Ultra 配備 1TB HBM4E；2028 年 Feynman GPU 採用晶粒堆疊與客製 HBM。"
+  - key: tf-hbm-2027
+    title: "HBM Supply Constraints Persist, 2027 Price Outlook Revised Upward with Blended ASP Forecast to Rise 121% YoY, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260929-13255.html"
+    type: analyst
+    lang: en
+    published: "2026-09-29"
+    accessed: "2026-10-16"
+    note: "預估 2027 年 HBM 綜合均價年增 121%；每疊都需要一顆基底晶粒，其成本不會隨 DRAM 層數等比例下降，8 層產品每 Gb 價格預估比 12 層高約 10–20%；GPU 與 ASIC 廠評估降低每顆晶片的 HBM 容量。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "Meta（arXiv）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-16"
+    note: "Llama 3 405B 以最多 1.6 萬顆 H100（每顆 80GB HBM3）訓練；54 天的預訓練期間共 466 次中斷，其中 419 次非預期；表 5：GPU 故障 148 次（30.1%）、GPU HBM3 記憶體 72 次（17.2%），為第二大原因。"
+updated: "2026-10-16"
+lastVerified: "2026-10-16"
+editorial:
+  status: fact-checked
+  author: learn-17
+  checkedBy: "learn-17-check"
+  checkedOn: "2026-10-06"
+  notes: "內容以 2026-10-06 為資料基準日，來源實際讀取日為 2026-10-16，未採用基準日之後發布的資料。查核已逐項比對 JEDEC 三份新聞稿、三星與 SK海力士新聞稿、美光新聞稿與 FQ3 2026 8-K、台積電 2025 與 2026 年技術論壇新聞稿、SK海力士 F-1/A、輝達 NVHBM 技術部落格與 Vera Rubin 規格頁、Llama 3 論文表 5、TrendForce，以及 Tom's Hardware 的 Hot Chips 2026 報導原文。更正：HBM3 最大 64GB 註明需預留的 16 層；SPHBM4 改寫為可裝在有機基板上，不再稱低成本（JEDEC 未提成本）；SK海力士 HBM4E 改為熱阻改善 17%；HBF 的 UCIe 改為 SK海力士的說法；美光 1-beta／1-gamma 改標為 DRAM 核心製程；Feynman 客製 HBM 改標為媒體報導；20 層每層變薄幅度改為約兩成。Hot Chips 2026 簡報內容引自 Tom's Hardware，非原始投影片；SK海力士混合鍵合設備訂單為業界消息、未經證實；高度、良率與功耗為本站示意計算。"
+---
+
+## 一句話解釋
+
+**HBM 是一座有限高規定的記憶體大樓。** 它把 12 到 16 層磨到只剩數十微米厚的 <Term id="dram">DRAM</Term> 晶粒，用成千上萬個 <Term id="tsv">TSV</Term>（矽穿孔）垂直串在一顆<Term id="base-die">基底晶粒</Term>上，整疊高度卻不能超過 775 微米。<LearnLink id="memory-and-hbm">記憶體牆與 HBM</LearnLink>說明了 AI 晶片為什麼需要 <Term id="hbm">HBM</Term>；這篇往下拆三件事：一疊 HBM 怎麼做出來、為什麼越疊越難，以及 <Term id="hbm4">HBM4</Term> 起基底晶粒改用邏輯製程之後，記憶體如何從標準品變成依客戶需求設計的「客製化 HBM」。
+
+## 生活化比喻
+
+<Callout type="analogy" title="限高 775 微米的倉儲大樓">
+
+- **限高**：HBM 緊貼著 <Term id="gpu">GPU</Term> 放，裝上散熱冷板之前，兩者會一起磨平，所以 HBM 不能比隔壁的運算晶片高。想多蓋幾層，只能把每層樓板做得更薄。
+- **電梯井**：TSV 是貫穿每層樓的電梯井，貨物（資料）上上下下都靠它。電梯很難跑得更快，就只好多挖幾座。
+- **一樓收發室**：基底晶粒負責把整棟樓的貨交給隔壁工廠。過去它用和樓上倉庫一樣的建材（DRAM 製程）蓋；現在改用工廠等級的建材（邏輯製程），就能順便接手原本在工廠裡的調度工作，工廠也多出空間放生產線。
+- **熱往上走，冷氣在屋頂**：最忙的收發室在一樓，冷氣卻裝在頂樓，樓層越多，一樓越難散熱。
+
+</Callout>
+
+## 原理
+
+### 一疊 HBM 的解剖：通道、Bank 與 TSV
+
+HBM 的<Term id="bandwidth">頻寬</Term>來自「同時做很多件事」。依 JEDEC 標準，HBM3 每疊有 16 個獨立通道，每個通道再分成 2 個虛擬通道<Cite k="jedec-hbm3" />；HBM4 把資料線從 1,024 條加倍到 2,048 條，獨立通道也加倍到 32 個，每個通道同樣分成 2 個虛擬通道<Cite k="jedec-hbm4" />，換算下來每個通道 64 位元寬（本站換算）。每個通道可以各自讀寫，就像一棟大樓裡有 32 組彼此獨立的貨梯。
+
+晶粒內部也講究平行。美光（Micron）在 2026 年 8 月的 Hot Chips 研討會上指出，一顆 HBM4 晶粒有 256 個 bank（記憶體庫），DDR5 晶粒只有 32 個；一顆 HBM3E 晶粒能提供 256 GB/s，一顆 DDR5 晶粒約 8 GB/s<Cite k="th-mu-hotchips" />。代價是面積：多出來的資料路徑、供電網路與 TSV 都要占地方，美光估計同樣容量下，HBM 約需 DDR5 三倍的<Term id="wafer">晶圓</Term>面積，而且差距逐代擴大<Cite k="th-mu-hotchips" />。
+
+TSV 的數量同樣驚人。三星（Samsung）2018 年量產的 8GB HBM2，每層<Term id="die">晶粒</Term>就有超過 5,000 個 TSV<Cite k="ss-hbm2-tsv" />。三星在 2026 年的 Hot Chips 解釋，TSV 的訊號速度很難提高，所以每一代 HBM 主要靠增加 TSV 數量來提升頻寬，這又吃掉面積、逼得 TSV 越排越密<Cite k="th-ss-hotchips" />。
+
+| 項目 | HBM3 標準（2022） | HBM4 標準（2025） | HBM4 量產品（2026） | HBM4E 樣品（2026） |
+|---|---|---|---|---|
+| 介面寬度 | 1,024 位元 | 2,048 位元 | 2,048 位元 | 新聞稿未載明 |
+| 獨立通道 | 16 個 | 32 個 | 32 個 | 新聞稿未載明 |
+| 每腳位速率 | 最高 6.4 Gb/s | 最高 8 Gb/s | 三星 11.7 Gb/s、美光逾 11 Gb/s、SK海力士逾 10 Gb/s | 三星 14 Gb/s、SK海力士最高 16 Gb/s |
+| 每疊頻寬 | 819 GB/s | 最高 2 TB/s | 三星最高 3.3 TB/s、美光逾 2.8 TB/s | 三星最高 3.6 TB/s |
+| 堆疊層數 | 4、8、12 層（預留 16 層） | 4、8、12、16 層 | 12 層量產，16 層送樣驗證 | 12 層 |
+| 單疊容量 | 最大 64 GB（需 16 層） | 最大 64 GB | 12 層最高 36 GB，16 層 48 GB | 12 層 48 GB |
+
+表中資料來自 JEDEC 標準<Cite k="jedec-hbm3" /><Cite k="jedec-hbm4" />，以及三星<Cite k="ss-hbm4" /><Cite k="ss-hbm4e" />、美光<Cite k="mu-hbm4" />與 SK海力士（SK hynix）<Cite k="skh-hbm4-dev" /><Cite k="skh-hbm4e" /><Cite k="skh-ces26" />的新聞稿；SK海力士的 HBM4 速度為 2025 年完成開發時公布的數字，它在 2026 年 1 月 CES 的新聞稿中另提到，12 層 HBM4 已展現 11.7 Gb/s。注意標準列的是規格上限，三家的量產品都跑得比標準快；HBM3 的 64 GB 要用到標準預留的 16 層才能達到；HBM4E 還在送樣，新聞稿沒有載明介面寬度與通道數。
+
+### 限高 775 微米：薄化是第一道關卡
+
+HBM 整疊的高度有上限。SK海力士美國分公司封裝工程副總 Jaesik Lee 在 Hot Chips 2026 說明，這個上限到 HBM3E 為止是 720 微米，JEDEC 在 HBM4 放寬到 775 微米，剛好是 12 吋邏輯晶圓的標準厚度；原因是 GPU 封裝裝上冷板之前，邏輯晶粒和記憶體堆疊都會被磨到露出矽面，記憶體只要比旁邊的處理器高，就會凸出來<Cite k="th-skh-hotchips" />。
+
+高度不變、層數增加，唯一的辦法是把每一層做薄。SK海力士 2024 年量產 12 層 HBM3E 時，把每顆 DRAM 晶粒做得比以前薄 40%，讓 12 層產品維持與 8 層相同的厚度<Cite k="skh-hbm3e-12h" />；三星則把晶粒之間的間隙縮小到 7 微米，同樣讓 12 層符合 8 層的高度規格<Cite k="ss-hbm3e-12h" />。到了 16 層的 HBM4，核心晶粒約 50 微米，層間間隙又比 12 層減半<Cite k="th-skh-hotchips" />。這麼薄的矽片很容易翹曲，Lee 認為，控制 50 微米以下晶粒的翹曲，並在減半的縫隙裡填滿材料，是 16 層的主要製造難題<Cite k="th-skh-hotchips" />。
+
+<FlowSteps
+  title="一疊 HBM 怎麼做出來（簡化示意）"
+  steps={[
+    { title: "做出 TSV", detail: "在 DRAM 晶圓上蝕刻深孔、填入銅，形成垂直導線" },
+    { title: "完成正面電路", detail: "做好記憶體陣列與周邊電路，再長出微凸塊" },
+    { title: "背面薄化", detail: "把晶圓背面研磨到數十微米，讓 TSV 從背面露出" },
+    { title: "切割與測試", detail: "切成晶粒並測試，盡量只讓良品進入堆疊" },
+    { title: "堆疊接合", detail: "逐層疊到基底晶粒上，接合後填滿層間縫隙" },
+    { title: "整疊測試與封裝", detail: "測過整疊再出貨，與 GPU 一起放上中介層" }]}
+  caption="各家製程細節不同，此處只列出共通的主要步驟。"
+/>
+
+### 接合：MR-MUF、TC-NCF 與混合鍵合
+
+晶粒疊上去之後，層與層之間要接通電路，也要填滿縫隙來固定接點、幫助散熱。三大廠走出了不同的路：
+
+| 做法 | 代表廠商 | 怎麼做 | 優勢與挑戰 |
+|---|---|---|---|
+| TC-NCF（熱壓非導電膜） | 三星 | 每層先貼一層非導電膜，再以<Term id="tcb">熱壓鍵合</Term>逐層接合 | 間隙可縮到 7 微米；訊號區用小凸塊、散熱區用大凸塊<Cite k="ss-hbm3e-12h" /> |
+| MR-MUF（大量回焊模封填充） | SK海力士 | 所有晶粒疊好後一次回焊接合，再注入液態保護材料固化<Cite k="th-skh-hotchips" /><Cite k="skh-f1" /> | 散熱比每層鋪膜有效率<Cite k="skh-f1" />；層數越多，填充與翹曲控制越難 |
+| <Term id="hybrid-bonding">混合鍵合</Term> | 三大廠皆在研發 | 拿掉凸塊，銅對銅、氧化層對氧化層直接接合 | 間隙歸零；但 16 到 20 層的多層接合難度遠高於單層 |
+
+SK海力士的簡報給了一組具體比較：MR-MUF 目前的凸塊間距約 30 微米，混合鍵合可降到 18 微米以下；在 20 層的堆疊中，拿掉凸塊能讓每顆核心晶粒厚 24%，熱阻也比 MR-MUF 低約 35%<Cite k="th-skh-hotchips" />。
+
+既然好處這麼多，為什麼還沒量產？因為每次 JEDEC 放寬高度，傳統凸塊就又多撐了一代。三星曾在 2025 年表態要在 HBM4 採用混合鍵合，但 775 微米的新上限讓這件事不再急迫；SK海力士則在 2026 年 8 月表示，混合鍵合趕不上 HBM4E，等於最快也要到 HBM5，但沒有指定導入的世代。業界還在討論把 20 層堆疊的上限再放寬到 825 至 900 微米，研究機構 Counterpoint 預期混合鍵合要到 2029 至 2030 年左右才會隨 HBM5 全面量產<Cite k="th-skh-hotchips" />。設備端已經開始布局：據 2026 年 3 月的業界消息，SK海力士的第一筆量產用混合鍵合訂單，是一套結合應用材料與 BESI 設備的整合系統，金額約 200 億韓元，但這項消息未經公司證實<Cite k="th-skh-hotchips" />。美光也認為 16 層有清楚的路徑，16 層以上則還有很多工作要做<Cite k="th-mu-hotchips" />。
+
+### 熱與可靠度：最熱的在底層
+
+HBM 的散熱結構先天不利。美光指出，基底晶粒位在堆疊最底部、負責最高速的介面工作，因此最熱，散熱器卻裝在最頂端，每多疊一層，熱阻就再上升一些；美光表示，現在是「圍繞散熱來設計架構」，和幾年前正好相反<Cite k="th-mu-hotchips" />。SK海力士補充了另外兩個因素：晶粒越薄，堆疊裡導熱不佳的氧化層比例就越高；腳位速度從早期 HBM 的約 1 Gb/s 提高到 HBM4 標準的 8 Gb/s，同樣面積裡的功率越來越集中，簡報所列各世代的熱負擔增加到 2.2 倍<Cite k="th-skh-hotchips" />。
+
+所以每一代新產品都把散熱當成賣點：三星 HBM4 的熱阻比 HBM3E 改善 10%、散熱提升 30%<Cite k="ss-hbm4" />；SK海力士 HBM4E 樣品的熱阻比 HBM4 改善 17%<Cite k="skh-hbm4e" />；三星 HBM4E 的熱阻特性則改善逾 14%<Cite k="ss-hbm4e" />。
+
+可靠度是另一個代價。Meta 的 Llama 3 論文指出，405B 模型在最多 1.6 萬顆 H100 上預訓練時，其中一段 54 天的統計期間內發生 419 次非預期中斷，其中 72 次（17.2%）來自 GPU 的 HBM3 記憶體，僅次於 GPU 本身故障的 148 次（30.1%）<Cite k="llama3" />。每顆晶片放的 HBM 越多，這類風險越高，標準也跟著補強：HBM3 導入晶粒上的錯誤更正碼（ECC）<Cite k="jedec-hbm3" />，HBM4 再加入針對 row hammer 干擾的 DRFM 機制<Cite k="jedec-hbm4" />。
+
+### 頻寬還能怎麼推：更寬、更快，代價是更熱
+
+<BarChart
+  title="HBM 每腳位速率：標準與量產品"
+  unit="Gb/s"
+  data={[
+    { label: "HBM3 標準上限", value: 6.4 },
+    { label: "HBM3E（SK海力士 2024 量產）", value: 9.6 },
+    { label: "HBM4 標準上限", value: 8 },
+    { label: "HBM4（三星 2026 量產）", value: 11.7 },
+    { label: "HBM4E（三星 2026 樣品）", value: 14 },
+    { label: "HBM4E（SK海力士樣品最高）", value: 16 }]}
+  source={["jedec-hbm3", "skh-hbm3e-12h", "jedec-hbm4", "ss-hbm4", "ss-hbm4e", "skh-hbm4e"]}
+  note="標準值為 JEDEC 規定的上限；量產品與樣品取各公司新聞稿公布的數字。三星 HBM4E 為穩定速率，可再提高到 16 Gb/s。"
+  keepOrder
+/>
+
+HBM4 的策略是「先加寬，再加速」：介面加倍到 2,048 位元，標準的速度上限 8 Gb/s 反而低於 HBM3E 量產品的 9.6 Gb/s，再由各家靠製程與設計把速度拉上去。三星說明，資料 I/O 加倍帶來功耗與散熱的挑戰，它靠低電壓 TSV 與供電網路最佳化，讓 HBM4 的能效比 HBM3E 提升 40%，同時把每疊頻寬拉高到 2.7 倍<Cite k="ss-hbm4" />。三星在 Hot Chips 也直言，每位元的能耗雖然在改善，但頻寬成長得更快，所以 HBM 的總功耗仍在上升<Cite k="th-ss-hotchips" />。
+
+這場追趕還沒有贏。美光的簡報估計，運算效能大約每 2 年成長 3 倍，HBM 頻寬卻不到 2 倍，<Term id="memory-wall">記憶體牆</Term>「仍在，甚至可能更糟」<Cite k="th-mu-hotchips" />。
+
+### 基底晶粒：從記憶體製程換成邏輯製程
+
+過去的基底晶粒，和上面的核心晶粒用同一套 DRAM 製程製造<Cite k="th-ss-hotchips" />。DRAM 製程擅長做電容與記憶體陣列，做高速邏輯電路卻不劃算。HBM4 是轉折點：
+
+- **SK海力士**：到 HBM3E 為止都用自家技術做基底晶粒，HBM4 改用台積電（TSMC）的先進邏輯製程<Cite k="skh-tsmc" />。
+- **台積電**：提供 N12 與 N3 兩種 HBM4 邏輯基底晶粒<Cite k="tsmc-sym25" />。
+- **三星**：HBM4 與 HBM4E 都用自家晶圓代工的 4 奈米邏輯基底晶粒<Cite k="ss-hbm4" /><Cite k="ss-hbm4e" />。
+- **美光**：HBM4 的 DRAM 核心晶粒採用自家 1-beta 製程，改用 1-gamma 製程的 HBM4E 預計 2027 年量產<Cite k="mu-fq3-26" />；據 Hot Chips 的報導，HBM4E 的基底晶粒將改由台積電製造<Cite k="th-mu-hotchips" />。
+
+為什麼要換？三星的說法是，邏輯製程主要能降低功耗、縮小面積，而且一顆和 XPU 同等級製程做出來的晶粒，能做的事遠不只傳遞資料<Cite k="th-ss-hotchips" />。基底晶粒上最大的區塊之一是實體層介面（PHY）：三星指出，在 11 × 12.8 毫米的 HBM4 基底晶粒上，傳統 PHY 就占了超過 8 × 4 毫米<Cite k="th-ss-hotchips" />，約為整顆晶粒面積的 23%（本站換算）。
+
+### 客製化 HBM：把控制器搬進記憶體
+
+SK海力士對客製化 HBM（cHBM）的定義是：依客戶需求，把原本位於 GPU 與 <Term id="asic">ASIC</Term> 的部分功能整合進 HBM 的基底晶粒<Cite k="skh-ces26" />。它在向美國證管會提交的上市申請文件（F-1）中也表示，HBM4E 的研發重點之一就是客製基底晶粒的整合<Cite k="skh-f1" />。
+
+三星在 Hot Chips 2026 提出的三階段藍圖，把這件事講得最具體<Cite k="th-ss-hotchips" />：
+
+1. **把面積還給運算**：用約 8.5 × 1.5 毫米的晶粒對晶粒連結取代逾 8 × 4 毫米的傳統 PHY，訊號通道深度從 5.5 毫米縮到 2 毫米；再把記憶體控制器從 XPU 搬進基底晶粒。三星估計控制器約占 XPU 面積的 5% 到 10%，換成運算單元可帶來 10% 到 20% 的效能提升。控制器靠近記憶體之後，還能用基底晶粒上的 <Term id="sram">SRAM</Term> 替換故障位址，不必為一個壞掉的記憶單元犧牲整排備用線路。
+2. **變成智慧記憶體子系統**：加入溫度、電壓與老化感測器及自我測試電路，從基底晶粒邊緣直接外接第二層記憶體，甚至在 DRAM 下方放入處理單元，三星稱為 aHBM。
+3. **zHBM**：把處理器直接疊在 DRAM 正下方，三星估計 I/O 功耗可比 HBM5 少約 70%；但為了散熱只規劃約 4 層，而且需要晶圓對晶圓與混合銅鍵合。三星沒有公布這三個階段的時程。
+
+輝達（NVIDIA）則在 2026 年 8 月推出 NVHBM：一種與主要記憶體廠共同設計、驗證的客製基底晶粒技術，把記憶體控制器移進 HBM 堆疊並整合客製 PHY。輝達宣稱，相較標準 HBM4E，NVHBM 每疊頻寬最多高 30%，PHY 與周邊面積最多少 67%，HBM 功耗少 15%<Cite k="nvidia-nvhbm" />。它只透過 <Term id="nvlink">NVLink</Term> Fusion 提供給客製晶片夥伴，第一個合作對象是亞馬遜旗下的 Annapurna Labs，不會用在已量產的 Rubin 機櫃<Cite k="th-nvhbm" />。據 Tom's Hardware 對輝達 GTC 2026 路線圖的報導，2028 年的 Feynman 世代也將採用客製 HBM<Cite k="th-nv-roadmap" />。
+
+<Compare
+  title="標準 HBM 與客製化 HBM"
+  left={{ title: "標準 HBM", items: ["基底晶粒依 JEDEC 規格設計，任何相容的控制器都能用", "記憶體控制器與 PHY 放在 GPU 或 ASIC 上", "一種產品可以賣給多家客戶，轉換供應商較容易", "代表：HBM4 標準品；JEDEC 另推可裝在有機基板上的 SPHBM4"] }}
+  right={{ title: "客製化 HBM", items: ["基底晶粒用邏輯製程，依特定加速器設計", "控制器搬進 HBM，PHY 換成較小的晶粒對晶粒連結", "加速器多出運算面積，但記憶體綁定單一平台", "代表：三星客製 HBM 樣品 2027 年送樣、輝達 NVHBM"] }}
+  caption="資料來源：SK海力士、三星、輝達與 JEDEC。客製化 HBM 仍多處於樣品與藍圖階段。"
+/>
+
+標準化的力量也沒有缺席。JEDEC 在 2026 年 7 月發布 SPHBM4：沿用 HBM4 的 DRAM 核心晶粒，只換一顆新的介面基底晶粒，把 2,048 條資料線縮減為 512 條、以 4 比 1 序列化維持相同的總傳輸量；凸塊間距因此可以放寬，直接接在一般有機基板上，而不是矽基板，也就不必再靠矽<Term id="interposer">中介層</Term>，走線較長也可能放進更多疊<Cite k="jedec-sphbm4" />。一邊是整合更緊密、綁定特定平台的客製，一邊是不依賴矽中介層、更通用的標準，兩條路會並行一段時間；JEDEC 的新聞稿並未談到成本，SPHBM4 實際能省多少，還要看產品問世後的報價。三星表示，客製 HBM 樣品將在 2027 年送交客戶<Cite k="ss-hbm4" />。
+
+成本結構也影響產品組合。TrendForce 指出，每一疊 HBM 都需要一顆基底晶粒，這顆晶粒的成本不會隨 DRAM 層數等比例下降，因此預估 2027 年 8 層產品每 Gb 的價格會比 12 層高約 10% 到 20%<Cite k="tf-hbm-2027" />。基底晶粒越先進、越客製，這筆固定成本越重要。
+
+### HBM 在記憶體階層裡的新鄰居
+
+<Scene3D id="hbm" variant="hierarchy" caption="記憶體階層塔：由上而下是暫存器、SRAM 快取、HBM、DDR／LPDDR、SSD 與 HDD。越往下容量越大、每位元越便宜，但延遲越長、頻寬越低。HBM 與 DDR 同屬 DRAM，延遲相近，HBM 勝在介面寬得多；按「下一步」可切換到 HBM 堆疊的拆解與剖面。各層數值為對數刻度的數量級示意。" />
+
+HBM 在<Term id="memory-hierarchy">記憶體階層</Term>中夾在晶片內的 SRAM 與 CPU 端的 DRAM 之間。HBM 本身越做越大，它的下方也出現了新的鄰居：
+
+- **HBM 本身越來越大**：每顆 Rubin GPU 配備 288 GB HBM4、頻寬 19.2 TB/s<Cite k="nvidia-vera-rubin" />；台積電規劃 2028 年生產的 14 倍光罩 CoWoS，可以在一個封裝裡放約 20 疊 HBM<Cite k="tsmc-sym26" />。
+- **往下一層，是更大的 CPU 記憶體**：美光量產的 <Term id="socamm">SOCAMM2</Term> 是以 <Term id="lpddr">LPDDR</Term> 組成的伺服器模組，每顆 Vera CPU 最多可配 2TB、頻寬 1.2 TB/s<Cite k="mu-hbm4" />。容量比 HBM 大得多，但一整顆 CPU 的頻寬，只有單顆 Rubin GPU 的 HBM 的十六分之一（本站換算）。透過 <Term id="cxl">CXL</Term> 外接的記憶體擴充，也屬於這類「大而慢」的層級。
+- **再往下，是快閃記憶體的新嘗試**：SanDisk 與 SK海力士在 2026 年 8 月透過 OCP 發表 <Term id="hbf">HBF</Term>（高頻寬快閃）規格，以 8 或 16 層 <Term id="nand-flash">NAND</Term> 堆疊做成最大 512GB 的封裝，頻寬分三個等級，約 0.4 至 3.0 TB/s，SK海力士表示介面採用 <Term id="ucie">UCIe</Term>；對照之下，HBM4 單疊最大是 64GB<Cite k="th-hbf-spec" />。但 OXMIQ Labs 的分析指出，HBF 能以大致相同的成本換到 HBM 的 8 到 16 倍容量，一旦頻寬成為瓶頸就會輸給 HBM，比較適合 <Term id="moe">MoE</Term> 模型中不常讀取的專家權重這類「大而冷」的資料<Cite k="th-hbf-oxmiq" />。
+
+<DeepDive title="深入一點：堆疊的算術——高度、良率與功耗">
+
+**一、每層能有多厚？** 若整疊上限是 H、核心晶粒有 N 層，加上基底晶粒共 N + 1 層，就算完全不留縫隙，每層平均厚度也不能超過：
+
+<MathTeX tex={"t_{\\mathrm{avg}}\\le\\frac{H_{\\max}}{N+1}"} display label="每層平均厚度不超過整疊高度上限除以核心晶粒層數加一" />
+
+| 堆疊 | 高度上限 | 每層平均上限（本站換算） |
+|---|---|---|
+| 12 層（HBM3E） | 720 微米 | 約 55 微米 |
+| 12 層（HBM4） | 775 微米 | 約 60 微米 |
+| 16 層（HBM4） | 775 微米 | 約 46 微米 |
+| 20 層 | 775 微米 | 約 37 微米 |
+| 20 層（若放寬） | 900 微米 | 約 43 微米 |
+
+實際還要扣掉層間縫隙、凸塊與頂部保護層，所以 16 層的核心晶粒平均得比 46 微米更薄，這與 SK海力士所說「50 微米以下」的晶粒相符<Cite k="th-skh-hotchips" />。20 層若仍守在 775 微米，每層平均還要再薄約兩成，這就是業界討論把上限放寬到 825 至 900 微米、或改用沒有凸塊與縫隙的混合鍵合的原因<Cite k="th-skh-hotchips" />。
+
+**二、層數越多，良率越難看。** 一疊 HBM 只要有一層或一個接點出問題，整疊（包括其他良品晶粒）都可能報廢。假設每顆核心晶粒測試後的<Term id="yield">良率</Term>為 99.5%、每一層接合的良率為 99.8%、基底晶粒為 99.5%（皆為示意假設），整疊良率約為：
+
+<MathTeX tex={"Y_{\\mathrm{stack}}\\approx Y_{\\mathrm{base}}\\times\\left(Y_{\\mathrm{die}}\\times Y_{\\mathrm{bond}}\\right)^{N}"} display label="整疊良率約等於基底晶粒良率乘以每層晶粒良率與接合良率的乘積的 N 次方" />
+
+代入後，8 層約 94.1%、12 層約 91.5%、16 層約 88.9%、20 層約 86.5%（本站示意計算）。每層只差零點幾個百分點，乘上十幾層就差出好幾個百分點，而且報廢的是整疊最貴的成品。這也是三星想用基底晶粒上的 SRAM 修補故障位址<Cite k="th-ss-hotchips" />，以及 HBM 特別仰賴晶粒測試的原因。
+
+**三、每位元變省電，總功耗仍上升。** 記憶體介面的功耗約等於每位元能耗乘以頻寬：
+
+<MathTeX tex={"P=E_{\\mathrm{bit}}\\times\\mathrm{BW}"} display label="功耗等於每位元能耗乘以頻寬" />
+
+三星 HBM4 的頻寬是 HBM3E 的 2.7 倍、能效提升 40%<Cite k="ss-hbm4" />。若把「能效提升 40%」解讀為每位元能耗降為原本的 1 ÷ 1.4，每疊功耗約變成 2.7 ÷ 1.4 ≈ 1.9 倍（本站換算）：每個位元更省電，整疊卻更熱，正是三星所說「總功耗仍在上升」的意思<Cite k="th-ss-hotchips" />。同一個公式也能檢驗 NVHBM：頻寬多 30%、功耗少 15%<Cite k="nvidia-nvhbm" />，等於每位元能耗約降為 0.85 ÷ 1.3 ≈ 0.65，少了約三分之一（本站換算，假設兩項數字在相同條件下量測）。這些都是廠商自行公布的比較，基準不盡相同，適合看方向，不宜當成精確數字。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+HBM 已經從單純的記憶體產品，變成橫跨記憶體、晶圓代工、設備與晶片設計的合作工程。
+
+- **記憶體三強**（<SegmentChip id="memory-storage" />）：依 IDC 統計，<CompanyChip id="sk-hynix">SK海力士</CompanyChip> 2026 年第一季的 HBM 營收市占為 56.4%<Cite k="skh-f1" />；<CompanyChip id="samsung-electronics">三星電子</CompanyChip>以「記憶體加晶圓代工」一條龍生產 4 奈米基底晶粒<Cite k="ss-hbm4" />；<CompanyChip id="micron">美光</CompanyChip>為 Vera Rubin 量產 12 層 HBM4<Cite k="mu-hbm4" />。SK海力士的美國上市申請文件引述 Gartner，2025 年 HBM 每 GB 價格是一般 DRAM 的五倍以上，HBM 營收預估從 2025 年的 330 億美元成長到 2027 年的 860 億美元<Cite k="skh-f1" />。同樣容量下，HBM 約吃掉三倍的晶圓面積<Cite k="th-mu-hotchips" />，是<Term id="memory-supercycle">記憶體超級循環</Term>的重要推手；<CompanyChip id="sandisk">SanDisk</CompanyChip> 則以 HBF 從快閃記憶體切入這一層<Cite k="th-hbf-spec" />。
+- **晶圓代工與封裝**（<SegmentChip id="foundry-packaging" />）：<CompanyChip id="tsmc">台積電</CompanyChip>同時供應 N12 與 N3 基底晶粒<Cite k="tsmc-sym25" />，又以 <Term id="cowos">CoWoS</Term> 把 HBM 與運算晶粒封在一起<Cite k="skh-tsmc" />。基底晶粒變成晶圓代工的產品，是這一代最重要的分工變化。
+- **設備**（<SegmentChip id="semi-equipment-materials" />）：熱壓鍵合機有<CompanyChip id="hanmi-semiconductor">韓美半導體</CompanyChip>、<CompanyChip id="hanwha-semitech">韓華 Semitech</CompanyChip>與 <CompanyChip id="asmpt">ASMPT</CompanyChip>；混合鍵合要靠 <CompanyChip id="besi">BESI</CompanyChip> 與<CompanyChip id="applied-materials">應用材料</CompanyChip>等業者；晶圓薄化與切割仰賴<CompanyChip id="disco">迪思科</CompanyChip>，整疊測試則有<CompanyChip id="advantest">愛德萬測試</CompanyChip>。層數越高、晶粒越薄，這些步驟越關鍵。
+- **矽智財與設計服務**（<SegmentChip id="eda-ip-design" />）：HBM 控制器與 PHY 是加速器必備的矽智財，<CompanyChip id="rambus">Rambus</CompanyChip> 與<CompanyChip id="guc">創意</CompanyChip>都有供應；客製化 HBM 讓基底晶粒必須和加速器一起設計，<CompanyChip id="alchip">世芯-KY</CompanyChip>、創意這類承接 CoWoS 與 HBM 整合的設計服務公司，角色可能更吃重。
+- **AI 晶片**（<SegmentChip id="ai-accelerators" />）：<CompanyChip id="nvidia">輝達</CompanyChip>從 Rubin 的 288 GB HBM4<Cite k="nvidia-vera-rubin" />、Rubin Ultra 的 1TB HBM4E，一路規劃到 Feynman 的客製 HBM<Cite k="th-nv-roadmap" />，並把 NVHBM 開放給 <CompanyChip id="amazon">亞馬遜</CompanyChip>等客製晶片夥伴<Cite k="th-nvhbm" />。誰能決定基底晶粒裡放什麼，誰就多掌握一分 AI 晶片的設計權。
+
+延伸閱讀：<TrendLink id="hbm4-custom-base-die">HBM4 與客製化基底晶粒</TrendLink>、<TrendLink id="memory-supercycle">記憶體超級循環</TrendLink>、<TrendLink id="cowos-capacity-panel-level">CoWoS 擴產與面板級封裝</TrendLink>。HBM 解決的是晶片「內」的資料搬運，晶片「之間」的連線，請接著讀<LearnLink id="interconnect-deep">互連深入：SerDes、CPO 與 Scale-up 標準之爭</LearnLink>。

@@ -1,0 +1,72 @@
+# Proposals from the datacenter scene agent, 2026-10-15.
+# Nothing here blocks the scene: each capability is implemented locally in
+# src/three/scenes/datacenter/kit.ts and can move to src/three/kit or src/three/core unchanged.
+
+- id: diorama-builder
+  target: src/three/kit/Diorama.ts
+  problem: >
+    Facility scenes (datacenter, energy, gpu-scale) are built from hundreds of small static parts
+    (cabinets, LEDs, louvres, coils, pipes). One Mesh per part blows the draw-call budget, and
+    InstancedMesh only helps for identical parts. BatchedMesh cannot dim one zone as a unit without
+    per-instance colour bookkeeping, and guided steps need "dim everything except the electrical
+    room" in one call.
+  proposal: >
+    `new Diorama(ctx)` with `box / block / cyl / rod / pipe(polyline, r, { fillet }) / lines / frame`
+    builders that take a zone name and a palette-keyed material key, accumulate geometry per
+    (zone, material) and `build()` merges each bucket into ONE mesh (≈ 30 draw calls for a whole
+    facility). `setDim({ zone: 0..1 })` tweens zones toward the background colour (fade-safe under
+    reduced motion), `palette(p)` re-tints every bucket from the palette (no hex colours in
+    scenes), and `hs` tags on parts build invisible pick proxies + a highlight frame (wire boxes +
+    soft fill, one draw call each) per hotspot.
+  workaround: src/three/scenes/datacenter/kit.ts (class Kit).
+
+- id: portrait-home-pose
+  target: src/three/core/host.ts (fitPose)
+  problem: >
+    `ctx.setPose(ctx.homePose)` on a portrait stage scales the already-portrait home pose by
+    |portrait| / |main| a second time, so "return to the overview" (step 0) lands farther away
+    than the initial frame (15–40 % here, depending on the variant).
+  proposal: >
+    Mark the pose returned by `ctx.homePose` (e.g. a non-enumerable `__home` flag, or a
+    `setPose(pose, { fit: false })` option) so `fitPose` leaves it untouched. The same option lets a
+    scene author step poses for the 4:5 stage directly: wide subjects (a hall, a row of bars) need
+    a different angle on portrait stages, not just a longer distance.
+  workaround: src/three/scenes/datacenter/kit.ts (Kit.exact() pre-divides the factor; Kit.home() uses it).
+
+- id: hotspot-click-card
+  target: src/three/core/hotspots.ts (HotspotSpec)
+  problem: >
+    A hotspot with an `href` navigates on pointer click. For chapter links (/learn/…, /chain/…)
+    that is wrong when the scene is embedded in that very chapter, and it skips the explanatory
+    card. Scenes have to re-implement select (card + announce) in `onSelect`.
+  proposal: >
+    `HotspotSpec.click?: 'navigate' | 'card'` (default 'navigate'); 'card' opens the interactive
+    card with the link inside, exactly like a touch tap.
+  workaround: src/three/scenes/datacenter/kit.ts (registerHotspots → onSelect).
+
+- id: flow-groups
+  target: src/three/kit/PathFlow.ts
+  problem: >
+    Guided steps show subsets of a flow network (only the hall air loop; only the support-room
+    power and water). Today each subset is its own PathFlow (one draw call and one data texture
+    each), 4–9 per variant here.
+  proposal: >
+    Per-path `group` ids and `flow.setGroupVisible(group, on)` / `setGroupOpacity(group, a)`
+    (a per-path alpha row in the colour texture), so one PathFlow can serve every step.
+  workaround: src/three/scenes/datacenter/kit.ts (Kit.flow per named subset, View.flows).
+
+- id: label-compact-text
+  target: src/three/core/labels.ts (LabelSpec)
+  problem: >
+    DOM labels keep their pixel size while the 3D subject shrinks on phones (390 px wide, 4:3 or
+    4:5 stage), so a dense diorama loses half its labels to collision culling, and which ones
+    survive is arbitrary (often the decorative tags instead of the equipment names). Scenes must
+    track the stage width themselves and swap texts / hide groups.
+  proposal: >
+    `LabelSpec.short?: string` (used when the stage is narrower than a layer-wide threshold, e.g.
+    640 px) and `LabelSpec.minWidth?: number` (hide below that stage width), applied by the
+    LabelLayer during layout.
+  workaround: >
+    src/three/scenes/datacenter/kit.ts (Kit.compact + `short` texts; on compact stages a guided
+    step hides the labels of dimmed zones instead of muting them; index.ts sets Kit.compact from
+    onResize).

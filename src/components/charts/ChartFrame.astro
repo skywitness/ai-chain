@@ -1,0 +1,149 @@
+---
+/**
+ * <ChartFrame> — the shared shell of every chart: title, 資料截至, unit/currency line, legend,
+ * the plot (default slot), notes, source links and a <details>「顯示資料表」 with a real <table>.
+ *
+ *   <ChartFrame title="台積電季營收" asOf="2026-10-06" unit="單位：新台幣億元"
+ *               sources={[{ title: '月營收報告', url: '…', publisher: '公開資訊觀測站' }]}
+ *               table={{ columns, rows }} legend={[{ label: '營收', kind: 'bar' }]}>
+ *     …plot markup…
+ *   </ChartFrame>
+ */
+import './charts.css';
+import DataTable from './DataTable.astro';
+import { uid } from '../content/page-state';
+import type { ChartSourceLink, LegendItem, TableSpec } from './types';
+
+interface Props {
+  title?: string | undefined;
+  /** keep the title for screen readers only */
+  titleHidden?: boolean | undefined;
+  /** element for the title (default p; use h3/h4 when the chart starts a document section) */
+  as?: 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | undefined;
+  subtitle?: string | undefined;
+  /** small pill after the title, e.g. 「示意資料」 */
+  badge?: string | undefined;
+  asOf?: string | null | undefined;
+  /** 「單位：新台幣億元」 (the 單位： prefix is added when missing) */
+  unit?: string | null | undefined;
+  legend?: LegendItem[] | undefined;
+  notes?: Array<string | null | undefined | false> | undefined;
+  sources?: ChartSourceLink[] | undefined;
+  table?: TableSpec | null | undefined;
+  tableLabel?: string | undefined;
+  empty?: boolean | undefined;
+  emptyText?: string | undefined;
+  /** no card chrome (used inside composites) */
+  bare?: boolean | undefined;
+  id?: string | undefined;
+  class?: string | undefined;
+  style?: string | undefined;
+}
+
+const {
+  title,
+  titleHidden = false,
+  as: As = 'p',
+  subtitle,
+  badge,
+  asOf,
+  unit,
+  legend = [],
+  notes = [],
+  sources = [],
+  table,
+  tableLabel = '顯示資料表',
+  empty = false,
+  emptyText = '目前沒有可顯示的資料。',
+  bare = false,
+  id,
+  class: className,
+  style,
+} = Astro.props;
+
+const titleId = uid(Astro, 'cht');
+const unitText = unit && !empty ? (unit.startsWith('單位') ? unit : `單位：${unit}`) : null;
+const noteList = empty ? [] : notes.filter((n): n is string => !!n);
+const srcList = sources.filter((s) => s && s.title);
+const hasHead = !!(title || subtitle || unitText || asOf || badge);
+const showTable = !empty && table && table.rows.length > 0;
+---
+
+<figure
+  class:list={['ch', bare && 'ch--bare', className]}
+  id={id}
+  style={style}
+  aria-labelledby={title ? titleId : undefined}
+  data-pagefind-ignore
+>
+  {
+    hasHead && (
+      <figcaption class:list={['ch__head', titleHidden && !subtitle && !unitText && !asOf && 'ch-sr']}>
+        {title && (
+          <As class:list={['ch__title', titleHidden && 'ch-sr']} id={titleId}>
+            {title}
+            {badge && <span class="ch__badge">{badge}</span>}
+          </As>
+        )}
+        {subtitle && <p class="ch__sub">{subtitle}</p>}
+        {(unitText || asOf) && (
+          <p class="ch__meta">
+            {unitText && <span>{unitText}</span>}
+            {asOf && <span>資料截至 {asOf.slice(0, 10)}</span>}
+          </p>
+        )}
+      </figcaption>
+    )
+  }
+  <slot name="before" />
+  {
+    !empty && legend.length > 0 && (
+      <ul class="ch__legend" aria-label="圖例">
+        {legend.map((l) => (
+          <li>
+            <span class:list={['ch-key', l.kind && l.kind !== 'bar' && `ch-key--${l.kind}`]} style={l.color ? `--k:${l.color}` : undefined} aria-hidden="true" />
+            <span>
+              {l.label}
+              {l.value && ' '}
+              {l.value && <b>{l.value}</b>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  {empty ? <p class="ch-empty">{emptyText}</p> : <slot />}
+  {
+    (noteList.length > 0 || srcList.length > 0 || showTable) && (
+      <div class="ch__foot">
+        {noteList.map((n) => (
+          <p>{n}</p>
+        ))}
+        {srcList.length > 0 && (
+          <p class="ch__src">
+            資料來源：
+            {srcList.map((s, i) => (
+              <>
+                {i > 0 && '；'}
+                {s.url ? <a href={s.url}>{s.title}</a> : <span>{s.title}</span>}
+                {s.publisher && s.publisher !== s.title && <span>（{s.publisher}）</span>}
+              </>
+            ))}
+          </p>
+        )}
+        {showTable && (
+          <details class="ch__table">
+            <summary>{tableLabel}</summary>
+            <div class="ch__tablewrap" tabindex="0" role="region" aria-label={`${title ?? '圖表'}資料表`}>
+              <DataTable {...table!} caption={table!.caption ?? `${title ?? '圖表'}資料表`} />
+            </div>
+          </details>
+        )}
+      </div>
+    )
+  }
+</figure>
+
+<script>
+  import './chart-tooltip.ts';
+</script>

@@ -1,0 +1,119 @@
+---
+/**
+ * 「建議先讀」 box listing prerequisite learn articles (titles and levels from curriculum.yaml).
+ *   <PrereqBox items={entry.data.prerequisites} />   (references or slugs)
+ * Renders nothing when the list is empty.
+ */
+import { getCurriculumArticle, levelMeta } from '../../lib/collections';
+import { learnHref } from '../../lib/paths';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  items: ReadonlyArray<string | { id: string }>;
+  title?: string | undefined;
+  /** Short helper sentence under the title */
+  note?: string | undefined;
+  class?: string | undefined;
+}
+const { items, title = '建議先讀', note = '先讀過這些文章，會更容易理解本篇內容。', class: className } = Astro.props;
+const list = items
+  .map((x) => getCurriculumArticle(typeof x === 'string' ? x : x.id))
+  .filter((a): a is NonNullable<typeof a> => !!a);
+---
+
+{
+  list.length > 0 && (
+    <aside class:list={['prereq', className]} aria-label={title}>
+      <p class="prereq__title">
+        <Icon name="book" />
+        {title}
+      </p>
+      {note && <p class="prereq__note">{note}</p>}
+      <ul class="prereq__list" role="list">
+        {list.map((a) => {
+          const lv = levelMeta(a.level);
+          return (
+            <li>
+              <a href={learnHref(a.slug)}>
+                <span class="prereq__lv" style={`--lv: ${lv.color}`}>
+                  {lv.label}
+                </span>
+                <span class="prereq__name">{a.title}</span>
+                <Icon name="arrow-right" class="prereq__arrow" />
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </aside>
+  )
+}
+
+<style>
+  @layer components {
+    .prereq {
+      display: grid;
+      gap: var(--space-2);
+      padding: var(--space-4) var(--space-5);
+      border: 1px dashed var(--c-border-strong);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      max-width: calc(var(--measure) + 2.5rem);
+    }
+    .prereq__title {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      font-weight: var(--fw-bold);
+      font-size: var(--fs-s);
+      color: var(--c-fg);
+    }
+    .prereq__note {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      margin-block-start: -0.25em;
+    }
+    .prereq__list {
+      display: grid;
+      gap: var(--space-1);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .prereq__list a {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-height: var(--tap);
+      padding: var(--space-1) var(--space-2);
+      margin-inline: calc(-1 * var(--space-2));
+      border-radius: var(--radius-m);
+      color: var(--c-fg);
+      text-decoration: none;
+      line-height: 1.5;
+    }
+    .prereq__list a:hover {
+      background: var(--c-hover);
+      color: var(--c-link);
+    }
+    .prereq__lv {
+      flex: none;
+      padding: 0 0.5em;
+      border-radius: var(--radius-s);
+      background: color-mix(in srgb, var(--lv) 12%, transparent);
+      color: var(--lv);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      line-height: 1.7;
+    }
+    .prereq__name {
+      flex: 1;
+      min-width: 0;
+      font-size: var(--fs-s);
+    }
+    .prereq__list :global(.prereq__arrow) {
+      flex: none;
+      color: var(--c-fg-subtle);
+    }
+  }
+</style>

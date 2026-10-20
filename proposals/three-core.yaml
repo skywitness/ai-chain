@@ -1,0 +1,27 @@
+# Proposals from the 3D engine core agent (three-core), 2026-10-07.
+# Nothing here blocks the 3D work: each item has a workaround already in place.
+
+- id: tsconfig-baseurl-ts6
+  target: tsconfig.json (frozen)
+  problem: >
+    TypeScript ~6.0.3 reports TS5101 "Option 'baseUrl' is deprecated" as an error, so
+    `npx tsc --noEmit -p tsconfig.json` stops before checking any file (and `astro check` may too).
+  proposal: >
+    Either add "ignoreDeprecations": "6.0" to compilerOptions, or drop "baseUrl" and write the
+    path aliases relative to the config ("@lib/*": ["./src/lib/*"], …), which TypeScript ≥ 4.1
+    resolves without baseUrl.
+  workaround: >
+    Agents type-check with a private config in research/tmp/<label>/tsconfig.json that extends the
+    root config and sets ignoreDeprecations (documented in docs/SCENE-CONTRACT.md §11).
+
+- id: zod-free-id-lists
+  target: src/schemas/common.ts (frozen)
+  problem: >
+    common.ts imports Zod at module level, so client code (three.js scenes, custom elements) cannot
+    import SEGMENT_IDS / LAYER_IDS / SCENE_IDS as values without bundling Zod.
+  proposal: >
+    Move the plain `as const` id arrays to a Zod-free module (e.g. src/schemas/ids.ts) and re-export
+    them from common.ts, so both build-time and client code share one source of truth.
+  workaround: >
+    src/three/core/ids.ts duplicates SEGMENT_IDS / LAYER_IDS with `satisfies` plus a compile-time
+    completeness check against the schema types, so drift fails the type-check.

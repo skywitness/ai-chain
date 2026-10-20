@@ -1,0 +1,412 @@
+---
+title: "AI 叢集網路：Scale-up 與 Scale-out"
+subtitle: "從機櫃內的 NVLink 到上萬顆 GPU 的葉脊網路：資料怎麼在晶片之間流動"
+description: "大型模型要用成千上萬顆 GPU 一起訓練與推論。本文說明為什麼需要叢集網路、All-Reduce 怎麼同步梯度，以及機櫃內的 Scale-up 與機櫃間的 Scale-out 各用什麼技術、差多少頻寬，並連結到交換器、網卡與光通訊供應鏈。"
+level: 2
+order: 214
+track: hardware
+prerequisites: [data-centers-101, gpu-architecture]
+next: [interconnect-deep, mixture-of-experts, datacenter-power-cooling]
+relatedSegments: [networking-optics, ai-accelerators, servers-systems, datacenter-infra]
+relatedCompanies: [nvidia, broadcom, amd, alphabet, meta, arista, cisco, celestica, accton, marvell, credo, astera-labs, amphenol, bizlink, innolight, eoptolink, coherent, lumentum, fabrinet, corning, tsmc, browave, foxconn]
+relatedModels: []
+relatedTrends: [scale-up-fabric-wars, co-packaged-optics, rack-scale-systems, custom-asic-rise]
+glossary:
+  - gpu
+  - scale-up
+  - scale-out
+  - nvlink
+  - network-switch
+  - optical-fiber
+  - all-reduce
+  - hbm
+  - parameter
+  - training
+  - data-parallelism
+  - tensor-parallelism
+  - expert-parallelism
+  - moe
+  - pcie
+  - tpu
+  - ualink
+  - ethernet
+  - nic
+  - rdma
+  - infiniband
+  - ultra-ethernet
+  - optical-transceiver
+  - cpo
+  - silicon-photonics
+  - aec
+  - retimer
+  - bandwidth
+scenes:
+  - id: network
+    variant: scale-up
+keyTakeaways:
+  - "大型模型的參數、梯度與優化器狀態遠超過一顆 GPU 的記憶體，必須拆到成千上萬顆 GPU 上一起算。"
+  - "訓練每一步都要用 All-Reduce 同步梯度，網路慢一點，所有 GPU 都得一起等。"
+  - "Scale-up 用 NVLink 等互連把一櫃 GPU 連成一顆大 GPU，Rubin 每顆 GPU 的 NVLink 頻寬達 3 至 3.6 TB/s。"
+  - "Scale-out 用網卡、交換器與光纖串起上萬顆 GPU，每顆 GPU 的頻寬只有 NVLink 的幾分之一。"
+  - "通訊最頻繁的張量平行放在機櫃內，資料平行跨機櫃，叢集設計就是依頻寬分配工作。"
+  - "交換晶片、網卡、AEC 與光模組構成網通與光通訊環節；輝達 2027 財年第一季網通營收年增 199%。"
+estimatedMinutes: 16
+sources:
+  - key: zero
+    title: "ZeRO: Memory Optimizations Toward Training Trillion Parameter Models"
+    publisher: "Rajbhandari et al.（arXiv）"
+    url: "https://arxiv.org/abs/1910.02054"
+    type: paper
+    lang: en
+    published: "2019-10-04"
+    accessed: "2026-10-15"
+    note: "混合精度搭配 Adam 優化器訓練時，每個參數需要 16 位元組的模型狀態（16 位元參數與梯度各 2 位元組，加上 32 位元參數副本、動量與變異數共 12 位元組）；兆級參數模型約需 16 TB。ZeRO-DP 分片優化器狀態與梯度時，通訊量與一般資料平行相同，再分片參數則最多增為 1.5 倍。"
+  - key: nvidia-nvlink
+    title: "NVLink and NVLink Switch"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/nvlink/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "每顆 GPU 的 NVLink 頻寬：第四代（Hopper）900 GB/s、第五代（Blackwell）1,800 GB/s、第六代（Vera Rubin）3,000 GB/s；NVLink 網域 8 顆，Blackwell 與 Rubin 可達 72 顆；NVL72 總頻寬 130 TB/s（Blackwell）與 216 TB/s（Rubin）；第六代 NVLink 頻寬為 PCIe Gen6 的 12 倍；標示為初步規格。NVLink Fusion 讓雲端業者以半客製 ASIC 或 CPU 接入 NVLink 機櫃架構。"
+  - key: nvidia-hopper
+    title: "NVIDIA Hopper Architecture In-Depth"
+    publisher: NVIDIA Technical Blog
+    url: "https://developer.nvidia.com/blog/nvidia-hopper-architecture-in-depth/"
+    type: docs
+    lang: en
+    published: "2022-03-22"
+    accessed: "2026-10-15"
+    note: "H100 的 NVLink 多 GPU I/O 總頻寬 900 GB/s，為 PCIe Gen 5 的 7 倍。"
+  - key: nvidia-gb200-blog
+    title: "NVIDIA GB200 NVL72 Delivers Trillion-Parameter LLM Training and Real-Time Inference"
+    publisher: NVIDIA Technical Blog
+    url: "https://developer.nvidia.com/blog/nvidia-gb200-nvl72-delivers-trillion-parameter-llm-training-and-real-time-inference/"
+    type: docs
+    lang: en
+    published: "2024-03-18"
+    accessed: "2026-10-15"
+    note: "GB200 NVL72 以銅纜卡匣（copper cable cartridge）高密度連接 GPU 與交換器；9 個 NVLink 交換托盤各提供 144 個 100 GB 的 NVLink 埠，完整連接 72 顆 Blackwell GPU 各自的 18 個 NVLink 埠；每個交換托盤有 2 顆 NVLink 交換晶片。"
+  - key: nvidia-vera-rubin
+    title: "NVIDIA Vera Rubin NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "每顆 Rubin GPU：288 GB HBM4、19.2 TB/s；NVLink 3 TB/s；網路頻寬（雙向）0.45 TB/s。整櫃 72 顆 GPU：NVLink 總頻寬 216 TB/s、網路頻寬（雙向）32.4 TB/s；採用 ConnectX-9 SuperNIC 與 BlueField-4 DPU，Scale-out 走 Quantum-X800 InfiniBand 與 Spectrum-X 乙太網路。"
+  - key: nvidia-hgx
+    title: "NVIDIA HGX Platform"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/hgx/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "「Individual GPU Specifications」列出單顆 Rubin GPU：NVLink 3.6 TB/s、288 GB HBM4、22 TB/s；與 Vera Rubin NVL72 產品頁的單顆數字（3 TB/s、19.2 TB/s）不同。"
+  - key: nvidia-rubin-pr
+    title: "NVIDIA Kicks Off the Next Generation of AI With Rubin — Six New Chips, One Incredible AI Supercomputer"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/rubin-platform-ai-supercomputer"
+    type: press-release
+    lang: en
+    published: "2026-01-05"
+    accessed: "2026-10-15"
+    note: "發表時公布：每顆 GPU 的 NVLink 6 頻寬 3.6 TB/s，Vera Rubin NVL72 整櫃 260 TB/s；與產品頁目前的初步規格（3 TB/s、216 TB/s）不同。"
+  - key: nvidia-supernic
+    title: "NVIDIA SuperNIC"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/networking/products/ethernet/supernic/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "ConnectX-8 SuperNIC 最高 800 Gb/s 網路頻寬、支援 PCIe Gen6；ConnectX-9 SuperNIC 每顆 GPU 最高 1.6 Tb/s；SuperNIC 與 Spectrum-X 乙太網路交換器搭配。"
+  - key: google-ironwood
+    title: "TPU7x (Ironwood)"
+    publisher: Google Cloud Documentation
+    url: "https://docs.cloud.google.com/tpu/docs/tpu7x"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "每顆晶片 192 GiB HBM、約 7.37 TB/s；晶片間互連（ICI）雙向頻寬每顆 1,200 GB/s；3D 環面拓撲，直接連到三個維度上最近的晶片；每個 pod 9,216 顆晶片；資料中心網路（DCN）頻寬每顆 100 Gbps。"
+  - key: amd-helios
+    title: "AMD Helios Rackscale Solution"
+    publisher: AMD
+    url: "https://www.amd.com/en/products/rackscale-solutions/helios.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "72 顆 Instinct MI455X GPU、EPYC Venice CPU 與 Pensando Vulcano AI 網卡；四個 Scale-up 卡匣以 UALink over Ethernet（UALoE）連接 72 顆 GPU，Scale-up 總頻寬最高 260 TB/s；Scale-out 頻寬 43 TB/s；支援 UEC 的 RDMA；預期 2026 年下半年大量部署。"
+  - key: ualink-1
+    title: "UALink Consortium Releases the Ultra Accelerator Link 200G 1.0 Specification"
+    publisher: UALink Consortium
+    url: "https://ualinkconsortium.org/wp-content/uploads/2025/04/UALink-1.0-Specification-PR_FINAL.pdf"
+    type: standard
+    lang: en
+    published: "2025-04-08"
+    accessed: "2026-10-15"
+    note: "UALink 200G 1.0 規格：每通道 200G，單一 AI 運算 pod 最多連接 1,024 顆加速器；以讀、寫與原子操作等記憶體語意在加速器之間通訊；聯盟成員逾 85 家；董事會成員包括阿里巴巴、AMD、Apple、Astera Labs、AWS、思科、Google、HPE、英特爾、Meta、微軟與 Synopsys。"
+  - key: uec-1
+    title: "Ultra Ethernet Consortium (UEC) Launches Specification 1.0 Transforming Ethernet for AI and HPC at Scale"
+    publisher: Ultra Ethernet Consortium
+    url: "https://ultraethernet.org/ultra-ethernet-consortium-uec-launches-specification-1-0-transforming-ethernet-for-ai-and-hpc-at-scale/"
+    type: standard
+    lang: en
+    published: "2025-06-11"
+    accessed: "2026-10-15"
+    note: "UEC 1.0 是以乙太網路為基礎的完整通訊堆疊，涵蓋網卡、交換器、光學與線纜各層，納入針對乙太網路與 IP 的新一代 RDMA、壅塞控制與網路安全。"
+  - key: avgo-th6
+    title: "Broadcom Ships Tomahawk 6: World's First 102.4 Tbps Switch"
+    publisher: Broadcom
+    url: "https://www.broadcom.com/company/news/product-releases/63146"
+    type: press-release
+    lang: en
+    published: "2025-06-03"
+    accessed: "2026-10-15"
+    note: "單晶片 102.4 Tbps 乙太網路交換容量；支援 100G／200G SerDes 與共同封裝光學；Scale-up 叢集規模 512 顆 XPU；以每鏈路 200 Gbps 的兩層 Scale-out 網路可連接逾 10 萬顆 XPU；另有單晶片 1,024 條 100G SerDes 的版本。智邦等系統商為合作夥伴。"
+  - key: nccl-perf
+    title: "NCCL Tests: Performance reported"
+    publisher: "NVIDIA（GitHub）"
+    url: "https://github.com/NVIDIA/nccl-tests/blob/master/doc/PERFORMANCE.md"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "AllReduce 每個元素需要 2(n−1) 次資料傳輸，匯流排頻寬 B = S/t × 2(n−1)/n；ReduceScatter 與 AllGather 的係數為 (n−1)/n。"
+  - key: megatron
+    title: "Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM"
+    publisher: "Narayanan et al.（arXiv）"
+    url: "https://arxiv.org/abs/2104.04473"
+    type: paper
+    lang: en
+    published: "2021-04-09"
+    accessed: "2026-10-15"
+    note: "結合管線平行（跨伺服器）、張量平行（伺服器內）與資料平行，在 3,072 顆 A100 上以每秒 502 PFLOP 訓練兆級參數模型，達峰值的 52%；張量平行的 All-Reduce 若跨伺服器，要走比 NVLink 慢的伺服器間連線；不佳的平行組合可能讓吞吐量下降達 2 倍。Selene 每個節點 8 顆 A100 以 NVLink／NVSwitch 相連，另有 8 張 200 Gbps HDR InfiniBand 網卡；節點間為三層（葉、脊、核心）胖樹拓撲，共 850 台交換器。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "Meta（arXiv）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-15"
+    note: "405B 模型最多以 1.6 萬顆 H100 訓練；每台伺服器 8 顆 GPU 以 NVLink 相連。RoCE 叢集 2.4 萬顆 GPU 採三層 Clos 網路：每櫃 16 顆 GPU 接一台 ToR 交換器，192 櫃組成 3,072 顆 GPU、全二分頻寬的 pod，8 個 pod 經彙聚交換器組成叢集，彙聚層超額訂閱比 1:7；平行策略與排程器會感知拓撲以減少跨 pod 通訊；兩顆 GPU 之間建立 16 條流並以 E-ECMP 分散負載，脊層採用深緩衝交換器。採用張量、上下文、管線與資料四維平行，表 4 的張量平行度為 8。"
+  - key: meta-genai-infra
+    title: "Building Meta’s GenAI Infrastructure"
+    publisher: "Engineering at Meta"
+    url: "https://engineering.fb.com/2024/03/12/data-center-engineering/building-metas-genai-infrastructure/"
+    type: company-site
+    lang: en
+    published: "2024-03-12"
+    accessed: "2026-10-15"
+    note: "兩座 24,576 顆 GPU 的叢集：一座採用以 Arista 7800 搭配 Wedge400 與 Minipack2 的 RoCE 乙太網路，另一座採用輝達 Quantum2 InfiniBand，兩者都連接 400 Gbps 端點；兩種叢集都已用於大型生成式 AI 工作負載，沒有出現網路瓶頸。"
+  - key: delloro-1q26
+    title: "Ethernet Extends Lead in AI Scale-Out Networks Despite Strong InfiniBand Rebound"
+    publisher: "Dell'Oro Group"
+    url: "https://www.delloro.com/news/ethernet-extends-lead-in-ai-scale-out-networks-despite-strong-infiniband-rebound/"
+    type: analyst
+    lang: en
+    published: "2026-06-02"
+    accessed: "2026-10-15"
+    note: "2026 年第一季 AI 後端網路的乙太網路交換器銷售增加一倍以上，約佔 AI 叢集資料中心交換器銷售的三分之二；InfiniBand 銷售在該季增為三倍以上，受惠於 Blackwell Ultra 平台的 800 Gbps 交換器出貨，但需求多半來自既有叢集升級。"
+  - key: delloro-2q26
+    title: "AI Back-End Networks Switch Sales Surpass Front-End Networks for the First Time in 2Q 2026"
+    publisher: "Dell'Oro Group"
+    url: "https://www.delloro.com/news/ai-back-end-networks-switch-sales-surpass-front-end-networks-for-the-first-time-in-2q2026/"
+    type: analyst
+    lang: en
+    published: "2026-09-03"
+    accessed: "2026-10-15"
+    note: "2026 年第二季 AI 後端網路的交換器銷售首度超越前端網路；乙太網路 AI 後端交換器銷售由 Celestica 居首、輝達緊追，Arista 第三、思科第四；1.6 Tbps 已開始送樣，預期 2026 年下半年放量；Scale-up 乙太網路應用將在下半年出現；市場至少未來一到兩年受限於供給。"
+  - key: nvda-q1fy27
+    title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2027"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2027"
+    type: press-release
+    lang: en
+    published: "2026-05-20"
+    accessed: "2026-10-15"
+    note: "依舊的子市場分類：資料中心運算營收 604 億美元、年增 77%；資料中心網通營收 148 億美元、年增 199%（同一份新聞稿宣布資料中心將改以 Hyperscale 與 ACIE 兩個子市場揭露；第二季新聞稿未再列出網通營收）。透過 NVLink Fusion 與 Marvell 建立策略夥伴關係，並在矽光子技術上合作。"
+  - key: nvda-q2fy27
+    title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2027"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2027"
+    type: press-release
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-15"
+    note: "同時支援可插拔與共同封裝光學的 Spectrum-6 交換器系統，作為 Vera Rubin 平台的一部分，正陸續送抵全球超大型 AI 工廠（原文 arriving across the world's gigascale AI factories）。"
+  - key: nvidia-cpo-2025
+    title: "NVIDIA Announces Spectrum-X Photonics, Co-Packaged Optics Networking Switches to Scale AI Factories to Millions of GPUs"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-spectrum-x-co-packaged-optics-networking-switches-ai-factories"
+    type: press-release
+    lang: en
+    published: "2025-03-18"
+    accessed: "2026-10-15"
+    note: "矽光子交換器的電源效率提升 3.5 倍、雷射數量減為四分之一、網路韌性提升 10 倍；矽光子生態系夥伴包括台積電、波若威、Coherent、康寧、Fabrinet、鴻海、Lumentum、SENKO、矽品、住友電工與天孚通信。"
+updated: "2026-10-15"
+lastVerified: "2026-10-15"
+editorial:
+  status: fact-checked
+  author: learn-12
+  checkedBy: "learn-12-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：主要數字已逐一對照一手來源（NVIDIA 產品頁與財報、AMD、Google Cloud、博通、UALink、UEC、Dell'Oro、Meta、arXiv 論文與 NCCL 文件），換算值均重算無誤。修正：Dell'Oro 2026 Q1 的 InfiniBand 銷售是增為三倍以上（原寫成長逾兩倍）；Vera Rubin 產品頁未標示初步規格；補上 HGX 頁面單顆 Rubin 的 NVLink 3.6 TB/s；Llama 3 只用 2.4 萬顆叢集中最多 1.6 萬顆；Spectrum-6 為正陸續送抵；網通營收為輝達舊分類數字；Astera Labs 改以 UALink 董事會成員佐證；智邦與 Credo 的龍頭說法改為較保守的描述；DeepDive 補上 ZeRO 分片的說明。Rubin NVLink 頻寬在輝達各頁面不一致（3 與 3.6 TB/s），本文以 NVLink 產品頁為準並並列說明。銅纜、光模組與 AEC 業者的角色為定性描述，與名冊一致，未另附來源。"
+---
+
+## 一句話解釋
+
+訓練或執行一個大型模型，要靠成千上萬顆 <Term id="gpu">GPU</Term> 分工合作，而它們每算完一小步就得交換結果。AI 叢集網路分成兩層：<Term id="scale-up">Scale-up</Term> 在機櫃內用 <Term id="nvlink">NVLink</Term> 等超高速互連，把幾十顆 GPU 連成一顆「大 GPU」；<Term id="scale-out">Scale-out</Term> 再用網卡、<Term id="network-switch">交換器</Term>與<Term id="optical-fiber">光纖</Term>，把成百上千個機櫃串成一座叢集。網路有多快，決定了昂貴的 GPU 能發揮幾成實力。
+
+## 生活化比喻
+
+<Callout type="analogy" title="全校一起寫一份超大報告">
+
+想像全校幾千位學生要合力完成一份超大報告，每個人負責一小部分：
+
+- **Scale-up 像同一間教室裡的小組**：桌子併在一起，任何人都能隨時把筆記遞給任何一位組員，整組像一個人在工作。
+- **Scale-out 像分散在各棟大樓的小組**：彼此只能靠走廊和校園郵差（交換器）傳紙條，量一大，走廊就會塞車。
+- **<Term id="all-reduce">All-Reduce</Term> 像每節下課的對答案**：每寫完一段，全校要把各自算出的分數加總，再把總分發回每一個人，才能開始寫下一段。只要有一張紙條遲到，全校都得等。
+- **銅線與光纖**：同一棟樓裡傳紙條用跑的就好（銅線）；跨校區就得改搭快遞專車（光收發模組加光纖）。
+
+所以分工時，最需要頻繁討論的工作要留在同一間教室，只需要偶爾對答案的工作才分到別棟大樓。這正是 AI 叢集安排工作的原則。
+
+</Callout>
+
+## 原理
+
+### 為什麼一顆 GPU 不夠用
+
+第一個原因是**放不下**。訓練時，每個<Term id="parameter">參數</Term>不只要存權重本身，還要存梯度與優化器的狀態。微軟（Microsoft）研究團隊在 ZeRO 論文中估算，以常見的混合精度搭配 Adam 優化器，每個參數需要 16 位元組<Cite k="zero" />。照這個比例，一個兆級參數的模型光是這些狀態就要 16 TB，而輝達（NVIDIA）Rubin 每顆 GPU 的 <Term id="hbm">HBM</Term> 是 288 GB<Cite k="nvidia-vera-rubin" />，至少要 56 顆 GPU 才裝得下（本站換算，尚未計入運算過程的中間結果）。
+
+第二個原因是**算不完**。Meta 的 Llama 3 405B 模型最多動用了 1.6 萬顆 H100 進行<Term id="training">訓練</Term><Cite k="llama3" />；輝達等研究團隊也曾用 3,072 顆 GPU 實測兆級參數模型的訓練速度<Cite k="megatron" />。這麼多 GPU 要像一台電腦一樣運作，就得把模型與資料拆開，常見的拆法有幾種：
+
+| 平行方式 | 怎麼拆 | 通訊特性 | 通常放在 |
+|---|---|---|---|
+| <Term id="tensor-parallelism">張量平行</Term> | 把每一層的大矩陣切給幾顆 GPU 一起算 | 每一層都要交換結果，頻繁且怕延遲 | 機櫃或伺服器內（Scale-up） |
+| 管線平行 | 把模型的不同層分給不同 GPU，像生產線接力 | 只在相鄰階段之間傳遞中間結果 | 可以跨伺服器 |
+| <Term id="data-parallelism">資料平行</Term> | 每組 GPU 處理不同的訓練資料 | 每一步結束時用 All-Reduce 加總梯度，量大但次數少 | 跨機櫃（Scale-out） |
+| <Term id="expert-parallelism">專家平行</Term> | 把 <Term id="moe">MoE</Term> 模型的不同專家放在不同 GPU | 每個 Token 都要送到負責的專家那裡，流量大 | 視模型與叢集規模而定 |
+
+輝達等團隊的 Megatron-LM 論文歸納出的原則是：張量平行放在同一台伺服器內，管線平行跨伺服器，再用資料平行擴大規模；它也指出，平行方式組合不當，吞吐量可能差到 2 倍<Cite k="megatron" />。Llama 3 的訓練同樣把張量平行度設為 8，正好是一台伺服器裡以 NVLink 相連的 GPU 數量<Cite k="llama3" />。
+
+### All-Reduce：大家的答案加總後再發回去
+
+資料平行最核心的通訊動作是 All-Reduce：每顆 GPU 用自己的資料算出一份梯度，所有 GPU 要拿到「全部梯度的總和」，才能用同樣的方式更新模型。最經典的做法是把 GPU 排成一個環：
+
+<FlowSteps
+  title="環狀 All-Reduce 的四個步驟"
+  steps={[
+    { title: "各自計算", detail: "每顆 GPU 用分到的資料算出一份梯度" },
+    { title: "分段加總", detail: "梯度切成 N 段，沿著環傳遞並逐段相加（Reduce-Scatter）" },
+    { title: "發回結果", detail: "每段加總好的結果再沿環傳回每一顆 GPU（All-Gather）" },
+    { title: "同步更新", detail: "所有 GPU 拿到相同的梯度總和，一起更新權重" }]}
+/>
+
+輝達通訊函式庫 NCCL 的測試文件給出了它的成本：每份資料需要 2(n−1) 次傳輸，換算下來，每顆 GPU 實際要送出的資料量約為梯度大小的 2(n−1)/n 倍<Cite k="nccl-perf" />。GPU 數 n 很大時，這個倍數趨近 2，也就是每顆 GPU 每一步都要把約 2 倍梯度大小的資料送進網路。好消息是環越大、每顆 GPU 要送的量並不會跟著暴增；壞消息是整個環的速度，取決於最慢的那一段連線。
+
+### Scale-up：把一櫃 GPU 變成一顆大 GPU
+
+Scale-up 的目標，是讓一群 GPU 能直接讀寫彼此的記憶體，像同一顆晶片一樣協作。輝達的 NVLink 是目前的主流：H100 的 NVLink 總頻寬 900 GB/s，是 <Term id="pcie">PCIe</Term> Gen5 的 7 倍<Cite k="nvidia-hopper" />；到了 Rubin 世代的第六代 NVLink，每顆 GPU 達 3,000 GB/s，是 PCIe Gen6 的 12 倍<Cite k="nvidia-nvlink" />。
+
+<BarChart
+  title="每顆 GPU 的 NVLink 頻寬"
+  unit="GB/s"
+  data={[
+    { label: "第四代（Hopper）", value: 900, note: "網域 8 顆 GPU" },
+    { label: "第五代（Blackwell）", value: 1800, note: "網域最多 72 顆" },
+    { label: "第六代（Rubin）", value: 3000, note: "網域最多 72 顆" }]}
+  source="nvidia-nvlink"
+  note="輝達 NVLink 產品頁的初步規格。輝達在 2026 年 1 月發表 Rubin 時公布的數字是每顆 3.6 TB/s、整櫃 260 TB/s，HGX 頁面的單顆 GPU 規格也寫 3.6 TB/s。"
+  keepOrder
+/>
+
+另一個關鍵變化是網域的大小。Hopper 世代的 NVLink 網域是一台伺服器裡的 8 顆 GPU；Blackwell 與 Rubin 的 NVL72 機櫃，把網域擴大到 72 顆<Cite k="nvidia-nvlink" />。怎麼做到的？以 GB200 NVL72 為例，每顆 GPU 有 18 個 NVLink 埠，機櫃中段的 9 個 NVLink 交換托盤各提供 144 個埠，透過機櫃背面的銅纜卡匣，把 72 顆 GPU 的每一個埠都接到交換器上<Cite k="nvidia-gb200-blog" />。72 × 18 = 1,296，正好等於 9 × 144，所以任兩顆 GPU 之間只隔一個交換晶片。整櫃的 NVLink 總頻寬，Blackwell 是 130 TB/s，Rubin 是 216 TB/s<Cite k="nvidia-nvlink" />。不過輝達在 2026 年 1 月發表 Rubin 時公布的是每顆 3.6 TB/s、整櫃 260 TB/s<Cite k="nvidia-rubin-pr" />，HGX 頁面的單顆 GPU 規格也寫 3.6 TB/s<Cite k="nvidia-hgx" />，輝達自家頁面的數字並不一致，本文以 NVLink 產品頁為準。
+
+<Scene3D id="network" variant="scale-up" caption="機櫃內的 Scale-up 網路：上下兩群運算托盤的 GPU，透過中間的 NVLink 交換托盤與背面的銅纜全互連；通往另一個機櫃的路只能走網卡，頻寬小得多。按「下一步」切換到葉脊架構與 CPO。GPU 與托盤數量為示意。" />
+
+NVLink 不是唯一的 Scale-up 方案，各陣營走的路不太一樣：
+
+| 方案 | 推動者 | 規模 | 特色 |
+|---|---|---|---|
+| NVLink | 輝達 | 一個網域最多 72 顆 GPU | 以 NVLink Fusion 開放給雲端業者的客製晶片 |
+| ICI | Google <Term id="tpu">TPU</Term> | 每個 pod 9,216 顆 Ironwood | 3D 環面拓撲，每顆晶片雙向 1.2 TB/s |
+| <Term id="ualink">UALink</Term> | UALink 聯盟（2025 年 4 月時逾 85 家成員） | 規格最多 1,024 顆加速器 | 開放標準，每通道 200G；超微（AMD）的 Helios 以 UALink over Ethernet 連接 72 顆 GPU |
+| Scale-up <Term id="ethernet">乙太網路</Term> | 博通（Broadcom）等 | Tomahawk 6 支援 512 顆 XPU | 沿用乙太網路生態與工具 |
+
+表中資料分別來自輝達<Cite k="nvidia-nvlink" />、Google Cloud<Cite k="google-ironwood" />、UALink 聯盟<Cite k="ualink-1" />、超微<Cite k="amd-helios" />與博通<Cite k="avgo-th6" />。各家的規模與頻寬定義不盡相同，只適合看大方向。誰會成為主流，見<TrendLink id="scale-up-fabric-wars">Scale-up 互連標準之爭</TrendLink>。
+
+### Scale-out：葉脊網路串起上萬顆 GPU
+
+走出機櫃，就進入 Scale-out 網路。每顆 GPU 旁邊通常配一張<Term id="nic">網卡</Term>：輝達 ConnectX-8 最高 800 Gb/s，ConnectX-9 每顆 GPU 最高 1.6 Tb/s<Cite k="nvidia-supernic" />。網卡支援 <Term id="rdma">RDMA</Term>（遠端直接記憶體存取），讓 GPU 的資料不必經過 CPU 轉手，就能直接寫進另一台伺服器的記憶體。
+
+網卡接上交換器，最常見的接法是「葉脊」架構：伺服器接到葉交換器，每台葉交換器再接到每一台脊交換器，任兩台伺服器之間最多經過「葉、脊、葉」三台交換器，叢集更大時再往上加一層。Meta 訓練 Llama 3 所用的 2.4 萬顆 GPU RoCE 叢集（預訓練最多動用其中 1.6 萬顆）就是三層：每櫃 16 顆 GPU 接一台機櫃頂交換器，192 櫃組成一個 3,072 顆 GPU 的 pod，pod 內部頻寬完全不打折；8 個 pod 再接成整座叢集，但最上層採 1:7 的超額訂閱，往上的頻寬只有往下的七分之一，所以平行策略會盡量避免跨 pod 通訊<Cite k="llama3" />。
+
+一層交換器能接多少 GPU，取決於交換晶片有幾個埠。以 k 個埠的交換器組成兩層葉脊網路，每台葉交換器一半的埠往下接伺服器、一半往上接脊，最多可以接：
+
+<MathTeX tex={"N_{\\max}=\\frac{k^{2}}{2}"} display label="兩層葉脊網路最多能連接的端點數，約等於交換器埠數 k 的平方除以 2" />
+
+博通的 Tomahawk 6 單晶片交換容量 102.4 Tbps，若切成 512 個 200G 埠，代入公式約可接 13 萬個端點，與博通宣稱「兩層網路連接逾 10 萬顆 XPU」相符<Cite k="avgo-th6" />；同一顆晶片若切成 128 個 800G 埠，兩層只能接約 8,000 個（本站換算）。埠數越多，同樣層數就能接越多 GPU，這是交換晶片一代代把容量加倍的原因之一。
+
+Scale-out 有兩大技術路線：
+
+<Compare
+  title="InfiniBand 與乙太網路"
+  left={{ title: "InfiniBand", items: ["源自高效能運算，原生支援 RDMA，延遲低", "主要由輝達的 Quantum 系列供應", "Meta 兩座 24,576 顆 GPU 叢集的其中一座採用"] }}
+  right={{ title: "乙太網路", items: ["資料中心最普及的網路，供應商多、維運工具成熟", "以 RoCE 在乙太網路上跑 RDMA；Ultra Ethernet 聯盟 2025 年發布 1.0 規格", "2026 年第一季約佔 AI 叢集交換器銷售的三分之二"] }}
+/>
+
+Meta 在 2024 年 3 月公布了兩座 24,576 顆 GPU 的叢集，一座用 RoCE 乙太網路、一座用 <Term id="infiniband">InfiniBand</Term>，端點都是 400 Gbps，兩者都跑過大型生成式 AI 工作，沒有出現網路瓶頸<Cite k="meta-genai-infra" />。<Term id="ultra-ethernet">Ultra Ethernet</Term> 聯盟在 2025 年 6 月發布 1.0 規格，從網卡、交換器、光學到線纜都納入<Cite k="uec-1" />。市場上，Dell'Oro 統計 2026 年第一季乙太網路約佔 AI 叢集交換器銷售的三分之二；InfiniBand 也明顯回溫，當季銷售增為三倍以上，但多半來自既有叢集的升級<Cite k="delloro-1q26" />。
+
+### 頻寬懸崖：越往外，路越窄
+
+把三層頻寬放在一起比，就看得出為什麼工作要這樣分配：
+
+<BarChart
+  title="Rubin 每顆 GPU 的三層頻寬"
+  unit="TB/s"
+  data={[
+    { label: "HBM4（記憶體）", value: 19.2 },
+    { label: "NVLink（Scale-up）", value: 3 },
+    { label: "網路（Scale-out，雙向）", value: 0.45 }]}
+  source="nvidia-vera-rubin"
+  note="輝達 Vera Rubin NVL72 產品頁的單顆 GPU 規格；網路頻寬為雙向（整櫃 32.4 TB/s）。輝達 HGX 頁面的單顆 GPU 規格則寫 HBM4 22 TB/s、NVLink 3.6 TB/s，層與層之間仍差好幾倍。"
+  keepOrder
+/>
+
+從 HBM 到 NVLink，頻寬只剩約六分之一；再從 NVLink 到 Scale-out 網路，又只剩約七分之一（本站換算）<Cite k="nvidia-vera-rubin" />。Google 的 TPU 也有類似的落差：Ironwood 每顆晶片的 ICI 雙向頻寬 1,200 GB/s，連到資料中心網路的頻寬則是 100 Gbps（約 12.5 GB/s），差距達數十倍以上<Cite k="google-ironwood" />。這就是為什麼通訊最密集的張量平行要關在 Scale-up 網域內，只需要每一步同步一次的資料平行才放到 Scale-out。
+
+### 銅線與光：距離決定介質
+
+資料離開晶片時是電訊號。距離短的時候，直接走銅線最省電也最便宜，所以 NVL72 機櫃內的 NVLink 用的是銅纜卡匣<Cite k="nvidia-gb200-blog" />。速度越高，銅線能傳的距離越短，需要 <Term id="retimer">Retimer</Term> 重整訊號，或是兩端內建訊號處理晶片的 <Term id="aec">AEC</Term> 主動電纜，才能連到隔壁幾個機櫃。距離再拉長到跨好幾排機櫃或跨機房，就得把電轉成光，插上<Term id="optical-transceiver">光收發模組</Term>，透過光纖傳到幾百公尺外。
+
+光模組數量龐大，也很耗電。下一步是<Term id="cpo">共同封裝光學（CPO）</Term>：用<Term id="silicon-photonics">矽光子</Term>把光引擎直接做進交換晶片的封裝。輝達 2025 年發表的矽光子交換器宣稱電源效率提升 3.5 倍、雷射數量減為四分之一<Cite k="nvidia-cpo-2025" />；2026 年 8 月，它在財報中表示，同時支援可插拔與共同封裝光學的 Spectrum-6 交換器系統正陸續送抵全球超大型 AI 工廠<Cite k="nvda-q2fy27" />。細節見<LearnLink id="interconnect-deep">互連深入</LearnLink>與<TrendLink id="co-packaged-optics">共同封裝光學走向量產</TrendLink>。
+
+<DeepDive title="深入一點：同步一次梯度要多久？">
+
+用 NCCL 文件的公式估算環狀 All-Reduce 的時間<Cite k="nccl-perf" />。設梯度大小為 S、GPU 數為 n、每顆 GPU 單向可用頻寬為 B：
+
+<MathTeX tex={"t\\approx\\frac{2(n-1)}{n}\\cdot\\frac{S}{B}"} display label="All-Reduce 時間約等於 2 乘以 n 減 1 除以 n，再乘以梯度大小 S 除以單向頻寬 B" />
+
+假設一個 700 億參數的模型，梯度以 16 位元儲存，S 約 140 GB；8 顆 GPU 做資料平行，係數為 2 × 7 ÷ 8 = 1.75。（實際上 700 億參數模型的訓練狀態放不進單顆 GPU，要搭配 ZeRO 這類把狀態分片的技術；不過分片優化器狀態與梯度時，通訊量和一般資料平行相同<Cite k="zero" />，所以這裡的估算仍有參考價值。）
+
+- **走 NVLink**：H100 的 NVLink 雙向合計 900 GB/s<Cite k="nvidia-hopper" />，單向約 450 GB/s，t 約 1.75 × 140 ÷ 450 ≈ 0.54 秒。
+- **走 400 Gbps 網卡**：單向約 50 GB/s，t 約 1.75 × 140 ÷ 50 ≈ 4.9 秒。
+
+同樣的同步，走網路要多花約 9 倍時間（本站簡化估算）。如果每一步的運算只要幾秒，GPU 會有一大半時間在等網路。實務上有幾種對策：把梯度切成小塊，一邊計算一邊傳送，讓通訊和運算重疊；結合張量與管線平行，讓每顆 GPU 負責的參數變少；在網路設計上避免壅塞。Meta 就讓兩顆 GPU 之間同時開 16 條連線，以改良的 ECMP 演算法分散到不同路徑，並在脊層採用深緩衝交換器吸收瞬間的流量高峰<Cite k="llama3" />。
+
+這個估算也說明了一個常被忽略的事實：叢集的有效算力不是 GPU 數量乘以單顆算力，而是取決於網路能讓多少 GPU 不用乾等。Megatron-LM 在 3,072 顆 GPU 上達到峰值的 52%，論文認為這已是當時同規模模型最快的訓練吞吐量<Cite k="megatron" />。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+AI 叢集網路對應到產業鏈上的 <SegmentChip id="networking-optics" /> 環節，近期成長得比運算更快：<CompanyChip id="nvidia" /> 2027 財年第一季（約當 2026 年 2–4 月）資料中心網通營收 148 億美元、年增 199%，同期運算營收年增 77%<Cite k="nvda-q1fy27" />。這兩個數字依舊的子市場分類計算；輝達在同一份財報中宣布，之後資料中心營收將改以客戶類型（超大規模業者 Hyperscale，以及 AI 雲端、工業與企業 ACIE）分類揭露<Cite k="nvda-q1fy27" />。Dell'Oro 也統計，2026 年第二季 AI 後端網路的交換器銷售首度超越傳統前端網路<Cite k="delloro-2q26" />。
+
+- **Scale-up 互連**：輝達的 NVLink 交換晶片與機櫃一起出貨；<CompanyChip id="amd" /> 的 Helios 採用 UALink over Ethernet<Cite k="amd-helios" />；<CompanyChip id="alphabet" /> 的 TPU 用自家 ICI<Cite k="google-ironwood" />。輝達也透過 NVLink Fusion 與 <CompanyChip id="marvell" /> 建立策略夥伴關係<Cite k="nvda-q1fy27" />。<CompanyChip id="astera-labs" /> 供應 Scale-up 交換晶片與 retimer，也是 UALink 聯盟的董事會成員之一<Cite k="ualink-1" />。
+- **交換晶片與交換器**：<CompanyChip id="broadcom" /> 的 Tomahawk 系列是乙太網路交換晶片的代表<Cite k="avgo-th6" />。2026 年第二季乙太網路 AI 後端交換器銷售，依序是 <CompanyChip id="celestica" />、輝達、<CompanyChip id="arista" /> 與 <CompanyChip id="cisco" /><Cite k="delloro-2q26" />；台灣的 <CompanyChip id="accton" /> 是白牌資料中心交換器的主要代工廠之一，在 Tomahawk 6 發表時也表示將與博通密切合作推出相關產品<Cite k="avgo-th6" />。
+- **網卡**：輝達 ConnectX SuperNIC<Cite k="nvidia-supernic" />、超微 Pensando Vulcano 網卡<Cite k="amd-helios" />。
+- **銅纜與連接晶片**：<CompanyChip id="amphenol" /> 供應機櫃背板銅纜與高速連接器；<CompanyChip id="credo" /> 是 AEC 主動電纜的主要供應商；台灣的 <CompanyChip id="bizlink" /> 也供應 AEC 與高速線束。
+- **光模組與光纖**：<CompanyChip id="innolight" /> 與 <CompanyChip id="eoptolink" /> 是高速光模組大廠，<CompanyChip id="coherent" />、<CompanyChip id="lumentum" /> 供應雷射與光元件，<CompanyChip id="fabrinet" /> 代工光模組，<CompanyChip id="corning" /> 供應光纖。
+- **CPO 與矽光子**：輝達的矽光子交換器生態系夥伴中，台灣有 <CompanyChip id="tsmc" />、<CompanyChip id="browave" />、<CompanyChip id="foxconn" /> 與矽品<Cite k="nvidia-cpo-2025" />。
+
+延伸閱讀：<TrendLink id="rack-scale-systems">機櫃即電腦：從 NVL72 到 Kyber</TrendLink>、<TrendLink id="custom-asic-rise">客製化 ASIC 崛起</TrendLink>。想了解 MoE 模型為什麼特別吃網路，可以接著讀<LearnLink id="mixture-of-experts">混合專家模型深入</LearnLink>。

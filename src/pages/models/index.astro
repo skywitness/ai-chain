@@ -1,0 +1,892 @@
+---
+/**
+ * /models/ 「大模型特性分析」: model-galaxy scene, 如何解讀評測 (pages/models-intro), flagship
+ * comparison table, benchmark dot plots, filterable family directory grouped by origin, and the
+ * multimodal / robotics section. Driven by src/data/models-index.yaml; families whose content entry
+ * is still being written appear with a 「內容整理中」 card and are left out of charts.
+ */
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Scene3D from '../../components/scene/Scene3D.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Icon from '../../components/ui/Icon.astro';
+import Card from '../../components/ui/Card.astro';
+import Badge from '../../components/ui/Badge.astro';
+import { mdxComponents } from '../../components/content/mdx-components';
+import SourcesList from '../../components/content/SourcesList.astro';
+import ModelFamilyCard from '../../components/model/ModelFamilyCard.astro';
+import ModelFilters from '../../components/model/ModelFilters.astro';
+import ModelMiniList from '../../components/model/ModelMiniList.astro';
+import FlagshipTable from '../../components/model/FlagshipTable.astro';
+import BenchmarkDots from '../../components/model/BenchmarkDots.astro';
+import {
+  KIND_LABELS,
+  KIND_ORDER,
+  KIND_SHORT,
+  OPENNESS_FILTERS,
+  ORIGIN_GROUPS,
+  commonBenchmarks,
+  getFamilies,
+  getLearnLinks,
+  kindColor,
+  opennessBucket,
+  originGroupOf,
+  type FamilyView,
+} from '../../components/model/model-data';
+import { getModelGalaxyData } from '../../lib/scene-data/models';
+import { levelMeta, safeEntry } from '../../lib/collections';
+import { learnHref, modelsCompareHref } from '../../lib/paths';
+import { DATA_DATE } from '../../lib/seo';
+
+const families = await getFamilies();
+const withData = families.filter((f) => f.data);
+const llm = families.filter((f) => f.kind === 'llm');
+const llmWithData = llm.filter((f) => f.data && f.flagship);
+const nonLlm = families.filter((f) => f.kind !== 'llm');
+
+// Scene (every star links to its family page; the directory below lists the same families in HTML)
+const galaxy = await getModelGalaxyData();
+
+// Intro (pages/models-intro.mdx)
+const intro = await safeEntry('pages', 'models-intro');
+const introRendered = intro ? await render(intro) : undefined;
+const IntroContent = introRendered?.Content;
+const introSources = intro?.data.sources ?? [];
+
+// Table + dot plots
+const flagshipBench = (() => {
+  const picked = commonBenchmarks(llmWithData.map((f) => f.flagship), 3);
+  return picked.length ? picked : ['aa-intelligence-index', 'gpqa-diamond', 'hle'];
+})();
+const dotBench = commonBenchmarks(llmWithData.map((f) => f.flagship), 4);
+const flagshipItems = llmWithData.map((f) => ({
+  version: f.flagship!,
+  label: f.flagship!.name,
+  href: f.href,
+}));
+
+// Directory
+const count = (pred: (f: FamilyView) => boolean) => families.filter(pred).length;
+const kindOptions = KIND_ORDER.map((k) => ({ id: k, label: KIND_SHORT[k] === '語言' ? '大型語言模型' : (KIND_SHORT[k] ?? k), count: count((f) => f.kind === k) }));
+const originOptions = ORIGIN_GROUPS.map((g) => ({ id: g.id, label: g.label, count: count((f) => originGroupOf(f.origin).id === g.id) }));
+const openOptions = OPENNESS_FILTERS.map((o) => ({ id: o.id, label: o.label, count: count((f) => opennessBucket(f.opennessClass) === o.id) }));
+const groups = ORIGIN_GROUPS.map((g) => ({
+  ...g,
+  families: families
+    .filter((f) => originGroupOf(f.origin).id === g.id)
+    .sort((a, b) => KIND_ORDER.indexOf(a.kind as never) - KIND_ORDER.indexOf(b.kind as never)),
+})).filter((g) => g.families.length > 0);
+
+// Multimodal and robotics
+const MM_KINDS: Array<{ kind: string; blurb: string; bench?: string }> = [
+  { kind: 'image', blurb: '依文字描述生成或修改圖片。評測多採人類盲測偏好的 Elo 分數，看的是「人覺得哪張比較好」。', bench: 'aa-text-to-image-elo' },
+  { kind: 'video', blurb: '生成數秒到數十秒的影片，部分模型同時生成音訊。成本常以每秒影片計價，與文字模型的 tokens 計價不同。', bench: 'aa-text-to-video-elo' },
+  { kind: 'audio', blurb: '語音合成、語音辨識與音樂生成，常用在客服、配音、有聲書與創作工具。' },
+  { kind: 'world', blurb: '依使用者的動作即時生成可互動的虛擬世界，用於遊戲、模擬，以及在虛擬環境中訓練機器人。' },
+  { kind: 'robotics', blurb: '把視覺、語言與動作結合（VLA 模型），讓機器人看懂環境、理解指令並做出動作。' },
+];
+/** Chart labels sit in a narrow column: drop parentheticals (「Nano Banana Pro（Gemini 3 Pro Image）」→「Nano Banana Pro」) and 「團隊」. */
+const stripParens = (s: string) => s.replace(/\s*[（(][^）)]*[）)]/g, '').trim() || s;
+const shortLab = (s: string) => stripParens(s).replace(/\s*團隊$/, '');
+const mmGroups = MM_KINDS.map((m) => {
+  const fams = nonLlm.filter((f) => f.kind === m.kind);
+  const items = m.bench
+    ? fams.flatMap((f) =>
+        f.versions
+          .filter((v) => v.benchmarks.some((b) => b.benchmark === m.bench) && v.status !== 'retired')
+          .map((v) => ({ version: v, label: stripParens(v.name), sublabel: shortLab(f.labName), href: f.href, highlight: v.id === f.flagship?.id })),
+      )
+    : [];
+  // keep the chart about as tall as the family list next to it
+  const limit = Math.max(6, fams.length + 3);
+  return { ...m, label: KIND_LABELS[m.kind] ?? m.kind, families: fams, items, limit };
+}).filter((g) => g.families.length > 0);
+
+// Related learning
+// One-line blurbs until the articles themselves are written (their subtitle replaces these).
+const learn = await getLearnLinks(['what-is-llm', 'reasoning-models', 'multimodal-models', 'open-vs-closed-models', 'model-evaluation', 'physical-ai-deep'], {
+  'what-is-llm': '從「預測下一個字」出發，看懂語言模型如何學會寫作、翻譯與寫程式。',
+  'reasoning-models': '為什麼先「思考」再回答會更準，以及推理模型多花的成本。',
+  'multimodal-models': '同一個模型如何同時看圖、聽聲音、讀影片，並生成圖像與語音。',
+  'open-vs-closed-models': '開放權重與封閉 API 各有什麼優缺點，授權條款又差在哪裡。',
+  'model-evaluation': '評測分數怎麼來、競技場如何投票，以及為什麼分數會過時。',
+  'physical-ai-deep': '機器人基礎模型、自駕與世界模型如何把 AI 帶進真實世界。',
+});
+
+const STARTER_IDS = ['what-is-llm', 'model-evaluation', 'open-vs-closed-models'];
+const starter = learn.filter((a) => STARTER_IDS.includes(a.slug));
+const further = learn.filter((a) => !STARTER_IDS.includes(a.slug));
+
+const openFamilies = withData.filter((f) => ['open', 'restricted', 'source'].includes(f.opennessClass)).length;
+const stats = [
+  { label: '收錄模型系列', value: families.length, unit: '個' },
+  { label: '大型語言模型系列', value: llm.length, unit: '個' },
+  { label: '多模態與機器人系列', value: nonLlm.length, unit: '個' },
+  { label: '已完成分析', value: withData.length, unit: `／${families.length}` },
+];
+const nav = [
+  { id: 'reading', label: '如何解讀評測' },
+  { id: 'flagships', label: '旗艦比較' },
+  { id: 'benchmarks', label: '評測分數' },
+  { id: 'families', label: '模型系列' },
+  { id: 'multimodal', label: '多模態與機器人' },
+];
+const description =
+  '把 OpenAI、Anthropic、Google、DeepSeek、通義千問等大模型的能力、價格、開放程度與評測分數放在一起看，並說明如何解讀評測與比較的限制。';
+---
+
+<BaseLayout
+  title="大模型特性分析：各家模型一次看懂"
+  description={description}
+  breadcrumbs={[{ label: '大模型' }]}
+  section="models"
+  sources={introSources}
+>
+  <div class="container models">
+    <header class="page-head models-head">
+      <div class="models-head__text">
+        <p class="page-head__kicker">大模型</p>
+        <h1 data-pagefind-weight="10">大模型特性分析</h1>
+        <p class="page-head__lede">
+          從語言模型到圖像、影片、世界模型與機器人，把各家模型的能力、價格、開放程度與評測分數放在一起看。每個分數都附上日期與來源：評測方法與時間不同，數字只能當作參考座標，不是排行榜的最終答案。
+        </p>
+      </div>
+      <dl class="models-stats">
+        {
+          stats.map((s) => (
+            <div class="models-stat">
+              <dt>{s.label}</dt>
+              <dd>
+                <span class="models-stat__v">{s.value}</span>
+                <span class="models-stat__u">{s.unit}</span>
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+      <div class="models-head__meta">
+        <DataAsOf date={DATA_DATE} />
+        {openFamilies > 0 && <span class="models-head__note">其中 {openFamilies} 個已整理系列提供開放權重</span>}
+      </div>
+      <span hidden data-pagefind-filter="類型:模型"></span>
+      <nav class="models-jump" aria-label="本頁段落" data-pagefind-ignore>
+        <ul>
+          {nav.map((n) => <li><a href={`#${n.id}`}>{n.label}</a></li>)}
+          <li><a href={modelsCompareHref()} class="models-jump__cta">並排比較 <Icon name="arrow-right" /></a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <section class="models-galaxy models-sec" id="galaxy" aria-labelledby="galaxy-title">
+      <div class="sec-head">
+        <p class="sec-kicker">先看全貌</p>
+        <h2 id="galaxy-title">模型星系：能力、成本與開放程度</h2>
+        <p class="sec-lede">每顆星是一個模型系列：越高越強、越右越貴、越前面越開放。跟著場景下方的導覽一步步看，或直接點選星點前往該系列。</p>
+      </div>
+      <Scene3D
+        id="model-galaxy"
+        variant="galaxy"
+        autoload="visible"
+        height="tall"
+        data={galaxy}
+        caption={`大模型星系：每顆星是一個模型系列，高度是綜合能力、左右是使用成本、前後是開放程度，顏色代表來源地區（${galaxy.length} 個系列，資料截至 ${DATA_DATE}）。點選星點可前往該系列頁面；同樣的清單見下方「模型系列」。`}
+      />
+      <div class="axes" role="group" aria-labelledby="axes-title">
+        <h3 id="axes-title" class="axes__title">星系座標怎麼算</h3>
+        <dl class="axes__list">
+          <div>
+            <dt><span class="axes__dot" style="--c: var(--chart-1)"></span>綜合能力（0–100）・高度</dt>
+            <dd>語言模型多取 Artificial Analysis 綜合智慧指數；圖像、影片與世界模型沒有共同指數，改用各自排行榜換算或編輯判斷，不同類型之間不宜直接比較。</dd>
+          </div>
+          <div>
+            <dt><span class="axes__dot" style="--c: var(--chart-2)"></span>成本指數（0–100）・左右</dt>
+            <dd>以輸入與輸出 3：1 混合的每百萬 tokens 價格取對數換算：0.05 美元為 0、100 美元為 100。</dd>
+          </div>
+          <div>
+            <dt><span class="axes__dot" style="--c: var(--chart-3)"></span>開放程度（0–1）・前後</dt>
+            <dd>0 為封閉、0.5 為開放權重但授權有限制、0.8 為開放權重且授權寬鬆、1 為連訓練資料與方法都公開。</dd>
+          </div>
+        </dl>
+        <p class="axes__note">每個系列頁都列出座標的計算方式與日期。</p>
+      </div>
+    </section>
+
+    <section class="section models-sec" id="reading" aria-labelledby="reading-title">
+      <div class="sec-head">
+        <p class="sec-kicker">閱讀指南</p>
+        <h2 id="reading-title">如何解讀評測</h2>
+      </div>
+      <div class="reading">
+        {
+          starter.length > 0 && (
+            <aside class="starter" aria-labelledby="starter-title">
+              <h3 id="starter-title" class="starter__title">
+                <Icon name="book" /> 剛開始認識大模型？
+              </h3>
+              <p class="starter__lede">先讀這幾篇基礎，再回來看分數會更清楚。</p>
+              <ol class="starter__list" role="list">
+                {starter.map((a) => (
+                  <li>
+                    <a href={learnHref(a.slug)}>
+                      <span class="starter__lv">{levelMeta(a.level).label}</span>
+                      <span class="starter__t">{a.title}</span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </aside>
+          )
+        }
+        <div class="reading__main">
+          {
+            IntroContent ? (
+              <>
+                <div class="prose">
+                  <IntroContent components={mdxComponents} />
+                </div>
+                {introSources.length > 0 && (
+                  <SourcesList sources={introSources} headingLevel={3} id="reading-sources" title="本段參考資料" class="reading__sources" />
+                )}
+              </>
+            ) : (
+              <div class="reading__fallback">
+                <p class="reading__lede">評測分數是模型能力的「快照」，不是絕對排名。看分數之前，先確認四件事：</p>
+                <ol class="tips">
+                  <li>
+                    <strong>測的是什麼？</strong>
+                    綜合指數把多項測驗加權平均；單項評測只測一種能力，例如研究所程度科學問答、修復真實程式錯誤或操作電腦。
+                  </li>
+                  <li>
+                    <strong>誰測的？</strong>
+                    實驗室自評常用最有利的設定；第三方或排行榜用一致的方法重測，比較適合跨模型比較。本站分別標示。
+                  </li>
+                  <li>
+                    <strong>何時測的？</strong>
+                    模型每隔幾個月就更新，排行榜也會改版。日期相差超過 90 天的分數，本站會加上提醒。
+                  </li>
+                  <li>
+                    <strong>花多少錢？</strong>
+                    API 價格以每百萬 tokens 計，分成輸入與輸出；推理模型會多產生「思考」tokens，實際成本可能高出許多。
+                  </li>
+                </ol>
+                <p class="reading__pending">
+                  <Icon name="clock" /> 完整的評測解讀文章整理中。
+                </p>
+              </div>
+            )
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="section models-sec" id="flagships" aria-labelledby="flagships-title">
+      <div class="sec-head">
+        <p class="sec-kicker">大型語言模型</p>
+        <h2 id="flagships-title">旗艦模型比較</h2>
+        <p class="sec-lede">
+          每個語言模型系列取一個旗艦版本，比較權重開放方式、上下文長度、API 價格、推理模式與關鍵評測。點選模型名稱可看完整的版本演進與評測。
+        </p>
+      </div>
+      <FlagshipTable families={llmWithData} benchmarks={flagshipBench} />
+      {
+        llm.length > llmWithData.length && (
+          <p class="pending-line">
+            <Icon name="clock" />
+            <span>
+              另有 {llm.length - llmWithData.length} 個語言模型系列內容整理中：
+              {llm
+                .filter((f) => !f.data)
+                .map((f) => f.title)
+                .join('、')}
+              。
+            </span>
+          </p>
+        )
+      }
+    </section>
+
+    <section class="section models-sec" id="benchmarks" aria-labelledby="benchmarks-title">
+      <div class="sec-head">
+        <p class="sec-kicker">評測分數</p>
+        <h2 id="benchmarks-title">旗艦模型的評測分數</h2>
+        <p class="sec-lede">
+          同一項評測，各旗艦模型的分數排在同一條軸上。每列標示測試日期與來源類型；<strong>日期不同</strong>的分數可能來自不同的測試版本或設定，比較時請留意。
+        </p>
+      </div>
+      {
+        dotBench.length > 0 ? (
+          <div class="dots-grid">
+            {dotBench.map((id) => (
+              <BenchmarkDots benchmark={id} items={flagshipItems} limit={12} />
+            ))}
+          </div>
+        ) : (
+          <p class="pending-box">評測資料整理中。</p>
+        )
+      }
+    </section>
+
+    <section class="section models-sec" id="families" aria-labelledby="families-title">
+      <div class="sec-head">
+        <p class="sec-kicker">模型系列</p>
+        <h2 id="families-title">各家模型系列一覽</h2>
+        <p class="sec-lede">依實驗室所在地分組。可依類型、來源地與開放程度篩選；每張卡片列出旗艦版本與一項關鍵指標。</p>
+      </div>
+      <ModelFilters target="model-directory" total={families.length} kinds={kindOptions} origins={originOptions} openness={openOptions} />
+      <div id="model-directory" class="directory" data-pagefind-ignore>
+        {
+          groups.map((g) => (
+            <section class="dir-group" data-model-group aria-labelledby={`grp-${g.id}`}>
+              <h3 class="dir-group__title" id={`grp-${g.id}`}>
+                {g.label}{' '}
+                <span class="dir-group__count">
+                  <span data-group-count>{g.families.length}</span> 個系列
+                </span>
+              </h3>
+              <ul class="dir-grid" role="list">
+                {g.families.map((f) => (
+                  <ModelFamilyCard family={f} headingLevel={4} />
+                ))}
+              </ul>
+            </section>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="section models-sec" id="multimodal" aria-labelledby="multimodal-title">
+      <div class="sec-head">
+        <p class="sec-kicker">不只是文字</p>
+        <h2 id="multimodal-title">多模態與機器人模型</h2>
+        <p class="sec-lede">
+          圖像、影片、語音、世界模型與機器人模型各有不同的評測方式與計價單位，因此不和語言模型放在同一張表比較。以下依類型整理代表系列。
+        </p>
+      </div>
+      <div class="mm">
+        {
+          mmGroups.map((g) => (
+            <section class:list={['mm-group', { 'has-chart': g.items.length >= 2 }]} aria-labelledby={`mm-${g.kind}`} style={`--kind-c: ${kindColor(g.kind)}`}>
+              <div class="mm-group__head">
+                <h3 id={`mm-${g.kind}`} class="mm-group__title">
+                  <span class="mm-group__dot" aria-hidden="true" />
+                  {g.label}{' '}
+                  <Badge>{g.families.length} 個系列</Badge>
+                </h3>
+                <p class="mm-group__blurb">{g.blurb}</p>
+              </div>
+              <div class:list={['mm-group__body', { 'has-chart': g.items.length >= 2 }]}>
+                <ModelMiniList families={g.families} benchmarks={g.bench ? [g.bench] : []} />
+                {g.items.length >= 2 && g.bench && (
+                  <BenchmarkDots benchmark={g.bench} items={g.items} limit={g.limit} as="h4" class="mm-chart" notes={['較大的點為各系列目前的旗艦版本。']} />
+                )}
+              </div>
+            </section>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="section models-sec" aria-labelledby="next-title">
+      <div class="sec-head">
+        <p class="sec-kicker">延伸閱讀</p>
+        <h2 id="next-title">想更了解模型？</h2>
+      </div>
+      <div class="next">
+        <a class="next__compare" href={modelsCompareHref()}>
+          <span class="next__icon"><Icon name="compare" size="1.5em" /></span>
+          <span>
+            <strong>模型並排比較</strong>
+            <span>任選 2 到 4 個版本，並排比較規格、價格與評測分數。</span>
+          </span>
+          <Icon name="arrow-right" />
+        </a>
+        <ul class="next__learn" role="list">
+          {
+            further.map((a) => (
+              <Card as="li" href={learnHref(a.slug)} title={a.title} description={a.description} kicker={`學習路徑・${levelMeta(a.level).label}`} level={a.level} headingLevel={3} />
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .models-head {
+    padding-block-end: var(--space-6);
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: var(--space-8);
+  }
+  .models-head__text {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .models-head__text h1 {
+    font-size: clamp(2rem, 1.4rem + 2.6vw, 3rem);
+    line-height: 1.2;
+  }
+  .models-stats {
+    margin: var(--space-2) 0 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    max-width: 52rem;
+  }
+  @media (min-width: 768px) {
+    .models-stats {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1100px) {
+    .models-head {
+      grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
+      align-items: end;
+    }
+    .models-head > :not(.models-head__text, .models-stats) {
+      grid-column: 1 / -1;
+    }
+    .models-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin: 0;
+    }
+  }
+  .models-stat {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-elev);
+  }
+  .models-stat dt {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .models-stat dd {
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.25em;
+  }
+  .models-stat__v {
+    font-size: var(--fs-xl);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+  }
+  .models-stat__u {
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .models-head__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+  }
+  .models-head__note {
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .models-jump ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .models-jump a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    min-block-size: 2.75rem;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    background: var(--c-bg-elev);
+    color: var(--c-fg);
+    font-size: var(--fs-s);
+    text-decoration: none;
+  }
+  .models-jump a:hover {
+    border-color: var(--c-border-strong);
+    color: var(--c-link-hover);
+  }
+  .models-jump .models-jump__cta {
+    background: var(--c-accent);
+    border-color: var(--c-accent);
+    color: var(--c-accent-fg);
+    font-weight: var(--fw-semibold);
+  }
+  .models-jump .models-jump__cta:hover {
+    color: var(--c-accent-fg);
+    filter: brightness(1.08);
+  }
+
+  .models-sec {
+    scroll-margin-block-start: calc(var(--header-h) + var(--space-4));
+  }
+  .models .section {
+    padding-block: var(--space-8) 0;
+  }
+  .sec-head {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-end: var(--space-5);
+  }
+  .sec-kicker {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-accent);
+  }
+  .sec-head h2 {
+    font-size: var(--fs-2xl);
+    line-height: 1.3;
+  }
+  .sec-lede {
+    max-width: var(--measure);
+    color: var(--c-fg-muted);
+    line-height: 1.75;
+  }
+
+  /* 如何解讀評測 */
+  .reading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+  @media (min-width: 1000px) {
+    .reading {
+      grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+      align-items: start;
+    }
+  }
+  .reading__main :global(.reading__sources) {
+    margin-block-start: var(--space-6);
+  }
+  .reading__lede {
+    font-size: var(--fs-m);
+    margin-block-end: var(--space-4);
+  }
+  .tips {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: tip;
+  }
+  @media (min-width: 640px) {
+    .tips {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .tips li {
+    counter-increment: tip;
+    position: relative;
+    padding: var(--space-4) var(--space-4) var(--space-4) calc(var(--space-4) + 2.2rem);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-elev);
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .tips li::before {
+    content: counter(tip);
+    position: absolute;
+    inset-inline-start: var(--space-4);
+    inset-block-start: var(--space-4);
+    inline-size: 1.6rem;
+    block-size: 1.6rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--c-accent-soft);
+    color: var(--c-accent);
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-xs);
+  }
+  .tips strong {
+    display: block;
+    color: var(--c-fg);
+    font-size: var(--fs-base);
+    margin-block-end: var(--space-1);
+  }
+  .reading__pending,
+  .pending-line {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    margin-block-start: var(--space-4);
+    font-size: var(--fs-s);
+    color: var(--c-fg-subtle);
+  }
+  .pending-line :global(svg),
+  .reading__pending :global(svg) {
+    flex: none;
+    transform: translateY(0.12em);
+  }
+  .pending-box {
+    padding: var(--space-6);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    text-align: center;
+    color: var(--c-fg-muted);
+  }
+  /* 模型星系 */
+  .models-galaxy {
+    padding-block-start: var(--space-7);
+  }
+  .axes {
+    margin-block-start: var(--space-5);
+    padding: var(--space-5);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-sunken);
+  }
+  @media (min-width: 900px) {
+    .axes__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: var(--space-6);
+    }
+  }
+
+  /* 新手先讀 */
+  .starter {
+    padding: var(--space-5);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  /* first in the DOM (beginners see it before the long read on phones); right column on wide screens */
+  @media (min-width: 1000px) {
+    .starter {
+      grid-column: 2;
+      grid-row: 1;
+      position: sticky;
+      inset-block-start: calc(var(--header-h) + var(--space-5));
+    }
+    .reading__main {
+      grid-column: 1;
+      grid-row: 1;
+    }
+  }
+  .starter__title {
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
+    font-size: var(--fs-m);
+  }
+  .starter__title :global(svg) {
+    color: var(--c-accent);
+  }
+  .starter__lede {
+    margin-block: var(--space-2) var(--space-3);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    line-height: 1.7;
+  }
+  .starter__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+  }
+  .starter__list li + li {
+    border-block-start: 1px solid var(--c-border);
+  }
+  .starter__list a {
+    display: grid;
+    gap: 0.15rem;
+    padding-block: var(--space-3);
+    min-block-size: 2.75rem;
+    text-decoration: none;
+    color: var(--c-fg);
+  }
+  .starter__list a:hover .starter__t {
+    text-decoration: underline;
+  }
+  .starter__lv {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .starter__t {
+    color: var(--c-link);
+    font-weight: var(--fw-semibold);
+    line-height: 1.5;
+  }
+  .axes__title {
+    font-size: var(--fs-m);
+    margin-block-end: var(--space-3);
+  }
+  .axes__list {
+    margin: 0;
+    display: grid;
+    gap: var(--space-4);
+  }
+  .axes__list dt {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-s);
+  }
+  .axes__dot {
+    inline-size: 0.7em;
+    block-size: 0.7em;
+    border-radius: 50%;
+    background: var(--c);
+  }
+  .axes__list dd {
+    margin: var(--space-1) 0 0;
+    font-size: var(--fs-s);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+  }
+  .axes__note {
+    margin-block-start: var(--space-4);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+
+  /* dot plots */
+  .dots-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+  @media (min-width: 1100px) {
+    .dots-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* directory */
+  .directory {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-7);
+    margin-block-start: var(--space-6);
+  }
+  .dir-group__title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    font-size: var(--fs-xl);
+    padding-block-end: var(--space-2);
+    margin-block-end: var(--space-4);
+    border-block-end: 1px solid var(--c-border);
+  }
+  .dir-group__count {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .dir-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+  }
+
+  /* multimodal */
+  .mm {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: var(--space-7) var(--space-6);
+  }
+  .mm-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .mm-group.has-chart {
+    grid-column: 1 / -1;
+  }
+  .mm-group__head {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-end: var(--space-4);
+  }
+  .mm-group__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    font-size: var(--fs-xl);
+  }
+  .mm-group__dot {
+    inline-size: 0.6em;
+    block-size: 0.6em;
+    border-radius: 50%;
+    background: var(--kind-c);
+  }
+  .mm-group__blurb {
+    max-width: var(--measure);
+    color: var(--c-fg-muted);
+    font-size: var(--fs-s);
+    line-height: 1.75;
+  }
+  .mm-group__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+  @media (min-width: 1100px) {
+    .mm-group__body.has-chart {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+      align-items: start;
+    }
+  }
+
+  /* next */
+  .next {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+  .next__compare {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border: 1px solid color-mix(in srgb, var(--c-accent) 35%, var(--c-border));
+    border-radius: var(--radius-l);
+    background: linear-gradient(120deg, var(--c-accent-soft), var(--c-bg-elev) 70%);
+    color: var(--c-fg);
+    text-decoration: none;
+  }
+  .next__compare:hover {
+    border-color: var(--c-accent);
+  }
+  .next__compare strong {
+    display: block;
+    font-size: var(--fs-l);
+  }
+  .next__compare span span {
+    color: var(--c-fg-muted);
+    font-size: var(--fs-s);
+  }
+  .next__icon {
+    display: grid;
+    place-items: center;
+    inline-size: 3rem;
+    block-size: 3rem;
+    border-radius: 50%;
+    background: var(--c-accent);
+    color: var(--c-accent-fg);
+  }
+  .next__learn {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+  }
+</style>

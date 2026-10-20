@@ -1,0 +1,89 @@
+# Proposals from the scaling-surface scene agent, 2026-10-09.
+# Nothing here blocks the scene: each capability is implemented locally in
+# src/three/scenes/scaling-surface/ and can move to the kit / core unchanged.
+
+- id: stage-slider
+  target: src/three/kit/StageControls.ts (same request as scene-cowos.yaml `stage-controls`)
+  problem: >
+    The 固定預算 / 最適脊線 steps need a continuous control (訓練預算 C, log10 FLOP) that moves
+    the iso-compute cut through the surface. There is no scene-UI API, so the scene hand-rolls a
+    native <input type="range"> with label, <output>, aria-valuetext, theme tokens and a portrait
+    (wrapping) layout. Any shared module should keep it outside `.scene-view` so arrow keys on the
+    slider never orbit the camera.
+  proposal: >
+    Adopt cowos' `createStageControls({ stage, signal, slider: { label, min, max, step, value,
+    valueText(v) → { text, spoken }, swatch?, onInput(v) } })` → `{ set(v), show(on),
+    setCompact(on), remove() }`; `valueText.spoken` feeds aria-valuetext (e.g. 「約 1 乘以 10 的
+    22 次方次浮點運算」). Scene3D could hide `.scene-controls` in poster / fallback states. A compact
+    mode matters: on the 4:3 phone stage (about 358 px wide) the full label + slider + value row
+    overflows, so the scene swaps in a short visible label (「預算 C（示意）」, kept inside the
+    accessible name) below 680 px and spans the stage below 560 px.
+  workaround: src/three/scenes/scaling-surface/budget.ts (createBudgetControl).
+
+- id: surface-plot
+  target: src/three/kit/SurfacePlot.ts
+  problem: >
+    A height-field z = f(x, y) with a colour ramp, side skirts down to a floor, iso-lines
+    (marching squares) and draped polylines is a generic 3D-plot need (loss landscapes, the
+    model-galaxy frontier, cost surfaces in train-infer). The pieces are not trivial to get right
+    (winding of the skirt walls, polygonOffset for co-planar lines, contour levels in log space).
+  proposal: >
+    `new SurfacePlot({ f(u, v), domain: [[u0, u1], [v0, v1]], size, segments, ramp(t, out),
+    contours: { levels, grid, lift }, skirt: true })` with `.mesh`, `.lines`, `.skirt`,
+    `drape(points, lift)`, `recolor(palette)` and `clip(plane | null)`.
+  workaround: >
+    src/three/scenes/scaling-surface/geometry.ts (buildSurface, buildSkirt, contours, drape) and
+    the ramp / recolour code in index.ts (applyPalette).
+
+- id: updatable-tube
+  target: src/three/kit/Tube.ts
+  problem: >
+    TubeGeometry allocates a new geometry per change, so a tube that follows a slider (the
+    iso-compute edge) leaks or stutters. Several scenes draw highlighted paths as thick tubes.
+  proposal: >
+    `new Tube(samples, radial)` with `set(points, radius)` rewriting position / normal buffers in
+    place (fixed vertex count, no per-frame allocation) and a parallel-transport frame.
+  workaround: src/three/scenes/scaling-surface/geometry.ts (Tube, CutFace).
+
+- id: clipping-plane-ghost
+  target: src/three/core/renderer.ts (docs) + kit helper
+  problem: >
+    Cutaways (this scene's budget cut; datacenter / cowos / hbm cross-sections) want "solid on one
+    side of a plane, ghosted on the other". This needs `renderer.localClippingEnabled = true`,
+    which is renderer-wide state the scene must restore on dispose.
+  proposal: >
+    Enable local clipping in the shared renderer by default (no cost when no material has
+    clippingPlanes), and add `ghostCut(mesh, plane, { opacity })` that clones the material into a
+    transparent, depthWrite-false, reversed-plane twin.
+  workaround: index.ts (keepPlane / ghostPlane, surfMat / ghostMat; restores localClippingEnabled).
+
+- id: stage-note
+  target: src/three/kit/StageControls.ts (or Scene3D.astro: a `.scene-note` slot)
+  problem: >
+    Step 5 (推論時縮放) needs a standing note card — a title, one sentence and a tiny sketch —
+    that stays legible on a 360 px phone stage. A card drawn in world space shrinks below the size
+    of its own HTML labels there, and ctx.card is the transient hover/select card (any hover
+    replaces it), so neither fits.
+  proposal: >
+    `createStageNote({ stage, corner: 'top-right', title, body?, svg?, compactBelow: 560 })` →
+    `{ setOpacity(v), setLayout('full' | 'row' | 'mini'), remove() }` (full = corner card on
+    landscape stages of at least 760 × 420; row = full-width strip with the sketch beside the text on
+    wide portrait stages; mini = title + a simplified sketch with larger axis text below 560 px and on
+    smaller landscape stages, its height capped by the stage height), styled like `.scene-card` from site tokens,
+    pointer-events none, aria-hidden (the step caption carries the same text), hidden by Scene3D in
+    poster / fallback states. Scenes then pick a camera pose per layout (this scene: PORTRAIT_ROW_4).
+  workaround: src/three/scenes/scaling-surface/note.ts (createNoteCard, inline-SVG sketch).
+
+- id: label-safe-areas
+  target: src/three/core/labels.ts
+  problem: >
+    Stage overlays (the budget slider, the note card) sit above the label layer, so a projected
+    label can end up half under an overlay; the scene works around it with per-width poses and by
+    hiding the front-corner ticks during the budget steps. Labels also have a fixed pixel size, so
+    a 16:9 layout tuned at 1280 px loses its widest labels off-stage at 640 px and on the 4:3 phone
+    stage; the scene keeps its own width classes (NARROW 680, SMALL 560, ROOMY 1000) for that.
+  proposal: >
+    `ctx.labels.setSafeAreas(() => DOMRect[])` (stage-relative rectangles treated as occupied by
+    the collision grid, so labels under them are culled like any collision), and a documented
+    `ctx.size` width class (e.g. `ctx.size.cls: 'phone' | 'narrow' | 'wide'`) shared by scenes.
+  workaround: index.ts (NARROW_POSES / SMALL_POSES, layout(), showLabels() front-tick rule).

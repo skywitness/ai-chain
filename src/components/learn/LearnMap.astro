@@ -1,0 +1,608 @@
+---
+/**
+ * 2D learning map: the curriculum as three terraces (入門 at the bottom, 深入 at the top) with one node
+ * per article and the 「建議先讀」 links as curves. Build-time SVG; /learn/ shows it in place of the
+ * `learn-mountain` 3D scene while that scene is not built yet.
+ *
+ * Two drawings share the data: a landscape one (labels under the nodes) and a portrait one for narrow
+ * containers (two rows per terrace, numbers only); a container query picks one. Nodes are mouse
+ * shortcuts only (tabindex -1): the board below lists the same links for keyboard and screen readers,
+ * so the drawings are aria-hidden and a visually hidden summary describes them. A small script adds
+ * hover cards, link highlighting and the viewer's ✓ read marks (src/client/progress.ts).
+ *
+ *   <LearnMap items={items} caption="…" />
+ */
+import { LEVELS, TRACK_LABELS } from '../../lib/collections';
+import { learnHref } from '../../lib/paths';
+import { TRACK_COLORS, TRACK_IDS, type LearnItem } from './learn-data';
+
+interface Props {
+  items: readonly LearnItem[];
+  caption?: string | undefined;
+}
+const { items, caption } = Astro.props;
+
+type Pt = { x: number; y: number };
+type Layout = {
+  w: number;
+  h: number;
+  r: number;
+  bands: Array<{ level: 1 | 2 | 3; y: number; h: number; labelX: number; labelY: number }>;
+  pos: Map<string, Pt>;
+};
+
+// Within each terrace the nodes are grouped by track (in this order, so that tracks that link to each
+// other sit side by side), ascending by number inside a group. Compared with plain number order this
+// halves the crossing 「先讀」 links (73 → 34 with the 2026-10 curriculum) and keeps each colour together.
+const MAP_TRACK_ORDER: readonly string[] = ['foundations', 'models', 'society', 'hardware', 'infra-business'];
+const trackRank = (t: string) => {
+  const i = MAP_TRACK_ORDER.indexOf(t);
+  return i < 0 ? MAP_TRACK_ORDER.length : i;
+};
+const byLevel = LEVELS.map((l) => ({
+  ...l,
+  items: items
+    .filter((i) => i.level === l.level)
+    .sort((a, b) => trackRank(a.track) - trackRank(b.track) || a.order - b.order),
+}));
+const known = new Set(items.map((i) => i.slug));
+const edges = items.flatMap((a) => a.prereqs.filter((p) => known.has(p) && p !== a.slug).map((p) => ({ from: p, to: a.slug })));
+
+// Landscape: three full-width terraces, one row of nodes each.
+function landscape(): Layout {
+  const w = 1200;
+  const bandH = 168;
+  const gap = 14;
+  const top = 18;
+  const x0 = 172;
+  const x1 = 1152;
+  const pos = new Map<string, Pt>();
+  const bands: Layout['bands'] = [];
+  [3, 2, 1].forEach((lv, row) => {
+    const y = top + row * (bandH + gap);
+    bands.push({ level: lv as 1 | 2 | 3, y, h: bandH, labelX: 28, labelY: y + bandH / 2 });
+    const list = byLevel[lv - 1]!.items;
+    const step = list.length > 1 ? (x1 - x0) / (list.length - 1) : 0;
+    list.forEach((it, i) => pos.set(it.slug, { x: list.length > 1 ? x0 + i * step : (x0 + x1) / 2, y: y + bandH / 2 - 12 }));
+  });
+  return { w, h: top * 2 + 3 * bandH + 2 * gap, r: 17, bands, pos };
+}
+
+// Portrait: terraces stacked, nodes in rows of up to 7.
+function portrait(): Layout {
+  const w = 360;
+  const perRow = 7;
+  const rowH = 58;
+  const headH = 34;
+  const padB = 16;
+  const gap = 10;
+  const x0 = 36;
+  const x1 = 324;
+  const pos = new Map<string, Pt>();
+  const bands: Layout['bands'] = [];
+  let y = 8;
+  for (const lv of [3, 2, 1] as const) {
+    const list = byLevel[lv - 1]!.items;
+    const rows = Math.max(1, Math.ceil(list.length / perRow));
+    const h = headH + rows * rowH + padB;
+    bands.push({ level: lv, y, h, labelX: 14, labelY: y + 20 });
+    list.forEach((it, i) => {
+      const row = Math.floor(i / perRow);
+      const inRow = Math.min(perRow, list.length - row * perRow);
+      const span = ((x1 - x0) * (inRow - 1)) / (perRow - 1);
+      const start = (w - span) / 2;
+      const col = i % perRow;
+      pos.set(it.slug, { x: inRow > 1 ? start + (col * span) / (inRow - 1) : w / 2, y: y + headH + rowH / 2 + row * rowH });
+    });
+    y += h + gap;
+  }
+  return { w, h: y - gap + 8, r: 15, bands, pos };
+}
+
+const f = (n: number) => Math.round(n * 10) / 10;
+function edgePath(L: Layout, a: Pt, b: Pt): string {
+  const r = L.r;
+  if (Math.abs(a.y - b.y) < 1) {
+    // same row: an arc over the nodes
+    const lift = Math.min(54, 18 + Math.abs(b.x - a.x) * 0.22);
+    return `M ${f(a.x)} ${f(a.y - r)} C ${f(a.x)} ${f(a.y - r - lift)}, ${f(b.x)} ${f(b.y - r - lift)}, ${f(b.x)} ${f(b.y - r)}`;
+  }
+  // prerequisite below → article above (or a later row in the same terrace)
+  const up = b.y < a.y;
+  const y1 = up ? a.y - r : a.y + r;
+  const y2 = up ? b.y + r : b.y - r;
+  const k = Math.max(24, Math.abs(y2 - y1) * 0.45);
+  return `M ${f(a.x)} ${f(y1)} C ${f(a.x)} ${f(up ? y1 - k : y1 + k)}, ${f(b.x)} ${f(up ? y2 + k : y2 - k)}, ${f(b.x)} ${f(y2)}`;
+}
+
+// ── Node labels: at most two lines, broken between words ──────────────────────────────────────────
+// Widths are in em: CJK = 1em, Latin/digits ≈ 0.56em.
+const labelWidth = (u: string) => [...u].reduce((w, ch) => w + (/[\x00-\x7f\xc0-\xff]/.test(ch) ? 0.56 : 1), 0);
+// One-character words that may stand alone (never glued to a neighbour when merging, see labelUnits).
+const FUNCTION_CHARS = new Set([...'與和及或的是到從在為把被讓對']);
+const isCjkChar = (s: string) => /^\p{Script=Han}$/u.test(s);
+// CJK line-breaking rules: a line never starts with closing punctuation or ends with opening punctuation.
+const NO_LINE_START = /^[？！。，、：；）」』】〉》?!.,:;)]/u;
+const NO_LINE_END = /[（「『【〈《(]$/u;
+const SEGMENTER = typeof Intl !== 'undefined' && 'Segmenter' in Intl ? new Intl.Segmenter('zh-Hant', { granularity: 'word' }) : undefined;
+
+/**
+ * Break a label into word units (spaces collapse to ' '). Uses the ICU word segmenter; runs of
+ * one-character segments it does not know (「封｜裝」「叢｜集」) are glued back together, except
+ * function words such as 「與」「的」.
+ */
+function labelUnits(s: string): string[] {
+  const raw = SEGMENTER ? [...SEGMENTER.segment(s)].map((x) => x.segment) : (s.match(/[A-Za-z0-9.+\-]+|\s+|./gu) ?? []);
+  const out: string[] = [];
+  let glue = false;
+  for (const r of raw) {
+    const u = /^\s+$/.test(r) ? ' ' : r;
+    const single = isCjkChar(u) && !FUNCTION_CHARS.has(u);
+    if (single && glue) out[out.length - 1] += u;
+    else out.push(u);
+    glue = single;
+  }
+  return out;
+}
+
+/**
+ * Wrap a label into at most two lines of about `max` em. When it fits in two lines it is split
+ * between words into two balanced lines, preferring a break at a space (between Latin and CJK) or
+ * after 「：」「、」, and avoiding a first line that ends with 「與」「的」. Longer labels fall back to a
+ * greedy wrap whose second line ends with 「…」.
+ */
+function wrap2(s: string, max: number): string[] {
+  const t = s.trim();
+  if (labelWidth(t) <= max) return [t];
+  const units = labelUnits(t);
+  let best: { cost: number; lines: [string, string] } | undefined;
+  for (let k = 1; k < units.length; k++) {
+    const a = units.slice(0, k).join('').trimEnd();
+    const b = units.slice(k).join('').trimStart();
+    if (!a || !b) continue;
+    const wa = labelWidth(a);
+    const wb = labelWidth(b);
+    if (wa > max || wb > max || NO_LINE_START.test(b) || NO_LINE_END.test(a)) continue;
+    const atSpace = units[k - 1] === ' ' || units[k] === ' ';
+    const afterMark = /[：:、]$/u.test(a);
+    const cost =
+      Math.abs(wa - wb) -
+      (atSpace || afterMark ? 2 : 0) +
+      (FUNCTION_CHARS.has(a.slice(-1)) ? 1 : 0) +
+      (wb > wa ? 0.01 : 0); // ties: the longer line first
+    if (!best || cost < best.cost) best = { cost, lines: [a, b] };
+  }
+  return best ? best.lines : wrapGreedy(units, max);
+}
+
+/** Greedy wrap (whole words) for labels longer than two lines: the second line ends with 「…」. */
+function wrapGreedy(units: readonly string[], max: number): string[] {
+  // First line: whole words (a single word longer than `max` stands alone).
+  let first = '';
+  let i = 0;
+  for (; i < units.length; i++) {
+    const u = units[i]!;
+    if (first && labelWidth((first + u).trimEnd()) > max) break;
+    first += u;
+  }
+  first = first.trim();
+  const rest = units.slice(i).join('').trim();
+  if (!rest) return [first];
+  if (labelWidth(rest) <= max) return [first, rest];
+  // Second line: CJK characters one by one, Latin words whole, until the ellipsis fits.
+  let second = '';
+  for (const a of rest.match(/[A-Za-z0-9.+\-]+|\s+|./gu) ?? []) {
+    if (labelWidth(second + a) + 1 > max) break;
+    second += a;
+  }
+  return [first, `${second.trimEnd().replace(/[\s：:、，與的（「(]+$/u, '')}…`];
+}
+
+const layouts = [
+  { key: 'wide', L: landscape(), labels: true },
+  { key: 'tall', L: portrait(), labels: false },
+];
+const levelInfo = (lv: 1 | 2 | 3) => byLevel[lv - 1]!;
+const bySlug = new Map(items.map((i) => [i.slug, i]));
+const usedTracks = TRACK_IDS.filter((t) => items.some((i) => i.track === t)).sort((a, b) => trackRank(a) - trackRank(b));
+const summary = `學習地圖：${byLevel.map((l) => `${l.label} ${l.items.length} 篇`).join('、')}，共 ${edges.length} 條「建議先讀」連線。完整清單與連結見下方「全部文章」。`;
+---
+
+<figure class="lm" data-lm>
+  <p class="sr-only">{summary}</p>
+  <div class="lm__stage">
+    {
+      layouts.map(({ key, L, labels }) => (
+        <svg
+          class:list={['lm__svg', `lm__svg--${key}`]}
+          viewBox={`0 0 ${L.w} ${L.h}`}
+          aria-hidden="true"
+          focusable="false"
+          data-lm-svg
+        >
+          <g class="lm__bands" aria-hidden="true">
+            {L.bands.map((b) => (
+              <g style={`--lv: ${levelInfo(b.level).color}`}>
+                <rect class="lm__band" x="4" y={b.y} width={L.w - 8} height={b.h} rx="14" />
+                <text class="lm__band-label" x={b.labelX} y={key === 'wide' ? b.labelY - 6 : b.labelY} dominant-baseline="middle">
+                  {levelInfo(b.level).label}
+                </text>
+                {key === 'wide' ? (
+                  <text class="lm__band-n" x={b.labelX} y={b.labelY + 18} dominant-baseline="middle">
+                    {`${levelInfo(b.level).items.length} 篇`}
+                  </text>
+                ) : (
+                  <text class="lm__band-n" x={b.labelX + 40} y={b.labelY} dominant-baseline="middle">
+                    {`${levelInfo(b.level).items.length} 篇`}
+                  </text>
+                )}
+              </g>
+            ))}
+          </g>
+          <g class="lm__edges" aria-hidden="true">
+            {edges.map((e) => {
+              const a = L.pos.get(e.from);
+              const b = L.pos.get(e.to);
+              return a && b ? <path class="lm__edge" d={edgePath(L, a, b)} data-from={e.from} data-to={e.to} /> : null;
+            })}
+          </g>
+          <g class="lm__nodes">
+            {items.map((it) => {
+              const p = L.pos.get(it.slug);
+              if (!p) return null;
+              return (
+                <a
+                  href={learnHref(it.slug)}
+                  tabindex="-1"
+                  aria-hidden="true"
+                  class:list={['lm__node', { 'lm__node--pending': !it.entry }]}
+                  data-slug={it.slug}
+                  data-title={it.title}
+                  data-meta={`${it.order} · ${LEVELS[it.level - 1]!.label} · ${it.trackLabel}`}
+                  style={`--t: ${TRACK_COLORS[it.track]}`}
+                >
+                  <circle class="lm__dot" cx={f(p.x)} cy={f(p.y)} r={L.r} />
+                  <text class="lm__num" x={f(p.x)} y={f(p.y)} dominant-baseline="central" text-anchor="middle">
+                    {it.order}
+                  </text>
+                  <g class="lm__tick" transform={`translate(${f(p.x + L.r * 0.72)} ${f(p.y - L.r * 0.72)})`}>
+                    <circle r="7" />
+                    <path d="M -3.2 0.2 L -0.9 2.5 L 3.4 -2.4" />
+                  </g>
+                  {labels && (
+                    <text class="lm__label" x={f(p.x)} y={f(p.y + L.r + 16)} text-anchor="middle">
+                      {wrap2(bySlug.get(it.slug)?.shortTitle ?? it.title, it.level === 1 ? 6.6 : 5.4).map((line, i) => (
+                        <tspan x={f(p.x)} dy={i === 0 ? 0 : 15}>
+                          {line}
+                        </tspan>
+                      ))}
+                    </text>
+                  )}
+                </a>
+              );
+            })}
+          </g>
+        </svg>
+      ))
+    }
+    <div class="lm__tip" data-lm-tip hidden>
+      <p class="lm__tip-meta" data-lm-tip-meta></p>
+      <p class="lm__tip-title" data-lm-tip-title></p>
+    </div>
+  </div>
+  <div class="lm__foot">
+    <ul class="lm__legend" role="list" aria-label="圖例">
+      {
+        usedTracks.map((t) => (
+          <li style={`--t: ${TRACK_COLORS[t]}`}>
+            <span class="lm__key-dot" aria-hidden="true" />
+            {TRACK_LABELS[t]}
+          </li>
+        ))
+      }
+      <li>
+        <svg class="lm__key-line" viewBox="0 0 28 10" aria-hidden="true"><path d="M 1 9 C 10 9, 18 1, 27 1"></path></svg>
+        建議先讀
+      </li>
+    </ul>
+    {caption && <figcaption class="lm__caption">{caption}</figcaption>}
+  </div>
+</figure>
+
+<script>
+  import { onProgressChange, readSlugs } from '../../client/progress';
+
+  const root = document.querySelector<HTMLElement>('[data-lm]');
+  if (root) {
+    const tip = root.querySelector<HTMLElement>('[data-lm-tip]');
+    const tipMeta = root.querySelector<HTMLElement>('[data-lm-tip-meta]');
+    const tipTitle = root.querySelector<HTMLElement>('[data-lm-tip-title]');
+    const stage = root.querySelector<HTMLElement>('.lm__stage');
+
+    const paint = (read: Set<string>) => {
+      root.querySelectorAll<SVGElement>('.lm__node').forEach((n) => n.classList.toggle('is-read', read.has(n.dataset['slug'] ?? '')));
+    };
+    paint(readSlugs());
+    onProgressChange(paint);
+
+    const clear = () => {
+      root.removeAttribute('data-hl');
+      root.querySelectorAll('.is-hl, .is-rel').forEach((el) => el.classList.remove('is-hl', 'is-rel'));
+      if (tip) tip.hidden = true;
+    };
+    const show = (node: SVGElement) => {
+      clear();
+      const slug = node.dataset['slug'] ?? '';
+      const svg = node.ownerSVGElement;
+      if (!svg) return;
+      root.setAttribute('data-hl', '');
+      node.classList.add('is-hl');
+      svg.querySelectorAll<SVGElement>('.lm__edge').forEach((e) => {
+        const from = e.dataset['from'];
+        const to = e.dataset['to'];
+        if (from !== slug && to !== slug) return;
+        e.classList.add('is-hl');
+        const other = from === slug ? to : from;
+        svg.querySelector(`.lm__node[data-slug="${other}"]`)?.classList.add('is-rel');
+      });
+      if (!tip || !tipMeta || !tipTitle || !stage) return;
+      tipMeta.textContent = node.dataset['meta'] ?? '';
+      tipTitle.textContent = node.dataset['title'] ?? '';
+      tip.hidden = false;
+      const box = stage.getBoundingClientRect();
+      const dot = node.querySelector('.lm__dot')?.getBoundingClientRect();
+      if (!dot) return;
+      const x = dot.left + dot.width / 2 - box.left;
+      const above = dot.top - box.top > 90;
+      const half = tip.offsetWidth / 2;
+      tip.style.left = `${Math.min(Math.max(x, half + 8), box.width - half - 8)}px`;
+      tip.style.top = above ? `${dot.top - box.top - 10}px` : `${dot.bottom - box.top + 10}px`;
+      tip.dataset['side'] = above ? 'top' : 'bottom';
+    };
+    root.addEventListener('pointerover', (e) => {
+      if ((e as PointerEvent).pointerType === 'touch') return;
+      const node = (e.target as Element | null)?.closest<SVGElement>('.lm__node');
+      if (node) show(node);
+    });
+    root.querySelector('.lm__stage')?.addEventListener('pointerleave', clear);
+  }
+</script>
+
+<style>
+  @layer components {
+    .lm {
+      container-type: inline-size;
+      margin: 0;
+      display: grid;
+      gap: var(--space-3);
+    }
+    .lm__stage {
+      position: relative;
+      padding: clamp(8px, 1.6cqi, 20px);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background:
+        radial-gradient(120% 90% at 85% 0%, color-mix(in srgb, var(--level-3) 9%, transparent), transparent 60%),
+        radial-gradient(90% 80% at 10% 100%, color-mix(in srgb, var(--level-1) 10%, transparent), transparent 65%),
+        var(--c-bg-elev);
+      overflow: hidden;
+    }
+    .lm__svg {
+      display: block;
+      inline-size: 100%;
+      block-size: auto;
+      overflow: visible;
+    }
+    .lm__svg--tall {
+      display: none;
+    }
+    @container (max-width: 56rem) {
+      .lm__svg--wide {
+        display: none;
+      }
+      .lm__svg--tall {
+        display: block;
+        max-inline-size: 27rem;
+        margin-inline: auto;
+      }
+    }
+    @container (max-width: 68rem) {
+      .lm__label {
+        display: none;
+      }
+    }
+
+    .lm__band {
+      fill: color-mix(in srgb, var(--lv) 7%, var(--c-bg-elev));
+      fill-opacity: 0.78;
+      stroke: color-mix(in srgb, var(--lv) 22%, transparent);
+      stroke-width: 1;
+    }
+    .lm__band-label {
+      fill: var(--lv);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+    .lm__svg--tall .lm__band-label {
+      font-size: 15px;
+    }
+    .lm__band-n {
+      fill: var(--c-fg-subtle);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+    .lm__svg--tall .lm__band-n {
+      font-size: 11px;
+    }
+
+    .lm__edge {
+      fill: none;
+      stroke: var(--c-fg-subtle);
+      stroke-opacity: 0.42;
+      stroke-width: 1.5;
+      transition:
+        stroke-opacity var(--dur-1) ease,
+        stroke var(--dur-1) ease;
+    }
+    .lm__svg--tall .lm__edge {
+      stroke-width: 1.2;
+    }
+
+    .lm__node {
+      cursor: pointer;
+      outline: none;
+      text-decoration: none;
+    }
+    .lm__node text {
+      text-decoration: none;
+    }
+    .lm__dot {
+      fill: var(--c-bg-elev);
+      stroke: var(--t);
+      stroke-width: 3;
+      transition:
+        fill var(--dur-1) ease,
+        stroke-width var(--dur-1) ease;
+    }
+    .lm__node--pending .lm__dot {
+      stroke-dasharray: 4 3;
+      stroke-width: 2.5;
+    }
+    .lm__num {
+      fill: var(--c-fg);
+      font-size: 11.5px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      pointer-events: none;
+    }
+    .lm__svg--tall .lm__num {
+      font-size: 10.5px;
+    }
+    .lm__label {
+      fill: var(--c-fg-muted);
+      font-size: 12.5px;
+      paint-order: stroke;
+      stroke: var(--c-bg-elev);
+      stroke-width: 4px;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+    .lm__tick {
+      display: none;
+      pointer-events: none;
+    }
+    .lm__tick circle {
+      fill: var(--c-pos);
+      stroke: var(--c-bg-elev);
+      stroke-width: 1.5;
+    }
+    .lm__tick path {
+      fill: none;
+      stroke: var(--c-bg-elev);
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .lm__node.is-read .lm__tick {
+      display: inline;
+    }
+    .lm__node.is-read .lm__dot {
+      fill: color-mix(in srgb, var(--t) 16%, var(--c-bg-elev));
+    }
+    .lm__node:hover .lm__dot,
+    .lm__node.is-hl .lm__dot {
+      fill: color-mix(in srgb, var(--t) 22%, var(--c-bg-elev));
+      stroke-width: 4;
+    }
+
+    /* highlight: the hovered node, its links and the articles at their other ends */
+    :global([data-lm][data-hl]) .lm__edge {
+      stroke-opacity: 0.12;
+    }
+    :global([data-lm][data-hl]) .lm__edge.is-hl {
+      stroke: var(--c-accent);
+      stroke-opacity: 0.95;
+      stroke-width: 2.25;
+    }
+    :global([data-lm][data-hl]) .lm__node:not(.is-hl, .is-rel) {
+      opacity: 0.4;
+    }
+
+    .lm__tip {
+      position: absolute;
+      z-index: 2;
+      max-inline-size: min(20rem, 80%);
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+      box-shadow: var(--shadow-2);
+      translate: -50% -100%;
+      pointer-events: none;
+    }
+    .lm__tip[data-side='bottom'] {
+      translate: -50% 0;
+    }
+    .lm__tip[hidden] {
+      display: none;
+    }
+    .lm__tip-meta {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+    .lm__tip-title {
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      line-height: 1.5;
+    }
+
+    .lm__foot {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-2) var(--space-5);
+    }
+    .lm__legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1) var(--space-4);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-muted);
+    }
+    .lm__legend li {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45em;
+      margin: 0;
+    }
+    .lm__key-dot {
+      inline-size: 0.8em;
+      block-size: 0.8em;
+      border-radius: 50%;
+      border: 2.5px solid var(--t);
+      background: var(--c-bg-elev);
+    }
+    .lm__key-line {
+      inline-size: 1.75em;
+      block-size: 0.7em;
+      overflow: visible;
+    }
+    .lm__key-line path {
+      fill: none;
+      stroke: var(--c-fg-subtle);
+      stroke-width: 1.6;
+    }
+    .lm__caption {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      line-height: 1.6;
+      max-inline-size: 44em;
+    }
+  }
+</style>

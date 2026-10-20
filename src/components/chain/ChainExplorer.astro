@@ -1,0 +1,359 @@
+---
+/**
+ * /chain/ explorer: the chain-panorama scene (variant explore) with a side panel kept in sync
+ * through `scene:hotspot` events. Hovering or selecting a segment in the scene (or in the scene's
+ * own hotspot list) shows its card here; picking a segment in the panel focuses it in the scene via
+ * `scene:command {type:'focus', id}`. Without JavaScript the panel shows the first card and the
+ * segment table further down the page carries the same information.
+ *   <ChainExplorer data={segmentsSceneData} cards={cards} />
+ */
+import Scene3D from '../scene/Scene3D.astro';
+import Icon from '../ui/Icon.astro';
+import BottleneckMeter from './BottleneckMeter.astro';
+import { companyHref, segmentHref } from '../../lib/paths';
+import type { SegmentSceneDatum } from '../../lib/scene-data/segments';
+import { layersWithSegments } from './chain-data';
+
+export interface ExplorerCard {
+  id: string;
+  order: number;
+  title: string;
+  layerTitle: string;
+  color: string;
+  tagline: string;
+  concentration?: string | undefined;
+  bottleneck?: number | undefined;
+  companies: Array<{ id: string; nameZh: string; name: string }>;
+  companyCount: number;
+  taiwanCount: number;
+}
+
+interface Props {
+  data: SegmentSceneDatum[];
+  cards: ExplorerCard[];
+  caption?: string | undefined;
+}
+const { data, cards, caption } = Astro.props;
+const layers = [...layersWithSegments()].reverse();
+const first = cards[0]?.id;
+---
+
+<div class="cx" data-chain-explorer data-pagefind-ignore>
+  <div class="cx__scene">
+    <Scene3D
+      id="chain-panorama"
+      variant="explore"
+      height="tall"
+      autoload="visible"
+      data={data}
+      caption={caption}
+    />
+  </div>
+  <aside class="cx__panel" aria-label="環節說明">
+    <p class="cx__panel-kicker">
+      <Icon name="layers" />
+      環節說明
+    </p>
+    <div class="cx__cards" aria-live="polite">
+      {
+        cards.map((c) => (
+          <article class="cx__card" data-cx-card={c.id} hidden={c.id !== first ? true : undefined} style={`--cx-c: ${c.color}`}>
+            <p class="cx__card-kicker">
+              第 {c.order} 環 · {c.layerTitle}
+            </p>
+            <h3 class="cx__card-title">{c.title}</h3>
+            <p class="cx__card-tag">{c.tagline}</p>
+            <dl class="cx__facts">
+              {c.concentration && (
+                <div>
+                  <dt>市場結構</dt>
+                  <dd>{c.concentration}</dd>
+                </div>
+              )}
+              {c.bottleneck && (
+                <div>
+                  <dt>瓶頸程度</dt>
+                  <dd>
+                    <BottleneckMeter level={c.bottleneck} color={c.color} />
+                  </dd>
+                </div>
+              )}
+              <div>
+                <dt>收錄公司</dt>
+                <dd>
+                  {c.companyCount} 家
+                  {c.taiwanCount > 0 && <span class="cx__tw">（台灣 {c.taiwanCount} 家）</span>}
+                </dd>
+              </div>
+            </dl>
+            {c.companies.length > 0 && (
+              <div class="cx__cos">
+                <p class="cx__cos-title">代表公司</p>
+                <ul class="cx__cos-list" role="list">
+                  {c.companies.map((co) => (
+                    <li>
+                      <a href={companyHref(co.id)}>{co.nameZh}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <a class="cx__go" href={segmentHref(c.id)}>
+              認識{c.title}
+              <Icon name="arrow-right" />
+            </a>
+          </article>
+        ))
+      }
+    </div>
+    <div class="cx__picker" data-cx-picker hidden>
+      <p class="cx__picker-title" id="cx-picker-title">選擇環節（由上而下）</p>
+      <ol class="cx__layers" role="list" aria-labelledby="cx-picker-title">
+        {
+          layers.map((l) => (
+            <li class="cx__layer" style={`--lc: ${l.color}`}>
+              <span class="cx__layer-name">{l.title}</span>
+              <span class="cx__layer-segs">
+                {l.segs.map((s) => (
+                  <button type="button" class="cx__pick" data-cx-pick={s.id} aria-pressed={s.id === first ? 'true' : 'false'} style={`--sc: ${s.color}`}>
+                    {s.short}
+                  </button>
+                ))}
+              </span>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </aside>
+</div>
+
+<script>
+  type HotspotDetail = { id?: string; action?: string };
+  function init(root: HTMLElement) {
+    if (root.dataset['cxReady']) return;
+    root.dataset['cxReady'] = '1';
+    const scene = root.querySelector<HTMLElement>('ai-scene');
+    const cards = [...root.querySelectorAll<HTMLElement>('[data-cx-card]')];
+    const picks = [...root.querySelectorAll<HTMLButtonElement>('[data-cx-pick]')];
+    const picker = root.querySelector<HTMLElement>('[data-cx-picker]');
+    if (picker) picker.hidden = false;
+    let current = cards.find((c) => !c.hidden)?.dataset['cxCard'] ?? '';
+    const show = (id: string) => {
+      if (!id || id === current || !cards.some((c) => c.dataset['cxCard'] === id)) return;
+      current = id;
+      for (const c of cards) c.hidden = c.dataset['cxCard'] !== id;
+      for (const p of picks) p.setAttribute('aria-pressed', String(p.dataset['cxPick'] === id));
+    };
+    root.addEventListener('scene:hotspot', (ev) => {
+      const d = (ev as CustomEvent<HotspotDetail>).detail;
+      if (d?.id && d.action !== 'leave') show(d.id);
+    });
+    for (const p of picks) {
+      p.addEventListener('click', () => {
+        const id = p.dataset['cxPick'] ?? '';
+        show(id);
+        scene?.dispatchEvent(new CustomEvent('scene:command', { detail: { type: 'focus', id } }));
+      });
+    }
+  }
+  const boot = () => document.querySelectorAll<HTMLElement>('[data-chain-explorer]').forEach(init);
+  boot();
+  document.addEventListener('astro:page-load', boot);
+</script>
+
+<style>
+  .cx {
+    display: grid;
+    gap: var(--space-5);
+    align-items: start;
+  }
+  @media (min-width: 1024px) {
+    .cx {
+      grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem);
+      gap: var(--space-6);
+    }
+    .cx__panel {
+      position: sticky;
+      top: calc(var(--header-h) + var(--space-4));
+    }
+  }
+  .cx__scene {
+    min-width: 0;
+  }
+  .cx__panel {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+  }
+  .cx__panel-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-subtle);
+  }
+  .cx__card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border: 1px solid var(--c-border);
+    border-block-start: 4px solid var(--cx-c);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: var(--shadow-2);
+  }
+  .cx__card[hidden] {
+    display: none;
+  }
+  .cx__card-kicker {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: color-mix(in srgb, var(--cx-c) 70%, var(--c-fg));
+    letter-spacing: 0.04em;
+  }
+  .cx__card-title {
+    font-size: var(--fs-xl);
+    line-height: 1.3;
+  }
+  .cx__card-tag {
+    color: var(--c-fg-muted);
+    line-height: 1.7;
+    font-size: var(--fs-s);
+  }
+  .cx__facts {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-block: var(--space-3);
+    border-block: 1px solid var(--c-border);
+    font-size: var(--fs-s);
+  }
+  .cx__facts > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .cx__facts dt {
+    color: var(--c-fg-muted);
+  }
+  .cx__facts dd {
+    margin: 0;
+    font-weight: var(--fw-semibold);
+    text-align: end;
+  }
+  .cx__tw {
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-muted);
+  }
+  .cx__cos-title {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    margin-block-end: var(--space-2);
+  }
+  .cx__cos-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .cx__cos-list a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 32px;
+    padding: 2px var(--space-3);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    font-size: var(--fs-s);
+    color: var(--c-fg);
+    text-decoration: none;
+  }
+  .cx__cos-list a:hover {
+    border-color: var(--cx-c);
+    color: var(--c-fg);
+  }
+  .cx__go {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4em;
+    min-block-size: var(--tap);
+    border-radius: var(--radius-m);
+    /* segment colour pulled toward the text colour: ≥ 4.5:1 for the label in both themes */
+    background: color-mix(in srgb, var(--cx-c) 62%, var(--c-fg));
+    color: var(--c-bg);
+    font-weight: var(--fw-semibold);
+    text-decoration: none;
+  }
+  .cx__go:hover {
+    background: color-mix(in srgb, var(--cx-c) 52%, var(--c-fg));
+    color: var(--c-bg);
+  }
+  .cx__picker[hidden] {
+    display: none;
+  }
+  .cx__picker-title {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-subtle);
+    margin-block-end: var(--space-2);
+  }
+  .cx__layers {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .cx__layer {
+    display: grid;
+    grid-template-columns: 8.6em minmax(0, 1fr);
+    gap: var(--space-2);
+    align-items: center;
+    font-size: var(--fs-xs);
+  }
+  .cx__layer-name {
+    white-space: nowrap;
+    color: var(--c-fg-muted);
+    border-inline-start: 3px solid var(--lc);
+    padding-inline-start: var(--space-2);
+    line-height: 1.3;
+  }
+  .cx__layer-segs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .cx__pick {
+    min-block-size: 32px;
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-s);
+    border: 1px solid color-mix(in srgb, var(--sc) 40%, var(--c-border));
+    background: color-mix(in srgb, var(--sc) 8%, var(--c-bg-elev));
+    color: var(--c-fg);
+    font: inherit;
+    font-size: var(--fs-xs);
+    cursor: pointer;
+  }
+  @media (pointer: coarse) {
+    .cx__pick,
+    .cx__cos-list a {
+      min-block-size: var(--tap);
+    }
+  }
+  .cx__pick:hover {
+    background: color-mix(in srgb, var(--sc) 18%, var(--c-bg-elev));
+  }
+  .cx__pick[aria-pressed='true'] {
+    background: color-mix(in srgb, var(--sc) 62%, var(--c-fg));
+    border-color: color-mix(in srgb, var(--sc) 62%, var(--c-fg));
+    color: var(--c-bg);
+    font-weight: var(--fw-semibold);
+  }
+</style>

@@ -1,0 +1,597 @@
+---
+title: "基礎模型"
+titleEn: "Foundation Models"
+order: 11
+layer: cloud-models
+tagline: "把算力與資料煉成通用智慧，再以 Token 計價賣給全世界"
+description: "基礎模型實驗室用 GW 級算力與海量資料訓練大型語言與多模態模型，再以訂閱、API 與企業方案變現。本章由淺入深說明關鍵技術、成本結構、市場規模、競爭格局與 2026–2028 年看點。"
+upstream:
+  - ai-accelerators
+  - datacenter-infra
+  - cloud-neocloud
+downstream:
+  - devtools-data-mlops
+  - apps-agents
+  - physical-ai
+scene:
+  id: attention
+  variant: layers
+scope:
+  includes:
+    - "前沿閉源模型實驗室（OpenAI、Anthropic、Google DeepMind、SpaceXAI、Meta 超級智慧實驗室）"
+    - "開放權重模型開發者（DeepSeek、智譜、月之暗面、MiniMax、Mistral、Ai2 等）"
+    - "多模態生成模型：圖像、影片、語音與音樂"
+    - "世界模型與 AI for Science 研究型實驗室"
+    - "主權與在地語言模型（含台灣 TAIDE 等繁體中文模型）"
+  excludes:
+    - "雲端平台與 GPU 算力租賃歸雲端與新雲"
+    - "AI 程式開發工具、資料標註與 MLOps 歸開發工具、資料與 MLOps"
+    - "以模型為基礎的企業與消費應用歸應用與 Agent"
+    - "機器人與自駕的軟硬體整合歸實體 AI"
+concentration: oligopoly
+bottleneck:
+  level: 3
+  note: "前沿能力集中在少數實驗室，但企業可以在多家模型之間快速切換，開放權重模型也提供替代選項；真正卡住這一環的是供應端的 AI 晶片、HBM、電力與資金，前沿實驗室的單輪募資已達數百億至上千億美元，算力合約以 GW 計。"
+keyMetrics:
+  - label: "企業 LLM 支出市佔（前三大）"
+    value: "Anthropic 40%、OpenAI 27%、Google 21%"
+    asOf: "2025-12-09"
+    source:
+      title: "2025: The State of Generative AI in the Enterprise"
+      publisher: Menlo Ventures
+      url: "https://menlovc.com/perspective/2025-the-state-of-generative-ai-in-the-enterprise/"
+      type: analyst
+      lang: en
+      published: "2025-12-09"
+      accessed: "2026-10-06"
+    note: "Menlo Ventures 依約 500 位美國企業決策者調查與由下而上模型估計；三家合計佔企業 LLM API 用量 88%。"
+  - label: "Anthropic 年化營收（run-rate）"
+    value: "逾 470 億美元"
+    asOf: "2026-05-28"
+    source:
+      title: "Anthropic raises $65B in Series H funding at $965B post-money valuation"
+      publisher: Anthropic
+      url: "https://www.anthropic.com/news/series-h"
+      type: press-release
+      lang: en
+      published: "2026-05-28"
+      accessed: "2026-10-06"
+    note: "公司自行揭露，2026 年 5 月突破；依 2025 年 9 月的 Series F 公告，2025 年初約為 10 億美元。"
+  - label: "OpenAI 每月營收"
+    value: "約 20 億美元"
+    asOf: "2026-03-31"
+    source:
+      title: "OpenAI raises $122 billion to accelerate the next phase of AI"
+      publisher: OpenAI
+      url: "https://openai.com/index/accelerating-the-next-phase-ai/"
+      type: press-release
+      lang: en
+      published: "2026-03-31"
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20261002045714/https://openai.com/index/accelerating-the-next-phase-ai/"
+    note: "公司自行揭露；企業營收佔比逾 40%。"
+  - label: "ChatGPT 週活躍用戶"
+    value: "逾 9 億"
+    asOf: "2026-03-31"
+    source:
+      title: "OpenAI raises $122 billion to accelerate the next phase of AI"
+      publisher: OpenAI
+      url: "https://openai.com/index/accelerating-the-next-phase-ai/"
+      type: press-release
+      lang: en
+      published: "2026-03-31"
+      accessed: "2026-10-06"
+      archiveUrl: "https://web.archive.org/web/20261002045714/https://openai.com/index/accelerating-the-next-phase-ai/"
+    note: "付費訂閱者逾 5,000 萬。"
+  - label: "Gemini App 月活躍用戶"
+    value: "9.5 億"
+    asOf: "2026-07-22"
+    source:
+      title: "Q2 2026 earnings call: Remarks from our CEO"
+      publisher: Google
+      url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/"
+      type: earnings-call
+      lang: en
+      published: "2026-07-22"
+      accessed: "2026-10-06"
+    note: "Google 模型 API 每分鐘處理約 220 億 Tokens，前一季為 160 億。"
+  - label: "Claude Opus 等級 API 價格（輸入／輸出，每百萬 Tokens）"
+    value: "4／20 美元"
+    asOf: "2026-10-06"
+    source:
+      title: "Pricing - Claude Platform Docs"
+      publisher: Anthropic
+      url: "https://platform.claude.com/docs/en/about-claude/pricing"
+      type: docs
+      lang: en
+      accessed: "2026-10-06"
+    note: "Claude Opus 5.5（官方建議多數工作的首選）；2025 年的 Opus 4.1 為 15／75 美元，降幅約 73%。更高階的 Claude Fable 5.1 為 10／50 美元。"
+  - label: "前沿語言模型訓練算力成長"
+    value: "約每年 5 倍"
+    asOf: "2026-10-06"
+    source:
+      title: "Trends in Artificial Intelligence"
+      publisher: Epoch AI
+      url: "https://epoch.ai/trends"
+      type: dataset
+      lang: en
+      accessed: "2026-10-06"
+    note: "自 2020 年起計；Epoch AI 估計前沿模型訓練成本每年約增 3.5 倍。"
+  - label: "開放權重模型 Intelligence Index 前五名"
+    value: "全為中國模型（最高 46 分）"
+    asOf: "2026-10-06"
+    source:
+      title: "Open Source AI Models: Intelligence, Performance & Price Analysis"
+      publisher: Artificial Analysis
+      url: "https://artificialanalysis.ai/models/open-source"
+      type: leaderboard
+      lang: en
+      accessed: "2026-10-06"
+    note: "Intelligence Index v4.3.2；前五名來自小米、智譜、月之暗面與 DeepSeek。同期封閉模型最高為 Claude Opus 5.5 的 58 分。"
+marketSize:
+  - year: 2024
+    value: 5719
+    unit: million
+    currency: USD
+    status: estimate
+    definition: "Gartner「GenAI Models」類別：全球在生成式 AI 模型本身的支出，不含 AI 應用軟體、服務與基礎設施（取自 2025 年 9 月版預測表）"
+    source:
+      title: "Gartner Says Worldwide AI Spending Will Total $1.5 Trillion in 2025"
+      publisher: Gartner
+      url: "https://www.gartner.com/en/newsroom/press-releases/2025-09-17-gartner-says-worldwide-ai-spending-will-total-1-point-5-trillion-in-2025"
+      type: analyst
+      lang: en
+      published: "2025-09-17"
+      accessed: "2026-10-06"
+  - year: 2025
+    value: 15494
+    unit: million
+    currency: USD
+    status: estimate
+    definition: "Gartner「AI Models」類別：全球在 AI 模型本身的支出，不含 AI 軟體、服務與基礎設施（2026 年 5 月版）"
+    source:
+      title: "Gartner Forecasts Worldwide AI Spending to Grow 47% in 2026"
+      publisher: Gartner
+      url: "https://www.gartner.com/en/newsroom/press-releases/2026-05-19-gartner-forecasts-worldwide-ai-spending-to-grow-47-percent-in-2026"
+      type: analyst
+      lang: en
+      published: "2026-05-19"
+      accessed: "2026-10-06"
+  - year: 2026
+    value: 32604
+    unit: million
+    currency: USD
+    status: forecast
+    definition: "Gartner「AI Models」類別：全球在 AI 模型本身的支出，不含 AI 軟體、服務與基礎設施（2026 年 5 月版）"
+    source:
+      title: "Gartner Forecasts Worldwide AI Spending to Grow 47% in 2026"
+      publisher: Gartner
+      url: "https://www.gartner.com/en/newsroom/press-releases/2026-05-19-gartner-forecasts-worldwide-ai-spending-to-grow-47-percent-in-2026"
+      type: analyst
+      lang: en
+      published: "2026-05-19"
+      accessed: "2026-10-06"
+  - year: 2027
+    value: 59161
+    unit: million
+    currency: USD
+    status: forecast
+    definition: "Gartner「AI Models」類別：全球在 AI 模型本身的支出，不含 AI 軟體、服務與基礎設施（2026 年 5 月版）"
+    source:
+      title: "Gartner Forecasts Worldwide AI Spending to Grow 47% in 2026"
+      publisher: Gartner
+      url: "https://www.gartner.com/en/newsroom/press-releases/2026-05-19-gartner-forecasts-worldwide-ai-spending-to-grow-47-percent-in-2026"
+      type: analyst
+      lang: en
+      published: "2026-05-19"
+      accessed: "2026-10-06"
+featuredCompanies:
+  - openai
+  - anthropic
+  - meta
+  - spacex
+  - deepseek
+  - bytedance
+  - mistral-ai
+  - zhipu-ai
+  - minimax
+  - moonshot-ai
+  - cohere
+  - elevenlabs
+taiwanRole: "台灣在模型層的直接參與有限：國科會 TAIDE、鴻海 FoxBrain、聯發創新基地 Breeze 等繁體中文模型，多以 Gemma、Llama 等國外開放權重模型為基礎續訓；但前沿實驗室使用的 AI 晶片幾乎都由台積電製造，訓練與推論伺服器也大量由鴻海、廣達、緯創等台廠組裝，是模型競賽背後的關鍵供應者。"
+relatedLearn:
+  - what-is-llm
+  - transformer-and-attention
+  - pretraining-to-chat
+  - reasoning-models
+  - multimodal-models
+  - open-vs-closed-models
+  - training-vs-inference-economics
+  - scaling-laws
+  - mixture-of-experts
+relatedTrends:
+  - open-weights-race
+  - reasoning-test-time-compute
+  - ai-monetization
+  - inference-demand
+  - ai-ipo-wave
+  - ai-infra-financing-bubble
+  - copyright-data-licensing
+  - export-controls-us-china
+  - china-self-sufficiency
+  - sovereign-ai
+  - small-models-distillation
+  - world-models-spatial-intelligence
+glossary:
+  - foundation-model
+  - llm
+  - agent
+  - token
+  - transformer
+  - pretraining
+  - parameter
+  - post-training
+  - rlhf
+  - reasoning-model
+  - test-time-compute
+  - moe
+  - active-parameters
+  - multimodal
+  - context-window
+  - token-pricing
+  - arr
+  - inference
+  - frontier-model
+  - open-weights
+  - gigawatt
+  - circular-financing
+  - export-controls
+  - entity-list
+  - distillation
+  - sovereign-ai
+  - scaling-laws
+  - taiwan-ai-basic-act
+sources:
+  - key: openai-raise
+    title: "OpenAI raises $122 billion to accelerate the next phase of AI"
+    publisher: OpenAI
+    url: "https://openai.com/index/accelerating-the-next-phase-ai/"
+    type: press-release
+    lang: en
+    published: "2026-03-31"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20261002045714/https://openai.com/index/accelerating-the-next-phase-ai/"
+    note: "官網拒絕自動讀取，經 Internet Archive 存檔頁核對內文"
+  - key: openai-cfo
+    title: "A business that scales with the value of intelligence"
+    publisher: OpenAI
+    url: "https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/"
+    type: company-site
+    lang: en
+    published: "2026-01-18"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20261001144751/https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/"
+    note: "財務長 Sarah Friar 署名文章；經 Internet Archive 存檔頁核對內文"
+  - key: anthropic-series-f
+    title: "Anthropic raises Series F at $183B post-money valuation"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/anthropic-raises-series-f-at-usd183b-post-money-valuation"
+    type: press-release
+    lang: en
+    published: "2025-09-02"
+    accessed: "2026-10-06"
+  - key: anthropic-series-g
+    title: "Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation"
+    type: press-release
+    lang: en
+    published: "2026-02-12"
+    accessed: "2026-10-06"
+  - key: anthropic-series-h
+    title: "Anthropic raises $65B in Series H funding at $965B post-money valuation"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/series-h"
+    type: press-release
+    lang: en
+    published: "2026-05-28"
+    accessed: "2026-10-06"
+  - key: anthropic-distillation
+    title: "Detecting and preventing distillation attacks"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/detecting-and-preventing-distillation-attacks"
+    type: company-site
+    lang: en
+    published: "2026-02-23"
+    accessed: "2026-10-06"
+  - key: alphabet-q2-2026
+    title: "Q2 2026 earnings call: Remarks from our CEO"
+    publisher: Google
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/"
+    type: earnings-call
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-06"
+  - key: claude-pricing
+    title: "Pricing - Claude Platform Docs"
+    publisher: Anthropic
+    url: "https://platform.claude.com/docs/en/about-claude/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: claude-models
+    title: "Models overview - Claude Platform Docs"
+    publisher: Anthropic
+    url: "https://platform.claude.com/docs/en/about-claude/models/overview"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: openai-pricing
+    title: "Pricing | OpenAI API"
+    publisher: OpenAI
+    url: "https://developers.openai.com/api/docs/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: gartner-2025-09
+    title: "Gartner Says Worldwide AI Spending Will Total $1.5 Trillion in 2025"
+    publisher: Gartner
+    url: "https://www.gartner.com/en/newsroom/press-releases/2025-09-17-gartner-says-worldwide-ai-spending-will-total-1-point-5-trillion-in-2025"
+    type: analyst
+    lang: en
+    published: "2025-09-17"
+    accessed: "2026-10-06"
+  - key: gartner-2026-05
+    title: "Gartner Forecasts Worldwide AI Spending to Grow 47% in 2026"
+    publisher: Gartner
+    url: "https://www.gartner.com/en/newsroom/press-releases/2026-05-19-gartner-forecasts-worldwide-ai-spending-to-grow-47-percent-in-2026"
+    type: analyst
+    lang: en
+    published: "2026-05-19"
+    accessed: "2026-10-06"
+  - key: menlo-2025
+    title: "2025: The State of Generative AI in the Enterprise"
+    publisher: Menlo Ventures
+    url: "https://menlovc.com/perspective/2025-the-state-of-generative-ai-in-the-enterprise/"
+    type: analyst
+    lang: en
+    published: "2025-12-09"
+    accessed: "2026-10-06"
+  - key: menlo-consumer-2026
+    title: "2026: The State of Consumer AI"
+    publisher: Menlo Ventures
+    url: "https://menlovc.com/perspective/2026-the-state-of-consumer-ai/"
+    type: analyst
+    lang: en
+    published: "2026-09-16"
+    accessed: "2026-10-06"
+  - key: aa-leaderboard
+    title: "LLM Leaderboard - Comparison of AI models"
+    publisher: Artificial Analysis
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20261006010411/https://artificialanalysis.ai/leaderboards/models"
+    note: "排行榜每日更新；分數以 2026-10-06 的 Internet Archive 存檔頁核對"
+  - key: aa-open
+    title: "Open Source AI Models: Intelligence, Performance & Price Analysis"
+    publisher: Artificial Analysis
+    url: "https://artificialanalysis.ai/models/open-source"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20261008191559/https://artificialanalysis.ai/models/open-source"
+    note: "排行榜每日更新；分數以 2026-10-08 的 Internet Archive 存檔頁核對"
+  - key: epoch-trends
+    title: "Trends in Artificial Intelligence"
+    publisher: Epoch AI
+    url: "https://epoch.ai/trends"
+    type: dataset
+    lang: en
+    accessed: "2026-10-06"
+  - key: deepseek-v3
+    title: "DeepSeek-V3 Technical Report"
+    publisher: DeepSeek-AI (arXiv)
+    url: "https://arxiv.org/abs/2412.19437"
+    type: paper
+    lang: en
+    published: "2024-12-27"
+    accessed: "2026-10-06"
+  - key: ai-index-2026
+    title: "The 2026 AI Index Report"
+    publisher: Stanford HAI
+    url: "https://hai.stanford.edu/ai-index/2026-ai-index-report"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+  - key: wiki-anthropic
+    title: "Anthropic"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Anthropic"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "IPO 秘密申請（原始出處 Axios）、Nscale 算力合約（CNBC 引述消息人士）與著作權和解（NPR 等）等事件，均為維基百科轉述的媒體報導"
+  - key: wiki-openai
+    title: "OpenAI"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/OpenAI"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "IPO 申請的原始出處為 The Wall Street Journal、The Times；延後上市的原始出處為 Fortune（2026-09-12）"
+  - key: wiki-xai
+    title: "SpaceXAI"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/SpaceXAI"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+  - key: wiki-msl
+    title: "Meta Superintelligence Labs"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Meta_Superintelligence_Labs"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+  - key: wiki-zhipu
+    title: "Z.ai"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Z.ai"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+  - key: wiki-minimax
+    title: "MiniMax Group"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/MiniMax_Group"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+  - key: taide-hf
+    title: "taide/Gemma-3-TAIDE-12b-Chat-2602"
+    publisher: TAIDE（Hugging Face）
+    url: "https://huggingface.co/taide/Gemma-3-TAIDE-12b-Chat-2602"
+    type: docs
+    lang: zh-TW
+    published: "2026-02-13"
+    accessed: "2026-10-06"
+  - key: foxbrain-hf
+    title: "FoxconnAI/Llama_3.1-FoxBrain-70B"
+    publisher: FoxconnAI（Hugging Face）
+    url: "https://huggingface.co/FoxconnAI/Llama_3.1-FoxBrain-70B"
+    type: docs
+    lang: en
+    published: "2025-05-19"
+    accessed: "2026-10-06"
+  - key: breeze-hf
+    title: "MediaTek-Research/Llama-Breeze2-8B-Instruct"
+    publisher: MediaTek Research（Hugging Face）
+    url: "https://huggingface.co/MediaTek-Research/Llama-Breeze2-8B-Instruct"
+    type: docs
+    lang: en
+    published: "2025-01-23"
+    accessed: "2026-10-06"
+  - key: zhwiki-ai-basic-act
+    title: "人工智慧基本法"
+    publisher: 維基百科
+    url: "https://zh.wikipedia.org/zh-tw/%E4%BA%BA%E5%B7%A5%E6%99%BA%E6%85%A7%E5%9F%BA%E6%9C%AC%E6%B3%95"
+    type: other
+    lang: zh-TW
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: seg-foundation-models
+  checkedBy: "seg-foundation-models-check"
+  checkedOn: "2026-10-06"
+  notes: "營收、用戶與估值以公司公告為準（OpenAI 官網經 Internet Archive 存檔頁讀取）；市場規模採 Gartner「AI 模型」類別（Gartner 官網拒絕自動讀取，經 Internet Archive 存檔頁核對表格），與單一公司年化營收口徑不同；排行榜分數以 Artificial Analysis 2026-10-06 與 2026-10-08 存檔頁核對；Sacra 等第三方營收估計未經證實，故不採用。查核時補上 Claude Fable 5.1 定價層級、修正美國最佳開放權重模型分數範圍，並把 Nscale 合約、OpenAI 延後上市等改標為媒體報導。"
+---
+
+<LevelSection level={1} title="這一環在做什麼">
+
+<Term id="foundation-model">基礎模型</Term>是用海量文字、程式碼、圖片與影音訓練出來的通用 AI 模型。它不是為單一任務打造，而是先學會「理解與生成」這種通用能力，再被各種產品拿去使用：聊天助理、會自己寫程式的 <Term id="agent">Agent</Term>、客服、搜尋與翻譯，甚至是機器人的大腦。目前最受矚目的基礎模型是<Term id="llm">大型語言模型（LLM）</Term>，例如 <CompanyChip id="openai">OpenAI</CompanyChip> 的 GPT、<CompanyChip id="anthropic">Anthropic</CompanyChip> 的 Claude、<CompanyChip id="alphabet">Alphabet</CompanyChip> 旗下 Google DeepMind 的 Gemini，以及中國 <CompanyChip id="deepseek">DeepSeek</CompanyChip> 的開放模型。
+
+<Callout type="analogy" title="培養一位通才，再按字數收費">
+訓練基礎模型，就像讓一位學生先讀遍整座圖書館（預訓練），再接受職前訓練，學會禮貌與做事方法（後訓練），最後上班替成千上萬的客人回答問題（推論）。讀書階段要先付一大筆學費，也就是算力；上班後則按「字數」收費：模型把文字切成小片段，稱為 <Term id="token">Token</Term>，API 以每百萬個 Token 計價，就像電費按「度」計算。
+</Callout>
+
+在產業鏈中，這一環位在算力之上、應用之下。往供應端看，它向 <SegmentChip id="ai-accelerators" />、<SegmentChip id="datacenter-infra" /> 與 <SegmentChip id="cloud-neocloud" /> 購買龐大算力；往需求端看，它把模型能力賣給 <SegmentChip id="devtools-data-mlops" />、<SegmentChip id="apps-agents" /> 與 <SegmentChip id="physical-ai" /> 的業者，同時直接經營 ChatGPT、Claude、Gemini 等消費產品。
+
+<StatGrid items={[{ label: "ChatGPT 週活躍用戶", value: "逾 9 億", note: "OpenAI，2026 年 3 月" },{ label: "Gemini App 月活躍用戶", value: "9.5 億", note: "Alphabet，2026 年第二季" },{ label: "Anthropic 年化營收", value: "逾 470 億美元", note: "Anthropic，2026 年 5 月" },{ label: "全球消費者 AI 支出", value: "約 400 億美元", note: "Menlo Ventures，2026 年", estimate: true }]} caption="資料來源：OpenAI、Alphabet、Anthropic 公告與 Menlo Ventures 估計" />
+
+上面四個數字分別來自 OpenAI 募資公告<Cite k="openai-raise" />、Alphabet 法說會<Cite k="alphabet-q2-2026" />、Anthropic 募資公告<Cite k="anthropic-series-h" />與 Menlo Ventures 的消費者調查<Cite k="menlo-consumer-2026" />。短短幾年，模型已從實驗室裡的研究成果，變成數億人經常使用的工具。
+
+</LevelSection>
+
+<LevelSection level={2} title="關鍵技術與商業模式" data-lint="level==2">
+
+### 關鍵技術：從預訓練到推理模型
+
+現代基礎模型幾乎都建立在 <Term id="transformer">Transformer</Term> 架構上，製作流程分成兩大段。<Term id="pretraining">預訓練</Term>讓模型在數兆個 Token 上反覆練習「預測下一個字」，把知識壓進數千億到數兆個<Term id="parameter">參數</Term>；<Term id="post-training">後訓練</Term>再用人類回饋強化學習（<Term id="rlhf">RLHF</Term>）等方法，教模型遵循指令、使用工具並守住安全界線。2024 年後，三個方向改變了這一環的樣貌：
+
+- **推理模型**：<Term id="reasoning-model">推理模型</Term>在回答前先「思考」，把更多算力花在推論階段，也就是<Term id="test-time-compute">推論時運算</Term>。Epoch AI 觀察到，2024 年 9 月第一批推理模型（OpenAI o1 系列）問世後，Epoch 能力指數（ECI）的前沿每年進步約 14 點，非推理模型只有 6 點<Cite k="epoch-trends" />。
+- **混合專家**：<Term id="moe">MoE</Term> 讓每個 Token 只啟用一小部分「專家」。DeepSeek-V3 總參數 6,710 億，每個 Token 只啟用 370 億<Cite k="deepseek-v3" />；月之暗面的 Kimi K3 更達 2.8 兆總參數、1,040 億<Term id="active-parameters">活躍參數</Term><Cite k="aa-open" />。
+- **多模態與長上下文**：前沿模型普遍能同時處理文字、圖片與影音（<Term id="multimodal">多模態</Term>），排行榜前段模型的<Term id="context-window">上下文視窗</Term>多已達 100 萬 Tokens<Cite k="aa-leaderboard" />。
+
+### 商業模式：訂閱、API 與企業方案
+
+模型公司的收入主要有三種。第一是**消費訂閱**：ChatGPT 在 2026 年 3 月有逾 9 億週活躍用戶、逾 5,000 萬名付費訂閱者<Cite k="openai-raise" />。第二是 **API 用量計費**：開發者按 Token 付費，也就是 <Term id="token-pricing">Token 計價</Term>。第三是**企業方案與程式 Agent**：OpenAI 的企業營收佔比已逾 40%<Cite k="openai-raise" />；Anthropic 的 Claude Code 在 2026 年 2 月的年化營收已超過 25 億美元<Cite k="anthropic-series-g" />。
+
+| 模型 | 輸入 | 輸出 | 定位 |
+|---|---|---|---|
+| Claude Opus 4.1 | 15 | 75 | 2025 年旗艦 |
+| Claude Fable 5.1 | 10 | 50 | 最高階 |
+| Claude Opus 5.5 | 4 | 20 | 旗艦（官方建議的首選） |
+| GPT-6 Astra | 10 | 50 | 旗艦 |
+| GPT-6.1 Sol | 2 | 10 | 中階 |
+| GPT-6 Luna | 0.10 | 0.50 | 平價 |
+
+上表單位為美元／每百萬 Tokens（標準價格，2026-10-06 讀取）<Cite k="claude-pricing" /><Cite k="openai-pricing" />。表中各模型的輸出價格都是輸入的 5 倍，而同等級模型降價很快：Claude Opus 等級從 15／75 美元降到 4／20 美元，降幅約 73%。價格也拉開了層級：Anthropic 建議多數工作先用 Opus 5.5，只有最吃重的推理與長時程 Agent 任務才改用價格約 2.5 倍的 Fable 5.1<Cite k="claude-models" />。
+
+### 成本結構：算力是最大的帳單
+
+模型公司的主要成本是算力，分成訓練新模型的研發算力，以及服務用戶的推論算力。Epoch AI 估計，前沿語言模型的訓練算力自 2020 年起每年成長約 5 倍，訓練成本每年增加約 3.5 倍；2024 年 OpenAI 的算力支出只有約 30% 用在推論<Cite k="epoch-trends" />。OpenAI 財務長指出，公司可用算力從 2023 年的 0.2 <Term id="gigawatt">GW</Term> 增加到 2024 年的 0.6 GW、2025 年約 1.9 GW，<Term id="arr">年化營收</Term>則從 20 億美元增加到 60 億、再到逾 200 億美元，兩者幾乎同步成長<Cite k="openai-cfo" />。
+
+反例是 DeepSeek-V3：最終一次完整訓練只用了 278.8 萬個 H800 GPU 小時，以每小時 2 美元租金換算約 557.6 萬美元；但論文也註明，這個數字不含先前的研究與消融實驗<Cite k="deepseek-v3" />。單次訓練便宜，不代表整體研發便宜。
+
+### 市場規模
+
+Gartner 估計，全球「AI 模型」支出 2025 年約 155 億美元，2026 年將成長 110% 至 326 億美元，2027 年達 592 億美元；不過這只佔 2026 年全球 AI 總支出 2.59 兆美元的約 1%，其中逾半數花在 AI 基礎設施<Cite k="gartner-2026-05" />。
+
+<BarChart title="全球 AI 模型支出（Gartner）" unit="十億美元" data={[{ label: "2024", value: 5.7 },{ label: "2025", value: 15.5 },{ label: "2026", value: 32.6, estimate: true },{ label: "2027", value: 59.2, estimate: true }]} source={["gartner-2025-09", "gartner-2026-05"]} note="2024 年值取自 2025 年 9 月版預測（當時類別名稱為 GenAI Models）；2026、2027 年為預測值。" />
+
+另一個角度是看兩大實驗室自己揭露的營收。要注意口徑不同：Gartner 的數字是全球支出中的一個分類，下圖則是單一公司的年化營收，兩者不能直接比較。
+
+<LineChart title="OpenAI 與 Anthropic 的年化營收" unit="十億美元" series={[{ name: "OpenAI", points: [{ x: "2023-12-31", y: 2 },{ x: "2024-12-31", y: 6 },{ x: "2025-12-31", y: 20 },{ x: "2026-03-31", y: 24, estimate: true }] },{ name: "Anthropic", points: [{ x: "2025-01-01", y: 1 },{ x: "2025-08-31", y: 5 },{ x: "2026-02-12", y: 14 },{ x: "2026-05-28", y: 47 }] }]} source={["openai-cfo", "openai-raise", "anthropic-series-f", "anthropic-series-g", "anthropic-series-h"]} note="皆為公司自行揭露的年化營收（ARR／run-rate），定義不完全相同；OpenAI 2026 年 3 月為「每月營收 20 億美元」乘以 12 的換算值。" />
+
+### 競爭格局
+
+這一環是典型的寡佔。Menlo Ventures 估計，2025 年 Anthropic 拿下企業 LLM 支出的 40%，OpenAI 27%，Google 21%，三家合計佔企業 LLM API 用量的 88%<Cite k="menlo-2025" />。消費端則是 ChatGPT 與 Gemini 並駕齊驅：Menlo Ventures 在 2026 年 7 月調查的美國 AI 使用者中，使用 ChatGPT 的佔 60%、Gemini 58%、Claude 20%<Cite k="menlo-consumer-2026" />。
+
+能力排名換手頻繁。2026 年 10 月 6 日，Artificial Analysis 綜合智慧指數（v4.3.2，各模型取分數最高的推理強度設定）前兩名都是 Claude：Opus 5.5 58 分、Sonnet 5.5 56 分；OpenAI 的 GPT-6 Astra 與 Google 的 Gemini 4 Argon 各為 53 分<Cite k="aa-leaderboard" />。<Term id="open-weights">開放權重</Term>陣營則由中國主導：前五名全是中國模型，<CompanyChip id="xiaomi">小米</CompanyChip> MiMo-V2.6-Pro 46 分、<CompanyChip id="zhipu-ai">智譜</CompanyChip> GLM-5.3 45 分、<CompanyChip id="moonshot-ai">月之暗面</CompanyChip> Kimi K3 44 分；美國表現最好的開放權重模型是 <CompanyChip id="thinking-machines-lab">Thinking Machines</CompanyChip> 的 Inkling 系列，只有 25–26 分<Cite k="aa-open" /><Cite k="aa-leaderboard" />。
+
+產業結構也在重組：<CompanyChip id="spacex">SpaceX</CompanyChip> 在 2026 年 2 月以全股票交易併購 xAI，xAI 並於 7 月更名為 SpaceXAI<Cite k="wiki-xai" />；<CompanyChip id="meta">Meta</CompanyChip> 在 Llama 4 之後改以閉源的 Muse 系列為主力<Cite k="wiki-msl" />；智譜與 <CompanyChip id="minimax">MiniMax</CompanyChip> 則在 2026 年 1 月先後於港交所掛牌<Cite k="wiki-zhipu" /><Cite k="wiki-minimax" />。
+
+</LevelSection>
+
+<LevelSection level={3} title="深入議題" data-lint="level===3">
+
+### 瓶頸：算力、記憶體與資金
+
+這一環的瓶頸主要不在模型本身，而在供應端。<Term id="frontier-model">前沿模型</Term>實驗室的算力合約已以 GW 計：Anthropic 在 2026 年 5 月的募資公告中提到，近幾週已與 <CompanyChip id="amazon">Amazon</CompanyChip> 簽下最多 5 GW 新算力、與 Google 和 <CompanyChip id="broadcom">博通</CompanyChip> 簽下 5 GW 新一代 TPU 算力，並取得 SpaceX Colossus 1、2 叢集的 GPU 算力；同一輪募資還有 <CompanyChip id="micron">美光</CompanyChip>、<CompanyChip id="samsung-electronics">三星</CompanyChip>、<CompanyChip id="sk-hynix">SK海力士</CompanyChip> 以策略基礎設施夥伴身分加入<Cite k="anthropic-series-h" />。Google 執行長也表示，在需求快速成長下，公司「仍受供給限制」<Cite k="alphabet-q2-2026" />。
+
+資金需求同樣驚人。OpenAI 在 2026 年 3 月完成 1,220 億美元承諾資金的募資，投後估值 8,520 億美元<Cite k="openai-raise" />；Anthropic 在 5 月以 9,650 億美元投後估值募得 650 億美元，其中 150 億美元是雲端業者先前承諾的投資<Cite k="anthropic-series-h" />。供應商同時是投資人的安排，被稱為<Term id="circular-financing">循環融資</Term>，是觀察 <TrendLink id="ai-infra-financing-bubble">AI 基礎設施泡沫風險</TrendLink>的重要線索。訓練資料則是另一個瓶頸：Anthropic 在 2025 年 9 月同意以 15 億美元和解作者集體訴訟，2026 年 7 月獲美國聯邦地區法院核准<Cite k="wiki-anthropic" />，相關爭議見 <TrendLink id="copyright-data-licensing">著作權訴訟與資料授權市場</TrendLink>。
+
+### 供需：推論需求正在爆發
+
+單價下滑的同時，用量快速成長。Google 模型 API 每分鐘處理的 Token 數，一季內從 160 億增加到約 220 億<Cite k="alphabet-q2-2026" />；OpenAI 的 API 在 2026 年 3 月每分鐘處理逾 150 億 Tokens<Cite k="openai-raise" />。推理模型與 Agent 會連續執行多個步驟，每項任務消耗的 Token 遠多於單次問答，使<Term id="inference">推論</Term>需求快速攀升，詳見 <TrendLink id="inference-demand">推論需求超越訓練</TrendLink>。
+
+### 地緣政治：中美競賽與主權 AI
+
+Stanford AI Index 2026 認為，中美模型的能力差距已「實質上消失」：截至 2026 年 3 月，Anthropic 的頂尖模型只領先 2.7%；但 2025 年美國民間 AI 投資達 2,859 億美元，是中國 124 億美元的 23 倍以上；AI Index 也提醒，這只計入民間投資、不含政府引導基金，可能低估中國的總投入<Cite k="ai-index-2026" />。美國以<Term id="export-controls">出口管制</Term>限制先進晶片輸往中國，智譜也在 2025 年 1 月被列入<Term id="entity-list">實體清單</Term><Cite k="wiki-zhipu" />。Anthropic 在 2026 年 2 月指控 DeepSeek、月之暗面與 MiniMax 透過約 2.4 萬個詐欺帳號，與 Claude 進行逾 1,600 萬次互動，藉此<Term id="distillation">蒸餾</Term>其能力<Cite k="anthropic-distillation" />；這是 Anthropic 單方面的指控。
+
+其他國家則發展<Term id="sovereign-ai">主權 AI</Term>，例如法國的 <CompanyChip id="mistral-ai">Mistral AI</CompanyChip>、加拿大的 <CompanyChip id="cohere">Cohere</CompanyChip>，以及韓國的 <CompanyChip id="naver">Naver</CompanyChip> 與 <CompanyChip id="lg-ai-research">LG AI 研究院</CompanyChip>，主打在地語言、資料主權與政府客戶。
+
+### 2026–2028 年觀察重點
+
+1. **上市與財報透明化**：Anthropic 在 2026 年 6 月宣布已向美國證管會秘密遞交 IPO 申請<Cite k="wiki-anthropic" />；OpenAI 也在 6 月遞件，但據 Fortune 報導，執行長 Altman 在 9 月證實今年不會上市，時程延到 2027 年<Cite k="wiki-openai" />。一旦公開招股文件，外界將首次看到這兩家公司經會計師查核的完整財報。
+2. **模型支出能否倍增**：Gartner 預測 2027 年全球 AI 模型支出達 592 億美元<Cite k="gartner-2026-05" />，可對照企業 Agent 的實際導入速度。
+3. **算力合約如期上線**：據 CNBC 引述消息人士報導，Anthropic 將向 Nscale 承租位於美國西維吉尼亞州、約 460 MW 的資料中心算力，預計 2027 年底啟用<Cite k="wiki-anthropic" />；GW 級園區能否準時供電是關鍵。
+4. **縮放是否延續**：Epoch AI 認為訓練算力的成長趨勢可望延續到 2030 年<Cite k="epoch-trends" />；<Term id="scaling-laws">縮放定律</Term>能否持續換來能力提升，決定前沿實驗室的資本支出規模。
+5. **開放權重競賽**：美歐開放模型能否追上中國，詳見 <TrendLink id="open-weights-race">開放權重競賽</TrendLink>。
+
+</LevelSection>
+
+## 台灣的角色
+
+台灣在基礎模型這一環的直接參與有限，但在供應鏈前端舉足輕重。Stanford AI Index 2026 指出，幾乎所有領先的 AI 晶片都由 <CompanyChip id="tsmc">台積電</CompanyChip>一家代工<Cite k="ai-index-2026" />。前沿實驗室的 GW 級算力合約，背後是台積電的先進製程與先進封裝產能，以及 <CompanyChip id="foxconn">鴻海</CompanyChip>、<CompanyChip id="quanta">廣達</CompanyChip>、<CompanyChip id="wistron">緯創</CompanyChip> 等台廠組裝的 AI 伺服器。
+
+在模型本身，台灣走的是「站在開放權重模型肩上」的在地化路線，而不是從零訓練前沿模型：
+
+- **TAIDE**：國科會推動的 <ModelChip id="taide">TAIDE</ModelChip> 在 2026 年 2 月釋出 Gemma-3-TAIDE-12b-Chat-2602，以 Google Gemma 3 12B 為基礎，加入約 220 億 Tokens 的正體中文資料續訓，訓練使用國網中心的 H200 GPU，共 1,520 個 GPU 小時<Cite k="taide-hf" />。這還不到 DeepSeek-V3 單次完整訓練（278.8 萬個 H800 GPU 小時）的千分之一<Cite k="deepseek-v3" />，屬於小規模的在地化續訓。
+- **企業模型**：鴻海的 <ModelChip id="foxconn-foxbrain">FoxBrain</ModelChip> 以 Meta Llama 3.1 70B 為基礎<Cite k="foxbrain-hf" />；<CompanyChip id="mediatek">聯發科</CompanyChip>旗下聯發創新基地的 <ModelChip id="mediatek-breeze">Breeze 2</ModelChip> 系列則以 Llama 3.2 為基礎，強化繁體中文能力，提供 3B 與 8B 兩種規模<Cite k="breeze-hf" />。
+- **政策**：《<Term id="taiwan-ai-basic-act">人工智慧基本法</Term>》於 2025 年 12 月 23 日三讀通過、2026 年 1 月 14 日公布、1 月 16 日生效，中央主管機關為國科會<Cite k="zhwiki-ai-basic-act" />，為台灣的 AI 發展與治理訂下基本原則。
+
+對台灣而言，模型層的機會在於繁體中文與在地產業知識，以及把模型部署到手機、PC 與工廠的端側應用；而前沿實驗室每一次擴大算力，多半也會轉化為台灣晶片與伺服器供應鏈的訂單。

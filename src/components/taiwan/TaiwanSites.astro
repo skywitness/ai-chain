@@ -1,0 +1,185 @@
+---
+/**
+ * Text companion of the taiwan-map scene: the parks, fabs, packaging plants, server clusters, research
+ * institutes and ports of src/data/taiwan/sites.yaml, grouped 北部／中部／南部 (north to south), each with its
+ * kind, city, a one-line note and the roster companies the file lists there (verified membership only).
+ * Without site data it renders nothing; pair it with <TaiwanHqBars> for the HQ distribution.
+ *   <TaiwanSites sites={readTaiwanSites()} headingLevel={3} />
+ */
+import TwChip from './TwChip.astro';
+import { getRosterCompany, type RosterCompany } from '../../lib/collections';
+import type { TaiwanSiteRecord } from '../../lib/scene-data/taiwan';
+import { regionOf, REGION_ORDER, SITE_KIND_META, siteKindMeta } from './taiwan-data';
+
+interface Props {
+  sites: readonly TaiwanSiteRecord[] | null | undefined;
+  headingLevel?: 3 | 4 | undefined;
+  class?: string | undefined;
+}
+const { sites, headingLevel = 3, class: className } = Astro.props;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+
+/** Drop the trailing coordinate-source remark (「座標：維基百科。」) from a note. */
+const cleanNote = (n: string | undefined) => n?.replace(/\s*座標：[^。]*。?\s*$/, '').trim() || undefined;
+
+const list = (sites ?? []).map((s) => ({
+  ...s,
+  region: regionOf(s.city, s.lat),
+  note: cleanNote(s.note),
+  roster: s.companies.map((id) => getRosterCompany(id)).filter((c): c is RosterCompany => !!c),
+}));
+const groups = REGION_ORDER.map((r) => ({
+  region: r,
+  sites: list.filter((s) => s.region === r).sort((a, b) => b.lat - a.lat),
+})).filter((g) => g.sites.length > 0);
+const kindsUsed = [...new Set(list.map((s) => s.kind))].filter((k) => k in SITE_KIND_META);
+---
+
+{
+  groups.length > 0 && (
+    <div class:list={['tws', className]}>
+      <ul class="tws__kinds" aria-label="地點類型">
+        {kindsUsed.map((k) => (
+          <li style={`--kc: ${siteKindMeta(k).color}`}>
+            <i aria-hidden="true" />
+            {siteKindMeta(k).label}
+          </li>
+        ))}
+      </ul>
+      {groups.map((g) => (
+        <div class="tws__group">
+          <H class="tws__region">
+            {g.region}
+            <span class="tws__region-n">{g.sites.length} 處</span>
+          </H>
+          <ol class="tws__list" role="list">
+            {g.sites.map((s) => (
+              <li class="tws__site" style={`--kc: ${siteKindMeta(s.kind).color}`}>
+                <p class="tws__top">
+                  <span class="tws__name">{s.name}</span>
+                  <span class="tws__kind">
+                    <i aria-hidden="true" />
+                    {siteKindMeta(s.kind).label}
+                  </span>
+                </p>
+                {s.city && <p class="tws__city">{s.city}</p>}
+                {s.note && <p class="tws__note">{s.note}</p>}
+                {s.roster.length > 0 && (
+                  <span class="tws__chips">
+                    {s.roster.map((c) => (
+                      <TwChip company={c} />
+                    ))}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+<style>
+  .tws {
+    display: grid;
+    gap: var(--space-5);
+    align-content: start;
+    min-width: 0;
+  }
+  .tws p {
+    margin: 0;
+  }
+  .tws__kinds {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    margin: 0;
+    padding: 0 0 var(--space-3);
+    list-style: none;
+    border-block-end: 1px solid var(--c-border);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .tws__kinds li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+  .tws__kinds i,
+  .tws__kind i {
+    inline-size: 0.55rem;
+    block-size: 0.55rem;
+    border-radius: 2px;
+    background: var(--kc);
+  }
+  .tws__region {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    margin: 0 0 var(--space-3);
+    font-size: var(--fs-m);
+    line-height: 1.3;
+  }
+  .tws__region-n {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .tws__list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tws__site {
+    display: grid;
+    gap: 4px;
+    padding: var(--space-3) var(--space-3) var(--space-3) calc(var(--space-3) + 3px);
+    border-radius: var(--radius-m);
+    background: var(--c-bg);
+    box-shadow: inset 3px 0 0 var(--kc);
+  }
+  .tws__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 2px var(--space-3);
+  }
+  .tws__name {
+    font-weight: var(--fw-semibold);
+    line-height: 1.45;
+  }
+  .tws__kind {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    white-space: nowrap;
+  }
+  .tws__city {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .tws__note {
+    font-size: var(--fs-s);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+  }
+  .tws__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-block-start: 4px;
+  }
+  @media (forced-colors: active) {
+    .tws__kinds i,
+    .tws__kind i {
+      background: CanvasText;
+    }
+  }
+</style>

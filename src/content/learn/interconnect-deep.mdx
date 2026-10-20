@@ -1,0 +1,474 @@
+---
+title: "互連深入：SerDes、CPO 與 Scale-up 標準之爭"
+subtitle: "每條通道 200 Gb/s 的訊號怎麼走出晶片：銅線的極限、光走進封裝，以及誰來定義機櫃裡的連線"
+description: "AI 晶片之間往來的資料幾乎都要經過 SerDes。本文說明 PAM4 與通道速度翻倍為何讓銅線越傳越短、可插拔光模組為何吃掉交換器一半功耗、CPO 如何把光引擎放進封裝，以及 NVLink、UALink、乙太網路與 ICI 的 Scale-up 標準之爭。"
+level: 3
+order: 310
+track: hardware
+prerequisites: [networking-for-ai]
+next: [hbm-deep, mixture-of-experts, datacenter-power-cooling]
+relatedSegments: [networking-optics, ai-accelerators, foundry-packaging, servers-systems, eda-ip-design]
+relatedCompanies: [broadcom, nvidia, marvell, amd, alphabet, amazon, tsmc, ase, credo, astera-labs, cisco, arista, celestica, amphenol, bizlink, innolight, eoptolink, coherent, lumentum, fabrinet, corning, browave, foci, landmark, vpec, foxconn, mediatek, alchip, ayar-labs, lightmatter]
+relatedModels: []
+relatedTrends: [co-packaged-optics, scale-up-fabric-wars, rack-scale-systems, custom-asic-rise, gpu-roadmap-rubin-feynman]
+glossary:
+  - serdes
+  - lpo
+  - cpo
+  - scale-up
+  - scale-out
+  - nvlink
+  - ualink
+  - ethernet
+  - pcie
+  - network-switch
+  - optical-transceiver
+  - optical-fiber
+  - silicon-photonics
+  - retimer
+  - aec
+  - nvl72
+  - gpu
+  - xpu
+  - asic
+  - tpu
+  - rdma
+  - ultra-ethernet
+  - all-reduce
+  - latency
+  - bandwidth
+  - soic
+  - cowos
+  - ucie
+  - chiplet
+  - hbm
+scenes:
+  - { id: network, variant: cpo }
+keyTakeaways:
+  - "SerDes 每通道速度約每隔幾年翻倍；IEEE 專案目標要求的銅纜距離，從 50G 的 3 公尺縮到 200G 的 1 公尺。"
+  - "交換晶片容量等於通道數乘以每通道速度，博通以 512 條 200G 通道做出 102.4 Tbps 的交換晶片。"
+  - "博通指出可插拔光模組約占交換系統一半功耗；CPO 把光引擎放進封裝，輝達稱每個介面可從約 30W 降到 9W。"
+  - "CPO 交換器已在 2026 年量產；輝達規劃 2028 年的 Feynman 世代首度以 CPO 做 Scale-up。"
+  - "Scale-up 標準分成 NVLink Fusion、UALink、乙太網路系的 ESUN／SUE，以及 Google ICI 等陣營。"
+  - "各陣營的實體層都在往 200G、400G SerDes 靠攏，真正的競爭在協定、交換晶片與生態系。"
+estimatedMinutes: 22
+sources:
+  - key: ieee-3cd
+    title: "IEEE 802.3cd 50 Gb/s Ethernet over a Single Lane and Next Generation 100 Gb/s and 200 Gb/s Ethernet Task Force Objectives (Updated)"
+    publisher: IEEE 802.3
+    url: "https://www.ieee802.org/3/cd/P802d3cd_objectives_v4.pdf"
+    type: standard
+    lang: en
+    accessed: "2026-10-16"
+    note: "2016 年 9 月會議通過的專案目標：單通道 50 Gb/s PHY，銅質雙軸電纜至少 3 公尺，電路板背板在 13.28125 GHz 時通道插入損耗不超過 30 dB。"
+  - key: ieee-3ck
+    title: "IEEE P802.3ck Objectives: 100 Gb/s per Electrical Lane"
+    publisher: IEEE 802.3
+    url: "https://www.ieee802.org/3/ck/P802_3ck_Objectives_2018mar.pdf"
+    type: standard
+    lang: en
+    accessed: "2026-10-16"
+    note: "2018 年 3 月研究小組通過的目標：單通道 100 Gb/s PHY，雙軸銅纜至少 2 公尺，電氣背板在 26.56 GHz 時插入損耗不超過 28 dB。"
+  - key: ieee-3dj
+    title: "Adopted IEEE P802.3dj Objectives"
+    publisher: IEEE 802.3
+    url: "https://www.ieee802.org/3/dj/projdoc/objectives_P802d3dj_240314.pdf"
+    type: standard
+    lang: en
+    published: "2024-03-14"
+    accessed: "2026-10-16"
+    note: "200 Gb/s 到 1.6 Tb/s 乙太網路：單通道 200 Gb/s，電氣背板晶粒對晶粒在 53.125 GHz 時插入損耗不超過 40 dB；每對雙軸銅纜每方向至少 1.0 公尺；單模光纖 500 公尺與 2 公里等。"
+  - key: wiki-pam
+    title: "Pulse-amplitude modulation"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Pulse-amplitude_modulation"
+    type: other
+    lang: en
+    accessed: "2026-10-16"
+    note: "PAM-4 有四個振幅準位，每個符號傳 2 位元；部分 100G 與 200G 乙太網路的銅線版本採用 PAM-4，PCI Express 6.0 也導入 PAM-4；PAM-4 比 NRZ 更容易受訊雜比影響、需要更多晶片面積。"
+  - key: avgo-bailly
+    title: "Broadcom Delivers Industry's First 51.2-Tbps Co-Packaged Optics Ethernet Switch Platform for Scalable AI Systems"
+    publisher: "Broadcom（Nasdaq 轉載）"
+    url: "https://www.nasdaq.com/press-release/broadcom-delivers-industrys-first-51.2-tbps-co-packaged-optics-ethernet-switch"
+    type: press-release
+    lang: en
+    published: "2024-03-14"
+    accessed: "2026-10-16"
+    note: "Bailly 把 8 個 6.4 Tbps 矽光子光引擎與 Tomahawk 5 整合，交換容量 51.2 Tbps；光學互連功耗比可插拔方案低 70%、矽面積效率高 8 倍；可插拔光收發模組約占傳統交換系統 50% 功耗與 50% 以上成本。"
+  - key: avgo-davisson
+    title: "Broadcom Announces Tomahawk 6 – Davisson, the Industry's First 102.4-Tbps Ethernet Switch with Co-Packaged Optics"
+    publisher: "Broadcom（Nasdaq 轉載）"
+    url: "https://www.nasdaq.com/press-release/broadcom-announces-tomahawkr-6-davisson-industrys-first-1024-tbps-ethernet-switch-co"
+    type: press-release
+    lang: en
+    published: "2025-10-08"
+    accessed: "2026-10-16"
+    note: "第三代 CPO 交換器 TH6-Davisson：102.4 Tbps，16 個 6.4 Tbps 光引擎，每通道 200 Gbps；採用台積電 COUPE 光引擎與基板級多晶片封裝，減少訊號調節與走線損耗，光學互連功耗降低 70%（比傳統可插拔低 3.5 倍以上）；可現場更換的 ELSFP 雷射模組；可與 DR 光模組、LPO 與 CPO 互通；支援 512 顆 XPU 的 Scale-up，以及每鏈路 200 Gbps、兩層網路逾 10 萬顆 XPU；第四代 CPO 將把每通道提高到 400 Gbps；新聞稿導言稱已出貨，供貨段落則寫正向早期客戶送樣；康寧為 TH6-Davisson 系統提供從面板到晶片的完整光纖組件。"
+  - key: avgo-ultra
+    title: "Broadcom Ships Tomahawk Ultra: Reimagining the Ethernet Switch for HPC and AI Scale-up"
+    publisher: "Broadcom（Microwave Journal 轉載）"
+    url: "https://www.microwavejournal.com/articles/44490-broadcom-ships-tomahawk-ultra-reimagining-the-ethernet-switch-for-hpc-and-ai-scale-up"
+    type: press-release
+    lang: en
+    published: "2025-07-15"
+    accessed: "2026-10-16"
+    note: "51.2 Tbps 滿載時交換延遲 250 奈秒；乙太網路標頭由 46 位元組縮減到最低 10 位元組；以鏈路層重傳（LLR）與信用式流量控制（CBFC）避免掉包；在交換晶片內執行 AllReduce 等集合通訊；搭配 Scale-Up Ethernet（SUE）時，XPU 對 XPU 延遲低於 400 奈秒（含交換）；與 Tomahawk 5 腳位完全相容。"
+  - key: ocp-esun
+    title: "Introducing ESUN: Advancing Ethernet for Scale-Up AI Infrastructure at OCP"
+    publisher: Open Compute Project
+    url: "https://www.opencompute.org/news/introducing-esun-advancing-ethernet-for-scale-up-ai-infrastructure-at-ocp/"
+    type: standard
+    lang: en
+    published: "2025-10-13"
+    accessed: "2026-10-16"
+    note: "ESUN（Ethernet for Scale-Up Networking）為 OCP 網路專案的新工作流，初始成員為 AMD、Arista、ARM、博通、思科、HPE Networking、邁威爾、Meta、微軟、輝達、OpenAI 與甲骨文；聚焦第二、三層乙太網路封包格式與交換，目標是不掉包、具錯誤韌性的單跳與多跳拓撲；端點功能由另一個工作流 SUE-T 負責，該工作流以博通捐出的 SUE 1.0 規格為基礎。"
+  - key: ualink-1
+    title: "UALink Consortium Releases the Ultra Accelerator Link 200G 1.0 Specification"
+    publisher: UALink Consortium
+    url: "https://ualinkconsortium.org/wp-content/uploads/2025/04/UALink-1.0-Specification-PR_FINAL.pdf"
+    type: standard
+    lang: en
+    published: "2025-04-08"
+    accessed: "2026-10-16"
+    note: "每通道 200G，一個 AI 運算 pod 最多 1,024 顆加速器；以讀、寫與原子操作進行加速器間通訊；聯盟稱其為簡單的 load/store 協定，原始速度與乙太網路相同、延遲與 PCIe 交換器相當，有效頻寬可達峰值的 93%；成員逾 85 家。"
+  - key: ualink-2
+    title: "Ultra Accelerator Link (UALink) Consortium Publishes Four Specifications Defining In-Network Compute, Chiplets, Manageability and 200G Performance"
+    publisher: UALink Consortium
+    url: "https://ualinkconsortium.org/wp-content/uploads/2026/04/UALink-2.0-Specification-PR_FINAL.pdf"
+    type: standard
+    lang: en
+    published: "2026-04-07"
+    accessed: "2026-10-16"
+    note: "Common Specification 2.0 加入網內運算；200G 資料鏈結層與實體層規格獨立成冊；Manageability 1.0；Chiplet Specification 1.0 完全相容 UCIe 3.0；董事會成員為阿里巴巴、AMD、Apple、Astera Labs、AWS、思科、Google、HPE、英特爾、Meta、微軟與 Synopsys。"
+  - key: register-ualink
+    title: "No-Nvidia interconnect club delivers 2.0 spec before v1.0 silicon ships"
+    publisher: The Register
+    url: "https://www.theregister.com/2026/04/07/ualink_2_specs/"
+    type: news
+    lang: en
+    published: "2026-04-07"
+    accessed: "2026-10-16"
+    note: "Simon Sharwood 撰。聯盟主席 Kurtis Bowman 表示，1.0 規格的晶片將在 2026 年下半年進入實驗室、2027 年問世並於當年稍晚出現在產品中；1.0 與 2.0 還不會是輝達的全面競爭者。"
+  - key: nvidia-nvlink
+    title: "NVLink and NVLink Switch"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/nvlink/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-16"
+    note: "第六代 NVLink 每顆 GPU 3 TB/s，為前一代的 1.7 倍、PCIe Gen6 的 12 倍；Vera Rubin NVL72 以全互連拓撲連接 72 顆 GPU，總頻寬 216 TB/s。"
+  - key: nvidia-vera-rubin
+    title: "NVIDIA Vera Rubin NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-16"
+    note: "整櫃 NVLink 總頻寬 216 TB/s；網路頻寬整櫃 32.4 TB/s、每顆 GPU 0.45 TB/s（雙向）；以 NVLink 6 交換器 Scale-up，以 Quantum-X800 InfiniBand 與 Spectrum-X 乙太網路 Scale-out。"
+  - key: nvidia-gb200-blog
+    title: "NVIDIA GB200 NVL72 Delivers Trillion-Parameter LLM Training and Real-Time Inference"
+    publisher: NVIDIA Technical Blog
+    url: "https://developer.nvidia.com/blog/nvidia-gb200-nvl72-delivers-trillion-parameter-llm-training-and-real-time-inference/"
+    type: docs
+    lang: en
+    published: "2024-03-18"
+    accessed: "2026-10-16"
+    note: "GB200 NVL72 以銅纜卡匣高密度連接 GPU 與 NVLink 交換器，9 個 NVLink 交換托盤透過纜線卡匣連接 18 個運算節點。"
+  - key: nvidia-fusion
+    title: "NVIDIA NVLink Fusion: Semi-Custom AI Infrastructure with Partner Ecosystem"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-nvlink-fusion-semi-custom-ai-infrastructure-partner-ecosystem"
+    type: press-release
+    lang: en
+    published: "2025-05-18"
+    accessed: "2026-10-16"
+    note: "Computex 發表 NVLink Fusion，讓業者以 NVLink 生態打造半客製 AI 基礎設施；客製晶片夥伴為聯發科、邁威爾、世芯與 Astera Labs，IP 與 EDA 為 Synopsys、Cadence，CPU 夥伴為富士通與高通；第五代 NVLink 每顆 GPU 1.8 TB/s，為 PCIe Gen5 的 14 倍。"
+  - key: nvidia-aws-fusion
+    title: "AWS Integrates AI Infrastructure with NVIDIA NVLink Fusion for Trainium4 Deployment"
+    publisher: NVIDIA Technical Blog
+    url: "https://developer.nvidia.com/blog/aws-integrates-ai-infrastructure-with-nvidia-nvlink-fusion-for-trainium4-deployment/"
+    type: docs
+    lang: en
+    published: "2025-12-02"
+    accessed: "2026-10-16"
+    note: "AWS 設計 Trainium4 與 NVLink 6 及 MGX 機櫃架構整合，為多世代合作的第一步；NVLink Fusion 可讓最多 72 顆客製 ASIC 全互連，每顆 3.6 TB/s、總計 260 TB/s；Vera Rubin 的 NVLink 交換托盤使用第六代 NVLink 6 交換器與 400G 客製 SerDes。"
+  - key: nvidia-cpo-2025
+    title: "NVIDIA Announces Spectrum-X Photonics, Co-Packaged Optics Networking Switches to Scale AI Factories to Millions of GPUs"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-spectrum-x-co-packaged-optics-networking-switches-ai-factories"
+    type: press-release
+    lang: en
+    published: "2025-03-18"
+    accessed: "2026-10-16"
+    note: "每埠 1.6 Tb/s 的矽光子交換器；雷射數量減為四分之一、電源效率提升 3.5 倍、訊號完整性提升 63 倍、網路韌性提升 10 倍；矽光子生態系包括台積電、波若威、Coherent、康寧、Fabrinet、鴻海、Lumentum、SENKO、矽品、住友電工與天孚通信。"
+  - key: nvidia-cpo-blog
+    title: "Scaling AI Factories with Co-Packaged Optics for Better Power Efficiency"
+    publisher: NVIDIA Technical Blog
+    url: "https://developer.nvidia.com/blog/scaling-ai-factories-with-co-packaged-optics-for-better-power-efficiency/"
+    type: docs
+    lang: en
+    published: "2025-08-18"
+    accessed: "2026-10-16"
+    note: "Ashkan Seyedi 撰。可插拔架構的電氣路徑在 200 Gb/s 通道下損耗可達 22 dB，CPO 約 4 dB；可插拔介面常需約 30W，CPO 可低至 9W；Quantum-X Photonics：115 Tb/s、144 埠 800 Gb/s，2026 年初上市；Spectrum-X Photonics：SN6810 為 102.4 Tb/s、128 埠 800 Gb/s，SN6800 為 409.6 Tb/s、512 埠 800 Gb/s，2026 下半年上市。"
+  - key: nvidia-vr-prod
+    title: "NVIDIA Vera Rubin Ramps Into Full Production to Power Agentic AI Factories Worldwide"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/vera-rubin-full-production-agentic-ai-factory"
+    type: press-release
+    lang: en
+    published: "2026-05-31"
+    accessed: "2026-10-16"
+    note: "Spectrum-X Ethernet Photonics 交換器已量產，輝達稱是全球首款採 200Gb/s SerDes 的 CPO 交換器；相較使用傳統光收發模組的網路，電源效率高 5 倍、AI 不中斷運行時間長 5 倍、部署快 1.3 倍；CoreWeave、Lambda 與甲骨文雲端為首批採用者。"
+  - key: tsmc-sym26
+    title: "TSMC Debuts A13 Technology at 2026 North America Technology Symposium"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3302"
+    type: press-release
+    lang: en
+    published: "2026-04-23"
+    accessed: "2026-10-16"
+    note: "採用 COUPE 的基板上共同封裝光學 2026 年開始生產；光引擎直接放進封裝，比電路板上的可插拔方案電源效率高 2 倍、延遲低 10 倍；採用 200Gbps 微環調變器。"
+  - key: th-cpo-foundry
+    title: "Co-Packaged Optics (CPO) foundry roadmaps: breaking down TSMC, Intel, Samsung, and GlobalFoundries' approach to next-generation scale-up connectivity"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/tech-industry/artificial-intelligence/co-packaged-optics-cpo-foundry-roadmaps-breaking-down-tsmc-intel-samsung-and-globalfoundries-approach-to-next-generation-scale-up-connectivity"
+    type: news
+    lang: en
+    published: "2026-08-03"
+    accessed: "2026-10-16"
+    note: "每通道 200 至 400 Gb/s 時，主機板上的長銅線走線損耗與功耗大增，需要更好的材料、retimer 與等化電路；台積電 COUPE 第一代以 SoIC-X 把 65 奈米電子晶片接合在光子晶片上，用於 1.6 Tbps 可插拔模組；第二代 COUPE on substrate 與交換晶片共同封裝，最高 6.4 Tbps；第三代放上中介層、12.8 Tbps，仍屬探索階段；微環調變器路線圖：2026 年每通道 200 Gb/s、頻寬密度每毫米 0.5 Tbps，2030 年每通道 400 Gb/s、每毫米 4 Tbps；三星晶圓代工規劃能效由約 10 pJ/bit 降至 5 pJ/bit，2029 年中介層方案約 2 pJ/bit（引自 SemiVision 刊出的簡報）。"
+  - key: th-nv-roadmap
+    title: "Nvidia updates data center roadmap with Rosa CPU and stacked Feynman GPUs"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/pc-components/gpus/nvidia-updates-data-center-roadmap-with-rosa-cpu-and-stacked-feynman-gpus-optical-nvlink-groq-lpus-with-nvfp4-and-nvlink-also-on-deck"
+    type: news
+    lang: en
+    published: "2026-03-17"
+    accessed: "2026-10-16"
+    note: "GTC 2026 路線圖：2027 年 Rubin Ultra 與 Kyber NVL144 機櫃，採用 NVLink 7 交換器；2028 年 Feynman 世代同時提供銅線與共同封裝光學兩種 Kyber Scale-up，黃仁勳稱這是第一次以銅線與 CPO 兩種方式做 Scale-up。"
+  - key: amd-helios
+    title: "AMD Helios Rackscale Solution"
+    publisher: AMD
+    url: "https://www.amd.com/en/products/rackscale-solutions/helios.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-16"
+    note: "72 顆 Instinct MI455X；四個 Scale-up 卡匣以 UALink over Ethernet（UALoE）連接 72 顆 GPU，Scale-up 總頻寬最高 260 TB/s；Scale-out 43 TB/s；依循 OCP Open Rack Wide、UALink 與 UEC 等開放標準。"
+  - key: google-ironwood
+    title: "TPU7x (Ironwood)"
+    publisher: Google Cloud Documentation
+    url: "https://docs.cloud.google.com/tpu/docs/tpu7x"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "每個 pod 9,216 顆晶片；每顆晶片的晶片間互連（ICI）雙向頻寬 1,200 GBps；3D 環面拓撲。"
+  - key: tpu-v4-ocs
+    title: "TPU v4: An Optically Reconfigurable Supercomputer for Machine Learning with Hardware Support for Embeddings"
+    publisher: "Jouppi et al.（arXiv）"
+    url: "https://arxiv.org/abs/2304.01433"
+    type: paper
+    lang: en
+    published: "2023-04-04"
+    accessed: "2026-10-16"
+    note: "光路交換器（OCS）可動態重組互連拓撲以提升規模、可用性與利用率；OCS 與相關光學元件占系統成本不到 5%、系統功耗不到 3%。"
+  - key: mrvl-celestial
+    title: "Marvell to Acquire Celestial AI, Accelerating Scale-up Connectivity for Next-Generation Data Centers"
+    publisher: Marvell Technology
+    url: "https://investor.marvell.com/news-events/press-releases/detail/1000/marvell-to-acquire-celestial-ai-accelerating-scale-up-connectivity-for-next-generation-data-centers"
+    type: press-release
+    lang: en
+    published: "2025-12-02"
+    accessed: "2026-10-16"
+    note: "首付約 32.5 億美元（10 億美元現金加股票），另有最高約 22.5 億美元的營收對賭股票；Photonic Fabric 第一代小晶片 16 Tbps，為現今 1.6T Scale-out 埠的 10 倍，可與 XPU 垂直共同封裝、讓出晶粒邊緣給更多 HBM；能效為銅線互連的 2 倍以上；預期 FY2028 下半年開始有實質營收。"
+  - key: lpo-msa
+    title: "Linear Pluggable Optics Multi-Source Agreement"
+    publisher: LPO MSA
+    url: "https://www.lpo-msa.org/"
+    type: standard
+    lang: en
+    accessed: "2026-10-16"
+    note: "LPO 把數位訊號處理（DSP）功能從可插拔光模組中移除，功耗與延遲較 DSP 方案低，模組成本也較低；每通道 100 Gb/s 並延伸到 200 Gb/s。"
+updated: "2026-10-16"
+lastVerified: "2026-10-16"
+editorial:
+  status: fact-checked
+  author: learn-17
+  checkedBy: "learn-17-check"
+  checkedOn: "2026-10-06"
+  notes: "內容以 2026-10-06 為資料基準日，來源實際讀取日為 2026-10-16，未採用基準日之後發布的資料。查核已逐項比對 IEEE 802.3cd／ck／dj 目標文件 PDF、UALink 1.0 與 2.0 新聞稿 PDF、OCP ESUN 公告、博通 Bailly 與 Davisson 新聞稿（GlobeNewswire 經 Nasdaq 轉載的全文）與 Tomahawk Ultra 新聞稿（Microwave Journal 轉載）、輝達 NVLink 與 Vera Rubin 規格頁及五篇新聞稿與技術部落格、台積電 2026 年技術論壇新聞稿、超微 Helios 頁、Google TPU7x 文件、TPU v4 論文、邁威爾新聞稿、LPO MSA 網站，以及 Tom's Hardware 原文。更正：首句改為晶片之間的資料「幾乎都」經過 SerDes（HBM 與封裝內晶粒對晶粒連結多用平行介面）；Davisson 改為 2025 年 10 月開始送樣，StatGrid 不再稱量產中；邁威爾 FY2028 補上約當期間；試算段的因果敘述改為量級比對，並移除來源未提及的新創能耗目標；全新光電改寫為化合物半導體磊晶；3D 場景說明改依實際導覽順序。博通原站以 JavaScript 呈現無法讀取，故以轉載全文查核；台積電與三星的 CPO 路線圖引自 Tom's Hardware；功耗與叢集為本站示意計算。"
+---
+
+## 一句話解釋
+
+**AI 叢集裡，晶片與晶片之間往來的資料，幾乎都要經過 SerDes。** <Term id="serdes">SerDes</Term>（序列器／解序列器）把晶片內部大量的平行資料，壓成少數幾條極高速的序列訊號送出去；只有距離極短的連線，例如 GPU 與緊鄰的 HBM、同一封裝內的晶粒對晶粒連結，才改用線路很多、每條線速度較低的平行介面。每條通道的速度大約每隔幾年翻倍，從 50、100 到 200 Gb/s，下一步是 400 Gb/s；速度越快，銅線能傳的距離越短、補償訊號的功耗越高，於是業界一路把光往晶片拉近，從可插拔光模組、<Term id="lpo">LPO</Term> 到 <Term id="cpo">CPO</Term>（共同封裝光學）。同一時間，機櫃內的 <Term id="scale-up">Scale-up</Term> 網路成了兵家必爭之地：輝達的 <Term id="nvlink">NVLink</Term>、開放標準 <Term id="ualink">UALink</Term>、以<Term id="ethernet">乙太網路</Term>為基礎的 ESUN 與 SUE，以及 Google 自家的 ICI，正在爭奪「誰來定義 AI 機櫃的連線」。<LearnLink id="networking-for-ai">AI 叢集網路</LearnLink>介紹了 Scale-up 與 Scale-out 的分工，這篇往下拆實體層與標準之爭。
+
+## 生活化比喻
+
+<Callout type="analogy" title="從一排慢車到一列高鐵">
+
+- **SerDes 像把一整排慢車併成一列高鐵**：晶片邊緣能拉出的接腳有限，與其開 64 條慢車道，不如把貨物裝上一列高速列車，用一條軌道跑完。
+- **速度越快，路要越短**：同一段舊鐵軌（銅線），列車開得越快越容易出軌（訊號衰減、失真），只能跑更短的距離；想跑遠，就得在半路設中繼站重新整隊（<Term id="retimer">Retimer</Term>、<Term id="aec">AEC</Term>）。
+- **光纖是高鐵專用道**：可以跑得很遠，但上下車要經過車站（<Term id="optical-transceiver">光收發模組</Term>），車站本身很耗電。CPO 等於把車站直接蓋進工廠，貨物不必再走一段市區道路才上車。
+- **標準之爭像軌距之爭**：誰的軌距成為主流，誰的列車就能開進最多城市。
+
+</Callout>
+
+## 原理
+
+### SerDes：把平行資料變成高速序列訊號
+
+一顆 AI 晶片的邊緣只有那麼長，能拉出的接腳數量有限。與其用許多條慢速導線並排傳送（還得擔心每條線抵達的時間不一致），不如把資料序列化，用少數幾對差動訊號線跑到極高的速度，時脈也一併藏在資料裡，由接收端再解回來。這就是 SerDes 的工作，也是晶片對外最耗面積與功耗的電路之一。
+
+提高速度有兩個旋鈕。第一個是每秒送出多少個符號（鮑率）；第二個是每個符號帶幾個位元。傳統的 NRZ 只有高、低兩個電壓準位，每個符號 1 位元；PAM4 則用四個準位，每個符號 2 位元，代價是準位之間的距離變小，更容易受雜訊干擾。100G、200G 乙太網路的部分銅線版本，以及 <Term id="pcie">PCIe</Term> 6.0，都已改用 PAM4<Cite k="wiki-pam" />。
+
+訊號在銅線上衰減得多快，取決於它的頻率：頻率越高，損耗越大。工程上常用奈奎斯特頻率代表一條通道的主要頻率，它等於符號速率的一半：
+
+<MathTeX tex={"f_{N}=\\frac{R_{b}}{2\\,b}"} display label="奈奎斯特頻率等於位元速率除以二倍的每符號位元數" />
+
+式中的 R 代表位元速率、b 是每個符號的位元數，R 除以 b 就是符號速率。IEEE 在 200 Gb/s 單通道乙太網路的專案目標中，要求晶粒對晶粒的電氣通道在 53.125 GHz 時損耗不超過 40 dB<Cite k="ieee-3dj" />。反推回去，53.125 GHz 乘以 2 等於每秒 1,062.5 億個符號，PAM4 每個符號 2 位元，線上原始速率約 212.5 Gb/s；比 200 Gb/s 多出的部分，主要是錯誤更正等編碼負擔（本站換算）。
+
+每次速度翻倍，測試頻率也跟著翻倍，銅線能傳的距離就縮短。把 IEEE 三個世代的專案目標並排看最清楚：
+
+| 每通道速率 | IEEE 專案 | 雙軸銅纜至少要傳 | 電氣通道損耗預算 |
+|---|---|---|---|
+| 50 Gb/s | 802.3cd（2016 年通過目標） | 3 公尺 | 13.28 GHz 時不超過 30 dB |
+| 100 Gb/s | 802.3ck（2018 年通過目標） | 2 公尺 | 26.56 GHz 時不超過 28 dB |
+| 200 Gb/s | 802.3dj（2024 年 3 月版目標） | 1 公尺 | 53.125 GHz 時不超過 40 dB（晶粒對晶粒） |
+
+表中資料來自 IEEE 802.3 各專案的目標文件<Cite k="ieee-3cd" /><Cite k="ieee-3ck" /><Cite k="ieee-3dj" />。
+
+<BarChart
+  title="IEEE 規格要求的最短銅纜傳輸距離"
+  unit="公尺"
+  data={[
+    { label: "50 Gb/s（802.3cd）", value: 3 },
+    { label: "100 Gb/s（802.3ck）", value: 2 },
+    { label: "200 Gb/s（802.3dj）", value: 1 }]}
+  source={["ieee-3cd", "ieee-3ck", "ieee-3dj"]}
+  note="為各專案目標中「雙軸銅纜至少要支援」的距離，實際產品可能更長；802.3dj 為每對銅纜每方向的要求。"
+  keepOrder
+/>
+
+每通道從 50G 走到 200G，銅纜的規格距離從 3 公尺縮到 1 公尺。為了在損耗更大的通道上把訊號救回來，SerDes 要加上更強的等化與數位訊號處理，再配合錯誤更正碼，這些都要花功耗、也會增加<Term id="latency">延遲</Term>。Tom's Hardware 整理的業界觀點指出，每通道到 200 至 400 Gb/s 時，在主機板上用長銅線走線，損耗與功耗都大幅上升，必須用更好的板材、加 retimer 與更複雜的等化電路<Cite k="th-cpo-foundry" />。
+
+下一站是 400G。輝達 Vera Rubin 的 NVLink 6 交換器已使用 400G 客製 SerDes<Cite k="nvidia-aws-fusion" />；博通（Broadcom）表示正在開發的第四代 CPO，會把每通道頻寬加倍到 400 Gbps<Cite k="avgo-davisson" />。
+
+### 交換晶片：通道數乘以速度
+
+一顆<Term id="network-switch">交換</Term>晶片的容量，基本上就是 SerDes 通道數乘以每通道速度。博通 2024 年的 Bailly 交換器是 51.2 Tbps<Cite k="avgo-bailly" />；2025 年的 Tomahawk 6 Davisson 把每通道提高到 200 Gbps，容量加倍到 102.4 Tbps<Cite k="avgo-davisson" />，換算等於 512 條 200G 通道（本站換算）。通道越多，一顆交換晶片能接的埠就越多，同樣層數的網路就能連更多晶片：博通表示，Davisson 可支援 512 顆 <Term id="xpu">XPU</Term> 的 Scale-up 網域，或以每鏈路 200 Gbps 的兩層網路連接逾 10 萬顆 XPU<Cite k="avgo-davisson" />。
+
+但 Scale-up 與 <Term id="scale-out">Scale-out</Term> 要的交換晶片並不一樣。博通 2025 年 7 月出貨的 Tomahawk Ultra 就是專為 Scale-up 調整的版本：51.2 Tbps 滿載時交換延遲 250 奈秒；把乙太網路的封包標頭從 46 位元組精簡到最低 10 位元組；用鏈路層重傳與信用式流量控制做到不掉包；還能在交換晶片內直接執行 <Term id="all-reduce">All-Reduce</Term> 等集合通訊。搭配博通的 Scale-Up Ethernet（SUE）時，XPU 對 XPU 的延遲低於 400 奈秒<Cite k="avgo-ultra" />。
+
+<Compare
+  title="Scale-up 與 Scale-out 對互連的要求"
+  left={{ title: "Scale-up（機櫃內）", items: ["以讀、寫等記憶體語意直接存取其他晶片的記憶體", "延遲以數百奈秒計，例如 Tomahawk Ultra 搭配 SUE 低於 400 奈秒", "在鏈路層重傳、做到不掉包", "規模數十到上千顆，UALink 1.0 最多 1,024 顆"] }}
+  right={{ title: "Scale-out（機櫃間）", items: ["以網卡透過 RDMA 傳送訊息", "對延遲的容忍度較高，重點是總頻寬與壅塞控制", "靠端到端的壅塞控制與多路徑分散流量", "規模數萬到十萬顆以上，兩層網路可連逾 10 萬顆 XPU"] }}
+  caption="資料來源：博通 Tomahawk Ultra 與 Davisson 新聞稿、UALink 聯盟。Scale-out 的細節見 AI 叢集網路一文。"
+/>
+
+Scale-out 端的 <Term id="rdma">RDMA</Term> 與 <Term id="ultra-ethernet">Ultra Ethernet</Term> 已在前一篇介紹；這篇的重點是 Scale-up，因為它的速度最快、距離最短，也最先撞上銅線的極限。
+
+### 銅線的最後防線：機櫃內的 Scale-up
+
+機櫃內的距離只有一兩公尺，銅線不需要光電轉換，所以仍是 Scale-up 的主力。以 GB200 <Term id="nvl72">NVL72</Term> 為例，機櫃以銅纜卡匣把 72 顆 GPU 連到 NVLink 交換托盤<Cite k="nvidia-gb200-blog" />。第六代 NVLink 讓每顆 <Term id="gpu">GPU</Term> 有 3 TB/s 的頻寬，是 PCIe Gen6 的 12 倍，整櫃總頻寬 216 TB/s<Cite k="nvidia-nvlink" />；同一顆 GPU 對機櫃外的網路頻寬只有 0.45 TB/s（雙向）<Cite k="nvidia-vera-rubin" />，相差約 6.7 倍（本站換算）。
+
+但銅線的餘裕越來越小。輝達的技術文章指出，可插拔架構中訊號從交換晶片走到面板模組的電氣路徑，在 200 Gb/s 通道下損耗可達 22 dB，CPO 則約 4 dB<Cite k="nvidia-cpo-blog" />。IEEE 對 200G 銅纜的規格目標是至少 1 公尺<Cite k="ieee-3dj" />，要連到隔壁幾個機櫃，就得用兩端內建訊號晶片的主動電纜（AEC）或在中途加 retimer。
+
+輝達的路線圖反映了這個拉鋸：2027 年的 Rubin Ultra 搭配 Kyber NVL144 機櫃與 NVLink 7 交換器；到了 2028 年的 Feynman 世代，Kyber 會同時提供銅線與共同封裝光學兩種 Scale-up 版本，黃仁勳稱這是「第一次同時以銅線與 CPO 做 Scale-up」<Cite k="th-nv-roadmap" />。
+
+### 光走進封裝：可插拔、LPO 與 CPO
+
+訊號一旦要跑出機櫃，就得轉成光。傳統做法是在交換器前面板插上可插拔光收發模組：模組裡的 DSP 重新整理電訊號，雷射把電轉成光送進<Term id="optical-fiber">光纖</Term>。這種模組好維修、好替換，但很耗電。博通在 2024 年指出，可插拔光收發模組約占傳統交換系統 50% 的功耗、50% 以上的成本<Cite k="avgo-bailly" />。
+
+業界有兩條省電的路：
+
+- **LPO（線性驅動可插拔光學）**：把 DSP 從光模組裡拿掉，由主晶片的 SerDes 直接驅動，功耗、延遲與成本都較低，規格從每通道 100 Gb/s 延伸到 200 Gb/s<Cite k="lpo-msa" />。它仍是可插拔模組，保留了好維修的優點。
+- **CPO（共同封裝光學）**：把光引擎和交換晶片放在同一個封裝基板上，電訊號只走幾毫米就轉成光。光引擎通常以<Term id="silicon-photonics">矽光子</Term>製程做成，再和負責驅動的電子晶片疊在一起。
+
+<Scene3D id="network" variant="cpo" caption="訊號離開交換晶片的三種走法：銅纜 DAC 一路都是電訊號，最省電但只能傳數公尺；可插拔光收發模組在面板上用 DSP 整理訊號、再由雷射轉成光；CPO 把光引擎放在交換晶片四周的同一個封裝上，雷射則放在面板上可抽換的外部光源模組。按「下一步」會依序經過機櫃內的 NVLink 網域與葉脊網路，最後兩步回到銅纜、光模組與 CPO 光引擎。功耗與距離的柱高為示意。" />
+
+CPO 已經從展示走到量產：
+
+- **博通**：2024 年 3 月交付 51.2 Tbps 的 Bailly，內含 8 個 6.4 Tbps 光引擎，光學互連功耗比可插拔低 70%<Cite k="avgo-bailly" />；2025 年 10 月開始向早期客戶送樣第三代 Davisson，102.4 Tbps、16 個 6.4 Tbps 光引擎、每通道 200 Gbps，光引擎採用台積電 COUPE 技術，雷射做成可在現場更換的模組，並可與 LPO 等光模組互通<Cite k="avgo-davisson" />。
+- **輝達**：2025 年 3 月發表每埠 1.6 Tb/s 的矽光子交換器，宣稱雷射數量減為四分之一、電源效率提升 3.5 倍<Cite k="nvidia-cpo-2025" />；其中乙太網路版的大型配置 SN6800 為 409.6 Tb/s、512 個 800 Gb/s 埠<Cite k="nvidia-cpo-blog" />。2026 年 5 月，輝達宣布 Spectrum-X Ethernet Photonics 交換器已量產，稱是全球首款採用 200Gb/s SerDes 的 CPO 交換器，CoreWeave、Lambda 與甲骨文雲端列名首批合作夥伴與採用者<Cite k="nvidia-vr-prod" />。
+- **台積電**：COUPE 以 <Term id="soic">SoIC</Term>-X 把 65 奈米的電子晶片接合在光子晶片上<Cite k="th-cpo-foundry" />；放在基板上的 CPO 版本 2026 年開始生產，相較電路板上的可插拔方案電源效率高 2 倍、延遲低 10 倍，並採用 200Gbps 的微環調變器<Cite k="tsmc-sym26" />。
+
+<StatGrid
+  title="CPO 的幾個關鍵數字"
+  items={[
+    { label: "可插拔光模組占交換系統功耗", value: "約 50%", note: "博通，2024" },
+    { label: "每個光學介面功耗", value: "約 30W → 9W", note: "可插拔對 CPO，輝達" },
+    { label: "200G 通道的電氣損耗", value: "22 dB → 4 dB", note: "可插拔對 CPO，輝達" },
+    { label: "CPO 交換晶片容量", value: "102.4 Tbps", note: "博通 Davisson，2025 年 10 月送樣" }]}
+  caption="資料來源：博通 Bailly 與 Davisson 新聞稿、輝達技術部落格。各家比較基準不同，屬廠商自行公布的數字。"
+/>
+
+再往後，光會更靠近運算晶片。依 Tom's Hardware 整理的台積電路線圖，COUPE 的微環調變器將從 2026 年的每通道 200 Gb/s、每毫米 0.5 Tbps 的頻寬密度，推進到 2030 年的每通道 400 Gb/s、每毫米 4 Tbps；把 12.8 Tbps 光引擎直接放上運算晶片中介層的第三代方案仍屬探索階段<Cite k="th-cpo-foundry" />。三星晶圓代工也規劃把光引擎的能效從約每位元 10 皮焦耳，降到 5 皮焦耳，2029 年的中介層方案再降到約 2 皮焦耳<Cite k="th-cpo-foundry" />。
+
+CPO 的代價是維修方式改變。可插拔模組壞了可以直接抽換，CPO 的光引擎卻和交換晶片封在一起，所以各家都把最容易故障、最怕熱的雷射移到面板上的外部光源模組，例如博通 Davisson 的可現場更換雷射模組<Cite k="avgo-davisson" />。博通也強調，把光引擎和交換晶片整合，能消除可插拔模組在製造與測試上的許多變異，改善連線中斷（link flap）的問題<Cite k="avgo-davisson" />。
+
+### Scale-up 標準之爭：誰來定義機櫃的連線
+
+Scale-up 網域決定了一個機櫃裡能放誰的晶片、用誰的交換器。目前主要有五股力量：
+
+| 陣營 | 主導者 | 技術重點 | 進度（截至 2026 年 10 月） |
+|---|---|---|---|
+| NVLink／NVLink Fusion | 輝達 | 每顆 GPU 3 TB/s，72 顆全互連；交換器採 400G 客製 SerDes | 隨 Vera Rubin 出貨；AWS Trainium4 將整合 NVLink 6 |
+| UALink | UALink 聯盟 | 每通道 200G，最多 1,024 顆加速器，記憶體語意 | 2.0 規格已發布；1.0 晶片 2026 下半年進實驗室 |
+| 乙太網路 Scale-up（ESUN、SUE-T） | OCP 社群，博通捐出 SUE 1.0 | 沿用乙太網路交換晶片，精簡標頭、鏈路層不掉包 | ESUN 2025 年 10 月成立 |
+| ICI 與光路交換 | Google | 3D 環面拓撲；TPU v4 已用光路交換器重組拓撲 | Ironwood 每個 pod 9,216 顆 |
+| 光學 Scale-up | 邁威爾（Celestial AI）、Ayar Labs、Lightmatter | 光學小晶片直接接在 XPU 上 | 邁威爾預期 FY2028 下半年（約當 2027 年 8 月至 2028 年 1 月）開始有實質營收 |
+
+表中資料來自輝達<Cite k="nvidia-nvlink" /><Cite k="nvidia-aws-fusion" />、UALink 聯盟<Cite k="ualink-1" /><Cite k="ualink-2" /><Cite k="register-ualink" />、OCP<Cite k="ocp-esun" />、Google<Cite k="google-ironwood" /><Cite k="tpu-v4-ocs" />與邁威爾<Cite k="mrvl-celestial" />，各家的規模與頻寬定義不同，只適合看方向。
+
+**NVLink 陣營**選擇「開放一部分」。輝達 2025 年 5 月推出 NVLink Fusion，讓其他公司的客製晶片也能接上 NVLink：首批客製晶片夥伴是聯發科、邁威爾、世芯與 Astera Labs，Synopsys、Cadence 提供矽智財與工具，富士通與高通則以自家 CPU 搭配輝達 GPU<Cite k="nvidia-fusion" />。2025 年 12 月，AWS 宣布 Trainium4 將整合 NVLink 6 與輝達的 MGX 機櫃架構；依輝達的說法，NVLink Fusion 可讓最多 72 顆客製 <Term id="asic">ASIC</Term> 全互連，每顆 3.6 TB/s、總計 260 TB/s<Cite k="nvidia-aws-fusion" />。
+
+**UALink 陣營**主打開放標準。2025 年 4 月發布的 1.0 規格支援每通道 200G、單一 pod 最多 1,024 顆加速器，以讀、寫與原子操作溝通；聯盟宣稱它的原始速度與乙太網路相同、延遲與 PCIe 交換器相當，有效頻寬可達峰值的 93%<Cite k="ualink-1" />。2026 年 4 月的 2.0 規格加入網內運算，並推出與 <Term id="ucie">UCIe</Term> 3.0 相容的<Term id="chiplet">小晶片</Term>規格，讓加速器能直接整合 UALink 小晶片<Cite k="ualink-2" />。不過聯盟主席也承認，1.0 晶片要到 2026 年下半年才進實驗室、2027 年才會出現在產品中，1.0 與 2.0 還不會是輝達的全面競爭者<Cite k="register-ualink" />。超微（AMD）的 Helios 機櫃則以 UALink over Ethernet 連接 72 顆 GPU，Scale-up 總頻寬最高 260 TB/s<Cite k="amd-helios" />，也就是在乙太網路的實體層上跑 UALink 協定。
+
+**乙太網路陣營**主張沿用最普及的生態。OCP 在 2025 年 10 月成立 ESUN 工作流，專注於 Scale-up 用的乙太網路封包格式與交換，目標是不掉包、具錯誤韌性的網路；端點的部分交給以博通 SUE 1.0 規格為基礎的 SUE-T。ESUN 的初始成員包括超微、Arista、ARM、博通、思科、HPE、邁威爾、Meta、微軟、輝達、OpenAI 與甲骨文<Cite k="ocp-esun" />，連輝達也在其中。
+
+**Google** 走自己的路。Ironwood <Term id="tpu">TPU</Term> 每個 pod 有 9,216 顆晶片，以 3D 環面拓撲相連，每顆晶片的 ICI 雙向頻寬 1,200 GBps<Cite k="google-ironwood" />。Google 在 TPU v4 的論文中說明，光路交換器（OCS）能動態重組互連拓撲，而 OCS 與相關光學元件只占系統成本不到 5%、功耗不到 3%<Cite k="tpu-v4-ocs" />。
+
+**光學新創**押注 Scale-up 終將變光。邁威爾 2025 年 12 月宣布以首付約 32.5 億美元收購 Celestial AI，另有最高約 22.5 億美元的營收對賭；它的第一代光學小晶片頻寬 16 Tbps，是現今 1.6T Scale-out 埠的 10 倍，能效為銅線互連的 2 倍以上，還能以垂直方式直接接進 XPU、不必占用晶粒邊緣，把邊緣讓給更多 <Term id="hbm">HBM</Term><Cite k="mrvl-celestial" />。
+
+把這張表攤開看，會發現一個共同趨勢：各陣營的實體層都在往 200G、再往 400G SerDes 與 CPO 靠攏，超微甚至直接把 UALink 跑在乙太網路的實體層上。真正的分歧在上層：協定是否開放、交換晶片由誰供應、軟體與系統生態站在哪一邊。延伸閱讀：<TrendLink id="scale-up-fabric-wars">Scale-up 互連標準之爭</TrendLink>。
+
+<DeepDive title="深入一點：用「每位元能耗」算光學的電費">
+
+比較互連方案最好用的單位是每傳 1 位元消耗多少能量，單位是皮焦耳（pJ/bit）。功耗等於每位元能耗乘以<Term id="bandwidth">頻寬</Term>：
+
+<MathTeX tex={"P=E_{\\mathrm{bit}}\\times\\mathrm{BW}"} display label="功耗等於每位元能耗乘以頻寬" />
+
+**一、一個光學介面。** 輝達表示，可插拔介面常需約 30W，CPO 可低至 9W<Cite k="nvidia-cpo-blog" />。輝達發表 CPO 交換器時以「每埠 1.6 Tb/s」為訴求<Cite k="nvidia-cpo-2025" />（實際機型多配置為 800 Gb/s 埠<Cite k="nvidia-cpo-blog" />），若假設這兩個功耗數字都對應 1.6 Tb/s 的介面（本站假設），每位元能耗分別約為：
+
+<MathTeX tex={"\\frac{30\\ \\mathrm{W}}{1.6\\ \\mathrm{Tb/s}}\\approx18.8\\ \\mathrm{pJ/bit},\\qquad\\frac{9\\ \\mathrm{W}}{1.6\\ \\mathrm{Tb/s}}\\approx5.6\\ \\mathrm{pJ/bit}"} display label="30 瓦除以每秒 1.6 兆位元約為每位元 18.8 皮焦耳；9 瓦約為 5.6 皮焦耳" />
+
+9 ÷ 30 = 0.3，也就是省下 70%，與博通宣稱 CPO 光學互連功耗低 70% 的數字相近<Cite k="avgo-bailly" />，不過兩家的比較基準不同。
+
+**二、一台交換器。** 一顆 102.4 Tbps 的交換晶片若全部接成 1.6 Tb/s 的光學埠，共 64 埠。光學部分的功耗，可插拔約 64 × 30 ＝ 1,920W，CPO 約 64 × 9 ＝ 576W（本站示意計算），一台就差了 1.3 kW 以上。這個量級，與博通所說可插拔模組約占傳統交換系統一半功耗的說法相符<Cite k="avgo-bailly" />。
+
+**三、一座叢集。** 博通表示，以每鏈路 200 Gbps 的兩層網路可連接逾 10 萬顆 XPU<Cite k="avgo-davisson" />。假設 10 萬顆 XPU 各有一條 200G 鏈路接到葉交換器，葉到脊也有同樣數量的鏈路，總共 20 萬條鏈路、40 萬個光學端點（本站假設；實際上靠近伺服器的一段常用銅線）。每個端點以 200 Gb/s 運作：
+
+- 以 18.8 pJ/bit 計：40 萬 × 200 Gb/s × 18.8 pJ/bit ≈ 1.5 MW
+- 以 5.6 pJ/bit 計：約 0.45 MW
+
+光是光學元件就差了約 1 MW（本站示意計算）。這還沒算上 Scale-up：如果 2028 年起 Scale-up 也開始用光<Cite k="th-nv-roadmap" />，每顆 GPU 的 Scale-up 頻寬是 Scale-out 的好幾倍<Cite k="nvidia-vera-rubin" />，每位元能耗的差距會被放大好幾倍。這也說明了晶圓代工廠為何持續壓低光引擎的每位元能耗，例如三星晶圓代工的路線圖從約 10 pJ/bit 降到 5 pJ/bit，2029 年的中介層方案再降到約 2 pJ/bit<Cite k="th-cpo-foundry" />。
+
+以上試算只用來看數量級：實際的埠速度、拓撲、銅線與光纖的比例、雷射與散熱的額外耗電，都會改變結果。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+互連橫跨 <SegmentChip id="networking-optics" />、<SegmentChip id="ai-accelerators" /> 與 <SegmentChip id="foundry-packaging" /> 等環節，而且每一次 SerDes 升速與光進封裝，都會重新分配價值。
+
+- **交換與 SerDes 晶片**：<CompanyChip id="broadcom">博通</CompanyChip>以 Tomahawk 6、Tomahawk Ultra 與 Davisson 同時布局 Scale-out、Scale-up 與 CPO<Cite k="avgo-davisson" /><Cite k="avgo-ultra" />；<CompanyChip id="nvidia">輝達</CompanyChip>以 NVLink 交換器負責機櫃內的 Scale-up，再以 Spectrum-X Photonics 等交換器負責機櫃之間的連線<Cite k="nvidia-vera-rubin" /><Cite k="nvidia-vr-prod" />；<CompanyChip id="marvell">邁威爾</CompanyChip>既是 NVLink Fusion 夥伴，又收購 Celestial AI 押注光學 Scale-up<Cite k="nvidia-fusion" /><Cite k="mrvl-celestial" />。<CompanyChip id="astera-labs">Astera Labs</CompanyChip> 同時是 NVLink Fusion 夥伴與 UALink 董事會成員<Cite k="nvidia-fusion" /><Cite k="ualink-2" />，<CompanyChip id="credo">Credo</CompanyChip> 則以 AEC 與 retimer 延長銅線的壽命。
+- **交換器系統**：<CompanyChip id="arista">Arista</CompanyChip>、<CompanyChip id="cisco">思科</CompanyChip>與<CompanyChip id="celestica">天弘</CompanyChip>都是 AI 網路交換器的主要供應商，ESUN 的初始成員也包括 Arista 與思科<Cite k="ocp-esun" />。
+- **銅纜**：<CompanyChip id="amphenol">安費諾</CompanyChip>供應機櫃背板銅纜與高速連接器，台灣的<CompanyChip id="bizlink">貿聯-KY</CompanyChip>供應 AEC 與高速線束。只要 Scale-up 還用銅線，這條線就會跟著 SerDes 升速。
+- **光模組與光元件**：<CompanyChip id="innolight">中際旭創</CompanyChip>、<CompanyChip id="eoptolink">新易盛</CompanyChip>是可插拔與 LPO 模組大廠；<CompanyChip id="coherent">Coherent</CompanyChip>、<CompanyChip id="lumentum">Lumentum</CompanyChip>供應雷射，<CompanyChip id="fabrinet">Fabrinet</CompanyChip>代工光學元件，<CompanyChip id="corning">康寧</CompanyChip>供應光纖，它們都列名輝達的矽光子生態系<Cite k="nvidia-cpo-2025" />；康寧也為 Davisson 提供從面板到晶片的光纖組件<Cite k="avgo-davisson" />。
+- **封裝與代工**：<CompanyChip id="tsmc">台積電</CompanyChip>的 COUPE 是博通 Davisson 光引擎的基礎<Cite k="avgo-davisson" />，也名列輝達的矽光子生態系；<CompanyChip id="ase">日月光投控</CompanyChip>旗下的矽品同樣在輝達的名單中<Cite k="nvidia-cpo-2025" />。光引擎要和交換晶片一起封裝，台積電第二代 COUPE 就是與 <Term id="cowos">CoWoS</Term> 整合、和交換晶片共同封裝<Cite k="th-cpo-foundry" />，先進封裝的角色會更吃重。
+- **客製晶片與光學新創**：<CompanyChip id="mediatek">聯發科</CompanyChip>與<CompanyChip id="alchip">世芯-KY</CompanyChip>是 NVLink Fusion 的首批客製晶片夥伴<Cite k="nvidia-fusion" />；<CompanyChip id="ayar-labs">Ayar Labs</CompanyChip> 與 <CompanyChip id="lightmatter">Lightmatter</CompanyChip> 則開發讓 XPU 直接以光互連的光學 I/O。雲端業者方面，<CompanyChip id="amazon">亞馬遜</CompanyChip>選擇接上 NVLink Fusion<Cite k="nvidia-aws-fusion" />，<CompanyChip id="alphabet">Alphabet</CompanyChip> 的 TPU 用自家 ICI<Cite k="google-ironwood" />，<CompanyChip id="amd">超微</CompanyChip>押注 UALink<Cite k="amd-helios" />。
+
+**台灣的位置**：台積電與矽品、<CompanyChip id="browave">波若威</CompanyChip>、<CompanyChip id="foxconn">鴻海</CompanyChip>都名列輝達的矽光子生態系<Cite k="nvidia-cpo-2025" />；上游還有做光纖陣列的<CompanyChip id="foci">上詮</CompanyChip>，以及供應雷射用化合物半導體磊晶片的<CompanyChip id="landmark">聯亞</CompanyChip>與<CompanyChip id="vpec">全新</CompanyChip>。CPO 把光學元件從面板搬進封裝，台灣在先進封裝與精密光學的聚落，有機會因此接到更多關鍵工序。
+
+延伸閱讀：<TrendLink id="co-packaged-optics">共同封裝光學走向量產</TrendLink>、<TrendLink id="rack-scale-systems">機櫃即電腦</TrendLink>、<TrendLink id="custom-asic-rise">客製化 ASIC 崛起</TrendLink>。互連搬的是晶片之間的資料，晶片旁邊的記憶體怎麼供應頻寬，請見<LearnLink id="hbm-deep">HBM 深入</LearnLink>。

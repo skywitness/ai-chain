@@ -1,0 +1,209 @@
+---
+/**
+ * <LinesPlot> — low-level multi-line plot used by MarginLines, MultiLine and LineChart.
+ * One y-axis, fluid width, fixed height. Hover columns snap to the nearest x and show a
+ * crosshair, the series dots and a tooltip listing every series at that x.
+ */
+import './charts.css';
+import { axisWidth, fmtTick, isNum, linePath, niceTicks, pct, round, spreadLabels, textWidthCh, tickDigits, vars } from './chart-utils';
+
+export interface LineXPoint {
+  /** 0..1 across the plot width */
+  pos: number;
+  label?: string | undefined;
+  group?: string | undefined;
+  minor?: boolean | undefined;
+  minor2?: boolean | undefined;
+  tip?: string | undefined;
+}
+
+export interface LineSeriesSpec {
+  name: string;
+  color: string;
+  /** aligned with xs (null = no value) */
+  values: Array<number | null>;
+  estimate?: boolean[] | undefined;
+  /** text shown in the end label, e.g. 「67.7%」 */
+  endValue?: string | undefined;
+  /** soft 10% wash under the line (single-series charts) */
+  area?: boolean | undefined;
+}
+
+interface Props {
+  xs: LineXPoint[];
+  series: LineSeriesSpec[];
+  ariaLabel: string;
+  height?: number | undefined;
+  domain?: [number, number] | undefined;
+  includeZero?: boolean | undefined;
+  percent?: boolean | undefined;
+  yFormat?: ((v: number) => string) | undefined;
+  endLabels?: boolean | undefined;
+  /** explicit x ticks (time axes) instead of per-point labels */
+  xTicks?: Array<{ pos: number; label: string; minor?: boolean | undefined }> | undefined;
+  class?: string | undefined;
+}
+
+const { xs, series, ariaLabel, height = 220, domain, includeZero = true, percent = false, yFormat, endLabels = true, xTicks, class: className } = Astro.props;
+
+const vals = series.flatMap((s) => s.values).filter(isNum);
+const t = domain ? niceTicks(domain[0], domain[1], 4, { includeZero }) : niceTicks(vals.length ? Math.min(...vals) : 0, vals.length ? Math.max(...vals) : 1, 4, { includeZero });
+const digits = tickDigits(t.ticks);
+const fmt = yFormat ?? ((v: number) => fmtTick(v, { percent, digits }));
+const yw = axisWidth(t.ticks.map(fmt));
+const base = pct(Math.max(t.domain[0], Math.min(0, t.domain[1])), t.domain);
+
+// paths (viewBox 1000 × 100, stretched; strokes do not scale)
+const paths = series.map((s) => {
+  let solid = '';
+  let dashed = '';
+  const pts = xs.map((x, i) => ({ x: round(x.pos * 1000, 2), v: s.values[i] ?? null, est: !!s.estimate?.[i] }));
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1]!;
+    const b = pts[i]!;
+    if (!isNum(a.v) || !isNum(b.v)) continue;
+    const seg = linePath([
+      [a.x, pct(a.v, t.domain)],
+      [b.x, pct(b.v, t.domain)],
+    ]);
+    if (a.est || b.est) dashed += seg;
+    else solid += seg;
+  }
+  let area = '';
+  if (s.area) {
+    const def = pts.filter((p) => isNum(p.v));
+    if (def.length > 1) {
+      area = `M${def[0]!.x},${100 - base}` + def.map((p) => `L${p.x},${round(100 - pct(p.v as number, t.domain), 3)}`).join('') + `L${def.at(-1)!.x},${100 - base}Z`;
+    }
+  }
+  return { s, solid, dashed, area };
+});
+
+// hover columns span the midpoints between neighbouring x positions
+const cols = xs.map((x, i) => {
+  const l = i === 0 ? 0 : (xs[i - 1]!.pos + x.pos) / 2;
+  const r = i === xs.length - 1 ? 1 : (x.pos + xs[i + 1]!.pos) / 2;
+  const w = Math.max(r - l, 1e-6);
+  return { x, i, l: round(l * 100, 3), w: round(w * 100, 3), c: round(((x.pos - l) / w) * 100, 3) };
+});
+const lastIdx = series.map((s) => {
+  for (let i = s.values.length - 1; i >= 0; i--) if (isNum(s.values[i])) return i;
+  return -1;
+});
+
+// end labels, de-collided in pixel space
+const showEnd = endLabels && series.length > 0;
+const endItems = series.map((s, k) => {
+  const i = lastIdx[k]!;
+  const v = i >= 0 ? (s.values[i] as number) : null;
+  return { s, y: v == null ? null : (1 - pct(v, t.domain) / 100) * height };
+});
+const placed = spreadLabels(
+  endItems.map((e) => e.y ?? height),
+  // one label line (fs-xs × line-height 1.2 ≈ 15.6px) plus a little air
+  17,
+  height,
+);
+const ew = showEnd ? Math.max(...series.map((s) => textWidthCh(`${s.name} ${s.endValue ?? ''}`))) + 3.4 : 0;
+let prevGroup: string | undefined;
+const n = xs.length;
+---
+
+<div
+  class:list={['ch-plot', showEnd && 'ch-plot--end', className]}
+  role="img"
+  aria-label={ariaLabel}
+  style={vars({ '--ch-h': `${height}px`, '--ch-yw': yw, '--ch-ew': showEnd ? `${round(ew, 1)}ch` : null, '--n': n })}
+>
+  <div class="ch-y" aria-hidden="true">
+    {t.ticks.map((v) => <span style={`--y:${pct(v, t.domain)}%`}>{fmt(v)}</span>)}
+  </div>
+  <div class="ch-area ch-dots-hover" aria-hidden="true">
+    {t.ticks.map((v) => <i class:list={['ch-gl', v === 0 && 'ch-gl--base']} style={`--y:${pct(v, t.domain)}%`} />)}
+    <svg class="ch-svg" viewBox="0 0 1000 100" preserveAspectRatio="none" focusable="false">
+      {paths.map((p) => p.area && <path class="is-area" d={p.area} style={`--k:${p.s.color}`} />)}
+      {
+        paths.map((p) => (
+          <>
+            {p.solid && <path d={p.solid} style={`--k:${p.s.color}`} />}
+            {p.dashed && <path class="is-dash" d={p.dashed} style={`--k:${p.s.color}`} />}
+          </>
+        ))
+      }
+    </svg>
+    {
+      cols.map(({ x, i, l, w, c }) => (
+        <div class="ch-col" style={`--l:${l}%;--w:${w}%;--c:${c}%`} data-tip={x.tip || undefined}>
+          {series.map((s, k) => {
+            const v = s.values[i];
+            return isNum(v) ? (
+              <span
+                class:list={['ch-dot', s.estimate?.[i] && 'ch-dot--est', i === lastIdx[k] && 'ch-dot--end']}
+                style={`--k:${s.color};--y:${pct(v, t.domain)}%`}
+              />
+            ) : null;
+          })}
+        </div>
+      ))
+    }
+  </div>
+  {
+    showEnd && (
+      <div class="ch-end" aria-hidden="true">
+        {endItems.map((e, k) =>
+          e.y == null ? null : (
+            <span style={`--py:${round(placed[k]!, 1)}px`}>
+              <i class="ch-key ch-key--line" style={`--k:${e.s.color}`} />
+              {e.s.name}
+              {e.s.endValue && ' '}
+              {e.s.endValue && <b>{e.s.endValue}</b>}
+            </span>
+          ),
+        )}
+      </div>
+    )
+  }
+  <div
+    class:list={['ch-x', !xs.some((x) => x.group) && 'ch-x--1']}
+    data-collapse={!xTicks && xs.some((x) => x.group) && xs.every((x) => !x.label || x.minor || x.minor2) ? '' : undefined}
+    aria-hidden="true"
+  >
+    {
+      xTicks
+        ? xTicks.map((tk, k) => (
+            <span
+              class:list={['ch-xl', k === 0 && tk.pos < 0.04 && 'ch-xl--first', k === xTicks.length - 1 && tk.pos > 0.96 && 'ch-xl--last']}
+              style={`--x:${round(tk.pos * 100, 3)}%`}
+              data-minor={tk.minor ? '' : undefined}
+              data-minor2={tk.minor ? '' : undefined}
+            >
+              {tk.label}
+            </span>
+          ))
+        : cols.map(({ x, i, l }) => {
+            const showGroup = x.group && x.group !== prevGroup;
+            prevGroup = x.group ?? prevGroup;
+            return (
+              <>
+                {x.label && (
+                  <span
+                    class:list={['ch-xl', i === n - 1 && x.pos > 0.97 && 'ch-xl--last', i === 0 && x.pos < 0.03 && 'ch-xl--first']}
+                    style={`--x:${round(x.pos * 100, 3)}%`}
+                    data-minor={x.minor ? '' : undefined}
+                    data-minor2={x.minor || x.minor2 ? '' : undefined}
+                  >
+                    {x.label}
+                  </span>
+                )}
+                {showGroup && <span class="ch-xt" style={`--x0:${l}%`} />}
+                {showGroup && (
+                  <span class="ch-xg" style={`--x0:${l}%;--gw:${round(textWidthCh(x.group!) + 1.2, 1)}ch`}>
+                    {x.group}
+                  </span>
+                )}
+              </>
+            );
+          })
+    }
+  </div>
+</div>

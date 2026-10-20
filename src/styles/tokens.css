@@ -1,0 +1,342 @@
+/*
+ * AI 產業鏈全景 — design tokens (single source of truth for colour, type and space).
+ * Owner: design-system agent. Everyone else consumes these tokens; raw hex values belong only here.
+ *
+ * Theme switching
+ *   - html[data-theme="light" | "dark"] forces a theme (set by the ThemeToggle, persisted in localStorage).
+ *   - Without the attribute the page follows prefers-color-scheme.
+ *   - Every token holds a plain colour value in each theme (no light-dark()), so JS consumers such as
+ *     the three.js theme reader can use getComputedStyle(el).getPropertyValue('--scene-bg') directly.
+ *
+ * Theme islands: any element with data-theme="light" | "dark" re-themes its subtree (set its own
+ * background/color, e.g. background: var(--c-bg); color: var(--c-fg)).
+ *
+ * Layer order is declared here and again inline in BaseLayout so it is fixed before any stylesheet loads.
+ */
+@layer reset, tokens, base, layout, prose, components, utilities;
+
+@layer tokens {
+  /* ───────────── Theme-independent tokens ───────────── */
+  :root {
+    /* Type: system CJK stack only (no web fonts) */
+    --font-sans: system-ui, -apple-system, 'PingFang TC', 'Noto Sans TC', 'Noto Sans CJK TC',
+      'Microsoft JhengHei', 'Heiti TC', sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', 'Roboto Mono', Menlo,
+      Consolas, 'Noto Sans Mono CJK TC', monospace;
+    --font-math: 'Cambria Math', 'STIX Two Math', 'Latin Modern Math', 'Noto Sans Math', math;
+
+    /* Fluid type scale (320px → 1440px). Body copy is 17px. */
+    --fs-xs: clamp(0.75rem, 0.73rem + 0.08vw, 0.8125rem); /* 12 → 13 */
+    --fs-s: clamp(0.84rem, 0.82rem + 0.1vw, 0.9rem); /* 13.5 → 14.4 */
+    --fs-m: 1.0625rem; /* 17 */
+    --fs-l: clamp(1.15rem, 1.1rem + 0.25vw, 1.3rem); /* 18.4 → 20.8 */
+    --fs-xl: clamp(1.3rem, 1.18rem + 0.55vw, 1.65rem); /* 20.8 → 26.4 */
+    --fs-2xl: clamp(1.55rem, 1.3rem + 1.1vw, 2.25rem); /* 24.8 → 36 */
+    --fs-3xl: clamp(1.9rem, 1.45rem + 2.1vw, 3.25rem); /* 30.4 → 52 */
+    /* Friendly aliases (same values) */
+    --fs-sm: var(--fs-s);
+    --fs-base: var(--fs-m);
+    --fs-md: var(--fs-m);
+    --fs-lg: var(--fs-l);
+
+    --lh-tight: 1.3;
+    --lh-snug: 1.5;
+    --lh-body: 1.8;
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+    --tracking-wide: 0.06em;
+
+    /* Space (4px base) */
+    --space-1: 0.25rem; /* 4 */
+    --space-2: 0.5rem; /* 8 */
+    --space-3: 0.75rem; /* 12 */
+    --space-4: 1rem; /* 16 */
+    --space-5: 1.5rem; /* 24 */
+    --space-6: 2rem; /* 32 */
+    --space-7: 3rem; /* 48 */
+    --space-8: 4rem; /* 64 */
+    --space-9: 6rem; /* 96 */
+    --space-10: 8rem; /* 128 */
+    --gutter: clamp(1rem, 0.6rem + 2vw, 2.25rem);
+
+    --radius-s: 4px;
+    --radius-m: 8px;
+    --radius-l: 14px;
+    --radius-pill: 999px;
+
+    --measure: 38em;
+    --container: 76rem;
+    --container-narrow: 52rem;
+    --header-h: 3.75rem;
+    --tap: 44px; /* minimum touch target */
+
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --dur-1: 120ms;
+    --dur-2: 200ms;
+    --dur-3: 320ms;
+
+    --z-sticky: 20;
+    --z-header: 40;
+    --z-popover: 60;
+    --z-skip: 100;
+  }
+
+  /* ───────────── Light theme (default): warm paper, ink text ───────────── */
+  :root,
+  [data-theme='light'] {
+    color-scheme: light;
+
+    --c-bg: #f8f5ee;
+    --c-bg-elev: #fffdf8;
+    --c-bg-sunken: #f0ebe0;
+    --c-fg: #15192a;
+    --c-fg-muted: #454b5e;
+    --c-fg-subtle: #5f6576;
+    --c-border: #e2dacb;
+    --c-border-strong: #8d8371;
+    --c-accent: #2b44b8;
+    --c-accent-fg: #ffffff;
+    --c-accent-soft: #e6e9f8;
+    --c-link: #1f47b0;
+    --c-link-hover: #142f7a;
+    --c-focus: #0b63ce;
+    --c-pos: #17703f;
+    --c-neg: #b3261e;
+    --c-warn: #8a5300;
+    --c-estimate: #6e6250;
+    --c-hover: rgb(21 25 42 / 0.05);
+    --c-selection: #cfd8f6;
+    --c-mark: #fbe7a8;
+    --c-overlay: rgb(16 18 28 / 0.4);
+
+    /* Level badges (入門／進階／深入) */
+    --level-1: #0d6b57;
+    --level-2: #1d5ea8;
+    --level-3: #6232b0;
+
+    /* 5 layers (bottom → top) */
+    --layer-foundation: #a66300;
+    --layer-silicon: #6f3fc0;
+    --layer-systems: #1f69b8;
+    --layer-cloud-models: #11826a;
+    --layer-applications: #c2455e;
+
+    /* 14 segments (scenes3d.md §A14, light column; eda-ip-design added between memory and accelerators) */
+    --seg-energy-power: #b86e00;
+    --seg-semi-equipment-materials: #b4501a;
+    --seg-foundry-packaging: #b83232;
+    --seg-memory-storage: #a82e6e;
+    --seg-eda-ip-design: #8e3aa8;
+    --seg-ai-accelerators: #6f3fc0;
+    --seg-networking-optics: #3c4bc4;
+    --seg-servers-systems: #1f69b8;
+    --seg-datacenter-infra: #0e7f94;
+    --seg-cloud-neocloud: #11826a;
+    --seg-foundation-models: #2d8a3e;
+    --seg-devtools-data-mlops: #66861a;
+    --seg-apps-agents: #8f7a10;
+    --seg-physical-ai: #c2455e;
+
+    /* Charts: categorical order is fixed (validated for CVD on this surface); never cycle */
+    --chart-1: #2a78d6;
+    --chart-2: #eb6834;
+    --chart-3: #1baf7a;
+    --chart-4: #eda100;
+    --chart-5: #e87ba4;
+    --chart-6: #008300;
+    --chart-7: #4a3aa7;
+    --chart-8: #e34948;
+    --chart-grid: #e4ddcf;
+    --chart-axis: #8c8373;
+    --chart-label: #4a5063;
+
+    /* 3D scenes */
+    --scene-bg: #f1ede4;
+    --scene-fg: #1b2030;
+    --scene-grid: #d8d0c0;
+    --scene-muted: #8b8474;
+    --scene-highlight: #b7791f;
+    --scene-flow: #0e7f94;
+    --scene-power: #b86e00;
+    --scene-heat: #c4471c;
+    --scene-coolant: #1f69b8;
+    --scene-optic: #6f3fc0;
+    --scene-tw-accent: #c41e47;
+
+    --shadow-1: 0 1px 2px rgb(40 32 18 / 0.06), 0 1px 1px rgb(40 32 18 / 0.04);
+    --shadow-2: 0 10px 30px -10px rgb(40 32 18 / 0.18), 0 2px 6px rgb(40 32 18 / 0.06);
+  }
+
+  /* ───────────── Dark theme: deep ink-navy, luminous segment colours ───────────── */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      color-scheme: dark;
+
+      --c-bg: #0b1322;
+      --c-bg-elev: #121c30;
+      --c-bg-sunken: #070d18;
+      --c-fg: #e7ebf3;
+      --c-fg-muted: #aeb7c9;
+      --c-fg-subtle: #8b96ac;
+      --c-border: #1f2a40;
+      --c-border-strong: #5b6b88;
+      --c-accent: #8fa3ff;
+      --c-accent-fg: #0b1322;
+      --c-accent-soft: #1a2547;
+      --c-link: #9db4ff;
+      --c-link-hover: #c9d6ff;
+      --c-focus: #7ab8ff;
+      --c-pos: #5cd08a;
+      --c-neg: #ff8577;
+      --c-warn: #f2b544;
+      --c-estimate: #a99d88;
+      --c-hover: rgb(231 235 243 / 0.06);
+      --c-selection: #2a3d77;
+      --c-mark: #4a3d12;
+      --c-overlay: rgb(2 5 12 / 0.6);
+
+      --level-1: #4fd6b4;
+      --level-2: #7cb6ff;
+      --level-3: #bf9bff;
+
+      --layer-foundation: #f5a524;
+      --layer-silicon: #a56bf0;
+      --layer-systems: #3e9bf0;
+      --layer-cloud-models: #2bc9a4;
+      --layer-applications: #ff8fa3;
+
+      --seg-energy-power: #f5a524;
+      --seg-semi-equipment-materials: #f07a3a;
+      --seg-foundry-packaging: #ef5d5d;
+      --seg-memory-storage: #e0569b;
+      --seg-eda-ip-design: #c65fe0;
+      --seg-ai-accelerators: #a56bf0;
+      --seg-networking-optics: #6d7cf5;
+      --seg-servers-systems: #3e9bf0;
+      --seg-datacenter-infra: #26bfd9;
+      --seg-cloud-neocloud: #2bc9a4;
+      --seg-foundation-models: #57cc6a;
+      --seg-devtools-data-mlops: #a6cf3e;
+      --seg-apps-agents: #e8c83a;
+      --seg-physical-ai: #ff8fa3;
+
+      --chart-1: #3987e5;
+      --chart-2: #d95926;
+      --chart-3: #199e70;
+      --chart-4: #c98500;
+      --chart-5: #d55181;
+      --chart-6: #008300;
+      --chart-7: #9085e9;
+      --chart-8: #e66767;
+      --chart-grid: #1f2b41;
+      --chart-axis: #5d6b85;
+      --chart-label: #aeb7c9;
+
+      --scene-bg: #08101d;
+      --scene-fg: #dfe6f2;
+      --scene-grid: #1e2a40;
+      --scene-muted: #5f6d86;
+      --scene-highlight: #ffd166;
+      --scene-flow: #9fe8ff;
+      --scene-power: #f5a524;
+      --scene-heat: #ff6a3d;
+      --scene-coolant: #3d9bff;
+      --scene-optic: #b28cff;
+      --scene-tw-accent: #ff4d6d;
+
+      --shadow-1: 0 1px 2px rgb(0 0 0 / 0.35), 0 0 0 1px rgb(255 255 255 / 0.02);
+      --shadow-2: 0 14px 36px -12px rgb(0 0 0 / 0.65), 0 2px 8px rgb(0 0 0 / 0.35);
+    }
+  }
+
+  [data-theme='dark'] {
+    color-scheme: dark;
+
+    --c-bg: #0b1322;
+    --c-bg-elev: #121c30;
+    --c-bg-sunken: #070d18;
+    --c-fg: #e7ebf3;
+    --c-fg-muted: #aeb7c9;
+    --c-fg-subtle: #8b96ac;
+    --c-border: #1f2a40;
+    --c-border-strong: #5b6b88;
+    --c-accent: #8fa3ff;
+    --c-accent-fg: #0b1322;
+    --c-accent-soft: #1a2547;
+    --c-link: #9db4ff;
+    --c-link-hover: #c9d6ff;
+    --c-focus: #7ab8ff;
+    --c-pos: #5cd08a;
+    --c-neg: #ff8577;
+    --c-warn: #f2b544;
+    --c-estimate: #a99d88;
+    --c-hover: rgb(231 235 243 / 0.06);
+    --c-selection: #2a3d77;
+    --c-mark: #4a3d12;
+    --c-overlay: rgb(2 5 12 / 0.6);
+
+    --level-1: #4fd6b4;
+    --level-2: #7cb6ff;
+    --level-3: #bf9bff;
+
+    --layer-foundation: #f5a524;
+    --layer-silicon: #a56bf0;
+    --layer-systems: #3e9bf0;
+    --layer-cloud-models: #2bc9a4;
+    --layer-applications: #ff8fa3;
+
+    --seg-energy-power: #f5a524;
+    --seg-semi-equipment-materials: #f07a3a;
+    --seg-foundry-packaging: #ef5d5d;
+    --seg-memory-storage: #e0569b;
+    --seg-eda-ip-design: #c65fe0;
+    --seg-ai-accelerators: #a56bf0;
+    --seg-networking-optics: #6d7cf5;
+    --seg-servers-systems: #3e9bf0;
+    --seg-datacenter-infra: #26bfd9;
+    --seg-cloud-neocloud: #2bc9a4;
+    --seg-foundation-models: #57cc6a;
+    --seg-devtools-data-mlops: #a6cf3e;
+    --seg-apps-agents: #e8c83a;
+    --seg-physical-ai: #ff8fa3;
+
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-3: #199e70;
+    --chart-4: #c98500;
+    --chart-5: #d55181;
+    --chart-6: #008300;
+    --chart-7: #9085e9;
+    --chart-8: #e66767;
+    --chart-grid: #1f2b41;
+    --chart-axis: #5d6b85;
+    --chart-label: #aeb7c9;
+
+    --scene-bg: #08101d;
+    --scene-fg: #dfe6f2;
+    --scene-grid: #1e2a40;
+    --scene-muted: #5f6d86;
+    --scene-highlight: #ffd166;
+    --scene-flow: #9fe8ff;
+    --scene-power: #f5a524;
+    --scene-heat: #ff6a3d;
+    --scene-coolant: #3d9bff;
+    --scene-optic: #b28cff;
+    --scene-tw-accent: #ff4d6d;
+
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.35), 0 0 0 1px rgb(255 255 255 / 0.02);
+    --shadow-2: 0 14px 36px -12px rgb(0 0 0 / 0.65), 0 2px 8px rgb(0 0 0 / 0.35);
+  }
+
+  /* Windows high-contrast / forced colours: let the system palette win */
+  @media (forced-colors: active) {
+    :root {
+      --c-border: CanvasText;
+      --c-border-strong: CanvasText;
+      --c-focus: Highlight;
+    }
+  }
+}

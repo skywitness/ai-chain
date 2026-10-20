@@ -1,0 +1,289 @@
+---
+title: "雲端與 AI 的商業模式"
+subtitle: "從出租電腦到販賣 Token：AI 的錢怎麼賺、又怎麼花"
+description: "雲端運算就是把電腦租給別人用；AI 時代，雲端業者出租 GPU 算力，模型公司按 Token 或月費收錢。本文說明 AI 的四種收費方式、雲端三巨頭與新雲的角色、巨額資本支出背後的帳，以及金流如何牽動整條產業鏈。"
+level: 1
+order: 109
+track: infra-business
+prerequisites: [what-is-llm]
+next: [ai-apps-and-agents-101, training-vs-inference-economics, ai-capex-economics]
+relatedSegments: [cloud-neocloud, foundation-models, apps-agents, ai-accelerators, servers-systems, datacenter-infra, energy-power]
+relatedCompanies: [amazon, microsoft, alphabet, oracle, coreweave, nebius, lambda, openai, anthropic, nvidia, alibaba, taiwan-ai-cloud, foxconn, quanta, wiwynn]
+relatedModels: [openai-gpt, anthropic-claude, google-gemini]
+relatedTrends: [hyperscaler-capex, ai-monetization, inference-demand, ai-infra-financing-bubble, sovereign-ai]
+glossary:
+  - cloud-computing
+  - datacenter
+  - yoy
+  - nvl72
+  - gigawatt
+  - ai-server
+  - gpu
+  - token
+  - api
+  - saas
+  - token-pricing
+  - gpu-as-a-service
+  - hyperscaler
+  - neocloud
+  - operating-margin
+  - arr
+  - capex
+  - depreciation
+  - free-cash-flow
+  - rpo
+  - batching
+  - inference
+scenes: []
+keyTakeaways:
+  - "雲端運算就是把電腦租給別人用；進入 AI 時代，出租的主角變成 GPU 算力。"
+  - "AI 有四種主要收費方式：月費訂閱、按 Token 計價的 API、GPU 時租，以及企業席位加用量。"
+  - "2026 年第二季全球雲端基礎設施營收 1,434 億美元、年增 43%，AWS、微軟、Google 合計約六成。"
+  - "OpenAI 的營收幾乎跟著算力成長：2023 到 2025 年算力約增 9.5 倍，年化營收約增 10 倍。"
+  - "雲端巨頭先花錢、後收錢：2026 年第二季亞馬遜、Alphabet、微軟的資本支出合計約 1,349 億美元。"
+  - "使用者付的錢一路從下游流向上游，最後變成晶片、伺服器、資料中心與電力的訂單。"
+estimatedMinutes: 11
+sources:
+  - key: synergy-q2-2026
+    title: "Q2 Cloud Market Passes $143 Billion; Highest Growth Rate in Eight Years"
+    publisher: "Synergy Research Group"
+    url: "https://www.srgresearch.com/articles/q2-cloud-market-passes-143-billion-highest-growth-rate-in-eight-years"
+    type: analyst
+    lang: en
+    published: "2026-07-30"
+    accessed: "2026-10-15"
+    note: "2026 年第二季全球雲端基礎設施服務（IaaS、PaaS 與代管私有雲）營收 1,434 億美元，年增 43%，為八年來最高；亞馬遜、微軟、Google 市占率分別為 28%、20%、15%；生成式 AI 專屬雲端服務年增 165%；九家新雲已躋身前 40 大雲端業者"
+  - key: amzn-q2-2026
+    title: "Amazon.com Announces Second Quarter Results (Form 8-K Exhibit 99.1)"
+    publisher: Amazon
+    url: "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000024/amzn-20260630xex991.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-30"
+    accessed: "2026-10-15"
+    note: "AWS 2026 年第二季營收 422.32 億美元、年增 37%（18 季以來最快），營業利益 166 億美元、營業利益率 39.4%；AWS 的 AI 業務年化營收逾 250 億美元；AWS 季營收 2025 Q1–2026 Q2 依序為 292.67、308.73、330.06、355.79、375.87、422.32 億美元；單季購置不動產與設備 542.08 億美元（一年前 321.83 億美元）；近四季自由現金流流出 76 億美元，一年前為流入 182 億美元，主因購置設備支出年增 661 億美元"
+  - key: msft-fy26-q4
+    title: "Microsoft Cloud and AI Strength Fuels Fourth Quarter Results (Form 8-K Exhibit 99.1)"
+    publisher: Microsoft
+    url: "https://www.sec.gov/Archives/edgar/data/789019/000119312526323632/msft-ex99_1.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-29"
+    accessed: "2026-10-15"
+    note: "FY2026（截至 2026 年 6 月）Azure 營收首度突破 1,000 億美元；FY2026 第四季 Azure 與其他雲端服務營收年增 43%；Microsoft 365 Copilot 付費席位逾 3,000 萬；商業剩餘履約義務年增 84% 至 6,780 億美元；單季不動產與設備增添 358.02 億美元（一年前 170.79 億美元）"
+  - key: goog-q2-2026
+    title: "Alphabet Announces Second Quarter 2026 Results (Form 8-K Exhibit 99.1)"
+    publisher: Alphabet
+    url: "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-15"
+    note: "Google Cloud 2026 年第二季營收 247.68 億美元、年增 82%（一年前 136.24 億美元）；Gemini 模型每分鐘處理 220 億個 API Token；單季購置不動產與設備 449.24 億美元（一年前 224.46 億美元）"
+  - key: orcl-q1-fy27
+    title: "Oracle Announces Q1 Results Driven by Triple Digit Growth in Cloud Infrastructure Revenues (Form 8-K Exhibit 99.1)"
+    publisher: Oracle
+    url: "https://www.sec.gov/Archives/edgar/data/1341439/000119312526387905/orcl-ex99_1.htm"
+    type: press-release
+    lang: en
+    published: "2026-09-10"
+    accessed: "2026-10-15"
+    note: "FY2027 第一季（2026 年 6–8 月）雲端基礎設施營收年增 121%；剩餘履約義務年增 2,090 億美元至 6,640 億美元；本季新交付 850 MW 資料中心容量"
+  - key: crwv-q2-2026
+    title: "CoreWeave Reports Strong Second Quarter 2026 Results (Form 8-K Exhibit 99.1)"
+    publisher: CoreWeave
+    url: "https://www.sec.gov/Archives/edgar/data/1769628/000176962826000362/coreweave2q26earningspress.htm"
+    type: press-release
+    lang: en
+    published: "2026-08-11"
+    accessed: "2026-10-15"
+    note: "2026 年第二季營收 25.75 億美元（一年前 12.12 億美元），營業損失 4,900 萬美元（營業利益率 -2%），利息支出淨額 6.4 億美元，淨損 6.26 億美元；未完成合約約 1,040 億美元；啟用電力 1.5 GW；完成業界首次 Vera Rubin NVL72 啟用與驗證"
+  - key: oa-business
+    title: "A business that scales with the value of intelligence"
+    publisher: OpenAI
+    url: "https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/"
+    type: company-site
+    lang: en
+    published: "2026-01-18"
+    accessed: "2026-10-15"
+    note: "財務長 Sarah Friar 署名文章。可用算力 2023 年 0.2 GW、2024 年 0.6 GW、2025 年約 1.9 GW；年化經常性營收 2023 年 20 億美元、2024 年 60 億美元、2025 年逾 200 億美元；商業模式包括消費者與團隊訂閱、由廣告與電商支撐的免費方案、按用量計價的 API，未來可能有授權、智財合作與按成果計價；前沿模型在高階硬體上訓練，大量推論改用較低成本的基礎設施"
+  - key: oa-funding
+    title: "Accelerating the next phase of AI"
+    publisher: OpenAI
+    url: "https://openai.com/index/accelerating-the-next-phase-ai/"
+    type: press-release
+    lang: en
+    published: "2026-03-31"
+    accessed: "2026-10-15"
+    note: "宣布完成 1,220 億美元募資；每月營收約 20 億美元；ChatGPT 訂閱數逾 5,000 萬；廣告試行不到六週年化營收逾 1 億美元；企業營收佔逾 40%；API 每分鐘處理逾 150 億個 Token；雲端夥伴包括微軟、甲骨文、AWS、CoreWeave 與 Google Cloud"
+  - key: an-series-g
+    title: "Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation"
+    type: press-release
+    lang: en
+    published: "2026-02-12"
+    accessed: "2026-10-15"
+    note: "年化營收（run-rate）140 億美元"
+  - key: an-series-h
+    title: "Anthropic raises $65B in Series H funding at $965B post-money valuation"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/series-h"
+    type: press-release
+    lang: en
+    published: "2026-05-28"
+    accessed: "2026-10-15"
+    note: "年化營收於 2026 年 5 月突破 470 億美元；Claude 是第一個在 AWS、Google Cloud 與 Microsoft Azure 三大雲端平台都能使用的前沿模型；AWS 為主要雲端與訓練夥伴"
+  - key: claude-pricing
+    title: "Pricing"
+    publisher: "Anthropic（Claude Platform Docs）"
+    url: "https://platform.claude.com/docs/en/about-claude/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "每百萬 Token 價格（輸入／輸出）：Claude Fable 5.1 為 10／50 美元、Claude Sonnet 5.5 為 2／10 美元；Opus 系列輸出價格：Opus 4.1 為 75 美元（已退役，僅 Bedrock 與 Google Cloud 仍提供）、Opus 4.5 到 4.8 與 Opus 5 皆為 25 美元、Opus 5.5 為 20 美元"
+  - key: claude-opus-55
+    title: "Introducing Claude Opus 5.5"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/claude-opus-5-5"
+    type: press-release
+    lang: en
+    published: "2026-09-22"
+    accessed: "2026-10-15"
+    note: "Opus 5.5 服務所需的運算比 Opus 5 少，定價也反映這一點：每百萬輸入／輸出 Token 4／20 美元，比 Opus 5 低 20%"
+  - key: claude-plans
+    title: "Plans & Pricing"
+    publisher: Anthropic
+    url: "https://claude.com/pricing"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "Claude Pro 月繳 20 美元（年繳折合每月 17 美元）；Enterprise 方案每席每月 20 美元（年繳、至少 20 席），用量另依 API 價格計算；頁面註明各方案皆有用量上限（Usage limits apply）"
+  - key: lambda-pricing
+    title: "GPU cloud pricing: rent NVIDIA H100, H200, and B200"
+    publisher: Lambda
+    url: "https://lambda.ai/pricing"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "隨選執行個體（8 卡機型）每顆 GPU 每小時：B200 SXM6 為 6.69 美元、H100 SXM 為 3.99 美元，未含稅"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial: { status: fact-checked, author: learn-05, checkedBy: "learn-05-check", checkedOn: "2026-10-06", notes: "內容以 2026-10-06 為資料基準日；各來源的 accessed 為實際讀取日 2026-10-15。定價頁（Claude、Lambda）為 10-15 讀取版本，與基準日之間若有調價未能回溯確認。" }
+---
+
+## 一句話解釋
+
+**<Term id="cloud-computing">雲端運算</Term>就是「把電腦租給別人用」：企業不必自己買伺服器、蓋機房，而是按用量付費。進入 AI 時代，雲端業者出租的主角變成 <Term id="gpu">GPU</Term> 算力，模型公司則把 AI 的能力切成一個個 <Term id="token">Token</Term> 來賣，或包成每月訂閱。** 看懂這門生意，就能理解為什麼科技巨頭願意每一季投入數百億美元蓋<Term id="datacenter">資料中心</Term>。
+
+## 生活化比喻
+
+<Callout type="analogy" title="想吃一頓飯，有四種方式">
+
+- **自己蓋廚房**：買地、買爐具、請廚師，一次花很多錢，但完全自己掌控。這就像企業自己買 GPU、蓋資料中心。
+- **租共享廚房**：設備由房東準備，按小時付租金。這是向雲端業者租用 GPU，按小時計費。
+- **叫外送**：點多少付多少。這是透過 <Term id="api">API</Term> 呼叫模型，按 Token 用量計價。
+- **吃到飽**：每月固定付一筆錢，在店家規定的份量內想吃就吃。這是 ChatGPT、Claude 這類 AI 助理的月費訂閱，通常也設有用量上限。
+
+越往下走，使用者越省事，但也把越多利潤交給提供服務的業者。AI 產業的商業模式，就是一群公司在這四種「吃法」之間分工合作。
+
+</Callout>
+
+## 原理：AI 的錢怎麼流動
+
+### 一條從使用者流向晶片的金流
+
+<FlowSteps title="AI 產業的金流" steps={[{ title: "使用者與企業", detail: "付月費訂閱或 API 使用費" }, { title: "AI 應用", detail: "把模型包裝成產品" }, { title: "模型公司", detail: "訓練與提供模型" }, { title: "雲端業者", detail: "出租 GPU 算力" }, { title: "硬體供應鏈", detail: "晶片、伺服器、電力" }]} />
+
+每一層都向下一層付錢：使用者付錢給 AI 應用，應用付 API 費給模型公司，模型公司向雲端租用算力，雲端業者再拿錢去買晶片、伺服器與電力。以 <CompanyChip id="openai">OpenAI</CompanyChip> 為例，它在 2026 年 3 月表示每月營收約 20 億美元，而它的算力來自微軟、甲骨文、AWS、CoreWeave 與 Google Cloud 等多家雲端業者<Cite k="oa-funding" />。
+
+### 四種收費方式
+
+| 收費方式 | 怎麼計價 | 實際例子 |
+|---|---|---|
+| 月費訂閱 | 每人每月固定費用 | Claude Pro 月繳 20 美元<Cite k="claude-plans" /> |
+| 按 Token 計價 | 依輸入與輸出的 Token 數量 | Claude Sonnet 5.5 每百萬輸入 Token 2 美元、輸出 10 美元<Cite k="claude-pricing" /> |
+| GPU 時租 | 每顆 GPU 每小時 | Lambda 的 H100（8 卡機型）每顆每小時 3.99 美元<Cite k="lambda-pricing" /> |
+| 席位加用量 | 每位員工月費，再加實際用量 | Claude Enterprise 每席每月 20 美元，用量另依 API 價格計算<Cite k="claude-plans" /> |
+
+**訂閱**是消費者最熟悉的模式。OpenAI 在 2026 年 3 月表示，ChatGPT 的付費訂閱數超過 5,000 萬<Cite k="oa-funding" />；企業端則常按「席位」收費，例如<CompanyChip id="microsoft">微軟</CompanyChip>的 Microsoft 365 Copilot 付費席位已超過 3,000 萬個<Cite k="msft-fy26-q4" />。這種按月收費、透過網路使用的軟體，稱為 <Term id="saas">SaaS</Term>（軟體即服務）。
+
+**按 Token 計價**是開發者與企業最常用的方式，業界稱為<Term id="token-pricing">Token 計價</Term>，就像水電費按度數計價。輸出 Token 的單價通常是輸入的好幾倍，因為輸入的文字可以一次平行讀完，輸出卻得一個接一個產生，每寫出一個 Token 都要把整個網路再算一次（見<LearnLink id="what-is-llm">大型語言模型是什麼</LearnLink>）。這門生意的規模可以用 Token 處理量來想像：OpenAI 在 2026 年 3 月表示，它的 API 每分鐘處理超過 150 億個 Token<Cite k="oa-funding" />；Google 在 2026 年 7 月表示，Gemini 模型每分鐘處理 220 億個 API Token<Cite k="goog-q2-2026" />。兩家公布的時間點不同，不宜直接比大小。
+
+**GPU 時租**又稱 <Term id="gpu-as-a-service">GPUaaS</Term>（GPU 即服務），客戶多半是要自己訓練或部署模型的公司。以 <CompanyChip id="lambda">Lambda</CompanyChip> 的隨選方案為例，較新的 B200 每顆每小時 6.69 美元，上一代的 H100 則是 3.99 美元<Cite k="lambda-pricing" />；若簽較長期的合約或租用大型叢集，價格另外議定。
+
+**廣告與電商**是最新加入的收入來源。OpenAI 財務長在 2026 年 1 月撰文說明，公司的商業模式包括消費者與團隊訂閱、由廣告與電商支撐的免費方案，以及按用量計價的 API，未來還可能出現授權與按成果計價等模式<Cite k="oa-business" />。到了 2026 年 3 月，OpenAI 的廣告試行計畫不到六週，年化營收就超過 1 億美元<Cite k="oa-funding" />。
+
+### 雲端三巨頭與新雲
+
+全球雲端市場由三家<Term id="hyperscaler">超大規模業者</Term>主導：亞馬遜（Amazon）的 AWS、微軟的 Azure，以及 Google Cloud。研究機構 Synergy Research 估計，2026 年第二季全球雲端基礎設施服務營收達 1,434 億美元，<Term id="yoy">年增</Term> 43%，是八年來最快的成長；三家市占率分別約 28%、20%、15%，而生成式 AI 專屬的雲端服務更年增 165%<Cite k="synergy-q2-2026" />。
+
+<StatGrid title="2026 年第二季，雲端業者的成績單" items={[{ label: "AWS 季營收", value: "422 億美元", note: "年增 37%，營業利益率 39.4%" }, { label: "Google Cloud 季營收", value: "248 億美元", note: "年增 82%" }, { label: "微軟 Azure", value: "年增 43%", note: "FY2026 全年營收首度突破 1,000 億美元" }, { label: "甲骨文 OCI", value: "年增 121%", note: "FY2027 第一季（2026 年 6–8 月）" }]} caption="資料來源：亞馬遜、Alphabet、微軟、甲骨文財報新聞稿" />
+
+上表的數字分別來自<CompanyChip id="amazon">亞馬遜</CompanyChip><Cite k="amzn-q2-2026" />、<CompanyChip id="alphabet">Alphabet</CompanyChip><Cite k="goog-q2-2026" />、微軟<Cite k="msft-fy26-q4" />與<CompanyChip id="oracle">甲骨文（Oracle）</CompanyChip><Cite k="orcl-q1-fy27" />。AI 讓原本已經很大的雲端生意重新加速：AWS 這一季年增 37%，是 18 季以來最快，亞馬遜並表示 AWS 的 AI 業務年化營收已超過 250 億美元<Cite k="amzn-q2-2026" />。
+
+<LineChart title="AWS 季營收：AI 帶動成長再加速" unit="十億美元" series={[{ name: "AWS", points: [{ x: "2025 Q1", y: 29.3 }, { x: "2025 Q2", y: 30.9 }, { x: "2025 Q3", y: 33.0 }, { x: "2025 Q4", y: 35.6 }, { x: "2026 Q1", y: 37.6 }, { x: "2026 Q2", y: 42.2 }] }]} source="amzn-q2-2026" note="年增率從 2025 年第一季的 17% 升到 2026 年第二季的 37%（不含匯率影響）" />
+
+除了三巨頭，還有一群專門出租 GPU 的<Term id="neocloud">新雲</Term>業者，例如 <CompanyChip id="coreweave">CoreWeave</CompanyChip>、<CompanyChip id="nebius">Nebius</CompanyChip> 與 Lambda。它們的強項是快速部署最新硬體，例如 CoreWeave 在 2026 年第二季完成業界首次 Vera Rubin <Term id="nvl72">NVL72</Term> 機櫃的啟用與驗證。它的成長也很快：單季營收 25.75 億美元，是一年前的兩倍以上；但為了買 GPU 大量舉債，單季利息支出約 6.4 億美元，最後淨損 6.26 億美元<Cite k="crwv-q2-2026" />。
+
+<Compare title="超大規模業者與新雲" left={{ title: "超大規模業者", items: ["例如 AWS、Azure、Google Cloud", "運算、儲存、資料庫、模型平台都賣", "也自研 AI 晶片，例如 Trainium、TPU", "AWS 2026 年第二季營業利益率 39.4%"] }} right={{ title: "新雲", items: ["例如 CoreWeave、Nebius、Lambda", "專注出租 GPU 算力", "成長快，但常靠舉債購買 GPU", "CoreWeave 2026 年第二季營業利益率 -2%"] }} />
+
+這裡的<Term id="operating-margin">營業利益率</Term>是「本業賺到的錢佔營收的比例」：AWS 每 100 美元營收約賺 39 美元<Cite k="amzn-q2-2026" />，CoreWeave 則還在虧損<Cite k="crwv-q2-2026" />。
+
+### 模型公司：營收跟著算力走
+
+模型公司是雲端最大的客戶之一。OpenAI 財務長公開了一組數字，說明營收幾乎和可用算力同步成長；這裡的算力以資料中心可用的電力容量計算，單位是 <Term id="gigawatt">GW</Term>（十億瓦）<Cite k="oa-business" />：
+
+| 年份 | OpenAI 可用算力 | 年化經常性營收 |
+|---|---|---|
+| 2023 | 0.2 GW | 20 億美元 |
+| 2024 | 0.6 GW | 60 億美元 |
+| 2025 | 約 1.9 GW | 逾 200 億美元 |
+
+這裡的 <Term id="arr">ARR</Term>（年化經常性營收）是把目前每月的經常性收入乘以 12，用來描述成長快速的公司。她也認為，如果過去這幾年有更多算力，客戶採用與營收原本可以成長得更快<Cite k="oa-business" />。另一家模型公司 <CompanyChip id="anthropic">Anthropic</CompanyChip> 的年化營收，從 2026 年 2 月的 140 億美元<Cite k="an-series-g" />，增加到同年 5 月的逾 470 億美元<Cite k="an-series-h" />。
+
+模型公司也透過雲端「上架」賣模型。Anthropic 的 Claude 同時在 AWS、Google Cloud 與 Microsoft Azure 三大平台提供<Cite k="an-series-h" />，企業可以在熟悉的雲端上直接呼叫，雲端業者也因此多賺一份平台收入。
+
+### 先花錢、後收錢：巨額資本支出
+
+要賣算力，得先買 GPU、蓋資料中心。2026 年第二季，三大雲端業者的<Term id="capex">資本支出</Term>都比一年前大幅增加：
+
+<BarChart title="2026 年第二季資本支出（購置不動產與設備）" unit="十億美元" data={[{ label: "亞馬遜", value: 54.2 }, { label: "Alphabet", value: 44.9 }, { label: "微軟", value: 35.8 }]} source={["amzn-q2-2026", "goog-q2-2026", "msft-fy26-q4"]} note="截至 2026 年 6 月 30 日的單季現金支出；微軟為 FY2026 第四季" />
+
+三家一季合計約 1,349 億美元；一年前同一季分別是 322 億、224 億與 171 億美元，合計約 717 億美元，一年內接近翻倍<Cite k="amzn-q2-2026" /><Cite k="goog-q2-2026" /><Cite k="msft-fy26-q4" />。
+
+這些錢買來的伺服器與廠房，會在未來幾年以<Term id="depreciation">折舊</Term>的方式逐年攤成成本。也就是說，雲端業者今天先付錢，期待未來幾年的 AI 收入把錢賺回來。短期內，自由現金流會承受壓力：亞馬遜近四季購置設備的淨支出比一年前多了 661 億美元，使近四季的<Term id="free-cash-flow">自由現金流</Term>從一年前流入 182 億美元，轉為流出 76 億美元<Cite k="amzn-q2-2026" />。
+
+業者願意這樣投資，一個重要理由是手上已經有大量簽好的合約。財報中的 <Term id="rpo">RPO</Term>（剩餘履約義務）代表客戶已經簽約、但還沒認列的營收：微軟的商業 RPO 達 6,780 億美元、年增 84%<Cite k="msft-fy26-q4" />，甲骨文也有 6,640 億美元<Cite k="orcl-q1-fy27" />。不過，合約要先蓋好資料中心、交付算力，才會變成營收；如果 AI 應用的收入成長跟不上，這些投資就可能變成沉重的負擔，這也是市場討論 <TrendLink id="ai-infra-financing-bubble">AI 基礎設施融資與泡沫風險</TrendLink>的焦點。
+
+<DeepDive title="深入一點：一顆 GPU 每秒要產出多少 Token 才回本？">
+
+用前面的價格做一個簡化的試算。假設一家公司向雲端租一顆 B200，每小時 6.69 美元<Cite k="lambda-pricing" />，拿來提供模型服務，每百萬個輸出 Token 收 10 美元，也就是 Claude Sonnet 5.5 的價格<Cite k="claude-pricing" />。先忽略輸入 Token、人力與其他成本，每小時的營收是：
+
+<MathTeX tex={"\\text{每小時營收}=\\text{每秒 Token 數}\\times 3600\\times\\text{每個 Token 的價格}"} display label="每小時營收等於每秒產出的 Token 數乘以 3600 秒再乘以每個 Token 的價格" />
+
+每個 Token 的價格是 10 ÷ 1,000,000 ＝ 0.00001 美元。要賺回 6.69 美元的租金，每小時至少要賣出 6.69 ÷ 0.00001 ＝ 669,000 個 Token，換算成**每秒約 186 個 Token**。
+
+這個門檻能不能跨過，取決於兩件事：
+
+1. **能不能同時服務很多人**：推論伺服器會用<Term id="batching">批次處理</Term>，讓一顆 GPU 同時替許多使用者產生 Token，總產出就能比只服務一個人高出許多。這也是<Term id="inference">推論</Term>服務能賺錢的關鍵。
+2. **使用率高不高**：如果 GPU 有一半時間閒置，忙碌時段就得產出兩倍的 Token 才能打平。這也是雲端業者偏好簽多年期合約的原因：先確定有人用，再買 GPU。
+
+一般來說，模型越大，每產生一個 Token 要做的運算越多，一顆 GPU 能賣出的 Token 就越少，單價也就越高。廠商通常不公開模型大小，但價格差距可以看出定位：Anthropic 最高階的 Claude Fable 5.1，輸出價格是每百萬 Token 50 美元，是 Sonnet 5.5 的 5 倍<Cite k="claude-pricing" />。反過來說，演算法與硬體一進步，服務成本下降，價格也會跟著降。Anthropic 表示 Opus 5.5 服務所需的運算比 Opus 5 少，因此定價降低 20%<Cite k="claude-opus-55" />：
+
+<BarChart title="Claude Opus 系列的輸出價格" unit="美元／百萬 Token" data={[{ label: "Opus 4.1", value: 75 }, { label: "Opus 4.5", value: 25 }, { label: "Opus 5", value: 25 }, { label: "Opus 5.5", value: 20 }]} source="claude-pricing" keepOrder note="節錄部分版本，依推出先後排列；Opus 4.6 到 4.8 的輸出價格同為 25 美元。皆為官方定價頁列出的標準價格" />
+
+OpenAI 也採取類似的策略：前沿模型在高階硬體上訓練，大量的推論工作則改放到成本較低的基礎設施上<Cite k="oa-business" />。對整條產業鏈來說，這代表 AI 的需求不只取決於「模型多聰明」，也取決於「每個 Token 能多便宜」。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+雲端是 AI 產業鏈的「收銀台」，使用者付的錢在這裡匯集，再一路流向上游：
+
+- **雲端與新雲**：<SegmentChip id="cloud-neocloud" /> 包括亞馬遜、微軟、Alphabet、甲骨文等超大規模業者，CoreWeave、Nebius、Lambda 等新雲，中國的<CompanyChip id="alibaba">阿里巴巴</CompanyChip>（阿里雲），以及台灣華碩旗下的<CompanyChip id="taiwan-ai-cloud">台智雲</CompanyChip>。
+- **模型**：<SegmentChip id="foundation-models" /> 的 OpenAI 與 Anthropic 是最大的算力買家之一，它們的營收成長直接決定要租多少算力。
+- **應用**：<SegmentChip id="apps-agents" /> 是金流的起點，使用者願不願意付費，決定了整條鏈的天花板。下一篇<LearnLink id="ai-apps-and-agents-101">AI 能做什麼</LearnLink>會介紹這些應用。
+- **硬體**：雲端業者的資本支出，會變成 <SegmentChip id="ai-accelerators" /> 的晶片訂單（例如<CompanyChip id="nvidia">輝達</CompanyChip>），以及 <SegmentChip id="servers-systems" /> 的伺服器訂單，台灣的<CompanyChip id="foxconn">鴻海</CompanyChip>、<CompanyChip id="quanta">廣達</CompanyChip>與<CompanyChip id="wiwynn">緯穎</CompanyChip>都替雲端業者組裝 <Term id="ai-server">AI 伺服器</Term>；再往下則是 <SegmentChip id="datacenter-infra" /> 與 <SegmentChip id="energy-power" />。
+
+想繼續追蹤這條金流，可以看趨勢文章<TrendLink id="hyperscaler-capex">超大規模業者的 AI 資本支出</TrendLink>、<TrendLink id="ai-monetization">AI 營收化</TrendLink>、<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>與<TrendLink id="sovereign-ai">主權 AI</TrendLink>。進階讀者可以接著讀<LearnLink id="training-vs-inference-economics">訓練與推論的經濟學</LearnLink>，以及<LearnLink id="ai-capex-economics">AI 資本支出與雲端經濟學</LearnLink>。

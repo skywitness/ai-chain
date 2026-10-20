@@ -1,0 +1,260 @@
+---
+title: "機器如何學習：資料、模型、訓練與推論"
+subtitle: "看例子、猜答案、對答案、修正：AI 學習的四個步驟"
+description: "機器學習是讓電腦從大量例子中自己找出規律。本文用準備考試的比喻，說明資料、模型、訓練與推論四個關鍵字，以及它們如何對應到 GPU、資料中心與雲端等產業鏈環節。"
+level: 1
+order: 103
+track: foundations
+prerequisites: [what-is-ai]
+next: [neural-networks-101, what-is-llm]
+relatedSegments: [devtools-data-mlops, foundation-models, ai-accelerators, datacenter-infra, cloud-neocloud, servers-systems, physical-ai]
+relatedCompanies: [nvidia, tsmc, alphabet, microsoft, amazon, meta, openai, deepseek, scale-ai, databricks, snowflake, apple, qualcomm, mediatek, quanta, wiwynn, foxconn, delta-electronics]
+relatedModels: [openai-gpt, meta-muse-llama, deepseek, google-gemini]
+relatedTrends: [inference-demand, hyperscaler-capex, edge-ai-devices]
+glossary:
+  - machine-learning
+  - training-data
+  - parameter
+  - training
+  - inference
+  - supervised-learning
+  - reinforcement-learning
+  - data-labeling
+  - pretraining
+  - rlhf
+  - generative-ai
+  - llm
+  - token
+  - neural-network
+  - deep-learning
+  - loss-function
+  - gradient-descent
+  - gpu
+  - latency
+scenes: []
+keyTakeaways:
+  - "機器學習不是由人寫規則，而是讓電腦從大量例子中自己調整參數、找出規律。"
+  - "四個關鍵字：資料是教材，模型是一組參數，訓練是調參數的過程，推論是學成後回答新問題。"
+  - "訓練就是反覆「猜答案、算誤差、調參數」；大型模型的訓練運算量極大，要動用大型 GPU 叢集。"
+  - "推論單次運算小但次數極多：Google 在 2026 年 7 月表示，其模型 API 每分鐘處理約 220 億個 token。"
+  - "資料、模型、訓練、推論，分別對應到資料服務、模型實驗室、晶片與資料中心、雲端與終端裝置。"
+estimatedMinutes: 10
+sources:
+  - key: google-mlcc
+    title: "What is Machine Learning? (Introduction to Machine Learning)"
+    publisher: Google for Developers
+    url: "https://developers.google.com/machine-learning/intro-to-ml/what-is-ml"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: gpt3
+    title: "Language Models are Few-Shot Learners"
+    publisher: OpenAI（arXiv）
+    url: "https://arxiv.org/abs/2005.14165"
+    type: paper
+    lang: en
+    published: "2020-05-28"
+    accessed: "2026-10-06"
+    note: "GPT-3 有 1,750 億個參數，所有模型都訓練 3,000 億個 token（Table 2.1）。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: Meta AI（arXiv）
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-06"
+    note: "405B 參數、15.6T token、3.8 × 10^25 FLOPs、最多 16K 顆 H100；54 天內 466 次訓練中斷，其中 419 次為意外中斷，約 78% 確認或疑似為硬體問題（Table 5）。"
+  - key: deepseek-v4
+    title: "DeepSeek-V4-Pro model card"
+    publisher: DeepSeek（Hugging Face）
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-06"
+    note: "預覽版說明：總參數 1.6T、啟用 49B，以超過 32T token 預訓練。"
+  - key: deepseek-changelog
+    title: "Change Log | DeepSeek API Docs"
+    publisher: DeepSeek
+    url: "https://api-docs.deepseek.com/updates"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "2026-04-24：DeepSeek API 開始提供 V4-Pro 與 V4-Flash。"
+  - key: gpt4
+    title: "GPT-4 Technical Report"
+    publisher: OpenAI（arXiv）
+    url: "https://arxiv.org/abs/2303.08774"
+    type: paper
+    lang: en
+    published: "2023-03-15"
+    accessed: "2026-10-06"
+  - key: alphabet-q2-2026
+    title: "Alphabet earnings call Q2 2026: Sundar Pichai remarks"
+    publisher: Google
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/"
+    type: earnings-call
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-06"
+    note: "執行長 Sundar Pichai 法說會講稿：模型 API 每分鐘處理約 220 億個 token，前一季為 160 億。"
+  - key: epoch
+    title: "Training compute of frontier AI models grows by 4-5x per year"
+    publisher: Epoch AI
+    url: "https://epoch.ai/publications/training-compute-of-frontier-ai-models-grows-by-4-5x-per-year"
+    type: analyst
+    lang: en
+    published: "2024-05-28"
+    accessed: "2026-10-06"
+    note: "Jaime Sevilla、Edu Roldán；統計期間為 2010 年至 2024 年 5 月。"
+  - key: eleuther
+    title: "Transformer Math 101"
+    publisher: EleutherAI
+    url: "https://blog.eleuther.ai/transformer-math/"
+    type: other
+    lang: en
+    published: "2023-04-18"
+    accessed: "2026-10-06"
+  - key: nvidia-train-infer
+    title: "What's the Difference Between Deep Learning Training and Inference?"
+    publisher: NVIDIA Blog
+    url: "https://blogs.nvidia.com/blog/difference-deep-learning-training-inference-ai/"
+    type: other
+    lang: en
+    published: "2016-07-29"
+    accessed: "2026-10-06"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: learn-02
+  checkedBy: "learn-02-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：GPT-3、GPT-4、Llama 3 論文原文，DeepSeek-V4-Pro 模型卡與 API 更新日誌，Alphabet 2026 Q2 法說講稿，Google MLCC、Epoch AI、EleutherAI、NVIDIA 部落格皆逐一核對。DeepSeek-V4-Pro 發布日由 04-22（Hugging Face 建檔日）更正為 04-24（官方上線日），並補上 DeepSeek API 更新日誌為發布日來源。"
+---
+
+## 一句話解釋
+
+<Term id="machine-learning">機器學習</Term>就是：不直接把規則寫給電腦，而是給它大量例子，讓它自己調整內部的一大堆數字，直到猜得夠準。這些例子叫<Term id="training-data">訓練資料</Term>，那一大堆數字叫<Term id="parameter">參數</Term>，調整參數的過程叫<Term id="training">訓練</Term>；學成之後，拿模型去回答沒看過的新問題，就叫<Term id="inference">推論</Term>。
+
+聊天機器人、即時翻譯、手機人臉解鎖、影音平台的推薦清單，背後幾乎都是這套流程。如果還不確定 AI、機器學習與深度學習的差別，可以先讀<LearnLink id="what-is-ai">什麼是 AI？</LearnLink>。
+
+## 生活化比喻
+
+<Callout type="analogy" title="把 AI 想成一位準備考試的學生">
+
+- **題庫＝訓練資料**：學生手上有大量附解答的考古題。
+- **腦中的解題方法＝模型**：一開始很粗糙，靠練習慢慢修正。
+- **寫題、對答案、訂正＝訓練**：每寫一題就對一次答案，錯得越離譜，訂正的幅度就越大。
+- **正式上考場＝推論**：遇到沒看過的新題目，只能用已經學會的方法作答，考場上不會再對答案。
+
+Google 的機器學習入門課程也用同一個比喻說明<Term id="supervised-learning">監督式學習</Term>：就像學生研讀同時附有題目與答案的舊考卷，練習得夠多，就準備好應付新考卷<Cite k="google-mlcc" />。
+
+</Callout>
+
+這個比喻還能解釋一個常見的失敗：如果學生只是把題庫答案背下來，換一題就不會了。模型也一樣，若只記住訓練資料、沒有學到真正的規律，就稱為「過度擬合」（overfitting）。所以工程師會刻意留下一部分資料不給模型看，當作「模擬考」，用來檢查模型是不是真的學會了。
+
+## 原理
+
+### 傳統程式 vs 機器學習
+
+<Compare
+  title="同樣是過濾垃圾郵件，兩種做法"
+  left={{ title: "傳統程式：人寫規則", items: ["工程師寫下規則，例如標題出現「中獎」就判定為垃圾信", "規則清楚、容易解釋", "對方換個寫法就失效，規則永遠寫不完"] }}
+  right={{ title: "機器學習：從例子學規則", items: ["收集大量「郵件＋是不是垃圾信」的例子", "電腦自己找出哪些特徵組合最可疑", "需要大量資料與算力，學到的規則藏在參數裡，不容易解釋"] }}
+/>
+
+### 四個關鍵字：資料、模型、訓練、推論
+
+<FlowSteps
+  title="機器學習的基本流程"
+  steps={[
+    { title: "資料", detail: "收集並整理大量例子，有時還要人工標上正確答案" },
+    { title: "模型", detail: "選一個帶有很多可調參數的數學函數，例如神經網路" },
+    { title: "訓練", detail: "猜答案、算誤差、調參數，重複非常多輪" },
+    { title: "推論", detail: "參數固定下來，拿去回答新的問題" }]}
+/>
+
+**資料是教材。** 對大型語言模型（<Term id="llm">LLM</Term>）來說，教材是網路文章、書籍、程式碼等文字，數量以 <Term id="token">token</Term> 計算（token 是模型處理文字的基本單位，大約是一個字或詞的片段）。教材的規模成長得非常快：2020 年的 GPT-3 訓練了 3,000 億個 token<Cite k="gpt3" />；2024 年 Meta 的 Llama 3 405B 用了 15.6 兆個<Cite k="llama3" />；2026 年 4 月釋出的 DeepSeek-V4-Pro<Cite k="deepseek-changelog" />則超過 32 兆個<Cite k="deepseek-v4" />。
+
+<BarChart title="大型語言模型的預訓練資料量" unit="兆個 token" data={[{ label: "GPT-3（2020）", value: 0.3 }, { label: "Llama 3 405B（2024）", value: 15.6 }, { label: "DeepSeek-V4-Pro（2026）", value: 32, note: "官方寫「超過 32 兆」" }]} source={["gpt3", "llama3", "deepseek-v4"]} keepOrder />
+
+**模型是一組參數。** 模型可以想成一個有很多旋鈕的數學函數：輸入一封郵件，輸出「是垃圾信的機率」。旋鈕的位置就是參數，GPT-3 就有 1,750 億個<Cite k="gpt3" />。模型「學到的東西」全部以數字的形式存在這些參數裡，所以一個模型的權重檔，本質上就是一張極長的數字清單。目前最常見的模型是<Term id="neural-network">神經網路</Term>，層數很多的神經網路就是<Term id="deep-learning">深度學習</Term>，下一篇<LearnLink id="neural-networks-101">神經網路入門</LearnLink>會拆開來看。
+
+**訓練是調參數。** 一開始參數是隨機的，模型只會亂猜。訓練就是讓模型對每個例子猜一次，用<Term id="loss-function">損失函數</Term>算出「錯了多少」，再用<Term id="gradient-descent">梯度下降</Term>決定每個參數該往哪個方向、調多少。這個循環重複非常多輪，誤差就會一點一點下降。
+
+**推論是學成後上場。** 訓練完成後，參數就固定下來。你每問聊天機器人一個問題，就是一次推論：模型用固定的參數算出答案，過程中並不會改變參數。聊天產品裡的「記憶」功能，通常是把對話重點另外存起來、下次再放進提示，並不是即時改寫模型本身。
+
+### 三種常見的學習方式
+
+| 方式 | 資料長什麼樣 | 典型例子 |
+|---|---|---|
+| 監督式學習 | 每筆資料都附正確答案（標籤） | 判斷垃圾信、預測房價、辨識照片裡是貓還是狗 |
+| 非監督式學習 | 只有資料、沒有答案，模型自己找出相似的群組 | 依消費習慣把顧客分群 |
+| 強化學習 | 沒有標準答案，只有做得好給獎勵、做不好給懲罰 | 下棋、訓練機器人走路 |
+
+上表的分類參考 Google 機器學習入門課程，該課程另外把<Term id="generative-ai">生成式 AI</Term>列為一類：從資料中學到模式，再依使用者的輸入產生新的文字、圖片、音訊或影片<Cite k="google-mlcc" />。監督式學習需要大量「正確答案」，常要靠人工逐筆標註，因此<Term id="data-labeling">資料標註</Term>本身就成了一門生意；<Term id="reinforcement-learning">強化學習</Term>則常用在機器人與遊戲。
+
+大型語言模型巧妙地繞過了「需要人工標答案」的限制：它的第一階段訓練（<Term id="pretraining">預訓練</Term>），是把文字的下一個 token 遮起來讓模型猜，答案就是原文本身，所以可以直接用海量文字來學，這種做法常被稱為「自監督學習」。OpenAI 在 GPT-4 技術報告中就說明，GPT-4 先以「預測文件中的下一個 token」進行預訓練，再用人類回饋強化學習（<Term id="rlhf">RLHF</Term>）做微調<Cite k="gpt4" />。換句話說，今天的大模型是好幾種學習方式的組合，細節可以看<LearnLink id="pretraining-to-chat">從預訓練到對話助理</LearnLink>。
+
+### 訓練與推論：兩種很不一樣的工作
+
+<Compare
+  title="訓練（學）vs 推論（用）"
+  left={{ title: "訓練", items: ["同一個模型通常只訓練一次或少數幾次，一次要跑很長的時間", "運算量極大，前沿大模型要動用上萬顆 GPU 組成的叢集", "目標是把參數調好，重視總算力與穩定性"] }}
+  right={{ title: "推論", items: ["每次有人使用都要做一次", "單次運算量小，但全球使用次數極多", "分散在雲端資料中心，也跑在手機和筆電上，重視回應速度與每次的成本"] }}
+/>
+
+訓練是一次性的大工程。Meta 訓練 Llama 3 405B 時，最多同時動用 1.6 萬顆輝達（NVIDIA）H100 <Term id="gpu">GPU</Term>，總共做了約 3.8 × 10²⁵ 次浮點運算<Cite k="llama3" />。研究機構 Epoch AI 統計，2010 年到 2024 年 5 月，前沿 AI 模型的訓練運算量每年成長 4 到 5 倍<Cite k="epoch" />。
+
+推論則是每天都在發生的日常。輝達的官方部落格把兩者的關係說得很直白：推論就是把訓練學到的能力拿出來用，沒有訓練就沒有推論<Cite k="nvidia-train-infer" />。單次推論的運算量很小，但次數驚人：Google 執行長皮查伊（Sundar Pichai）在 2026 年 7 月的第二季法說會上表示，Google 的模型 API 每分鐘處理約 220 億個 token，前一季還是 160 億<Cite k="alphabet-q2-2026" />。依此換算，一天約 32 兆個 token，大約是 Llama 3 整套預訓練資料的兩倍，而這還只是一家公司透過 API 的用量。這麼多次推論累積起來，算力需求非常可觀，這正是產業關注<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>的原因。和訓練不同，推論重視的是回應速度（<Term id="latency">延遲</Term>）與每次的成本。
+
+<StatGrid
+  title="訓練與推論的規模感"
+  items={[
+    { label: "Llama 3 405B 預訓練運算量", value: "3.8 × 10²⁵", unit: "次浮點運算", note: "Meta，2024" },
+    { label: "Llama 3 405B 訓練用 GPU", value: "最多 1.6 萬顆", note: "NVIDIA H100，Meta，2024" },
+    { label: "前沿模型訓練運算量成長", value: "每年 4–5 倍", note: "Epoch AI，2010 至 2024-05" },
+    { label: "Google 模型 API 處理量", value: "約 220 億", unit: "token／分鐘", note: "Alphabet，2026 年第二季" }]}
+  caption="來源：Meta〈The Llama 3 Herd of Models〉、Epoch AI、Alphabet 2026 年第二季法說會"
+/>
+
+<DeepDive title="深入一點：用一條直線看懂「訓練」在做什麼">
+
+假設一家手搖飲店的老闆想用氣溫預測當天能賣幾杯。最簡單的模型是一條直線：
+
+<MathTeX tex="\hat y = w x + b" display label="預測杯數等於 w 乘以氣溫再加上 b" />
+
+x 是氣溫，ŷ 是預測杯數，w 和 b 就是這個模型僅有的兩個參數。訓練資料是過去一年每天的氣溫與實際杯數 y。
+
+**第一步：算誤差。** 對每一天，用損失函數衡量「猜錯多少」，常見的做法是把差距平方，讓大錯比小錯受到更重的懲罰：
+
+<MathTeX tex="L = (\hat y - y)^2" display label="損失等於預測值減實際值的平方" />
+
+再把所有天數的損失平均，就是常見的「均方誤差」（MSE）。
+
+**第二步：找方向、往下走。** 梯度下降會算出「w 稍微變大一點，誤差會變大還是變小」（也就是梯度），然後朝讓誤差變小的方向移動一小步，步伐大小由學習率 η 控制：
+
+<MathTeX tex="w \leftarrow w - \eta \cdot \partial L / \partial w" display label="新的 w 等於舊的 w 減去學習率乘以損失對 w 的偏微分" />
+
+b 也用同樣方式更新。猜答案、算誤差、調參數，這三步不斷重複，直線就會慢慢貼近真實資料。
+
+**把直線換成大模型。** 大型語言模型做的本質上是同一件事，只是參數從 2 個變成數千億、甚至上兆個，模型也從一條直線換成很深的神經網路。EleutherAI 整理的經驗公式指出，訓練一個 Transformer 大約需要「6 × 參數量 × 訓練 token 數」次浮點運算<Cite k="eleuther" />：
+
+<MathTeX tex="C \approx 6 N D" display label="訓練運算量約等於 6 乘以參數量乘以訓練 token 數" />
+
+代入 Llama 3 405B：6 × 4,050 億 × 15.6 兆 ≈ 3.8 × 10²⁵，和 Meta 公布的數字一致<Cite k="llama3" />。這麼大的工程很難一路順利：Meta 在預訓練期間的一段 54 天內，就遇到 466 次訓練工作中斷，其中 419 次是非計畫中的意外中斷；這些意外中斷約 78% 確認或疑似來自硬體問題，例如 GPU 或主機元件故障<Cite k="llama3" />。這說明訓練不只是演算法問題，也非常仰賴晶片、伺服器與資料中心的可靠度。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+機器學習的四個關鍵字，各自撐起了產業鏈上的一群公司：
+
+- **資料** → <SegmentChip id="devtools-data-mlops" />：資料標註公司如 <CompanyChip id="scale-ai" />，資料平台如 <CompanyChip id="databricks" />、<CompanyChip id="snowflake" />，負責收集、清理、標註與管理訓練資料。
+- **模型** → <SegmentChip id="foundation-models" />：<CompanyChip id="openai" />、<CompanyChip id="meta" />、<CompanyChip id="deepseek" />，以及 <CompanyChip id="alphabet" /> 旗下的 Google DeepMind，負責設計模型並投入資源訓練，例如 <ModelChip id="openai-gpt" />、<ModelChip id="deepseek" />、<ModelChip id="google-gemini" />。
+- **訓練** → <SegmentChip id="ai-accelerators" />、<SegmentChip id="datacenter-infra" />：大型模型的訓練需要成千上萬顆 GPU，例如 <CompanyChip id="nvidia" /> 的產品；這些晶片由 <CompanyChip id="tsmc" /> 等晶圓代工廠製造，再裝進伺服器、放進耗電龐大的資料中心。
+- **推論** → <SegmentChip id="cloud-neocloud" />、<SegmentChip id="physical-ai" />：大部分推論跑在 <CompanyChip id="microsoft" />、<CompanyChip id="amazon" />、<CompanyChip id="alphabet" /> 等雲端業者的資料中心；也有越來越多推論直接在手機、筆電上執行，用的是 <CompanyChip id="apple" />、<CompanyChip id="qualcomm" />、<CompanyChip id="mediatek" /> 等公司晶片裡的 AI 運算單元（見<TrendLink id="edge-ai-devices">邊緣 AI 趨勢</TrendLink>）。
+
+從台灣的角度來看，晶片製造（台積電）、AI 伺服器組裝（<CompanyChip id="quanta" />、<CompanyChip id="wiwynn" />、<CompanyChip id="foxconn" />）到電源與散熱（<CompanyChip id="delta-electronics" />），台灣廠商主要集中在「訓練與推論所需的硬體」這一段。想看整條鏈怎麼串起來，可以讀<LearnLink id="ai-supply-chain-map">一張圖看懂 AI 產業鏈</LearnLink>；想知道為什麼偏偏是 GPU，請看<LearnLink id="why-gpus">為什麼 AI 需要 GPU？</LearnLink>。

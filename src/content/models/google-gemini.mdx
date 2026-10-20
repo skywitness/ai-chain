@@ -1,0 +1,585 @@
+---
+title: "Google Gemini 系列"
+family: "Gemini"
+kind: llm
+lab: alphabet
+labName: "Google DeepMind"
+labUnit: google-deepmind
+origin: US
+summary: "Gemini 是 Google DeepMind 的閉源旗艦多模態模型系列，原生支援文字、影像、音訊、影片與 PDF 輸入，主力型號提供約 105 萬 Token 上下文，並深度整合 Gemini App、搜尋 AI 模式、Google Cloud 與自研 TPU。2026 年 Google 以 Flash 線密集迭代（3.5 到 3.8 Flash），9 月底再以有限預覽推出新一代旗艦 Gemini 4 Argon，於 2026-10-02 登上 Arena 文字榜第一。"
+strengths:
+  - "原生多模態與長上下文：3.x 主力型號輸入上限 1,048,576 Token，可直接處理影片、音訊與 PDF；Gemini 4 Argon 在長解碼模式下的輸出上限提高到約 100 萬 Token"
+  - "Flash 線性價比高：Gemini 3.8 Flash 在 AA 智慧指數 v4.3 拿到 41 分，標準層試行價為每百萬 Token 輸入 0.75 美元、輸出 3.75 美元（至 2026-12-31）"
+  - "人類偏好排名領先：Gemini 4 Argon 於 2026-10-02 以 1525 分居 Arena 文字榜第一，3.8 Flash 以 1495 分排第 8"
+  - "與 Google 產品及自研 TPU 垂直整合：Gemini App 月活躍用戶 9.5 億、模型 API 每分鐘處理約 220 億 Token（2026 Q2）"
+weaknesses:
+  - "旗艦 Gemini 4 Argon 截至 2026-10-06 仍是有限預覽，尚未列入 Gemini API 定價頁；原訂 2026 年 6 月推出的 Gemini 3.5 Pro 至今未發布"
+  - "第三方綜合指數仍非第一：Argon（High）在 AA 智慧指數 v4.3 為 53 分，低於 Claude Opus 5.5（Max）的 58 分；Google 自家比較中 Terminal-bench 4.0 也落後 Opus 5.5"
+  - "版本汰換快、預覽版多：Gemini 3 Pro Preview 上線不到四個月即關閉，2.5 系列自 2026-09-18 起只開放給既有使用者，開發者遷移成本高"
+  - "3.8 Flash 與 Argon 傾向多花 Token 換取表現（Artificial Analysis 統計 Argon 跑完智慧指數共輸出約 1.1 億個 Token，高於同級模型中位數，被評為偏冗長），實際成本可能高於標價推算"
+bestFor:
+  - "需要一次讀完長文件、整個程式碼庫或長影片的多模態分析"
+  - "大量呼叫的 Agent 與程式開發工作流（Flash 線）"
+  - "已使用 Google Cloud、Workspace 或 Android 生態系的企業"
+  - "資安防禦團隊（3.8 Flash Cyber 與 Argon 透過 Fairwind 計畫提供給受信任防禦者）"
+positioning:
+  capability: 53
+  costIndex: 58
+  openness: 0
+  method: computed
+  asOf: "2026-10-06"
+  note: "以旗艦 Gemini 4 Argon（High 推理強度）計算。capability 取 Artificial Analysis 智慧指數 v4.3 分數 53。costIndex 以 Google 公布的試行價（輸入 2、輸出 10 美元／百萬 Token）依 3:1 混合為 4 美元，套用 $0.05→0、$100→100 的對數換算約 58；試行期後的 4／20 美元換算約 67。閉源權重，openness 為 0。"
+relatedLearn: [what-is-llm, multimodal-models, reasoning-models, agents-and-mcp, model-evaluation]
+glossary: [frontier-model, multimodal, context-window, tpu, moe, reasoning-model, agent, elo-rating, benchmark]
+sources:
+  - &gemini-api-pricing
+    key: gemini-api-pricing
+    title: "Gemini Developer API pricing"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemini-api/docs/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20261006232935/https://ai.google.dev/gemini-api/docs/pricing"
+  - &gemini-api-models
+    key: gemini-api-models
+    title: "Gemini API Models"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemini-api/docs/models"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - &gemini-api-deprecations
+    key: gemini-api-deprecations
+    title: "Gemini deprecations"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemini-api/docs/deprecations"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - &gemini-api-changelog
+    key: gemini-api-changelog
+    title: "Gemini API release notes"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemini-api/docs/changelog"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20261006162120/https://ai.google.dev/gemini-api/docs/changelog"
+  - &argon-blog
+    key: argon-blog
+    title: "Gemini 4 Argon: our next era of frontier intelligence"
+    publisher: "Google"
+    url: "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-4-argon/"
+    type: press-release
+    lang: en
+    published: "2026-09-30"
+    accessed: "2026-10-06"
+  - key: argon-model-card
+    title: "Gemini 4 Argon - Model Card"
+    publisher: "Google DeepMind"
+    url: "https://storage.googleapis.com/deepmind-media/Model-Cards/Gemini-4-Argon-Model-Card.pdf"
+    type: docs
+    lang: en
+    accessed: "2026-10-17"
+    note: "2026 年 10 月發布，晚於資料基準日；僅用於補充架構、輸入模態、上下文與知識截止等模型規格，搭配 Gemini API 模型頁 ai.google.dev/gemini-api/docs/models/gemini-4-argon"
+  - &dm-gemini
+    key: dm-gemini
+    title: "Gemini 4 Argon - Google DeepMind"
+    publisher: "Google DeepMind"
+    url: "https://deepmind.google/models/gemini/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - &dm-gemini-pro
+    key: dm-gemini-pro
+    title: "Gemini 3.1 Pro - Google DeepMind"
+    publisher: "Google DeepMind"
+    url: "https://deepmind.google/models/gemini/pro/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: dm-gemini-flash
+    title: "Gemini 3.8 Flash - Google DeepMind"
+    publisher: "Google DeepMind"
+    url: "https://deepmind.google/models/gemini/flash/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - &gemini-38-blog
+    key: gemini-38-blog
+    title: "Introducing Gemini 3.8 Flash and 3.8 Flash Cyber"
+    publisher: "Google"
+    url: "https://blog.google/innovation-and-ai/models-and-research/gemini-models/3-8-flash-and-3-8-flash-cyber/"
+    type: press-release
+    lang: en
+    published: "2026-09-02"
+    accessed: "2026-10-06"
+  - &gemini-38-model-card
+    key: gemini-38-model-card
+    title: "Gemini 3.8 Flash Model Card"
+    publisher: "Google DeepMind"
+    url: "https://storage.googleapis.com/deepmind-media/Model-Cards/Gemini-3-8-Flash-Model-Card.pdf"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - &gemini-35-blog
+    key: gemini-35-blog
+    title: "Gemini 3.5: frontier intelligence with action"
+    publisher: "Google"
+    url: "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-5/"
+    type: press-release
+    lang: en
+    published: "2026-05-19"
+    accessed: "2026-10-06"
+  - &gemini-3-flash-blog
+    key: gemini-3-flash-blog
+    title: "Gemini 3 Flash: frontier intelligence built for speed"
+    publisher: "Google"
+    url: "https://blog.google/products-and-platforms/products/gemini/gemini-3-flash/"
+    type: press-release
+    lang: en
+    published: "2025-12-17"
+    accessed: "2026-10-06"
+  - &gemini-3-pro-model-card
+    key: gemini-3-pro-model-card
+    title: "Gemini 3 Pro Model Card"
+    publisher: "Google DeepMind"
+    url: "https://storage.googleapis.com/deepmind-media/Model-Cards/Gemini-3-Pro-Model-Card.pdf"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - &aa-leaderboard
+    key: aa-leaderboard
+    title: "LLM Leaderboard - Comparison of AI models from OpenAI, Anthropic, Google, SpaceXAI & others"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "Intelligence Index v4.3；各型號分數另見 artificialanalysis.ai/models/<型號> 個別頁面，版本變更紀錄見 artificialanalysis.ai/methodology/intelligence-benchmarking"
+  - &arena-text
+    key: arena-text
+    title: "Text Arena: LLM Rankings & AI Model Benchmarks"
+    publisher: "Arena (formerly LMArena)"
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    published: "2026-10-02"
+    accessed: "2026-10-06"
+    note: "總榜（overall），預設開啟 style control"
+  - key: techcrunch-35pro
+    title: "Google releases three new Gemini models — but no 3.5 Pro"
+    publisher: "TechCrunch"
+    url: "https://techcrunch.com/2026/07/21/google-releases-three-new-gemini-models-but-no-3-5-pro/"
+    type: news
+    lang: en
+    published: "2026-07-21"
+    accessed: "2026-10-06"
+  - key: alphabet-q2-2026
+    title: "Alphabet earnings call Q2 2026: Sundar Pichai remarks"
+    publisher: "Google"
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/"
+    type: earnings-call
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-06"
+versions:
+  - id: gemini-4-argon
+    name: "Gemini 4 Argon"
+    released: "2026-09-30"
+    status: preview
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: moe
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 1048576
+    knowledgeCutoff: "2026-03"
+    reasoning: always
+    availability: [api]
+    pricing:
+      - asOf: "2026-09-30"
+        inputPerMTok: 2
+        outputPerMTok: 10
+        cachedInputPerMTok: 0.1
+        currency: USD
+        tierNote: "Google 公布的試行價（快取輸入為輸入價的 5%）；試行期後為輸入 4、輸出 20 美元。截至 2026-10-06 尚未列入 Gemini API 定價頁"
+        source: *argon-blog
+    benchmarks:
+      - { benchmark: aa-intelligence-index, score: 53, setting: "v4.3，High 推理強度", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1525, setting: "總榜第 1 名，4,932 票，預發布版本", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+      - { benchmark: terminal-bench, score: 57.4, setting: "Terminal-bench 4.0，Google 自報（Claude Opus 5.5 為 66.4%）", reportedBy: lab, date: "2026-09-30", source: *dm-gemini }
+    notes: "先透過 Fairwind 計畫提供給受信任的資安防禦者與測試者，Google 表示之後將先開放給付費 API 客戶與 Google AI Ultra 訂閱者。輸出上限由前代的 64K 提高到約 100 萬 Token（需啟用長解碼，一般同步請求仍為 65,536 Token），且輸入與輸出共用約 105 萬 Token 的上下文。官方比較表中 DeepSWE v1.1 為 77.9%、長影片理解 LVBench 為 91.7%。架構（稀疏 MoE）、輸入模態與知識截止（2026 年 3 月）依其後發布的模型卡與 Gemini API 模型頁補充。"
+  - id: gemini-3-8-flash
+    name: "Gemini 3.8 Flash"
+    released: "2026-09-02"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 65536
+    knowledgeCutoff: "2026-03"
+    reasoning: always
+    availability: [api, chat-app, cloud-marketplace]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.75
+        outputPerMTok: 3.75
+        cachedInputPerMTok: 0.075
+        currency: USD
+        tierNote: "標準層試行價，適用至 2026-12-31；2027-01-01 起為輸入 1.50、輸出 7.50 美元"
+        source: *gemini-api-pricing
+    benchmarks:
+      - { benchmark: aa-intelligence-index, score: 41, setting: "v4.3，High 推理強度", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1495, setting: "總榜第 8 名", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+    notes: "Google 稱為最強的 Flash 模型，主打長時程軟體工程與 Agent；同日推出僅限受信任防禦者使用的 3.8 Flash Cyber。模型卡註明以 3.7 Flash 為基礎，知識截止 2026 年 3 月（部分領域仍停在 2025 年 1 月）。思考等級只支援 low／medium／high。"
+  - id: gemini-3-7-flash
+    name: "Gemini 3.7 Flash"
+    released: "2026-08-13"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 65536
+    reasoning: always
+    availability: [api, chat-app, cloud-marketplace]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.75
+        outputPerMTok: 3.75
+        cachedInputPerMTok: 0.075
+        currency: USD
+        tierNote: "標準層試行價，適用至 2026-12-31；之後為輸入 1.50、輸出 7.50 美元"
+        source: *gemini-api-pricing
+    benchmarks:
+      - { benchmark: aa-intelligence-index, score: 39, setting: "v4.3，High 推理強度", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1488, setting: "總榜第 17 名", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+  - id: gemini-3-6-flash
+    name: "Gemini 3.6 Flash"
+    released: "2026-07-21"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 65536
+    reasoning: hybrid
+    availability: [api, chat-app, cloud-marketplace]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.75
+        outputPerMTok: 3.75
+        cachedInputPerMTok: 0.075
+        currency: USD
+        tierNote: "標準層試行價，適用至 2026-12-31；之後為輸入 1.50、輸出 7.50 美元"
+        source: *gemini-api-pricing
+    benchmarks:
+      - { benchmark: aa-intelligence-index, score: 34, setting: "v4.3，High 推理強度", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1483, setting: "總榜第 22 名", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+    notes: "官方說明改善 Token 效率與程式／Agent 規劃能力，價格低於 3.5 Flash；Gemini 3 Flash Preview 的建議替代型號。"
+  - id: gemini-3-5-flash-lite
+    name: "Gemini 3.5 Flash-Lite"
+    released: "2026-07-21"
+    status: ga
+    tier: small
+    weights: closed
+    license: proprietary
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 65536
+    reasoning: hybrid
+    availability: [api, cloud-marketplace]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.3
+        outputPerMTok: 2.5
+        cachedInputPerMTok: 0.03
+        currency: USD
+        tierNote: "標準層"
+        source: *gemini-api-pricing
+    benchmarks:
+      - { benchmark: aa-intelligence-index, score: 22, setting: "v4.3", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1455, reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+  - id: gemini-3-5-flash
+    name: "Gemini 3.5 Flash"
+    released: "2026-05-19"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 65536
+    reasoning: hybrid
+    availability: [api, chat-app, cloud-marketplace]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1.5
+        outputPerMTok: 9
+        cachedInputPerMTok: 0.15
+        currency: USD
+        tierNote: "標準層"
+        source: *gemini-api-pricing
+    benchmarks:
+      - { benchmark: terminal-bench, score: 76.2, setting: "Terminal-Bench 2.1，Google 自報", reportedBy: lab, date: "2026-05-19", source: *gemini-35-blog }
+      - { benchmark: aa-intelligence-index, score: 33, setting: "v4.3，High 推理強度", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1477, setting: "High 推理強度", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+    notes: "Gemini 3.5 系列首發型號，發表時成為 Gemini App 與搜尋 AI 模式的預設模型。模型卡註明以 Gemini 3 Flash 為基礎。"
+  - id: gemini-3-1-flash-lite
+    name: "Gemini 3.1 Flash-Lite"
+    released: "2026-05-07"
+    status: ga
+    tier: small
+    weights: closed
+    license: proprietary
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 65536
+    reasoning: hybrid
+    availability: [api, cloud-marketplace]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.25
+        outputPerMTok: 1.5
+        cachedInputPerMTok: 0.025
+        currency: USD
+        tierNote: "標準層，文字／影像／影片輸入；音訊輸入為 0.50 美元"
+        source: *gemini-api-pricing
+    notes: "2026-03-03 以預覽版推出，2026-05-07 正式版；官方已列出最早 2027-05-07 關閉，建議改用 3.5 Flash-Lite。"
+  - id: gemini-3-1-pro-preview
+    name: "Gemini 3.1 Pro Preview"
+    released: "2026-02-19"
+    status: preview
+    tier: flagship
+    weights: closed
+    license: proprietary
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 65536
+    reasoning: always
+    availability: [api, chat-app, cloud-marketplace]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 2
+        outputPerMTok: 12
+        cachedInputPerMTok: 0.2
+        currency: USD
+        tierNote: "標準層，提示長度 200K Token 以內"
+        source: *gemini-api-pricing
+      - asOf: "2026-10-06"
+        inputPerMTok: 4
+        outputPerMTok: 18
+        cachedInputPerMTok: 0.4
+        currency: USD
+        tierNote: "標準層，提示長度超過 200K Token"
+        source: *gemini-api-pricing
+    benchmarks:
+      - { benchmark: hle, score: 44.4, setting: "完整題組（文字＋多模態），不使用工具", reportedBy: lab, date: "2026-02-19", source: *dm-gemini-pro }
+      - { benchmark: arc-agi-2, score: 77.1, setting: "ARC Prize Verified", reportedBy: lab, date: "2026-02-19", source: *dm-gemini-pro }
+      - { benchmark: gpqa-diamond, score: 94.3, setting: "不使用工具", reportedBy: lab, date: "2026-02-19", source: *dm-gemini-pro }
+      - { benchmark: swe-bench-verified, score: 80.6, setting: "單次嘗試", reportedBy: lab, date: "2026-02-19", source: *dm-gemini-pro }
+      - { benchmark: swe-bench-pro, score: 54.2, setting: "Public 題組，單次嘗試", reportedBy: lab, date: "2026-02-19", source: *dm-gemini-pro }
+      - { benchmark: terminal-bench, score: 68.5, setting: "Terminal-Bench 2.0，Terminus-2 框架", reportedBy: lab, date: "2026-02-19", source: *dm-gemini-pro }
+      - { benchmark: tau2-bench, score: 90.8, setting: "Retail 領域", reportedBy: lab, date: "2026-02-19", source: *dm-gemini-pro }
+      - { benchmark: aa-intelligence-index, score: 30, setting: "v4.3", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1487, setting: "總榜第 18 名", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+    notes: "以 Gemini 3 Pro 為基礎，另有偏重自訂工具的 customtools 端點。截至 2026-10-06 仍為預覽版，是 Gemini API 上唯一的 Pro 型號。"
+  - id: gemini-3-flash-preview
+    name: "Gemini 3 Flash Preview"
+    released: "2025-12-17"
+    status: preview
+    tier: mid
+    weights: closed
+    license: proprietary
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 65536
+    reasoning: hybrid
+    availability: [api, chat-app, cloud-marketplace]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.5
+        outputPerMTok: 3
+        cachedInputPerMTok: 0.05
+        currency: USD
+        tierNote: "標準層，文字／影像／影片輸入；音訊輸入為 1.00 美元"
+        source: *gemini-api-pricing
+    benchmarks:
+      - { benchmark: gpqa-diamond, score: 90.4, reportedBy: lab, date: "2025-12-17", source: *gemini-3-flash-blog }
+      - { benchmark: hle, score: 33.7, setting: "不使用工具", reportedBy: lab, date: "2025-12-17", source: *gemini-3-flash-blog }
+      - { benchmark: swe-bench-verified, score: 78, reportedBy: lab, date: "2025-12-17", source: *gemini-3-flash-blog }
+      - { benchmark: aa-intelligence-index, score: 26, setting: "v4.3，推理模式；AA 標示為估計值", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1473, reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+    notes: "官方定價頁已標為舊版（legacy），棄用時程頁列出的建議替代型號為 3.6 Flash。"
+  - id: gemini-3-pro-preview
+    name: "Gemini 3 Pro Preview"
+    released: "2025-11-18"
+    status: retired
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: moe
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 65536
+    knowledgeCutoff: "2025-01"
+    reasoning: always
+    availability: [api, chat-app, cloud-marketplace]
+    benchmarks:
+      - { benchmark: hle, score: 37.5, setting: "完整題組，不使用工具，High 推理", reportedBy: lab, date: "2026-02-19", source: *dm-gemini-pro }
+      - { benchmark: gpqa-diamond, score: 91.9, setting: "不使用工具", reportedBy: lab, date: "2026-02-19", source: *dm-gemini-pro }
+      - { benchmark: arc-agi-2, score: 31.1, setting: "ARC Prize Verified", reportedBy: lab, date: "2026-02-19", source: *dm-gemini-pro }
+      - { benchmark: swe-bench-verified, score: 76.2, setting: "單次嘗試", reportedBy: lab, date: "2026-02-19", source: *dm-gemini-pro }
+      - { benchmark: aa-intelligence-index, score: 28, setting: "v4.3，High 推理強度；AA 標示為估計值", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1485, setting: "總榜第 19 名", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+    notes: "Gemini 3 系列的基礎模型，模型卡揭露為稀疏 MoE 架構、以 TPU 訓練。2026-03-09 關閉，API 名稱改指向 3.1 Pro Preview。"
+  - id: gemini-2-5-flash-lite
+    name: "Gemini 2.5 Flash-Lite"
+    released: "2025-07-22"
+    status: ga
+    tier: small
+    weights: closed
+    license: proprietary
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 65536
+    knowledgeCutoff: "2025-01"
+    reasoning: hybrid
+    availability: [api, cloud-marketplace]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.1
+        outputPerMTok: 0.4
+        cachedInputPerMTok: 0.01
+        currency: USD
+        tierNote: "標準層，文字／影像／影片輸入；音訊輸入為 0.30 美元"
+        source: *gemini-api-pricing
+    notes: "2026-09-18 起僅限曾使用過的既有使用者存取；官方表示並未棄用。"
+  - id: gemini-2-5-flash
+    name: "Gemini 2.5 Flash"
+    released: "2025-06-17"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    modalitiesIn: [text, image, audio, video]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 65536
+    knowledgeCutoff: "2025-01"
+    reasoning: hybrid
+    availability: [api, cloud-marketplace]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.3
+        outputPerMTok: 2.5
+        cachedInputPerMTok: 0.03
+        currency: USD
+        tierNote: "標準層，文字／影像／影片輸入；音訊輸入為 1.00 美元"
+        source: *gemini-api-pricing
+    benchmarks:
+      - { benchmark: aa-intelligence-index, score: 13, setting: "v4.3，推理模式；AA 標示為估計值", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1409, reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+    notes: "官方稱為第一款可設定思考預算的混合推理模型。2026-09-18 起僅限既有使用者存取。"
+  - id: gemini-2-5-pro
+    name: "Gemini 2.5 Pro"
+    released: "2025-06-17"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 65536
+    knowledgeCutoff: "2025-01"
+    reasoning: always
+    availability: [api, cloud-marketplace]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 1.25
+        outputPerMTok: 10
+        cachedInputPerMTok: 0.125
+        currency: USD
+        tierNote: "標準層，提示長度 200K Token 以內；超過時為輸入 2.50、輸出 15 美元"
+        source: *gemini-api-pricing
+    benchmarks:
+      - { benchmark: aa-intelligence-index, score: 16, setting: "v4.3", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1446, setting: "總榜第 86 名", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+    notes: "2025-03-25 以實驗版首度亮相，2025-06-17 正式版。2026-09-18 起僅限既有使用者存取，官方表示並未棄用。"
+flagshipVersion: gemini-4-argon
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: models-03
+  checkedBy: "models-03-check"
+  checkedOn: "2026-10-06"
+  notes: "查核時（2026-10-17）已知的基準日後變動，下次更新時處理：Gemini 4 Argon 於 2026-10-13 正式開放（定價頁列試行價至 2026-11-30，之後為 4／20 美元）；3.5 Flash 與 3.7 Flash 於 2026-10-08 棄用並自動轉向 3.6／3.8 Flash；Arena 與 AA 分數已更新。"
+---
+
+## 系列概覽
+
+Gemini 是 <CompanyChip id="alphabet">Alphabet</CompanyChip> 旗下 Google DeepMind 開發的閉源<Term id="frontier-model">前沿模型</Term>系列，從第一代起就以<Term id="multimodal">原生多模態</Term>為核心：同一個模型可以直接讀文字、圖片、音訊、影片與 PDF。Gemini 3 系列的基礎模型 Gemini 3 Pro 採用稀疏 <Term id="moe">MoE</Term> 架構，並在自研的 <Term id="tpu">TPU</Term> 上訓練<Cite k="gemini-3-pro-model-card" />。Gemini 也是 Gemini App、搜尋 AI 模式與 Google Cloud 的底層模型；Alphabet 在 2026 年第二季法說會表示，Gemini App 月活躍用戶達 9.5 億，模型 API 每分鐘處理約 220 億個 Token<Cite k="alphabet-q2-2026" />。
+
+產品線大致分三層：追求最強能力的 Pro 與旗艦（目前是 Gemini 4 Argon）、兼顧速度與成本的 Flash，以及大量呼叫用的 Flash-Lite。圖像生成另以 <ModelChip id="google-nano-banana">Nano Banana</ModelChip> 為品牌，開放權重則由 <ModelChip id="google-gemma">Gemma</ModelChip> 負責。
+
+## 特性分析
+
+- **長上下文**：3.x 主力型號的<Term id="context-window">上下文視窗</Term>為 1,048,576 Token、輸出上限 65,536 Token<Cite k="gemini-api-models" />；Gemini 4 Argon 則把輸出上限從前代的 64K 一口氣拉到約 100 萬 Token，讓模型能在單次任務中長時間推理、一次寫完大型程式或長篇證明<Cite k="argon-blog" />；這需要開啟長解碼模式，且輸入與輸出共用約 105 萬 Token 的上下文<Cite k="argon-model-card" />。
+- **推理強度可調**：Gemini 3 之後的型號都是<Term id="reasoning-model">推理模型</Term>，開發者以 thinking level 調整思考量。3.7 與 3.8 Flash 已不支援最低的 minimal 等級，Google 也坦言 3.8 Flash 會「更努力」、在高強度下用掉更多 Token<Cite k="gemini-38-blog" />。
+- **Flash 快速迭代**：3.6、3.7、3.8 Flash 在六週內連發三版，並以每百萬 Token 輸入 0.75 美元、輸出 3.75 美元的試行價（至 2026 年底）爭取 <Term id="agent">Agent</Term> 與程式開發用量<Cite k="gemini-api-pricing" />。
+- **資安取向**：3.8 Flash Cyber 與 Gemini 4 Argon 都主打找出並修補漏洞的防禦能力，先透過 Fairwind 計畫提供給受信任的防禦者<Cite k="argon-blog" />，呼應<TrendLink id="frontier-cyber-capabilities">前沿模型資安能力</TrendLink>的趨勢。
+- **計費選項多**：除了標準層，Gemini API 另有 Batch（約五折）、Flex 與 Priority 層。以 3.8 Flash 為例，Batch 與 Flex 為輸入 0.375、輸出 1.875 美元（試行期價格）；長提示可搭配 context caching，快取輸入價約為標準輸入價的一成<Cite k="gemini-api-pricing" />。
+- **通路最廣**：3.8 Flash 同時上架 Gemini App、搜尋 AI 模式、Google AI Studio、Gemini API 與企業 Agent 平台<Cite k="dm-gemini-flash" />，其中 Gemini App 與搜尋 AI 模式先開放給 Google AI Pro、Ultra 付費訂閱者<Cite k="gemini-38-blog" />，消費者與開發者用的是同一代模型。
+
+## 適合與不適合的用途
+
+**適合**：一次讀完長合約、整個程式碼庫或長影片的分析工作；大量呼叫的 Agent 與程式開發流程，Flash 線在成本與速度上有優勢；已在 Google Cloud、Workspace、Android 生態系內的企業，整合成本較低。
+
+**不適合或需留意**：
+
+- 想立刻用上最強模型的開發者：Argon 截至 2026-10-06 仍是有限預覽，Gemini API 定價頁上唯一的 Pro 型號仍是 3.1 Pro Preview<Cite k="gemini-api-pricing" />。
+- 需要長期固定版本的系統：Gemini 3 Pro Preview 上線不到四個月就在 2026-03-09 關閉，2.5 系列自 2026-09-18 起只開放給既有使用者<Cite k="gemini-api-deprecations" />，遷移成本不可忽視。
+- 需要自行部署或微調權重的場景，應改看開放權重的 Gemma。
+
+<Callout type="tip" title="Pro、Flash、Flash-Lite 怎麼選">
+多數應用可先以 3.8 Flash 當預設；需要極低延遲、大量分類或翻譯時改用 Flash-Lite（3.5 Flash-Lite 每百萬 Token 輸入 0.30 美元、輸出 2.50 美元）；只有 Flash 明顯答不好的高難度推理，再考慮 3.1 Pro Preview，或等待 Argon 正式開放。選型前最好用自己的資料實測，因為各型號的 Token 用量差異很大。
+</Callout>
+
+## 版本演進
+
+| 時間 | 版本 | 重點 |
+|---|---|---|
+| 2025-06 | 2.5 Pro、2.5 Flash 正式版 | 2.5 Flash 為首款可設定思考預算的混合推理模型 |
+| 2025-11 | 3 Pro Preview | Gemini 3 系列基礎模型，2026-03 關閉 |
+| 2025-12 | 3 Flash Preview | SWE-bench Verified 78%，Google 稱超越 3 Pro |
+| 2026-02 | 3.1 Pro Preview | ARC-AGI-2 自報由 31.1% 升至 77.1% |
+| 2026-05 | 3.5 Flash | 成為 Gemini App 與搜尋 AI 模式預設模型 |
+| 2026-07 至 09 | 3.6、3.7、3.8 Flash | 六週三版，主攻長時程程式與 Agent |
+| 2026-09-30 | Gemini 4 Argon | 新一代旗艦，有限預覽 |
+
+Pro 線在 2026 年出現明顯空窗。Google 在 5 月發表 3.5 Flash 時表示 3.5 Pro「下個月」推出<Cite k="gemini-35-blog" />，但 TechCrunch 引述 Bloomberg 報導指出，Google 因未達內部效能目標而延後<Cite k="techcrunch-35pro" />；截至資料基準日，DeepMind 官網仍標示「3.5 Pro coming soon」<Cite k="dm-gemini-pro" />，而 Google 已先推出 Gemini 4 Argon。
+
+## 評測解讀
+
+截至 2026-10-02，Gemini 4 Argon 以 1525 分居 Arena 文字總榜（預設開啟風格控制）第一（當時僅累積約 4,900 票，分數仍可能變動），3.8 Flash 則以 1495 分排第 8<Cite k="arena-text" />；不過在 Artificial Analysis 智慧指數 v4.3（2026-10-06 查閱）上，Argon（High 推理強度）為 53 分，低於 Claude Opus 5.5（Max 推理強度）的 58 分，若同樣比 High 則兩者相近（Opus 5.5 為 54 分），並與 GPT-6 Astra、Claude Fable 5.1 同一級距<Cite k="aa-leaderboard" />。人類盲測投票的 <Term id="elo-rating">Elo</Term> 分數重視回答風格與易讀性，綜合題庫則重視推理與 Agent 任務，兩者衡量的面向不同，可參考<LearnLink id="model-evaluation">模型評測</LearnLink>。
+
+Google 自家的比較表同樣有輸有贏：Argon 在 DeepSWE v1.1（77.9%）、Vals Index 與長影片理解 LVBench（91.7%）領先，但 Terminal-bench 4.0 的 57.4% 落後 Claude Opus 5.5 的 66.4%，FrontierSWE v2 的 55.0% 也低於 GPT-6 Astra 與 Opus 5.5<Cite k="dm-gemini" />。此外，AA 指數每次改版都會調整題組（v4.3 以 AutomationBench 取代 τ³-Banking、Terminal-Bench 由 2.1 升級為 4.0）<Cite k="aa-leaderboard" />，新舊分數不能直接比較；本頁 3.1 Pro 的 AA 分數（30）低於 3.8 Flash（41），反映的是 Flash 世代的快速進步。廠商自報的 <Term id="benchmark">Benchmark</Term> 也常使用不同版本題組與測試框架，例如 3.1 Pro 的 Terminal-Bench 是 2.0 版、3.5 Flash 是 2.1 版，數字不宜並排比較。

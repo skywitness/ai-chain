@@ -1,0 +1,133 @@
+---
+/**
+ * <MarginLines financials={entry.data} company="台積電" />
+ * Gross and operating margin (percent) over the last N fiscal periods, one shared % axis.
+ */
+import './charts.css';
+import ChartFrame from './ChartFrame.astro';
+import LinesPlot, { type LineSeriesSpec, type LineXPoint } from './LinesPlot.astro';
+import { tip } from './chart-utils';
+import type { LegendItem, TableSpec } from './types';
+import { type FinancialsInput, type MetricPoint, marginSeries, sourcesFor } from '../../lib/financial-metrics';
+import { formatPercent, formatPointChange } from '../../lib/format';
+import { isCalendarNamed, parsePeriod, sortByStart } from '../../lib/fiscal';
+
+interface Props {
+  financials: FinancialsInput;
+  periodType?: 'quarter' | 'half' | 'year' | undefined;
+  count?: number | undefined;
+  company?: string | undefined;
+  title?: string | undefined;
+  subtitle?: string | undefined;
+  height?: number | undefined;
+  notes?: string[] | undefined;
+  badge?: string | undefined;
+  bare?: boolean | undefined;
+  titleHidden?: boolean | undefined;
+  as?: 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | undefined;
+  class?: string | undefined;
+}
+
+const { financials: fin, company = '', subtitle, height = 200, notes = [], badge, bare, titleHidden, as, class: className } = Astro.props;
+const ms = marginSeries(fin, Astro.props.periodType);
+const count = Astro.props.count ?? (ms.periodType === 'quarter' ? 12 : 8);
+const title = Astro.props.title ?? `${company}毛利率與營業利益率`;
+
+// union of periods (by start date), last N
+const byPeriod = new Map<string, MetricPoint>();
+for (const p of [...ms.gross, ...ms.operating]) if (!byPeriod.has(p.period)) byPeriod.set(p.period, p);
+const periods = sortByStart([...byPeriod.values()]).slice(-count);
+const g = new Map(ms.gross.map((p) => [p.period, p]));
+const o = new Map(ms.operating.map((p) => [p.period, p]));
+const calendarNamed = periods.length > 0 && periods.every((p) => isCalendarNamed(p));
+const n = periods.length;
+
+const xs: LineXPoint[] = periods.map((p, i) => {
+  const parsed = parsePeriod(p.period);
+  const fy = parsed?.fy ?? 0;
+  const group = parsed?.kind === 'year' ? undefined : calendarNamed ? String(fy) : `FY${String(fy).slice(2)}`;
+  const label =
+    parsed?.kind === 'quarter' ? `Q${parsed.quarter}` : parsed?.kind === 'half' ? `H${parsed.half}` : calendarNamed ? String(fy) : `FY${String(fy).slice(2)}`;
+  const gp = g.get(p.period);
+  const op = o.get(p.period);
+  return {
+    pos: (i + 0.5) / n,
+    label,
+    group,
+    minor: parsed?.kind === 'quarter' && n > 8 && (parsed.quarter === 2 || parsed.quarter === 4),
+    minor2: parsed?.kind === 'quarter' || parsed?.kind === 'half',
+    tip: tip(p.longLabel, [
+      ['毛利率', gp ? `${formatPercent(gp.value)}${gp.yoy != null ? `（${formatPointChange(gp.yoy, 1, 'yoy')}）` : ''}` : ''],
+      ['營業利益率', op ? `${formatPercent(op.value)}${op.yoy != null ? `（${formatPointChange(op.yoy, 1, 'yoy')}）` : ''}` : ''],
+    ]),
+  };
+});
+
+const lastG = [...periods].reverse().map((p) => g.get(p.period)).find(Boolean);
+const lastO = [...periods].reverse().map((p) => o.get(p.period)).find(Boolean);
+const series: LineSeriesSpec[] = [];
+if (ms.gross.length)
+  series.push({
+    name: '毛利率',
+    color: 'var(--chart-1)',
+    values: periods.map((p) => g.get(p.period)?.value ?? null),
+    estimate: periods.map((p) => !!g.get(p.period)?.estimate),
+    endValue: lastG ? formatPercent(lastG.value) : undefined,
+  });
+if (ms.operating.length)
+  series.push({
+    name: '營業利益率',
+    color: 'var(--chart-2)',
+    values: periods.map((p) => o.get(p.period)?.value ?? null),
+    estimate: periods.map((p) => !!o.get(p.period)?.estimate),
+    endValue: lastO ? formatPercent(lastO.value) : undefined,
+  });
+
+const legend: LegendItem[] = series.map((s) => ({ label: s.name, kind: 'line', color: s.color }));
+const first = periods[0];
+const last = periods.at(-1);
+const aria =
+  first && last
+    ? `${title}折線圖，${first.label} 至 ${last.label}。` +
+      (lastG ? `最新一期毛利率 ${formatPercent(lastG.value)}${lastG.yoy != null ? `，較去年同期${formatPointChange(lastG.yoy)}` : ''}。` : '') +
+      (lastO ? `營業利益率 ${formatPercent(lastO.value)}${lastO.yoy != null ? `，較去年同期${formatPointChange(lastO.yoy)}` : ''}。` : '')
+    : '';
+
+const table: TableSpec = {
+  columns: [
+    { key: 'p', label: '期間' },
+    { key: 'g', label: '毛利率', numeric: true },
+    { key: 'o', label: '營業利益率', numeric: true },
+  ],
+  rows: [...periods].reverse().map((p) => ({
+    p: p.longLabel,
+    g: g.get(p.period) ? formatPercent(g.get(p.period)!.value) : '',
+    o: o.get(p.period) ? formatPercent(o.get(p.period)!.value) : '',
+  })),
+};
+const sources = sourcesFor(fin, periods.flatMap((p) => [g.get(p.period)?.src, o.get(p.period)?.src]).filter((x): x is string => !!x)).map((x) => ({
+  title: x.title,
+  url: x.url,
+  publisher: x.publisher,
+}));
+const allNotes = [...notes];
+---
+
+<ChartFrame
+  title={title}
+  titleHidden={titleHidden}
+  as={as}
+  subtitle={subtitle}
+  badge={badge}
+  asOf={fin.lastVerified}
+  unit="%"
+  legend={legend}
+  notes={allNotes}
+  sources={sources}
+  table={table}
+  empty={periods.length === 0}
+  bare={bare}
+  class={className}
+>
+  <LinesPlot xs={xs} series={series} ariaLabel={aria} height={height} percent />
+</ChartFrame>

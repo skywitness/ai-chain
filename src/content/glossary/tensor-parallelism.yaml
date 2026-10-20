@@ -1,0 +1,47 @@
+term: "張量平行"
+zh: "張量平行化"
+en: "Tensor Parallelism"
+aliases:
+  - "張量並行"
+  - "層內模型平行"
+  - "TP"
+  - "Tensor Parallel"
+  - "Intra-layer Model Parallelism"
+category: training
+level: 3
+short: "把單一層的大矩陣切開，交給多顆 GPU 同時計算；因為通訊頻繁，通常只在同一台伺服器內使用。"
+definition: "張量平行把神經網路同一層內的權重矩陣切成數塊，分別放在不同 GPU 上計算，再交換部分結果組合出完整輸出，因此能處理單顆 GPU 放不下的超大模型。NVIDIA 在 2019 年的 Megatron-LM 以 8 路張量平行搭配 64 路資料平行，用 512 顆 GPU 訓練 83 億參數模型，持續達到 15.1 PetaFLOPs、76% 的擴展效率。由於每一層都要頻繁交換資料，張量平行對頻寬與延遲非常敏感：Meta 訓練 Llama 3 時，把它放在最內層、限制在同一台伺服器內，靠 NVLink 高速互連。更大的 Scale-up 網域（例如 NVL72 機櫃）則讓張量平行可以跨越更多 GPU。"
+example: "像一張超大拼圖由 8 個人各拼一塊，但每拼完一段就得互相對齊邊緣，所以這 8 個人最好坐在同一張桌子旁。"
+related:
+  - data-parallelism
+  - expert-parallelism
+  - nvlink
+  - scale-up
+  - matrix-multiplication
+learnMore:
+  - networking-for-ai
+  - interconnect-deep
+segments:
+  - networking-optics
+  - ai-accelerators
+  - servers-systems
+sources:
+  - title: "Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism"
+    publisher: NVIDIA
+    url: "https://arxiv.org/abs/1909.08053"
+    type: paper
+    lang: en
+    published: "2019-09-17"
+    accessed: "2026-10-06"
+  - title: "The Llama 3 Herd of Models"
+    publisher: Meta
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-training
+  checkedBy: "gloss-training-check"
+  checkedOn: "2026-10-06"

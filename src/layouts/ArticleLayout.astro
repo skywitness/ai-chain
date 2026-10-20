@@ -1,0 +1,278 @@
+---
+/**
+ * Long-form article layout for learn and trend pages.
+ *
+ *   const { Content, headings } = await render(entry);
+ *   <ArticleLayout title={d.title} description={d.description} level={d.level} minutes={d.estimatedMinutes}
+ *                  kicker="學習路徑" headings={headings} prereqs={d.prerequisites}
+ *                  keyTakeaways={d.keyTakeaways} sources={d.sources} lastVerified={d.lastVerified}
+ *                  breadcrumbs={[{ label: '學習路徑', href: sectionHref('learn') }, { label: d.title }]}>
+ *     <Content components={mdxComponents} />
+ *     <NextSteps slot="next" items={[…]} prev={…} next={…} />
+ *   </ArticleLayout>
+ *
+ * Renders: header (kicker, H1, subtitle, level badge, reading time, 資料截至), PrereqBox, sticky TOC
+ * (sidebar ≥ 1100px, collapsible above the body below that), the MDX body in .prose, KeyTakeaways,
+ * the `after` slot, the `next` slot, then SourcesList (ids src-<key> for <Cite>).
+ * Slots: default (body) · `header` (extra chips under the meta row) · `hero` (full column, e.g. a scene,
+ * between header and body) · `aside` (extra sidebar content under the TOC) · `after` · `next`.
+ */
+import type { MarkdownHeading } from 'astro';
+import BaseLayout from './BaseLayout.astro';
+import Badge from '../components/ui/Badge.astro';
+import DataAsOf from '../components/ui/DataAsOf.astro';
+import Icon from '../components/ui/Icon.astro';
+import TOC from '../components/layout/TOC.astro';
+import PrereqBox from '../components/content/PrereqBox.astro';
+import KeyTakeaways from '../components/content/KeyTakeaways.astro';
+import SourcesList from '../components/content/SourcesList.astro';
+import { levelMeta } from '../lib/collections';
+import { articleJsonLd, type BreadcrumbItem, type JsonLd } from '../lib/seo';
+import type { RouteKey } from '../lib/paths';
+import type { SourceT } from '../schemas/common';
+
+export interface Props {
+  title: string;
+  description: string;
+  subtitle?: string | undefined;
+  /** Small label above the H1, e.g. 「學習路徑 · 晶片與硬體」 */
+  kicker?: string | undefined;
+  level?: 1 | 2 | 3 | undefined;
+  /** Reading time in minutes (frontmatter estimatedMinutes) */
+  minutes?: number | undefined;
+  headings?: readonly MarkdownHeading[] | undefined;
+  prereqs?: ReadonlyArray<string | { id: string }> | undefined;
+  keyTakeaways?: readonly string[] | undefined;
+  sources?: readonly SourceT[] | undefined;
+  lastVerified?: string | undefined;
+  updated?: string | undefined;
+  published?: string | undefined;
+  breadcrumbs?: BreadcrumbItem[] | undefined;
+  image?: string | undefined;
+  jsonLd?: JsonLd | JsonLd[] | undefined;
+  section?: RouteKey | null | undefined;
+  /** Pagefind 類型 filter value (default 文章) */
+  searchType?: string | undefined;
+  /** Extra Pagefind filters, e.g. { 環節: '記憶體與儲存' } */
+  searchFilters?: Record<string, string | readonly string[]> | undefined;
+  /** Show the table of contents (default: when there are ≥ 3 headings) */
+  toc?: boolean | undefined;
+  /** Section name for JSON-LD articleSection */
+  articleSection?: string | undefined;
+  noindex?: boolean | undefined;
+}
+
+const {
+  title,
+  description,
+  subtitle,
+  kicker,
+  level,
+  minutes,
+  headings = [],
+  prereqs = [],
+  keyTakeaways = [],
+  sources = [],
+  lastVerified,
+  updated,
+  published,
+  breadcrumbs,
+  image,
+  jsonLd,
+  section,
+  searchType = '文章',
+  searchFilters = {},
+  toc,
+  articleSection,
+  noindex,
+} = Astro.props;
+
+const lv = level ? levelMeta(level) : undefined;
+const tocHeadings = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
+const showToc = toc ?? tocHeadings.filter((h) => h.depth === 2).length >= 3;
+const ld: JsonLd[] = [
+  articleJsonLd({
+    title,
+    description,
+    path: Astro.url,
+    site: Astro.site,
+    datePublished: published ?? updated,
+    dateModified: updated ?? lastVerified,
+    image,
+    section: articleSection,
+    educationalLevel: lv?.label,
+  }),
+];
+if (jsonLd) ld.push(...(Array.isArray(jsonLd) ? jsonLd : [jsonLd]));
+const filters: Array<[string, string]> = [['類型', searchType]];
+if (lv) filters.push(['難度', lv.label]);
+for (const [k, v] of Object.entries(searchFilters)) {
+  for (const val of typeof v === 'string' ? [v] : v) filters.push([k, val]);
+}
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  image={image}
+  type="article"
+  jsonLd={ld}
+  breadcrumbs={breadcrumbs}
+  section={section}
+  sources={sources}
+  publishedTime={published}
+  modifiedTime={updated ?? lastVerified}
+  noindex={noindex}
+>
+  <article class:list={['article', 'container', { 'article--toc': showToc }]}>
+    <header class="article__head">
+      {kicker && <p class="article__kicker">{kicker}</p>}
+      <h1 class="article__title" data-pagefind-weight="10">{title}</h1>
+      {subtitle && <p class="article__subtitle">{subtitle}</p>}
+      <div class="article__meta">
+        {lv && <Badge level={lv.level} size="m" srPrefix="難度：" />}
+        {
+          minutes && (
+            <span class="article__time">
+              <Icon name="clock" />
+              約 {minutes} 分鐘
+            </span>
+          )
+        }
+        {lastVerified && <DataAsOf date={lastVerified} />}
+      </div>
+      {Astro.slots.has('header') && <div class="article__header-extra"><slot name="header" /></div>}
+      {filters.map(([k, v]) => <span hidden data-pagefind-filter={`${k}:${v}`} />)}
+    </header>
+
+    {
+      prereqs.length > 0 && (
+        <div class="article__prereq">
+          <PrereqBox items={prereqs} />
+        </div>
+      )
+    }
+
+    {Astro.slots.has('hero') && <div class="article__hero"><slot name="hero" /></div>}
+
+    <div class="article__grid">
+      {
+        showToc && (
+          <aside class="article__aside" aria-label="本頁目錄與相關內容">
+            <div class="article__aside-sticky">
+              <TOC headings={tocHeadings} class="article__toc-list" />
+              <slot name="aside" />
+            </div>
+          </aside>
+        )
+      }
+      <div class="article__main">
+        {showToc && <TOC headings={tocHeadings} variant="disclosure" class="article__toc-inline" />}
+        <div class="prose article__body">
+          <slot />
+        </div>
+        {keyTakeaways.length > 0 && <KeyTakeaways items={keyTakeaways} />}
+        <slot name="after" />
+        <slot name="next" />
+        {sources.length > 0 && <SourcesList sources={sources} />}
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  @layer layout {
+    .article {
+      padding-block-end: var(--space-8);
+    }
+    .article__head {
+      display: grid;
+      gap: var(--space-3);
+      padding-block: var(--space-6) var(--space-5);
+      max-width: 52rem;
+    }
+    .article__kicker {
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--c-fg-muted);
+    }
+    .article__title {
+      font-size: var(--fs-3xl);
+      line-height: 1.25;
+      text-wrap: balance;
+    }
+    .article__subtitle {
+      font-size: var(--fs-l);
+      line-height: 1.7;
+      color: var(--c-fg-muted);
+      max-width: var(--measure);
+    }
+    .article__meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-2) var(--space-4);
+      margin-block-start: var(--space-2);
+    }
+    .article__time {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35em;
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .article__header-extra {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+    .article__prereq {
+      margin-block-end: var(--space-6);
+    }
+    .article__hero {
+      margin-block-end: var(--space-6);
+    }
+
+    .article__grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-7);
+    }
+    .article__main {
+      min-width: 0;
+      max-width: 48rem;
+    }
+    .article__aside {
+      display: none;
+    }
+    .article__main > :global(.article__toc-inline) {
+      margin-block-end: var(--space-6);
+    }
+
+    @media (min-width: 1100px) {
+      .article--toc .article__grid {
+        grid-template-columns: minmax(0, 48rem) minmax(13rem, 16rem);
+        justify-content: start;
+        column-gap: clamp(var(--space-7), 5vw, var(--space-9));
+      }
+      .article__aside {
+        display: block;
+        order: 2;
+      }
+      .article__aside-sticky {
+        position: sticky;
+        inset-block-start: calc(var(--header-h) + var(--space-5));
+        max-height: calc(100vh - var(--header-h) - var(--space-7));
+        overflow-y: auto;
+        display: grid;
+        gap: var(--space-6);
+        padding-block-end: var(--space-4);
+      }
+      .article__main > :global(.article__toc-inline) {
+        display: none;
+      }
+    }
+  }
+</style>

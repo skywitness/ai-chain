@@ -1,0 +1,222 @@
+---
+/**
+ * Segment × Taiwan-company matrix: one row per segment (chain order), columns 一線／二線／三線與新創,
+ * cells hold company chips (largest first). Companies that list the segment as a secondary role
+ * appear as dashed chips under 「兼營」. A real <table> on wide screens; stacked cards below 900px.
+ *   <TaiwanMatrix rows={taiwanMatrix(companies, sizes)} />
+ */
+import TwChip from './TwChip.astro';
+import { LAYERS, TIER_LABELS } from '../../lib/collections';
+import { segmentHref } from '../../lib/paths';
+import type { MatrixRow, Tier } from './taiwan-data';
+
+interface Props {
+  rows: readonly MatrixRow[];
+  caption?: string | undefined;
+  class?: string | undefined;
+}
+const { rows, caption = '台灣公司在 AI 產業鏈 14 個環節的分布', class: className } = Astro.props;
+const tiers: Tier[] = [1, 2, 3];
+const layerTitle = (id: string) => LAYERS.find((l) => l.id === id)?.title ?? '';
+const total = rows.reduce((n, r) => n + r.total, 0);
+---
+
+<div class:list={['twm', className]} data-pagefind-ignore>
+  <table class="twm__table">
+    <caption class="sr-only">{caption}（共 {total} 家，依主要環節分類）</caption>
+    <thead>
+      <tr>
+        <th scope="col" class="twm__seg-h">產業鏈環節</th>
+        {tiers.map((t) => <th scope="col">{TIER_LABELS[t]}</th>)}
+        <th scope="col">兼營</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((r) => (
+          <tr style={`--sc: ${r.seg.color}`} class:list={{ 'twm__row--empty': r.total === 0 }}>
+            <th scope="row" class="twm__seg">
+              <a href={segmentHref(r.seg.id)} class="twm__seg-link">
+                <span class="twm__seg-no">{String(r.seg.order).padStart(2, '0')}</span>
+                <span class="twm__seg-name">{r.seg.title}</span>
+              </a>
+              <span class="twm__seg-meta">
+                {layerTitle(r.seg.layer)} · {r.total > 0 ? `${r.total} 家` : '尚無主要廠商'}
+              </span>
+            </th>
+            {tiers.map((t) => (
+              <td data-label={TIER_LABELS[t]} class:list={{ 'twm__cell--empty': r.tiers[t].length === 0 }}>
+                {r.tiers[t].length > 0 ? (
+                  <span class="twm__chips">
+                    {r.tiers[t].map((c) => (
+                      <TwChip company={c} />
+                    ))}
+                  </span>
+                ) : (
+                  <span class="twm__none"><span aria-hidden="true">—</span><span class="sr-only">無</span></span>
+                )}
+              </td>
+            ))}
+            <td data-label="兼營" class:list={['twm__sec', { 'twm__cell--empty': r.secondary.length === 0 }]}>
+              {r.secondary.length > 0 ? (
+                <span class="twm__chips">
+                  {r.secondary.map((c) => (
+                    <TwChip company={c} muted />
+                  ))}
+                </span>
+              ) : (
+                <span class="twm__none"><span aria-hidden="true">—</span><span class="sr-only">無</span></span>
+              )}
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .twm {
+    min-width: 0;
+  }
+  .twm__table {
+    inline-size: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--fs-s);
+  }
+  .twm__table th,
+  .twm__table td {
+    text-align: start;
+    vertical-align: top;
+  }
+  thead th {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-muted);
+    border-block-end: 2px solid var(--c-border-strong);
+    white-space: nowrap;
+  }
+  tbody tr > * {
+    padding: var(--space-3);
+    border-block-end: 1px solid var(--c-border);
+  }
+  .twm__seg {
+    position: relative;
+    inline-size: 15rem;
+    padding-inline-start: calc(var(--space-3) + 4px);
+    font-weight: var(--fw-regular);
+  }
+  .twm__seg::before {
+    content: '';
+    position: absolute;
+    inset-block: var(--space-3);
+    inset-inline-start: 0;
+    inline-size: 4px;
+    border-radius: 2px;
+    background: var(--sc);
+  }
+  .twm__seg-link {
+    display: inline-flex;
+    gap: 0.5em;
+    align-items: baseline;
+    color: var(--c-fg);
+    font-weight: var(--fw-semibold);
+    text-decoration: none;
+    line-height: 1.45;
+  }
+  .twm__seg-link:hover .twm__seg-name {
+    color: var(--c-link);
+    text-decoration: underline;
+  }
+  .twm__seg-no {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .twm__seg-meta {
+    display: block;
+    margin-block-start: 2px;
+    padding-inline-start: 1.6em;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .twm__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .twm__none {
+    color: var(--c-fg-subtle);
+  }
+  .twm__sec {
+    background: color-mix(in srgb, var(--c-bg-sunken) 45%, transparent);
+  }
+  .twm__row--empty .twm__seg-link {
+    color: var(--c-fg-muted);
+  }
+
+  /* Stacked cards on narrow screens */
+  @media (max-width: 899px) {
+    .twm__table,
+    .twm__table tbody,
+    .twm__table tr,
+    .twm__table th,
+    .twm__table td {
+      display: block;
+    }
+    .twm__table thead {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+    .twm__table tbody {
+      display: grid;
+      gap: var(--space-3);
+    }
+    .twm__table tr {
+      border: 1px solid var(--c-border);
+      border-inline-start: 4px solid var(--sc);
+      border-radius: var(--radius-m);
+      background: var(--c-bg-elev);
+      overflow: hidden;
+    }
+    tbody tr > * {
+      border-block-end: 0;
+      padding: var(--space-2) var(--space-4);
+    }
+    .twm__seg {
+      inline-size: auto;
+      padding: var(--space-3) var(--space-4) var(--space-2);
+    }
+    .twm__seg::before {
+      display: none;
+    }
+    .twm__table td {
+      display: grid;
+      grid-template-columns: 5.5em minmax(0, 1fr);
+      gap: var(--space-2);
+      align-items: start;
+    }
+    .twm__table td::before {
+      content: attr(data-label);
+      padding-block-start: 0.35em;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-muted);
+    }
+    .twm__table td:last-child {
+      padding-block-end: var(--space-3);
+    }
+    .twm__cell--empty {
+      display: none !important;
+    }
+    .twm__sec {
+      background: none;
+    }
+  }
+</style>

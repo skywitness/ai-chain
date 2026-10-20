@@ -1,0 +1,169 @@
+---
+/**
+ * <MonthlyRevenue financials={entry.data} company="台積電" months={24} />
+ * Taiwan-style monthly revenue: headline figures (latest month, MoM, YoY, cumulative YTD YoY),
+ * monthly bars and a YoY % line in an aligned lower panel. MoM is in the tooltip and table.
+ */
+import './charts.css';
+import ChartFrame from './ChartFrame.astro';
+import BarsPlot, { type BarSlot } from './BarsPlot.astro';
+import { round, tip } from './chart-utils';
+import type { TableSpec } from './types';
+import { type FinancialsInput, monthlyRevenue, seriesCurrency, sourcesFor } from '../../lib/financial-metrics';
+import {
+  formatAmount,
+  formatChange,
+  formatMoney,
+  formatNumber,
+  formatSignedPercent,
+  monthLabel,
+  moneyUnitLabel,
+  pickAxisUnit,
+  scaleMillions,
+} from '../../lib/format';
+import { parsePeriod } from '../../lib/fiscal';
+
+interface Props {
+  financials: FinancialsInput;
+  /** months shown (default 24; compact profiles use 13) */
+  months?: number | undefined;
+  company?: string | undefined;
+  title?: string | undefined;
+  subtitle?: string | undefined;
+  showStats?: boolean | undefined;
+  showYoy?: boolean | undefined;
+  height?: number | undefined;
+  notes?: string[] | undefined;
+  badge?: string | undefined;
+  bare?: boolean | undefined;
+  titleHidden?: boolean | undefined;
+  as?: 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | undefined;
+  class?: string | undefined;
+}
+
+const {
+  financials: fin,
+  months = 24,
+  company = '',
+  subtitle,
+  showStats = true,
+  showYoy = true,
+  height = 200,
+  notes = [],
+  badge,
+  bare,
+  titleHidden,
+  as,
+  class: className,
+} = Astro.props;
+
+const title = Astro.props.title ?? `${company}月營收`;
+const all = monthlyRevenue(fin).filter((p) => p.status !== 'guidance');
+const shown = all.slice(-months);
+const currency = seriesCurrency(fin, 'revenue', 'month');
+const unit = pickAxisUnit(Math.max(1, ...shown.map((p) => p.value)));
+const latest = [...shown].reverse().find((p) => !p.estimate) ?? null;
+const money = (v: number | null | undefined) => (v == null ? '—' : formatMoney(v, currency));
+
+const slots: BarSlot[] = shown.map((p) => {
+  const parsed = parsePeriod(p.period);
+  const m = parsed?.month ?? 1;
+  return {
+    value: round(scaleMillions(p.value, unit), 4),
+    estimate: p.estimate,
+    label: String(m),
+    group: `${parsed?.year ?? ''}`,
+    minor: ![1, 4, 7, 10].includes(m),
+    minor2: true,
+    strip: showYoy ? p.yoy : null,
+    stripEstimate: p.estimate,
+    valueLabel: p === latest ? formatAmount(p.value) : undefined,
+    tip: tip(monthLabel(p.period), [
+      ['營收', money(p.value)],
+      ['月增率', p.mom != null ? formatSignedPercent(p.mom) : ''],
+      ['年增率', p.yoy != null ? formatSignedPercent(p.yoy) : ''],
+      ['累計營收', p.ytd != null ? money(p.ytd) : ''],
+      ['累計年增率', p.ytdYoy != null ? formatSignedPercent(p.ytdYoy) : ''],
+    ]),
+  };
+});
+
+const lm = latest ? parsePeriod(latest.period)?.month ?? 1 : 1;
+const ytdLabel = lm === 1 ? '1 月累計' : `1–${lm} 月累計`;
+const first = shown[0];
+const aria =
+  first && latest
+    ? `${title}長條圖，${monthLabel(first.period)}至${monthLabel(shown.at(-1)!.period)}，共 ${shown.length} 個月。` +
+      `${monthLabel(latest.period)}營收${money(latest.value)}，${formatChange(latest.mom, 'mom')}，${formatChange(latest.yoy, 'yoy')}` +
+      (latest.ytdYoy != null ? `；${ytdLabel}${formatChange(latest.ytdYoy, 'ytd')}。` : '。') +
+      (showYoy ? '下方折線為年增率。' : '')
+    : '';
+
+const table: TableSpec = {
+  columns: [
+    { key: 'm', label: '月份' },
+    { key: 'v', label: `營收（${moneyUnitLabel(unit, currency)}）`, numeric: true },
+    { key: 'mom', label: '月增率', numeric: true },
+    { key: 'yoy', label: '年增率', numeric: true },
+    { key: 'ytd', label: `累計營收（${moneyUnitLabel(unit, currency)}）`, numeric: true },
+    { key: 'ytdYoy', label: '累計年增率', numeric: true },
+  ],
+  rows: [...shown].reverse().map((p) => ({
+    m: monthLabel(p.period, 'short'),
+    v: formatNumber(scaleMillions(p.value, unit), { digits: unit === '億' ? 1 : unit === '兆' ? 3 : 0 }),
+    mom: p.mom != null ? formatSignedPercent(p.mom) : '',
+    yoy: p.yoy != null ? formatSignedPercent(p.yoy) : '',
+    ytd: p.ytd != null ? formatNumber(scaleMillions(p.ytd, unit), { digits: unit === '億' ? 1 : unit === '兆' ? 3 : 0 }) : '',
+    ytdYoy: p.ytdYoy != null ? formatSignedPercent(p.ytdYoy) : '',
+  })),
+};
+const sources = sourcesFor(fin, shown.map((p) => p.src)).map((x) => ({ title: x.title, url: x.url, publisher: x.publisher }));
+const allNotes = ['月營收為公司自結之合併營收，未經會計師查核；季度與年度數字以財務報告為準。', ...notes];
+---
+
+<ChartFrame
+  title={title}
+  titleHidden={titleHidden}
+  as={as}
+  subtitle={subtitle}
+  badge={badge}
+  asOf={fin.lastVerified}
+  unit={moneyUnitLabel(unit, currency)}
+  legend={showYoy ? [
+    { label: '月營收', kind: 'bar', color: 'var(--chart-1)' },
+    { label: '年增率（下圖）', kind: 'line', color: 'var(--chart-2)' },
+  ] : []}
+  notes={allNotes}
+  sources={sources}
+  table={table}
+  empty={shown.length === 0}
+  bare={bare}
+  class={className}
+>
+  {
+    showStats && latest && (
+      <dl class="ch-stats" slot="before">
+        <div>
+          <dt>{monthLabel(latest.period)}營收</dt>
+          <dd>{money(latest.value)}</dd>
+        </div>
+        <div>
+          <dt>月增率</dt>
+          <dd>{latest.mom != null ? formatSignedPercent(latest.mom) : '—'}</dd>
+        </div>
+        <div>
+          <dt>年增率</dt>
+          <dd>{latest.yoy != null ? formatSignedPercent(latest.yoy) : '—'}</dd>
+        </div>
+        <div>
+          <dt>{ytdLabel}</dt>
+          <dd>
+            {latest.ytd != null ? money(latest.ytd) : '—'}
+            {latest.ytdYoy != null && <small>{formatChange(latest.ytdYoy, 'ytd')}</small>}
+          </dd>
+        </div>
+      </dl>
+    )
+  }
+  <BarsPlot slots={slots} ariaLabel={aria} height={height} strip={showYoy ? { label: '年增率（%）', color: 'var(--chart-2)' } : null} />
+</ChartFrame>

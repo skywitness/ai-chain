@@ -1,0 +1,564 @@
+---
+title: 資料中心（電力、散熱、營運）
+titleEn: "Data Centers (Power, Cooling & Operations)"
+order: 9
+layer: systems
+tagline: AI 工廠的廠房與水電：把電送進機櫃，再把熱帶出機房
+description: 資料中心環節負責把電送進機櫃、把熱帶出機房，涵蓋 UPS、配電、液冷 CDU 等設備，以及開發商、REIT 與託管業者。本章由淺入深解析 800V 直流、機櫃功率密度、市場規模、電力與在地瓶頸，以及台灣的角色。
+upstream: [energy-power, servers-systems]
+downstream: [cloud-neocloud, foundation-models]
+scene: { id: datacenter, variant: overview }
+scope:
+  includes:
+    - 機房電力設備：中壓開關設備、變壓器、UPS 與電池、母線槽、PDU、預製電力模組、800V 直流配電與固態變壓器
+    - 機房級散熱：冰水主機與排熱設備、機房空調、CDU 與液冷分歧管、浸沒式冷卻
+    - 機房監控管理軟體與維運服務
+    - 資料中心開發商、REIT 與託管（Colocation）業者
+    - 轉型為 AI 機房房東的加密貨幣礦企，以及為 AI 園區提供資金的投資機構
+  excludes:
+    - 發電、電網與重電設備（歸能源與電力）
+    - 伺服器電源供應器（PSU）、BBU、伺服器內的水冷板與風扇（歸伺服器、系統與關鍵零組件）
+    - 交換器、光模組與線纜（歸網通與光通訊）
+    - 出租 GPU 算力的雲端與新雲業者（歸雲端與新雲）
+concentration: competitive
+bottleneck:
+  level: 4
+  note: 瓶頸已從「有沒有需求」變成「能不能交付」：併網、設備交期、施工人力與社區同意都受限。北維吉尼亞機房空置率只剩 0.3%，電力與散熱設備商的在手訂單持續創新高。
+keyMetrics:
+  - label: 全球資料中心實體基礎設施（DCPI）單季營收（2026 Q1）
+    value: 約 120 億美元（年增 28%）
+    asOf: "2026-07-07"
+    note: 本季起新納入排熱設備，約貢獻 10 億美元；散熱類別年增近 50%，北美占全球營收一半以上。
+    source:
+      title: "Data Center Physical Infrastructure Market Expands 28 Percent Y/Y in 1Q 2026, According to Dell'Oro Group"
+      publisher: Dell'Oro Group
+      url: "https://www.delloro.com/news/data-center-physical-infrastructure-market-expands-28-percent-y-y-in-1q-2026/"
+      type: analyst
+      lang: en
+      published: "2026-07-07"
+      accessed: "2026-10-06"
+  - label: 全球 DCPI 市占（2025 Q1）
+    value: 施耐德電機與 Vertiv 幾乎並列第一（差距約 0.1 個百分點）
+    asOf: "2025-07-08"
+    source:
+      title: "Data Center Physical Infrastructure Grew 17 Percent Y/Y in 1Q 2025, Driven by AI Buildout, According to Dell'Oro Group"
+      publisher: Dell'Oro Group
+      url: "https://www.delloro.com/news/data-center-physical-infrastructure-grew-17-percent-y-y-in-1q-2025-driven-by-ai-buildout/"
+      type: analyst
+      lang: en
+      published: "2025-07-08"
+      accessed: "2026-10-06"
+  - label: 機櫃功率密度
+    value: 平均約 15 kW；AI 機櫃需 60–120 kW
+    asOf: "2025-02-05"
+    note: Dell'Oro 在 2025 年 1 月版五年預測報告的發布稿中所述，屬 2025 年初的業界概況。
+    source:
+      title: "Dell'Oro Group Raises Market Forecast for Data Center Liquid Cooling and Rack Power Distribution"
+      publisher: Dell'Oro Group
+      url: "https://www.delloro.com/news/delloro-group-raises-market-forecast-for-data-center-liquid-cooling-and-rack-power-distribution/"
+      type: analyst
+      lang: en
+      published: "2025-02-05"
+      accessed: "2026-10-06"
+  - label: 800V 直流架構
+    value: 比 415V 交流配電省 45% 銅，支援 1 MW 機櫃
+    asOf: "2025-05-20"
+    note: 輝達在 2025 年 5 月規劃，800V 直流資料中心將隨 Kyber 機櫃在 2027 年全面量產。
+    source:
+      title: "NVIDIA 800 VDC Architecture Will Power the Next Generation of AI Factories"
+      publisher: NVIDIA
+      url: "https://developer.nvidia.com/blog/nvidia-800-v-hvdc-architecture-will-power-the-next-generation-of-ai-factories/"
+      type: company-site
+      lang: en
+      published: "2025-05-20"
+      accessed: "2026-10-06"
+  - label: 全球資料中心液冷市場（2025）
+    value: 接近 30 億美元（約為 2024 年兩倍）
+    asOf: "2026-01-08"
+    note: 預估 2029 年約 70 億美元。
+    source:
+      title: "Data Center Liquid Cooling Market to Approach $7 Billion by 2029 as AI Deployments Accelerate, According to Dell'Oro Group"
+      publisher: Dell'Oro Group
+      url: "https://www.delloro.com/news/data-center-liquid-cooling-market-to-approach-7-billion-by-2029-as-ai-deployments-accelerate/"
+      type: analyst
+      lang: en
+      published: "2026-01-08"
+      accessed: "2026-10-06"
+  - label: 北維吉尼亞資料中心空置率（2026 Q1）
+    value: 0.3%（一年前 0.8%）
+    asOf: "2026-06-17"
+    note: 北美最大的資料中心市場；北美前四大市場的整體空置率也降到歷史新低。
+    source:
+      title: "Global Data Center Trends 2026"
+      publisher: CBRE
+      url: "https://www.cbre.com/insights/reports/global-data-center-trends-2026"
+      type: analyst
+      lang: en
+      published: "2026-06-17"
+      accessed: "2026-10-06"
+  - label: Vertiv 2026 年營收財測
+    value: 138–142 億美元（有機成長 30%–32%）
+    asOf: "2026-07-29"
+    note: 2026 Q2 營收 32.74 億美元、年增 24%。
+    source:
+      title: "Vertiv Reports Strong Second Quarter 2026 with Diluted EPS Growth of 53%, Raises Full Year 2026 Guidance Across All Key Metrics"
+      publisher: Vertiv
+      url: "https://www.sec.gov/Archives/edgar/data/1674101/000162828026050323/q22026exhibit991vrt07292026.htm"
+      type: press-release
+      lang: en
+      published: "2026-07-29"
+      accessed: "2026-10-06"
+  - label: Digital Realty 可開發 IT 容量
+    value: 約 8.5 GW（現有約 3.1 GW）
+    asOf: "2026-06-30"
+    note: 全球 310 座資料中心（含 89 座由合資公司持有）；第二季末已簽約、尚未起租的租約，年化基本租金合計 19 億美元（以 100% 持分計）。
+    source:
+      title: "Digital Realty Second Quarter 2026 Financial Supplement"
+      publisher: Digital Realty
+      url: "https://www.sec.gov/Archives/edgar/data/1297996/000110465926086270/dlr-20260723xex99d1.htm"
+      type: press-release
+      lang: en
+      published: "2026-07-23"
+      accessed: "2026-10-06"
+marketSize:
+  - year: 2024
+    value: 31.4
+    unit: billion
+    currency: USD
+    status: estimate
+    definition: 全球資料中心實體基礎設施（DCPI）製造商營收，涵蓋 UPS、散熱、機櫃配電與母線槽、機櫃 PDU、機櫃與通道封閉、軟體與服務。本站依 Dell'Oro 2025 年 7 月版預測（2029 年 631 億美元、2024–2029 年年複合成長率 15%）回推，並非該機構公布值；此口徑尚未納入排熱設備。
+    source:
+      title: "AI Build-Out to Propel Data Center Physical Infrastructure Market to $63.1 Billion by 2029, According to Dell'Oro Group"
+      publisher: Dell'Oro Group
+      url: "https://www.delloro.com/news/ai-build-out-to-propel-data-center-physical-infrastructure-market-to-63-1-billion-by-2029/"
+      type: analyst
+      lang: en
+      published: "2025-08-15"
+      accessed: "2026-10-06"
+  - year: 2025
+    value: 44.4
+    unit: billion
+    currency: USD
+    status: estimate
+    definition: 全球 DCPI 製造商營收，含 2026 年起新增統計的排熱（Heat Rejection）設備。本站依 Dell'Oro 2026 年 7 月版預測（2030 年 1,200 億美元、2025–2030 年年複合成長率 22%）回推，並非該機構公布值；與 2024 年數字口徑不同，不宜直接相比。
+    source:
+      title: "Data Center Physical Infrastructure Market Forecast to Reach $120 Billion by 2030, According to Dell'Oro Group"
+      publisher: Dell'Oro Group
+      url: "https://www.delloro.com/news/data-center-physical-infrastructure-market-forecast-to-reach-120-billion-by-2030/"
+      type: analyst
+      lang: en
+      published: "2026-08-19"
+      accessed: "2026-10-06"
+  - year: 2030
+    value: 120
+    unit: billion
+    currency: USD
+    status: forecast
+    definition: 全球 DCPI 製造商營收預測（含排熱設備），Dell'Oro 2026 年 7 月版五年預測，2025–2030 年年複合成長率 22%。
+    source:
+      title: "Data Center Physical Infrastructure Market Forecast to Reach $120 Billion by 2030, According to Dell'Oro Group"
+      publisher: Dell'Oro Group
+      url: "https://www.delloro.com/news/data-center-physical-infrastructure-market-forecast-to-reach-120-billion-by-2030/"
+      type: analyst
+      lang: en
+      published: "2026-08-19"
+      accessed: "2026-10-06"
+featuredCompanies:
+  - vertiv
+  - schneider-electric
+  - eaton
+  - equinix
+  - digital-realty
+  - legrand
+  - nvent
+  - modine
+  - coolit
+  - applied-digital
+  - hut-8
+  - kaori
+taiwanRole: 台灣在這一環以設備供應為主：台達電、光寶科名列輝達 800V 直流架構的電源合作夥伴，高力供應液冷 CDU 與熱交換器，2026 年前 9 月營收年增逾一倍。本地資料中心市場規模較小，且受北部供電瓶頸限制：台電 2024 年 8 月公開表示桃園以北不再核供 5MW 以上的新資料中心；2026 年 7 月經濟部表示這項限制可望鬆綁，並研議在電廠周邊設置算力專區，能源署也自 2026 年起將 5MW 以上的新建或擴建資料中心納入能源使用審查。
+relatedLearn:
+  - data-centers-101
+  - datacenter-power-cooling
+  - ai-capex-economics
+  - ai-supply-chain-map
+relatedTrends:
+  - liquid-cooling-mainstream
+  - 800v-dc-power
+  - power-bottleneck-onsite-generation
+  - datacenter-local-impact
+  - ai-infra-financing-bubble
+  - hyperscaler-capex
+  - rack-scale-systems
+  - taiwan-ai-policy
+glossary:
+  - datacenter
+  - ai-factory
+  - rack
+  - ups
+  - pdu
+  - liquid-cooling
+  - rack-power-density
+  - 800v-dc
+  - sst
+  - cold-plate
+  - cdu
+  - immersion-cooling
+  - pue
+  - colocation
+  - reit
+  - hyperscaler
+  - neocloud
+  - behind-the-meter
+  - gigawatt
+sources:
+  - key: delloro-dcpi-1q26
+    title: "Data Center Physical Infrastructure Market Expands 28 Percent Y/Y in 1Q 2026, According to Dell'Oro Group"
+    publisher: Dell'Oro Group
+    url: "https://www.delloro.com/news/data-center-physical-infrastructure-market-expands-28-percent-y-y-in-1q-2026/"
+    type: analyst
+    lang: en
+    published: "2026-07-07"
+    accessed: "2026-10-06"
+  - key: delloro-dcpi-4q25
+    title: "Data Center Physical Infrastructure Market Reaches $10.9 Billion in 4Q 2025, Up 20 Percent Y/Y, According to Dell'Oro Group"
+    publisher: Dell'Oro Group
+    url: "https://www.delloro.com/news/data-center-physical-infrastructure-market-reaches-10-9-billion-in-4q-2025-up-20-percent-y-y/"
+    type: analyst
+    lang: en
+    published: "2026-03-19"
+    accessed: "2026-10-06"
+  - key: delloro-dcpi-2q25
+    title: "Data Center Physical Infrastructure Maintains Strong Growth Trajectory, Up 18 Percent Y/Y in 2Q 2025, According to Dell'Oro Group"
+    publisher: Dell'Oro Group
+    url: "https://www.delloro.com/news/data-center-physical-infrastructure-maintains-strong-growth-trajectory-up-18-percent-y-y-in-2q-2025/"
+    type: analyst
+    lang: en
+    published: "2025-09-10"
+    accessed: "2026-10-06"
+  - key: delloro-dcpi-1q25
+    title: "Data Center Physical Infrastructure Grew 17 Percent Y/Y in 1Q 2025, Driven by AI Buildout, According to Dell'Oro Group"
+    publisher: Dell'Oro Group
+    url: "https://www.delloro.com/news/data-center-physical-infrastructure-grew-17-percent-y-y-in-1q-2025-driven-by-ai-buildout/"
+    type: analyst
+    lang: en
+    published: "2025-07-08"
+    accessed: "2026-10-06"
+  - key: delloro-dcpi-3q25
+    title: "Data Center Physical Infrastructure Market Expands 18 Percent Y/Y in 3Q 2025, According to Dell'Oro Group"
+    publisher: Dell'Oro Group
+    url: "https://www.delloro.com/news/data-center-physical-infrastructure-market-expands-18-percent-y-y-in-3q-2025/"
+    type: analyst
+    lang: en
+    published: "2025-12-10"
+    accessed: "2026-10-06"
+  - key: delloro-fcst-2030
+    title: "Data Center Physical Infrastructure Market Forecast to Reach $120 Billion by 2030, According to Dell'Oro Group"
+    publisher: Dell'Oro Group
+    url: "https://www.delloro.com/news/data-center-physical-infrastructure-market-forecast-to-reach-120-billion-by-2030/"
+    type: analyst
+    lang: en
+    published: "2026-08-19"
+    accessed: "2026-10-06"
+  - key: delloro-fcst-2029
+    title: "AI Build-Out to Propel Data Center Physical Infrastructure Market to $63.1 Billion by 2029, According to Dell'Oro Group"
+    publisher: Dell'Oro Group
+    url: "https://www.delloro.com/news/ai-build-out-to-propel-data-center-physical-infrastructure-market-to-63-1-billion-by-2029/"
+    type: analyst
+    lang: en
+    published: "2025-08-15"
+    accessed: "2026-10-06"
+  - key: delloro-fcst-2026-02
+    title: "Data Center Physical Infrastructure Market to Surpass $80 Billion by 2030, According to Dell'Oro Group"
+    publisher: Dell'Oro Group
+    url: "https://www.delloro.com/news/data-center-physical-infrastructure-market-to-surpass-80-billion-by-2030/"
+    type: analyst
+    lang: en
+    published: "2026-02-10"
+    accessed: "2026-10-06"
+  - key: delloro-fcst-2025-02
+    title: "Dell'Oro Group Raises Market Forecast for Data Center Liquid Cooling and Rack Power Distribution"
+    publisher: Dell'Oro Group
+    url: "https://www.delloro.com/news/delloro-group-raises-market-forecast-for-data-center-liquid-cooling-and-rack-power-distribution/"
+    type: analyst
+    lang: en
+    published: "2025-02-05"
+    accessed: "2026-10-06"
+  - key: delloro-lc-2026
+    title: "Data Center Liquid Cooling Market to Approach $7 Billion by 2029 as AI Deployments Accelerate, According to Dell'Oro Group"
+    publisher: Dell'Oro Group
+    url: "https://www.delloro.com/news/data-center-liquid-cooling-market-to-approach-7-billion-by-2029-as-ai-deployments-accelerate/"
+    type: analyst
+    lang: en
+    published: "2026-01-08"
+    accessed: "2026-10-06"
+  - key: delloro-pred-2026
+    title: "Beyond the Bubble Talk: What 2026 Really Holds for Data Center Physical Infrastructure"
+    publisher: Dell'Oro Group
+    url: "https://www.delloro.com/2026-predictions-data-center-physical-infrastructure-market/"
+    type: analyst
+    lang: en
+    published: "2025-12-15"
+    accessed: "2026-10-06"
+  - key: nvidia-800v
+    title: "NVIDIA 800 VDC Architecture Will Power the Next Generation of AI Factories"
+    publisher: NVIDIA
+    url: "https://developer.nvidia.com/blog/nvidia-800-v-hvdc-architecture-will-power-the-next-generation-of-ai-factories/"
+    type: company-site
+    lang: en
+    published: "2025-05-20"
+    accessed: "2026-10-06"
+  - key: vertiv-q2-2026
+    title: "Vertiv Reports Strong Second Quarter 2026 with Diluted EPS Growth of 53%, Raises Full Year 2026 Guidance Across All Key Metrics"
+    publisher: Vertiv
+    url: "https://www.sec.gov/Archives/edgar/data/1674101/000162828026050323/q22026exhibit991vrt07292026.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-29"
+    accessed: "2026-10-06"
+  - key: vertiv-uig
+    title: "Vertiv Announces Agreement to Acquire UtilityInnovation Group to Accelerate Time to Power for AI Data Centers"
+    publisher: Vertiv
+    url: "https://www.sec.gov/Archives/edgar/data/1674101/000119312526379306/d472406dex991.htm"
+    type: press-release
+    lang: en
+    published: "2026-09-02"
+    accessed: "2026-10-06"
+  - key: eaton-q2-2026
+    title: "Eaton Reports Record Second Quarter 2026 Results, with Strong Organic Growth, Accelerating Orders and Backlog, and Raises Organic Growth Guidance"
+    publisher: Eaton
+    url: "https://www.sec.gov/Archives/edgar/data/1551182/000155118226000027/etn06302026exhibit99.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-31"
+    accessed: "2026-10-06"
+  - key: equinix-q2-2026
+    title: "Equinix Reports Second-Quarter Results, Raises 2026 Guidance and Long-Term Outlook"
+    publisher: Equinix
+    url: "https://www.sec.gov/Archives/edgar/data/1101239/000110123926000145/a991eqix-q226xpr.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-29"
+    accessed: "2026-10-06"
+  - key: dlr-q2-2026
+    title: "Digital Realty Second Quarter 2026 Financial Supplement"
+    publisher: Digital Realty
+    url: "https://www.sec.gov/Archives/edgar/data/1297996/000110465926086270/dlr-20260723xex99d1.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-23"
+    accessed: "2026-10-06"
+  - key: cbre-gdc-2026
+    title: "Global Data Center Trends 2026"
+    publisher: CBRE
+    url: "https://www.cbre.com/insights/reports/global-data-center-trends-2026"
+    type: analyst
+    lang: en
+    published: "2026-06-17"
+    accessed: "2026-10-06"
+  - key: hut8-q2-2026
+    title: "Hut 8 Reports Second Quarter 2026 Results"
+    publisher: Hut 8
+    url: "https://www.sec.gov/Archives/edgar/data/1964789/000110465926090041/tm2621890d1_ex99-1.htm"
+    type: press-release
+    lang: en
+    published: "2026-08-04"
+    accessed: "2026-10-06"
+  - key: apld-q4-fy26
+    title: "Applied Digital Reports Fiscal Fourth Quarter and Full Year 2026 Results"
+    publisher: Applied Digital
+    url: "https://www.sec.gov/Archives/edgar/data/1144879/000114487926000044/apldq426earningsreleaseasf.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-27"
+    accessed: "2026-10-06"
+  - key: ecolab-coolit-2026
+    title: "Ecolab to Acquire CoolIT Systems, a Global Leader in Advanced Liquid Cooling for Next-Gen AI Data Centers"
+    publisher: Ecolab
+    url: "https://www.sec.gov/Archives/edgar/data/31462/000110465926032446/tm269446d1_ex99-1.htm"
+    type: press-release
+    lang: en
+    published: "2026-03-20"
+    accessed: "2026-10-06"
+  - key: ecolab-q2-2026
+    title: "Ecolab Delivers Accelerated Sales Growth and Double-Digit EPS Growth (Second Quarter 2026)"
+    publisher: Ecolab
+    url: "https://www.sec.gov/Archives/edgar/data/31462/000162828026049933/ecl_ex99x1.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-28"
+    accessed: "2026-10-06"
+  - key: uptime-2026
+    title: "Uptime Institute 16th Annual 2026 Global Data Center Survey: Deployment of High Density Racks Rising Fast, Operators Face Continued Recruiting and Retention Pressures"
+    publisher: Uptime Institute
+    url: "https://uptimeinstitute.com/about-ui/press-releases/16th-annual-2026-global-data-center-survey-deployment-of-high-density-racks-rising-fast-operators-face-continued-recruiting-and-retention-pressures"
+    type: press-release
+    lang: en
+    published: "2026-07-28"
+    accessed: "2026-10-06"
+  - key: iea-key-questions-2026
+    title: "Data centre electricity use surged in 2025, even with tightening bottlenecks driving a scramble for solutions"
+    publisher: International Energy Agency
+    url: "https://www.iea.org/news/data-centre-electricity-use-surged-in-2025-even-with-tightening-bottlenecks-driving-a-scramble-for-solutions"
+    type: press-release
+    lang: en
+    published: "2026-04-16"
+    accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20260603014834/https://www.iea.org/news/data-centre-electricity-use-surged-in-2025-even-with-tightening-bottlenecks-driving-a-scramble-for-solutions"
+  - key: yahoo-8996
+    title: "高力（8996）營收表"
+    publisher: Yahoo 股市
+    url: "https://tw.stock.yahoo.com/quote/8996.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: yahoo-6561
+    title: "是方（6561）營收表"
+    publisher: Yahoo 股市
+    url: "https://tw.stock.yahoo.com/quote/6561.TWO/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+  - key: technews-5mw-2024
+    title: "台電：桃園以北不再核供 5MW 以上資料中心，經濟部：要 AI 大廠，請支持台電電廠"
+    publisher: 科技新報
+    url: "https://finance.technews.tw/2024/08/12/want-big-ai-companies-to-invest-please-support-building-power-plants/"
+    type: news
+    lang: zh-TW
+    published: "2024-08-12"
+    accessed: "2026-10-06"
+  - key: udn-5mw-2026
+    title: "北部5MW以上AI資料中心解禁 曾文生點名兩地方可提專區方案"
+    publisher: 聯合新聞網
+    url: "https://udn.com/news/story/7238/9629060"
+    type: news
+    lang: zh-TW
+    published: "2026-07-15"
+    accessed: "2026-10-06"
+  - key: udn-dc-2026
+    title: "考量用電需求 經濟部：強化資料中心整體規劃與審議機制"
+    publisher: 經濟日報（聯合新聞網）
+    url: "https://udn.com/news/story/7238/9465799"
+    type: news
+    lang: zh-TW
+    published: "2026-04-27"
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: seg-datacenter-infra
+  checkedBy: "seg-datacenter-infra-check"
+  checkedOn: "2026-10-06"
+---
+
+<LevelSection level={1} title="這一環在做什麼">
+
+GPU 伺服器再強大，也得放進一棟有電、有冷卻、有網路、全年無休有人看管的建築裡才能工作，這棟建築就是<Term id="datacenter">資料中心</Term>；專門為 AI 運算設計的大型園區，又常被稱為<Term id="ai-factory">AI 工廠</Term>。這一環負責三件事：
+
+- **供電**：把電網送來的高壓電，經過開關設備、變壓器、<Term id="ups">UPS</Term>（不斷電系統）與 <Term id="pdu">PDU</Term>（電源分配單元），穩定地送進每一個<Term id="rack">機櫃</Term>。
+- **散熱**：晶片用掉的電幾乎全部變成熱，必須靠空調、冰水主機，或把冷卻液直接送到晶片旁的<Term id="liquid-cooling">液冷</Term>系統帶走。
+- **蓋機房與出租**：取得土地與電力、蓋好機房，再租給雲端業者、AI 公司或一般企業。這是開發商、<Term id="reit">REIT</Term>（不動產投資信託）與 <Term id="colocation">Colocation</Term>（主機代管）業者的生意。
+
+<FlowSteps title="電從園區大門走到晶片" steps={["變電站與中壓開關","變壓器","UPS 與電池","母線槽與 PDU","機櫃電源架","GPU 晶片"]} />
+
+<Callout type="analogy" title="資料中心像一棟專為機器設計的「出租廠房」">
+想像一座全年無休的工廠，裡面的員工是成千上萬台伺服器。房東（資料中心業者）負責蓋廠房、拉電線、裝冷氣和備用發電機；租客（雲端業者、AI 公司）只要把機器搬進來、插上電就能開工。特別的是，這些員工每一位都像一台開到最大的電暖器，而且越新的員工越熱。所以這座廠房最貴、最難搞定的，不是建築本身，而是「電夠不夠」和「熱散不散得掉」。
+</Callout>
+
+AI 讓這兩個問題同時放大。Dell'Oro 在 2025 年初指出，當時機櫃平均約 15 kW，AI 加速伺服器卻需要每櫃 60–120 kW<Cite k="delloro-fcst-2025-02" />；<CompanyChip id="nvidia">輝達（NVIDIA）</CompanyChip>更規劃自 2027 年起支援 1 MW 等級的機櫃<Cite k="nvidia-800v" />。<Term id="rack-power-density">機櫃功率密度</Term>一路往上，光靠風扇已經壓不住熱，液冷就從選配變成標配。用電總量也快速增加：國際能源總署（IEA）統計，全球資料中心用電 2025 年成長 17%，並預估到 2030 年將再翻倍<Cite k="iea-key-questions-2026" />。
+
+<StatGrid items={[{ label: "機櫃平均功率", value: "約 15 kW", note: "Dell'Oro，2025 年初" }, { label: "AI 機櫃功率", value: "60–120 kW", note: "Dell'Oro，2025 年初" }, { label: "下一代機櫃", value: "1 MW", note: "輝達 800V 架構，2027 年起", estimate: true }, { label: "資料中心用電成長", value: "17%", note: "2025 年，IEA" }]} />
+
+想先建立整體概念，可以閱讀<LearnLink id="data-centers-101">資料中心入門：AI 工廠長什麼樣子</LearnLink>。
+
+</LevelSection>
+
+<LevelSection level={2} title="關鍵技術與商業模式" data-lint="level==2">
+
+### 供電鏈：從中壓開關到 800V 直流
+
+電從電網進入園區後，先經中壓開關設備與變壓器降壓，再由 UPS 搭配電池撐住停電到備用發電機啟動之間的空檔，最後經母線槽與 PDU 分送到各機櫃。架空母線槽正成為 AI 機房的預設配電方式<Cite k="delloro-fcst-2026-02" />：2026 年第一季，母線槽營收年增約三成，UPS 年增近兩成<Cite k="delloro-dcpi-1q26" />；UPS 的成長集中在大型三相系統，直接接上中壓電網的 UPS 設計也逐漸受到採用<Cite k="delloro-fcst-2030" />。
+
+下一步是改用直流。輝達在 2025 年 5 月提出 <Term id="800v-dc">800V 直流</Term>架構：在園區邊界就把 13.8 kV 交流電轉成 800V 直流，省去中間多次交直流轉換。相較 415V 交流配電，同樣粗細的導體可多送 85% 的電力、少用 45% 的銅；相較目前機櫃內的 54V 直流配電，端到端效率最多可提升 5%。輝達預計 800V 直流資料中心會隨 Kyber 機櫃在 2027 年全面量產。合作夥伴包括 <CompanyChip id="vertiv">維諦技術（Vertiv）</CompanyChip>、<CompanyChip id="schneider-electric">施耐德電機（Schneider Electric）</CompanyChip>、<CompanyChip id="eaton">伊頓（Eaton）</CompanyChip>，以及台灣的 <CompanyChip id="delta-electronics">台達電</CompanyChip>與 <CompanyChip id="lite-on">光寶科</CompanyChip><Cite k="nvidia-800v" />。Dell'Oro 預估，<Term id="sst">SST</Term>（固態變壓器）自 2029 年起會明顯壓縮 UPS 需求，最先出現在已大致捨棄 UPS 架構的大型 AI 工廠<Cite k="delloro-fcst-2030" />。
+
+### 散熱：從吹冷氣到把水送到晶片
+
+<Compare title="氣冷與直接液冷" left={{ title: "氣冷", items: ["風扇與機房空調帶走熱", "冷熱通道隔離", "適合中低密度機櫃", "既有機房即可沿用"] }} right={{ title: "直接液冷（DLC）", items: ["冷卻液流經晶片上的水冷板", "CDU 與設施水迴路交換熱量", "可支撐高密度 AI 機櫃", "需要管路、快接頭與防漏設計"] }} />
+
+目前主流是單相的<Term id="cold-plate">水冷板</Term>直接液冷<Cite k="delloro-lc-2026" />：冷卻液流過貼在 GPU 上的金屬冷板，再由 <Term id="cdu">CDU</Term>（冷卻液分配裝置）與設施端的冰水或乾式冷卻器交換熱量。不過並非所有機房都會全面改用液冷：Dell'Oro 預期，2026 年企業與託管機房裡會出現 40–80 kW 的高效能氣冷機櫃與 60–150 kW 液冷機櫃混搭的情形，讓營運者更難管理不均勻的熱負載<Cite k="delloro-pred-2026" />。輝達的 Vera Rubin 運算托盤已完全取消風扇，可全液冷運作<Cite k="delloro-fcst-2026-02" />。<Term id="immersion-cooling">浸沒式冷卻</Term>則把整台伺服器泡進不導電液體中，目前仍屬利基路線。衡量效率常用 <Term id="pue">PUE</Term>（總用電除以 IT 用電，越接近 1 越好）；Uptime Institute 的 2026 年調查指出，全球平均 PUE 只有小幅改善，舊機房拖慢了整體進度<Cite k="uptime-2026" />。
+
+### 商業模式與成本結構
+
+這一環有兩種很不一樣的生意：
+
+1. **設備商**：賣電力與散熱設備，再加上安裝與維運服務，接單到出貨常需數季，「在手訂單」是關鍵指標。Vertiv 2026 年第二季營收 32.74 億美元、年增 24%，全年營收財測上調至 138–142 億美元<Cite k="vertiv-q2-2026" />；Eaton 美洲電氣部門在手訂單年增 33%，電氣事業滾動 12 個月的訂單出貨比為 1.2<Cite k="eaton-q2-2026" />。
+2. **房東**：開發商與 REIT 先投入土地、電力、建物與機電設備，再以長約出租，收入來自每 kW 每月的租金、電費轉嫁與網路互連費。<CompanyChip id="equinix">易昆尼克斯（Equinix）</CompanyChip>第二季營收 26.25 億美元、年增 16%（含一次性的 xScale 費用），全年資本支出預估 50–60 億美元<Cite k="equinix-q2-2026" />；<CompanyChip id="digital-realty">Digital Realty</CompanyChip> 第二季續約租金以現金計上漲 25.4%<Cite k="dlr-q2-2026" />。新興房東的合約更長、更大：<CompanyChip id="applied-digital" /> 自 2026 年 3 月起，與同一家高投資等級的<Term id="hyperscaler">超大規模業者</Term>連簽三份 15 年「照付不議」租約，其中兩份各 300 MW、基本期合約收入各約 75 億美元；公司已簽約的 IT 負載合計約 1.4 GW，基本期合約收入約 360 億美元<Cite k="apld-q4-fy26" />。
+
+房東的成本以前期資本支出與融資成本為主，所以租約長度與租戶信用，直接決定資金成本。
+
+### 市場規模
+
+Dell'Oro 統計的資料中心實體基礎設施（DCPI，包含 UPS、散熱、配電、機櫃與相關服務）製造商營收，連續多季兩位數成長：
+
+<BarChart title="全球 DCPI 單季營收" unit="十億美元" data={[{ label: "2025 Q2", value: 8.9 }, { label: "2025 Q4", value: 10.9 }, { label: "2026 Q1", value: 12.0 }]} source={["delloro-dcpi-2q25", "delloro-dcpi-4q25", "delloro-dcpi-1q26"]} note="2026 Q1 起新納入排熱設備，約貢獻 10 億美元，與前期口徑不完全相同。" />
+
+2026 年第一季營收約 120 億美元、年增 28%，散熱類別年增近 50%，北美占全球營收一半以上<Cite k="delloro-dcpi-1q26" />。Dell'Oro 在 2026 年 8 月預估，DCPI 市場將以 22% 的年複合成長率在 2030 年達到 1,200 億美元<Cite k="delloro-fcst-2030" />；一年前它的預測還是 2029 年 631 億美元<Cite k="delloro-fcst-2029" />。兩次預測的終點年份不同，新版也擴大納入排熱設備，不能直接相減；但上修幅度之大，仍反映業界對需求的預期持續拉高。液冷是成長最快的一塊：2025 年接近 30 億美元，預估 2029 年約 70 億美元<Cite k="delloro-lc-2026" />。
+
+### 競爭格局
+
+設備端由少數綜合大廠領先：2025 年第一季，施耐德與 Vertiv 的全球 DCPI 市占只差約 0.1 個百分點<Cite k="delloro-dcpi-1q25" />。開發商端則相對分散，各區域有不同龍頭。
+
+| 子領域 | 代表業者 | 競爭型態 |
+|---|---|---|
+| 電力與散熱整合大廠 | Vertiv、施耐德、伊頓、ABB、西門子 | 少數大廠領先 |
+| 配電、機櫃與 PDU | 羅格朗、nVent | 多家競爭 |
+| 冰水主機與排熱 | 特靈科技、江森自控、摩丁 | 暖通大廠主導 |
+| 液冷 CDU 與冷板 | CoolIT、nVent、Vertiv、高力 | 新進者多、併購頻繁 |
+| 開發商與 REIT | Equinix、Digital Realty、QTS、Vantage、NTT DATA | 資本密集、區域分散 |
+| 礦企與礦場代管業者轉型房東 | Hut 8、Applied Digital、Core Scientific | 新興勢力 |
+
+併購也在加速，焦點集中在液冷：伊頓在 2026 年 3 月以 95.5 億美元完成收購散熱業者 Boyd Thermal<Cite k="eaton-q2-2026" />；水處理大廠 Ecolab 在 2026 年 3 月宣布以約 47.5 億美元現金收購液冷業者 <CompanyChip id="coolit" /><Cite k="ecolab-coolit-2026" />，並已在 7 月完成交易<Cite k="ecolab-q2-2026" />；Vertiv 與羅格朗也接連進行收購與入股，重心同樣是液冷<Cite k="delloro-dcpi-1q26" />。新進者同樣在搶市：<CompanyChip id="modine">摩丁（Modine）</CompanyChip>取得數筆重要的超大規模業者訂單<Cite k="delloro-dcpi-3q25" />。
+
+</LevelSection>
+
+<LevelSection level={3} title="深入議題" data-lint="level===3">
+
+### 瓶頸一：電從哪裡來
+
+Dell'Oro 指出，取得電力仍是 AI 建置最關鍵的挑戰<Cite k="delloro-dcpi-1q26" />，現場發電已從備案變成大型園區的必要選項<Cite k="delloro-fcst-2026-02" />。設備商因此往電網端延伸：Vertiv 在 2026 年 9 月宣布以約 14.5 億美元現金（另依 EBITDA 目標達成情況，最多再付 11.5 億美元）收購微電網業者 UtilityInnovation Group，補上<Term id="behind-the-meter">表後供電</Term>、現場發電與儲能調度能力，預計第四季完成<Cite k="vertiv-uig" />。電網與發電的細節，請見 <SegmentChip id="energy-power" />。
+
+### 瓶頸二：交付，而不是需求
+
+Dell'Oro 在 2026 年 8 月直言：「需求已不再是未知數，交付才是。」設備交期、施工人力、併網與社區同意都仍受限<Cite k="delloro-fcst-2030" />。Vertiv 的第二季財報也提到，部分營收因供應鏈暫時壅塞與分期施工而小幅遞延<Cite k="vertiv-q2-2026" />。人力同樣吃緊，超過一半的受訪業者表示難以找到合格人才<Cite k="uptime-2026" />。
+
+### 瓶頸三：社區與審批
+
+CBRE 指出，地方反對正在限制新供給<Cite k="cbre-gdc-2026" />；Dell'Oro 也提到，第一個全州性的資料中心暫停令已經生效，社區反對擋下或延後了相當比例的已宣布專案；歐洲、中東與非洲則因電力取得較慢、審批較難，成為唯一被下修預測的地區<Cite k="delloro-fcst-2030" />。電價、用水與噪音等議題，可延伸閱讀<TrendLink id="datacenter-local-impact">資料中心的在地影響</TrendLink>。
+
+### 供需：空置率創新低
+
+2026 年第一季，北美前四大市場的機房存量年增 33%，整體空置率卻降到歷史新低：北維吉尼亞 0.3%、亞特蘭大 1%、達拉斯 1.8%；亞太區租金最高的新加坡，每 kW 每月租金達 330–475 美元<Cite k="cbre-gdc-2026" />。不過「宣布」不等於「蓋好」：Dell'Oro 在 2025 年底估計，已公開宣布的容量超過 70 <Term id="gigawatt">GW</Term>，其中不少可能只停留在紙上，並預期 2026 年底全球至少有五座園區的營運容量超過 1 GW<Cite k="delloro-pred-2026" />。
+
+### 融資與租戶集中
+
+AI 機房愈來愈依賴長約與專案融資。<CompanyChip id="hut-8" /> 已簽下 949 MW 的 IT 容量租約（含第二季結束後新簽的 352 MW），基本期合約總值約 266 億美元，並完成 75 億美元的投資等級專案融資，首批機房預計 2027 年交付<Cite k="hut8-q2-2026" />。Applied Digital 則讓<Term id="neocloud">新雲</Term>租戶 CoreWeave 的母公司為既有租約提供擔保，並另取得信用狀，以強化租約的信用品質<Cite k="apld-q4-fy26" />。一旦少數大租戶的需求或信用轉弱，房東與債權人都會受到衝擊，可參考<TrendLink id="ai-infra-financing-bubble">AI 基礎設施融資與泡沫風險</TrendLink>。
+
+### 2026–2028 年觀察重點
+
+1. **800V 直流量產**：Kyber 機櫃與 800V 直流資料中心能否在 2027 年如期全面量產<Cite k="nvidia-800v" />。
+2. **固態變壓器**：2029 年前後能否如預期開始壓縮 UPS 需求<Cite k="delloro-fcst-2030" />。
+3. **液冷滲透**：單相直接液冷能否維持主流，兩相液冷何時放量<Cite k="delloro-lc-2026" />。
+4. **成長斜率**：Dell'Oro 預期新增容量的年增速在 2026 年見頂，之後放緩但仍維持兩位數<Cite k="delloro-fcst-2030" />。
+5. **大型園區交付**：Hut 8 的 River Bend 與 Beacon Point 預計 2027 年第二、三季交付首批機房<Cite k="hut8-q2-2026" />。
+
+想深入了解技術細節，可閱讀<LearnLink id="datacenter-power-cooling">資料中心電力與散熱深入</LearnLink>，以及趨勢<TrendLink id="liquid-cooling-mainstream">液冷成為主流</TrendLink>、<TrendLink id="800v-dc-power">800V 直流供電與 MW 級機櫃</TrendLink>。
+
+</LevelSection>
+
+## 台灣的角色
+
+台灣在這一環主要扮演**設備供應者**。電源方面，<CompanyChip id="delta-electronics">台達電</CompanyChip>與<CompanyChip id="lite-on">光寶科</CompanyChip>名列輝達 800V 直流架構的電源元件合作夥伴<Cite k="nvidia-800v" />。散熱方面，伺服器內的水冷板與散熱模組（例如<CompanyChip id="avc">奇鋐</CompanyChip>、<CompanyChip id="auras">雙鴻</CompanyChip>）屬於 <SegmentChip id="servers-systems" />；機房端的 CDU 與板式熱交換器，則以<CompanyChip id="kaori">高力</CompanyChip>為代表。高力 2025 年營收新台幣 65.8 億元、年增 64%，2026 年前 9 月累計 94.7 億元、年增 121%，9 月單月年增 154%<Cite k="yahoo-8996" />。
+
+<BarChart title="高力（8996）營收" unit="億元新台幣" data={[{ label: "2024", value: 40.0 }, { label: "2025", value: 65.8 }, { label: "2026 1–9月", value: 94.7 }]} source="yahoo-8996" note="2026 年為 1–9 月累計，非全年。" keepOrder />
+
+**本地機房市場**規模相對小。電信中立的託管業者<CompanyChip id="chief-telecom">是方</CompanyChip> 2026 年前 9 月營收新台幣 31.0 億元，年增 2.8%<Cite k="yahoo-6561" />，成長明顯落後設備廠。最大的限制是北部電力：台電在 2024 年 8 月表示，桃園以北不再核供 5MW 以上的新資料中心<Cite k="technews-5mw-2024" />。經濟部在 2026 年 4 月估計，到 2030 年資料中心用電將增加約 1 GW，主要集中在西部都會與產業廊帶；能源署也自 2026 年起，要求新建或擴建 5MW 以上的大型資料中心在建廠前提出能源使用規劃送審，並要求雲端業者的超大型資料中心 <Term id="pue">PUE</Term> 不超過 1.3、主機代管機房不超過 1.4<Cite k="udn-dc-2026" />。2026 年 7 月情勢出現轉折：經濟部長龔明鑫表示，桃園以北 5MW 的限制可望解禁，報導指出這與大潭電廠新機組完工有關；台電董事長曾文生也表示，若桃園、基隆在大潭、協和電廠附近規劃 AI 資料中心專區，台電可與地方合作<Cite k="udn-5mw-2026" />。政策發展可參考<TrendLink id="taiwan-ai-policy">台灣 AI 政策與算力布局</TrendLink>。

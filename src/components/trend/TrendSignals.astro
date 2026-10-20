@@ -1,0 +1,190 @@
+---
+/**
+ * 「觀察指標」 (dated signals with their source) followed by 「反方觀點」 (counterpoints), as two stacked panels.
+ *   <TrendSignals signals={d.signals} counterpoints={d.counterpoints} headingLevel={3} />
+ */
+import Icon from '../ui/Icon.astro';
+import { formatDate } from '../../lib/format';
+import type { SourceT } from '../../schemas/common';
+
+interface Signal {
+  text: string;
+  date?: string | undefined;
+  source?: SourceT | undefined;
+}
+interface Props {
+  signals: readonly Signal[];
+  counterpoints: readonly string[];
+  headingLevel?: 2 | 3 | undefined;
+  signalsTitle?: string | undefined;
+  counterTitle?: string | undefined;
+  class?: string | undefined;
+}
+const {
+  signals,
+  counterpoints,
+  headingLevel = 3,
+  signalsTitle = '觀察指標',
+  counterTitle = '反方觀點',
+  class: className,
+} = Astro.props;
+const H = `h${headingLevel}` as 'h2' | 'h3';
+---
+
+<div class:list={['sig', className]}>
+  <section class="sig__col sig__col--signals" aria-labelledby="trend-signals">
+    <H id="trend-signals" class="sig__h">
+      <Icon name="data" />
+      {signalsTitle}
+    </H>
+    <p class="sig__lede">追蹤這些指標，可以判斷趨勢是在加速還是轉弱。</p>
+    <ol class="sig__list" role="list">
+      {
+        signals.map((s) => (
+          <li class="sig__item">
+            <p class="sig__text">{s.text}</p>
+            {(s.date || s.source) && (
+              <p class="sig__meta">
+                {s.date && <time datetime={s.date}>{formatDate(s.date)}</time>}
+                {s.source && (
+                  <a href={s.source.url} rel="noopener noreferrer" target="_blank" class="sig__src">
+                    {s.source.publisher}〈{s.source.title}〉
+                    <Icon name="external" />
+                    <span class="sr-only">（另開新視窗）</span>
+                  </a>
+                )}
+              </p>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+  <section class="sig__col sig__col--counter" aria-labelledby="trend-counterpoints">
+    <H id="trend-counterpoints" class="sig__h">
+      <Icon name="warn" />
+      {counterTitle}
+    </H>
+    <p class="sig__lede">另一種看法：哪些因素可能讓趨勢延後、縮小或轉向。</p>
+    <ul class="sig__list sig__list--counter" role="list">
+      {
+        counterpoints.map((c) => (
+          <li class="sig__item">
+            <p class="sig__text">{c}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</div>
+
+<style>
+  /* Stacked: the article column is at most 48rem, too narrow for two readable columns. */
+  .sig {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+  .sig__col {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    min-width: 0;
+  }
+  .sig__col--counter {
+    background: color-mix(in srgb, var(--c-warn) 5%, var(--c-bg-elev));
+    border-color: color-mix(in srgb, var(--c-warn) 22%, var(--c-border));
+  }
+  .sig__h {
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
+    margin: 0;
+    font-size: var(--fs-l);
+    scroll-margin-block-start: calc(var(--header-h) + var(--space-4));
+  }
+  .sig__col--signals .sig__h :global(svg) {
+    color: var(--c-accent);
+  }
+  .sig__col--counter .sig__h :global(svg) {
+    color: var(--c-warn);
+  }
+  .sig__lede {
+    margin: 0;
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .sig__list {
+    display: grid;
+    gap: var(--space-3);
+    margin: var(--space-1) 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: sig;
+  }
+  .sig__item {
+    position: relative;
+    display: grid;
+    gap: var(--space-1);
+    padding-inline-start: 2rem;
+    counter-increment: sig;
+  }
+  .sig__item::before {
+    content: counter(sig);
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 0.2em;
+    display: grid;
+    place-items: center;
+    inline-size: 1.4rem;
+    block-size: 1.4rem;
+    border-radius: 50%;
+    background: var(--c-accent-soft);
+    color: var(--c-accent);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+  }
+  .sig__list--counter .sig__item::before {
+    content: '';
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    inset-inline-start: 0.45rem;
+    inset-block-start: 0.7em;
+    background: var(--c-warn);
+  }
+  .sig__item + .sig__item {
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .sig__item + .sig__item::before {
+    inset-block-start: calc(var(--space-3) + 0.2em);
+  }
+  .sig__list--counter .sig__item + .sig__item::before {
+    inset-block-start: calc(var(--space-3) + 0.7em);
+  }
+  .sig__text {
+    margin: 0;
+    line-height: 1.75;
+  }
+  .sig__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25em 0.75em;
+    margin: 0;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .sig__src {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    color: var(--c-link);
+    overflow-wrap: anywhere;
+  }
+</style>

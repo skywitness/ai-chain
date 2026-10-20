@@ -1,0 +1,335 @@
+---
+title: "Google Gemma 開放權重系列"
+family: "Gemma"
+kind: llm
+lab: alphabet
+labName: "Google DeepMind"
+labUnit: google-deepmind
+origin: US
+summary: "Gemma 是 Google DeepMind 以 Gemini 同源技術打造的開放權重模型系列，尺寸從可在手機離線執行的 E2B、E4B，到能放進單張 80GB GPU 的 31B。2026 年 4 月推出的 Gemma 4 改用 Apache 2.0 授權，新增 MoE 版本與可切換的推理模式；Alphabet 表示 Gemma 系列累計下載超過 9 億次，其中 Gemma 4 推出後不到四個月即超過 3 億次。"
+strengths:
+  - "授權寬鬆：Gemma 4 改採 Apache 2.0，商用、修改與再散布的限制明顯少於 Gemma 3 的自訂使用條款"
+  - "尺寸齊全：E2B、E4B、12B、26B A4B（MoE，活躍參數 3.8B）與 31B，可部署在手機、筆電、工作站到單張 H100"
+  - "世代進步大：31B 在官方模型卡自報 MMLU-Pro 85.2%、GPQA Diamond 84.3%，Gemma 3 27B（不開思考）分別為 67.6% 與 42.4%"
+  - "原生多模態與工具呼叫：全系列支援影像輸入，E2B、E4B、12B 另支援音訊；內建系統提示、函式呼叫與可切換的思考模式"
+weaknesses:
+  - "與前沿閉源模型仍有差距：31B 在 AA 智慧指數 v4.3 為 15 分，同期 Gemini 3.8 Flash 為 41 分"
+  - "只公開權重與技術報告，未公開訓練資料與完整訓練流程，不屬於完全開源"
+  - "上下文最長 256K Token，短於 Gemini 主力型號的約 105 萬 Token；Gemini API 只提供免費層，正式上線多需自建或透過第三方託管"
+bestFor:
+  - "資料不能離開自家機房或裝置的企業、政府與醫療場景"
+  - "手機、筆電與邊緣裝置上的離線 AI 功能"
+  - "以自有資料微調的專用模型（翻譯、函式呼叫、醫療影像等）"
+  - "學術研究、教學與模型可解釋性研究"
+positioning:
+  capability: 15
+  costIndex: 16
+  openness: 0.8
+  method: computed
+  asOf: "2026-10-06"
+  note: "capability 取旗艦 Gemma 4 31B（推理模式）在 Artificial Analysis 智慧指數 v4.3 的 15 分（26B A4B 為 17 分）。Google 的 Gemini API 對 Gemma 4 只提供免費層、沒有付費價格，因此 costIndex 改用 Artificial Analysis 統計的第三方託管中位價（26B A4B：輸入 0.10、輸出 0.37 美元／百萬 Token），依 3:1 混合約 0.17 美元，套用 $0.05→0、$100→100 的對數換算約 16。Apache 2.0 開放權重但未公開訓練資料，openness 為 0.8。"
+relatedLearn: [open-vs-closed-models, mixture-of-experts, inference-optimization, what-is-llm]
+glossary: [open-weights, dense-model, moe, active-parameters, speculative-decoding, quantization, fine-tuning, sovereign-ai, edge-ai, benchmark]
+sources:
+  - &gemma4-blog
+    key: gemma4-blog
+    title: "Gemma 4: Byte for byte, the most capable open models"
+    publisher: "Google"
+    url: "https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/"
+    type: press-release
+    lang: en
+    published: "2026-04-02"
+    accessed: "2026-10-06"
+  - &gemma4-hf-card
+    key: gemma4-hf-card
+    title: "google/gemma-4-31B-it model card"
+    publisher: "Google DeepMind（Hugging Face）"
+    url: "https://huggingface.co/google/gemma-4-31B-it"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "同一張模型卡列出 E2B、E4B、12B、26B A4B、31B 與 Gemma 3 27B 的規格與評測"
+  - key: gemma4-tech-report
+    title: "Gemma 4 Technical Report"
+    publisher: "Google DeepMind（arXiv）"
+    url: "https://arxiv.org/abs/2607.02770"
+    type: paper
+    lang: en
+    published: "2026-07-02"
+    accessed: "2026-10-06"
+  - &gemma-releases
+    key: gemma-releases
+    title: "Gemma releases"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemma/docs/releases"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: dm-gemma
+    title: "Gemma - Google DeepMind"
+    publisher: "Google DeepMind"
+    url: "https://deepmind.google/models/gemma/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - &gemma3-model-card
+    key: gemma3-model-card
+    title: "Gemma 3 model card"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemma/docs/core/model_card_3"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - &gemma3n-docs
+    key: gemma3n-docs
+    title: "Gemma 3n model overview"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemma/docs/gemma-3n"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: hf-gemma4-26b
+    title: "google/gemma-4-26B-A4B-it"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/google/gemma-4-26B-A4B-it"
+    type: dataset
+    lang: en
+    accessed: "2026-10-06"
+    note: "Hugging Face API 的近 30 日下載數為滾動統計，2026 年 10 月查詢時逾 1,000 萬次，為下載量最高的 Gemma 4 型號"
+  - key: gemini-api-pricing
+    title: "Gemini Developer API pricing"
+    publisher: "Google AI for Developers"
+    url: "https://ai.google.dev/gemini-api/docs/pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: alphabet-q2-2026
+    title: "Alphabet earnings call Q2 2026: Sundar Pichai remarks"
+    publisher: "Google"
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/"
+    type: earnings-call
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-06"
+  - &aa-leaderboard
+    key: aa-leaderboard
+    title: "LLM Leaderboard - Comparison of AI models from OpenAI, Anthropic, Google, SpaceXAI & others"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "Intelligence Index v4.3；託管價格見 artificialanalysis.ai/models/gemma-4-26b-a4b"
+  - &arena-text
+    key: arena-text
+    title: "Text Arena: LLM Rankings & AI Model Benchmarks"
+    publisher: "Arena (formerly LMArena)"
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    published: "2026-10-02"
+    accessed: "2026-10-06"
+    note: "總榜（overall），預設開啟 style control"
+versions:
+  - id: gemma-4-31b
+    name: "Gemma 4 31B"
+    released: "2026-04-02"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 30.7, disclosed: true }
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    knowledgeCutoff: "2025-01"
+    reasoning: hybrid
+    availability: [self-host, api]
+    benchmarks:
+      - { benchmark: mmlu-pro, score: 85.2, setting: "指令微調版", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: gpqa-diamond, score: 84.3, reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: livecodebench, score: 80, setting: "LiveCodeBench v6", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: tau2-bench, score: 76.9, setting: "三個領域平均", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: hle, score: 19.5, setting: "不使用工具", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: aa-intelligence-index, score: 15, setting: "v4.3，推理模式", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1453, setting: "總榜第 76 名", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+    notes: "60 層密集模型，視覺編碼器約 5.5 億參數；未量化的 bfloat16 權重可放進單張 80GB H100。Gemini API 與 Google AI Studio 只提供免費層。發表時名列 Arena 文字榜開放模型第 3 名。"
+  - id: gemma-4-26b-a4b
+    name: "Gemma 4 26B A4B"
+    released: "2026-04-02"
+    status: ga
+    tier: mid
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: moe
+    params: { totalB: 25.2, activeB: 3.8, disclosed: true }
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    knowledgeCutoff: "2025-01"
+    reasoning: hybrid
+    availability: [self-host, api]
+    benchmarks:
+      - { benchmark: mmlu-pro, score: 82.6, setting: "指令微調版", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: gpqa-diamond, score: 82.3, reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: livecodebench, score: 77.1, setting: "LiveCodeBench v6", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: tau2-bench, score: 68.2, setting: "三個領域平均", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: aa-intelligence-index, score: 17, setting: "v4.3，推理模式；AA 標示為估計值", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1437, setting: "總榜第 100 名", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+    notes: "128 個專家、每個 Token 啟用 8 個加 1 個共享專家，推論速度接近 4B 模型。Hugging Face 上近 30 日下載量最高的 Gemma 4 型號。"
+  - id: gemma-4-12b
+    name: "Gemma 4 12B Unified"
+    released: "2026-06-03"
+    status: ga
+    tier: mid
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 11.95, disclosed: true }
+    modalitiesIn: [text, image, audio, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    knowledgeCutoff: "2025-01"
+    reasoning: hybrid
+    availability: [self-host]
+    benchmarks:
+      - { benchmark: mmlu-pro, score: 77.2, setting: "指令微調版", reportedBy: lab, date: "2026-06-03", source: *gemma4-hf-card }
+      - { benchmark: gpqa-diamond, score: 78.8, reportedBy: lab, date: "2026-06-03", source: *gemma4-hf-card }
+      - { benchmark: aa-intelligence-index, score: 14, setting: "v4.3，推理模式；AA 標示為估計值", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+    notes: "「Unified」指不使用獨立的視覺與音訊編碼器，影像區塊與音訊波形經線性層直接投影進語言模型的嵌入空間。"
+  - id: gemma-4-e4b
+    name: "Gemma 4 E4B"
+    released: "2026-04-02"
+    status: ga
+    tier: small
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 8, disclosed: true }
+    modalitiesIn: [text, image, audio, video]
+    modalitiesOut: [text]
+    contextTokens: 131072
+    knowledgeCutoff: "2025-01"
+    reasoning: hybrid
+    availability: [self-host, on-device]
+    benchmarks:
+      - { benchmark: mmlu-pro, score: 69.4, setting: "指令微調版", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: gpqa-diamond, score: 58.6, reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: aa-intelligence-index, score: 9, setting: "v4.3，推理模式", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+    notes: "有效參數 4.5B（含逐層嵌入表共約 8B）；同時推出更小的 E2B（有效 2.3B、含嵌入約 5.1B）。與 Pixel、Qualcomm、MediaTek 合作最佳化，可在手機、Raspberry Pi 與 Jetson Orin Nano 離線執行。Gemma 4 預訓練資料截至 2025 年 1 月。"
+  - id: gemma-3-270m
+    name: "Gemma 3 270M"
+    released: "2025-08-14"
+    status: ga
+    tier: small
+    weights: open-weights
+    license: "Gemma Terms of Use"
+    architecture: dense
+    params: { totalB: 0.27, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 32768
+    knowledgeCutoff: "2024-08"
+    reasoning: none
+    availability: [self-host, on-device]
+    notes: "超小型模型，定位為針對特定任務微調的基底；之後的 FunctionGemma（2025-12）即為 270M 尺寸。"
+  - id: gemma-3n-e4b
+    name: "Gemma 3n E4B"
+    released: "2025-06-26"
+    status: ga
+    tier: small
+    weights: open-weights
+    license: "Gemma Terms of Use"
+    architecture: unknown
+    modalitiesIn: [text, image, audio]
+    modalitiesOut: [text]
+    contextTokens: 32768
+    reasoning: none
+    availability: [self-host, on-device]
+    benchmarks:
+      - { benchmark: lmarena-text, score: 1317, setting: "gemma-3n-e4b-it", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+    notes: "行動裝置優先設計，採 MatFormer 架構與逐層嵌入（PLE）快取，可略過載入視覺與音訊參數以節省記憶體；2025-05-20 先以預覽版亮相。"
+  - id: gemma-3-27b
+    name: "Gemma 3 27B"
+    released: "2025-03-10"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Gemma Terms of Use"
+    architecture: dense
+    params: { totalB: 27, disclosed: true }
+    modalitiesIn: [text, image]
+    modalitiesOut: [text]
+    contextTokens: 131072
+    knowledgeCutoff: "2024-08"
+    reasoning: none
+    availability: [self-host, api]
+    benchmarks:
+      - { benchmark: mmlu-pro, score: 67.6, setting: "不開思考，引自 Gemma 4 模型卡對照欄", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: gpqa-diamond, score: 42.4, setting: "不開思考，引自 Gemma 4 模型卡對照欄", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: aa-intelligence-index, score: 5, setting: "v4.3", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1365, setting: "gemma-3-27b-it", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
+    notes: "Gemma 3 同時推出 1B、4B、12B、27B；4B、12B、27B 為 128K 上下文，1B 為 32K。27B 以 14 兆 Token 訓練，訓練資料截至 2024 年 8 月。採 Google 自訂的 Gemma 使用條款。上一代主力，列入以對照 Gemma 4 的進步。"
+flagshipVersion: gemma-4-31b
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: models-03
+  checkedBy: "models-03-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+Gemma 是 Google DeepMind 的<Term id="open-weights">開放權重</Term>模型系列，與閉源的 <ModelChip id="google-gemini">Gemini</ModelChip> 共用研究成果，但把權重公開讓任何人下載、部署與微調。Alphabet 在 2026 年 7 月的法說會表示，Gemma 系列累計下載已超過 9 億次，其中 Gemma 4 自 4 月推出後就超過 3 億次<Cite k="alphabet-q2-2026" />。在 Hugging Face 上，26B A4B 指令版近 30 日下載量超過 1,000 萬次<Cite k="hf-gemma4-26b" />，在<TrendLink id="open-weights-race">開放權重競賽</TrendLink>中是美國陣營的重要選手。
+
+目前主力是 2026-04-02 發表的 Gemma 4，首批包含 E2B、E4B、26B A4B 與 31B 四種尺寸<Cite k="gemma4-blog" />，6 月再補上 12B Unified<Cite k="gemma-releases" />。最大的改變是授權：Gemma 3 以前採用 Google 自訂的使用條款，Gemma 4 改為 Apache 2.0<Cite k="gemma4-blog" />，企業法務審查的門檻明顯降低。
+
+<Callout type="analogy" title="開放權重像一整鍋熬好的高湯">
+「開放權重」就像餐廳把熬好的高湯整鍋送給你：你可以在自家廚房（自己的伺服器、筆電或手機）直接使用，也能加料調成自己的口味（微調）；但餐廳沒有公開用了哪些食材、怎麼熬製（訓練資料與訓練流程）。所以 Gemma 可以自由部署與修改，卻不等於「完全開源」。
+</Callout>
+
+## 特性分析
+
+- **兩種架構並行**：31B 是<Term id="dense-model">密集模型</Term>（30.7B 參數），追求最高品質並適合當微調基底；26B A4B 是 <Term id="moe">MoE</Term>，總參數 25.2B，但每個 Token 只啟用 3.8B <Term id="active-parameters">活躍參數</Term>，推論速度接近 4B 模型<Cite k="gemma4-hf-card" />。
+- **為裝置端設計**：E2B、E4B 的「E」代表有效參數，透過逐層嵌入（PLE）讓 E4B 以約 4.5B 有效參數運作，並與 Qualcomm、MediaTek 合作，可在手機與 Raspberry Pi 上離線執行<Cite k="gemma4-blog" />，是<Term id="edge-ai">邊緣 AI</Term> 的重要選項。
+- **多模態與 Agent**：全系列支援影像與影片輸入，E2B、E4B、12B 另支援音訊；內建可切換的思考模式、函式呼叫與系統提示角色。小型模型上下文為 128K，中大型為 256K Token<Cite k="gemma4-hf-card" />。
+- **推論加速**：Google 陸續釋出多 Token 預測（MTP）草稿模型與 QAT <Term id="quantization">量化</Term>版本<Cite k="gemma-releases" />，前者可搭配<Term id="speculative-decoding">推測解碼</Term>提升生成速度，後者讓模型在手機與筆電上更省記憶體<Cite k="dm-gemma" />。
+
+<DeepDive title="深入一點：E 系列的「有效參數」是什麼？">
+一般模型的每一層共用同一張嵌入表；Gemma 4 的 E2B、E4B 則採用逐層嵌入（Per-Layer Embeddings，PLE），讓每一層解碼器對每個 Token 都有一份自己的小型嵌入。這些嵌入表很大，但只用來快速查表、不參與大量矩陣運算，所以模型卡另外標示「有效參數」：E4B 為 4.5B，連同嵌入表約 8B；E2B 為 2.3B，連同嵌入表約 5.1B<Cite k="gemma4-hf-card" />。12B Unified 則走另一條路，拿掉獨立的視覺與音訊編碼器，以輕量線性層把影像區塊與音訊波形直接投影進語言模型，降低多模態延遲，也能一次微調整個模型。
+</DeepDive>
+
+## 適合與不適合的用途
+
+**適合**：
+
+- 資料不能離開自家機房或裝置的場景，例如政府、金融與醫療，也是發展<Term id="sovereign-ai">主權 AI</Term> 的常見起點。
+- 手機、筆電上的離線 AI 功能；31B 的未量化權重可放進單張 80GB H100，量化後可在消費級 GPU 上執行<Cite k="gemma4-blog" />。
+- 以自有資料<Term id="fine-tuning">微調</Term>的專用模型。Google 自己就以 Gemma 為底推出 MedGemma、TranslateGemma、FunctionGemma 等衍生模型<Cite k="gemma-releases" />。
+
+**不適合**：
+
+- 需要前沿推理、長時程 Agent 或百萬 Token 上下文的任務：31B 在 AA 智慧指數 v4.3 為 15 分，與 Gemini 3.8 Flash 的 41 分仍有一段差距<Cite k="aa-leaderboard" />。
+- 需要「完全開源」（含訓練資料與配方）的研究，Gemma 只公開權重與技術報告<Cite k="gemma4-tech-report" />。
+- 沒有 GPU 維運能力、又需要正式服務等級的團隊：Gemini API 對 Gemma 4 只有免費層，沒有付費方案<Cite k="gemini-api-pricing" />，正式上線通常要自建或改用第三方託管。
+
+## 版本演進
+
+| 時間 | 版本 | 重點 |
+|---|---|---|
+| 2025-03 | Gemma 3（1B、4B、12B、27B） | 影像輸入、128K 上下文（1B 為 32K），Gemma 使用條款<Cite k="gemma3-model-card" /> |
+| 2025-06 | Gemma 3n（E2B、E4B） | 行動裝置優先，支援音訊輸入，32K 上下文<Cite k="gemma3n-docs" /> |
+| 2025-08 | Gemma 3 270M | 超小型，專為特定任務微調 |
+| 2025-09 至 2026-01 | EmbeddingGemma、VaultGemma、FunctionGemma、TranslateGemma、MedGemma 1.5 | 嵌入、差分隱私、函式呼叫、翻譯、醫療等衍生模型 |
+| 2026-04 | Gemma 4（E2B、E4B、26B A4B、31B） | Apache 2.0、MoE、可切換推理 |
+| 2026-06 | Gemma 4 12B Unified、QAT 量化版、DiffusionGemma | 不用獨立編碼器的統一多模態架構；量化版便於手機與筆電部署；DiffusionGemma 結合 Gemini Diffusion 研究<Cite k="dm-gemma" /> |
+| 2026-07 | Gemma 4 技術報告 | 於 arXiv 公開 |
+| 2026-10 | EmbeddingGemma 2（740M） | 把文字、程式碼、影像、影片與音訊放進同一個嵌入空間<Cite k="gemma-releases" /> |
+
+## 評測解讀
+
+Google 在模型卡自報的數字顯示世代進步很大：31B 的 MMLU-Pro 為 85.2%、GPQA Diamond 為 84.3%，對照欄中的 Gemma 3 27B（不開思考）分別只有 67.6% 與 42.4%<Cite k="gemma4-hf-card" />。不過 Gemma 4 的數字是開啟推理模式後由實驗室自測，與不思考的舊模型並排，會放大差距。
+
+第三方方面，Gemma 4 發表時 31B 曾名列 Arena 文字榜開放模型第 3 名<Cite k="gemma4-blog" />；到 2026-10-02，31B 為 1453 分、總榜第 76 名，26B A4B 為 1437 分、第 100 名<Cite k="arena-text" />，名次隨新模型湧入而下滑。Artificial Analysis 智慧指數 v4.3 中，26B A4B（17 分，AA 標示為估計值）反而略高於 31B（15 分）<Cite k="aa-leaderboard" />，兩者差距不大，說明不同評測組合可能讓排序反轉。整體來看，Gemma 的定位是「同尺寸表現強」而非「絕對最強」，比較時應與 <ModelChip id="alibaba-qwen">Qwen</ModelChip>、<ModelChip id="openai-gpt-oss">gpt-oss</ModelChip> 等同級開放權重模型對照，並參考<LearnLink id="open-vs-closed-models">開放與封閉模型</LearnLink>的取捨。

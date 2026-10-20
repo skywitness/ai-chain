@@ -1,0 +1,357 @@
+---
+title: "IBM Granite 系列"
+family: "Granite"
+kind: llm
+lab: ibm
+labName: "IBM"
+origin: US
+summary: "IBM 以 Apache 2.0 授權釋出的企業級開放權重模型家族，主力是 3B、8B、30B 的中小型模型。2025 年 10 月的 Granite 4.0 採用 Mamba-2 與 Transformer 混合架構，2026 年 4 月的 4.1 改回稠密架構，8 月的 4.2 再加入可切換的推理模式。它的定位不是前沿競賽，而是可地端部署、可稽核、成本低的企業工作負載。"
+strengths:
+  - "全系列採 Apache 2.0 授權，可商用與微調；Granite 4 起所有 checkpoint 附加密簽章，並取得 ISO/IEC 42001:2023 AI 管理系統認證"
+  - "3B 到 30B 的小尺寸設計，另提供 FP8、NVFP4、MXFP4、GGUF 與 MLX 量化版，單張 GPU 或筆電即可執行，適合資料不出企業的地端部署"
+  - "Granite 4.2 支援思考、不思考與低強度思考三種模式，8B 與 30B 另經 Agent 強化學習，原生支援 OpenAI 格式的工具呼叫"
+  - "與 watsonx.ai、Red Hat 平台整合；透過 watsonx.ai 取用的 IBM 模型享有 IBM 的智慧財產權補償（indemnification）"
+weaknesses:
+  - "綜合能力與前沿模型差距明顯：旗艦 Granite 4.2 30B 的 Artificial Analysis 智慧指數為 13（AA 獨立實測），IBM 自評的 SWE-bench Pro 僅 33.3%"
+  - "多數評測由 IBM 自行公布，第三方獨立評測仍少；LMArena 文字榜票數約 3,400 票，信賴區間較寬"
+  - "一年內從 4.0、4.1 換到 4.2，架構在混合與稠密之間切換，企業導入後需要重新驗證"
+  - "watsonx.ai 上按 token 計價的 Granite 4 世代語言模型只有 4.0-H-Small；4.1 須按小時租用專屬部署，4.2 尚未列入 watsonx.ai 的模型清單"
+bestFor:
+  - "必須在地端或私有雲執行、資料不能離開企業環境的文件處理、RAG 與客服流程"
+  - "高頻、低成本的結構化任務：分類、資訊擷取、摘要與工具呼叫"
+  - "作為微調基底，打造特定領域的小型模型"
+  - "筆電與邊緣裝置上的離線推論（3B 與 Nano 系列）"
+positioning:
+  capability: 13
+  costIndex: 23
+  openness: 0.8
+  method: computed
+  asOf: "2026-10-17"
+  note: "capability 取旗艦 Granite 4.2 30B 的 Artificial Analysis Intelligence Index v4.3.2 分數 13（AA 獨立實測，2026-10-17 查核時讀取）。costIndex 以 AA 列出的 API 價格（輸入 0.16、輸出 0.65 美元／百萬 tokens）按 3:1 混合為 0.28 美元，再依 0.05 美元 → 0、100 美元 → 100 的對數尺度換算；IBM 官方 watsonx.ai 尚未提供 4.2 的按 token 計價，若改用 4.0-H-Small 的官方價格則約為 11。openness 0.8：Apache 2.0 開放權重，但預訓練資料未完整公開。"
+versions:
+  - id: granite-4-2-30b
+    name: "Granite 4.2 30B"
+    released: "2026-08-25"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 30, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 131072
+    reasoning: hybrid
+    availability: [self-host, api]
+    benchmarks:
+      - benchmark: swe-bench-verified
+        score: 57.0
+        setting: "IBM 自評（NeMo Evaluator 框架）"
+        reportedBy: lab
+        date: "2026-08-25"
+        source: { title: "Granite 4.2 LLMs: How They're Built", publisher: "IBM Granite Team（Hugging Face Blog）", url: "https://huggingface.co/blog/ibm-granite/granite-4-2", type: docs, lang: en, published: "2026-08-25", accessed: "2026-10-06" }
+      - benchmark: swe-bench-pro
+        score: 33.29
+        setting: "IBM 自評（NeMo Evaluator 框架）"
+        reportedBy: lab
+        date: "2026-08-25"
+        source: { title: "Granite 4.2 LLMs: How They're Built", publisher: "IBM Granite Team（Hugging Face Blog）", url: "https://huggingface.co/blog/ibm-granite/granite-4-2", type: docs, lang: en, published: "2026-08-25", accessed: "2026-10-06" }
+      - benchmark: terminal-bench
+        score: 29.24
+        setting: "Terminal-Bench 2.1，IBM 自評"
+        reportedBy: lab
+        date: "2026-08-25"
+        source: { title: "Granite 4.2 LLMs: How They're Built", publisher: "IBM Granite Team（Hugging Face Blog）", url: "https://huggingface.co/blog/ibm-granite/granite-4-2", type: docs, lang: en, published: "2026-08-25", accessed: "2026-10-06" }
+      - benchmark: livecodebench
+        score: 75.77
+        setting: "LiveCodeBench v6，pass@1"
+        reportedBy: lab
+        date: "2026-08-25"
+        source: { title: "Granite 4.2 LLMs: How They're Built", publisher: "IBM Granite Team（Hugging Face Blog）", url: "https://huggingface.co/blog/ibm-granite/granite-4-2", type: docs, lang: en, published: "2026-08-25", accessed: "2026-10-06" }
+      - benchmark: aime-2025
+        score: 89.17
+        setting: "pass@1，IBM 自評"
+        reportedBy: lab
+        date: "2026-08-25"
+        source: { title: "Granite 4.2 LLMs: How They're Built", publisher: "IBM Granite Team（Hugging Face Blog）", url: "https://huggingface.co/blog/ibm-granite/granite-4-2", type: docs, lang: en, published: "2026-08-25", accessed: "2026-10-06" }
+      - benchmark: mmlu-pro
+        score: 77.6
+        setting: "IBM 自評"
+        reportedBy: lab
+        date: "2026-08-25"
+        source: { title: "Granite 4.2 LLMs: How They're Built", publisher: "IBM Granite Team（Hugging Face Blog）", url: "https://huggingface.co/blog/ibm-granite/granite-4-2", type: docs, lang: en, published: "2026-08-25", accessed: "2026-10-06" }
+      - benchmark: aa-intelligence-index
+        score: 13
+        setting: "v4.3.2；AA 獨立實測（非估計值），高於同級開放權重小模型的中位數 8"
+        reportedBy: third-party
+        date: "2026-10-17"
+        source: { title: "Granite 4.2 30B - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/granite-4-2-30b", type: leaderboard, lang: en, accessed: "2026-10-17" }
+      - benchmark: lmarena-text
+        score: 1340
+        setting: "文字競技場總榜，±10，3,401 票，第 232 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "以 Granite 4.1 30B Base 後訓練而成的稠密推理模型，原生 128K 上下文，可延伸至 512K。30B 版另做第二階段 Agent 程式 SFT。IBM 官方 watsonx.ai 尚未提供按 token 計價，AA 列出的 API 價格為輸入 0.16、輸出 0.65 美元／百萬 tokens。"
+  - id: granite-4-2-8b
+    name: "Granite 4.2 8B"
+    released: "2026-08-25"
+    status: ga
+    tier: small
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 8, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 131072
+    reasoning: hybrid
+    availability: [self-host, api, on-device]
+    benchmarks:
+      - benchmark: swe-bench-verified
+        score: 47.67
+        setting: "IBM 自評（NeMo Evaluator 框架）"
+        reportedBy: lab
+        date: "2026-08-25"
+        source: { title: "Granite-4.2-8B model card", publisher: "IBM（Hugging Face）", url: "https://huggingface.co/ibm-granite/granite-4.2-8b", type: docs, lang: en, published: "2026-08-25", accessed: "2026-10-06" }
+      - benchmark: mmlu-pro
+        score: 74.04
+        setting: "IBM 自評"
+        reportedBy: lab
+        date: "2026-08-25"
+        source: { title: "Granite-4.2-8B model card", publisher: "IBM（Hugging Face）", url: "https://huggingface.co/ibm-granite/granite-4.2-8b", type: docs, lang: en, published: "2026-08-25", accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1288
+        setting: "文字競技場總榜，±11，3,237 票"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "與 30B 同一套訓練流程（含 Agent 強化學習），另有 3B 版本（未做 Agent 強化學習）。提供 Apple 晶片用的 MLX 量化版，可在筆電上執行。"
+  - id: granite-4-1-30b
+    name: "Granite 4.1 30B"
+    released: "2026-04-29"
+    status: ga
+    tier: mid
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 30, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 131072
+    reasoning: none
+    availability: [self-host, api]
+    benchmarks:
+      - benchmark: mmlu-pro
+        score: 64.09
+        setting: "5-shot，CoT"
+        reportedBy: lab
+        date: "2026-04-29"
+        source: { title: "Granite 4.1 LLMs: How They're Built", publisher: "IBM Granite Team（Hugging Face Blog）", url: "https://huggingface.co/blog/ibm-granite/granite-4-1", type: docs, lang: en, published: "2026-04-29", accessed: "2026-10-06" }
+      - benchmark: aa-intelligence-index
+        score: 7
+        setting: "v4.3.2；AA 標示為估計值"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Granite 4.1 30B - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/granite-4-1-30b", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "從頭以約 15 兆 tokens、分五階段預訓練的稠密模型（3B／8B／30B），不輸出長思考鏈以換取穩定延遲。IBM 稱 8B 版即可追平前代 32B MoE 的 Granite 4.0-H-Small。watsonx.ai 上為按小時計費的專屬部署；AA 已標示其被 4.2 取代。"
+  - id: granite-4-0-nano
+    name: "Granite 4.0 Nano（1B／350M）"
+    released: "2025-10-28"
+    status: ga
+    tier: small
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: hybrid
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    reasoning: none
+    availability: [self-host, on-device]
+    notes: "針對邊緣運算與裝置端推論的超小型版本（H 1B 約 15 億參數、H 350M 約 3.5 億參數），同時提供 Mamba-2 混合（H）與傳統 Transformer 兩種變體，後者方便在尚未完整支援混合架構的執行環境中使用。"
+  - id: granite-4-0-h-small
+    name: "Granite 4.0-H-Small"
+    released: "2025-10-02"
+    status: ga
+    tier: mid
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: hybrid
+    params: { totalB: 32, activeB: 9, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 131072
+    reasoning: none
+    availability: [api, self-host]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.0636
+        outputPerMTok: 0.265
+        currency: USD
+        tierNote: "watsonx.ai 按 token 計價（官方以每千 tokens 0.0000636／0.000265 美元標示）"
+        source: { title: "Supported foundation models in watsonx.ai", publisher: "IBM", url: "https://dataplatform.cloud.ibm.com/docs/content/wsj/analyze-data/fm-models.html?context=wx", type: docs, lang: en, accessed: "2026-10-06" }
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 6
+        setting: "v4.3.2；AA 標示為估計值"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Granite 4.0 H Small - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/granite-4-0-h-small", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1287
+        setting: "文字競技場總榜（列名 ibm-granite-h-small），±8，5,576 票"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "Mamba-2 層與 Transformer 區塊以 9:1 比例交錯，前饋層為 MoE（72 個專家中啟用 10 個）。IBM 稱長輸入與多批次並行時所需記憶體減少 70% 以上；訓練樣本長度達 512K，效能驗證至 128K。同代另有 H-Tiny（7B／1B 活躍）、H-Micro 與 Micro（3B）。"
+  - id: granite-3-3-8b
+    name: "Granite 3.3 8B Instruct"
+    released: "2025-04-16"
+    status: retired
+    tier: small
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 8, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    reasoning: hybrid
+    availability: [self-host]
+    notes: "以 think／response 標籤區隔思考與回答的早期推理嘗試。watsonx.ai 於 2025-11-24 標為淘汰、2026-02-22 下架，官方建議改用 granite-4-h-small；Hugging Face 權重仍可下載。"
+flagshipVersion: granite-4-2-30b
+relatedLearn: [open-vs-closed-models, reasoning-models, mixture-of-experts, inference-optimization, model-evaluation]
+glossary: [open-weights, dense-model, moe, ssm, reasoning-model, quantization, function-calling, grpo, benchmark-contamination, test-time-compute]
+sources:
+  - key: ibm-granite-site
+    title: "IBM Granite"
+    publisher: IBM
+    url: "https://www.ibm.com/granite"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: ibm-granite-4-0
+    title: "IBM Granite 4.0: hyper-efficient, high performance hybrid models for enterprise"
+    publisher: IBM
+    url: "https://www.ibm.com/new/announcements/ibm-granite-4-0-hyper-efficient-high-performance-hybrid-models"
+    type: press-release
+    lang: en
+    published: "2025-10-02"
+    accessed: "2026-10-06"
+  - key: hf-granite-4-1
+    title: "Granite 4.1 LLMs: How They're Built"
+    publisher: "IBM Granite Team（Hugging Face Blog）"
+    url: "https://huggingface.co/blog/ibm-granite/granite-4-1"
+    type: docs
+    lang: en
+    published: "2026-04-29"
+    accessed: "2026-10-06"
+  - key: hf-granite-4-2
+    title: "Granite 4.2 LLMs: How They're Built"
+    publisher: "IBM Granite Team（Hugging Face Blog）"
+    url: "https://huggingface.co/blog/ibm-granite/granite-4-2"
+    type: docs
+    lang: en
+    published: "2026-08-25"
+    accessed: "2026-10-06"
+  - key: hf-granite-4-2-card
+    title: "Granite-4.2-8B model card"
+    publisher: "IBM（Hugging Face）"
+    url: "https://huggingface.co/ibm-granite/granite-4.2-8b"
+    type: docs
+    lang: en
+    published: "2026-08-25"
+    accessed: "2026-10-06"
+  - key: hf-granite-4-0-card
+    title: "Granite-4.0-H-Small model card"
+    publisher: "IBM（Hugging Face）"
+    url: "https://huggingface.co/ibm-granite/granite-4.0-h-small"
+    type: docs
+    lang: en
+    published: "2025-10-02"
+    accessed: "2026-10-06"
+  - key: hf-granite-4-2-mlx
+    title: "granite-4.2-8b-q4-mlx"
+    publisher: "IBM（Hugging Face）"
+    url: "https://huggingface.co/ibm-granite/granite-4.2-8b-q4-mlx"
+    type: docs
+    lang: en
+    published: "2026-09-01"
+    accessed: "2026-10-17"
+  - key: hf-granite-nano
+    title: "Granite 4.0 Nano: Just how small can you go?"
+    publisher: "IBM Granite Team（Hugging Face Blog）"
+    url: "https://huggingface.co/blog/ibm-granite/granite-4-nano"
+    type: docs
+    lang: en
+    published: "2025-10-28"
+    accessed: "2026-10-17"
+  - key: watsonx-models
+    title: "Supported foundation models in watsonx.ai"
+    publisher: IBM
+    url: "https://dataplatform.cloud.ibm.com/docs/content/wsj/analyze-data/fm-models.html?context=wx"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: watsonx-lifecycle
+    title: "Foundation model lifecycle（watsonx.ai）"
+    publisher: IBM
+    url: "https://dataplatform.cloud.ibm.com/docs/content/wsj/analyze-data/fm-model-lifecycle.html?context=wx"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: aa-granite-4-2
+    title: "Granite 4.2 30B - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/granite-4-2-30b"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-17"
+  - key: lmarena-text
+    title: "Text Arena Leaderboard"
+    publisher: LMArena
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial: { status: fact-checked, author: models-07, checkedBy: "models-07-check", checkedOn: "2026-10-06", notes: "2026-10-17 查核：Artificial Analysis 已將 Granite 4.2 30B 改為獨立實測，指數由初稿記載的估計值 15 更新為 13，排名改以同級中位數描述；4.2 的 MMLU-Pro、SWE-bench 等評測設定以官方表格為準（官方未標註 5-shot 或思考模式）。" }
+---
+
+## 系列概覽
+
+Granite 是 <CompanyChip id="ibm">IBM</CompanyChip> 自行訓練的開放權重模型家族。除了語言模型，還包含語音、視覺、嵌入、Guardian 防護與時間序列模型，全部採 Apache 2.0 授權<Cite k="ibm-granite-site" />。IBM 的定位很清楚：不追逐前沿排行榜，而是提供企業「夠用、便宜、可稽核」的小模型，再搭配 watsonx.ai 與 Red Hat 平台銷售。Granite 4.0 的模型都附有加密簽章，IBM 也宣稱 Granite 是第一個取得 ISO/IEC 42001:2023（AI 管理系統國際標準）認證的開放語言模型家族<Cite k="ibm-granite-4-0" />。
+
+<Callout type="analogy" title="生活化比喻">如果前沿模型是頂級跑車，Granite 比較像規格公開、保固清楚、可以裝進自家廠房的標準引擎：馬力不是最大，但好維修、好稽核，也不必把貨物（資料）運到別人的工廠。</Callout>
+
+模型本身免費開放，商業上則是把客戶帶進 watsonx 與 Red Hat 的平台與顧問服務，屬於 <SegmentChip id="foundation-models">基礎模型</SegmentChip>環節中「開放權重＋企業平台」的路線。
+
+## 特性分析
+
+- **小尺寸、可地端**：主力只有 3B、8B、30B 三種尺寸，4.2 並提供 FP8、NVFP4、MXFP4、GGUF 等<Term id="quantization">量化</Term>版本<Cite k="hf-granite-4-2" />，IBM 另在 Hugging Face 釋出 Apple 晶片用的 MLX 版本<Cite k="hf-granite-4-2-mlx" />，一張 GPU 甚至一台筆電就能執行。
+- **架構來回調整**：Granite 4.0 把 Mamba-2（一種 <Term id="ssm">SSM</Term> 狀態空間模型）與 Transformer 以 9:1 交錯，H-Small 再加上 <Term id="moe">MoE</Term>（32B 總參數、9B 活躍），主打長輸入時記憶體需求減少 70% 以上<Cite k="ibm-granite-4-0" />。到了 4.1，IBM 改回<Term id="dense-model">稠密模型</Term>，以約 15 兆 tokens 從頭預訓練，並稱 8B 版即可追平前代 H-Small<Cite k="hf-granite-4-1" />。
+- **推理與 Agent**：Granite 4.2 是 IBM 第一個稠密架構的<Term id="reasoning-model">推理模型</Term>家族，同一個模型可切換思考、不思考與低強度思考。後訓練以 <Term id="grpo">GRPO</Term> 在數學、程式、工具使用等多種環境做強化學習，8B 與 30B 另在沙箱中練習修程式、操作終端機與搜尋網頁，並原生支援 OpenAI 格式的<Term id="function-calling">函式呼叫</Term><Cite k="hf-granite-4-2" />。
+- **家族分工**：同一家族還有 Granite Guardian（輸入輸出的安全過濾）與 Granite Embedding（RAG 檢索用的嵌入模型），可與語言模型組成完整的企業流程<Cite k="ibm-granite-site" />。
+- **訓練算力**：4.1 與 4.2 都在 <CompanyChip id="coreweave">CoreWeave</CompanyChip> 託管的 <CompanyChip id="nvidia">輝達</CompanyChip> GB200 NVL72 叢集上訓練<Cite k="hf-granite-4-1" /><Cite k="hf-granite-4-2" />。
+
+## 適合與不適合的用途
+
+**適合**：資料不能離開企業的文件問答、RAG、客服與表單擷取；需要大量呼叫、對成本敏感的分類與摘要；作為領域微調的基底；筆電或邊緣裝置上的離線推論（3B 與 Nano 系列）。透過 watsonx.ai 使用時，IBM 對 Granite 生成內容的第三方智慧財產權主張提供不設上限的補償；從 Hugging Face 等第三方管道下載的版本則不在補償範圍內。這對法遵要求高的金融、政府客戶有實際意義<Cite k="ibm-granite-4-0" /><Cite k="watsonx-models" />。
+
+**不適合**：前沿等級的複雜推理、長時程的程式 Agent（30B 在 SWE-bench Pro 只有約 33%）、影像或語音混合輸入（語言模型只吃文字，視覺需改用 Granite Vision）。官方測試語言包含中文，但沒有公布繁體中文評測，台灣使用者導入前應自行驗證。
+
+## 版本演進
+
+| 版本 | 發布 | 架構 | 重點 |
+|---|---|---|---|
+| Granite 3.3 8B | 2025-04 | 稠密 8B | 以標籤區隔思考與回答；watsonx.ai 已於 2026-02 下架 |
+| Granite 4.0 | 2025-10 | Mamba-2 混合，H-Small 為 MoE | 省記憶體、加密簽章、ISO 42001 |
+| Granite 4.0 Nano | 2025-10 | 約 1.5B／350M | 邊緣與裝置端推論 |
+| Granite 4.1 | 2026-04 | 稠密 3B／8B／30B | 重新預訓練，上下文延伸至 512K |
+| Granite 4.2 | 2026-08 | 稠密 3B／8B／30B | 可切換推理模式、Agent 強化學習 |
+
+Granite 3.3 8B 在 watsonx.ai 上於 2025-11-24 標為淘汰、2026-02-22 下架，官方建議改用 granite-4-h-small<Cite k="watsonx-lifecycle" />。目前 watsonx.ai 上按 token 計價的 Granite 4 世代語言模型只有 4.0-H-Small（每百萬 tokens 輸入約 0.064 美元、輸出約 0.265 美元），4.1 須按小時租用專屬部署，4.2 則尚未列入 watsonx.ai 的模型清單<Cite k="watsonx-models" />。Granite 4.0 Nano 於 2025-10-28 發布，提供 Mamba-2 混合與傳統 Transformer 兩種版本，主打邊緣與裝置端部署<Cite k="hf-granite-nano" />。
+
+## 評測解讀
+
+IBM 在 2026-08-25 公布 Granite 4.2 30B 的自評成績：AIME 2025 為 89.2%、MMLU-Pro 為 77.6%、LiveCodeBench v6 為 75.8%，但 SWE-bench Verified 為 57.0%、SWE-bench Pro 為 33.3%、Terminal-Bench 2.1 為 29.2%<Cite k="hf-granite-4-2" />。考試型題目分數高、多步驟 Agent 任務分數低，正是小模型的典型輪廓。
+
+第三方方面，Artificial Analysis（AA）已完成對 Granite 4.2 30B 的獨立實測，智慧指數為 13（2026-10-17 查核時讀取），高於同尺寸開放權重模型的中位數 8，但與前沿模型仍有很大距離<Cite k="aa-granite-4-2" />。AA 指數 v4.3.2 已大量納入 GDPval、Terminal-Bench 4.0 等 Agent 型評測，小模型普遍分數偏低，不宜直接拿來和 IBM 自評的考試型分數對照。版本之間的比較也要小心：4.1 30B 的 MMLU-Pro 為 64.1%（5-shot CoT 的指令模型）<Cite k="hf-granite-4-1" />，4.2 則預設先思考再作答，進步很可能有一部分來自推理時多花的 tokens，也就是<Term id="test-time-compute">測試時運算</Term>，而不只是知識變多。LMArena 文字競技場（2026-10-02 更新）上，Granite 4.2 30B 為 1340 分，但只有約 3,400 票、信賴區間 ±10<Cite k="lmarena-text" />。另外，AIME 等公開題目也有<Term id="benchmark-contamination">評測汙染</Term>的疑慮，選型時建議以自己的資料實測為準。

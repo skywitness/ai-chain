@@ -1,0 +1,170 @@
+---
+/**
+ * <CompanyFinancials financials={entry.data} profile="full|compact" company="台積電" />
+ *
+ * full:    headline figures (latest period, TTM with USD conversion, margins, guidance), revenue
+ *          bars with a CSS-only 季／年／月 switch (radio buttons + :has(), no JS), margin lines
+ *          and revenue mix (up to two mix groups).
+ * compact: the last 4 fiscal years of revenue, plus Taiwan monthly revenue (13 months) when
+ *          present.
+ */
+import './charts.css';
+import ChartFrame from './ChartFrame.astro';
+import RevenueBars from './RevenueBars.astro';
+import MonthlyRevenue from './MonthlyRevenue.astro';
+import MarginLines from './MarginLines.astro';
+import SegmentMix from './SegmentMix.astro';
+import { uid } from '../content/page-state';
+import {
+  type FinancialsInput,
+  annualRevenue,
+  marginSeries,
+  metricPoints,
+  mixGroups,
+  primaryPeriodType,
+  summarizeFinancials,
+} from '../../lib/financial-metrics';
+import { currencyName, formatChange, formatDate, formatMoney, formatMoneyRange, formatPercent, formatPointChange } from '../../lib/format';
+import { labelForPeriod } from '../../lib/fiscal';
+import { rateClause, rateInfo } from '../../lib/fx';
+
+interface Props {
+  financials: FinancialsInput;
+  profile: 'full' | 'compact';
+  /** display name, e.g. 「台積電」 */
+  company?: string | undefined;
+  /** element used for chart titles (default h3, under the page's 營收表現 H2) */
+  as?: 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | undefined;
+  id?: string | undefined;
+  class?: string | undefined;
+}
+
+const { financials: fin, profile, company = '', as = 'h3', id, class: className } = Astro.props;
+const sum = summarizeFinancials(fin);
+const primary = primaryPeriodType(fin);
+const hasMonthly = metricPoints(fin, 'revenue', 'month').length > 0;
+const years = annualRevenue(fin);
+const hasYears = years.length > 0;
+const margins = marginSeries(fin);
+const hasMargins = margins.gross.length + margins.operating.length > 0;
+const groups = mixGroups(fin).slice(0, 2);
+const name = uid(Astro, 'cf');
+const tabs = [
+  ...(primary === 'quarter' ? [{ v: 'q', label: '季' }] : primary === 'half' ? [{ v: 'h', label: '半年' }] : []),
+  ...(hasYears ? [{ v: 'y', label: '年' }] : []),
+  ...(hasMonthly ? [{ v: 'm', label: '月' }] : []),
+];
+const firstTab = tabs[0]?.v ?? 'q';
+
+// headline figures
+const cur = sum.currency;
+const ttm = sum.ttm ?? sum.ttmNative;
+const ttmUsd = sum.ttm?.valueUsd ?? null;
+const ttmRate = sum.ttm && cur !== 'USD' ? rateInfo(cur, { start: sum.ttm.start, end: sum.ttm.end }) : null;
+const latest = sum.latest;
+const guide = sum.guidance;
+const PERIOD_ZH = { quarter: '季', half: '半年度', year: '年度' } as const;
+const As = as;
+// titles of the switchable panels sit one level below the card title
+const sub = (as === 'p' ? 'p' : (`h${Math.min(6, Number(as.slice(1)) + 1)}` as 'h3' | 'h4' | 'h5' | 'h6'));
+---
+
+{
+  profile === 'full' ? (
+    <div class:list={['cf', className]} id={id}>
+      <div class:list={['ch', 'cf__switch']}>
+        <div class="ch__head">
+          <As class="ch__title">{company}營收表現</As>
+          <p class="ch__meta">
+            <span>原幣：{currencyName(cur)}</span>
+            <span>資料截至 {fin.lastVerified}</span>
+          </p>
+        </div>
+        {tabs.length > 1 && (
+          <fieldset class="cf__tabs">
+            <legend>營收資料期間</legend>
+            {tabs.map((t) => (
+              <>
+                <input type="radio" name={name} id={`${name}-${t.v}`} value={t.v} checked={t.v === firstTab} />
+                <label for={`${name}-${t.v}`}>{t.label}</label>
+              </>
+            ))}
+          </fieldset>
+        )}
+        {latest && (
+          <dl class="ch-stats">
+            <div>
+              <dt>最新{PERIOD_ZH[sum.periodType ?? 'quarter']}營收（{latest.label}）</dt>
+              <dd>
+                {formatMoney(latest.value, cur)}
+                {latest.yoy != null && <small>{formatChange(latest.yoy, 'yoy')}</small>}
+              </dd>
+            </div>
+            {ttm && ttm.basis !== 'year' && (
+              <div>
+                <dt>{ttm.label}營收</dt>
+                <dd>
+                  {formatMoney(ttm.value, cur)}
+                  <small>
+                    {ttmUsd != null && cur !== 'USD' ? `≈ ${formatMoney(ttmUsd, 'USD')}（以美元換算）` : ttm.yoy != null ? formatChange(ttm.yoy, 'yoy') : ''}
+                  </small>
+                </dd>
+              </div>
+            )}
+            {sum.grossMargin && (
+              <div>
+                <dt>毛利率（{sum.grossMargin.label}）</dt>
+                <dd>
+                  {formatPercent(sum.grossMargin.value)}
+                  {sum.grossMargin.yoy != null && <small>較去年同期{formatPointChange(sum.grossMargin.yoy)}</small>}
+                </dd>
+              </div>
+            )}
+            {guide && (
+              <div>
+                <dt>公司財測（{labelForPeriod(guide.forPeriod, fin.fiscalYear)}）</dt>
+                <dd>
+                  {formatMoneyRange(guide.low, guide.high, guide.currency)}
+                  <small>{formatDate(guide.issued, 'iso')} 發布</small>
+                </dd>
+              </div>
+            )}
+          </dl>
+        )}
+        {tabs.map((t) => (
+          <div class="cf__panel" data-panel={t.v} data-default={t.v === firstTab ? '' : undefined}>
+            {t.v === 'm' ? (
+              <MonthlyRevenue financials={fin} company={company} months={24} bare as={sub} />
+            ) : (
+              <RevenueBars financials={fin} periodType={t.v === 'q' ? 'quarter' : t.v === 'h' ? 'half' : 'year'} company={company} bare as={sub} />
+            )}
+          </div>
+        ))}
+        {ttmRate && sum.ttm && (
+          <p class="cf__usd">
+            {sum.ttm.label}美元換算：每期依其期間平均匯率換算後加總（例如最新一期{rateClause(rateInfo(cur, { start: sum.ttm.periods.at(-1)!.start, end: sum.ttm.periods.at(-1)!.end })!)}），僅供跨公司比較。
+          </p>
+        )}
+      </div>
+      {(hasMargins || groups.length > 0) && (
+        <div class="cf__grid">
+          {hasMargins && <MarginLines financials={fin} company={company} as={as} />}
+          {groups.map((g) => (
+            <SegmentMix financials={fin} group={g.group} company={company} as={as} />
+          ))}
+        </div>
+      )}
+    </div>
+  ) : (
+    <div class:list={['cf', 'cf__grid', className]} id={id}>
+      {hasYears ? (
+        <RevenueBars financials={fin} periodType="year" count={4} company={company} as={as} title={`${company}近年營收`} />
+      ) : primary ? (
+        <RevenueBars financials={fin} periodType={primary} count={8} company={company} as={as} />
+      ) : (
+        <ChartFrame title={`${company}營收`} as={as} empty emptyText="尚無公開營收資料。" />
+      )}
+      {hasMonthly && <MonthlyRevenue financials={fin} company={company} months={13} as={as} showStats={false} />}
+    </div>
+  )
+}

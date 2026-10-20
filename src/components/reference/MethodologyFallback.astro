@@ -1,0 +1,97 @@
+---
+/**
+ * Built-in methodology text for /sources/, shown while src/content/pages/methodology.mdx does not
+ * exist yet. Describes the rules actually implemented in src/lib/{fiscal,fx,format}.ts and the data
+ * schemas. Headings match METHODOLOGY_FALLBACK_HEADINGS (used for the page TOC).
+ * Render inside a .prose container.
+ */
+import Callout from '../content/Callout.astro';
+import { DATA_DATE } from '../../lib/seo';
+import { learnHref, sectionHref } from '../../lib/paths';
+import { getCurriculumArticle } from '../../lib/collections';
+
+const evalArticle = getCurriculumArticle('model-evaluation');
+---
+
+<h2 id="principles">資料原則</h2>
+<ul>
+  <li>
+    <strong>一手來源優先。</strong>公司財報、法說會簡報、年報與新聞稿、監理機關申報（美國
+    SEC EDGAR、台灣公開資訊觀測站）、官方技術文件與定價頁、政府與標準組織文件。媒體、研究機構與維基百科作為補充，並盡量交叉查證。
+  </li>
+  <li>
+    <strong>每個數字都附來源與日期。</strong>每頁底部的「資料來源」列出出處與讀取日期，內文的上標編號可以直接跳到對應來源。
+  </li>
+  <li><strong>查不到就省略。</strong>寧可留白，也不猜測或捏造數字。</li>
+  <li>
+    <strong>估計值一律標示。</strong>圖表以斜線填色與虛線外框呈現，表格加註「估計」，並寫明估計依據。
+  </li>
+  <li>
+    <strong>標示資料日期。</strong>全站資料基準日為 <time datetime={DATA_DATE}>{DATA_DATE}</time>；每頁的「資料截至」代表該頁最後一次查核的日期。
+  </li>
+</ul>
+
+<h2 id="fiscal">財報期間與財年</h2>
+<p>
+  各家公司的會計年度不同：輝達（NVIDIA）的財年在 1 月底結束，美光（Micron）約在 8 月底，微軟在 6 月 30 日，台積電、三星與 SK 海力士則採日曆年。為了避免混淆，本站這樣處理：
+</p>
+<ul>
+  <li>保留公司原本的期別標籤（例如 FY2027 Q2），同時記錄確切的起訖日期。</li>
+  <li>
+    換算成日曆季時，以<strong>重疊天數最多</strong>的季度為準。例如輝達 FY2027 第二季為 2026/4/27–7/26，其中 65 天落在第二季、26
+    天落在第三季，因此對應 2026 Q2。
+  </li>
+  <li>跨公司比較（例如資本支出、環節排名）使用日曆季；單一公司的圖表使用公司原本的期別，提示中再列出日曆區間。</li>
+  <li>年增率（YoY）比較的是上一個財年的同一季，而不是日曆上的同一季。</li>
+  <li>近四季合計（TTM）只在四季連續、而且沒有估計值時才計算。</li>
+</ul>
+
+<h2 id="currency">幣別與匯率換算</h2>
+<ul>
+  <li>先顯示原幣，例如「新台幣 9,337 億元」；大數使用萬、億、兆（1 兆 = 10<sup>12</sup>）。</li>
+  <li>換算成美元的數字放在第二行，並註明使用的平均匯率與期間，僅供比較。</li>
+  <li>
+    月資料用月平均匯率、季資料用季平均、年資料用年平均。公司財季與日曆季不一致時，以該期間涵蓋各月的平均匯率依天數加權。
+  </li>
+  <li>
+    匯率來自美國聯準會 H.10 系列（透過 FRED 取得）；H.10 沒有的幣別改用歐洲央行參考匯率，沙烏地里亞爾與阿聯迪拉姆採官方釘住匯率。完整清單見下方「匯率換算基準」。
+  </li>
+  <li>依美元換算後排序或排名時，頁面會註明「以美元換算」。</li>
+</ul>
+
+<h2 id="estimates">估計值、私人公司與財測</h2>
+<ul>
+  <li>私人公司的營收多半沒有公開，只能引用公司聲明或媒體報導，一律標示為估計，並寫明依據、來源與日期。</li>
+  <li>年化經常性收入（ARR）是獨立指標，不與財報營收混在一起比較。</li>
+  <li>估計值不納入近四季合計、排名與環節加總。</li>
+  <li>公司財測以區間呈現並標示「公司財測」；財報重編時以最新數字為準，並加註說明。</li>
+</ul>
+
+<h2 id="taiwan-monthly">台灣月營收</h2>
+<p>
+  台灣上市櫃公司每月 10 日前在公開資訊觀測站公告上個月營收。原始單位是新台幣千元，本站換算為百萬元儲存，並計算月增率、年增率與累計年增率。月營收屬自結數字、未經會計師查核，季度數字以財務報表為準。
+</p>
+
+<h2 id="models">模型評測與價格</h2>
+<ul>
+  <li>
+    評測分數一律附上測試日期、設定與出處，並區分官方自評、第三方測試與排行榜。並排比較的分數日期相差超過 90 天時，頁面會提醒。
+  </li>
+  <li>API 價格取自官方定價頁，以美元／每百萬 Token 計，並記錄查詢日期；價格可能隨時調整，請以官方頁面為準。</li>
+  <li>
+    「綜合能力、成本、開放程度」的定位分數是幫助理解的編輯判斷，不是排名。
+  </li>
+</ul>
+{
+  evalArticle && (
+    <p>
+      評測怎麼讀、有哪些陷阱，請見<a href={learnHref(evalArticle.slug)}>{evalArticle.title}</a>。
+    </p>
+  )
+}
+
+<Callout type="info" title="數字有誤怎麼辦？">
+  每個數字都能追溯到來源。如果來源與本站不一致，請以來源為準；如果來源本身已更新，代表本站資料可能過時，可參考下方「資料新鮮度」。更多編輯流程說明見<a
+    href={sectionHref('about')}>關於本站</a
+  >。
+</Callout>

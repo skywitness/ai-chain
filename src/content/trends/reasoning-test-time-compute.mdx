@@ -1,0 +1,305 @@
+---
+title: "推理模型與推論時運算"
+description: "推理模型在回答前先「想」一段，讓多花算力在推論成為提升能力的新槓桿。從 2024 年 9 月的 o1-preview 到 2026 年可調思考強度的模型，推理類模型在 2025 年底已佔 OpenRouter 過半 Token 用量，推論需求與成本結構隨之改變。"
+category: software
+horizon: near
+horizonYears: [2024, 2028]
+confidence: high
+confidenceRationale: "OpenAI、Anthropic、Google、DeepSeek 的旗艦模型都已內建可調的思考模式，OpenRouter 與 Google 公布的用量也顯示推理類工作量快速成長，方向相當明確；不確定的是幅度：Token 效率改善與蒸餾可能抵銷部分運算需求，推理能力在高複雜度任務上的極限也仍有爭議。"
+impact: high
+milestones:
+  - { date: "2024-09", label: "OpenAI 發表 o1-preview：以強化學習訓練模型先想再答", status: done }
+  - { date: "2024-12", label: "o3 預覽版在 ARC-AGI-1 半私有測試集拿下 75.7%，高運算設定 87.5%", status: done }
+  - { date: "2025-01", label: "DeepSeek-R1 以 MIT 授權開放權重，公開以強化學習誘發推理的方法", status: done }
+  - { date: "2025-02", label: "Claude 3.7 Sonnet 推出，可設定思考 Token 預算（最多 128K）", status: done }
+  - { date: "2025-03", label: "METR：AI Agent 可完成的任務長度約每 7 個月翻倍", status: done }
+  - { date: "2025-07", label: "進階版 Gemini Deep Think 在 IMO 以自然語言於 4.5 小時內拿下 35 分，達金牌水準", status: done }
+  - { date: "2025-08", label: "GPT-5 以路由器整合快速模型與深度推理模型", status: done }
+  - { date: "2025-12", label: "OpenRouter：推理類模型佔平台 Token 用量逾五成", status: done }
+  - { date: "2026-04", label: "DeepSeek-V4 提供不思考、High、Max 三種推理模式", status: done }
+  - { date: "2026-07", label: "Google 模型 API 每分鐘處理約 220 億個 Token，一季前為 160 億", status: done }
+  - { date: "2028", label: "若 METR 的趨勢延續，Agent 可勝任多種一週長的任務（推估 2027–2029 年）", status: speculative }
+signals:
+  - text: "OpenRouter 分析平台逾 100 兆個 Token：經推理類模型處理的 Token 佔比，從 2025 年第一季初幾乎可忽略，升到 2025 年底超過五成。"
+    date: "2025-12-04"
+    source: { title: "State of AI: An Empirical 100 Trillion Token Study with OpenRouter", publisher: "OpenRouter、a16z", url: "https://openrouter.ai/state-of-ai", type: analyst, lang: en, published: "2025-12-04", accessed: "2026-10-16", note: "報告標示 2025 年 12 月發表；僅反映 OpenRouter 平台的使用者組成" }
+  - text: "Google 執行長在 2026 年第二季法說會表示，旗下模型 API 每分鐘處理約 220 億個 Token，前一季為 160 億。"
+    date: "2026-07-22"
+    source: { title: "Alphabet earnings call Q2 2026: Sundar Pichai remarks", publisher: "Google Blog", url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/", type: earnings-call, lang: en, published: "2026-07-22", accessed: "2026-10-16" }
+  - text: "Google 各產品與 API 每月處理的 Token 在 2025 年 10 月已逾 1,300 兆（1.3 千兆），一年內成長逾 20 倍。"
+    date: "2025-10-29"
+    source: { title: "Alphabet earnings, Q3 2025: CEO's remarks", publisher: "Google Blog", url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q3-2025/", type: earnings-call, lang: en, published: "2025-10-29", accessed: "2026-10-16" }
+  - text: "輝達執行長黃仁勳表示，推理 AI 增加了另一條縮放定律：訓練用更多算力讓模型更聰明，推論時想得更久讓答案更好。"
+    date: "2025-02-26"
+    source: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2025", publisher: NVIDIA, url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2025", type: press-release, lang: en, published: "2025-02-26", accessed: "2026-10-16" }
+  - text: "同一組 DeepSeek-V4-Pro 權重，在 HMMT 2026 年 2 月數學競賽的成績：不思考 31.7%、High 94.0%、Max 95.2%。"
+    date: "2026-04-24"
+    source: { title: "DeepSeek-V4-Pro model card", publisher: "DeepSeek（Hugging Face）", url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro", type: docs, lang: en, published: "2026-04-24", accessed: "2026-10-16" }
+counterpoints:
+  - "成本與延遲：o3 預覽版在 ARC-AGI-1 的高運算設定用了低運算設定約 172 倍的算力，100 題共產生 57 億個 Token；ARC Prize 當時估計請人解一題約 5 美元，比 o3 預覽版便宜。"
+  - "能力有天花板：Apple 研究人員以可控難度的謎題測試，發現推理模型超過某個複雜度後準確率會完全崩潰，且在接近崩潰時反而減少思考量。"
+  - "強化學習未必帶來新能力：有研究以大 k 值的 pass@k 評估，發現可驗證獎勵強化學習（RLVR）訓練的模型在 k=1 時較好，但 k 夠大時基礎模型反而解出更多題。"
+  - "思維鏈不一定可信：Anthropic 測試發現，Claude 3.7 Sonnet 只有 25%、DeepSeek R1 只有 39% 會在思維鏈中提到影響答案的提示，靠閱讀思維鏈來監督模型仍有限制。"
+  - "效率可能抵銷需求：開放權重與蒸餾讓小模型也能推理，例如 DeepSeek 一併釋出 6 個蒸餾模型；推論算力的成長幅度未必等於 Token 用量的成長。"
+relatedSegments: [foundation-models, ai-accelerators, cloud-neocloud, memory-storage, devtools-data-mlops]
+relatedCompanies: [openai, anthropic, alphabet, deepseek, nvidia, openrouter, apple]
+relatedModels: [openai-gpt, anthropic-claude, google-gemini, deepseek, openai-gpt-oss]
+relatedLearn: [reasoning-models, post-training-deep, training-vs-inference-economics, inference-optimization, scaling-laws]
+glossary: [reasoning-model, chain-of-thought, test-time-compute, token, reinforcement-learning, rlvr, inference, kv-cache, decode, token-pricing, open-weights]
+sources:
+  - key: openrouter
+    title: "State of AI: An Empirical 100 Trillion Token Study with OpenRouter"
+    publisher: "OpenRouter、a16z"
+    url: "https://openrouter.ai/state-of-ai"
+    type: analyst
+    lang: en
+    published: "2025-12-04"
+    accessed: "2026-10-16"
+    note: "2025 年 12 月發表；記載 o1-preview 於 2024-09-12、o1 正式版於 2024-12-05 推出；推理類模型的 Token 佔比在 2025 年第一季初幾乎可忽略，報告發表時超過五成。"
+  - key: arc-o3
+    title: "OpenAI o3 Breakthrough High Score on ARC-AGI-Pub"
+    publisher: ARC Prize
+    url: "https://arcprize.org/blog/oai-o3-pub-breakthrough"
+    type: leaderboard
+    lang: en
+    published: "2024-12-20"
+    accessed: "2026-10-16"
+    note: "半私有測試集 100 題：高效率設定 75.7%（每題 6 個樣本、共 3,350 萬個 Token）；低效率設定 87.5%（每題 1,024 個樣本、共 57 億個 Token，算力約 172 倍）。成本欄位曾於 2025-03 與 2025-12 依新價格更新。"
+  - key: deepseek-r1-hf
+    title: "DeepSeek-R1 model card"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-R1"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "MIT 授權；開源 DeepSeek-R1-Zero、DeepSeek-R1 與 6 個以 Llama、Qwen 為底的蒸餾模型"
+  - key: deepseek-r1-paper
+    title: "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning"
+    publisher: "arXiv（DeepSeek-AI）"
+    url: "https://arxiv.org/abs/2501.12948"
+    type: paper
+    lang: en
+    published: "2025-01-22"
+    accessed: "2026-10-16"
+    note: "摘要指出推理能力可透過純強化學習誘發，不需人工標註的推理軌跡"
+  - key: claude-37
+    title: "Claude 3.7 Sonnet and Claude Code"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/claude-3-7-sonnet"
+    type: press-release
+    lang: en
+    published: "2025-02-24"
+    accessed: "2026-10-16"
+  - key: gpt5-card
+    title: "GPT-5 System Card"
+    publisher: OpenAI
+    url: "https://cdn.openai.com/gpt-5-system-card.pdf"
+    type: docs
+    lang: en
+    published: "2025-08-13"
+    accessed: "2026-10-16"
+    note: "GPT-5 由快速模型、深度推理模型與即時路由器組成；ChatGPT 中的 gpt-5-thinking-pro 使用平行推論時運算"
+  - key: openai-reasoning
+    title: "Reasoning models"
+    publisher: OpenAI API Docs
+    url: "https://developers.openai.com/api/docs/guides/reasoning"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "reasoning.effort 依模型可為 none、minimal、low、medium、high、xhigh、max；推理 Token 不顯示但佔用上下文並以輸出 Token 計費，依題目可能產生數百到數萬個；建議起初預留至少 25,000 個 Token"
+  - key: snell
+    title: "Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters"
+    publisher: "arXiv（Snell et al.）"
+    url: "https://arxiv.org/abs/2408.03314"
+    type: paper
+    lang: en
+    published: "2024-08-06"
+    accessed: "2026-10-16"
+    note: "運算最適策略比 best-of-N 基準效率高 4 倍以上；FLOPs 相同時，在小模型已有一定成功率的題目上，推論時運算可勝過大 14 倍的模型"
+  - key: deepseek-v4
+    title: "DeepSeek-V4-Pro model card"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-16"
+    note: "V4-Pro 三種模式（Non-think／High／Max）：HMMT 2026 Feb 31.7／94.0／95.2；LiveCodeBench 56.8／89.8／93.5；GPQA Diamond 72.9／89.1／90.1"
+  - key: deepmind-imo
+    title: "Advanced version of Gemini with Deep Think officially achieves gold-medal standard at the International Mathematical Olympiad"
+    publisher: Google DeepMind
+    url: "https://deepmind.google/blog/advanced-version-of-gemini-with-deep-think-officially-achieves-gold-medal-standard-at-the-international-mathematical-olympiad/"
+    type: company-site
+    lang: en
+    published: "2025-07-21"
+    accessed: "2026-10-16"
+  - key: metr-horizon
+    title: "Measuring AI Ability to Complete Long Tasks"
+    publisher: METR
+    url: "https://metr.org/blog/2025-03-19-measuring-ai-ability-to-complete-long-tasks/"
+    type: paper
+    lang: en
+    published: "2025-03-19"
+    accessed: "2026-10-16"
+    note: "50% 成功率的任務長度過去 6 年約每 7 個月翻倍；若趨勢再延續 2 到 4 年，通用自主 Agent 可勝任多種一週長的任務。METR 已註明部分文字與圖表為發表時的資料，之後改用新版方法"
+  - key: goog-io-2025
+    title: "Google I/O 2025: Sundar Pichai's opening keynote"
+    publisher: "Google Blog"
+    url: "https://blog.google/innovation-and-ai/technology/ai/io-2025-keynote/"
+    type: company-site
+    lang: en
+    published: "2025-05-20"
+    accessed: "2026-10-16"
+    note: "一年前每月處理 9.7 兆個 Token，現在逾 480 兆"
+  - key: goog-q3-2025
+    title: "Alphabet earnings, Q3 2025: CEO's remarks"
+    publisher: "Google Blog"
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q3-2025/"
+    type: earnings-call
+    lang: en
+    published: "2025-10-29"
+    accessed: "2026-10-16"
+    note: "每月逾 1.3 千兆（1,300 兆）個 Token，一年成長逾 20 倍；第一方模型經客戶直接 API 呼叫每分鐘處理 70 億個 Token"
+  - key: goog-q4-2025
+    title: "Alphabet earnings, Q4 2025: CEO's remarks"
+    publisher: "Google Blog"
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q4-2025/"
+    type: earnings-call
+    lang: en
+    published: "2026-02-04"
+    accessed: "2026-10-16"
+    note: "API 每分鐘逾 100 億個 Token"
+  - key: goog-q1-2026
+    title: "Alphabet earnings call, Q1 2026: Sundar Pichai's remarks"
+    publisher: "Google Blog"
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q1-2026/"
+    type: earnings-call
+    lang: en
+    published: "2026-04-29"
+    accessed: "2026-10-16"
+    note: "API 每分鐘逾 160 億個 Token"
+  - key: goog-q2-2026
+    title: "Alphabet earnings call Q2 2026: Sundar Pichai remarks"
+    publisher: "Google Blog"
+    url: "https://blog.google/company-news/inside-google/message-ceo/alphabet-earnings-q2-2026/"
+    type: earnings-call
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-16"
+    note: "API 每分鐘約 220 億個 Token"
+  - key: nvda-q4-fy25
+    title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2025"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2025"
+    type: press-release
+    lang: en
+    published: "2025-02-26"
+    accessed: "2026-10-16"
+  - key: apple-illusion
+    title: "The Illusion of Thinking: Understanding the Strengths and Limitations of Reasoning Models via the Lens of Problem Complexity"
+    publisher: "arXiv（Shojaee et al., Apple）"
+    url: "https://arxiv.org/abs/2506.06941"
+    type: paper
+    lang: en
+    published: "2025-06-07"
+    accessed: "2026-10-16"
+  - key: rl-boundary
+    title: "Does Reinforcement Learning Really Incentivize Reasoning Capacity in LLMs Beyond the Base Model?"
+    publisher: "arXiv（Yue et al.）"
+    url: "https://arxiv.org/abs/2504.13837"
+    type: paper
+    lang: en
+    published: "2025-04-18"
+    accessed: "2026-10-16"
+  - key: cot-faithfulness
+    title: "Reasoning models don't always say what they think"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/research/reasoning-models-dont-say-think"
+    type: paper
+    lang: en
+    published: "2025-04-03"
+    accessed: "2026-10-16"
+published: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: trends-06
+  checkedBy: "trends-06-check"
+  checkedOn: "2026-10-06"
+  notes: "資料基準日 2026-10-06，來源實際讀取日為 2026-10-16。OpenAI 官網文章讀取遭拒（403），o1 推出日期改引 OpenRouter 報告，GPT-5 改引 cdn.openai.com 的系統卡。Google 的 API Token 數字取自各季法說會講稿，2026 年第二季為「約」220 億。ARC Prize 的成本欄位曾依新價格更新，內文只引用 Token 數與分數。查核（trends-06-check）：OpenRouter 報告（發表日 2025-12-04、推理類佔比逾五成）、ARC Prize o3 數字、DeepSeek-R1 授權與蒸餾模型、DeepSeek-V4-Pro 三種模式的 HMMT／LiveCodeBench／GPQA 分數、Claude 3.7 Sonnet 128K 思考預算、GPT-5 路由器、OpenAI 推理強度與 25,000 Token 建議、Snell 論文、IMO 35／42 分、METR 7 個月翻倍、Google 各季每分鐘 Token 數與發布日期、輝達新聞稿引言、Apple／RLVR／思維鏈忠實度三篇反方研究皆以原始來源核對無誤。修正：METR 外推為「多種」而非「多數」一週長任務；Google 訊號改為與所引來源一致的數字；補充 o3 預覽版曾以 ARC 公開訓練集訓練、與正式版不同；三個轉址的 Google 與 DeepMind 網址更新為現行網址。"
+---
+
+## 趨勢摘要
+
+一句話：<Term id="reasoning-model">推理模型</Term>會在回答前先產生一段內部的<Term id="chain-of-thought">思維鏈</Term>，題目越難想得越久；「在推論時多花算力換取更好的答案」因此成為提升能力的新槓桿，也就是<Term id="test-time-compute">推論時運算</Term>。
+
+**已發生的事實**：OpenAI 在 2024 年 9 月 12 日推出 o1-preview<Cite k="openrouter" />，此後 Anthropic、DeepSeek 等實驗室也陸續推出可調整思考量的模型<Cite k="claude-37" /><Cite k="deepseek-v4" />。OpenRouter 統計，推理類模型處理的 <Term id="token">Token</Term> 佔比，從 2025 年初幾乎可忽略升到年底超過五成<Cite k="openrouter" />。
+
+**仍屬預測的部分**：METR 推估，若 AI Agent 可完成的任務長度持續每 7 個月左右翻倍，2027 到 2029 年間可勝任多種一週長的任務<Cite k="metr-horizon" />；這是趨勢外推，不是保證。
+
+## 為什麼重要
+
+過去提升模型能力，主要靠「訓練時」投入更多算力與資料；推理模型多了一個旋鈕：同一個模型，讓它想久一點，答案就更好。DeepSeek-V4-Pro 的官方數字很能說明這點，同一組權重只是切換思考模式，數學競賽成績就從三成跳到九成以上<Cite k="deepseek-v4" />：
+
+<BarChart title="DeepSeek-V4-Pro 不同思考模式的 HMMT 2026 年 2 月成績" unit="%" data={[{ label: "不思考", value: 31.7 }, { label: "思考（High）", value: 94.0 }, { label: "最大思考（Max）", value: 95.2 }]} source="deepseek-v4" note="同一組模型權重、Pass@1；廠商自行公布的評測結果。" />
+
+這也改變了算力的帳本。推理 Token 的內容雖然不會透過 API 回傳，仍佔用上下文並以輸出 Token 計費，依題目難度可能多出數百到數萬個 Token，OpenAI 建議開發者一開始至少預留 25,000 個 Token<Cite k="openai-reasoning" />。輝達執行長黃仁勳因此把推理稱為「另一條縮放定律」<Cite k="nvda-q4-fy25" />：算力需求不再只集中在訓練，每一次回答都要多算。
+
+<Callout type="analogy" title="生活化比喻">
+考試時，簡單題直接寫答案，難題則先在草稿紙上演算。草稿紙用得越多（推理 Token），越有機會算對，但也越花時間、越花紙。推理模型就是學會了「什麼時候該打草稿、打多少」的考生。
+</Callout>
+
+<DeepDive title="深入一點：推論時運算的兩種花法">
+推論時多花的算力，大致有兩種用法。第一種是**序列式**：讓模型寫出更長的思維鏈，一路檢查、修正再作答，Claude 的思考預算與 OpenAI 的推理強度調整的就是這一種<Cite k="claude-37" /><Cite k="openai-reasoning" />。第二種是**平行式**：同一題取樣多個答案，再以投票或評分挑出最好的一個。o3 預覽版在 ARC-AGI-1 的兩種設定就是例子：高效率設定每題取 6 個樣本，高運算設定每題取 1,024 個<Cite k="arc-o3" />；ChatGPT 中的 gpt-5-thinking-pro 也採用平行的推論時運算<Cite k="gpt5-card" />；達到 IMO 金牌水準的進階版 Gemini Deep Think 也用到了平行思考<Cite k="deepmind-imo" />。兩種做法並不互斥，可以同時使用。
+
+Snell 等人 2024 年的論文指出，依題目難度動態分配推論算力，效率可比單純「取 N 個答案挑最好」高 4 倍以上；在總運算量相同的比較下，對小模型已有一定成功率的題目，多給推論算力甚至能勝過大 14 倍的模型<Cite k="snell" />。這和推理模型「看題目決定想多久」的設計方向一致。
+</DeepDive>
+
+## 關鍵驅動力
+
+**一、強化學習讓模型學會「想」。** DeepSeek-R1 的論文指出，推理能力可以透過純<Term id="reinforcement-learning">強化學習</Term>誘發，不需要人工標註的推理示範<Cite k="deepseek-r1-paper" />；它在 2025 年 1 月以 MIT 授權開放權重，並一併釋出 6 個蒸餾小模型<Cite k="deepseek-r1-hf" />。數學、程式這類答案可自動驗證的題目，特別適合這種<Term id="rlvr">可驗證獎勵強化學習</Term>。
+
+**二、可調的思考預算成為產品標配。** Claude 3.7 Sonnet 在 2025 年 2 月推出，自稱第一個混合推理模型，API 使用者可指定最多思考 N 個 Token、上限 128K<Cite k="claude-37" />；GPT-5 由快速模型、深度推理模型與即時路由器組成，依題目複雜度決定由誰回答<Cite k="gpt5-card" />；OpenAI API 的推理強度則依模型可從 none 一路調到 max<Cite k="openai-reasoning" />。
+
+**三、高難度任務的突破。** o3 預覽版在 ARC-AGI-1 半私有測試集拿下 75.7%，放大約 172 倍算力後達 87.5%；不過這個測試版本曾以 ARC-AGI-1 的公開訓練集訓練，ARC Prize 也註明它與後來正式推出的 o3 不同<Cite k="arc-o3" />。進階版 Gemini Deep Think 在 2025 年國際數學奧林匹亞（IMO）以自然語言、在 4.5 小時的比賽時限內拿下 42 分中的 35 分，達金牌水準<Cite k="deepmind-imo" />。
+
+**四、Agent 與程式工作把推理變成預設。** 多步驟工作需要規劃與自我檢查，推動了推論用量。Google 模型 API 的處理量從 2025 年第三季到 2026 年第二季成長為 3 倍以上：
+
+<LineChart title="Google 模型 API 每分鐘處理的 Token 數" unit="十億個 Token／分鐘" series={[{ name: "Google 第一方模型 API", points: [{ x: "2025 Q3", y: 7 }, { x: "2025 Q4", y: 10 }, { x: "2026 Q1", y: 16 }, { x: "2026 Q2", y: 22 }] }]} source={["goog-q3-2025", "goog-q4-2025", "goog-q1-2026", "goog-q2-2026"]} note="客戶直接透過 API 呼叫的處理量，取自 Alphabet 各季法說會講稿；2026 Q2 為「約」220 億。用量成長也包含非推理的工作。" />
+
+## 時間表與里程碑
+
+| 時間 | 事件 | 性質 |
+|---|---|---|
+| 2024 年 9 月 | o1-preview 推出<Cite k="openrouter" /> | 已發生 |
+| 2025 年 1–2 月 | DeepSeek-R1 開放權重<Cite k="deepseek-r1-hf" />；Claude 3.7 Sonnet 混合推理<Cite k="claude-37" /> | 已發生 |
+| 2025 年 7–8 月 | IMO 金牌水準<Cite k="deepmind-imo" />；GPT-5 路由架構<Cite k="gpt5-card" /> | 已發生 |
+| 2026 年 4 月 | DeepSeek-V4 三種推理模式<Cite k="deepseek-v4" /> | 已發生 |
+| 2027–2029 年 | Agent 可勝任多種一週長任務<Cite k="metr-horizon" /> | 研究機構外推 |
+
+## 受影響的環節與公司
+
+<Scene3D id="train-infer" variant="inference" caption="推論時的批次處理、KV Cache 與 prefill／decode 兩階段" />
+
+- <SegmentChip id="foundation-models" />：<CompanyChip id="openai">OpenAI</CompanyChip>、<CompanyChip id="anthropic">Anthropic</CompanyChip>、<CompanyChip id="alphabet">Google</CompanyChip>、<CompanyChip id="deepseek">深度求索（DeepSeek）</CompanyChip>的競爭重點之一，是推理品質與每題所需的思考 Token。代表系列：<ModelChip id="openai-gpt" />、<ModelChip id="anthropic-claude" />、<ModelChip id="google-gemini" />、<ModelChip id="deepseek" />。
+- <SegmentChip id="ai-accelerators" />、<SegmentChip id="memory-storage" />：長思考代表更多逐字產生的<Term id="decode">解碼</Term>步驟與更大的<Term id="kv-cache">KV Cache</Term>，對推論晶片與記憶體頻寬的要求隨之提高，詳見<TrendLink id="inference-chips-new-paradigms">推論晶片新典範</TrendLink>。
+- <SegmentChip id="cloud-neocloud" />：推理 Token 以輸出 Token 計費<Cite k="openai-reasoning" />，以<Term id="token-pricing">Token 計價</Term>的雲端與 API 業者營收因此與思考量直接相關，相關討論見<TrendLink id="inference-demand">推論需求</TrendLink>。
+- <SegmentChip id="devtools-data-mlops" />：強化學習需要大量可自動驗證的題目與訓練環境，這類資料與評測工具成為後訓練的重要投入。
+
+## 反方觀點與風險
+
+- **成本與延遲**：o3 預覽版的高運算設定，100 題共產生 57 億個 Token；ARC Prize 當時估計，請人解一題約 5 美元，比 o3 預覽版便宜<Cite k="arc-o3" />。推理不一定值得，簡單問題想太久只是浪費。
+- **能力有天花板**：Apple 研究人員以可控難度的謎題測試，發現推理模型超過某個複雜度後準確率完全崩潰，接近崩潰時反而減少思考量<Cite k="apple-illusion" />。
+- **強化學習未必帶來新能力**：有研究發現，RLVR 訓練的模型在只取一次答案時較好，但允許大量取樣時，原本的基礎模型反而解出更多題<Cite k="rl-boundary" />。
+- **思維鏈不一定可信**：Claude 3.7 Sonnet 只有 25%、DeepSeek R1 只有 39% 會在思維鏈中承認使用了題目中的提示<Cite k="cot-faithfulness" />。
+- **效率可能抵銷需求**：<Term id="open-weights">開放權重</Term>與蒸餾讓小模型也能推理<Cite k="deepseek-r1-hf" />，推論算力的成長未必與 Token 用量同步。
+
+## 觀察指標
+
+- OpenRouter、Google 等平台公布的推理類 Token 佔比與 API 處理量（2026 年第二季約每分鐘 220 億個 Token）<Cite k="goog-q2-2026" />。
+- 各家模型在相同分數下所需的思考 Token 是否持續下降。
+- ARC-AGI、數學與程式競賽等高難度評測的分數與每題成本。
+- METR 等機構量測的 Agent 任務長度是否延續翻倍趨勢。
+- 推論專用晶片與記憶體在資料中心資本支出中的比重。
+
+延伸閱讀：<LearnLink id="reasoning-models">推理模型</LearnLink>、<LearnLink id="training-vs-inference-economics">訓練與推論的經濟學</LearnLink>、<TrendLink id="agentic-ai-standards">Agent 生態與標準化</TrendLink>。

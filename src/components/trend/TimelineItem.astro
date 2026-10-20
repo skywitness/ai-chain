@@ -1,0 +1,107 @@
+---
+/**
+ * One milestone row in 「關鍵時間軸」 (used by TrendTimeline). Carries the trend's filter attributes.
+ */
+import { MILESTONE_STATUS_META, isPast, milestoneDateLabel, type Milestone, type TrendView } from './trend-meta';
+
+interface Props {
+  trend: TrendView;
+  milestone: Milestone;
+}
+const { trend: t, milestone: m } = Astro.props;
+---
+
+<li
+  class:list={['tli', { 'tli--past': isPast(m.date) }]}
+  data-ms
+  data-category={t.category}
+  data-horizon={t.horizon ?? ''}
+  data-confidence={t.confidence ?? ''}
+>
+  <span class:list={['tli__mark', `tli__mark--${m.status}`]} aria-hidden="true"></span>
+  <span class="tli__body">
+    <span class="tli__date">
+      <time datetime={String(m.date)}>{milestoneDateLabel(m.date, 'short')}</time>
+      <span>{MILESTONE_STATUS_META[m.status].label}</span>
+    </span>
+    <span class="tli__label">{m.label}</span>
+    <a class="tli__trend" href={t.href}>{t.title}</a>
+  </span>
+</li>
+
+<style>
+  .tli {
+    --lc: var(--c-fg-muted);
+    display: grid;
+    grid-template-columns: 0.75rem minmax(0, 1fr);
+    gap: var(--space-2);
+    align-items: start;
+  }
+  .tli[data-category='hardware'] {
+    --lc: var(--chart-1);
+  }
+  .tli[data-category='software'] {
+    --lc: var(--chart-3);
+  }
+  .tli[data-category='market'] {
+    --lc: var(--chart-4);
+  }
+  .tli[data-category='policy'] {
+    --lc: var(--chart-7);
+  }
+  .tli__mark {
+    display: inline-block;
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+    margin-block-start: 0.3em;
+    border-radius: 50%;
+    border: 2px solid var(--lc);
+    box-sizing: border-box;
+  }
+  .tli__mark--done {
+    background: var(--lc);
+  }
+  .tli__mark--speculative {
+    border-style: dashed;
+    border-width: 1.5px;
+  }
+  .tli__body {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+  }
+  .tli__date {
+    display: flex;
+    gap: 0.5em;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .tli__date time {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .tli__label {
+    font-size: var(--fs-s);
+    line-height: 1.6;
+    color: var(--c-fg);
+  }
+  .tli--past .tli__label {
+    color: var(--c-fg-muted);
+  }
+  .tli__trend {
+    justify-self: start;
+    font-size: var(--fs-xs);
+    line-height: 1.5;
+    color: var(--c-link);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  .tli__trend:hover {
+    text-decoration: underline;
+  }
+  .tli__trend::before {
+    content: '→ ';
+    content: '→ ' / ''; /* decorative: not announced by screen readers */
+  }
+</style>

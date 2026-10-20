@@ -1,0 +1,82 @@
+---
+/**
+ * Grid of headline numbers.
+ *   <StatGrid items={[{ label: "全球 EUV 市占", value: "≈100%", note: "ASML，2026" }]} />
+ * Each item accepts the Stat props: label, value, unit?, note?, delta?, deltaLabel?, trend?, asOf?, estimate?
+ */
+import Stat from '../ui/Stat.astro';
+
+interface StatItem {
+  label: string;
+  value: string | number;
+  unit?: string | undefined;
+  note?: string | undefined;
+  delta?: string | number | undefined;
+  deltaLabel?: string | undefined;
+  trend?: 'up' | 'down' | 'flat' | undefined;
+  asOf?: string | undefined;
+  estimate?: boolean | undefined;
+}
+interface Props {
+  items: readonly StatItem[];
+  title?: string | undefined;
+  /** Source/notes line under the grid */
+  caption?: string | undefined;
+  class?: string | undefined;
+}
+const { items, title, caption, class: className } = Astro.props;
+---
+
+<figure class:list={['stat-grid', className]}>
+  {title && <figcaption class="stat-grid__title">{title}</figcaption>}
+  <ul class="stat-grid__list" role="list">
+    {
+      items.map((it) => (
+        <li class="stat-grid__item">
+          <Stat {...it} size="s" />
+        </li>
+      ))
+    }
+  </ul>
+  {caption && <p class="stat-grid__caption">{caption}</p>}
+</figure>
+
+<style>
+  @layer components {
+    .stat-grid {
+      container-type: inline-size;
+      margin: 1.8em 0;
+    }
+    .stat-grid__title {
+      margin-block-end: var(--space-3);
+      font-size: var(--fs-s);
+      font-weight: var(--fw-bold);
+    }
+    .stat-grid__list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+      gap: 0;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      overflow: hidden;
+    }
+    .stat-grid__item {
+      margin: 0 !important;
+      padding: var(--space-4) clamp(var(--space-3), 3cqi, var(--space-5));
+      background: var(--c-bg-elev);
+      /* hairlines on the right and bottom; the outer ones are clipped by the list's overflow */
+      box-shadow:
+        1px 0 0 var(--c-border),
+        0 1px 0 var(--c-border);
+    }
+    .stat-grid__caption {
+      margin-block-start: var(--space-2);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+  }
+</style>

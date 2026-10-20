@@ -1,0 +1,284 @@
+---
+title: "HBM4 與客製化記憶體"
+description: "HBM4 把介面加倍到 2,048 位元，最底層的基底晶粒也改用晶圓代工的邏輯製程，讓記憶體開始依 GPU 與 ASIC 的需求客製。本文區分已量產的事實、2027–2028 年藍圖與反方風險。"
+category: hardware
+horizon: near
+horizonYears: [2026, 2028]
+confidence: high
+confidenceRationale: "HBM4 已由 SK海力士、三星、美光三家量產出貨，三星與 SK海力士的基底晶粒也已改用邏輯製程，屬已發生的事實；較不確定的是客製功能普及的速度，以及 2027–2028 年藍圖能否如期。"
+impact: high
+milestones:
+  - { date: "2024-04", label: "SK海力士與台積電簽署 HBM4 合作備忘錄，基底晶粒改用台積電邏輯製程", status: done }
+  - { date: "2025-03", label: "SK海力士送出首批 12 層 HBM4 樣品（36GB）", status: done }
+  - { date: "2025-04", label: "JEDEC 發布 HBM4 標準 JESD270-4", status: done }
+  - { date: "2025-09", label: "SK海力士完成 HBM4 開發並備妥量產體系", status: done }
+  - { date: "2026-02", label: "三星 HBM4 量產出貨，採 4 奈米邏輯基底晶粒", status: done }
+  - { date: "2026-03", label: "美光為輝達 Vera Rubin 量產 HBM4", status: done }
+  - { date: "2026-05", label: "三星送樣 HBM4E（12 層、48GB）", status: done }
+  - { date: "2026-07", label: "JEDEC 發布 SPHBM4，可不用矽中介層", status: done }
+  - { date: "2027", label: "Rubin Ultra 規劃每個 GPU 封裝搭載 1TB HBM4E；美光 HBM4E 預計量產", status: expected }
+  - { date: "2027", label: "三星客製化 HBM 樣品送交客戶", status: expected }
+  - { date: "2028", label: "輝達 Feynman 世代規劃採用客製化 HBM", status: expected }
+signals:
+  - text: "SK海力士表示 HBM4 已在 2026 年第二季開始大量出貨、下半年擴大量產，HBM4E 也已在上半年完成送樣。"
+    date: "2026-07-29"
+    source: { title: "SK hynix Announces 2Q26 Financial Results", publisher: SK hynix, url: "https://news.skhynix.com/en/q2-2026-business-results/", type: press-release, lang: en, published: "2026-07-29", accessed: "2026-10-06" }
+  - text: "三星表示晶圓代工事業獲利改善的動力之一是 HBM 基底晶粒需求，下半年將擴大 4 奈米基底晶粒的銷售。"
+    date: "2026-07-30"
+    source: { title: "Samsung Electronics Announces Second Quarter 2026 Results", publisher: Samsung Electronics, url: "https://news.samsung.com/global/samsung-electronics-announces-second-quarter-2026-results", type: press-release, lang: en, published: "2026-07-30", accessed: "2026-10-06" }
+  - text: "SK海力士在美國上市文件中引述 IDC：2026 年第一季 HBM 營收市占 56.4%，並把客製基底晶粒整合列為 HBM4E 的研發重點。"
+    date: "2026-07-06"
+    source: { title: "SK hynix Inc. Registration Statement (Form F-1/A)", publisher: "U.S. SEC（SK hynix）", url: "https://www.sec.gov/Archives/edgar/data/0002120882/000119312526295501/d32785df1a.htm", type: filing, lang: en, published: "2026-07-06", accessed: "2026-10-06" }
+  - text: "三星在 Hot Chips 2026 公布三階段 HBM 藍圖：先把介面縮小、再在基底晶粒放入運算單元，最後把處理器直接疊在 DRAM 下方（zHBM）。"
+    date: "2026-09-01"
+    source: { title: "Samsung reveals three-phase HBM roadmap that puts logic and compute inside memory", publisher: "Tom's Hardware", url: "https://www.tomshardware.com/tech-industry/semiconductors/hot-chips-2026-samsung-reveals-a-three-phase-hbm-roadmap-that-puts-logic-and-compute-inside-memory-zhbm-ultimately-stacks-dram-directly-on-top-of-the-processor", type: news, lang: en, published: "2026-09-01", accessed: "2026-10-06" }
+  - text: "TrendForce 估計 2027 年 HBM 綜合均價年增 121%，並指出 GPU 與 ASIC 廠正評估改用 8 層 HBM 以控制成本。"
+    date: "2026-09-29"
+    source: { title: "HBM Supply Constraints Persist, 2027 Price Outlook Revised Upward with Blended ASP Forecast to Rise 121% YoY, Says TrendForce", publisher: TrendForce, url: "https://www.trendforce.com/presscenter/news/20260929-13255.html", type: analyst, lang: en, published: "2026-09-29", accessed: "2026-10-06" }
+counterpoints:
+  - "客製化會把 HBM 綁定在單一加速器上，買方可能寧可採用標準品以維持多家供應；JEDEC 在 2026 年 7 月發布的 SPHBM4 則走另一條路，以標準封裝降低整合成本，不過它目前被視為利基方案，短期內難以取代 HBM4。"
+  - "成本壓力可能抑制規格升級：TrendForce 指出 GPU 與 ASIC 廠因 HBM 供給緊、價格高，正評估把 12 層改為 8 層，客製化與更高堆疊未必是所有客戶的首選。"
+  - "基底晶粒改由台積電或三星晶圓代工生產後，HBM 出貨多了一個依賴環節；邏輯製程或 CoWoS 封裝產能若吃緊，可能拖慢交貨。"
+  - "堆疊越高、塞進基底晶粒的功能越多，散熱與良率越難處理；三星的 zHBM 構想就因散熱只規劃約 4 層，且官方尚未公布量產時程。"
+relatedSegments: [memory-storage, foundry-packaging, ai-accelerators, eda-ip-design]
+relatedCompanies: [sk-hynix, samsung-electronics, micron, tsmc, nvidia, amd]
+relatedLearn: [memory-and-hbm, hbm-deep, advanced-packaging-deep, gpu-architecture]
+glossary: [hbm, hbm4, base-die, memory-wall, tsv, interposer, cowos, hybrid-bonding, dram]
+sources:
+  - key: jedec-hbm4
+    title: "JEDEC and Industry Leaders Collaborate to Release JESD270-4 HBM4 Standard: Advancing Bandwidth, Efficiency, and Capacity for AI and HPC"
+    publisher: JEDEC
+    url: "https://www.jedec.org/news/pressreleases/jedec%C2%AE-and-industry-leaders-collaborate-release-jesd270-4-hbm4-standard-advancing"
+    type: standard
+    lang: en
+    published: "2025-04-16"
+    accessed: "2026-10-06"
+  - key: skh-tsmc
+    title: "SK hynix Partners with TSMC to Strengthen HBM Technological Leadership"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/sk-hynix-partners-with-tsmc-to-strengthen-hbm-technological-leadership/"
+    type: press-release
+    lang: en
+    published: "2024-04-19"
+    accessed: "2026-10-06"
+  - key: skh-hbm4-sample
+    title: "SK hynix Ships World’s First 12-Layer HBM4 Samples to Customers"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/sk-hynix-ships-world-first-12-layer-hbm4-samples-to-customers/"
+    type: press-release
+    lang: en
+    published: "2025-03-19"
+    accessed: "2026-10-06"
+  - key: skh-hbm4-dev
+    title: "SK hynix Completes World’s First HBM4 Development and Readies Mass Production"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/sk-hynix-completes-worlds-first-hbm4-development-and-readies-mass-production/"
+    type: press-release
+    lang: en
+    published: "2025-09-12"
+    accessed: "2026-10-06"
+  - key: skh-ces26
+    title: "SK hynix Showcases Next-Generation AI Memory Innovations at CES 2026"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/sk-hynix-showcases-next-generation-ai-memory-innovations-at-ces-2026/"
+    type: press-release
+    lang: en
+    published: "2026-01-06"
+    accessed: "2026-10-06"
+  - key: skh-q2-26
+    title: "SK hynix Announces 2Q26 Financial Results"
+    publisher: SK hynix
+    url: "https://news.skhynix.com/en/q2-2026-business-results/"
+    type: press-release
+    lang: en
+    published: "2026-07-29"
+    accessed: "2026-10-06"
+  - key: skh-f1
+    title: "SK hynix Inc. Registration Statement (Form F-1/A)"
+    publisher: "U.S. SEC（SK hynix）"
+    url: "https://www.sec.gov/Archives/edgar/data/0002120882/000119312526295501/d32785df1a.htm"
+    type: filing
+    lang: en
+    published: "2026-07-06"
+    accessed: "2026-10-06"
+  - key: ss-hbm4
+    title: "Samsung Ships Industry-First Commercial HBM4 With Ultimate Performance for AI Computing"
+    publisher: Samsung Electronics
+    url: "https://news.samsung.com/global/samsung-ships-industry-first-commercial-hbm4-with-ultimate-performance-for-ai-computing"
+    type: press-release
+    lang: en
+    published: "2026-02-12"
+    accessed: "2026-10-06"
+  - key: ss-hbm4e
+    title: "Samsung Electronics Begins Shipment of Industry-First HBM4E Samples"
+    publisher: Samsung Electronics
+    url: "https://semiconductor.samsung.com/news-events/news/samsung-electronics-begins-shipment-of-industry-first-hbm4e-samples"
+    type: press-release
+    lang: en
+    published: "2026-05-29"
+    accessed: "2026-10-06"
+  - key: ss-q2-26
+    title: "Samsung Electronics Announces Second Quarter 2026 Results"
+    publisher: Samsung Electronics
+    url: "https://news.samsung.com/global/samsung-electronics-announces-second-quarter-2026-results"
+    type: press-release
+    lang: en
+    published: "2026-07-30"
+    accessed: "2026-10-06"
+  - key: mu-hbm4
+    title: "Micron in High-Volume Production of HBM4 Designed for NVIDIA Vera Rubin, PCIe Gen6 SSD and SOCAMM2"
+    publisher: Micron Technology
+    url: "https://investors.micron.com/news/press-release/2026/Micron-in-High-Volume-Production-of-HBM4-Designed-for-NVIDIA-Vera-Rubin-PCIe-Gen6-SSD-and-SOCAMM2-03-16-2026/default.aspx"
+    type: press-release
+    lang: en
+    published: "2026-03-16"
+    accessed: "2026-10-06"
+  - key: mu-fq3-26
+    title: "Micron Technology, Inc. Reports Record Results for the Third Quarter of Fiscal 2026 (Form 8-K Exhibit 99.1)"
+    publisher: "U.S. SEC（Micron Technology）"
+    url: "https://www.sec.gov/Archives/edgar/data/723125/000072312526000013/a2026q3ex991-pressrelease.htm"
+    type: press-release
+    lang: en
+    published: "2026-06-24"
+    accessed: "2026-10-06"
+  - key: tsmc-sym25
+    title: "TSMC Unveils Next-Generation A14 Process at North America Technology Symposium"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3228"
+    type: press-release
+    lang: en
+    published: "2025-04-24"
+    accessed: "2026-10-06"
+  - key: nv-vr-nvl72
+    title: "NVIDIA Vera Rubin NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: amd-mi400
+    title: "AMD Instinct MI400 Series"
+    publisher: AMD
+    url: "https://www.amd.com/en/products/accelerators/instinct/mi400.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: th-nv-roadmap
+    title: "Nvidia updates data center roadmap with Rosa CPU and stacked Feynman GPUs"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/pc-components/gpus/nvidia-updates-data-center-roadmap-with-rosa-cpu-and-stacked-feynman-gpus-optical-nvlink-groq-lpus-with-nvfp4-and-nvlink-also-on-deck"
+    type: news
+    lang: en
+    published: "2026-03-17"
+    accessed: "2026-10-06"
+  - key: th-ss-hotchips
+    title: "Samsung reveals three-phase HBM roadmap that puts logic and compute inside memory"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/tech-industry/semiconductors/hot-chips-2026-samsung-reveals-a-three-phase-hbm-roadmap-that-puts-logic-and-compute-inside-memory-zhbm-ultimately-stacks-dram-directly-on-top-of-the-processor"
+    type: news
+    lang: en
+    published: "2026-09-01"
+    accessed: "2026-10-06"
+  - key: th-sphbm4
+    title: "JEDEC releases new SPHBM4 standard to slash AI memory costs"
+    publisher: "Tom's Hardware"
+    url: "https://www.tomshardware.com/pc-components/dram/jedec-releases-new-sphbm4-standard-to-slash-ai-memory-costs-narrow-512-bit-interface-enables-dropping-expensive-interposers-for-organic-substrates"
+    type: news
+    lang: en
+    published: "2026-07-08"
+    accessed: "2026-10-06"
+  - key: tf-hbm-2027
+    title: "HBM Supply Constraints Persist, 2027 Price Outlook Revised Upward with Blended ASP Forecast to Rise 121% YoY, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260929-13255.html"
+    type: analyst
+    lang: en
+    published: "2026-09-29"
+    accessed: "2026-10-06"
+  - key: tf-hbm-wafer
+    title: "Tight DRAM Supply Gives Suppliers Greater Pricing Power in HBM, with HBM Contract Prices Expected to Surge Multiples Higher in 2027, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260602-13074.html"
+    type: analyst
+    lang: en
+    published: "2026-06-02"
+    accessed: "2026-10-06"
+published: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial: { status: fact-checked, author: trends-02, checkedBy: "trends-02-check", checkedOn: "2026-10-06" }
+---
+
+## 趨勢摘要
+
+<Term id="hbm">HBM</Term>（高頻寬記憶體）是把多層 <Term id="dram">DRAM</Term> 晶粒以 <Term id="tsv">TSV</Term>（矽穿孔）垂直堆疊，再放在 GPU 旁邊的記憶體。2025 年 4 月 JEDEC 公布 <Term id="hbm4">HBM4</Term> 標準：介面從 1,024 位元加倍到 2,048 位元，每腳位最高 8 Gb/s、每疊頻寬最高 2 TB/s，最多 16 層、單疊最大 64GB<Cite k="jedec-hbm4" />。
+
+比頻寬更重要的變化發生在堆疊最底層的 <Term id="base-die">基底晶粒</Term>。過去它和上面的 DRAM 用同一種記憶體製程；到了 HBM4，SK海力士（SK hynix）依 2024 年與台積電（TSMC）簽署的合作備忘錄，改用台積電的邏輯製程<Cite k="skh-tsmc" />，三星（Samsung）用自家 4 奈米<Cite k="ss-hbm4" />，台積電也推出 N12 與 N3 的 HBM4 基底晶粒<Cite k="tsmc-sym25" />。邏輯製程讓基底晶粒能接手原本放在 GPU 或 ASIC 上的功能，這就是「客製化 HBM」：SK海力士的定義是把客戶 GPU、ASIC 的部分功能整合進基底晶粒<Cite k="skh-ces26" />。
+
+要分清楚兩件事：HBM4 與邏輯製程基底晶粒已經是量產中的事實；真正依客戶需求改寫基底晶粒功能的客製 HBM，目前仍在樣品與藍圖階段，三星預計 2027 年才送出客製 HBM 樣品<Cite k="ss-hbm4" />。
+
+## 為什麼重要
+
+<Callout type="analogy" title="生活化比喻">HBM 像一棟疊在 GPU 旁的倉庫大樓，基底晶粒是一樓的收發室。以前收發室只負責收件、送件；改用邏輯製程後，它可以依每位客戶的需求加裝分揀機，甚至代做一部分加工。</Callout>
+
+- **記憶體牆**：AI 加速器的瓶頸常是資料搬不夠快（<Term id="memory-wall">記憶體牆</Term>）。輝達（NVIDIA）Vera Rubin 每顆 GPU 搭載 288GB HBM4<Cite k="nv-vr-nvl72" />，超微（AMD）MI455X 更用 12 疊、432GB HBM4<Cite k="amd-mi400" />。
+- **價值鏈重組**：基底晶粒變成晶圓代工產品，記憶體廠、晶圓代工廠與晶片設計公司必須一起設計。三星 2026 年第二季財報就指出，晶圓代工獲利改善的動力之一是 HBM 基底晶粒需求<Cite k="ss-q2-26" />。
+- **議價方式改變**：HBM 多採年度議價，2026 年第二季起買賣雙方已轉向洽談 2027 年的 HBM4 供貨<Cite k="tf-hbm-wafer" />；SK海力士表示已與約 10 家客戶簽訂長期供貨協議<Cite k="skh-q2-26" />。
+- **客戶綁定加深**：客製 HBM 要配合特定加速器開發，供應商轉換成本變高。SK海力士 2026 年第一季 HBM 營收市占 56.4%（IDC），並把客製基底晶粒列為 HBM4E 研發重點<Cite k="skh-f1" />。
+
+## 關鍵驅動力
+
+1. **容量與頻寬持續加碼**：三星 HBM4 量產規格為每腳位 11.7 Gb/s，比 JEDEC 標準的 8 Gb/s 快約 46%，每疊頻寬最高 3.3 TB/s<Cite k="ss-hbm4" />；美光（Micron）為 Vera Rubin 量產的 HBM4 為 36GB、每疊逾 2.8 TB/s<Cite k="mu-hbm4" />。
+2. **省電與省面積**：介面寬度加倍後功耗跟著上升，三家都把能效當賣點：SK海力士稱 HBM4 能效提升逾 40%<Cite k="skh-hbm4-dev" />，三星稱比 HBM3E 提升 40%<Cite k="ss-hbm4" />，美光稱比自家 HBM3E 提升逾 20%<Cite k="mu-hbm4" />（皆為廠商自行比較，基準不同）。三星說明，HBM4 改用 4 奈米基底晶粒主要是為了降低功耗與面積；它在 Hot Chips 2026 估算，把傳統 HBM 介面（PHY，逾 8 × 4 公釐）換成晶粒對晶粒連結後，只需約 8.5 × 1.5 公釐<Cite k="th-ss-hotchips" />。
+3. **ASIC 需求**：TrendForce 估計 2026 年 HBM 需求成長主要來自 AI ASIC，每顆晶片的 HBM 容量從 96GB／192GB 提高到 216GB／288GB<Cite k="tf-hbm-wafer" />。
+4. **排擠效應**：HBM 佔 DRAM 晶圓投片的比重持續上升（見下圖，TrendForce 估計），也帶動 <TrendLink id="memory-supercycle">記憶體超級循環</TrendLink>。
+
+<DeepDive title="深入一點：基底晶粒裡可以放什麼？">
+
+基底晶粒夾在 DRAM 堆疊與中介層之間，負責銜接記憶體與運算晶片，面積最大的區塊之一是 HBM 的實體介面（PHY）。三星在 Hot Chips 2026 描述的三階段做法<Cite k="th-ss-hotchips" />：
+
+1. **讓出加速器面積**：把傳統 PHY 換成較小的晶粒對晶粒連結，並把記憶體控制器移進基底晶粒，GPU 或 ASIC 就能把省下的面積拿去放運算單元。
+2. **變成智慧記憶體子系統**：加入溫度、電壓、製程與老化等感測器，以及自我測試電路；在晶粒邊緣直接外接第二層記憶體（LPDDR 或 HBM），甚至在 DRAM 下方放入處理單元，三星稱為 aHBM。
+3. **zHBM**：處理器直接疊在 DRAM 正下方，三星估計 I/O 功耗可比 HBM5 少約 70%；但為了散熱只規劃約 4 層，且需要晶圓對晶圓鍵合。
+
+這些都是廠商的研究與藍圖，不是已量產的產品。
+
+</DeepDive>
+
+<BarChart title="HBM 佔三大廠 DRAM 晶圓投片比重（年底）" unit="%" data={[{ label: "2025", value: 18, estimate: true }, { label: "2026", value: 22, estimate: true }, { label: "2027", value: 30, estimate: true }]} source="tf-hbm-wafer" note="三個年度皆為 TrendForce 估計值（2026-06 發布）。" />
+
+## 時間表與里程碑
+
+| 時間 | 事件 | 性質 |
+|---|---|---|
+| 2025-03 | SK海力士送出 12 層 HBM4 樣品，36GB、每疊逾 2 TB/s<Cite k="skh-hbm4-sample" /> | 已發生 |
+| 2025-09 | SK海力士完成 HBM4 開發，腳位速度逾 10 Gb/s<Cite k="skh-hbm4-dev" /> | 已發生 |
+| 2026-02 | 三星宣布業界首家 HBM4 量產出貨<Cite k="ss-hbm4" /> | 已發生 |
+| 2026-05 | 三星送樣 HBM4E：每腳位 14 Gb/s、每疊最高 3.6 TB/s<Cite k="ss-hbm4e" /> | 已發生 |
+| 2026 年第二季 | SK海力士 HBM4 開始大量出貨<Cite k="skh-q2-26" /> | 已發生 |
+| 2027 | 美光 HBM4E 預計量產<Cite k="mu-fq3-26" />；三星客製 HBM 樣品送交客戶<Cite k="ss-hbm4" /> | 公司計畫 |
+| 2027 | Rubin Ultra 每個 GPU 封裝（含 4 顆運算晶粒）搭載 1TB HBM4E | 輝達藍圖<Cite k="th-nv-roadmap" /> |
+| 2028 | Feynman 世代採用晶粒堆疊與客製 HBM | 輝達藍圖<Cite k="th-nv-roadmap" /> |
+
+更遠的構想仍屬研究階段：三星的第二階段要在基底晶粒放入運算單元，第三階段 zHBM 則把處理器直接疊在 DRAM 下方，需要晶圓對晶圓與 <Term id="hybrid-bonding">混合鍵合</Term>，官方未公布時程<Cite k="th-ss-hotchips" />。
+
+## 受影響的環節與公司
+
+- <SegmentChip id="memory-storage" />：<CompanyChip id="sk-hynix">SK海力士</CompanyChip>、<CompanyChip id="samsung-electronics">三星</CompanyChip>、<CompanyChip id="micron">美光</CompanyChip> 三強要同時比良率、速度與客製設計能力。
+- <SegmentChip id="foundry-packaging" />：<CompanyChip id="tsmc">台積電</CompanyChip> 同時供應基底晶粒與 <Term id="cowos">CoWoS</Term> 封裝，HBM 要透過 <Term id="interposer">中介層</Term> 與 GPU 相連；三星則是記憶體加晶圓代工一條龍。
+- <SegmentChip id="ai-accelerators" />：<CompanyChip id="nvidia">輝達</CompanyChip>、<CompanyChip id="amd">超微</CompanyChip> 與 ASIC 客戶決定要多少 HBM、要不要客製。
+- <SegmentChip id="eda-ip-design" />：基底晶粒的介面與功能要和加速器一起設計，設計服務與介面 IP 的角色可能變重。延伸閱讀：<LearnLink id="hbm-deep">HBM 深入</LearnLink>。
+
+## 反方觀點與風險
+
+- **標準化的反向力量**：客製化讓 HBM 綁定單一加速器。JEDEC 在 2026 年 7 月發布 SPHBM4，以 512 位元窄介面讓 HBM4 等級記憶體可裝在一般有機基板上、不用矽中介層，主打降低整合成本；不過 Tom's Hardware 評估它仍屬利基技術，頻寬與延遲短期內難與 HBM4 正面競爭<Cite k="th-sphbm4" />。
+- **成本壓力**：TrendForce 估計 2027 年 HBM 綜合均價年增 121%，GPU 與 ASIC 廠正評估把 12 層改為 8 層；由於每疊都要一顆基底晶粒，成本攤提較差，8 層每 Gb 的價格預估比 12 層高約 10–20%<Cite k="tf-hbm-2027" />。
+- **獲利排序可能改變**：TrendForce 指出 2026 年第一季 HBM 每片晶圓營收已被 DDR5 64GB RDIMM 超越<Cite k="tf-hbm-wafer" />，若 HBM 漲價不如預期，記憶體廠可能調整投片。
+- **供應鏈多一環**：基底晶粒依賴晶圓代工產能，邏輯製程或封裝吃緊都可能拖慢交貨；堆疊越高，散熱與良率也越難。
+
+## 觀察指標
+
+1. 三星客製 HBM 樣品是否在 2027 年如期送樣，以及首批客戶是 GPU 還是雲端 ASIC。
+2. Rubin Ultra 的 HBM4E 容量與 2027 年 8 層／12 層的實際組合。
+3. 各家 HBM 市占：SK海力士 2026 年第一季 56.4%（IDC）的領先能否維持。
+4. 台積電、三星晶圓代工財報中與 HBM 基底晶粒相關的描述。
+5. SPHBM4 等標準化、低成本方案是否出現採用案例。

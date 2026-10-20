@@ -1,0 +1,51 @@
+# Proposal from agent: qa-infra (2026-10-07)
+# No new dependency and no schema change is required for the QA tooling to work today.
+# These are convenience/consistency changes to frozen files, for the integrator to decide.
+proposals:
+  - id: npm-scripts-for-qa
+    target: package.json
+    kind: scripts
+    problem: >
+      package.json already has links / shots / posters / coverage / test:e2e / test:scene, but no entry for the
+      accessibility suite, the budget check, the poster verification, or the "verify" sequence from
+      architecture §1. Agents currently have to type `npx playwright test tests/a11y` and
+      `npx tsx scripts/check-budgets.ts` by hand (documented in docs/QA.md).
+    change:
+      add:
+        "test:a11y": "playwright test tests/a11y"
+        "budgets": "tsx scripts/check-budgets.ts"
+        "posters:verify": "tsx scripts/capture-posters.ts --verify"
+        "verify:static": "npm run check && npm run validate && npm run lint:zh && npm run lint:content"
+        "verify:dist": "npm run links && npm run budgets && npm run posters:verify"
+      keep: '"test:e2e": "playwright test tests/e2e" (unchanged)'
+    note: >
+      The browser part of the verify sequence needs environment variables (ROUTES_FROM=dist, PW_WEBSERVER=preview),
+      and npm runs scripts in cmd.exe on Windows, where `VAR=x cmd` does not work. Rather than adding cross-env,
+      the integrator could let qa-infra own a tiny scripts/verify.ts orchestrator in a later wave that sets the
+      variables in-process and runs the full sequence from docs/QA.md §5.
+    workaround: docs/QA.md lists every command, in bash and PowerShell form.
+
+  - id: tsconfig-baseurl-deprecated
+    target: tsconfig.json
+    kind: observation
+    problem: >
+      TypeScript 6.0.3 reports error TS5101 ("Option 'baseUrl' is deprecated and will stop functioning in
+      TypeScript 7.0") for tsconfig.json as soon as there are no syntax errors elsewhere. Plain
+      `npx tsc --noEmit -p tsconfig.json` therefore cannot pass. (Today it also stops early on syntax errors in
+      src/lib/seo.ts lines 122 and 124, "Unterminated regular expression literal", owned by another agent.)
+    change: >
+      Remove "baseUrl": "." (the "paths" entries resolve relative to tsconfig.json without it since TS 4.1),
+      or add "ignoreDeprecations": "6.0" to compilerOptions.
+    workaround: >
+      qa-infra type-checks its own files with a scoped config in research/tmp/qa-infra/tsconfig.qa.json that
+      extends tsconfig.json and sets ignoreDeprecations. Result: 0 errors.
+
+  - id: lighthouse-ci-missing
+    target: package.json
+    kind: dependency (optional)
+    problem: >
+      architecture §1 and §8.10 list @lhci/cli ^0.15.1 and a lighthouserc.json owned by QA, but @lhci/cli is not
+      in package.json, so LCP / CLS / TBT / Lighthouse-score budgets are not checked automatically. All byte
+      budgets of §7.6 are covered by scripts/check-budgets.ts without it.
+    change: Add "@lhci/cli": "^0.15.1" to devDependencies; qa-infra then writes lighthouserc.json (8 URLs, mobile preset, 3 runs).
+    workaround: None automated; run Lighthouse manually in Chrome DevTools on the 8 URLs from §8.10 if needed.

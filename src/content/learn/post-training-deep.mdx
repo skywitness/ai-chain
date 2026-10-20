@@ -1,0 +1,450 @@
+---
+title: "後訓練深入：RLHF、DPO、RLVR 與蒸餾"
+subtitle: "回答由誰產生、回饋有多密：一張地圖看懂所有後訓練方法"
+description: "後訓練決定模型怎麼使用學到的知識。本文以「回答由誰產生、回饋有多密」兩個問題，比較 SFT、RLHF、DPO、RLVR 與蒸餾的原理與成本，拆解 GRPO、DAPO、GSPO 等演算法細節，並說明強化學習算力上升與蒸餾爭議對產業鏈的影響。"
+level: 3
+order: 302
+track: models
+prerequisites: [reasoning-models]
+next: [model-evaluation, mixture-of-experts, ai-safety-and-regulation]
+relatedSegments: [foundation-models, devtools-data-mlops, ai-accelerators, cloud-neocloud]
+relatedCompanies: [openai, anthropic, deepseek, alibaba, bytedance, meta, ai2, thinking-machines-lab, alphabet, moonshot-ai, minimax, nvidia, inferact, radixark, surge-ai, mercor, scale-ai, turing, labelbox]
+relatedModels: [deepseek, alibaba-qwen, openai-gpt, anthropic-claude, bytedance-seed, ai2-olmo, google-gemma, xai-grok, moonshot-kimi, minimax]
+relatedTrends: [reasoning-test-time-compute, small-models-distillation, open-weights-race, export-controls-us-china, inference-demand]
+glossary:
+  - post-training
+  - pretraining
+  - foundation-model
+  - sft
+  - rlhf
+  - dpo
+  - rlvr
+  - grpo
+  - reinforcement-learning
+  - rl-environment
+  - distillation
+  - synthetic-data
+  - reasoning-model
+  - alignment
+  - token
+  - softmax
+  - moe
+  - gpu
+  - inference-engine
+  - agent
+  - open-weights
+  - export-controls
+scenes: []
+keyTakeaways:
+  - "後訓練可用兩個問題分類：回答由誰產生（模仿或自己練），以及回饋多密（逐 Token 或整題一分）。"
+  - "RLHF 的 PPO 要同時運行策略、參考、獎勵與價值四個模型；DPO 把偏好學習簡化成分類損失。"
+  - "RLVR 以可自動驗證的答案當獎勵，GRPO 用組內比較取代價值模型，是推理模型的核心訓練法。"
+  - "DeepSeek-R1-Zero 的強化學習約用 10.1 萬 H800 GPU 小時，AIME 2024 從 15.6% 升到 77.9%。"
+  - "同策略蒸餾結合自己練與老師逐 Token 評分，Qwen3-8B 只用強化學習約 1/10 的 GPU 時數就表現更好。"
+  - "後訓練算力比重快速上升；蒸餾也引發爭議，Anthropic 指控三家中國實驗室大規模違規蒸餾 Claude。"
+estimatedMinutes: 22
+sources:
+  - key: tml-opd
+    title: "On-Policy Distillation"
+    publisher: "Thinking Machines Lab"
+    url: "https://thinkingmachines.ai/blog/on-policy-distillation/"
+    type: company-site
+    lang: en
+    published: "2025-10-27"
+    accessed: "2026-10-15"
+    note: "把後訓練分成同策略（從學生模型自己取樣）與異策略（模仿外部來源的目標輸出）；監督式微調為異策略、密集回饋，強化學習為同策略、稀疏回饋，同策略蒸餾為同策略、密集回饋。異策略訓練的缺點是學生在老師常見的情境中學習，早期犯下老師不會犯的錯後會越偏越遠（累積誤差）；強化學習每回合只提供固定數量的資訊位元。以逐 Token 的反向 KL 作為損失，學生與老師行為相同時為零。以 Tinker 訓練 API 重現 Qwen3 以同策略蒸餾、用強化學習一小部分成本達到同等推理表現的結果。實驗以 Qwen3-32B 為老師、Qwen3-8B-Base 為學生：SFT-400K 起點 AIME'24 為 60%，外推 SFT-2M 約 70%，強化學習 68%，同策略蒸餾 70%；作者估計強化學習成本與訓練 200 萬筆異策略蒸餾資料相近。與 SFT-2M 相比，同策略蒸餾的成本效率為 9 到 30 倍：SFT 資料集已存在時約 9 倍，計入老師取樣成本時約 30 倍。"
+  - key: instructgpt
+    title: "Training language models to follow instructions with human feedback"
+    publisher: "OpenAI（arXiv）"
+    url: "https://arxiv.org/abs/2203.02155"
+    type: paper
+    lang: en
+    published: "2022-03-04"
+    accessed: "2026-10-15"
+    note: "PPO 在每個 Token 加上對 SFT 模型的 KL 懲罰，係數 beta 為 0.02；175B SFT 需 4.9 petaflop/s-day、175B PPO-ptx 需 60，GPT-3 預訓練為 3,640。"
+  - key: deepseekmath
+    title: "DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models"
+    publisher: "DeepSeek-AI（arXiv）"
+    url: "https://arxiv.org/abs/2402.03300"
+    type: paper
+    lang: en
+    published: "2024-02-05"
+    accessed: "2026-10-15"
+    note: "提出 GRPO，為 PPO 的變體，省去評論者（價值）模型，改以群組分數估計基準，大幅減少訓練資源；PPO 的價值函數通常是與策略模型同等大小的另一個模型，帶來可觀的記憶體與運算負擔；PPO 需要策略、參考、獎勵與價值模型。結果監督：每個輸出的獎勵減去組內平均、除以組內標準差，作為該輸出所有 Token 的優勢；GRPO 直接在損失中加入與參考模型的 KL 散度。DeepSeekMath 7B 在競賽級 MATH 測驗達 51.7%。"
+  - key: deepseek-r1
+    title: "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning"
+    publisher: "DeepSeek-AI（arXiv；Nature 645, 633–638）"
+    url: "https://arxiv.org/abs/2501.12948"
+    type: paper
+    lang: en
+    published: "2025-01-22"
+    accessed: "2026-10-15"
+    note: "依現行 arXiv v2（2026-01-04）。R1-Zero 以 DeepSeek-V3-Base 為起點、不經 SFT，以 GRPO 與規則式獎勵（準確度與格式）訓練，AIME 2024 平均 pass@1 由 15.6% 升至 77.9%。R1 流程：數千筆冷啟動資料、推理強化學習（另加語言一致性獎勵以減少語言混雜）、以拒絕取樣蒐集約 60 萬筆推理與約 20 萬筆非推理資料（共約 80 萬筆）做 SFT，再進行第二階段強化學習（一般資料以獎勵模型評分，僅在 1,700 步中的最後 400 步加入，因為更多步數可能導致 reward hacking）。B.4.4／表 7：R1-Zero 以 64×8 顆 H800 訓練約 198 小時，計 101K GPU 小時（20.2 萬美元）；SFT 資料建立 5K；R1 為 41K；合計 147K GPU 小時，以每 GPU 小時 2 美元計 29.4 萬美元。蒸餾：以 80 萬筆資料對基礎模型微調 2 到 3 個 epoch；表 15 AIME 2024 pass@1：GPT-4o-0513 9.3、R1-Distill-Qwen-1.5B 28.9、R1-Distill-Qwen-32B 72.6。表 16：在 Qwen2.5-32B-Base 上做超過 1 萬步的大規模強化學習（Qwen2.5-32B-Zero）為 47.0，與 QwQ-32B-Preview（50.0）相當，明顯不如蒸餾版。結論：蒸餾更強的模型既經濟又有效，但超越人類智慧可能仍需要更強的基礎模型與更大規模的強化學習。"
+  - key: deepseek-v3
+    title: "DeepSeek-V3 Technical Report"
+    publisher: "DeepSeek-AI（arXiv）"
+    url: "https://arxiv.org/abs/2412.19437"
+    type: paper
+    lang: en
+    published: "2024-12-27"
+    accessed: "2026-10-15"
+    note: "表 1：完整訓練共 2,788K H800 GPU 小時（預訓練 2,664K、上下文延長 119K、後訓練 5K）；成本只計正式訓練，不含架構、演算法與資料的前期研究與消融實驗。"
+  - key: dpo
+    title: "Direct Preference Optimization: Your Language Model is Secretly a Reward Model"
+    publisher: "Stanford University（arXiv）"
+    url: "https://arxiv.org/abs/2305.18290"
+    type: paper
+    lang: en
+    published: "2023-05-29"
+    accessed: "2026-10-15"
+    note: "以新的獎勵模型參數化，取得最佳策略的封閉解，只需簡單的分類損失即可解決標準 RLHF 問題，微調時不必從語言模型取樣。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "Meta AI（arXiv）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-15"
+    note: "後訓練以獎勵模型、拒絕取樣、SFT 與 DPO 為主，不採用 PPO 等較不穩定、較難放大的強化學習演算法；共進行六輪。"
+  - key: tulu3
+    title: "Tülu 3: Pushing Frontiers in Open Language Model Post-Training"
+    publisher: "Allen Institute for AI（arXiv）"
+    url: "https://arxiv.org/abs/2411.15124"
+    type: paper
+    lang: en
+    published: "2024-11-22"
+    accessed: "2026-10-15"
+    note: "完全公開的後訓練配方，訓練演算法包含 SFT、DPO，以及作者命名的「可驗證獎勵強化學習」（RLVR）。"
+  - key: gao
+    title: "Scaling Laws for Reward Model Overoptimization"
+    publisher: "OpenAI（arXiv）"
+    url: "https://arxiv.org/abs/2210.10760"
+    type: paper
+    lang: en
+    published: "2022-10-19"
+    accessed: "2026-10-15"
+    note: "獎勵模型只是不完美的代理指標，依古德哈特定律，對它最佳化過度會損害真正的表現；以固定的「黃金標準」獎勵模型扮演人類，研究對代理獎勵模型進行強化學習或 best-of-n 取樣時黃金分數如何變化；關係的函數形式依最佳化方法而異，係數隨獎勵模型參數量平滑變化。"
+  - key: dapo
+    title: "DAPO: An Open-Source LLM Reinforcement Learning System at Scale"
+    publisher: "ByteDance Seed、清華大學 AIR 等（arXiv）"
+    url: "https://arxiv.org/abs/2503.14476"
+    type: paper
+    lang: en
+    published: "2025-03-18"
+    accessed: "2026-10-15"
+    note: "以 Qwen2.5-32B 基礎模型在 AIME 2024 達 50 分，只用 DeepSeek-R1-Zero-Qwen-32B（47 分）一半的訓練步數；直接用 GRPO 只有 30 分。四項技術：Clip-Higher（避免熵崩塌）、動態取樣、Token 層級的策略梯度損失、過長回答的獎勵調整。表 1 逐步加入：Naive GRPO 30、過長過濾 36、Clip-Higher 38、軟性過長懲罰 41、Token 層級損失 42、動態取樣 50。epsilon 為 0.2 時，機率 0.01 與 0.9 的 Token 上限分別為 0.012 與 1.08；DAPO 設 epsilon_low 0.2、epsilon_high 0.28；若同一提示的所有輸出都答對，優勢為零、梯度為零。每個提示取樣 16 個回答；預期最大長度 16,384 個 Token，另留 4,096 個作為軟性懲罰區。程式碼建立在 verl 框架上並開源。"
+  - key: gspo
+    title: "Group Sequence Policy Optimization"
+    publisher: "Qwen Team, Alibaba（arXiv）"
+    url: "https://arxiv.org/abs/2507.18071"
+    type: paper
+    lang: en
+    published: "2025-07-24"
+    accessed: "2026-10-15"
+    note: "GRPO 以 Token 層級的重要性比率，產生隨回答長度累積的高變異雜訊，訓練超大模型時常導致災難性、不可逆的崩潰；GSPO 改以序列似然（經長度正規化）定義重要性比率，並在序列層級截斷、給獎勵與最佳化；效率與表現優於 GRPO，明顯穩定 MoE 的強化學習，促成最新 Qwen3 模型的進步。"
+  - key: rl-boundary
+    title: "Does Reinforcement Learning Really Incentivize Reasoning Capacity in LLMs Beyond the Base Model?"
+    publisher: "清華大學等（arXiv，NeurIPS 2025）"
+    url: "https://arxiv.org/abs/2504.13837"
+    type: paper
+    lang: en
+    published: "2025-04-18"
+    accessed: "2026-10-15"
+    note: "以大 k 值的 pass@k 評估：RLVR 模型在 k 小（例如 k=1）時優於基礎模型，k 大時基礎模型較高；推理能力源自並受限於基礎模型；六種常見 RLVR 演算法表現相近；蒸餾則能從老師模型引入新的推理模式；作者認為需要更好的強化學習範式，例如持續放大規模與多輪的 Agent 與環境互動。"
+  - key: prorl
+    title: "ProRL: Prolonged Reinforcement Learning Expands Reasoning Boundaries in Large Language Models"
+    publisher: "NVIDIA（arXiv）"
+    url: "https://arxiv.org/abs/2505.24864"
+    type: paper
+    lang: en
+    published: "2025-05-30"
+    accessed: "2026-10-15"
+    note: "強化學習是否真的擴大推理能力仍有爭議；ProRL 結合 KL 散度控制、參考策略重設與多樣化任務做長時間強化學習，強化學習後的模型在大範圍的 pass@k 上都勝過基礎模型，包括基礎模型取樣再多次都失敗的情境；推理邊界的提升與基礎模型在該任務的能力及訓練時間長短高度相關。"
+  - key: deepseek-v32
+    title: "DeepSeek-V3.2: Pushing the Frontier of Open Large Language Models"
+    publisher: "DeepSeek-AI（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V3.2/resolve/main/assets/paper.pdf"
+    type: paper
+    lang: en
+    published: "2025-12-01"
+    accessed: "2026-10-15"
+    note: "後訓練運算預算超過預訓練成本的 10%；大規模合成 Agent 任務，產生超過 1,800 個不同環境與 8.5 萬個複雜提示來驅動強化學習。"
+  - key: hinton
+    title: "Distilling the Knowledge in a Neural Network"
+    publisher: "Google（arXiv）"
+    url: "https://arxiv.org/abs/1503.02531"
+    type: paper
+    lang: en
+    published: "2015-03-09"
+    accessed: "2026-10-15"
+    note: "摘要指出 Caruana 等人已證明可把集成模型的知識壓縮進單一模型，本文以不同的壓縮技術進一步發展；把集成模型的知識壓縮進單一、易於部署的模型；以大模型輸出的類別機率作為「軟目標」，並提高最後 softmax 的溫度讓軟目標更平滑，小模型以相同溫度學習；比對 logit 是蒸餾的特例。"
+  - key: gemma2
+    title: "Gemma 2: Improving Open Language Models at a Practical Size"
+    publisher: "Google DeepMind（arXiv）"
+    url: "https://arxiv.org/abs/2408.00118"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-15"
+    note: "2B 與 9B 模型以知識蒸餾取代預測下一個 Token：最小化學生與老師對每個 Token 機率分布的負對數似然；訓練 Token 數超過理論運算最適量的 50 倍。"
+  - key: qwen3
+    title: "Qwen3 Technical Report"
+    publisher: "Qwen Team（arXiv）"
+    url: "https://arxiv.org/abs/2505.09388"
+    type: paper
+    lang: en
+    published: "2025-05-14"
+    accessed: "2026-10-15"
+    note: "旗艦模型採四階段後訓練；5 個稠密小模型（0.6B 到 14B）與 Qwen3-30B-A3B 改用由強到弱的蒸餾：先以老師在思考與不思考模式下的輸出做異策略蒸餾，再讓學生自己產生回答，將其 logit 對齊老師（Qwen3-32B 或 Qwen3-235B-A22B）以最小化 KL 散度；只需四階段訓練約 1/10 的 GPU 時數。表 21（Qwen3-8B，自同一異策略蒸餾檢查點出發）：AIME'24 起點 55.0，強化學習後 67.6（17,920 GPU 小時），同策略蒸餾後 74.4（1,800 GPU 小時）；蒸餾提升 pass@64，強化學習沒有。"
+  - key: deepseek-v4
+    title: "DeepSeek-V4-Pro model card"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-15"
+    note: "後訓練分兩階段：先以 SFT 與 GRPO 強化學習分別培養各領域專家，再以同策略蒸餾整合成單一模型。"
+  - key: o3
+    title: "Introducing OpenAI o3 and o4-mini"
+    publisher: OpenAI
+    url: "https://openai.com/index/introducing-o3-and-o4-mini/"
+    type: company-site
+    lang: en
+    published: "2025-04-16"
+    accessed: "2026-10-15"
+    archiveUrl: "https://web.archive.org/web/2025/https://openai.com/index/introducing-o3-and-o4-mini/"
+    note: "大規模強化學習呈現與 GPT 系列預訓練相同的「算力越多、表現越好」趨勢；在強化學習上把訓練算力與推論時推理都再推進一個數量級。"
+  - key: grok4
+    title: "Grok 4"
+    publisher: xAI
+    url: "https://x.ai/news/grok-4"
+    type: company-site
+    lang: en
+    published: "2025-07-09"
+    accessed: "2026-10-15"
+    note: "以擁有 20 萬顆 GPU 的 Colossus 叢集執行強化學習訓練，以預訓練等級的規模精進推理能力；訓練所用算力比先前多出一個數量級以上。"
+  - key: verl
+    title: "verl: Volcano Engine Reinforcement Learning for LLMs（README）"
+    publisher: "verl 社群（GitHub）"
+    url: "https://github.com/volcengine/verl"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "由 ByteDance Seed 團隊發起、社群維護的強化學習訓練函式庫，為 HybridFlow 論文的開源版本；以 vLLM、SGLang 與 HF Transformers 產生 rollout。"
+  - key: surge-wiki
+    title: "Surge AI"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Surge_AI"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "專注於 RLHF、強化學習環境與語言資料標註。"
+  - key: mercor-wiki
+    title: "Mercor"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Mercor"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "美國 AI 資料新創，招募工程師、律師、醫師、銀行家與記者等專家訓練 AI 模型與聊天機器人。"
+  - key: anthropic-distill
+    title: "Detecting and preventing distillation attacks"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/detecting-and-preventing-distillation-attacks"
+    type: company-site
+    lang: en
+    published: "2026-02-23"
+    accessed: "2026-10-15"
+    note: "Anthropic 表示辨識出 DeepSeek、Moonshot、MiniMax 三家實驗室的工業規模行動，透過約 24,000 個詐騙帳號與 Claude 進行超過 1,600 萬次對話，違反服務條款與地區存取限制，以蒸餾取得 Claude 的能力；其中 DeepSeek 超過 15 萬次。蒸餾是廣泛使用且正當的訓練方法，前沿實驗室常蒸餾自家模型以推出更小、更便宜的版本；疑慮在於非法蒸餾的模型可能缺乏安全防護，並削弱出口管制。以 IP 位址關聯、請求中繼資料、基礎設施指標及部分業界夥伴的佐證歸因。"
+updated: "2026-10-15"
+lastVerified: "2026-10-15"
+editorial:
+  status: fact-checked
+  author: learn-13
+  checkedBy: "learn-13-check"
+  checkedOn: "2026-10-06"
+  notes: "已逐項比對 InstructGPT、DeepSeekMath、DeepSeek-R1（arXiv v2）、DeepSeek-V3、DPO、Llama 3、Tülu 3、Gao、DAPO、GSPO、Yue 等人、ProRL、DeepSeek-V3.2、Hinton、Gemma 2、Qwen3 等論文，以及 Thinking Machines、Anthropic、OpenAI、xAI、Hugging Face 與 verl 官方頁面。R1 後訓練約為 V3 成本 5%、InstructGPT 約 1.8% 為本文換算。Anthropic 的蒸餾指控為單方說法，已於內文標示。資料基準日 2026-10-06，實際讀取日 2026-10-15。"
+---
+
+## 一句話解釋
+
+<Term id="post-training">後訓練</Term>是在<Term id="pretraining">預訓練</Term>之後，用相對少的資料與算力，決定模型「怎麼使用自己學到的知識」的一連串訓練：用示範教格式（<Term id="sft">SFT</Term>），用人類偏好教取捨（<Term id="rlhf">RLHF</Term>、<Term id="dpo">DPO</Term>），用可以自動判對錯的題目讓模型自己練習（<Term id="rlvr">RLVR</Term>），再用<Term id="distillation">蒸餾</Term>把大模型的本事傳給小模型。2024 年以後，後訓練從「調教禮貌與格式」變成培養推理與 <Term id="agent">Agent</Term> 能力的主戰場，占用的算力也快速上升。
+
+本文假設你已讀過<LearnLink id="pretraining-to-chat">從預訓練到對話助理</LearnLink>與<LearnLink id="reasoning-models">推理模型：讓 AI 先想再答</LearnLink>，這裡把重點放在各方法的取捨、演算法細節與成本。
+
+## 生活化比喻
+
+<Callout type="analogy" title="學開車的四種方式">
+
+- **看教練示範影片（SFT）**：每個動作都有標準答案，但影片裡的路況未必是你會遇到的。一旦你轉彎轉太大，影片沒教過怎麼救回來，錯誤只會越滾越大。
+- **比較兩段行車紀錄（DPO）**：教練拿兩段影片給你看，告訴你哪一段開得比較好。
+- **自己上路、只看有沒有平安抵達（強化學習）**：練的是你自己真正會遇到的路況，但一整趟只得到「到了」或「沒到」一個訊號，很難知道是哪個路口出錯。
+- **自己開、教練坐旁邊即時提醒（同策略蒸餾）**：你自己開，教練對你的每個動作立刻評分。既練到自己的路況，又有每一步的回饋。
+
+這四種方式的差別，可以歸納成兩個問題：**車是誰在開？回饋有多密？**
+
+</Callout>
+
+## 原理
+
+### 一張地圖：用兩個問題分類後訓練方法
+
+第一個問題是「訓練用的回答由誰產生」。如果回答來自外部（人類標註者或更強的老師模型），稱為**異策略**（off-policy）；如果回答由正在訓練的模型自己產生，稱為**同策略**（on-policy）。這裡的「策略」指的就是正在訓練的模型。第二個問題是「回饋有多密」：每個 <Term id="token">Token</Term> 都有標準答案的叫密集回饋，整個回答只得到一個分數的叫稀疏回饋<Cite k="tml-opd" />。
+
+| 方法 | 回答由誰產生 | 回饋密度 | 代表做法 |
+|---|---|---|---|
+| SFT | 外部示範（異策略） | 密集：每個 Token 都有標準答案 | 人工示範、老師模型產生的資料 |
+| DPO | 外部事先收集的回答配對（異策略） | 每對回答一個偏好 | Llama 3、Tülu 3 |
+| RLHF（PPO） | 模型自己（同策略） | 稀疏：獎勵模型給整個回答一個分數 | InstructGPT |
+| RLVR（GRPO 等） | 模型自己（同策略） | 稀疏：答對或答錯 | DeepSeek-R1、Qwen3 |
+| 同策略蒸餾 | 模型自己（同策略） | 密集：老師對每個 Token 評分 | Qwen3 小模型、DeepSeek-V4 |
+
+兩個維度各有代價。異策略的問題是「累積誤差」：學生只在老師常見的情境中學習，一旦犯下老師從不會犯的錯，就會走進訓練時沒看過的局面，越偏越遠。同策略強化學習沒有這個問題，但每一回合只帶來很少的資訊量，學得慢<Cite k="tml-opd" />。現代的後訓練流程，就是在這兩個維度之間組合搭配。
+
+### RLHF 的工程負擔，與 DPO 的捷徑
+
+經典 RLHF 用 PPO 演算法做<Term id="reinforcement-learning">強化學習</Term>，訓練時要同時運行四個模型：正在學習的策略模型、凍結不動的參考模型（用來計算 KL 懲罰，避免偏離太遠）、替回答打分數的獎勵模型，以及估計「這個狀態大概能拿幾分」的價值模型。價值模型通常和策略模型一樣大，記憶體與運算負擔可觀<Cite k="deepseekmath" />。InstructGPT 在每個 Token 上都加了 KL 懲罰，係數為 0.02<Cite k="instructgpt" />。
+
+獎勵模型還有一個根本問題：它只是人類偏好的代理指標。OpenAI 的 Gao 等人用一個固定的「黃金標準」獎勵模型扮演人類，另外訓練一個代理獎勵模型，觀察對代理模型最佳化得越用力時，黃金分數如何變化。結果符合古德哈特定律：最佳化過了頭，真正的表現反而受損，而且這種關係可以用公式描述，係數隨獎勵模型的大小平滑變化<Cite k="gao" />。DeepSeek-R1 的第二階段強化學習也只在 1,700 步中的最後 400 步才加入獎勵模型的偏好分數，原因正是步數再多就可能出現鑽漏洞（reward hacking）<Cite k="deepseek-r1" />。
+
+DPO 證明同樣的偏好目標有封閉解，可以改寫成一個簡單的分類損失，既不需要獎勵模型，訓練中也不必讓模型產生新回答<Cite k="dpo" />。<CompanyChip id="meta" /> 訓練 Llama 3 時就選擇獎勵模型、拒絕取樣、SFT 與 DPO 的組合，跑了六輪，理由是 PPO 較不穩定、較難放大<Cite k="llama3" />。<CompanyChip id="ai2" /> 公開的 Tülu 3 配方則依序使用 SFT、DPO 與 RLVR<Cite k="tulu3" />。DPO 的限制在於它是異策略：只能從現成的回答配對中學習，無法探索模型自己可能寫出的新答案。
+
+### RLVR：讓答案自己當裁判
+
+如果題目本身就能判對錯，例如數學有標準答案、程式可以跑單元測試，就不必訓練獎勵模型。Ai2 在 Tülu 3 中把這種做法命名為 RLVR（可驗證獎勵的強化學習）<Cite k="tulu3" />。DeepSeek-R1-Zero 的推理題只用兩種規則式獎勵：答案是否正確（數學比對答案，程式交給編譯器與測試案例），以及思考過程是否寫在指定格式內；正式版 R1 另外加上「語言一致性」獎勵，避免思考過程中英混雜<Cite k="deepseek-r1" />。
+
+RLVR 最具代表性的演算法之一，是 <CompanyChip id="deepseek" /> 在 2024 年 2 月 DeepSeekMath 論文中提出的 <Term id="grpo">GRPO</Term>。它是 PPO 的變體，最大的改變是拿掉價值模型：同一題讓模型產生一組回答，用組內的平均分數當作比較基準，比平均好的回答提高機率、比平均差的降低，省下大量記憶體與運算<Cite k="deepseekmath" />。
+
+<FlowSteps
+  title="GRPO 的一個訓練步驟"
+  steps={[
+    { title: "抽題", detail: "從題庫抽出一批數學、程式等可以自動驗證的題目" },
+    { title: "同題多答", detail: "每題讓目前的模型產生一組回答，例如 DAPO 每題取樣 16 個" },
+    { title: "規則評分", detail: "比對答案或執行測試，答對給分、格式不符扣分" },
+    { title: "組內比較", detail: "每個回答的分數減去組內平均、除以組內標準差，得到「優勢」" },
+    { title: "更新模型", detail: "提高優勢為正的回答機率、降低為負的，並以 KL 項拉住，避免偏離參考模型太遠" }]}
+  caption="依 DeepSeekMath 與 DAPO 論文整理。"
+/>
+
+DeepSeek-R1-Zero 直接在基礎模型上用 GRPO 訓練，不先做 SFT。它用 512 顆（64 × 8）H800 GPU 訓練約 198 小時，共 10.1 萬 GPU 小時，以每小時 2 美元計約 20.2 萬美元；AIME 2024 的平均單次正確率從 15.6% 升到 77.9%<Cite k="deepseek-r1" />。完整的 R1 流程更講究可讀性與通用性：
+
+<FlowSteps
+  title="DeepSeek-R1 的後訓練流程"
+  steps={[
+    { title: "冷啟動 SFT", detail: "數千筆人類可讀的長思維鏈示範，先教格式" },
+    { title: "推理強化學習", detail: "以規則式獎勵在數學、程式等題目上訓練，並加入語言一致性獎勵" },
+    { title: "拒絕取樣 SFT", detail: "每題取樣多個回答、只留正確的，得到約 60 萬筆推理資料，再加約 20 萬筆寫作、問答等非推理資料" },
+    { title: "第二階段強化學習", detail: "推理題沿用規則獎勵，一般題改用獎勵模型評分，兼顧有用與無害" }]}
+  caption="資料來源：DeepSeek-R1 論文 arXiv v2（該論文已刊登於《自然》期刊）。"
+/>
+
+把 R1-Zero、資料建立與 R1 本身加總，整個 R1 的後訓練合計 14.7 萬 GPU 小時、約 29.4 萬美元<Cite k="deepseek-r1" />，約為其基礎模型 DeepSeek-V3 完整訓練（278.8 萬 GPU 小時）的 5%<Cite k="deepseek-v3" />。這是本文換算；兩份報告列出的都是正式訓練的估算成本，不含前期研究與實驗。
+
+### 把強化學習練穩：DAPO 與 GSPO
+
+演算法寫在論文上很簡潔，放大時卻常常失控。<CompanyChip id="bytedance" /> 的 Seed 團隊與清華大學在 2025 年 3 月發表 DAPO：直接用 GRPO 訓練 Qwen2.5-32B 基礎模型，AIME 2024 只拿到 30 分，遠低於 DeepSeek 公布的 47 分；他們逐一找出問題並修正，最後以一半的訓練步數達到 50 分，並把整套系統建立在 verl 框架上開源<Cite k="dapo" />。
+
+<BarChart
+  title="DAPO 逐步加入各項技術後的 AIME 2024 分數"
+  unit="分"
+  data={[{ label: "直接用 GRPO", value: 30 }, { label: "＋過長回答過濾", value: 36 }, { label: "＋Clip-Higher", value: 38 }, { label: "＋軟性過長懲罰", value: 41 }, { label: "＋Token 層級損失", value: 42 }, { label: "＋動態取樣（DAPO）", value: 50 }]}
+  source="dapo"
+  note="以 Qwen2.5-32B 基礎模型訓練，分數為 32 次取樣的平均；作為對照，DeepSeek-R1-Zero-Qwen-32B 為 47 分"
+  keepOrder
+/>
+
+其中兩個問題最有代表性：
+
+- **熵崩塌**：訓練不久，同一題的多個回答變得幾乎一模一樣，模型不再探索。原因藏在 PPO 的截斷機制裡：截斷範圍設為 0.2 時，一個原本機率 0.01 的 Token 最多只能升到 0.012，機率 0.9 的 Token 卻幾乎不受限制。罕見但可能有用的「探索型」Token 因此很難被放大。DAPO 把上限放寬到 0.28、下限維持 0.2，稱為 Clip-Higher<Cite k="dapo" />。
+- **零梯度**：如果一題的所有回答都答對（或都答錯），組內沒有差異，優勢全部為零，這題對訓練毫無貢獻。隨著模型變強，這種題目越來越多。DAPO 的動態取樣會多抽一些題目，把全對或全錯的過濾掉，讓每一批都有有效訊號<Cite k="dapo" />。
+
+<CompanyChip id="alibaba" /> 的 Qwen 團隊則在 2025 年 7 月提出 GSPO。他們認為 GRPO 逐 Token 計算的重要性比率會產生雜訊，回答越長累積越多，訓練超大模型時常導致無法挽回的崩潰，<Term id="moe">MoE</Term> 模型尤其嚴重；GSPO 改在整個回答的層級計算比率與截斷，明顯穩定了 MoE 的強化學習，也促成了 2025 年 7 月前後 Qwen3 更新版模型的進步<Cite k="gspo" />。
+
+### RLVR 的邊界：放大舊能力，還是學到新能力？
+
+RLVR 讓模型「更常答對」，但它有沒有教會模型原本不會的東西？清華大學等機構的 Yue 等人用 pass@k（取樣 k 次只要有一次答對就算對）檢驗：k 很小時，強化學習後的模型明顯勝過基礎模型；k 很大時，基礎模型反而比較高。換句話說，強化學習後的推理路徑大多早已存在於基礎模型的取樣分布中，強化學習主要是讓模型更穩定地找到它們；相對地，蒸餾能從老師模型帶進新的推理模式<Cite k="rl-boundary" />。
+
+DeepSeek 的實驗也指向同一個方向：在 Qwen2.5-32B 基礎模型上直接做超過 1 萬步的大規模強化學習，AIME 2024 只到 47.0%；改用 R1 產生的資料蒸餾同一個基礎模型，卻達到 72.6%。DeepSeek 的結論是，把更強的模型蒸餾成小模型既經濟又有效，但若要超越人類智慧的邊界，可能仍需要更強的基礎模型與更大規模的強化學習<Cite k="deepseek-r1" />。
+
+不過，強化學習能否帶來新能力，目前仍有爭議。<CompanyChip id="nvidia" /> 的研究團隊在 2025 年 5 月提出 ProRL：加入 KL 控制、定期重設參考模型，並用多樣化的任務做長時間強化學習，結果強化學習後的模型在大範圍的 pass@k 上都勝過基礎模型，甚至能解出基礎模型取樣再多次也解不出的題目；他們發現邊界能擴大多少，與基礎模型在該任務原本的能力以及訓練時間長短密切相關<Cite k="prorl" />。Yue 等人也認為，持續放大規模、讓模型與環境多輪互動，可能才是釋放強化學習潛力的方向<Cite k="rl-boundary" />。
+
+### 從解題到 Agent：強化學習環境
+
+推理題之後，下一個戰場是讓模型學會使用工具、完成多步驟任務。這需要<Term id="rl-environment">強化學習環境</Term>：一個模型可以採取行動、觀察結果並得到評分的沙盒，例如程式庫、瀏覽器或終端機。DeepSeek-V3.2 為此合成了超過 1,800 個不同環境與 8.5 萬個複雜提示來驅動強化學習，後訓練預算也超過預訓練成本的 10%<Cite k="deepseek-v32" />。
+
+環境與高品質題目不容易大量自製，於是出現專門的供應商：<CompanyChip id="surge-ai" /> 專注於 RLHF、強化學習環境與語言資料標註<Cite k="surge-wiki" />，<CompanyChip id="mercor" /> 則招募工程師、律師、醫師與銀行家等專家，替 AI 模型產生訓練資料<Cite k="mercor-wiki" />。
+
+### 蒸餾：讓老師帶學生
+
+「知識蒸餾」一詞與現代做法，來自 Hinton 等人 2015 年的論文（更早已有 Caruana 等人把大型集成模型壓縮成單一模型的研究）：讓小模型學習大模型輸出的完整機率分布（稱為「軟目標」），而不只是標準答案。做法是提高 <Term id="softmax">softmax</Term> 的「溫度」T，讓老師的機率分布變得平滑，連「第二可能、第三可能的答案」都透露出來，學生再用同樣的溫度學習<Cite k="hinton" />：
+
+<MathTeX tex={"q_i=\\frac{\\exp(z_i/T)}{\\sum_j\\exp(z_j/T)}"} display label="第 i 類的機率等於 z_i 除以 T 的指數，除以所有類別 z_j 除以 T 的指數總和" />
+
+到了大型語言模型時代，蒸餾發展出三種主要形式：
+
+1. **序列蒸餾（異策略）**：讓老師產生大量回答，學生直接拿來做 SFT。DeepSeek 用 R1 整理的約 80 萬筆資料，對 Qwen2.5 與 Llama 3 系列的開放模型微調 2 到 3 個 epoch，得到 6 個 15 億到 700 億參數的蒸餾模型；其中只有 15 億參數的 R1-Distill-Qwen-1.5B，AIME 2024 就達到 28.9%，高於 GPT-4o 的 9.3%<Cite k="deepseek-r1" />。
+2. **機率分布蒸餾**：學生在每個 Token 上模仿老師的整個機率分布，資訊量比單一答案多得多。<CompanyChip id="alphabet" /> 的 Gemma 2 在預訓練階段就用這種方式訓練 2B 與 9B 模型，讀的 Token 數超過運算最適量的 50 倍<Cite k="gemma2" />。
+3. **同策略蒸餾**：學生自己產生回答，老師對其中每個 Token 評分，學生朝老師的分布調整。這就是比喻中「自己開、教練即時提醒」的做法，兼具同策略與密集回饋的優點<Cite k="tml-opd" />。
+
+Qwen3 的小模型（6 億到 140 億參數的 5 個稠密模型，以及 Qwen3-30B-A3B）全部改用「由強到弱」的蒸餾：先做異策略蒸餾打底，再讓學生自己產生回答，對齊 Qwen3-32B 或 Qwen3-235B-A22B 老師的輸出。整體只需完整四階段訓練約 1/10 的 GPU 時數<Cite k="qwen3" />。論文中的對照實驗特別有說服力：
+
+<BarChart
+  title="Qwen3-8B：強化學習與同策略蒸餾的對照"
+  unit="AIME'24 分數"
+  data={[{ label: "起點（異策略蒸餾後）", value: 55.0 }, { label: "＋強化學習", value: 67.6 }, { label: "＋同策略蒸餾", value: 74.4 }]}
+  source="qwen3"
+  note="強化學習用了 17,920 GPU 小時，同策略蒸餾只用 1,800 GPU 小時；蒸餾也提高了 pass@64，強化學習則沒有"
+  keepOrder
+/>
+
+<CompanyChip id="thinking-machines-lab" /> 在 2025 年 10 月用自家的 Tinker 訓練 API 重現了這個結果：以 Qwen3-32B 當老師、Qwen3-8B-Base 當學生，要把 AIME'24 推到約 70%，同策略蒸餾所需的運算，比把異策略蒸餾資料擴大到約 200 萬筆（作者估計成本與強化學習相近）少 9 到 30 倍；9 倍是不計老師產生資料的成本，約 30 倍是連同老師成本一起計算<Cite k="tml-opd" />。2026 年 4 月的 DeepSeek-V4 更把它用在旗艦模型上：先用 SFT 與 GRPO 分別培養各領域的「專家」，再用同策略蒸餾把它們的能力整合進同一個模型<Cite k="deepseek-v4" />。
+
+### 後訓練吃掉的算力越來越多
+
+<StatGrid
+  title="後訓練與強化學習的算力比重"
+  items={[
+    { label: "InstructGPT（2022）", value: "約 1.8%", note: "SFT 加 RLHF 共 64.9 petaflop/s-day，GPT-3 預訓練為 3,640" },
+    { label: "DeepSeek-R1（2025）", value: "約 5%", note: "R1 全部後訓練 14.7 萬 GPU 小時，DeepSeek-V3 為 278.8 萬" },
+    { label: "DeepSeek-V3.2（2025）", value: "超過 10%", note: "官方表示後訓練預算已超過預訓練成本的 10%" },
+    { label: "OpenAI o3（2025）", value: "約 ×10", note: "強化學習訓練算力比前代再推進一個數量級" },
+    { label: "xAI Grok 4（2025）", value: "20 萬顆 GPU", note: "以預訓練等級的叢集做強化學習，算力比先前多一個數量級以上" }]}
+  caption="前兩項為本文依技術報告數字換算，第三項為 DeepSeek 論文所述，後兩項為官方說明；各項計算單位不同，只適合看趨勢。"
+/>
+
+數字的來源分別是 InstructGPT 論文<Cite k="instructgpt" />、DeepSeek-R1 與 V3 的技術報告<Cite k="deepseek-r1" /><Cite k="deepseek-v3" />、DeepSeek-V3.2 論文<Cite k="deepseek-v32" />，以及 OpenAI 與 xAI 的發表文章<Cite k="o3" /><Cite k="grok4" />。2022 年的後訓練只是預訓練的零頭；到了 2025 年，OpenAI 表示強化學習算力再放大約一個數量級，xAI 則表示超過一個數量級，並以預訓練等級的規模來做強化學習。
+
+### 蒸餾的灰色地帶
+
+蒸餾的效率，也讓它成為競爭與安全問題。2026 年 2 月 23 日，<CompanyChip id="anthropic" /> 公開指控 <CompanyChip id="deepseek" />、<CompanyChip id="moonshot-ai" /> 與 <CompanyChip id="minimax" /> 透過約 2.4 萬個詐騙帳號，與 Claude 進行了超過 1,600 萬次互動，以蒸餾 Claude 的能力，違反服務條款與地區存取限制<Cite k="anthropic-distill" />。Anthropic 同時強調，蒸餾本身是正當且普遍的方法，前沿實驗室也經常蒸餾自家模型，推出更小、更便宜的版本；它的疑慮在於未經授權蒸餾出來的模型可能不保留安全防護，並削弱晶片<Term id="export-controls">出口管制</Term>的效果<Cite k="anthropic-distill" />。以上是 Anthropic 單方面的說法，相關爭議可參考<TrendLink id="export-controls-us-china">晶片出口管制與中美科技角力</TrendLink>。
+
+<DeepDive title="深入一點：重要性比率、截斷、群組優勢與反向 KL">
+
+**重要性比率與截斷。** 強化學習每產生一批回答，會用它更新好幾次參數。為了修正「回答是舊模型產生的」這個落差，PPO 會計算每個 Token 在新舊模型下的機率比 r，並把它截斷在 1 − ε 到 1 + ε 之間，避免一次更新太多<Cite k="dapo" />：
+
+<MathTeX tex={"r_{i,t}(\\theta)=\\frac{\\pi_\\theta(o_{i,t}\\mid q,o_{i,\\lt t})}{\\pi_{\\theta_{\\mathrm{old}}}(o_{i,t}\\mid q,o_{i,\\lt t})},\\qquad\\min\\!\\left(r_{i,t}\\hat{A}_{i},\\;\\mathrm{clip}(r_{i,t},1-\\varepsilon_{\\mathrm{low}},1+\\varepsilon_{\\mathrm{high}})\\hat{A}_{i}\\right)"} display label="重要性比率等於新模型與舊模型產生同一個 Token 的機率比；目標取比率乘優勢、與截斷後比率乘優勢兩者中較小者" />
+
+傳統 PPO 的上下限相同（ε 約 0.2），DAPO 把上限 ε_high 放寬到 0.28，讓低機率的探索型 Token 有空間被放大<Cite k="dapo" />。
+
+**群組優勢。** GRPO 不用價值模型，而是把同一題 G 個回答的獎勵標準化，當作每個回答中所有 Token 的優勢<Cite k="deepseekmath" />：
+
+<MathTeX tex={"\\hat{A}_i=\\frac{r_i-\\mathrm{mean}(r_1,\\ldots,r_G)}{\\mathrm{std}(r_1,\\ldots,r_G)}"} display label="第 i 個回答的優勢等於它的獎勵減去組內平均，再除以組內標準差" />
+
+這個式子也說明了零梯度問題：組內獎勵全部相同時，分子為零。GSPO 則把比率改成整個回答的機率比，並依長度開 |y| 次方根做正規化，讓截斷以序列為單位進行<Cite k="gspo" />。
+
+**同策略蒸餾的損失。** 同策略蒸餾讓學生 π_θ 自己產生回答，再對每個 Token 計算學生與老師分布之間的反向 KL 散度<Cite k="tml-opd" />：
+
+<MathTeX tex={"\\mathrm{KL}\\!\\left(\\pi_\\theta\\,\\|\\,\\pi_{\\mathrm{teacher}}\\right)=\\mathbb{E}_{x\\sim\\pi_\\theta}\\!\\left[\\log\\pi_\\theta(x_{t+1}\\mid x_{1..t})-\\log\\pi_{\\mathrm{teacher}}(x_{t+1}\\mid x_{1..t})\\right]"} display label="反向 KL 等於在學生自己的取樣下，學生對數機率減去老師對數機率的期望值" />
+
+學生與老師行為完全相同時，反向 KL 為零。它可以看成一種「每個 Token 都有分數」的獎勵：學生在自己會走到的每一個狀態上，都知道老師會怎麼做。這正是它比只看最終對錯的強化學習更省算力的原因。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+- **強化學習是「邊生成邊學」** → <SegmentChip id="ai-accelerators" />、<SegmentChip id="cloud-neocloud" />：GRPO 每一步都要讓模型對每題產生一組長回答，訓練過程中包含大量類似<Term id="inference-engine">推論引擎</Term>的工作。ByteDance 發起的開源框架 verl，就用 vLLM、SGLang 等推論引擎產生這些回答<Cite k="verl" />，兩者背後的商業公司見 <CompanyChip id="inferact" /> 與 <CompanyChip id="radixark" />。規模也越來越大：R1-Zero 用了 512 顆 H800<Cite k="deepseek-r1" />，Grok 4 的強化學習則動用 20 萬顆 <Term id="gpu">GPU</Term> 的叢集<Cite k="grok4" />，持續推升對 <CompanyChip id="nvidia" /> 等加速器的需求。
+- **資料、專家與環境成為新的供應鏈** → <SegmentChip id="devtools-data-mlops" />：偏好資料、可驗證題庫與強化學習環境，都需要大量專業人力。除了前面提到的 Surge AI 與 Mercor，<CompanyChip id="scale-ai" />、<CompanyChip id="turing" />、<CompanyChip id="labelbox" /> 等資料業者也提供後訓練資料、評測與環境；<Term id="synthetic-data">合成資料</Term>則讓模型自己生產一部分訓練材料。
+- **公開的訓練配方加速追趕** → <SegmentChip id="foundation-models" />：DeepSeek（<ModelChip id="deepseek" />）公開 GRPO 與 R1，ByteDance（<ModelChip id="bytedance-seed" />）公開 DAPO 與 verl，Qwen（<ModelChip id="alibaba-qwen" />）公開 GSPO 與由強到弱的蒸餾，Ai2（<ModelChip id="ai2-olmo" />）公開完整的 Tülu 3 配方。這些<Term id="open-weights">開放權重</Term>實驗室的公開細節，讓後進者能快速複製<Term id="reasoning-model">推理模型</Term>的做法，見<TrendLink id="open-weights-race">開放權重競賽與兆級參數模型</TrendLink>；<CompanyChip id="openai" />（<ModelChip id="openai-gpt" />）與 Anthropic（<ModelChip id="anthropic-claude" />）等封閉實驗室則較少公開細節。
+- **蒸餾讓小模型扛起大任務** → 蒸餾與同策略蒸餾讓小模型以一小部分成本接近大模型的能力，降低推論成本，也讓手機、PC 等終端裝置能執行實用的模型，見<TrendLink id="small-models-distillation">小模型與蒸餾：端側 AI 的崛起</TrendLink>與<TrendLink id="reasoning-test-time-compute">推理模型與推論時運算</TrendLink>。後訓練說到底，是在<Term id="foundation-model">基礎模型</Term>的能力範圍內做取捨與<Term id="alignment">對齊</Term>；它能否可靠地讓模型更安全，是<LearnLink id="ai-safety-and-regulation">AI 安全、治理與法規</LearnLink>關心的問題。

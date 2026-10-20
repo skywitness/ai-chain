@@ -1,0 +1,141 @@
+---
+/**
+ * /404 找不到頁面: a search button (Pagefind, same trigger as the header) and links to every section.
+ * Served by all static hosts for unknown URLs (404.html). Owner: pages-reference agent.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Button from '../components/ui/Button.astro';
+import SectionLinks from '../components/reference/SectionLinks.astro';
+import { LAYERS } from '../lib/collections';
+import { withBase } from '../lib/paths';
+
+const layers = [...LAYERS].reverse();
+---
+
+<BaseLayout
+  title="找不到頁面"
+  description="這個網址沒有對應的頁面。可以使用全站搜尋，或從學習路徑、產業鏈、公司資料庫等主要單元重新開始。"
+  noindex
+  pagefind={false}
+  section={null}
+>
+  <div class="container nf">
+    <section class="nf__hero" aria-labelledby="nf-title">
+      <div class="nf__art" aria-hidden="true">
+        <svg viewBox="0 0 220 168" width="220" height="168" focusable="false">
+          {
+            layers.map((l, i) => {
+              const y = 8 + i * 32;
+              const broken = i === 2;
+              return broken ? (
+                <g style={`color: ${l.color}`}>
+                  <rect x="8" y={y} width="86" height="22" rx="6" fill="currentColor" opacity="0.9" />
+                  <rect x="128" y={y + 9} width="84" height="22" rx="6" fill="currentColor" opacity="0.55" transform={`rotate(6 170 ${y + 20})`} />
+                  <path d={`M100 ${y + 4} l8 7 -6 6 8 8`} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.7" />
+                </g>
+              ) : (
+                <rect x="8" y={y} width="204" height="22" rx="6" fill={l.color} opacity="0.9" />
+              );
+            })
+          }
+        </svg>
+        <p class="nf__code">404</p>
+      </div>
+
+      <div class="nf__text">
+        <h1 id="nf-title">找不到頁面</h1>
+        <p class="nf__lede">
+          這條鏈在這裡斷了：你要找的頁面可能已經移動、改名，或網址有誤。試試全站搜尋，或從下面的主要單元重新出發。
+        </p>
+        <div class="nf__actions">
+          <Button variant="primary" icon="search" class="js-only" data-search-trigger="" aria-label="搜尋全站（Ctrl K）">
+            搜尋全站
+          </Button>
+          <Button href={withBase('/')} icon="arrow-left">回到首頁</Button>
+        </div>
+        <p class="nf__hint js-only">也可以按 <kbd data-search-kbd>Ctrl K</kbd> 開啟搜尋。</p>
+      </div>
+    </section>
+
+    <section class="nf__sections" aria-labelledby="nf-sections">
+      <h2 id="nf-sections" class="nf__h2">主要單元</h2>
+      <SectionLinks />
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  @layer components {
+    .nf {
+      display: grid;
+      gap: var(--space-8);
+      padding-block: var(--space-7) var(--space-4);
+    }
+    .nf__hero {
+      display: grid;
+      gap: var(--space-6);
+      align-items: center;
+    }
+    @media (min-width: 840px) {
+      .nf__hero {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: var(--space-8);
+      }
+    }
+    .nf__art {
+      position: relative;
+      inline-size: min(100%, 10rem);
+    }
+    @media (min-width: 840px) {
+      .nf__art {
+        inline-size: 15rem;
+      }
+    }
+    .nf__art svg {
+      display: block;
+      inline-size: 100%;
+      block-size: auto;
+    }
+    .nf__code {
+      margin-block-start: var(--space-3);
+      font-size: var(--fs-xl);
+      font-weight: var(--fw-bold);
+      letter-spacing: 0.3em;
+      color: var(--c-fg-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+    .nf__text {
+      display: grid;
+      gap: var(--space-4);
+      max-width: 40rem;
+    }
+    .nf__lede {
+      font-size: var(--fs-l);
+      line-height: 1.75;
+      color: var(--c-fg-muted);
+    }
+    .nf__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      margin-block-start: var(--space-2);
+    }
+    .nf__hint {
+      font-size: var(--fs-s);
+      color: var(--c-fg-subtle);
+    }
+    /* keyboard shortcut hint is noise on touch screens */
+    @media (hover: none) and (pointer: coarse) {
+      .nf__hint {
+        display: none;
+      }
+    }
+    .nf__sections {
+      display: grid;
+      gap: var(--space-4);
+    }
+    .nf__h2 {
+      font-size: var(--fs-xl);
+    }
+  }
+</style>

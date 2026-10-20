@@ -1,0 +1,128 @@
+---
+/**
+ * 「受影響的環節、公司與模型」: rows of segment, company and model chips, plus related glossary terms.
+ * Empty rows are omitted; renders nothing when every list is empty.
+ *   <TrendAffected segments={['foundry-packaging']} companies={['tsmc']} models={[]} terms={['cowos']} />
+ */
+import SegmentChip from '../content/SegmentChip.astro';
+import CompanyChip from '../content/CompanyChip.astro';
+import ModelChip from '../content/ModelChip.astro';
+import { getGlossaryIndexEntry } from '../../lib/collections';
+import { glossaryHref } from '../../lib/paths';
+
+interface Props {
+  segments?: readonly string[] | undefined;
+  companies?: readonly string[] | undefined;
+  models?: readonly string[] | undefined;
+  terms?: readonly string[] | undefined;
+  class?: string | undefined;
+}
+const { segments = [], companies = [], models = [], terms = [], class: className } = Astro.props;
+const termItems = terms.map((id) => {
+  const t = getGlossaryIndexEntry(id);
+  return { id, label: t?.term ?? id, zh: t?.zh };
+});
+const rows = [
+  { key: 'seg', label: '產業鏈環節', n: segments.length },
+  { key: 'co', label: '公司', n: companies.length },
+  { key: 'model', label: '模型', n: models.length },
+  { key: 'term', label: '相關名詞', n: termItems.length },
+].filter((r) => r.n > 0);
+---
+
+{
+  rows.length > 0 && (
+    <dl class:list={['aff', className]}>
+      {rows.map((r) => (
+        <div class="aff__row">
+          <dt class="aff__label">
+            {r.label}
+            <span class="aff__n">{r.n}</span>
+          </dt>
+          <dd class="aff__chips">
+            {r.key === 'seg' && segments.map((id) => <SegmentChip id={id} />)}
+            {r.key === 'co' && companies.map((id) => <CompanyChip id={id} />)}
+            {r.key === 'model' && models.map((id) => <ModelChip id={id} />)}
+            {r.key === 'term' &&
+              termItems.map((t) => (
+                <a class="aff__term" href={glossaryHref(t.id)} title={t.zh}>
+                  {t.label}
+                  {t.zh && t.zh !== t.label && <span class="aff__term-zh">{t.zh}</span>}
+                </a>
+              ))}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+<style>
+  .aff {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    overflow: hidden;
+  }
+  .aff__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2) var(--space-5);
+    padding: var(--space-4) var(--space-5);
+  }
+  .aff__row + .aff__row {
+    border-block-start: 1px solid var(--c-border);
+  }
+  @media (min-width: 640px) {
+    .aff__row {
+      grid-template-columns: 7.5rem minmax(0, 1fr);
+      align-items: baseline;
+    }
+  }
+  .aff__label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .aff__n {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .aff__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    line-height: 2;
+  }
+  .aff__term {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4em;
+    padding: 0 0.55em;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-s);
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font-size: 0.94em;
+    line-height: 1.55;
+    text-decoration: none;
+    text-decoration-line: none;
+  }
+  .aff__term:hover {
+    border-color: var(--c-border-strong);
+    background: var(--c-hover);
+  }
+  .aff__term-zh {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+</style>

@@ -1,0 +1,949 @@
+---
+title: "MiniMax 系列"
+family: "MiniMax M"
+kind: "llm"
+lab: "minimax"
+labName: "MiniMax（稀宇科技）"
+origin: "CN"
+summary: "上海稀宇科技（MiniMax）的 M 系列語言模型，主打低價、工具呼叫與程式 Agent。2025 年 6 月的 M1 以閃電注意力支援 100 萬 tokens；10 月起的 M2 系列（M2 到 M2.7）以精簡 MoE 壓低成本，其中 M2 總參數 2,300 億、每個 token 只啟用 100 億；2026-06-01 推出的 MiniMax-M3 約 4,280 億參數、原生多模態並支援 100 萬 tokens，API 每百萬 tokens 輸入 0.30、輸出 1.20 美元。授權則由 Apache 2.0 逐步收緊為商用須通知或另行授權。"
+strengths:
+  - "價格低：M3 在 512K 以內每百萬 tokens 輸入 0.30、輸出 1.20 美元（官方標示原價永久 5 折），快取讀取 0.06 美元"
+  - "工具呼叫與指令遵循佳：AA 量測 M3 的 τ²-bench 為 88.9%、IFBench 為 82.9%"
+  - "原生多模態加 100 萬 tokens 上下文，自研 MSA 稀疏注意力讓 1M 長度下每 token 運算量降到 M2 的 1/20"
+  - "較少亂答：AA-Omniscience 知識測驗中，M3 遇到不會的題目多半選擇不答，幻覺率約 18%，明顯低於 Kimi K3（約 53%）與 DeepSeek V4.1-Flash（約 96%）"
+weaknesses:
+  - "綜合能力落後同級：M3 的 AA 綜合智慧指數 29，明顯低於 DeepSeek V4.1-Flash（39）與 Kimi K3（44）等開放權重旗艦"
+  - "知識型問答弱：AA Omniscience 準確率僅約 17%，高難度 Terminal-Bench 4.0 也只有 2.0%"
+  - "授權收緊：M2.7 改為非商用授權；M3 商用須標示並通知 MiniMax，年營收逾 2,000 萬美元須事先書面授權"
+  - "最新的 M3.1-Flash-Preview 未公布價格、評測與權重，只能在自家 MiniMax Code 與訂閱方案中使用"
+bestFor:
+  - "預算有限、需要大量工具呼叫的 Agent 與自動化流程"
+  - "需要長上下文並搭配看圖、看影片的程式與辦公任務"
+  - "非商用研究與教學中的本地部署（商用前需確認授權條件）"
+positioning:
+  capability: 29
+  costIndex: 31
+  openness: 0.5
+  method: "computed"
+  asOf: "2026-10-06"
+  note: "capability 取 MiniMax-M3 的 AA 綜合智慧指數 v4.3（29.2）；costIndex 以官方標準方案 512K 以內價格（輸入 0.30、輸出 1.20 美元）3:1 混合約 0.525 美元／百萬 tokens，依對數換算（0.05 美元 = 0、100 美元 = 100）得 31；權重開放但採 MiniMax Community License，非商用免費、商用須標示與通知或授權，openness = 0.5。"
+versions:
+  - id: "minimax-m3-1-flash-preview"
+    name: "MiniMax-M3.1-Flash-Preview"
+    released: "2026-09-27"
+    status: "preview"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn:
+      - "text"
+      - "image"
+      - "video"
+    modalitiesOut:
+      - "text"
+    contextTokens: 1000000
+    reasoning: "always"
+    availability:
+      - "api"
+      - "chat-app"
+    notes: "官方文件稱目前只透過 M Plan 訂閱（以訂閱金鑰呼叫 API）與 MiniMax Code 提供，未開放隨用隨付計費；思考預設開啟，可用 effort 設定 low、medium、high、xhigh、max（預設 max）。發布日期依 DataNorth 報導，官方未公布價格、參數、評測與權重。"
+  - id: "minimax-m3"
+    name: "MiniMax-M3"
+    released: "2026-06-01"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "MiniMax Community License"
+    architecture: "moe"
+    params:
+      totalB: 428
+      activeB: 23
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+      - "video"
+    modalitiesOut:
+      - "text"
+    contextTokens: 1000000
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "chat-app"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.3
+        outputPerMTok: 1.2
+        cachedInputPerMTok: 0.06
+        currency: "USD"
+        tierNote: "標準方案，輸入 512K tokens 以內；官方標示原價 0.60／2.40 永久 5 折"
+        source:
+          lang: "en"
+          accessed: "2026-10-17"
+          title: "Pricing Overview"
+          publisher: "MiniMax Open Platform"
+          url: "https://platform.minimax.io/docs/pricing/overview"
+          type: "docs"
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.6
+        outputPerMTok: 2.4
+        cachedInputPerMTok: 0.12
+        currency: "USD"
+        tierNote: "標準方案，輸入超過 512K tokens；Priority 方案為標準價 1.5 倍"
+        source:
+          lang: "en"
+          accessed: "2026-10-17"
+          title: "Pricing Overview"
+          publisher: "MiniMax Open Platform"
+          url: "https://platform.minimax.io/docs/pricing/overview"
+          type: "docs"
+    benchmarks:
+      - benchmark: "swe-bench-pro"
+        score: 59
+        setting: "Claude Code 框架，自家基礎設施測試（官方部落格）"
+        reportedBy: "lab"
+        date: "2026-06-01"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax M3: Frontier Coding, 1M Context, Native Multimodality — All in One Model"
+          publisher: "MiniMax"
+          url: "https://www.minimax.io/blog/minimax-m3"
+          type: "company-site"
+          published: "2026-06-01"
+      - benchmark: "terminal-bench"
+        score: 66
+        setting: "Terminal-Bench 2.1，Terminus 2 框架（官方部落格）"
+        reportedBy: "lab"
+        date: "2026-06-01"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax M3: Frontier Coding, 1M Context, Native Multimodality — All in One Model"
+          publisher: "MiniMax"
+          url: "https://www.minimax.io/blog/minimax-m3"
+          type: "company-site"
+          published: "2026-06-01"
+      - benchmark: "aa-intelligence-index"
+        score: 29.2
+        setting: "v4.3"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M3 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m3"
+          type: "leaderboard"
+      - benchmark: "gpqa-diamond"
+        score: 92.9
+        setting: "AA 獨立測試"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M3 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m3"
+          type: "leaderboard"
+      - benchmark: "hle"
+        score: 39
+        setting: "AA 獨立測試"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M3 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m3"
+          type: "leaderboard"
+      - benchmark: "terminal-bench"
+        score: 65.2
+        setting: "Terminal-Bench 2.1，AA 獨立測試"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M3 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m3"
+          type: "leaderboard"
+      - benchmark: "terminal-bench"
+        score: 2
+        setting: "Terminal-Bench 4.0，AA 獨立測試"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M3 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m3"
+          type: "leaderboard"
+      - benchmark: "tau2-bench"
+        score: 88.9
+        setting: "AA 獨立測試"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M3 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m3"
+          type: "leaderboard"
+      - benchmark: "lmarena-text"
+        score: 1440
+        setting: "minimax-m3，第 96 名，±4"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          published: "2026-10-02"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+    notes: "約 4,280 億參數、每個 token 啟用約 230 億；自訓練第一步就混合文字、圖片與影片。採自研 MiniMax Sparse Attention（MSA），官方稱在 1M 上下文下每 token 運算量為 M2 的 1/20，prefill 加速 9 倍以上、decode 加速 15 倍以上；API 保證至少 512K 上下文。思考模式可設 enabled、adaptive、disabled。Hugging Face 另有 MXFP8 版本。官方標示輸出約每秒 100 tokens 以上，AA 於 2026 年 10 月中旬量測約每秒 93 tokens。"
+  - id: "minimax-m2-7"
+    name: "MiniMax-M2.7"
+    released: "2026-03-18"
+    status: "ga"
+    tier: "mid"
+    weights: "open-weights"
+    license: "MiniMax 非商用授權（商用須事先書面授權）"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 204800
+    reasoning: "always"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.3
+        outputPerMTok: 1.2
+        cachedInputPerMTok: 0.06
+        currency: "USD"
+        tierNote: "MiniMax-M2.7；快取寫入 0.375"
+        source:
+          lang: "en"
+          accessed: "2026-10-17"
+          title: "Pricing Overview"
+          publisher: "MiniMax Open Platform"
+          url: "https://platform.minimax.io/docs/pricing/overview"
+          type: "docs"
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.6
+        outputPerMTok: 2.4
+        cachedInputPerMTok: 0.06
+        currency: "USD"
+        tierNote: "MiniMax-M2.7-highspeed（輸出約每秒 100 tokens）"
+        source:
+          lang: "en"
+          accessed: "2026-10-17"
+          title: "Pricing Overview"
+          publisher: "MiniMax Open Platform"
+          url: "https://platform.minimax.io/docs/pricing/overview"
+          type: "docs"
+    benchmarks:
+      - benchmark: "swe-bench-pro"
+        score: 56.22
+        setting: "官方新聞稿"
+        reportedBy: "lab"
+        date: "2026-03-18"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax M2.7: Early Echoes of Self-Evolution"
+          publisher: "MiniMax"
+          url: "https://www.minimax.io/news/minimax-m27-en"
+          type: "press-release"
+          published: "2026-03-18"
+      - benchmark: "terminal-bench"
+        score: 57
+        setting: "Terminal-Bench 2（官方新聞稿）"
+        reportedBy: "lab"
+        date: "2026-03-18"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax M2.7: Early Echoes of Self-Evolution"
+          publisher: "MiniMax"
+          url: "https://www.minimax.io/news/minimax-m27-en"
+          type: "press-release"
+          published: "2026-03-18"
+      - benchmark: "aa-intelligence-index"
+        score: 22.8
+        setting: "v4.3，AA 已列為舊版"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2.7 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m2-7"
+          type: "leaderboard"
+      - benchmark: "gpqa-diamond"
+        score: 87.4
+        setting: "AA 獨立測試"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2.7 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m2-7"
+          type: "leaderboard"
+      - benchmark: "hle"
+        score: 29.6
+        setting: "AA 獨立測試"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2.7 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m2-7"
+          type: "leaderboard"
+      - benchmark: "terminal-bench"
+        score: 55.4
+        setting: "Terminal-Bench 2.1，AA 獨立測試"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2.7 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m2-7"
+          type: "leaderboard"
+      - benchmark: "tau2-bench"
+        score: 84.8
+        setting: "AA 獨立測試"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2.7 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m2-7"
+          type: "leaderboard"
+      - benchmark: "lmarena-text"
+        score: 1415
+        setting: "minimax-m2.7，第 137 名，±3"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          published: "2026-10-02"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+    notes: "官方稱是第一個深度參與自身演進的 M 系列模型（在訓練流程中自行更新記憶與建立技能）；GDPval-AA 為 1495 Elo。權重於 2026-04-09 上架 Hugging Face，2026-10-17 讀取時近 30 天下載量約 62 萬次，約為 M3 的 3 倍。"
+  - id: "minimax-m2-5"
+    name: "MiniMax-M2.5"
+    released: "2026-02-12"
+    status: "deprecated"
+    tier: "mid"
+    weights: "open-weights"
+    license: "Modified MIT"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 204800
+    reasoning: "always"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.3
+        outputPerMTok: 1.2
+        cachedInputPerMTok: 0.03
+        currency: "USD"
+        tierNote: "舊版模型；highspeed 版為 0.60／2.40，快取寫入 0.375"
+        source:
+          lang: "en"
+          accessed: "2026-10-17"
+          title: "Pricing Overview"
+          publisher: "MiniMax Open Platform"
+          url: "https://platform.minimax.io/docs/pricing/overview"
+          type: "docs"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 80.2
+        setting: "官方模型卡"
+        reportedBy: "lab"
+        date: "2026-02-12"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2.5 (model card)"
+          publisher: "MiniMax (Hugging Face)"
+          url: "https://huggingface.co/MiniMaxAI/MiniMax-M2.5"
+          type: "docs"
+          published: "2026-02-12"
+      - benchmark: "aa-intelligence-index"
+        score: 22.8
+        setting: "v4.3，AA 已列為舊版"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2.5 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m2-5"
+          type: "leaderboard"
+      - benchmark: "lmarena-text"
+        score: 1391
+        setting: "minimax-m2.5，第 171 名，±4"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          published: "2026-10-02"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+    notes: "在數十萬個真實環境中以強化學習訓練；官方稱跑完 SWE-bench Verified 的平均時間比 M2.1 快 37%。官方 API 已列為舊版。"
+  - id: "minimax-m2-1"
+    name: "MiniMax-M2.1"
+    released: "2025-12-23"
+    status: "deprecated"
+    tier: "mid"
+    weights: "open-weights"
+    license: "Modified MIT"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 204800
+    reasoning: "always"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.3
+        outputPerMTok: 1.2
+        cachedInputPerMTok: 0.03
+        currency: "USD"
+        tierNote: "舊版模型；highspeed 版為 0.60／2.40，快取寫入 0.375"
+        source:
+          lang: "en"
+          accessed: "2026-10-17"
+          title: "Pricing Overview"
+          publisher: "MiniMax Open Platform"
+          url: "https://platform.minimax.io/docs/pricing/overview"
+          type: "docs"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 74
+        setting: "官方模型卡"
+        reportedBy: "lab"
+        date: "2025-12-23"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2.1 (model card)"
+          publisher: "MiniMax (Hugging Face)"
+          url: "https://huggingface.co/MiniMaxAI/MiniMax-M2.1"
+          type: "docs"
+          published: "2025-12-23"
+      - benchmark: "terminal-bench"
+        score: 47.9
+        setting: "Terminal-Bench 2.0（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-12-23"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2.1 (model card)"
+          publisher: "MiniMax (Hugging Face)"
+          url: "https://huggingface.co/MiniMaxAI/MiniMax-M2.1"
+          type: "docs"
+          published: "2025-12-23"
+      - benchmark: "aa-intelligence-index"
+        score: 20.9
+        setting: "v4.3，AA 已列為舊版"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2.1 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m2-1"
+          type: "leaderboard"
+      - benchmark: "lmarena-text"
+        score: 1385
+        setting: "minimax-m2.1-preview，第 182 名，±5"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          published: "2026-10-02"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+    notes: "強化多種程式語言的開發與重構能力。官方 API 已列為舊版。"
+  - id: "minimax-m2"
+    name: "MiniMax-M2"
+    released: "2025-10-27"
+    status: "deprecated"
+    tier: "mid"
+    weights: "open-weights"
+    license: "Modified MIT"
+    architecture: "moe"
+    params:
+      totalB: 230
+      activeB: 10
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 204800
+    reasoning: "always"
+    availability:
+      - "api"
+      - "self-host"
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.3
+        outputPerMTok: 1.2
+        cachedInputPerMTok: 0.03
+        currency: "USD"
+        tierNote: "舊版模型；快取寫入 0.375"
+        source:
+          lang: "en"
+          accessed: "2026-10-17"
+          title: "Pricing Overview"
+          publisher: "MiniMax Open Platform"
+          url: "https://platform.minimax.io/docs/pricing/overview"
+          type: "docs"
+    benchmarks:
+      - benchmark: "swe-bench-verified"
+        score: 69.4
+        setting: "OpenHands 框架、128K 上下文（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-10-27"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2 (model card)"
+          publisher: "MiniMax (Hugging Face)"
+          url: "https://huggingface.co/MiniMaxAI/MiniMax-M2"
+          type: "docs"
+          published: "2025-10-27"
+      - benchmark: "terminal-bench"
+        score: 46.3
+        setting: "Terminal-Bench（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-10-27"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2 (model card)"
+          publisher: "MiniMax (Hugging Face)"
+          url: "https://huggingface.co/MiniMaxAI/MiniMax-M2"
+          type: "docs"
+          published: "2025-10-27"
+      - benchmark: "aa-intelligence-index"
+        score: 18.6
+        setting: "v4.3，AA 已列為舊版"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M2 Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m2"
+          type: "leaderboard"
+      - benchmark: "lmarena-text"
+        score: 1343
+        setting: "minimax-m2，第 225 名，±8"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          published: "2026-10-02"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+    notes: "總參數 2,300 億、啟用 100 億的精簡 MoE，主打 Agent 與程式工作流的低延遲與低成本；M2.1、M2.5 與 M2.7 的權重規模與 M2 相同（依 Hugging Face 標示的參數量判斷，四者幾乎相同，官方未另行說明）。官方 API 已列為舊版。"
+  - id: "minimax-m1"
+    name: "MiniMax-M1"
+    released: "2025-06-16"
+    status: "retired"
+    tier: "reasoning"
+    weights: "open-weights"
+    license: "Apache-2.0"
+    architecture: "moe"
+    params:
+      totalB: 456
+      activeB: 45.9
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 1000000
+    reasoning: "always"
+    availability:
+      - "self-host"
+    benchmarks:
+      - benchmark: "aime-2025"
+        score: 76.9
+        setting: "M1-80K（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-06-16"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M1-80k (model card)"
+          publisher: "MiniMax (Hugging Face)"
+          url: "https://huggingface.co/MiniMaxAI/MiniMax-M1-80k"
+          type: "docs"
+          published: "2025-06-16"
+      - benchmark: "gpqa-diamond"
+        score: 70
+        setting: "M1-80K（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-06-16"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M1-80k (model card)"
+          publisher: "MiniMax (Hugging Face)"
+          url: "https://huggingface.co/MiniMaxAI/MiniMax-M1-80k"
+          type: "docs"
+          published: "2025-06-16"
+      - benchmark: "swe-bench-verified"
+        score: 56
+        setting: "M1-80K（官方模型卡）"
+        reportedBy: "lab"
+        date: "2025-06-16"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax-M1-80k (model card)"
+          publisher: "MiniMax (Hugging Face)"
+          url: "https://huggingface.co/MiniMaxAI/MiniMax-M1-80k"
+          type: "docs"
+          published: "2025-06-16"
+      - benchmark: "aa-intelligence-index"
+        score: 11.7
+        setting: "v4.3，MiniMax M1 80k，AA 已列為舊版"
+        reportedBy: "third-party"
+        date: "2026-10-06"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "MiniMax M1 80k Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/minimax-m1-80k"
+          type: "leaderboard"
+      - benchmark: "lmarena-text"
+        score: 1364
+        setting: "minimax-m1，第 200 名，±4"
+        reportedBy: "leaderboard"
+        date: "2026-10-02"
+        source:
+          lang: "en"
+          accessed: "2026-10-06"
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          published: "2026-10-02"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+    notes: "混合 MoE 與閃電注意力（線性注意力）的推理模型，原生支援 100 萬 tokens 上下文，分 40K 與 80K 兩種思考預算版本。官方 API 模型清單已不再列出，權重仍可在 Hugging Face 下載。"
+flagshipVersion: "minimax-m3"
+relatedLearn:
+  - "open-vs-closed-models"
+  - "mixture-of-experts"
+  - "agents-and-mcp"
+  - "multimodal-models"
+  - "transformer-and-attention"
+  - "model-evaluation"
+glossary:
+  - "open-weights"
+  - "moe"
+  - "active-parameters"
+  - "sparse-attention"
+  - "context-window"
+  - "multimodal"
+  - "agent"
+  - "function-calling"
+  - "hallucination"
+  - "reasoning-model"
+  - "elo-rating"
+sources:
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "mm-m3-blog"
+    title: "MiniMax M3: Frontier Coding, 1M Context, Native Multimodality — All in One Model"
+    publisher: "MiniMax"
+    url: "https://www.minimax.io/blog/minimax-m3"
+    type: "company-site"
+    published: "2026-06-01"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "mm-m3-page"
+    title: "MiniMax M3 - Coding & Agentic Frontier, 1M Context, Multimodal"
+    publisher: "MiniMax"
+    url: "https://www.minimax.io/models/text/m3"
+    type: "company-site"
+  - lang: "en"
+    accessed: "2026-10-17"
+    key: "hf-minimax-m3"
+    title: "MiniMax-M3 (model card)"
+    publisher: "MiniMax (Hugging Face)"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M3"
+    type: "docs"
+    published: "2026-06-02"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "mm-m3-license"
+    title: "MiniMax Community License (MiniMax-M3)"
+    publisher: "MiniMax (Hugging Face)"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE"
+    type: "docs"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "mm-m27-license"
+    title: "Non-Commercial License (MiniMax-M2.7)"
+    publisher: "MiniMax (Hugging Face)"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M2.7/blob/main/LICENSE"
+    type: "docs"
+  - lang: "en"
+    accessed: "2026-10-17"
+    key: "mm-pricing"
+    title: "Pricing Overview"
+    publisher: "MiniMax Open Platform"
+    url: "https://platform.minimax.io/docs/pricing/overview"
+    type: "docs"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "mm-textgen"
+    title: "Model Invocation (Supported Models)"
+    publisher: "MiniMax Open Platform"
+    url: "https://platform.minimax.io/docs/guides/text-generation"
+    type: "docs"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "mm-relnotes"
+    title: "Release Notes: Models"
+    publisher: "MiniMax Open Platform"
+    url: "https://platform.minimax.io/docs/release-notes/models"
+    type: "docs"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "mm-m27-news"
+    title: "MiniMax M2.7: Early Echoes of Self-Evolution"
+    publisher: "MiniMax"
+    url: "https://www.minimax.io/news/minimax-m27-en"
+    type: "press-release"
+    published: "2026-03-18"
+  - lang: "en"
+    accessed: "2026-10-17"
+    key: "hf-minimax-m27"
+    title: "MiniMax-M2.7 (model card)"
+    publisher: "MiniMax (Hugging Face)"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M2.7"
+    type: "docs"
+    published: "2026-03-18"
+  - lang: "en"
+    accessed: "2026-10-17"
+    key: "hf-minimax-m25"
+    title: "MiniMax-M2.5 (model card)"
+    publisher: "MiniMax (Hugging Face)"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M2.5"
+    type: "docs"
+    published: "2026-02-12"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "hf-minimax-m21"
+    title: "MiniMax-M2.1 (model card)"
+    publisher: "MiniMax (Hugging Face)"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M2.1"
+    type: "docs"
+    published: "2025-12-23"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "hf-minimax-m2"
+    title: "MiniMax-M2 (model card)"
+    publisher: "MiniMax (Hugging Face)"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M2"
+    type: "docs"
+    published: "2025-10-27"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "mm-m1-news"
+    title: "MiniMax-M1, the World's First Open-Source, Large-Scale, Hybrid-Attention Reasoning Model"
+    publisher: "MiniMax"
+    url: "https://www.minimax.io/news/minimaxm1"
+    type: "press-release"
+    published: "2025-06-16"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "hf-minimax-m1"
+    title: "MiniMax-M1-80k (model card)"
+    publisher: "MiniMax (Hugging Face)"
+    url: "https://huggingface.co/MiniMaxAI/MiniMax-M1-80k"
+    type: "docs"
+    published: "2025-06-16"
+  - lang: "en"
+    accessed: "2026-10-17"
+    key: "aa-minimax-m3"
+    title: "MiniMax-M3 Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/minimax-m3"
+    type: "leaderboard"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "aa-minimax-m27"
+    title: "MiniMax-M2.7 Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/minimax-m2-7"
+    type: "leaderboard"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "aa-leaderboard"
+    title: "LLM Leaderboard: Comparison of AI Models (Intelligence Index v4.3)"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    note: "綜合指數於 2026-10-06 與 2026-10-17 讀取時一致；名次會隨新模型加入而變動，本頁不引用名次"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "lmarena-text"
+    title: "Text Arena Leaderboard (Overall)"
+    publisher: "LMArena"
+    url: "https://arena.ai/leaderboard/text"
+    type: "leaderboard"
+    published: "2026-10-02"
+    note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+  - lang: "en"
+    accessed: "2026-10-06"
+    key: "datanorth-m31"
+    title: "MiniMax releases M3.1-Flash-Preview"
+    publisher: "DataNorth"
+    url: "https://datanorth.ai/news/minimax-releases-m3-1-flash-preview"
+    type: "news"
+    published: "2026-09-28"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-09"
+  checkedBy: "models-09-check"
+  checkedOn: "2026-10-06"
+  notes: "查核依 MiniMax 開放平台定價頁、模型清單與發布紀錄、官方部落格與新聞稿、Hugging Face 模型卡與授權條款，AA 與 LMArena（2026-10-02 快照）逐項核對。修正：定價頁網址已轉址、移除無法回溯查證的 AA 開放權重名次、Hugging Face 下載量與 AA 速度改用可查證讀數、M3.1-Flash-Preview 可用方式改為訂閱制 API。"
+---
+
+## 系列概覽
+
+<CompanyChip id="minimax">MiniMax（稀宇科技）</CompanyChip>是少數同時經營語言、影片、語音與音樂模型的中國實驗室：2026 年 7 月推出影片模型 MiniMax H3 與 Music 3.0，語音則有 Speech 2.8<Cite k="mm-relnotes" />。本頁聚焦它的 M 系列語言模型，這條產品線一路以「便宜、能用工具、能寫程式」為賣點。
+
+截至 2026-10-06，官方 API 列出的語言模型如下<Cite k="mm-textgen" /><Cite k="mm-pricing" />：
+
+| 型號 | 上下文 | 每百萬 tokens 價格（輸入／輸出） | 說明 |
+|---|---|---|---|
+| MiniMax-M3.1-Flash-Preview | 100 萬 | 未公布 | 僅限 M Plan 訂閱與 MiniMax Code |
+| MiniMax-M3 | 100 萬 | 0.30／1.20 美元（512K 以內） | 旗艦，輸出約每秒 100 tokens 以上 |
+| MiniMax-M2.7 | 204,800 | 0.30／1.20 美元 | 輸出約每秒 60 tokens，另有高速版 |
+| M2.5、M2.1、M2 | 204,800 | 0.30／1.20 美元 | 列為舊版 |
+
+官方文件把 M3.1-Flash-Preview 列為最新的 M 系列模型，但目前只透過 M Plan 訂閱金鑰與 MiniMax Code 提供<Cite k="mm-textgen" />；據媒體報導它於 2026-09-27 推出，官方至今未公布價格、參數與評測<Cite k="datanorth-m31" />。
+
+## 特性分析
+
+**低價與 Agent 定位。** 2025 年 10 月的 M2 是總參數 2,300 億、每個 token 只啟用 100 億的 <Term id="moe">MoE</Term>，官方強調小的<Term id="active-parameters">啟用參數</Term>能降低延遲與成本，專為程式與 <Term id="agent">Agent</Term> 工作流設計<Cite k="hf-minimax-m2" />。從 M2 到 M3，標準 API 價格都維持在每百萬 tokens 輸入 0.30 美元、輸出 1.20 美元；其中 M3 是輸入 512K 以內、官方標示原價「永久五折」後的價格<Cite k="mm-pricing" />。
+
+**MSA 稀疏注意力撐起百萬上下文。** M3 採自研的 MiniMax Sparse Attention，把 KV 切成區塊並只計算被選中的部分。官方稱在 100 萬 tokens 下，每個 token 的運算量只有前代的 1/20，prefill 與 decode 分別加速 9 倍與 15 倍以上<Cite k="mm-m3-blog" />。這屬於<Term id="sparse-attention">稀疏注意力</Term>路線，與 DeepSeek 的 DSA 同樣是先篩選、再計算；官方稱 MSA 切分 KV 區塊更精細，能涵蓋更多有效上下文<Cite k="mm-m3-blog" />。
+
+**原生多模態與長程任務。** M3 從訓練第一步就混合文字、圖片與影片，也能操作桌面電腦<Cite k="mm-m3-blog" />。官方展示 M3 連續執行約 24 小時、呼叫工具 1,959 次，把 Hopper GPU 上 FP8 矩陣乘法核心的硬體峰值使用率由 7.6% 提升到 71.3%<Cite k="mm-m3-page" /><Cite k="mm-m3-blog" />。
+
+**授權逐步收緊。** M1 採 Apache 2.0，M2 到 M2.5 為修改版 MIT；M2.7 改為非商用授權，商用須事先取得書面授權並標示「Built with MiniMax M2.7」<Cite k="mm-m27-license" />；M3 的 MiniMax Community License 允許非商用免費使用，商用必須標示「Built with MiniMax M3」並通知 MiniMax，年營收超過 2,000 萬美元者須事先取得書面授權，且禁止軍事用途<Cite k="mm-m3-license" />。
+
+**敢說不知道。** AA 的知識測驗中，M3 遇到不會的題目多半選擇不答，<Term id="hallucination">幻覺</Term>率約 18%，明顯低於 Kimi K3 與 DeepSeek V4.1-Flash；但答對率也只有約 17%<Cite k="aa-minimax-m3" />。
+
+## 適合與不適合的用途
+
+適合：
+
+- **大量工具呼叫的自動化流程**：AA 量測 M3 的 τ²-bench 為 88.9%，搭配低價，適合客服、資料整理等需要反覆<Term id="function-calling">呼叫函式</Term>的 Agent<Cite k="aa-minimax-m3" />。
+- **長文件、長影片與大型程式碼庫**：100 萬 tokens 上下文，512K 以內不加價。
+- **研究與教學的本地部署**：權重在 Hugging Face 可下載，非商用用途免費。
+
+不適合：
+
+- **需要前沿綜合能力的任務**：M3 的 AA 綜合智慧指數 29，低於 <ModelChip id="deepseek" />（39）與 <ModelChip id="moonshot-kimi" />（44）<Cite k="aa-leaderboard" />。
+- **知識密集的問答**：答對率偏低，宜搭配 <LearnLink id="rag-and-vector-search">RAG</LearnLink>。
+- **想直接商用自架的新創或企業**：M2.7 與 M3 都需要通知或取得授權，法務成本比 MIT 授權的模型高。
+- **需要穩定 API 的最新版本**：M3.1-Flash-Preview 只在自家工具與訂閱方案中提供。
+
+## 版本演進
+
+| 發布日 | 版本 | 重點 |
+|---|---|---|
+| 2025-06-16 | M1 | 4,560 億參數，閃電注意力加 MoE，100 萬上下文，Apache 2.0 |
+| 2025-10-27 | M2 | 2,300 億參數、啟用 100 億，主打 Agent 與程式 |
+| 2025-12-23 | M2.1 | 強化多語言程式開發 |
+| 2026-02-12 | M2.5 | 大規模強化學習，SWE-bench Verified 80.2% |
+| 2026-03-18 | M2.7 | 模型參與自身訓練流程，改採非商用授權 |
+| 2026-06-01 | M3 | 約 4,280 億參數、原生多模態、MSA、100 萬上下文 |
+| 2026-09-27 | M3.1-Flash-Preview | 僅在 MiniMax Code 提供，據媒體報導 |
+
+日期取自官方發布紀錄與新聞稿<Cite k="mm-relnotes" /><Cite k="mm-m1-news" />。值得注意的是，依 2026-10-17 讀取的 Hugging Face 近 30 天下載量，M2.5 約 76 萬次、M2.7 約 62 萬次，都明顯高於 M3 的約 20 萬次<Cite k="hf-minimax-m25" /><Cite k="hf-minimax-m27" /><Cite k="hf-minimax-m3" />，顯示較小、較快的舊版仍有大量自架需求。
+
+## 評測解讀
+
+<Callout type="warn" title="注意評測時間與設定">官方數字來自各版本發布當時的部落格或模型卡，AA 分數讀取於 2026-10-06（10 月 17 日複核一致），LMArena 榜單標示更新於 2026-10-02。Terminal-Bench 的 2.0、2.1、4.0 版難度不同，不能直接比較。</Callout>
+
+| 評測 | M3 官方 | M3 AA | M2.7 官方 | M2.7 AA |
+|---|---|---|---|---|
+| AA 綜合智慧指數 v4.3 | 無 | 29.2 | 無 | 22.8 |
+| Terminal-Bench 2.1 | 66.0% | 65.2% | 57.0%（2.0 版） | 55.4% |
+| SWE-bench Pro | 59.0% | 未測 | 56.2% | 未測 |
+| GPQA Diamond | 未公布 | 92.9% | 未公布 | 87.4% |
+| HLE（無工具） | 未公布 | 39.0% | 未公布 | 29.6% |
+
+- **這項官方數字可被重現**：M3 的 Terminal-Bench 2.1 官方 66.0%（Terminus 2 框架）與 AA 的 65.2% 幾乎一致<Cite k="mm-m3-blog" /><Cite k="aa-minimax-m3" />。
+- **單項不差，綜合偏低**：M3 的 GPQA 與 Kimi K3 相差不到 1 個百分點，但 AA 指數 v4.3 納入 Terminal-Bench 4.0、AutomationBench 等難度更高的 Agent 評測，M3 在 Terminal-Bench 4.0 只有 2.0%，是綜合分數偏低的主因之一<Cite k="aa-leaderboard" />。
+- **人類偏好排名居中**：LMArena 文字榜上 M3 為 1440 分、第 96 名，M2.7 為 1415 分、第 137 名<Cite k="lmarena-text" />。
+- **讀數建議**：MiniMax 的優勢在「每一美元能做多少 Agent 工作」，比較時應同時看價格與速度，而不只是單一分數。評測方法差異可參考<LearnLink id="model-evaluation">模型評測</LearnLink>。

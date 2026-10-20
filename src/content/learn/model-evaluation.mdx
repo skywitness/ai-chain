@@ -1,0 +1,477 @@
+---
+title: "模型評測：Benchmark、競技場與 Agent 評測"
+subtitle: "分數怎麼來、能信幾分：從考試題庫、人類盲測到讓 Agent 實際把事做完"
+description: "AI 模型的分數怎麼來、能信幾分？本文說明 Benchmark 題庫、競技場人類盲測與 Agent 任務評測的原理，以及資料汙染、題庫飽和、評測設定與統計誤差如何影響排名，最後整理讀懂成績表的五個問題。"
+level: 3
+order: 305
+track: models
+prerequisites: [reasoning-models]
+next: [ai-safety-and-regulation, open-vs-closed-models]
+relatedSegments: [foundation-models, devtools-data-mlops, apps-agents]
+relatedCompanies: [lmarena, scale-ai, openai, anthropic, alphabet, meta, deepseek, ikala, hugging-face]
+relatedModels: [deepseek, anthropic-claude, openai-gpt, google-gemini, meta-muse-llama]
+relatedTrends: [reasoning-test-time-compute, ai-coding, agentic-ai-standards, open-weights-race]
+glossary:
+  - benchmark
+  - agent
+  - llm
+  - frontier-model
+  - reasoning-model
+  - test-time-compute
+  - benchmark-contamination
+  - elo-rating
+  - open-weights
+  - post-training
+  - rl-environment
+scenes: []
+keyTakeaways:
+  - "Benchmark 是固定題庫加標準答案，便宜又可重複，但會飽和，題目也可能外洩到訓練資料。"
+  - "競技場讓真人盲測投票，貼近實際使用，但會受私下測試次數與評審偏好影響。"
+  - "Agent 評測讓模型在真實環境把任務做完，同時衡量可靠度、所需時間與成本。"
+  - "同一模型的分數會隨推理強度、取樣次數與執行框架改變，跨表比較前要先對齊設定。"
+  - "題數有限時，誤差可達數個百分點；排行榜上一兩分的差距，常落在誤差範圍內。"
+estimatedMinutes: 20
+sources:
+  - key: mmlu
+    title: "Measuring Massive Multitask Language Understanding"
+    publisher: "Hendrycks et al.（arXiv:2009.03300）"
+    url: "https://arxiv.org/abs/2009.03300"
+    type: paper
+    lang: en
+    published: "2020-09-07"
+    accessed: "2026-10-15"
+    note: "MMLU 涵蓋 57 項任務；最大的 GPT-3 模型平均只比隨機猜測高出近 20 個百分點"
+  - key: codex
+    title: "Evaluating Large Language Models Trained on Code"
+    publisher: "Chen et al., OpenAI（arXiv:2107.03374）"
+    url: "https://arxiv.org/abs/2107.03374"
+    type: paper
+    lang: en
+    published: "2021-07-07"
+    accessed: "2026-10-15"
+    note: "HumanEval 為 164 題手寫程式題，平均每題 7.7 個單元測試；Codex（12B）單次作答解出 28.8%，GPT-3 為 0%，每題取樣 100 次可解出 70.2%；第 2.1 節定義 pass@k 的無偏估計式，以 n = 200 個樣本計算"
+  - key: gpqa
+    title: "GPQA: A Graduate-Level Google-Proof Q&A Benchmark"
+    publisher: "Rein et al.（arXiv:2311.12022）"
+    url: "https://arxiv.org/abs/2311.12022"
+    type: paper
+    lang: en
+    published: "2023-11-20"
+    accessed: "2026-10-15"
+    note: "448 題選擇題；具博士背景的領域專家正確率 65%（扣除事後承認的明顯失誤為 74%）；可無限制上網、平均花費 30 分鐘以上的非專家為 34%；最強的 GPT-4 方案 39%。論文表 2：Diamond 子集 198 題，只收兩位專家都答對、多數非專家答錯的題目，專家驗證者正確率 81.3%、非專家 22.1%，作者提醒此數字因篩題方式而有偏差"
+  - key: mmlu-pro
+    title: "MMLU-Pro: A More Robust and Challenging Multi-Task Language Understanding Benchmark"
+    publisher: "Wang et al.（arXiv:2406.01574）"
+    url: "https://arxiv.org/abs/2406.01574"
+    type: paper
+    lang: en
+    published: "2024-06-03"
+    accessed: "2026-10-15"
+    note: "選項由 4 個增為 10 個；模型正確率比在 MMLU 上低 16% 到 33%；24 種提示詞風格下，分數波動由 MMLU 的 4–5% 降到約 2%"
+  - key: mmlu-pro-gh
+    title: "MMLU-Pro (GitHub repository)"
+    publisher: TIGER-AI-Lab
+    url: "https://github.com/TIGER-AI-Lab/MMLU-Pro"
+    type: dataset
+    lang: en
+    accessed: "2026-10-15"
+    note: "超過 12,000 題，取自學術考試與教科書，涵蓋 14 個領域，每題 10 個選項"
+  - key: hle-paper
+    title: "Humanity's Last Exam"
+    publisher: "Phan et al.（arXiv:2501.14249）"
+    url: "https://arxiv.org/abs/2501.14249"
+    type: paper
+    lang: en
+    published: "2025-01-24"
+    accessed: "2026-10-15"
+    note: "作者為 Long Phan 等 1,155 人；HLE 由各領域專家共同出題；摘要指出頂尖 LLM 在 HLE 上的正確率與校準度都很低。最新版本 v11 為 2026-07-28"
+  - key: hle-site
+    title: "Humanity's Last Exam"
+    publisher: "Center for AI Safety & Scale AI（lastexam.ai）"
+    url: "https://lastexam.ai/"
+    type: dataset
+    lang: en
+    accessed: "2026-10-15"
+    note: "2025-04-03 題庫定版為 2,500 題，涵蓋上百個學科；2025-10-08 推出持續更新的 HLE-Rolling；2026-01-28 論文刊登於 Nature 649 期；2026-09-22 推出 HLE-Diamond，目的是在前沿模型逼近原題庫的雜訊上限時，提供研究者平順的移轉路徑"
+  - key: ai-index-2025
+    title: "The 2025 AI Index Report"
+    publisher: "Stanford HAI"
+    url: "https://hai.stanford.edu/ai-index/2025-ai-index-report"
+    type: analyst
+    lang: en
+    accessed: "2026-10-15"
+    note: "2023 年推出的 MMMU、GPQA、SWE-bench，一年後分數分別上升 18.8、48.9、67.3 個百分點；排名第 1 與第 10 的模型分數差距一年內由 11.9% 縮小到 5.4%"
+  - key: ai-index-2026
+    title: "The 2026 AI Index Report"
+    publisher: "Stanford HAI"
+    url: "https://hai.stanford.edu/ai-index/2026-ai-index-report"
+    type: analyst
+    lang: en
+    accessed: "2026-10-15"
+    note: "AI Agent 在 OSWorld 的任務成功率由 12% 躍升到約 66%，但在結構化 Benchmark 上仍約每 3 次失敗 1 次；模型能拿到國際數學奧林匹亞金牌，最佳模型判讀指針時鐘的正確率卻只有 50.1%，研究者稱為 AI 的「鋸齒狀前沿」"
+  - key: ds-v4-pro
+    title: "DeepSeek-V4-Pro (model card)"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "廠商自行測得的比較表（Opus-4.6 Max／GPT-5.4 xHigh／Gemini-3.1-Pro High／K2.6 Thinking／GLM-5.1 Thinking／DS-V4-Pro Max）：GPQA Diamond 91.3／93.0／94.3／90.5／86.2／90.1；MMLU-Pro 89.1／87.5／91.0／87.1／86.0／87.5；HLE 40.0／39.8／44.4／36.4／34.7／37.7；SWE Verified 80.8／未列／80.6／80.2／未列／80.6；SWE Pro 57.3／57.7／54.2／58.6／58.4／55.4；Terminal Bench 2.0 65.4／75.1／68.5／66.7／63.5／67.9。V4-Pro 推理模式比較（Non-Think／High／Max）：GPQA Diamond 72.9／89.1／90.1；LiveCodeBench 56.8／89.8／93.5；MMLU-Pro 82.9／87.1／87.5"
+  - key: tmmluplus
+    title: "TMMLU+ (dataset card and leaderboard)"
+    publisher: "iKala（Hugging Face）"
+    url: "https://huggingface.co/datasets/ikala/tmmluplus"
+    type: dataset
+    lang: en
+    accessed: "2026-10-15"
+    note: "繁體中文多選題，66 個科目，內容主要反映台灣的語言、教育與專業情境；v1.1 共 22,203 題（測試 19,680、開發 321、驗證 2,202）；論文為 Tam et al., arXiv:2403.01858。資料卡上的 v1.1 排行榜共 21 個模型，最高總分 96.16，13 個模型高於 80 分，採各 API 預設參數。資料卡最後更新於 2026-09-23（Hugging Face 提交紀錄）"
+  - key: gsm1k
+    title: "A Careful Examination of Large Language Model Performance on Grade School Arithmetic"
+    publisher: "Zhang et al., Scale AI（arXiv:2405.00332）"
+    url: "https://arxiv.org/abs/2405.00332"
+    type: paper
+    lang: en
+    published: "2024-05-01"
+    accessed: "2026-10-15"
+    note: "GSM1k 共 1,205 題，仿照 GSM8k 的風格與難度重新出題；領先模型在 GSM1k 上的正確率最多下降 8%；模型生成 GSM8k 原題的機率與兩份考卷的分數落差呈正相關（Spearman r² = 0.36）；多數前沿模型幾乎沒有過度擬合跡象"
+  - key: swebench
+    title: "SWE-bench: Can Language Models Resolve Real-World GitHub Issues?"
+    publisher: "Jimenez et al.（arXiv:2310.06770）"
+    url: "https://arxiv.org/abs/2310.06770"
+    type: paper
+    lang: en
+    published: "2023-10-10"
+    accessed: "2026-10-15"
+    note: "2,294 個取自真實 GitHub issue 與 pull request 的軟體工程問題，來自 12 個熱門 Python 程式庫；當時表現最好的 Claude 2 只解決 1.96%"
+  - key: swebench-verified
+    title: "SWE-bench Verified"
+    publisher: "SWE-bench"
+    url: "https://www.swebench.com/verified.html"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-15"
+    note: "與 OpenAI 合作、由人工審查題目描述是否清楚、測試是否正確、任務是否可解後篩出的 500 題子集；另設 Bash Only 排行榜，以 mini-SWE-agent 在最簡 bash 環境中評測各模型"
+  - key: openai-swev
+    title: "Why SWE-bench Verified no longer measures frontier coding capabilities"
+    publisher: OpenAI
+    url: "https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/"
+    type: company-site
+    lang: en
+    published: "2026-02-23"
+    accessed: "2026-10-15"
+    note: "原頁面以程式讀取時遭拒（HTTP 403），內容經 Epoch AI 審查報告、The Decoder 報導與搜尋引擎摘要交叉確認：OpenAI 不再引用 SWE-bench Verified 分數；抽查約 27.6% 的題目（以模型常答錯的題目為主）後，其中 59.4% 的測試會拒絕功能正確的修正；GPT-5.2、Claude Opus 4.5、Gemini 3 Flash Preview 能憑記憶重現部分原始修正；改推薦 SWE-bench Pro"
+  - key: epoch-swev
+    title: "Benchmark Review: SWE-bench Verified"
+    publisher: Epoch AI
+    url: "https://epoch.ai/benchmarks/swe-bench-verified/review"
+    type: analyst
+    lang: en
+    published: "2026-09-03"
+    accessed: "2026-10-15"
+    note: "2026-09-03 審查。OpenAI 於 2026-02-23 公布稽核結果：抽查 27.6% 的題目，其中 59.4% 的測試案例會拒絕功能正確的解答，換算全部題目至少約 16.4% 有問題；OpenAI 也指出受測的前沿模型都在訓練時看過部分題目與解答。Epoch 因此將此題庫評為有瑕疵"
+  - key: decoder-swev
+    title: "OpenAI wants to retire the AI coding benchmark that everyone has been competing on"
+    publisher: The Decoder
+    url: "https://the-decoder.com/openai-wants-to-retire-the-ai-coding-benchmark-that-everyone-has-been-competing-on/"
+    type: news
+    lang: en
+    published: "2026-02-23"
+    accessed: "2026-10-15"
+    note: "報導 OpenAI 指出 SWE-bench Verified 有測試瑕疵與訓練資料外洩問題，並建議改用 SWE-bench Pro、同時自建不公開的測試。該報導將 59.4% 寫成全體題目的比例，與 OpenAI 原文「抽查子集」的範圍不同，本文採較窄的說法"
+  - key: swebench-pro
+    title: "SWE-Bench Pro: Can AI Agents Solve Long-Horizon Software Engineering Tasks?"
+    publisher: "arXiv:2509.16941"
+    url: "https://arxiv.org/abs/2509.16941"
+    type: paper
+    lang: en
+    published: "2025-09-21"
+    accessed: "2026-10-15"
+    note: "1,865 題、41 個程式庫；公開集 11 個程式庫、保留集 12 個、商用集 18 個專有程式庫；保留集與商用集題目不公開，定位為抗汙染的測試平台"
+  - key: scale-swepro
+    title: "SWE-Bench Pro (Public Dataset) Leaderboard"
+    publisher: "Scale AI（Scale Labs）"
+    url: "https://labs.scale.com/leaderboard/swe_bench_pro"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-15"
+    note: "公開集 731 題（取自 GPL 等強著佐權授權的開源程式庫）、私有集 276 題（新創公司的 18 個專有程式庫，成績另列排行榜）、保留集 858 題（不公布成績）。排行榜混合 mini-swe-agent 與其他執行框架的結果。2026 年 10 月查閱時前五名（皆以 mini-swe-agent 執行）：Muse Spark 1.1 61.50 ± 3.10、gpt-5.4（xHigh）59.10 ± 3.56、Muse Spark 55.00 ± 3.60、claude-opus-4-6（thinking）51.90 ± 3.61、gemini-3.1-pro（thinking）46.10 ± 3.60"
+  - key: aa-method
+    title: "Intelligence Benchmarking Methodology"
+    publisher: Artificial Analysis
+    url: "https://artificialanalysis.ai/methodology/intelligence-benchmarking"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "Artificial Analysis Intelligence Index v4.3.2：Agent 類 30%（AA-Briefcase 15%、GDPval-AA 10%、AutomationBench-AA 5%）、程式 20%（Terminal-Bench 4.0、SciCode 各 10%）、一般 30%（AA-Omniscience 15%、GDP.pdf 10%、AA-LCR 5%）、科學推理 20%（HLE、CritPt 各 10%）；所有模型在相同條件下以零樣本指令提示評測，非推理模型溫度 0、推理模型 0.6（實驗室另有建議者除外）；部分評測重複 3 或 5 次，一般以 pass@1 計分"
+  - key: arena-hiw
+    title: "How Arena Works"
+    publisher: "Arena（原 LMArena）"
+    url: "https://arena.ai/how-it-works"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "對戰模式中使用者看到兩個匿名模型的回答，投票後才揭曉身分；自 2024 年 3 月起協助各實驗室測試包含未發表模型在內的專有與開源模型；已開源大量人類偏好資料集。原網域 lmarena.ai 已轉址至 arena.ai"
+  - key: chatbot-arena
+    title: "Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference"
+    publisher: "Chiang et al.（arXiv:2403.04132）"
+    url: "https://arxiv.org/abs/2403.04132"
+    type: paper
+    lang: en
+    published: "2024-03-07"
+    accessed: "2026-10-15"
+    note: "截至 2024 年 1 月，累積約 24 萬票、來自超過 9 萬名使用者，涵蓋 50 多個模型；以 Bradley-Terry 模型估計勝率與排名；群眾投票與專家評分的一致率為 72% 到 83%"
+  - key: wiki-lmb
+    title: "Language model benchmark"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Language_model_benchmark"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "次要來源。LMArena（原 Chatbot Arena）由人類在兩個模型輸出之間投票，再由投票結果計算 Elo 分數；若模型是為了在某個 Benchmark 上拿高分而設計或挑選，該 Benchmark 可能不再是衡量模型品質的好指標"
+  - key: elo-wiki
+    title: "Elo rating system"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Elo_rating_system"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "次要來源。預期得分公式 E_A = 1 / (1 + 10^((R_B − R_A)/400))；等級分高出對手 100 分，預期得分約 64%"
+  - key: leaderboard-illusion
+    title: "The Leaderboard Illusion"
+    publisher: "Singh et al.（arXiv:2504.20879）"
+    url: "https://arxiv.org/abs/2504.20879"
+    type: paper
+    lang: en
+    published: "2025-04-29"
+    accessed: "2026-10-15"
+    note: "Meta 在 Llama 4 發表前，於競技場私下測試了 27 個模型變體；估計 Google 與 OpenAI 分別取得全部競技場資料的 19.2% 與 20.4%，83 個開放權重模型合計只有 29.7%；作者保守估計，少量競技場資料就能讓模型在競技場分布上的相對表現最多提升 112%"
+  - key: arena-judge
+    title: "Self-Preference of AI Judges"
+    publisher: "Arena"
+    url: "https://arena.ai/blog/llm-judge-self-preference"
+    type: company-site
+    lang: en
+    published: "2026-09-30"
+    accessed: "2026-10-15"
+    note: "以 2026-06-01 至 09-23 的 1,460 場英文文字競技場對戰，請 12 個模型擔任評審（每場正反順序各評一次），共 34,580 個判決。平均而言，模型在自己參戰的對戰中有 58% 選自己的回答，人類只有 34% 選同一個回答；人類有 32% 判平手或兩者皆差，模型更常硬選勝方；AI 評審與其他 AI 評審意見一致的比例 79.4%，與人類投票一致只有 56.9%。2026-10-06 更新"
+  - key: arena-harness
+    title: "HarnessTax: How Much Does the Harness Matter for Coding Agents?"
+    publisher: "Arena"
+    url: "https://arena.ai/blog/coding-agents-harness-tax"
+    type: company-site
+    lang: en
+    published: "2026-09-16"
+    accessed: "2026-10-15"
+    note: "以 7 個模型 × 3 種執行框架（Claude Code、Codex CLI、Pi）共 21 組，在 SWE-bench Lite 與 Terminal-Bench 2.0 各隨機抽 30 題、每題跑 3 次。執行框架對成功率影響不大（SWE-bench Lite 約 ±2%、Terminal-Bench 2.0 約 ±5%），成本差距卻可達 5 倍；在共同模型上，Claude Code 的成本約為 Pi 的 2.0 倍。只有 30 題，樣本偏小"
+  - key: osworld
+    title: "OSWorld: Benchmarking Multimodal Agents for Open-Ended Tasks in Real Computer Environments"
+    publisher: "Xie et al.（arXiv:2404.07972）"
+    url: "https://arxiv.org/abs/2404.07972"
+    type: paper
+    lang: en
+    published: "2024-04-11"
+    accessed: "2026-10-15"
+    note: "369 個真實電腦操作任務；人類可完成超過 72.36%，當時最佳模型只有 12.24%"
+  - key: tau-bench
+    title: "τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains"
+    publisher: "Yao et al.（arXiv:2406.12045）"
+    url: "https://arxiv.org/abs/2406.12045"
+    type: paper
+    lang: en
+    published: "2024-06-17"
+    accessed: "2026-10-15"
+    note: "以語言模型模擬使用者，測試 Agent 使用領域 API 工具並遵守領域規範的能力，以對話結束時的資料庫狀態是否符合目標判定成敗；gpt-4o 等最先進的函式呼叫 Agent 成功率不到 50%，零售領域的 pass^8 不到 25%；提出 pass^k 衡量多次嘗試的可靠度"
+  - key: metr-th
+    title: "Time Horizon of AI Models (METR-Horizon v1.1)"
+    publisher: METR
+    url: "https://metr.org/time-horizons/"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-15"
+    note: "結果檔 benchmark_results_1_1.yaml：GPT-5（2025-08）50% 時間長度 203.0 分鐘、80% 時間長度 38.3 分鐘；Claude Opus 4.6（2026-02）50% 時間長度 718.8 分鐘（信賴區間 316.7–3,633.8）、80% 時間長度 69.9 分鐘（27.0–170.4）；2023 年以來的翻倍時間約 128.7 天（104.4–158.0 天，排除中心估計超過 16 小時的資料點）。頁面註明以目前題庫，超過 16 小時的測量並不可靠；自 2026-09-08 起不再持續更新"
+  - key: gdpval
+    title: "GDPval: Evaluating AI Model Performance on Real-World Economically Valuable Tasks"
+    publisher: "OpenAI（arXiv:2510.04374）"
+    url: "https://arxiv.org/abs/2510.04374"
+    type: paper
+    lang: en
+    published: "2025-10-05"
+    accessed: "2026-10-15"
+    note: "完整題庫 1,320 個任務，涵蓋對美國 GDP 貢獻最大的 9 個產業、44 種職業；出題專家平均 14 年經驗，任務平均需專業人士約 7 小時完成；由同職業專家盲測比較人類與模型的交付成果；開源 220 題黃金子集，表現最好的 Claude Opus 4.1 有 47.6% 的成果被評為勝過或等同人類專家"
+  - key: arc-agi-2
+    title: "ARC-AGI-2"
+    publisher: ARC Prize Foundation
+    url: "https://arcprize.org/arc-agi/2/"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-15"
+    note: "訓練集 1,000 題，公開、半私有與私有評測集各 120 題；2025 年初以 400 多名一般民眾現場校準，每題至少有 2 人在 2 次嘗試內解出；自 ARC-AGI-2 起所有成績都附上效率指標，以每題成本為起點"
+  - key: arc-agi-3
+    title: "ARC-AGI-3"
+    publisher: ARC Prize Foundation
+    url: "https://arcprize.org/arc-agi/3/"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-15"
+    note: "互動式推理 Benchmark：Agent 要在陌生環境中探索、自行找出目標並持續學習；100% 代表 Agent 能像人類一樣有效率地破完所有遊戲"
+updated: "2026-10-15"
+lastVerified: "2026-10-15"
+editorial: { status: fact-checked, author: learn-15, checkedBy: "learn-15-check", checkedOn: "2026-10-06", notes: "內容以 2026-10-06 為資料基準日，來源實際讀取日為 2026-10-15。查核已逐項比對 arXiv 原文（GPQA 表 2、GSM1k、Codex、Chatbot Arena、SWE-Bench Pro、GDPval 等）、DeepSeek V4-Pro 模型卡、TMMLU+ 資料卡、Scale AI 排行榜、Artificial Analysis 方法說明、Arena 部落格、METR 結果檔與 ARC Prize 頁面。OpenAI 關於 SWE-bench Verified 的原文以程式讀取時遭拒，59.4% 的範圍已依 Epoch AI 審查報告改為「抽查 27.6% 題目中的比例」。各排行榜數字為查閱當下版本，會持續變動；TMMLU+ 資料卡最後更新於 2026-09-23，早於基準日。" }
+---
+
+## 一句話解釋
+
+**模型評測就是用一套事先設計好的任務，替 AI 模型的能力打分數。** 最常見的是 <Term id="benchmark">Benchmark</Term>（基準測試）：一份固定題庫加上標準答案。第二種是「競技場」：讓真人盲測比較兩個模型的回答，再用投票結果排名。第三種是 <Term id="agent">Agent</Term> 評測：讓模型在真實的程式碼庫、作業系統或客服情境裡，實際把一件事做完。
+
+三種方法各自只照亮能力的一小塊，而且分數會受題目外洩、評測設定與統計誤差影響。所以讀任何一張成績表之前，都要先問：這個分數是怎麼量出來的？
+
+## 生活化比喻
+
+<Callout type="analogy" title="公司怎麼挑人：筆試、面試與試用期">
+
+想像一家公司要招募工程師。
+
+**筆試**最省事：所有人寫同一份考卷，對完答案就能排名。但考古題如果流傳出去，背過答案的人分數會虛高；題目太簡單時，大家都考九十幾分，也分不出高下。這就是靜態 Benchmark 的優點與弱點。
+
+**面試**比較貼近真實：主管同時看兩位應徵者的回答，選出比較好的一位。可是主管可能偏好口才好、表達漂亮的人，不見得是能力最強的人；有人若能私下模擬面試很多次，也會占便宜。這就是競技場式的人類偏好評測。
+
+**試用期**最準：直接交付一份真實的工作，看他能不能獨立完成、花了多少時間與成本、出錯時會不會自己發現。這就是 Agent 評測，也最花時間與金錢。
+
+好公司會三者並用，模型評測也是如此。
+
+</Callout>
+
+## 原理一：Benchmark 怎麼運作
+
+### 一次評測的五個步驟
+
+<FlowSteps title="一次模型評測的流程" steps={[{ title: "定義能力", detail: "要量知識、推理、寫程式，還是完成任務" }, { title: "準備題目與答案", detail: "選擇題、可驗證的數值答案、單元測試或專家評分標準" }, { title: "設定執行條件", detail: "提示詞、取樣溫度、推理強度、可用工具、嘗試次數" }, { title: "評分", detail: "比對答案、執行測試，或由人類與模型評審打分" }, { title: "統計與報告", detail: "正確率、信賴區間、成本與時間" }]} />
+
+每一步的選擇都會改變分數：題目決定量的是哪一種能力，執行條件決定模型能發揮多少，評分方式決定什麼才算「對」。因此兩張成績表上同名的 Benchmark，如果設定不同，數字其實不能直接比較。
+
+### 題目一路變難：從 MMLU 到 HLE
+
+Benchmark 的歷史，就是出題者與模型的賽跑。每當一份題庫被考到接近滿分，就有人推出更難的新題庫：
+
+| Benchmark | 推出時間 | 規模與形式 | 推出時的成績 |
+|---|---|---|---|
+| MMLU | 2020 年 9 月 | 57 個科目的選擇題 | 最大的 GPT-3 平均只比隨機猜測高近 20 個百分點<Cite k="mmlu" /> |
+| HumanEval | 2021 年 7 月 | 164 題手寫程式題，用單元測試判定對錯 | Codex 單次作答解出 28.8%，GPT-3 為 0%<Cite k="codex" /> |
+| GPQA | 2023 年 11 月 | 448 題研究所程度的生物、物理、化學選擇題 | 具博士學位或攻讀中的領域專家答對 65%，可上網查 30 分鐘以上的非專家 34%，最強的 GPT-4 方案 39%<Cite k="gpqa" /> |
+| MMLU-Pro | 2024 年 6 月 | 超過 12,000 題、14 個領域，選項由 4 個增為 10 個<Cite k="mmlu-pro-gh" /> | 模型正確率比在 MMLU 上低 16% 到 33%<Cite k="mmlu-pro" /> |
+| HLE（人類最後的考試） | 2025 年 1 月 | 2025 年 4 月定版為 2,500 題，涵蓋上百個學科的專家難題<Cite k="hle-site" /> | 頂尖模型的正確率與校準度都很低<Cite k="hle-paper" /> |
+
+GPQA 的設計很有代表性：題目要「專家答得出來、外行人上網也查不到」。品質最高的 Diamond 子集共 198 題，原則上只收錄兩位專家都答對、多數非專家答錯的題目；在這個子集上，專家驗證者的正確率是 81.3%，非專家只有 22.1%。作者也提醒，這兩個數字是篩題後的結果，本身就偏向「專家高、外行低」<Cite k="gpqa" />。
+
+### 飽和：題庫被「考爛」之後
+
+題庫的壽命越來越短。史丹佛大學《AI Index 2025》指出，2023 年才推出的 MMMU、GPQA 與 SWE-bench，一年後的分數分別上升 18.8、48.9 與 67.3 個百分點<Cite k="ai-index-2025" />。當頂尖模型的分數全擠在天花板附近，Benchmark 就失去鑑別力，這叫做「飽和」。
+
+DeepSeek 在 V4-Pro 的模型卡中列出一張六個<Term id="frontier-model">前沿模型</Term>的比較表，數字由廠商自行測得，正好看出新舊題庫的差別<Cite k="ds-v4-pro" />：
+
+| Benchmark | 六個模型的分數範圍 | 解讀 |
+|---|---|---|
+| MMLU-Pro | 86.0–91.0 | 全部擠在九成上下，接近天花板 |
+| GPQA Diamond | 86.2–94.3 | 全都高於論文中專家驗證者的 81.3% |
+| SWE-bench Verified | 80.2–80.8（四個模型有公布） | 差距不到 1 個百分點，分不出高下 |
+| SWE-bench Pro | 54.2–58.6 | 題目較新，部分題目不公開 |
+| HLE | 34.7–44.4 | 仍有很大的進步空間 |
+| Terminal-Bench 2.0 | 63.5–75.1 | 差距最大，仍有鑑別力 |
+
+台灣也有自己的例子。<CompanyChip id="ikala">iKala</CompanyChip> 發布的 TMMLU+ 以繁體中文出題，涵蓋 66 個科目、約 2.2 萬題，內容反映台灣的語言、教育與專業情境。依 2026 年 9 月更新的資料卡，排行榜列出 21 個模型，其中 13 個總分超過 80 分，最高達 96.16 分<Cite k="tmmluplus" />，高分區同樣越來越擁擠。
+
+連 HLE 都在準備後路。題庫難免有少數錯題或答案有爭議的題目，分數高到一定程度後，剩下的差距可能只是雜訊。2026 年 9 月，HLE 團隊推出 HLE-Diamond，目的就是在前沿模型逼近原題庫的雜訊上限時，給研究者一條平順的移轉路徑<Cite k="hle-site" />。
+
+## 原理二：分數為什麼不能照單全收
+
+### 題目外洩：評測汙染
+
+<Term id="benchmark-contamination">評測汙染</Term>指的是題目或答案出現在模型的訓練資料裡。網路上公開的題庫，很容易在抓取資料時被一起收進去，模型可能是「背過答案」，而不是真的會解。
+
+<CompanyChip id="scale-ai">Scale AI</CompanyChip> 的研究團隊做過一個實驗：仿照小學數學題庫 GSM8k 的風格與難度，重新出了 1,205 題從未公開的 GSM1k。部分模型換考新題後，正確率最多下降 8%；而且模型越能「背出」GSM8k 的原題，兩份考卷的落差往往越大。不過多數前沿模型幾乎沒有過度擬合的跡象<Cite k="gsm1k" />。
+
+更有名的例子是 SWE-bench Verified。這份 500 題的題庫，是 SWE-bench 團隊與 <CompanyChip id="openai">OpenAI</CompanyChip> 合作，由人工逐題審查題目描述、測試與可解性後篩出的子集<Cite k="swebench-verified" />，一度是各家發表程式能力時必報的數字。2026 年 2 月，OpenAI 宣布不再引用這項分數，理由有二：第一，多個前沿模型能憑記憶重現部分題目的原始修正，顯示題目已流入訓練資料；第二，OpenAI 抽查約 27.6% 的題目（以模型經常答錯的題目為主），發現其中 59.4% 的測試會把功能正確的修正判為失敗，換算下來，全部題目中至少約 16.4% 有這類瑕疵。OpenAI 因此改推薦 SWE-bench Pro<Cite k="openai-swev" /><Cite k="epoch-swev" /><Cite k="decoder-swev" />。
+
+SWE-bench Pro 的對策是把部分題目鎖起來。它共有 1,865 題、來自 41 個程式庫<Cite k="swebench-pro" />：公開集 731 題取自採 GPL 等強著佐權授權的開源專案，私有集 276 題來自新創公司的 18 個專有程式庫（題目不公開、成績另列），另有 858 題保留集完全不公布成績<Cite k="scale-swepro" />。只要有一部分題目從未公開，就能檢查模型在公開題上的高分是否「名副其實」。
+
+這正是古德哈特定律的翻版：一項指標一旦變成大家追逐的目標，就不再是好的指標。如果模型是為了在某個 Benchmark 拿高分而設計或挑選出來的，這個 Benchmark 就可能不再能反映模型的真實品質<Cite k="wiki-lmb" />。
+
+### 同一個模型，不同的分數
+
+即使題目沒有外洩，評測設定也會大幅改變分數：
+
+- **嘗試次數**：HumanEval 上，Codex 只答一次能解出 28.8%；每題讓它生成 100 個答案、只要有一個通過測試就算對，比例升到 70.2%<Cite k="codex" />。成績表上的 pass@1 與 pass@k 量的是不同的東西。
+- **推理強度**：<Term id="reasoning-model">推理模型</Term>可以設定思考多久，也就是投入多少<Term id="test-time-compute">推論時運算</Term>。DeepSeek V4-Pro 在 GPQA Diamond 上，不思考模式為 72.9 分，最高推理模式為 90.1 分<Cite k="ds-v4-pro" />，同一個模型相差 17 個百分點。
+- **Agent 執行框架**：Agent 評測時，模型要搭配一套管理工具、上下文與步驟的執行框架（harness）。Arena 部落格發表的一項研究，以 7 個模型搭配 3 種執行框架測試，發現框架對成功率影響不大，成本卻能差到 5 倍<Cite k="arena-harness" />。
+- **誰來測**：在 Scale AI 自行測得的 SWE-bench Pro 公開排行榜上，以 mini-swe-agent 執行的 Claude Opus 4.6（thinking）為 51.9 分<Cite k="scale-swepro" />；DeepSeek 模型卡列出的 Opus 4.6 最高推理模式則是 57.3 分<Cite k="ds-v4-pro" />。兩者推理設定與執行框架都不同，相差 5.4 個百分點。
+
+因此，第三方機構會盡量統一條件。例如 Artificial Analysis 的綜合智慧指數，2026 年 10 月查閱時為 v4.3.2 版，由 10 項評測加權組成：Agent 類 30%、程式 20%、一般能力 30%、科學推理 20%；所有模型都在相同提示方式下評測，除非實驗室另有建議，非推理模型的取樣溫度設為 0、推理模型設為 0.6<Cite k="aa-method" />。統一條件的好處是可以比較，代價是不一定能發揮每個模型的最佳狀態。
+
+## 原理三：競技場，讓人類盲測投票
+
+靜態題庫有標準答案，但很多日常問題沒有，例如「幫我改寫這封信」。競技場的做法是：使用者輸入問題，系統隨機派出兩個匿名模型作答，使用者選出比較好的一個，投票後才揭曉模型身分<Cite k="arena-hiw" />。
+
+最有名的是 Chatbot Arena，也就是後來的 LMArena，現已改名為 <CompanyChip id="lmarena">Arena</CompanyChip>。根據其 2024 年的論文，截至當年 1 月已累積約 24 萬票、來自超過 9 萬名使用者，再用 Bradley-Terry 模型把勝負紀錄轉換成每個模型的實力分數；群眾投票與專家評分的一致率在 72% 到 83% 之間<Cite k="chatbot-arena" />。排行榜上的分數採用類似西洋棋 <Term id="elo-rating">Elo 分數</Term> 的尺度<Cite k="wiki-lmb" />，分數差代表勝率：高出 100 分，預期勝率約 64%<Cite k="elo-wiki" />。
+
+<Compare title="靜態 Benchmark 與競技場" left={{ title: "靜態 Benchmark", items: ["有標準答案，可自動評分", "便宜、快速、可重複", "題目公開久了容易外洩", "只能量有明確答案的能力"] }} right={{ title: "競技場", items: ["沒有標準答案，由真人投票", "問題來自真實使用者，不易事先背題", "反映的是偏好，不一定等於正確", "需要大量投票，新模型要等票數累積"] }} />
+
+競技場也有弱點。2025 年的論文〈排行榜幻象〉（The Leaderboard Illusion）指出，<CompanyChip id="meta">Meta</CompanyChip> 在 Llama 4 發表前，曾在競技場上私下測試 27 個模型變體；論文估計 Google 與 OpenAI 各自取得全部競技場資料的 19.2% 與 20.4%，83 個<Term id="open-weights">開放權重</Term>模型合計只有 29.7%。作者並估計，只要少量競技場資料，就能讓模型在競技場上的相對表現最多提升 112%<Cite k="leaderboard-illusion" />。能多次試考、只公布最好的一次，排名自然會偏向資源多的廠商。
+
+另一個問題是評審。用模型當評審（LLM-as-a-judge）既便宜又快，在評測與訓練中都很常見，但 Arena 2026 年 9 月的研究顯示，評審模型偏愛自己。研究團隊讓 12 個模型評審 1,460 場真實對戰：在自己參戰的場次中，模型平均有 58% 選自己的回答，人類只有 34% 選同一個回答；人類有三分之一的場次判為平手或兩者皆差，模型則更常硬選出勝方。AI 評審彼此意見一致的比例是 79.4%，與人類投票一致的比例卻只有 56.9%<Cite k="arena-judge" />。
+
+## 原理四：Agent 評測，從答題到把事做完
+
+當 <Term id="llm">LLM</Term> 開始操作工具、寫程式、點擊網頁，評測也從「答對題目」轉向「完成任務」。這類評測通常在沙盒環境中執行，用最終狀態判斷成敗：程式能否通過測試、資料庫是否改成正確的樣子、檔案是否存在。
+
+- **SWE-bench**：2,294 個來自 12 個熱門 Python 程式庫的真實 GitHub 問題，模型要讀懂程式碼並提交修正，以專案原有的測試判定。2023 年 10 月推出時，表現最好的 Claude 2 只解決 1.96%<Cite k="swebench" />。
+- **OSWorld**：369 個在真實作業系統中操作電腦的任務。推出時人類可完成超過 72.36%，最佳模型只有 12.24%<Cite k="osworld" />；《AI Index 2026》指出，Agent 的成功率已升到約 66%，但在結構化 Benchmark 上仍約每 3 次失敗 1 次<Cite k="ai-index-2026" />。
+- **τ-bench**：用語言模型扮演顧客，Agent 要一邊對話、一邊呼叫零售等領域的系統工具，並遵守公司規定。推出時最強的 Agent 成功率不到一半，若要求同一題連續成功 8 次，零售領域的比例更不到 25%<Cite k="tau-bench" />。
+- **GDPval**：OpenAI 從對美國 GDP 貢獻最大的 9 個產業、44 種職業中，請平均 14 年經驗的專業人士設計 1,320 個真實工作任務，平均要花專家約 7 小時。成果由同職業專家盲測比較；在 220 題的公開子集上，2025 年 10 月論文發表時表現最好的 Claude Opus 4.1，有 47.6% 的成果被評為勝過或等同人類專家<Cite k="gdpval" />。
+- **ARC-AGI**：專考從沒見過的抽象規則。ARC-AGI-2 的每個評測集有 120 題，每題都至少有 2 位一般民眾在 2 次嘗試內解出，而且所有成績都要附上效率指標，目前以成本衡量<Cite k="arc-agi-2" />；ARC-AGI-3 進一步改成互動遊戲，滿分代表 Agent 破關的效率與人類一樣好<Cite k="arc-agi-3" />。
+
+研究機構 METR 則換了一個角度：不問「答對幾題」，而問「能完成人類專家要花多久的任務」。METR 估計，2023 年以來，模型以 50% 成功率能完成的任務長度，大約每 129 天翻倍一次<Cite k="metr-th" />。但門檻設多高，結論差很多：
+
+<BarChart title="同一個模型，成功率門檻不同，能完成的任務長度差很多" unit="分鐘" data={[{ label: "GPT-5：50% 成功率", value: 203 }, { label: "GPT-5：80% 成功率", value: 38 }, { label: "Claude Opus 4.6：50% 成功率", value: 719 }, { label: "Claude Opus 4.6：80% 成功率", value: 70 }]} source="metr-th" keepOrder note="METR Time Horizon 1.1 結果，以人類專家完成同樣任務所需的時間計算。Claude Opus 4.6 的 50% 估計值信賴區間約 317 到 3,634 分鐘；METR 提醒超過 16 小時的測量並不可靠，該頁面自 2026 年 9 月起已停止更新。" />
+
+Claude Opus 4.6 有一半機會完成約 12 小時的任務，但若要求八成把握，任務長度只剩約 70 分鐘<Cite k="metr-th" />。對企業來說，後者往往才是能放心交辦的範圍。這也呼應《AI Index 2026》所說的「鋸齒狀前沿」：模型能拿下國際數學奧林匹亞金牌，最佳模型判讀指針時鐘的正確率卻只有 50.1%<Cite k="ai-index-2026" />。
+
+### 讀懂一張成績表：五個問題
+
+1. **誰測的？** 廠商自行公布，還是第三方用統一條件測得？
+2. **用什麼設定？** 推理強度、嘗試次數、可用工具與執行框架是否相同？
+3. **題目可能外洩嗎？** 題庫公開多久了？有沒有不公開的保留題？
+4. **差距大於誤差嗎？** 題目有多少？有沒有附上信賴區間？
+5. **量的是你在乎的能力嗎？** 知識、人類偏好、任務完成度與成本，是四件不同的事。
+
+<DeepDive title="深入一點：分數的誤差、Elo 勝率與 pass@k">
+
+**一、題數決定誤差。** 把每一題看成一次獨立的「對或錯」，若真實正確率是 p、題數是 n，量到的正確率標準誤約為：
+
+<MathTeX tex={"\\mathrm{SE}=\\sqrt{\\frac{p(1-p)}{n}}"} display label="標準誤等於 p 乘以 1 減 p 再除以題數 n 的平方根" />
+
+GPQA Diamond 只有 198 題<Cite k="gpqa" />。若 p 為 0.9，標準誤約 2.1 個百分點，95% 信賴區間約正負 4.2 個百分點。前面比較表裡，90.1 分與 91.3 分只差 1.2 個百分點<Cite k="ds-v4-pro" />，統計上分不出高下。SWE-bench Verified 有 500 題，p 為 0.8 時，95% 信賴區間仍約正負 3.5 個百分點。Scale AI 的 SWE-bench Pro 排行榜直接標出每個成績的信賴區間，前五名約正負 3.1 到 3.6 分；第一名 61.50 分與第二名 59.10 分的差距，就落在這個範圍內<Cite k="scale-swepro" />。實際上同一份題庫的題目並非完全獨立，真實誤差往往更大。
+
+**二、Elo 分數差代表勝率。** 競技場排名的核心是「兩兩比較的勝率」。Elo 公式中，A 對 B 的預期得分為<Cite k="elo-wiki" />：
+
+<MathTeX tex={"E_A=\\frac{1}{1+10^{(R_B-R_A)/400}}"} display label="A 的預期得分等於 1 除以 1 加上 10 的 B 分數減 A 分數再除以 400 次方" />
+
+分數差 100 分時，勝率約 64%；差 10 分時，勝率只有約 51.4%，幾乎是擲硬幣。所以榜首與第二名差個位數分數，代表的是「兩者幾乎一樣好」。
+
+**三、pass@k 與 pass^k。** pass@k 問的是「試 k 次，至少一次成功」的機率。Codex 論文提出的無偏估計法是：每題生成 n 個樣本，其中 c 個正確，則<Cite k="codex" />：
+
+<MathTeX tex={"\\text{pass@}k=\\mathbb{E}\\left[1-\\frac{\\binom{n-c}{k}}{\\binom{n}{k}}\\right]"} display label="pass at k 等於 1 減去從錯誤樣本中挑 k 個的組合數除以從全部樣本挑 k 個的組合數，再取期望值" />
+
+τ-bench 則反過來，提出 pass^k：同一題連續 k 次都成功的機率<Cite k="tau-bench" />。若每次成功率都是 p 且彼此獨立，pass^k 就是 p 的 k 次方。單次成功率 80% 看起來不錯，但連續 8 次都成功的機率只有約 16.8%。寫程式時可以多試幾次再挑對的，用 pass@k 合理；客服 Agent 每一次都要做對，pass^k 才是真正的門檻。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+模型評測看似只是學術活動，其實已經變成 AI 產業鏈的一部分。
+
+- **基礎模型**（<SegmentChip id="foundation-models" />）：<CompanyChip id="openai">OpenAI</CompanyChip>、<CompanyChip id="anthropic">Anthropic</CompanyChip>、<CompanyChip id="alphabet">Google</CompanyChip>、<CompanyChip id="deepseek">DeepSeek</CompanyChip> 等實驗室發表新模型時，都以 Benchmark 成績表說明進步幅度。可自動驗證的題目，也常被改造成<Term id="post-training">後訓練</Term>用的<Term id="rl-environment">強化學習環境</Term>；Arena 也指出，用模型當評審的做法同時出現在評測與模型訓練中<Cite k="arena-judge" />。評測與訓練的界線越模糊，越需要不公開的保留題來檢查真實能力。延伸閱讀：<LearnLink id="post-training-deep">後訓練深入</LearnLink>。
+- **開發工具與資料**（<SegmentChip id="devtools-data-mlops" />）：評測本身已經是一門生意。<CompanyChip id="lmarena">Arena</CompanyChip> 經營競技場排行榜，自 2024 年 3 月起協助各實驗室測試未發表的模型<Cite k="arena-hiw" />；<CompanyChip id="scale-ai">Scale AI</CompanyChip> 維護含私有題目的 SWE-bench Pro 排行榜<Cite k="scale-swepro" />；<CompanyChip id="hugging-face">Hugging Face</CompanyChip> 則承載大量公開題庫，例如 TMMLU+<Cite k="tmmluplus" />。高難度題目越來越依賴領域專家：HLE 論文的作者超過一千人<Cite k="hle-paper" />，GDPval 的出題專家平均有 14 年經驗<Cite k="gdpval" />。專家出題與評分的需求，和訓練資料標註是同一條供應鏈。
+- **應用與 Agent**（<SegmentChip id="apps-agents" />）：企業導入 AI 時，公開排行榜只能當參考，最終要用自己的任務評測。Arena 部落格發表的實驗顯示，同一個模型換一套執行框架，成功率相近，成本卻可能差到 5 倍<Cite k="arena-harness" />，評測因此必須把成本一起算進去。這也直接影響 Token 用量，以及背後雲端算力的需求。
+- **台灣**：繁體中文與台灣情境的評測資源相對稀少。<CompanyChip id="ikala">iKala</CompanyChip> 的 TMMLU+ 以 66 個科目檢驗模型對台灣語言、教育與專業知識的掌握<Cite k="tmmluplus" />，可作為本地模型與應用業者選型時的參考；不過它是選擇題，仍要搭配自己的實際任務評測。
+
+想了解推理強度如何影響分數，可以回頭讀<LearnLink id="reasoning-models">推理模型</LearnLink>；想看 Agent 如何呼叫工具，請讀<LearnLink id="agents-and-mcp">AI Agent 與 MCP</LearnLink>。評測也是 AI 安全的基礎，前沿模型的危險能力評估與分級釋出，會在<LearnLink id="ai-safety-and-regulation">AI 安全、治理與法規</LearnLink>中說明；相關趨勢可見<TrendLink id="reasoning-test-time-compute">推理模型與推論時運算</TrendLink>與<TrendLink id="ai-coding">AI 寫程式：從補全到自主 Agent</TrendLink>。

@@ -1,0 +1,254 @@
+---
+/**
+ * The 14 segments at a glance: tagline, market structure, bottleneck 1–5, top companies and the
+ * Taiwan role. A real table on wide screens; each row becomes a card under 960px (explicit ARIA
+ * table roles keep the semantics when the display changes).
+ *   <SegmentTable rows={rows} />
+ */
+import BottleneckMeter from './BottleneckMeter.astro';
+import { companyHref, segmentHref } from '../../lib/paths';
+
+export interface SegmentTableRow {
+  id: string;
+  order: number;
+  title: string;
+  color: string;
+  layerTitle: string;
+  tagline: string;
+  concentration?: string | undefined;
+  bottleneck?: number | undefined;
+  companies: Array<{ id: string; nameZh: string }>;
+  taiwan: string;
+  taiwanCount: number;
+}
+
+interface Props {
+  rows: SegmentTableRow[];
+  caption?: string | undefined;
+}
+const { rows, caption = 'AI 產業鏈 14 個環節一覽' } = Astro.props;
+---
+
+<div class="st">
+  <table class="st__table" role="table">
+    <caption class="sr-only">{caption}</caption>
+    <thead role="rowgroup">
+      <tr role="row">
+        <th scope="col" role="columnheader">環節</th>
+        <th scope="col" role="columnheader">一句話</th>
+        <th scope="col" role="columnheader">市場結構</th>
+        <th scope="col" role="columnheader">瓶頸程度</th>
+        <th scope="col" role="columnheader">代表公司</th>
+        <th scope="col" role="columnheader">台灣的角色</th>
+      </tr>
+    </thead>
+    <tbody role="rowgroup">
+      {
+        rows.map((r) => (
+          <tr role="row" style={`--sc: ${r.color}`}>
+            <th scope="row" role="rowheader" class="st__seg">
+              <span class="st__seg-in">
+                <span class="st__order">{String(r.order).padStart(2, '0')}</span>
+                <span class="st__seg-text">
+                  <a href={segmentHref(r.id)}>{r.title}</a>
+                  <span class="st__layer">{r.layerTitle}</span>
+                </span>
+              </span>
+            </th>
+            <td role="cell" data-label="一句話" class="st__tag">
+              {r.tagline}
+            </td>
+            <td role="cell" data-label="市場結構" class="st__conc">
+              {r.concentration ?? '—'}
+            </td>
+            <td role="cell" data-label="瓶頸程度" class="st__bn">
+              {r.bottleneck ? <BottleneckMeter level={r.bottleneck} color={r.color} /> : '—'}
+            </td>
+            <td role="cell" data-label="代表公司" class="st__cos">
+              {r.companies.length ? (
+                <span class="st__cos-list">
+                  {r.companies.map((c, i) => (
+                    <>
+                      <a href={companyHref(c.id)}>{c.nameZh}</a>
+                      {i < r.companies.length - 1 && <span aria-hidden="true">、</span>}
+                    </>
+                  ))}
+                </span>
+              ) : (
+                '—'
+              )}
+            </td>
+            <td role="cell" data-label="台灣的角色" class="st__tw">
+              {r.taiwan || '—'}
+              {r.taiwanCount > 0 && <span class="st__tw-count">參與這一環的台灣公司 {r.taiwanCount} 家</span>}
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .st__table {
+    inline-size: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--fs-s);
+    line-height: 1.6;
+  }
+  .st__table th,
+  .st__table td {
+    text-align: start;
+    vertical-align: top;
+    padding: var(--space-3) var(--space-3);
+    border-block-end: 1px solid var(--c-border);
+    overflow-wrap: anywhere;
+  }
+  .st__table thead th {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.04em;
+    color: var(--c-fg-subtle);
+    border-block-end: 2px solid var(--c-border-strong);
+    white-space: nowrap;
+  }
+  .st__table tbody tr:hover {
+    background: var(--c-hover);
+  }
+  .st__seg {
+    min-inline-size: 12rem;
+    border-inline-start: 4px solid var(--sc);
+  }
+  .st__seg-in {
+    display: flex;
+    gap: var(--space-3);
+  }
+  .st__order {
+    flex: none;
+    white-space: nowrap;
+    min-inline-size: 2ch;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+    color: color-mix(in srgb, var(--sc) 75%, var(--c-fg));
+    padding-block-start: 0.2em;
+  }
+  .st__seg-text {
+    display: grid;
+    gap: 2px;
+    min-inline-size: 0;
+  }
+  .st__seg a {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-m);
+    color: var(--c-fg);
+    text-decoration: none;
+    line-height: 1.4;
+  }
+  .st__seg a:hover {
+    color: var(--c-link);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .st__layer {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  .st__tag {
+    color: var(--c-fg-muted);
+    min-inline-size: 12rem;
+  }
+  .st__conc {
+    white-space: nowrap;
+    font-weight: var(--fw-semibold);
+  }
+  .st__bn {
+    white-space: nowrap;
+  }
+  .st__cos {
+    min-inline-size: 9rem;
+  }
+  .st__cos a {
+    /* a company name never splits across lines (「西門子能／源」); the list wraps at 「、」 */
+    white-space: nowrap;
+    color: var(--c-fg);
+    text-decoration-color: var(--c-border-strong);
+    text-underline-offset: 0.2em;
+  }
+  .st__cos a:hover {
+    color: var(--c-link);
+  }
+  .st__tw {
+    color: var(--c-fg-muted);
+    min-inline-size: 14rem;
+  }
+  .st__tw-count {
+    display: block;
+    margin-block-start: var(--space-1);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+
+  /* Narrow: each row becomes a card */
+  @media (max-width: 959px) {
+    .st__table,
+    .st__table tbody,
+    .st__table tr,
+    .st__table th,
+    .st__table td {
+      display: block;
+    }
+    .st__table thead {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .st__table tbody {
+      display: grid;
+      gap: var(--space-3);
+    }
+    .st__table tr {
+      border: 1px solid var(--c-border);
+      border-block-start: 4px solid var(--sc);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      padding: var(--space-3) var(--space-4);
+    }
+    .st__table tbody tr:hover {
+      background: var(--c-bg-elev);
+    }
+    .st__table th,
+    .st__table td {
+      padding: var(--space-2) 0;
+      border-block-end: 1px dashed var(--c-border);
+      min-inline-size: 0;
+    }
+    .st__table td:last-child {
+      border-block-end: 0;
+    }
+    .st__seg {
+      border-inline-start: 0;
+    }
+    .st__table td::before {
+      content: attr(data-label);
+      display: block;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-subtle);
+      margin-block-end: 2px;
+    }
+    .st__conc,
+    .st__bn {
+      display: inline-block !important;
+      inline-size: 50%;
+      vertical-align: top;
+    }
+  }
+</style>

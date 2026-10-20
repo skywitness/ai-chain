@@ -1,0 +1,258 @@
+---
+title: "阿里巴巴通義萬相 Wan"
+family: "Wan（通義萬相）"
+kind: video
+lab: alibaba
+labName: "阿里巴巴 Wan 團隊"
+origin: CN
+summary: "阿里巴巴的影片生成模型家族（通義萬相）。Wan2.1（2025-02）與 Wan2.2（2025-07）以 Apache 2.0 開放權重，是開源影片生成最常用的基礎之一；Wan2.5 起加入同步音訊，並改為只透過阿里雲百煉 API 提供。2026 年 8 月推出的 Wan3.0 可一次生成最長 30 秒影片，還能直接讀取簡報、PDF 等文件轉成影片，2026-10-06 在 Artificial Analysis 文生影片榜（含音訊）以 Elo 1,156 排名第 1。"
+strengths:
+  - "盲測偏好名列前茅：Wan3.0 在 AA 文生影片榜（AA-Video-T2V v2.0，含音訊）以 1,156 分居首，無聲版榜單（1,128 分）同樣第 1（2026-10-06）。"
+  - "單次生成長度長：Wan3.0 一次可生成 2 到 30 秒影片，並提供智慧時長建議與影片延伸；前代 Wan2.6、2.7 最長 15 秒。"
+  - "輸入形式多元：Wan3.0 可混合參考文字、圖片、音訊與影片，並首度接受 doc、xls、ppt、pdf 等文件與網頁連結。"
+  - "開源生態基礎：Wan2.1 與 Wan2.2（含可在消費級顯示卡執行的 TI2V-5B）採 Apache 2.0，ComfyUI、Diffusers 等工具皆已整合。"
+weaknesses:
+  - "旗艦不再開源：Hugging Face 上的 Wan-AI 組織只開放到 Wan2.2 系列及其衍生模型，Wan2.5 之後的版本僅能透過 API 使用。"
+  - "官方坦言 Wan3.0 的音訊質感與畫面文字準確度仍待改進。"
+  - "並非各榜一致領先：AA 圖生影片榜（含音訊）未進前 5（1,164 分，第 1 名 MiniMax H3 Max 為 1,195 分），Arena 文生影片榜（2026-09-21）排第 6；AA 文生影片榜與第 2 名的差距也在信賴區間內。"
+  - "單位成本偏高：AA 以官方 API 估算 1080p 每分鐘約 12 美元，高於 Gemini Omni 1.1 Flash 的 9.12 美元與 MiniMax H3（768p）的 4.8 美元。"
+bestFor:
+  - "需要較長單鏡頭或完整敘事的短劇、MV 與品牌廣告"
+  - "把既有簡報、報告、試算表直接轉成影片"
+  - "需要角色、商品跨鏡頭一致的電商與廣告素材"
+  - "自建管線、微調或學術研究（使用開源的 Wan2.1／Wan2.2）"
+positioning:
+  capability: 100
+  costIndex: 66
+  openness: 0
+  method: editorial
+  asOf: "2026-10-06"
+  note: "capability 以旗艦 Wan3.0 在 AA-Video-T2V v2.0（含音訊）榜的 Elo 1,156 做最小—最大正規化：(1156−838)÷(1156−838)×100＝100（榜上最低 838，2026-10-06 讀取），與本站 Google Veo 頁同一方法；滿分只代表該榜第一，它在 AA 圖生影片榜未進前 5、在 Arena 文生影片榜排第 6。costIndex 為編輯判斷：Wan 依秒計價，無法套用每百萬 tokens 公式，改以 AA 估算的 1080p 每分鐘 API 成本相對比較（Wan3.0 12 美元、Gemini Omni 1.1 Flash 9.12 美元），以 Omni 1.1 Flash 在本站的 62 為錨點，依兩者價格比在同一對數尺度上平移約 3.6，得 66。openness 為 0：Wan3.0 僅提供 API；家族中的 Wan2.1、Wan2.2 採 Apache 2.0 開放權重（相當於 0.8）。"
+versions:
+  - id: wan2-1
+    name: "Wan2.1（14B／1.3B）"
+    released: "2025-02-25"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: diffusion
+    params: { totalB: 14, disclosed: true }
+    modalitiesIn: [text, image]
+    modalitiesOut: [video]
+    reasoning: none
+    availability: [api, self-host]
+    notes: "2025-01-09 先以 wan2.1-t2v-plus／turbo 在百煉 API 推出，2025-02-25 開放 14B 與 1.3B 權重（文生影片、圖生影片，480P／720P），之後陸續開放首尾影格（FLF2V）與影片編輯模型 VACE。不含音訊。API 版 wan2.1-t2v-plus 720P 每秒 0.10 美元（依秒計價，不適用每百萬 tokens 欄位）。"
+  - id: wan2-2
+    name: "Wan2.2（A14B／TI2V-5B）"
+    released: "2025-07-28"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: moe
+    params: { totalB: 27, activeB: 14, disclosed: true }
+    modalitiesIn: [text, image]
+    modalitiesOut: [video]
+    reasoning: none
+    availability: [api, self-host]
+    notes: "首度把 MoE 引入影片擴散模型：高雜訊與低雜訊兩個約 14B 的專家依去噪階段切換，總參數 27B、每步啟用 14B。另開放以高壓縮 VAE 打造的 5B 稠密模型 TI2V-5B，可在 RTX 4090 等消費級顯示卡生成 720P、24fps 影片。訓練資料較 Wan2.1 多 65.6% 圖片與 83.2% 影片。2025-08-26 開放語音驅動的 S2V-14B，2025-09-19 開放角色動畫與替換模型 Animate-14B。API 版 wan2.2-t2v-plus 480P 每秒 0.02 美元、1080P 每秒 0.10 美元。"
+  - id: wan2-5-preview
+    name: "Wan2.5 Preview"
+    released: "2025-09-23"
+    status: preview
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image]
+    modalitiesOut: [video, audio]
+    reasoning: none
+    availability: [api]
+    notes: "新架構首度讓音訊與畫面同步生成，片長 5 或 10 秒，480P 至 1080P、30fps；自此不再開放權重。API 每秒 0.05 美元（480P）至 0.15 美元（1080P）。Arena 文生影片榜 1,245 分、第 25 名（2026-09-21）。"
+  - id: wan2-6
+    name: "Wan2.6"
+    released: "2025-12-03"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [video, audio]
+    reasoning: none
+    availability: [api]
+    notes: "智慧分鏡可生成多鏡頭敘事影片，最長 15 秒，支援多人穩定對白與更自然的音色；2025-12-16 推出以指定人物或物件為參考的 r2v（2 到 10 秒），2026-01 推出 flash 快速版。720P 每秒 0.10 美元、1080P 每秒 0.15 美元。Arena 文生影片榜 1,327 分、第 21 名（2026-09-21）。"
+  - id: wan2-7
+    name: "Wan2.7"
+    released: "2026-04-03"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, video, audio]
+    modalitiesOut: [video, audio]
+    reasoning: none
+    availability: [api]
+    benchmarks:
+      - benchmark: aa-text-to-video-elo
+        score: 1030
+        setting: "Wan2.7-260612 快照；AA-Video-T2V v2.0，含音訊，Overall；Elo 以 Kling 3.0 1080p (Pro) 固定為 1000；第 13 名"
+        reportedBy: leaderboard
+        date: "2026-10-06"
+        source: { title: "AA-Video-T2V v2.0 Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/video/leaderboard/text-to-video", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "2026-04-03 推出文生、圖生、參考生影片與影片編輯（videoedit），2026-04-25 與 2026-06-12 兩度更新快照。參考生影片可混用最多 5 個圖片或影片參考並複製音色；影片編輯可局部或整體修改，並複製動作、特效與運鏡。輸出 720P／1080P、30fps，文生與圖生 2 到 15 秒。定價同 Wan2.6。Arena 文生影片榜 1,337 分、第 20 名（2026-09-21）。"
+  - id: wan3-0
+    name: "Wan3.0"
+    released: "2026-08-06"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, audio, video, pdf]
+    modalitiesOut: [video, audio]
+    reasoning: none
+    availability: [api]
+    benchmarks:
+      - benchmark: aa-text-to-video-elo
+        score: 1156
+        setting: "AA-Video-T2V v2.0，含音訊，Overall；Elo 以 Kling 3.0 1080p (Pro) 固定為 1000；第 1 名，信賴區間 1,147–1,165，8,300 次出場"
+        reportedBy: leaderboard
+        date: "2026-10-06"
+        source: { title: "AA-Video-T2V v2.0 Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/video/leaderboard/text-to-video", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: aa-text-to-video-elo
+        score: 1128
+        setting: "AA-Video-T2V-Silent v2.0（無聲），Overall；第 1 名"
+        reportedBy: leaderboard
+        date: "2026-10-06"
+        source: { title: "AA-Video-T2V v2.0 Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/video/leaderboard/text-to-video", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "2026-08-06 在百煉上架，2026-08-24 全面開放（GA），2026-08-20 推出加速版 wan3.0-video-prime。輸出 2 到 30 秒、480P／720P／1080P、30fps，支援首尾影格、全方位參考（文字、圖片、影片、音訊、文件與網頁連結）、智慧時長、自適應長寬比、音訊開關與影片延伸，並沿用 Wan2.7 的影片編輯。依秒計價（不適用每百萬 tokens 欄位）：480P 每秒 0.05 美元、720P 0.10 美元、1080P 0.20 美元（2026-10-06 定價頁另標限時七折）；prime 版為 0.068、0.14、0.28 美元。官方未公開架構與參數。"
+flagshipVersion: wan3-0
+relatedLearn: [multimodal-models, model-evaluation, open-vs-closed-models]
+glossary: [diffusion-model, moe, multimodal, open-weights, elo-rating]
+sources:
+  - key: wan3-blog
+    title: "Wan3.0: 30-Second AI Video Generation from Any Input"
+    publisher: "Alibaba Cloud Model Studio Blog"
+    url: "https://modelstudio.alibabacloud.com/intl/blog/wan3-ai-video-generation-model/"
+    type: press-release
+    lang: en
+    published: "2026-08-06"
+    accessed: "2026-10-06"
+  - key: giga-wan3
+    title: "The video generation AI 'Wan3.0' has been officially released, capable of generating videos up to 30 seconds long"
+    publisher: "GIGAZINE"
+    url: "https://gigazine.net/gsc_news/en/20260825-alibaba-wan-3-0/"
+    type: news
+    lang: en
+    published: "2026-08-25"
+    accessed: "2026-10-06"
+    note: "引述 @Alibaba_Wan 2026-08-24 宣布全面開放"
+  - key: ali-video
+    title: "Video generation and editing - Alibaba Cloud Model Studio"
+    publisher: "Alibaba Cloud"
+    url: "https://www.alibabacloud.com/help/en/model-studio/video-generate-edit-model/"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "頁面標示 2026-09-28 更新"
+  - key: ali-pricing
+    title: "Alibaba Cloud Model Studio model pricing"
+    publisher: "Alibaba Cloud"
+    url: "https://www.alibabacloud.com/help/en/model-studio/model-pricing"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "頁面標示 2026-10-06 更新；本文採國際區（新加坡）價格"
+  - key: ms-lifecycle
+    title: "Alibaba Cloud Model Studio: Model lifecycle and updates"
+    publisher: "Alibaba Cloud"
+    url: "https://www.alibabacloud.com/help/en/model-studio/newly-released-models"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: wan22-gh
+    title: "Wan2.2: Open and Advanced Large-Scale Video Generative Models"
+    publisher: "Wan-Video (GitHub)"
+    url: "https://github.com/Wan-Video/Wan2.2"
+    type: docs
+    lang: en
+    published: "2025-07-28"
+    accessed: "2026-10-06"
+  - key: hf-wan
+    title: "Wan-AI on Hugging Face"
+    publisher: "Hugging Face (Wan-AI)"
+    url: "https://huggingface.co/Wan-AI"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: aa-t2v
+    title: "AA-Video-T2V v2.0 Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/video/leaderboard/text-to-video"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+  - key: aa-i2v
+    title: "AA-Video-I2V v1.0 Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/video/leaderboard/image-to-video"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+  - key: arena-t2v
+    title: "Text-to-Video Arena Leaderboard"
+    publisher: "Arena (LMArena)"
+    url: "https://arena.ai/leaderboard/text-to-video"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "lmarena.ai 轉址至 arena.ai；榜單標示 2026-09-21 更新，48 個模型、718,577 票"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: models-10
+  checkedBy: "models-10-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+Wan（中文「通義萬相」）是 <CompanyChip id="alibaba">阿里巴巴</CompanyChip>的影片生成模型家族。官方統計，從 Wan1.0 到 Wan3.0 已歷經 8 次迭代，路線從「生成素材」走向「完整創作」、從內容生成走向商業交付<Cite k="wan3-blog" />。
+
+Wan 在開源社群的影響力來自 2025 年：Wan2.1（2025-02-25）與 Wan2.2（2025-07-28）以 Apache 2.0 開放<Term id="open-weights">權重</Term>，ComfyUI、Diffusers 在 Wan2.2 發布當天即完成整合，不少社群的加速框架與長影片研究也以 Wan2.1／2.2 為基礎<Cite k="wan22-gh" />。但從 2025 年 9 月的 Wan2.5 起，新版本改為只透過阿里雲百煉（Model Studio）API 提供；截至 2026-10-06，Hugging Face 上的 Wan-AI 組織只開放到 Wan2.2 系列及其衍生模型，2026 年 7 月新增的 Wan2.2-Animate-2-14B、Wan-Dancer-14B 等角色動畫與舞蹈模型仍採 Apache 2.0<Cite k="hf-wan" /><Cite k="ms-lifecycle" />。2026 年 8 月推出的 Wan3.0 是目前旗艦<Cite k="wan3-blog" />。
+
+## 特性分析
+
+- **30 秒單次生成**：Wan3.0 一次可生成 2 到 30 秒、最高 1080P、30fps 的影片，會依提示詞建議合適長度，也能延伸既有影片接續劇情；前代 Wan2.6、2.7 最長 15 秒<Cite k="ali-video" /><Cite k="giga-wan3" />。
+- **萬物皆可轉影片**：除了文字、圖片、音訊、影片，Wan3.0 首度能讀取 doc、xls、ppt、pdf、md 等文件與網頁連結（每次 1 個、100MB 與 50 頁以內），可把產品簡報變成廣告片、把試算表變成動態圖表<Cite k="wan3-blog" />。
+- **一致性與擬真**：官方強調參考生影片時，人物五官、髮型、服裝，以及道具標誌與空間關係都能跨鏡頭保持一致，並避免千篇一律的「AI 臉」<Cite k="wan3-blog" />。
+- **擴散加 MoE**：開源的 Wan2.2 首度把<Term id="moe">混合專家（MoE）</Term>引入影片<Term id="diffusion-model">擴散模型</Term>：高雜訊專家負責整體構圖、低雜訊專家補細節，總參數 27B、每步只啟用 14B<Cite k="wan22-gh" />。Wan3.0 則未公開架構與參數。
+- **依秒計價**：Wan3.0 每秒 0.05 美元（480P）、0.10 美元（720P）、0.20 美元（1080P），一支 30 秒 1080P 影片約 6 美元；加速版 prime 為每秒 0.068 至 0.28 美元<Cite k="ali-pricing" />。
+
+## 適合與不適合的用途
+
+**適合**：需要較長單鏡頭或完整敘事的短劇、MV 與品牌廣告；把既有簡報、報告、表格直接轉成影片；需要角色與商品跨鏡頭一致的電商與廣告素材。想自行部署、微調或做研究的團隊，可使用開源的 Wan2.1 或 Wan2.2，其中 TI2V-5B 可在 RTX 4090 這類消費級顯示卡上生成 720P 影片<Cite k="wan22-gh" />。
+
+**不適合**：需要旗艦級品質又必須自行部署的場景，因為 Wan3.0 只有 API；對畫面文字或音訊質感要求極高的鏡頭，官方坦言兩者仍待改進<Cite k="wan3-blog" />。另外，阿里巴巴自己的百煉文件目前建議 15 秒以內的文生影片優先使用另一個模型 HappyHorse 1.1，Wan3.0 則主打更長影片與全方位參考<Cite k="ali-video" />，選型時可兩者並列比較。
+
+## 版本演進
+
+| 版本 | 時間 | 重點 |
+|---|---|---|
+| Wan2.1 | 2025-02-25 開源 | 14B／1.3B，Apache 2.0，不含音訊 |
+| Wan2.2 | 2025-07-28 | MoE 影片擴散（27B，每步啟用 14B）、TI2V-5B，Apache 2.0 |
+| Wan2.5 Preview | 2025-09-23 | 首度同步生成音訊、最長 10 秒；改為僅 API |
+| Wan2.6 | 2025-12-03 | 多鏡頭敘事、最長 15 秒、多人對白 |
+| Wan2.7 | 2026-04-03 | 影片編輯、最多 5 個混合參考與音色複製 |
+| Wan3.0 | 2026-08-06 | 30 秒、文件轉影片；2026-08-24 全面開放 |
+
+一年半之間，單次生成長度從 5 秒拉長到 30 秒，輸入從文字、圖片擴展到音訊、影片與文件。官方也把下一步指向具身智慧、自動駕駛與工業模擬等需要重建物理世界的領域<Cite k="wan3-blog" />。
+
+## 評測解讀
+
+影片生成沒有標準答案，主流評測是請人類盲測兩兩比較，再換算成 <Term id="elo-rating">Elo 分數</Term>。截至 2026-10-06，Artificial Analysis 的文生影片榜（AA-Video-T2V v2.0，含音訊）上，Wan3.0 以 1,156 分排第 1，Wan2.7（2026-06-12 快照）為 1,030 分、第 13 名；無聲版榜單 Wan3.0 也以 1,128 分居首<Cite k="aa-t2v" />。不過領先幅度很小：第 2 名 Utopai X 為 1,149 分，而 Wan3.0 的信賴區間是 1,147 到 1,165，兩者在統計上難分高下。換到圖生影片（AA-Video-I2V v1.0，含音訊），Wan3.0 為 1,164 分，未進前 5，明顯落後榜首 MiniMax H3 Max 的 1,195 分<Cite k="aa-i2v" />；Arena 文生影片榜（2026-09-21 更新）上，wan3.0 為 1,476 ±13 分、第 6 名，第 1 名是 Google 的 <ModelChip id="google-veo">Gemini Omni 1.1 Flash</ModelChip><Cite k="arena-t2v" />。
+
+各榜結論不同，原因包括評審來源（AA 為招募評審、Arena 為公開投票）、題目組成、是否含音訊，以及新模型票數較少。成本也該一起看：AA 以官方 API 估算生成 1 分鐘 1080p 影片，Wan3.0 約 12 美元、Gemini Omni 1.1 Flash 約 9.12 美元，<CompanyChip id="minimax">MiniMax</CompanyChip> 的 H3（768p）約 4.8 美元<Cite k="aa-t2v" />。影片榜單幾乎每月都有新模型加入，引用排名時務必註明日期。

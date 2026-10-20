@@ -1,0 +1,113 @@
+---
+/**
+ * One benchmark across several model versions, as a DotPlot (one dot per score, each with its
+ * date, reporter and source). DotPlot itself adds the 「日期相差 N 天」 warning (> 90 days).
+ *
+ *   <BenchmarkDots benchmark="gpqa-diamond" items={[{ version: v, label: v.name, href }]} />
+ *   <BenchmarkDots benchmark="hle" items={…} mode="all" />   every reported score (lab + third-party)
+ */
+import DotPlot, { type DotRow } from '../charts/DotPlot.astro';
+import {
+  REPORTER_LABELS,
+  benchmarkInfo,
+  benchmarkMap,
+  pickBenchmark,
+  uniqueSources,
+  type ModelBenchmark,
+  type ModelVersion,
+} from './model-data';
+
+export interface BenchmarkItem {
+  version: ModelVersion;
+  label: string;
+  sublabel?: string | undefined;
+  href?: string | undefined;
+  highlight?: boolean | undefined;
+}
+interface Props {
+  benchmark: string;
+  items: BenchmarkItem[];
+  /** best: one representative score per version (independent first) · all: every reported score */
+  mode?: 'best' | 'all' | undefined;
+  title?: string | undefined;
+  subtitle?: string | undefined;
+  notes?: string[] | undefined;
+  /** keep the top N rows */
+  limit?: number | undefined;
+  as?: 'h2' | 'h3' | 'h4' | 'p' | undefined;
+  class?: string | undefined;
+}
+const { benchmark, items, mode = 'best', title, subtitle, notes = [], limit, as = 'h3', class: className } = Astro.props;
+const info = benchmarkInfo(benchmark, benchmarkMap());
+const used: ModelBenchmark[] = [];
+let rows: DotRow[] = [];
+for (const it of items) {
+  const list =
+    mode === 'all'
+      ? it.version.benchmarks.filter((b) => b.benchmark === benchmark)
+      : [pickBenchmark(it.version, benchmark)].filter((b): b is ModelBenchmark => !!b);
+  for (const b of list) {
+    used.push(b);
+    const reporter = REPORTER_LABELS[b.reportedBy] ?? b.reportedBy;
+    rows.push({
+      label: it.label,
+      sublabel: mode === 'all' ? reporter : it.sublabel,
+      value: b.score,
+      date: b.date,
+      href: it.href,
+      highlight: it.highlight,
+      series: reporter,
+      note: [b.setting, `來源：${b.source.publisher}`].filter(Boolean).join('；'),
+    });
+  }
+}
+rows.sort((a, b) => (info.higherIsBetter ? b.value - a.value : a.value - b.value));
+const totalRows = rows.length;
+if (limit && rows.length > limit) rows = rows.slice(0, limit);
+const truncated = rows.length < totalRows;
+const usedKeys = new Set(rows.map((r) => `${r.label}|${r.value}|${r.date}`));
+let srcList = uniqueSources(
+  used.filter((b) => [...usedKeys].some((k) => k.endsWith(`|${b.score}|${b.date}`))).map((b) => b.source),
+);
+// Many rows → many near-identical leaderboard pages: keep one link per publisher, at most 4.
+const manySources = srcList.length > 4;
+if (manySources) {
+  const seenPub = new Set<string>();
+  srcList = srcList.filter((s) => (seenPub.has(s.publisher) ? false : (seenPub.add(s.publisher), true)));
+}
+const sources = srcList.slice(0, 4).map((s) => ({ title: s.title, url: s.url, publisher: s.publisher }));
+const isElo = /elo/i.test(info.scale);
+// Scores are never negative: keep the axis at or above zero (DotPlot pads the range by 15 % below,
+// which would otherwise show「−20」on a 0–100 index). Percent scales are clamped by DotPlot itself.
+const isPercent = /%/.test(info.scale);
+const vals = rows.map((r) => r.value);
+const lo = vals.length ? Math.min(...vals) : 0;
+const hi = vals.length ? Math.max(...vals) : 0;
+const span = hi - lo || Math.abs(hi) * 0.1 || 1;
+const domain: [number, number] | undefined =
+  !isPercent && lo >= 0 && lo - span * 0.15 < 0 ? [0, hi + span * 0.1] : undefined;
+// One colour per reporter type on every chart (blue 自評, orange 第三方, green 排行榜), not by order of appearance.
+const SERIES_ORDER = ['lab', 'third-party', 'leaderboard'].map((k) => REPORTER_LABELS[k] ?? k);
+// Elo ratings are integers on the leaderboards; one decimal adds noise (「1,525.0」).
+const digits = isElo ? 0 : undefined;
+---
+
+<DotPlot
+  title={title ?? info.zh}
+  subtitle={subtitle ?? info.measures}
+  scale={info.scale}
+  rows={rows}
+  higherIsBetter={info.higherIsBetter}
+  sources={sources}
+  notes={[
+    ...notes,
+    truncated ? `只列${info.higherIsBetter ? '分數最高' : '表現最佳'}的 ${rows.length} 筆（共 ${totalRows} 筆）；其餘分數見各系列頁。` : null,
+    isElo ? 'Elo 分數來自人類盲測投票，會隨新模型加入與投票累積而浮動。' : null,
+    manySources ? '下方僅列代表性來源；每一列的來源見資料表與各系列頁。' : null,
+  ]}
+  domain={domain}
+  digits={digits}
+  seriesOrder={SERIES_ORDER}
+  as={as}
+  class={className}
+/>

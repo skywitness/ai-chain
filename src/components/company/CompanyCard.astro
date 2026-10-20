@@ -1,0 +1,83 @@
+---
+/**
+ * One compact directory card for /companies/ (owner: pages-companies). Deliberately has no <style>
+ * block so the 700+ cards carry no scoped-style attributes; CompanyDirectory styles `.cc*`.
+ *
+ *   <CompanyCard row={row} rank="0 12 5 300 22" />
+ *
+ * data-* attributes drive src/client/filters.ts: segs (space-separated), region, tier, listed
+ * (1/0), q (NFKC-lowercased search haystack) and rank (sort positions, one per sort option).
+ */
+import Sparkline from '../charts/Sparkline.astro';
+import { segmentMeta } from '../../lib/collections';
+import { companyHref } from '../../lib/paths';
+import { formatChange, formatMoney, monthLabel } from '../../lib/format';
+import type { CompanyRow } from '../../lib/scene-data/companies';
+import { REGION_LABELS, TIER_LABELS } from './labels';
+
+interface Props {
+  row: CompanyRow;
+  /** space-separated sort positions, in the order of the sort options */
+  rank: string;
+}
+const { row: c, rank } = Astro.props;
+const seg = segmentMeta(c.segment);
+const norm = (s: string) => s.normalize('NFKC').toLowerCase();
+const tickers = [...new Set(c.listings.map((l) => l.ticker))];
+const haystack = [...new Set([c.id, c.name, c.nameZh, ...c.aliases, ...tickers].map(norm))].join(' ');
+const showEn = norm(c.name).replace(/\s+/g, '') !== norm(c.nameZh).replace(/\s+/g, '');
+const region = REGION_LABELS[c.region] ?? c.region;
+const place = c.cityZh || c.city;
+const ticker = tickers.slice(0, 2).join(' · ');
+const converted = c.revenueCurrency != null && c.revenueCurrency !== 'USD';
+const revText = c.revenueUsdM != null ? `${converted ? '≈ ' : ''}${formatMoney(c.revenueUsdM, 'USD')}` : '';
+const yoyText = c.yoy != null ? formatChange(c.yoy, 'yoy', 0) : '';
+const noRevenue = c.listings.length
+  ? '營收資料整理中'
+  : c.ownership === 'subsidiary'
+    ? '集團子公司，未單獨揭露營收'
+    : c.ownership === 'private'
+      ? '未上市，未公開財報'
+      : '未公開營收資料';
+/** 「近兩個半年度」 reads like 「兩個半」 (2.5) at a glance; say 「近兩期半年報」 instead */
+const REV_LABELS: Record<string, string> = { 近四季: '近四季營收', 近兩個半年度: '近兩期半年報營收' };
+const revTitle = c.revenueUsdM != null ? `${REV_LABELS[c.revenueLabel ?? ''] ?? `${c.revenueLabel ?? '近四季'}營收`}${converted ? '（以美元換算）' : ''}` : '';
+const arrWhen = c.arr ? (/^\d{4}-\d{2}$/.test(c.arr.period) ? monthLabel(c.arr.period, 'short') : c.arr.period) : '';
+---
+
+<li
+  class="cc"
+  data-segs={c.segments.join(' ')}
+  data-region={c.region}
+  data-tier={String(c.tier)}
+  data-listed={c.listings.length ? '1' : '0'}
+  data-q={haystack}
+  data-rank={rank}
+>
+  <a class="cc__link" href={companyHref(c.id)}>
+    <span class="cc__name">{c.nameZh}</span>
+    {showEn && <span class="cc__en" lang="en">{c.name}</span>}
+  </a>
+  <span class="cc__seg"><span class="cc__dot" aria-hidden="true"></span>{seg?.short ?? c.segment}</span>
+  <span class:list={['cc__tier', `cc__tier--${c.tier}`]}>{TIER_LABELS[c.tier]}</span>
+  <span class="cc__meta">
+    {region}{place && region !== place ? ` · ${place}` : ''}{ticker && <> · <span class="cc__tk">{ticker}</span></>}
+  </span>
+  {
+    revText ? (
+      <span class="cc__rev" title={revTitle}>
+        <span class="cc__rev-label">{REV_LABELS[c.revenueLabel ?? ''] ?? `${c.revenueLabel ?? ''}營收`}</span>
+        <span class="cc__rev-val">{revText}</span>
+        {yoyText && <span class:list={['cc__yoy', c.yoy != null && c.yoy < 0 ? 'is-neg' : 'is-pos']}>{yoyText}</span>}
+      </span>
+    ) : c.arr ? (
+      <span class="cc__rev" title="公司揭露或媒體報導的年化營收（run-rate），非經查核財報">
+        <span class="cc__rev-label">年化營收（{arrWhen}，估）</span>
+        <span class="cc__rev-val">≈ {formatMoney(c.arr.valueUsdM, 'USD')}</span>
+      </span>
+    ) : (
+      <span class="cc__rev cc__rev--none">{noRevenue}</span>
+    )
+  }
+  {c.spark && <Sparkline values={c.spark} estimate={c.sparkEstimate} width={64} height={22} label="近期營收走勢" class="cc__spark" />}
+</li>

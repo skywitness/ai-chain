@@ -1,0 +1,277 @@
+---
+/**
+ * /sources/ 資料來源與研究方法
+ * - Methodology from pages entry "methodology" (MDX), or the built-in MethodologyFallback.
+ * - FX basis table, editorial status counts, data freshness (lastVerified > 180 days flagged),
+ *   the curated registry (sources collection, by kind) and the aggregated bibliography
+ *   (every Source across collections, deduplicated by URL, grouped by publisher, with citing pages).
+ * Owner: pages-reference agent.
+ */
+import type { MarkdownHeading } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import TOC from '../../components/layout/TOC.astro';
+import SourcesList from '../../components/content/SourcesList.astro';
+import { mdxComponents } from '../../components/content/mdx-components';
+import MethodologyFallback from '../../components/reference/MethodologyFallback.astro';
+import FxTable from '../../components/reference/FxTable.astro';
+import EditorialStatusPanel from '../../components/reference/EditorialStatusPanel.astro';
+import FreshnessPanel from '../../components/reference/FreshnessPanel.astro';
+import SourceRegistry from '../../components/reference/SourceRegistry.astro';
+import Bibliography from '../../components/reference/Bibliography.astro';
+import { getBibliography, loadPageEntry, STALE_DAYS } from '../../components/reference/reference-data';
+import { sectionHref } from '../../lib/paths';
+import { DATA_DATE } from '../../lib/seo';
+
+const page = await loadPageEntry('methodology');
+const bib = await getBibliography();
+const fmt = (n: number) => n.toLocaleString('zh-TW');
+
+const FALLBACK_HEADINGS: MarkdownHeading[] = [
+  { depth: 2, slug: 'principles', text: '資料原則' },
+  { depth: 2, slug: 'fiscal', text: '財報期間與財年' },
+  { depth: 2, slug: 'currency', text: '幣別與匯率換算' },
+  { depth: 2, slug: 'estimates', text: '估計值、私人公司與財測' },
+  { depth: 2, slug: 'taiwan-monthly', text: '台灣月營收' },
+  { depth: 2, slug: 'models', text: '模型評測與價格' },
+];
+const DATA_HEADINGS: MarkdownHeading[] = [
+  { depth: 2, slug: 'fx-basis', text: '匯率換算基準' },
+  { depth: 2, slug: 'editorial-status', text: '查核狀態' },
+  { depth: 2, slug: 'freshness', text: '資料新鮮度' },
+  { depth: 2, slug: 'registry', text: '精選來源' },
+  { depth: 2, slug: 'bibliography', text: '參考文獻總覽' },
+];
+const methodHeadings = page ? page.headings.filter((h) => h.depth === 2) : FALLBACK_HEADINGS;
+const toc = [...methodHeadings, ...DATA_HEADINGS];
+const pageSources = page?.data.sources ?? [];
+if (pageSources.length) toc.push({ depth: 2, slug: 'sources', text: '本頁參考來源' });
+
+const title = page?.data.title ?? '資料來源與研究方法';
+const description =
+  page?.data.description ??
+  '本站的資料原則與研究方法：財報期間與財年換算、匯率、估計值政策、台灣月營收與模型評測，以及全站引用來源的總覽與資料新鮮度。';
+const updated = page?.data.updated ?? DATA_DATE;
+const Content = page?.Content;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  breadcrumbs={[{ label: '資料來源與研究方法' }]}
+  section="sources"
+  sources={pageSources}
+  modifiedTime={updated}
+>
+  <div class="container src">
+    <header class="page-head src-head">
+      <p class="page-head__kicker">參考資料</p>
+      <h1 data-pagefind-weight="10">資料來源與研究方法</h1>
+      <p class="page-head__lede">
+        本站的每個數字都附上來源與日期。這一頁說明我們怎麼蒐集與換算資料、如何標示估計值，並列出全站實際引用的所有來源，方便你自行核對。
+      </p>
+      <DataAsOf date={updated} label="本頁更新於" />
+      <dl class="src-stats" data-pagefind-ignore>
+        <div>
+          <dt>不重複來源</dt>
+          <dd><span class="num">{fmt(bib.totalSources)}</span> 筆</dd>
+        </div>
+        <div>
+          <dt>引用次數</dt>
+          <dd><span class="num">{fmt(bib.totalCitations)}</span> 次</dd>
+        </div>
+        <div>
+          <dt>發布者</dt>
+          <dd><span class="num">{fmt(bib.groups.length)}</span> 個</dd>
+        </div>
+        <div>
+          <dt>附來源的頁面</dt>
+          <dd><span class="num">{fmt(bib.pagesWithSources)}</span> 頁</dd>
+        </div>
+      </dl>
+    </header>
+
+    <div class="src-layout">
+      <aside class="src-aside" aria-label="本頁目錄">
+        <div class="src-aside__sticky">
+          <TOC headings={toc} />
+        </div>
+      </aside>
+
+      <div class="src-main">
+        <TOC headings={toc} variant="disclosure" class="src-toc-inline" />
+
+        <div class="prose src-prose">
+          {Content ? <Content components={mdxComponents} /> : <MethodologyFallback />}
+        </div>
+
+        <section class="src-sec" aria-labelledby="fx-basis">
+          <h2 class="src-h2" id="fx-basis">匯率換算基準</h2>
+          <p class="src-intro">
+            換算美元時使用的期間平均匯率。單一公司的財報先以原幣呈現，美元數字只作為跨公司比較的參考。
+          </p>
+          <FxTable />
+        </section>
+
+        <section class="src-sec" aria-labelledby="editorial-status">
+          <h2 class="src-h2" id="editorial-status">查核狀態</h2>
+          <p class="src-intro">
+            每筆內容都標有編輯狀態：<strong>草稿</strong>是初步整理；<strong>已調研</strong>代表數字與敘述都已附上來源；<strong>已查核</strong>則由撰寫者以外的編輯逐項比對來源後才標示。
+          </p>
+          <EditorialStatusPanel />
+        </section>
+
+        <section class="src-sec" aria-labelledby="freshness">
+          <h2 class="src-h2" id="freshness">資料新鮮度</h2>
+          <p class="src-intro">
+            每筆資料都記錄最後查核日期（頁面上的「資料截至」）。產業變化很快，超過 {STALE_DAYS} 天沒有重新查核的條目會在這裡標示出來，閱讀時請特別留意。
+          </p>
+          <FreshnessPanel />
+        </section>
+
+        <section class="src-sec" aria-labelledby="registry">
+          <h2 class="src-h2" id="registry">精選來源</h2>
+          <p class="src-intro">我們經常使用、並評估過可信度的來源，依類型分組。</p>
+          <SourceRegistry />
+        </section>
+
+        <section class="src-sec" aria-labelledby="bibliography">
+          <h2 class="src-h2" id="bibliography">參考文獻總覽</h2>
+          <p class="src-intro">
+            全站實際引用的每一筆來源，相同網址只列一次，依發布者分組，並列出引用它的頁面。點選發布者即可展開清單。
+          </p>
+          <Bibliography data={bib} />
+        </section>
+
+        {pageSources.length > 0 && <SourcesList sources={pageSources} title="本頁參考來源" class="ref-sources" />}
+
+        <p class="src-foot">
+          想了解本站的目的、編輯流程與免責聲明，請看<a href={sectionHref('about')}>關於本站</a>。
+        </p>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  @layer components {
+    .src-head {
+      padding-block-end: var(--space-6);
+    }
+    /* 2 × 2 on phones (no lone fourth figure), one row from 640 px */
+    .src-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, max-content));
+      gap: var(--space-4) var(--space-7);
+      margin: var(--space-3) 0 0;
+    }
+    @media (min-width: 640px) {
+      .src-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3) var(--space-7);
+      }
+    }
+    .src-stats > div {
+      display: grid;
+      gap: 2px;
+    }
+    .src-stats dt {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--c-fg-subtle);
+    }
+    .src-stats dd {
+      margin: 0;
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+    .src-stats dd > .num {
+      font-size: var(--fs-xl);
+      font-weight: var(--fw-bold);
+      color: var(--c-fg);
+      margin-inline-end: 0.15em;
+    }
+
+    .src-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-7);
+    }
+    .src-aside {
+      display: none;
+    }
+    .src-main {
+      display: grid;
+      gap: var(--space-8);
+      min-width: 0;
+      max-width: 48rem;
+    }
+    .src-main > :global(.src-toc-inline) {
+      margin-block-end: calc(-1 * var(--space-5));
+    }
+    @media (min-width: 1100px) {
+      .src-layout {
+        grid-template-columns: minmax(0, 48rem) minmax(13rem, 16rem);
+        justify-content: start;
+        column-gap: clamp(var(--space-7), 5vw, var(--space-9));
+      }
+      .src-aside {
+        display: block;
+        order: 2;
+      }
+      .src-aside__sticky {
+        position: sticky;
+        inset-block-start: calc(var(--header-h) + var(--space-5));
+        max-height: calc(100vh - var(--header-h) - var(--space-7));
+        overflow-y: auto;
+      }
+      .src-main > :global(.src-toc-inline) {
+        display: none;
+      }
+    }
+
+    /* the grid gap already separates it */
+    .src-main > :global(.ref-sources.sources) {
+      margin-block-start: 0;
+    }
+    .src-prose > :global(:first-child) {
+      margin-block-start: 0;
+    }
+    .src-sec {
+      display: grid;
+      gap: var(--space-4);
+      min-width: 0;
+    }
+    .src-h2 {
+      position: relative;
+      padding-block-start: 0.9em;
+      font-size: var(--fs-2xl);
+      scroll-margin-top: var(--space-2); /* plus html scroll-padding-top */
+    }
+    .src-h2::before {
+      content: '';
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline-start: 0;
+      inline-size: 2.25rem;
+      block-size: 3px;
+      border-radius: 2px;
+      background: var(--c-accent);
+      opacity: 0.85;
+    }
+    .src-intro {
+      max-width: var(--measure);
+      color: var(--c-fg-muted);
+      line-height: var(--lh-body);
+    }
+    .src-foot {
+      padding: var(--space-5);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-sunken);
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+  }
+</style>

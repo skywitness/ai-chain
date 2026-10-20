@@ -1,0 +1,822 @@
+---
+/**
+ * /dev/components/ — living style guide for the design system (development only: routed by
+ * ./[page].astro, which emits nothing in production builds).
+ * Uses small fake data. Owner: design-system agent.
+ */
+import { existsSync, readFileSync } from 'node:fs';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import ProfileLayout from '../../layouts/ProfileLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
+import Button from '../../components/ui/Button.astro';
+import Card from '../../components/ui/Card.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Icon from '../../components/ui/Icon.astro';
+import Stat from '../../components/ui/Stat.astro';
+import Tag from '../../components/ui/Tag.astro';
+import { ICONS, type IconName } from '../../components/ui/icons';
+import TOC from '../../components/layout/TOC.astro';
+import ThemeToggle from '../../components/layout/ThemeToggle.astro';
+import LogoMark from '../../components/layout/LogoMark.astro';
+import { mdxComponents as M } from '../../components/content/mdx-components';
+import PrereqBox from '../../components/content/PrereqBox.astro';
+import NextSteps from '../../components/content/NextSteps.astro';
+import SourcesList from '../../components/content/SourcesList.astro';
+import { LAYERS, SEGMENTS } from '../../lib/collections';
+import { learnHref, sectionHref, withBase } from '../../lib/paths';
+import type { SourceT } from '../../schemas/common';
+
+const {
+  Term,
+  Cite,
+  CompanyChip,
+  ModelChip,
+  SegmentChip,
+  LearnLink,
+  TrendLink,
+  Callout,
+  DeepDive,
+  LevelSection,
+  MathTeX,
+  FlowSteps,
+  Compare,
+  StatGrid,
+  KeyTakeaways,
+  Figure,
+  Scene3D,
+  BarChart,
+  LineChart,
+} = M;
+
+const sources: SourceT[] = [
+  {
+    key: 'demo-annual',
+    title: '2025 Annual Report',
+    publisher: '示範半導體公司',
+    url: 'https://example.com/ir/annual-2025',
+    type: 'annual-report',
+    lang: 'en',
+    published: '2026-03-12',
+    accessed: '2026-10-06',
+  },
+  {
+    key: 'demo-monthly',
+    title: '2026 年 8 月營業收入報告',
+    publisher: '公開資訊觀測站',
+    url: 'https://mops.example.com/monthly',
+    type: 'monthly-revenue',
+    lang: 'zh-TW',
+    published: '2026-09-10',
+    accessed: '2026-10-06',
+    note: '月營收為自結數，未經會計師查核。',
+  },
+  {
+    key: 'demo-paper',
+    title: 'Scaling Laws for Neural Language Models',
+    publisher: 'arXiv',
+    url: 'https://arxiv.org/abs/2001.08361',
+    type: 'paper',
+    lang: 'en',
+    published: '2020-01-23',
+    accessed: '2026-10-06',
+    archiveUrl: 'https://web.archive.org/web/2026/https://arxiv.org/abs/2001.08361',
+  },
+];
+
+const sections = [
+  { slug: 'sg-tokens', text: '色彩 tokens' },
+  { slug: 'sg-type', text: '字級與排版' },
+  { slug: 'sg-prose', text: '內文排版（prose）' },
+  { slug: 'sg-callouts', text: '提示框' },
+  { slug: 'sg-levels', text: '分級段落與展開' },
+  { slug: 'sg-diagrams', text: '流程、比較與數字' },
+  { slug: 'sg-charts', text: '圖表' },
+  { slug: 'sg-article', text: '文章元件' },
+  { slug: 'sg-ui', text: '介面元件' },
+  { slug: 'sg-cards', text: '卡片與版面' },
+].map((s) => ({ depth: 2, slug: s.slug, text: s.text }));
+
+const surfaceTokens = ['--c-bg', '--c-bg-elev', '--c-bg-sunken', '--c-border', '--c-border-strong'];
+const textTokens = ['--c-fg', '--c-fg-muted', '--c-fg-subtle', '--c-link', '--c-accent'];
+const semanticTokens = ['--c-accent', '--c-focus', '--c-pos', '--c-neg', '--c-warn', '--c-estimate', '--level-1', '--level-2', '--level-3'];
+const chartTokens = Array.from({ length: 8 }, (_, i) => `--chart-${i + 1}`);
+const sceneTokens = ['--scene-bg', '--scene-fg', '--scene-grid', '--scene-muted', '--scene-highlight', '--scene-flow', '--scene-power', '--scene-heat', '--scene-coolant', '--scene-optic', '--scene-tw-accent'];
+const iconNames = Object.keys(ICONS) as IconName[];
+const typeScale = [
+  ['--fs-3xl', '產業鏈全景 3xl'],
+  ['--fs-2xl', '晶圓代工與先進封裝 2xl'],
+  ['--fs-xl', '記憶體牆與 HBM xl'],
+  ['--fs-l', '先進封裝入門：CoWoS 與 Chiplet l'],
+  ['--fs-m', '台積電 2026 年第二季營收年增 38.6%，主要來自 AI 加速器需求。m（內文 17px）'],
+  ['--fs-s', '資料截至 2026-10-06，數字均附來源。s'],
+  ['--fs-xs', '估計值以斜線標示，不納入排名。xs'],
+];
+
+// Layout previews (dev server only). Prerendered pages never see query strings, so the preview is chosen by a
+// scratch file: write 'article' or 'profile' to research/tmp/design-system/layout-demo.txt, delete it to go back.
+const DEMO_FILE = 'research/tmp/design-system/layout-demo.txt';
+const demo = import.meta.env.DEV && existsSync(DEMO_FILE) ? readFileSync(DEMO_FILE, 'utf8').trim() : null;
+const articleHeadings = [
+  { depth: 2, slug: 'one-line', text: '一句話解釋' },
+  { depth: 2, slug: 'analogy', text: '生活化比喻' },
+  { depth: 2, slug: 'principle', text: '原理' },
+  { depth: 3, slug: 'principle-tsv', text: 'TSV 與堆疊' },
+  { depth: 2, slug: 'chain', text: '與產業鏈的連結' },
+];
+---
+
+{demo === 'article' ? (
+  <ArticleLayout
+    title="記憶體牆與 HBM"
+    subtitle="為什麼 AI 晶片越來越受限於記憶體頻寬，以及 HBM 如何把 DRAM 疊起來"
+    description="說明記憶體牆的成因、HBM 的堆疊結構與三大供應商，並連結到產業鏈中的記憶體與先進封裝環節。"
+    kicker="學習路徑 · 晶片與硬體"
+    level={2}
+    minutes={14}
+    headings={articleHeadings}
+    prereqs={['gpu-architecture', 'why-gpus']}
+    keyTakeaways={['AI 晶片的瓶頸常常是記憶體頻寬，而不是算力。', 'HBM 以 TSV 垂直堆疊 DRAM，貼在 GPU 旁邊。', '先進封裝產能決定了 AI 加速器能出貨多少。']}
+    sources={sources}
+    lastVerified="2026-10-06"
+    updated="2026-10-06"
+    breadcrumbs={[{ label: '學習路徑', href: sectionHref('learn') }, { label: '記憶體牆與 HBM' }]}
+    noindex
+  >
+    <h2 id="one-line">一句話解釋</h2>
+    <p>當運算單元越來越快，資料卻來不及從記憶體送過來，整顆晶片就只能等待，這就是<Term id="memory-wall">記憶體牆</Term>。</p>
+    <h2 id="analogy">生活化比喻</h2>
+    <Callout type="analogy" title="廚師與食材">廚師（GPU）切菜再快，如果食材（資料）從倉庫送來的速度太慢，餐廳還是出不了菜。</Callout>
+    <h2 id="principle">原理</h2>
+    <p>以 <Term id="hbm">HBM</Term> 為例，它把 8 到 12 層 DRAM 晶粒堆疊起來<Cite k="demo-annual" />，再放在 GPU 旁邊的矽中介層上。</p>
+    <h3 id="principle-tsv">TSV 與堆疊</h3>
+    <p>每一層晶粒都以矽穿孔連接，頻寬因此遠高於傳統 DDR 記憶體<Cite k="demo-paper" />。</p>
+    <DeepDive title="深入一點：為什麼 HBM 需要先進封裝？"><p>HBM 與 GPU 之間有上千條訊號線，只能透過矽中介層或橋接晶粒連接。</p></DeepDive>
+    <h2 id="chain">與產業鏈的連結</h2>
+    <p>HBM 由 <CompanyChip id="sk-hynix" />、<CompanyChip id="samsung-electronics" /> 與 <CompanyChip id="micron" /> 供應，屬於 <SegmentChip id="memory-storage" /> 環節。</p>
+    <NextSteps slot="next" items={[{ learn: 'hbm-deep', kicker: '準備好深入了嗎？' }, { segment: 'memory-storage' }, { trend: 'hbm4-custom-base-die' }]} prev={{ href: learnHref('semiconductor-process-nodes'), title: '製程節點' }} next={{ href: learnHref('networking-for-ai'), title: 'AI 叢集網路' }} />
+  </ArticleLayout>
+) : demo === 'profile' ? (
+  <ProfileLayout
+    title="示範晶圓代工（Demo Foundry）：產品、技術與營收"
+    description="示範用公司檔案，用來檢視 ProfileLayout 的版面。"
+    name="示範晶圓代工"
+    nameAlt="Demo Foundry Co."
+    kicker="公司資料庫 · 晶圓代工與先進封裝"
+    segment="foundry-packaging"
+    summary="全球最大的示範晶圓代工廠，量產最先進製程並提供 CoWoS 先進封裝；幾乎所有 AI 加速器都由其製造。"
+    aliases={['Demo Foundry', 'DFC', '9999', '示範代工']}
+    facts={[
+      { label: '總部', value: '新竹' },
+      { label: '成立', value: '1987 年' },
+      { label: '上市', value: 'TWSE: 9999', note: 'NYSE ADR: DFC' },
+      { label: '員工', value: '83,000 人', note: '2025 年底' },
+      { label: '近四季營收', value: '新台幣 3.6 兆元', note: '≈ 1,150 億美元' },
+      { label: '官方網站', value: 'example.com', href: 'https://example.com' },
+    ]}
+    lastVerified="2026-10-06"
+    sources={sources}
+    breadcrumbs={[{ label: '公司資料庫', href: sectionHref('companies') }, { label: '示範晶圓代工' }]}
+    noindex
+  >
+    <Fragment slot="badges">
+      <Badge tone="accent">一線</Badge>
+      <Badge>上市</Badge>
+      <Badge tone="info">完整檔案</Badge>
+      <Badge segment="foundry-packaging">代工封裝</Badge>
+    </Fragment>
+    <section class="prose">
+      <h2 id="overview">公司概況</h2>
+      <p>示範晶圓代工專注於晶圓製造，不設計自有品牌晶片<Cite k="demo-annual" />。2026 年第二季營收年增 38.6%<Cite k="demo-monthly" />。</p>
+      <StatGrid items={[{ label: '2026 Q2 營收', value: '9,337', unit: '億元', delta: 38.6, deltaLabel: '年增' }, { label: '毛利率', value: '58.6%' }, { label: '先進製程占比', value: '74%', note: '7 奈米以下' }]} />
+      <h2 id="products">產品與技術</h2>
+      <p>主要產品包含 N3、N2 製程與 CoWoS 封裝服務。</p>
+    </section>
+  </ProfileLayout>
+) : (
+
+<BaseLayout
+  title="元件樣式指南"
+  description="AI 產業鏈全景設計系統的元件、色彩與排版樣式指南（開發用頁面）。"
+  noindex
+  pagefind={false}
+  sources={sources}
+  breadcrumbs={[{ label: '開發工具' }, { label: '元件樣式指南' }]}
+>
+  <div class="container sg">
+    <header class="page-head">
+      <p class="page-head__kicker">設計系統 · 開發用頁面</p>
+      <h1>元件樣式指南</h1>
+      <p class="page-head__lede">
+        「編輯式技術地圖集」的視覺語言：淺色主題是溫暖的紙白與墨色文字，深色主題是深墨藍底與發光的環節色。切換右上角的主題按鈕，或使用下方按鈕檢視兩種主題。
+      </p>
+      <div class="cluster">
+        <ThemeToggle showLabel />
+        <Badge tone="warn">不會被搜尋引擎索引</Badge>
+        <DataAsOf date="2026-10-06" />
+      </div>
+    </header>
+
+    <div class="sg__grid">
+      <aside class="sg__aside">
+        <div class="sg__aside-sticky">
+          <TOC headings={sections} title="章節" />
+        </div>
+      </aside>
+
+      <div class="sg__main">
+        <!-- ───────────── Tokens ───────────── -->
+        <section class="sg__section" aria-labelledby="sg-tokens">
+          <h2 id="sg-tokens">色彩 tokens</h2>
+          <p class="sg__desc">同一組 token 在淺色與深色主題各有一組數值；元件只使用 token，不寫死色碼。下方左右並排為兩種主題的「主題島」。</p>
+          <div class="sg__islands">
+            {
+              (['light', 'dark'] as const).map((theme) => (
+                <div class="sg__island" data-theme={theme}>
+                  <p class="sg__island-title">{theme === 'light' ? '淺色主題' : '深色主題'}</p>
+                  <p class="sg__group-label">表面與框線</p>
+                  <ul class="sg__swatches" role="list">
+                    {surfaceTokens.map((t) => (
+                      <li>
+                        <span class="sg__chip" style={`background: var(${t})`} />
+                        <code>{t}</code>
+                      </li>
+                    ))}
+                  </ul>
+                  <p class="sg__group-label">文字</p>
+                  <ul class="sg__swatches" role="list">
+                    {textTokens.map((t) => (
+                      <li>
+                        <span class="sg__text" style={`color: var(${t})`}>
+                          文字 Aa
+                        </span>
+                        <code>{t}</code>
+                      </li>
+                    ))}
+                  </ul>
+                  <p class="sg__group-label">語意色</p>
+                  <ul class="sg__swatches" role="list">
+                    {semanticTokens.map((t) => (
+                      <li>
+                        <span class="sg__chip" style={`background: var(${t})`} />
+                        <code>{t}</code>
+                      </li>
+                    ))}
+                  </ul>
+                  <p class="sg__group-label">五層</p>
+                  <ul class="sg__bars" role="list">
+                    {[...LAYERS].reverse().map((l) => (
+                      <li>
+                        <span class="sg__bar" style={`background: ${l.color}`} />
+                        <span>{l.title}</span>
+                        <code>--layer-{l.id}</code>
+                      </li>
+                    ))}
+                  </ul>
+                  <p class="sg__group-label">14 環節</p>
+                  <ul class="sg__segs" role="list">
+                    {SEGMENTS.map((s) => (
+                      <li>
+                        <span class="sg__dot" style={`background: ${s.color}`} />
+                        <span>
+                          {s.order}. {s.short}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p class="sg__group-label">圖表類別色（固定順序）</p>
+                  <ul class="sg__row" role="list">
+                    {chartTokens.map((t, i) => (
+                      <li class="sg__chartchip" style={`background: var(${t})`} title={t}>
+                        {i + 1}
+                      </li>
+                    ))}
+                  </ul>
+                  <p class="sg__group-label">3D 場景</p>
+                  <ul class="sg__row" role="list">
+                    {sceneTokens.map((t) => (
+                      <li class="sg__scenechip" style={`background: var(${t})`} title={t} />
+                    ))}
+                  </ul>
+                  <div class="sg__island-demo">
+                    <Badge level={1} />
+                    <Badge level={2} />
+                    <Badge level={3} />
+                    <Badge tone="estimate">估計</Badge>
+                    <Badge tone="pos">年增</Badge>
+                    <Badge tone="neg">年減</Badge>
+                    <Button variant="primary" size="s">主要按鈕</Button>
+                    <a href="#sg-tokens">文字連結</a>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        </section>
+
+        <!-- ───────────── Type ───────────── -->
+        <section class="sg__section" aria-labelledby="sg-type">
+          <h2 id="sg-type">字級與排版</h2>
+          <p class="sg__desc">系統中文字體（蘋方、Noto Sans TC、微軟正黑體），不下載網路字型。字級以 clamp() 隨視窗流動；內文 17px／行高 1.8。</p>
+          <ul class="sg__type" role="list">
+            {
+              typeScale.map(([t, sample]) => (
+                <li>
+                  <code>{t}</code>
+                  <span style={`font-size: var(${t}); font-weight: ${t === '--fs-m' || t === '--fs-s' || t === '--fs-xs' ? 400 : 700}`}>{sample}</span>
+                </li>
+              ))
+            }
+          </ul>
+          <p class="sg__desc">
+            等寬字 <code>var(--font-mono)</code>：<code>FY2027-Q2</code>、<kbd>Ctrl K</kbd>；表格數字使用 tabular-nums。
+          </p>
+        </section>
+
+        <!-- ───────────── Prose ───────────── -->
+        <section class="sg__section" aria-labelledby="sg-prose">
+          <h2 id="sg-prose">內文排版（prose）</h2>
+          <div class="prose sg__prose">
+            <p>
+              AI 加速器的效能，越來越受限於記憶體頻寬，而不只是運算單元的數量。這就是所謂的<Term id="memory-wall">記憶體牆</Term>
+              。為了解決它，業界把多顆 DRAM 晶粒垂直堆疊成 <Term id="hbm">HBM</Term>，再透過 <Term
+                id="cowos-demo"
+                term="CoWoS"
+                zh="基板上晶圓上晶片封裝"
+                en="Chip on Wafer on Substrate"
+                level={2}
+                short="台積電的 2.5D 先進封裝，把 GPU 與 HBM 並排放在矽中介層上，是 AI 晶片的關鍵產能瓶頸。"
+              >CoWoS</Term> 與 GPU 封裝在一起<Cite k="demo-annual" />。
+            </p>
+            <p>
+              第二次出現的 <Term id="hbm">HBM</Term> 只是一般文字，不會重複出現互動卡片。台灣廠商如 <CompanyChip id="tsmc" />、<CompanyChip id="nvidia">輝達</CompanyChip>
+              與 <CompanyChip id="not-a-company">不存在的公司</CompanyChip> 會以小卡呈現；模型用 <ModelChip id="anthropic-claude" />，環節用 <SegmentChip id="memory-storage" /> 或 <SegmentChip
+                id="foundry-packaging"
+                short
+              />。延伸閱讀：<LearnLink id="memory-and-hbm" />、<TrendLink id="hbm4-custom-base-die" />。月營收數字請見<Cite k="demo-monthly" />。
+            </p>
+            <h3>三級標題：為什麼頻寬比算力更重要</h3>
+            <p>
+              以 2026 年的旗艦 GPU 為例，<strong>每秒可讀取 8 TB 以上的資料</strong>，但模型推論時仍有大量時間在等待權重從記憶體搬出來。<em>強調</em>使用著重號而不是斜體。
+            </p>
+            <ul>
+              <li>SRAM：最快、最貴，位於晶片內部。</li>
+              <li>HBM：堆疊在 GPU 旁邊，頻寬最高的外部記憶體。</li>
+              <li>DDR5／LPDDR5X：容量較大，頻寬較低。</li>
+            </ul>
+            <ol>
+              <li>設計晶片並完成光罩。</li>
+              <li>在晶圓廠進行數百道製程。</li>
+              <li>封裝、測試後出貨。</li>
+            </ol>
+            <blockquote><p>「先進封裝已經從後段製程，變成決定 AI 晶片產能的核心環節。」</p></blockquote>
+            <table>
+              <thead>
+                <tr><th>公司</th><th>環節</th><th align="right">2026 Q2 營收</th><th align="right">年增率</th><th>備註</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>示範晶圓代工</td><td>代工封裝</td><td align="right">9,337 億元</td><td align="right">+38.6%</td><td>新台幣，財報數字</td></tr>
+                <tr><td>示範記憶體廠</td><td>記憶體</td><td align="right">93.0 億美元</td><td align="right">+47.2%</td><td>會計年度與日曆年度不同</td></tr>
+                <tr><td>示範 AI 新創</td><td>基礎模型</td><td align="right">≈ 40 億美元</td><td align="right">—</td><td>估計值（年化營收）</td></tr>
+              </tbody>
+            </table>
+            <p>行內程式碼如 <code>withBase('/learn/')</code>，以及數學式 <MathTeX tex="E = mc^2" />。</p>
+            <MathTeX tex={String.raw`R = k_1 \frac{\lambda}{\mathrm{NA}}`} display label="解析度 R 等於 k1 乘以波長除以數值孔徑" />
+          </div>
+        </section>
+
+        <!-- ───────────── Callouts ───────────── -->
+        <section class="sg__section prose" aria-labelledby="sg-callouts">
+          <h2 id="sg-callouts">提示框</h2>
+          <Callout type="info" title="什麼是環節？">本站把 AI 產業鏈分成五層十四個環節，每家公司都有一個主要環節。</Callout>
+          <Callout type="tip">閱讀數字時，先看資料截至日期與幣別。</Callout>
+          <Callout type="warn" title="估計值">私人公司的營收多半是媒體估計，本站以斜線與「估計」標示，不納入排名。</Callout>
+          <Callout type="analogy" title="把晶圓廠想成印刷廠">
+            <p>光罩像是印刷用的版，晶圓是紙，微影機則是把圖案一層一層「印」上去的機器。</p>
+          </Callout>
+          <Callout type="data" title="關鍵數字">全球 EUV 曝光機幾乎全部由單一供應商生產<Cite k="demo-annual" />。</Callout>
+        </section>
+
+        <!-- ───────────── Levels ───────────── -->
+        <section class="sg__section" aria-labelledby="sg-levels">
+          <h2 id="sg-levels">分級段落與展開</h2>
+          <div class="prose">
+            <DeepDive title="深入一點：TSV 是怎麼做的？">
+              <p>矽穿孔（TSV）是在晶粒上蝕刻出垂直的孔，再填入銅，讓上下堆疊的晶粒可以直接連通。</p>
+              <ul><li>孔徑只有數微米。</li><li>一顆 HBM 堆疊有上千個 TSV。</li></ul>
+            </DeepDive>
+            <LevelSection level={1} title="這一環在做什麼" id="sg-level-1">
+              <p>記憶體負責暫存運算需要的資料。AI 模型越大，需要搬動的資料越多。</p>
+            </LevelSection>
+            <LevelSection level={2} title="關鍵技術與商業模式" id="sg-level-2">
+              <h3>HBM 的堆疊方式</h3>
+              <p>目前主流是 8 層或 12 層堆疊，下一代往 16 層發展。</p>
+            </LevelSection>
+            <LevelSection level={3} title="深入議題" id="sg-level-3">
+              <p>HBM4 的基底晶粒開始改用邏輯製程，記憶體廠與晶圓代工廠的分工因此改變。</p>
+            </LevelSection>
+          </div>
+        </section>
+
+        <!-- ───────────── Diagrams ───────────── -->
+        <section class="sg__section" aria-labelledby="sg-diagrams">
+          <h2 id="sg-diagrams">流程、比較與數字</h2>
+          <FlowSteps title="晶片怎麼做出來" steps={['設計', '光罩', '晶圓製造', '封裝', '測試']} />
+          <FlowSteps
+            title="RAG 的四個步驟"
+            steps={[
+              { title: '切塊', detail: '把文件切成數百字的片段' },
+              { title: '嵌入', detail: '每個片段轉成向量' },
+              { title: '檢索', detail: '找出與問題最接近的片段' },
+              { title: '生成', detail: '把片段放進提示詞再回答' },
+            ]}
+          />
+          <Compare
+            title="FinFET 與 GAA"
+            left={{ title: 'FinFET（鰭式）', items: ['閘極從三面包覆通道', '7 奈米到 3 奈米的主流', '漏電控制已接近極限'] }}
+            right={{ title: 'GAA（環繞式閘極）', items: ['閘極四面包覆奈米片', '2 奈米世代開始量產', '可調整奈米片寬度'], note: '台積電 N2、三星 SF3' }}
+          />
+          <StatGrid
+            title="記憶體環節關鍵數字（示意）"
+            items={[
+              { label: 'HBM 市場規模', value: '≈ 350', unit: '億美元', note: '2025 年，估計', estimate: true },
+              { label: '主要供應商', value: 3, unit: '家', note: 'SK 海力士、三星、美光' },
+              { label: '季營收年增', value: '93.0', unit: '億美元', delta: 47.2, deltaLabel: '年增' },
+              { label: 'DRAM 合約價季變動', value: '−8%', delta: '-8%', asOf: '2026-09-30' },
+            ]}
+            caption="示意資料，僅供樣式展示。"
+          />
+        </section>
+
+        <!-- ───────────── Charts ───────────── -->
+        <section class="sg__section" aria-labelledby="sg-charts">
+          <h2 id="sg-charts">圖表</h2>
+          <p class="sg__desc">BarChart／LineChart 由圖表元件負責；在 MDX 中不需 import 即可使用。</p>
+          <BarChart
+            title="超大規模業者資本支出（示意）"
+            unit="十億美元"
+            data={[
+              { label: '2023', value: 150 },
+              { label: '2024', value: 230 },
+              { label: '2025', value: 400 },
+              { label: '2026', value: 600, estimate: true },
+            ]}
+            note="2026 年為估計值。"
+          />
+          <LineChart
+            title="每百萬 token 價格（示意）"
+            unit="美元"
+            series={[
+              { name: '旗艦模型', points: [{ x: '2024', y: 15 }, { x: '2025', y: 10 }, { x: '2026', y: 5 }] },
+              { name: '小模型', points: [{ x: '2024', y: 0.6 }, { x: '2025', y: 0.3 }, { x: '2026', y: 0.15 }] },
+            ]}
+          />
+          <Scene3D id="cowos" variant="cowos" caption="CoWoS 2.5D 封裝爆炸圖（3D 場景，未載入時顯示預留圖）" />
+        </section>
+
+        <!-- ───────────── Article components ───────────── -->
+        <section class="sg__section" aria-labelledby="sg-article">
+          <h2 id="sg-article">文章元件</h2>
+          <PrereqBox items={['what-is-llm', 'gpu-architecture', { id: 'memory-and-hbm' }]} />
+          <KeyTakeaways
+            id="sg-takeaways"
+            headingLevel={3}
+            items={['AI 晶片的瓶頸常常是記憶體頻寬，而不是算力。', 'HBM 以 TSV 垂直堆疊 DRAM，貼在 GPU 旁邊。', '先進封裝產能決定了 AI 加速器能出貨多少。']}
+          />
+          <Figure caption="圖說：Figure 元件包住任何 SVG 或圖片，並附來源。" source="本站整理">
+            <svg viewBox="0 0 600 120" role="img" aria-label="五層產業鏈示意">
+              {
+                [...LAYERS].map((l, i) => (
+                  <g>
+                    <rect x={i * 120 + 4} y="30" width="112" height="60" rx="8" style={`fill: ${l.color}; opacity: .9`} />
+                    <text x={i * 120 + 60} y="66" text-anchor="middle" style="fill: var(--c-bg); font-size: 15px; font-weight: 700">
+                      {l.title}
+                    </text>
+                  </g>
+                ))
+              }
+            </svg>
+          </Figure>
+          <NextSteps
+            id="sg-next"
+            items={[
+              { learn: 'transformer-and-attention', kicker: '準備好進階了嗎？', description: '從 Token 走進注意力機制。' },
+              { segment: 'memory-storage' },
+              { trend: 'hbm4-custom-base-die' },
+              { href: sectionHref('models'), title: '大模型特性分析', kicker: '延伸', description: '比較各家模型的強項。' },
+            ]}
+            prev={{ href: learnHref('gpu-architecture'), title: 'GPU 與 AI 加速器架構' }}
+            next={{ href: learnHref('networking-for-ai'), title: 'AI 叢集網路：Scale-up 與 Scale-out' }}
+          />
+          <SourcesList sources={sources} id="sg-sources" headingLevel={3} />
+        </section>
+
+        <!-- ───────────── UI ───────────── -->
+        <section class="sg__section" aria-labelledby="sg-ui">
+          <h2 id="sg-ui">介面元件</h2>
+          <h3 class="sg__h3">Badge</h3>
+          <div class="cluster">
+            <Badge>上市</Badge>
+            <Badge tone="accent">一線</Badge>
+            <Badge tone="info">完整檔案</Badge>
+            <Badge tone="pos">年增 38.6%</Badge>
+            <Badge tone="neg">年減 8%</Badge>
+            <Badge tone="warn">財年不同</Badge>
+            <Badge tone="estimate">估計</Badge>
+            <Badge level={1} />
+            <Badge level={2} />
+            <Badge level={3} />
+            <Badge segment="foundry-packaging">代工封裝</Badge>
+            <Badge size="m" tone="accent">中尺寸</Badge>
+          </div>
+          <h3 class="sg__h3">Tag</h3>
+          <div class="cluster">
+            <Tag active href="#sg-ui">全部</Tag>
+            <Tag href="#sg-ui" segment="energy-power">能源</Tag>
+            <Tag href="#sg-ui" segment="ai-accelerators">AI 晶片</Tag>
+            <Tag href="#sg-ui" segment="cloud-neocloud">雲端</Tag>
+            <Tag>先進封裝</Tag>
+          </div>
+          <h3 class="sg__h3">Button</h3>
+          <div class="cluster">
+            <Button variant="primary" icon="arrow-right" iconPosition="end">開始學習</Button>
+            <Button>次要按鈕</Button>
+            <Button variant="ghost" icon="search">幽靈按鈕</Button>
+            <Button href={withBase('/learn/')} variant="secondary" size="s">小尺寸連結</Button>
+            <Button disabled>停用</Button>
+          </div>
+          <h3 class="sg__h3">Stat 與 DataAsOf</h3>
+          <div class="grid-auto" style="--min: 13rem">
+            <Stat label="2026 Q2 營收" value="9,337" unit="億元" delta="+38.6%" deltaLabel="年增" asOf="2026-07-17" />
+            <Stat label="毛利率" value="58.6%" delta={-0.4} deltaLabel="季減（百分點）" />
+            <Stat label="年化營收" value="≈ 40" unit="億美元" estimate note="依媒體報導" />
+            <Stat label="市占率" value="≈100%" note="全球 EUV 曝光機" size="l" />
+          </div>
+          <DataAsOf date="2026-10-06" note="月營收為自結數" />
+          <h3 class="sg__h3">Breadcrumbs</h3>
+          <Breadcrumbs
+            label="麵包屑範例"
+            items={[
+              { label: '首頁', href: withBase('/') },
+              { label: '產業鏈', href: sectionHref('chain') },
+              { label: '晶圓代工與先進封裝' },
+            ]}
+          />
+          <h3 class="sg__h3">Icon</h3>
+          <ul class="sg__icons" role="list">
+            {
+              iconNames.map((n) => (
+                <li>
+                  <Icon name={n} size="22px" />
+                  <code>{n}</code>
+                </li>
+              ))
+            }
+          </ul>
+          <h3 class="sg__h3">TOC（折疊版）與 Logo</h3>
+          <div class="sg__two">
+            <TOC headings={sections.slice(0, 5)} variant="disclosure" />
+            <p class="sg__logo"><LogoMark size="48px" /> <span>AI 產業鏈全景</span></p>
+          </div>
+        </section>
+
+        <!-- ───────────── Cards ───────────── -->
+        <section class="sg__section" aria-labelledby="sg-cards">
+          <h2 id="sg-cards">卡片與版面</h2>
+          <ul class="grid-auto" role="list" style="--min: 16rem">
+            <Card as="li" href={learnHref('what-is-ai')} kicker="入門 · 約 12 分鐘" title="什麼是 AI？人工智慧、機器學習與深度學習" level={1}>
+              從寫規則到從資料中學習，看懂 AI、機器學習與深度學習的關係。
+              <Fragment slot="meta"><Badge level={1} /><span>基礎概念</span></Fragment>
+            </Card>
+            <Card as="li" href={withBase('/chain/foundry-packaging/')} kicker="產業鏈 · 第 3 環" title="晶圓代工與先進封裝" segment="foundry-packaging" description="把晶片設計變成實體晶片，並以 CoWoS 等先進封裝把 GPU 與 HBM 整合在一起。">
+              <Fragment slot="meta"><Badge segment="foundry-packaging">代工封裝</Badge><Badge tone="warn">瓶頸 5／5</Badge></Fragment>
+            </Card>
+            <Card as="li" title="沒有連結的卡片" variant="sunken" kicker="說明">
+              卡片也可以只是資訊容器，不一定要可點擊。
+            </Card>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+)}
+
+<style>
+  .sg {
+    padding-block-end: var(--space-8);
+  }
+  .sg__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-7);
+  }
+  .sg__aside {
+    display: none;
+  }
+  @media (min-width: 1100px) {
+    .sg__grid {
+      grid-template-columns: 13rem minmax(0, 1fr);
+    }
+    .sg__aside {
+      display: block;
+    }
+    .sg__aside-sticky {
+      position: sticky;
+      top: calc(var(--header-h) + var(--space-5));
+    }
+  }
+  .sg__main {
+    min-width: 0;
+    max-width: 56rem;
+  }
+  .sg__section {
+    padding-block: var(--space-6) var(--space-7);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .sg__section > h2 {
+    font-size: var(--fs-2xl);
+    margin-block-end: var(--space-3);
+  }
+  .sg__section.prose > h2 {
+    padding-block-start: 0;
+  }
+  .sg__section.prose > h2::before {
+    display: none;
+  }
+  .sg__desc {
+    color: var(--c-fg-muted);
+    font-size: var(--fs-s);
+    margin-block-end: var(--space-4);
+    max-width: var(--measure);
+  }
+  .sg__h3 {
+    font-size: var(--fs-l);
+    margin: var(--space-6) 0 var(--space-3);
+  }
+  .sg__islands {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: var(--space-4);
+  }
+  .sg__island {
+    padding: var(--space-5);
+    border-radius: var(--radius-l);
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    color: var(--c-fg);
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+  }
+  .sg__island-title {
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-l);
+  }
+  .sg__group-label {
+    margin-block-start: var(--space-3);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-subtle);
+  }
+  .sg__swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: var(--space-2);
+    margin: 0;
+  }
+  .sg__swatches li,
+  .sg__bars li,
+  .sg__segs li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-xs);
+    min-width: 0;
+  }
+  .sg__swatches code,
+  .sg__bars code {
+    font-size: 0.72rem;
+    color: var(--c-fg-muted);
+    overflow-wrap: anywhere;
+  }
+  .sg__chip {
+    flex: none;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border-radius: var(--radius-s);
+    border: 1px solid var(--c-border);
+  }
+  .sg__text {
+    flex: none;
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-s);
+  }
+  .sg__bars {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+  }
+  .sg__bar {
+    inline-size: 3rem;
+    block-size: 0.9rem;
+    border-radius: 3px;
+    flex: none;
+  }
+  .sg__bars li span:nth-child(2) {
+    min-inline-size: 7.5em;
+    font-size: var(--fs-s);
+  }
+  .sg__segs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+    gap: 4px var(--space-3);
+    margin: 0;
+  }
+  .sg__dot {
+    inline-size: 0.8rem;
+    block-size: 0.8rem;
+    border-radius: 50%;
+    flex: none;
+  }
+  .sg__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+  }
+  .sg__chartchip {
+    display: grid;
+    place-items: center;
+    inline-size: 2rem;
+    block-size: 2rem;
+    border-radius: var(--radius-s);
+    color: white;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+  }
+  .sg__scenechip {
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border-radius: 50%;
+    border: 1px solid var(--c-border);
+  }
+  .sg__island-demo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin-block-start: var(--space-4);
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .sg__type {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0 0 var(--space-4);
+  }
+  .sg__type li {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: baseline;
+    line-height: 1.4;
+  }
+  .sg__type code {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .sg__icons {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+    gap: var(--space-2);
+    margin: 0;
+  }
+  .sg__icons li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-elev);
+    font-size: var(--fs-xs);
+  }
+  .sg__two {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-5);
+    align-items: start;
+  }
+  .sg__logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--fs-xl);
+    font-weight: var(--fw-bold);
+    letter-spacing: 0.04em;
+  }
+</style>

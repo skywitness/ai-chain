@@ -1,0 +1,222 @@
+---
+/**
+ * Curated source registry (sources collection), grouped by kind. Calm empty state while the
+ * collection is still being filled.
+ *   <SourceRegistry />
+ */
+import Badge from '../ui/Badge.astro';
+import { safeCollection } from '../../lib/collections';
+import { REGISTRY_KIND_LABELS, RELIABILITY_LABELS } from './reference-data';
+
+interface Props {
+  headingLevel?: 3 | 4 | undefined;
+}
+const { headingLevel = 3 } = Astro.props;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+
+const entries = await safeCollection('sources');
+const kinds = Object.keys(REGISTRY_KIND_LABELS);
+const groups = kinds
+  .map((kind) => ({
+    kind,
+    ...REGISTRY_KIND_LABELS[kind]!,
+    items: entries
+      .filter((e) => e.data.kind === kind)
+      .sort(
+        (a, b) =>
+          ['primary', 'secondary', 'tertiary'].indexOf(a.data.reliability) -
+            ['primary', 'secondary', 'tertiary'].indexOf(b.data.reliability) ||
+          a.data.name.localeCompare(b.data.name),
+      ),
+  }))
+  .filter((g) => g.items.length > 0);
+const hostOf = (u: string) => {
+  try {
+    return new URL(u).hostname.replace(/^www\./, '');
+  } catch {
+    return u;
+  }
+};
+const TONE = { primary: 'pos', secondary: 'info', tertiary: 'neutral' } as const;
+---
+
+{
+  groups.length === 0 ? (
+    <div class="reg-empty" role="status">
+      <p class="reg-empty__title">精選來源清單整理中</p>
+      <p>
+        我們正在把最常用的一手來源（公司投資人關係網站、監理機關、交易所、標準組織、研究實驗室等）整理成清單，並註明各自的可信度與用途。在此之前，下方「參考文獻總覽」已列出全站實際引用的每一筆來源。
+      </p>
+    </div>
+  ) : (
+    <div class="reg">
+      {groups.length > 2 && (
+        <nav class="reg__index" aria-label="精選來源類型">
+          <ul role="list">
+            {groups.map((g) => (
+              <li>
+                <a href={`#reg-${g.kind}`}>
+                  {g.zh}
+                  <span class="num">{g.items.length}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+      {groups.map((g) => (
+        <section class="reg__group" aria-labelledby={`reg-${g.kind}`}>
+          <H class="reg__h" id={`reg-${g.kind}`}>
+            {g.zh}
+            <span class="reg__count num">{g.items.length}</span>
+          </H>
+          <p class="reg__blurb">{g.blurb}</p>
+          <ul class="reg__list" role="list">
+            {g.items.map((e) => (
+              <li class="reg__item">
+                <p class="reg__name">
+                  <a href={e.data.homepage}>
+                    {e.data.nameZh ?? e.data.name}
+                  </a>
+                  <Badge tone={TONE[e.data.reliability]}>{RELIABILITY_LABELS[e.data.reliability]}</Badge>
+                </p>
+                <p class="reg__meta">
+                  {e.data.nameZh && e.data.nameZh !== e.data.name && <span lang="en">{e.data.name}</span>}
+                  <span class="reg__host">{hostOf(e.data.homepage)}</span>
+                </p>
+                <p class="reg__usage">{e.data.usage}</p>
+                {e.data.notes && <p class="reg__notes">{e.data.notes}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+<style>
+  @layer components {
+    .reg {
+      display: grid;
+      gap: var(--space-6);
+    }
+    .reg__index ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin: 0;
+      padding: 0;
+    }
+    .reg__index a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+      min-height: 2.25rem;
+      padding: 0.1em 0.85em;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-pill);
+      background: var(--c-bg-elev);
+      color: var(--c-fg);
+      font-size: var(--fs-s);
+      text-decoration: none;
+    }
+    .reg__index a:hover {
+      border-color: var(--c-accent);
+      background: var(--c-accent-soft);
+    }
+    .reg__index .num {
+      color: var(--c-fg-subtle);
+      font-size: var(--fs-xs);
+    }
+    .reg__group {
+      display: grid;
+      gap: var(--space-2);
+      padding: var(--space-5) var(--space-5) var(--space-3);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      box-shadow: var(--shadow-1);
+    }
+    @media (max-width: 479px) {
+      .reg__group {
+        padding-inline: var(--space-4);
+      }
+    }
+    .reg__h {
+      scroll-margin-top: var(--space-2); /* plus html scroll-padding-top */
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--fs-l);
+    }
+    .reg__count {
+      padding: 0 0.55em;
+      border-radius: var(--radius-pill);
+      background: var(--c-bg-sunken);
+      color: var(--c-fg-subtle);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      line-height: 1.8;
+    }
+    .reg__blurb {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+    .reg__list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+      gap: 0 var(--space-6);
+      margin: var(--space-2) 0 0;
+      padding: 0;
+    }
+    .reg__item {
+      display: grid;
+      align-content: start;
+      gap: 2px;
+      padding: var(--space-3) 0 var(--space-4);
+      border-block-start: 1px solid var(--c-border);
+      font-size: var(--fs-s);
+      line-height: 1.7;
+    }
+    .reg__name {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-2);
+      font-size: var(--fs-m);
+      font-weight: var(--fw-semibold);
+      max-width: none;
+    }
+    .reg__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.2em 0.8em;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .reg__usage {
+      color: var(--c-fg-muted);
+    }
+    .reg__notes {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .reg-empty {
+      display: grid;
+      gap: var(--space-2);
+      padding: var(--space-5);
+      border: 1px dashed var(--c-border-strong);
+      border-radius: var(--radius-l);
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      max-width: 48rem;
+    }
+    .reg-empty__title {
+      font-size: var(--fs-m);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg);
+    }
+  }
+</style>

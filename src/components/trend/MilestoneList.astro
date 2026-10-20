@@ -1,0 +1,144 @@
+---
+/**
+ * Vertical milestone timeline for one trend, with a 「資料基準日」 divider between past and future.
+ *   <MilestoneList milestones={view.milestones} color="var(--chart-1)" />
+ */
+import { DATA_DATE } from '../../lib/seo';
+import { MILESTONE_STATUS_META, isPast, milestoneDateLabel, milestoneKey, type Milestone } from './trend-meta';
+
+interface Props {
+  milestones: readonly Milestone[];
+  color?: string | undefined;
+  class?: string | undefined;
+}
+const { milestones, color = 'var(--c-accent)', class: className } = Astro.props;
+const sorted = [...milestones].sort((a, b) => milestoneKey(a.date).localeCompare(milestoneKey(b.date)));
+const firstFuture = sorted.findIndex((m) => !isPast(m.date));
+const showToday = firstFuture > 0 || (firstFuture === -1 && sorted.length > 0);
+const todayAt = firstFuture === -1 ? sorted.length : firstFuture;
+---
+
+<ol class:list={['ml', className]} style={`--mc: ${color}`} role="list">
+  {
+    sorted.map((m, i) => (
+      <>
+        {showToday && i === todayAt && (
+          <li class="ml__today" aria-hidden="true">
+            <span>資料基準日 {DATA_DATE}</span>
+          </li>
+        )}
+        <li class:list={['ml__item', `ml__item--${m.status}`, { 'ml__item--past': isPast(m.date) }]}>
+          <span class="ml__mark" aria-hidden="true" />
+          <div class="ml__body">
+            <p class="ml__meta">
+              <time datetime={String(m.date)}>{milestoneDateLabel(m.date)}</time>
+              <span class="ml__status">{MILESTONE_STATUS_META[m.status].label}</span>
+            </p>
+            <p class="ml__label">{m.label}</p>
+          </div>
+        </li>
+      </>
+    ))
+  }
+  {
+    showToday && todayAt === sorted.length && (
+      <li class="ml__today" aria-hidden="true">
+        <span>資料基準日 {DATA_DATE}</span>
+      </li>
+    )
+  }
+</ol>
+
+<style>
+  .ml {
+    position: relative;
+    display: grid;
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0 0 0 1.75rem;
+    list-style: none;
+  }
+  .ml::before {
+    content: '';
+    position: absolute;
+    inset-block: 0.6rem;
+    inset-inline-start: calc(0.5rem - 1px);
+    inline-size: 2px;
+    border-radius: 1px;
+    background: linear-gradient(var(--c-border-strong), color-mix(in srgb, var(--c-border-strong) 30%, transparent));
+  }
+  .ml__item {
+    position: relative;
+  }
+  .ml__mark {
+    position: absolute;
+    inset-inline-start: -1.75rem;
+    inset-block-start: 0.3rem;
+    inline-size: 1rem;
+    block-size: 1rem;
+    border-radius: 50%;
+    border: 2.5px solid var(--mc);
+    background: var(--c-bg);
+    box-sizing: border-box;
+  }
+  .ml__item--done .ml__mark {
+    background: var(--mc);
+  }
+  .ml__item--speculative .ml__mark {
+    border-style: dashed;
+    border-width: 2px;
+  }
+  .ml__body {
+    display: grid;
+    gap: 2px;
+  }
+  .ml p {
+    margin: 0;
+  }
+  .ml__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3em 0.75em;
+    font-size: var(--fs-s);
+    font-variant-numeric: tabular-nums;
+  }
+  .ml__meta time {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg);
+  }
+  .ml__status {
+    color: var(--c-fg-subtle);
+  }
+  .ml__label {
+    line-height: 1.7;
+  }
+  .ml__item--past .ml__label {
+    color: var(--c-fg-muted);
+  }
+  .ml__today {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-inline-start: -1.75rem;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--c-accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .ml__today::before,
+  .ml__today::after {
+    content: '';
+    block-size: 2px;
+    background: var(--c-accent);
+    border-radius: 1px;
+  }
+  .ml__today::before {
+    inline-size: 1rem;
+    flex: none;
+  }
+  .ml__today::after {
+    flex: 1;
+    opacity: 0.35;
+  }
+</style>

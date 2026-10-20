@@ -1,0 +1,40 @@
+# Proposals from the chip-floorplan scene agent, 2026-10-15.
+# Nothing here blocks the scene: each capability is implemented locally in
+# src/three/scenes/chip-floorplan/ and can move to the kit / core unchanged.
+
+- id: portrait-step-poses
+  target: src/three/core/types.ts (same request as scene-hbm.yaml `portrait-step-poses`)
+  problem: >
+    `ctx.setPose` only scales the camera distance on portrait stages. Whole-die steps (signoff,
+    tape-out) are seen from the side on 16:9; on a 4:5 stage the die and the mask stack are wider
+    than the frame however far the camera backs off, so they need a more frontal pose, and the
+    close-up steps need a different target height. The scene keeps three extra tables and
+    re-applies the step pose when the stage flips.
+  proposal: >
+    Accept `setPose({ ...pose, portrait?: Partial<CameraPose> })`; the host picks the portrait
+    variant on portrait stages and re-applies the current step pose when the stage shape flips
+    (unless the reader has orbited).
+  workaround: src/three/scenes/chip-floorplan/index.ts (PORTRAIT_POSES, PORTRAIT_DIST, PORTRAIT_DY, poseFor, onResize).
+
+- id: faded-floor-grid
+  target: src/three/kit/FloorGrid.ts
+  problem: >
+    Diorama scenes want a calm floor grid that fades out radially (no hard edge at the far plane).
+    `GridHelper` cannot fade, so scenes hand-roll a LineSegments grid with per-vertex RGBA.
+  proposal: >
+    `new FloorGrid({ radius, step, y, materials })` → `{ object, setPalette(p), dispose() }`:
+    one LineSegments draw with vertex alpha `(1 − r²)^1.6`, coloured from `grid` / `fg` per theme.
+  workaround: src/three/scenes/chip-floorplan/index.ts (buildFloorGrid).
+
+- id: vertex-colour-tint
+  target: src/three/kit/TintedMerge.ts
+  problem: >
+    The floorplan city is ~180 rounded blocks merged into one mesh per block type (8 draws) so
+    that hover highlight, dimming, the IP-sourcing recolour and the IR-drop heat map can all
+    tint individual blocks. That needs a per-part vertex-colour range in a merged geometry,
+    which every "many static parts, per-part colour" scene re-implements.
+  proposal: >
+    `mergeTinted(parts: { geometry, color }[])` → `{ mesh, setColor(i, c), commit() }` that keeps
+    each part's vertex range and writes the colour attribute in place (DynamicDrawUsage,
+    addUpdateRange for the touched span).
+  workaround: src/three/scenes/chip-floorplan/index.ts (blockMeshes, paintCity).

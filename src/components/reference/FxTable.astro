@@ -1,0 +1,151 @@
+---
+/**
+ * 「匯率換算基準」: the period-average USD rates the site uses (src/data/fx/usd-rates.json), with the
+ * last full calendar year, the latest full quarter and each series' source.
+ *   <FxTable />
+ */
+import { FX_COVERAGE, FX_GENERATED, fxCurrencies, fxSource, rateInfo } from '../../lib/fx';
+import { currencyName, formatNumber } from '../../lib/format';
+
+interface Props {
+  class?: string | undefined;
+}
+const { class: className } = Astro.props;
+
+const [covY, covM] = FX_COVERAGE.to.split('-').map(Number) as [number, number];
+const lastQ = Math.floor(covM / 3); // last complete quarter of the coverage year
+const quarterKey = lastQ >= 1 ? `${covY}-Q${lastQ}` : `${covY - 1}-Q4`;
+const quarterLabel = lastQ >= 1 ? `${covY} Q${lastQ}` : `${covY - 1} Q4`;
+const yearKey = String(lastQ >= 1 ? covY - 1 : covY - 2);
+
+const digits = (r: number) => (r >= 100 ? 1 : r >= 10 ? 2 : 3);
+const rows = fxCurrencies().map((c) => {
+  const src = fxSource(c);
+  const y = rateInfo(c, yearKey, { extrapolate: false });
+  const q = rateInfo(c, quarterKey, { extrapolate: false });
+  const provider = src?.provider ?? '';
+  const short = /FRED/.test(provider)
+    ? `FRED ${src?.series ?? ''}`.trim()
+    : /European Central Bank/.test(provider)
+      ? '歐洲央行'
+      : /peg/i.test(src?.series ?? '') || /SAMA|CBUAE/.test(provider)
+        ? '官方釘住匯率'
+        : provider;
+  return { code: c, name: currencyName(c), year: y?.rate, quarter: q?.rate, url: src?.url, short, provider };
+});
+---
+
+<div class:list={['fx', className]} data-pagefind-ignore>
+  <div class="scroll-x fx__scroll">
+    <table class="fx__table">
+      <caption class="sr-only">各幣別兌 1 美元的平均匯率（{yearKey} 年平均與 {quarterLabel} 季平均）及資料來源</caption>
+      <thead>
+        <tr>
+          <th scope="col">幣別</th>
+          <th scope="col" class="fx__num">{yearKey} 年平均</th>
+          <th scope="col" class="fx__num">{quarterLabel} 平均</th>
+          <th scope="col">資料來源</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.map((r) => (
+            <tr>
+              <th scope="row">
+                <span class="fx__name">{r.name}</span>
+                <span class="fx__code" lang="en">
+                  {r.code}
+                </span>
+              </th>
+              <td class="fx__num">{r.year != null ? formatNumber(r.year, { digits: digits(r.year) }) : '—'}</td>
+              <td class="fx__num">{r.quarter != null ? formatNumber(r.quarter, { digits: digits(r.quarter) }) : '—'}</td>
+              <td class="fx__src">
+                {r.url ? (
+                  <a href={r.url} rel="noopener external" title={r.provider}>
+                    {r.short}
+                  </a>
+                ) : (
+                  r.short
+                )}
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  <p class="fx__note">
+    數值為 1 美元可兌換的外幣金額，取每日資料的算術平均。匯率資料涵蓋 {FX_COVERAGE.from.replace('-', ' 年 ')} 月至 {
+      FX_COVERAGE.to.replace('-', ' 年 ')
+    } 月，更新於 <time datetime={FX_GENERATED}>{FX_GENERATED}</time>。
+  </p>
+</div>
+
+<style>
+  @layer components {
+    .fx {
+      display: grid;
+      gap: var(--space-3);
+    }
+    .fx__scroll {
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+    }
+    .fx__table {
+      display: table;
+      inline-size: 100%;
+      margin: 0;
+      font-size: var(--fs-s);
+      font-variant-numeric: tabular-nums;
+      border-collapse: collapse;
+    }
+    .fx__table th,
+    .fx__table td {
+      padding: 0.6em 1em;
+      border-block-end: 1px solid var(--c-border);
+      text-align: start;
+      vertical-align: baseline;
+      min-width: 0;
+      max-width: none;
+      white-space: nowrap;
+    }
+    .fx__table thead th {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: 0.04em;
+      color: var(--c-fg-muted);
+      background: var(--c-bg-sunken);
+      border-block-end: 1px solid var(--c-border-strong);
+    }
+    .fx__table tbody tr:last-child > * {
+      border-block-end: 0;
+    }
+    .fx__table tbody th {
+      font-weight: var(--fw-regular);
+    }
+    .fx__name {
+      color: var(--c-fg);
+      margin-inline-end: 0.5em;
+    }
+    .fx__code {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      font-family: var(--font-mono);
+    }
+    .fx__table .fx__num {
+      text-align: end;
+    }
+    .fx__src a {
+      color: var(--c-fg-muted);
+    }
+    .fx__src a:hover {
+      color: var(--c-link-hover);
+    }
+    .fx__note {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      line-height: 1.7;
+    }
+  }
+</style>

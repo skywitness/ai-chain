@@ -1,0 +1,214 @@
+/*
+ * Long-form reading typography for MDX bodies (CJK-first). Owner: design-system agent.
+ * Wrap rendered MDX in <div class="prose">…</div>. Layouts already do this.
+ *
+ *  - 17px / 1.8, strict CJK line breaking, measure ≈ 38em for text blocks
+ *  - Tables, figures and charts may use the full column width; tables scroll inside themselves
+ *  - Tabular numerals in tables and data
+ */
+@layer prose {
+  .prose {
+    font-size: var(--fs-m);
+    line-height: var(--lh-body);
+    line-break: strict;
+    overflow-wrap: break-word;
+    color: var(--c-fg);
+    min-width: 0;
+  }
+
+  .prose > * + * {
+    margin-block-start: var(--flow, 1.15em);
+  }
+
+  .prose :where(p, ul, ol, dl, blockquote, h2, h3, h4, h5, h6) {
+    max-width: var(--measure);
+  }
+
+  .prose :where(h2) {
+    --flow: 2.2em;
+    position: relative;
+    padding-block-start: 0.9em;
+    font-size: var(--fs-2xl);
+  }
+  .prose :where(h2)::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inline-size: 2.25rem;
+    block-size: 3px;
+    border-radius: 2px;
+    background: var(--c-accent);
+    opacity: 0.85;
+  }
+  .prose :where(h3) {
+    --flow: 2em;
+    font-size: var(--fs-xl);
+  }
+  .prose :where(h4) {
+    --flow: 1.8em;
+    font-size: var(--fs-l);
+  }
+  .prose :where(h5, h6) {
+    --flow: 1.6em;
+    font-size: var(--fs-m);
+  }
+  .prose :where(h2, h3, h4, h5, h6) + * {
+    --flow: 0.75em;
+  }
+
+  .prose :where(strong, b) {
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+  }
+  .prose :where(em, i) {
+    font-style: normal;
+    /* CJK has no italics: emphasise with emphasis dots */
+    text-emphasis: filled dot;
+    text-emphasis-position: under right;
+    -webkit-text-emphasis: filled dot;
+    -webkit-text-emphasis-position: under right;
+  }
+  .prose :where(em, i):lang(en) {
+    font-style: italic;
+    text-emphasis: none;
+    -webkit-text-emphasis: none;
+  }
+
+  .prose :where(ul, ol) {
+    padding-inline-start: 1.5em;
+  }
+  .prose :where(li) + :where(li) {
+    margin-block-start: 0.4em;
+  }
+  .prose :where(li) > :where(ul, ol) {
+    margin-block-start: 0.4em;
+  }
+  .prose :where(li)::marker {
+    color: var(--c-fg-subtle);
+  }
+  .prose :where(ol > li)::marker {
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--fw-semibold);
+  }
+
+  .prose :where(dl) {
+    display: grid;
+    gap: 0.25em 1em;
+  }
+  .prose :where(dt) {
+    font-weight: var(--fw-semibold);
+  }
+  .prose :where(dd) {
+    margin-inline-start: 0;
+    color: var(--c-fg-muted);
+  }
+
+  .prose :where(blockquote) {
+    padding: 0.2em 0 0.2em 1.1em;
+    border-inline-start: 3px solid var(--c-border-strong);
+    color: var(--c-fg-muted);
+  }
+
+  .prose :where(hr) {
+    margin-block: 2.5em;
+  }
+
+  .prose :where(code):not(pre code) {
+    padding: 0.1em 0.35em;
+    border-radius: var(--radius-s);
+    background: var(--c-bg-sunken);
+    border: 1px solid var(--c-border);
+    font-size: 0.86em;
+    overflow-wrap: anywhere;
+  }
+  .prose :where(pre) {
+    padding: var(--space-4);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-sunken);
+    border: 1px solid var(--c-border);
+    overflow-x: auto;
+    line-height: 1.6;
+    font-size: var(--fs-s);
+  }
+
+  .prose :where(img, video) {
+    border-radius: var(--radius-m);
+  }
+  .prose :where(figure) {
+    margin-inline: 0;
+  }
+  .prose :where(figcaption) {
+    margin-block-start: var(--space-2);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    line-height: 1.6;
+  }
+
+  /* Tables: scroll inside their own box, never the page. CJK cells wrap; Latin words and numbers stay whole. */
+  .prose :where(table) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    border-collapse: collapse;
+    font-size: var(--fs-s);
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+    --flow: 1.6em;
+  }
+  .prose :where(th, td) {
+    padding: 0.55em 0.9em;
+    text-align: start;
+    vertical-align: top;
+    border-block-end: 1px solid var(--c-border);
+    overflow-wrap: break-word;
+    min-width: 6.5em;
+    max-width: 24em;
+  }
+  .prose :where(th:first-child, td:first-child) {
+    padding-inline-start: 0.2em;
+  }
+  /* Phones: a four-column text table squeezed into 358px left 4 characters per line; keep about 6 and
+     let the table scroll inside its own box instead. */
+  @media (max-width: 30rem) {
+    .prose :where(td) {
+      min-width: 7.5em;
+    }
+  }
+  .prose :where(thead th) {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.04em;
+    border-block-end: 1.5px solid var(--c-border-strong);
+    white-space: nowrap;
+    vertical-align: bottom;
+  }
+  .prose :where(tbody tr:hover) {
+    background: var(--c-hover);
+  }
+  .prose :where(td[align='right'], th[align='right']) {
+    text-align: end;
+  }
+  .prose :where(td[align='center'], th[align='center']) {
+    text-align: center;
+  }
+
+  .prose :where(a) {
+    text-decoration-thickness: 1px;
+  }
+
+  /* Superscript/subscript in chemistry & units */
+  .prose :where(sup, sub) {
+    font-size: 0.72em;
+  }
+
+  /* Display math gets breathing room and scrolls if very wide */
+  .prose :where(math.tml-display) {
+    margin-block: 1.2em;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.25em;
+  }
+}

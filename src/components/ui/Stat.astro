@@ -1,0 +1,174 @@
+---
+/**
+ * A single headline number.
+ *
+ *   <Stat label="全球 EUV 曝光機市占" value="≈100%" note="ASML，2026" />
+ *   <Stat label="2026 Q2 營收" value="9,337 億元" delta="+38.6%" trend="up" asOf="2026-07-17" />
+ *
+ * Colour never carries the meaning alone: the delta keeps its sign and an sr-only 增加／減少 word.
+ */
+interface Props {
+  label: string;
+  value: string | number;
+  /** Small unit after the value (e.g. 「億美元」) */
+  unit?: string | undefined;
+  note?: string | undefined;
+  /** e.g. '+12.4%' or 12.4 (numbers are formatted with a sign and % ) */
+  delta?: string | number | undefined;
+  deltaLabel?: string | undefined; // 「年增」
+  trend?: 'up' | 'down' | 'flat' | undefined;
+  /** ISO date; renders 「資料截至 …」 */
+  asOf?: string | undefined;
+  /** Marks the value as an estimate (hatched underline + 「估計」) */
+  estimate?: boolean | undefined;
+  /** Optional link for the source/note */
+  href?: string | undefined;
+  size?: 's' | 'm' | 'l' | undefined;
+  class?: string | undefined;
+}
+
+const {
+  label,
+  value,
+  unit,
+  note,
+  delta,
+  deltaLabel,
+  trend,
+  asOf,
+  estimate = false,
+  href,
+  size = 'm',
+  class: className,
+} = Astro.props;
+
+const deltaText =
+  typeof delta === 'number' ? `${delta > 0 ? '+' : delta < 0 ? '−' : '±'}${Math.abs(delta).toLocaleString('zh-TW')}%` : delta;
+const dir =
+  trend ??
+  (typeof delta === 'number'
+    ? delta > 0
+      ? 'up'
+      : delta < 0
+        ? 'down'
+        : 'flat'
+    : typeof delta === 'string'
+      ? /^\s*[+＋]/.test(delta)
+        ? 'up'
+        : /^\s*[-−–]/.test(delta)
+          ? 'down'
+          : 'flat'
+      : undefined);
+const dirWord = dir === 'up' ? '增加' : dir === 'down' ? '減少' : '持平';
+const valueText = typeof value === 'number' ? value.toLocaleString('zh-TW') : value;
+---
+
+<div class:list={['stat', `stat--${size}`, className]}>
+  <p class="stat__label">{label}</p>
+  <p class:list={['stat__value', { 'stat__value--est': estimate }]}>
+    <span class="stat__num">{valueText}</span>
+    {unit && <span class="stat__unit">{unit}</span>}
+    {estimate && <span class="stat__est">估計</span>}
+  </p>
+  {
+    deltaText && (
+      <p class:list={['stat__delta', dir && `stat__delta--${dir}`]}>
+        <span class="stat__arrow" aria-hidden="true">
+          {dir === 'up' ? '▲' : dir === 'down' ? '▼' : '■'}
+        </span>
+        {deltaLabel && <span>{deltaLabel}</span>}
+        <span class="sr-only">{dirWord}</span>
+        <span class="num">{deltaText}</span>
+      </p>
+    )
+  }
+  {
+    (note || asOf) && (
+      <p class="stat__note">
+        {href && note ? <a href={href}>{note}</a> : note}
+        {note && asOf && <span aria-hidden="true"> · </span>}
+        {asOf && (
+          <span>
+            資料截至 <time datetime={asOf}>{asOf}</time>
+          </span>
+        )}
+      </p>
+    )
+  }
+</div>
+
+<style>
+  @layer components {
+    .stat {
+      display: grid;
+      gap: var(--space-1);
+      align-content: start;
+      min-width: 0;
+    }
+    .stat__label {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      line-height: 1.5;
+    }
+    .stat__value {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.3em;
+      font-size: var(--fs-2xl);
+      font-weight: var(--fw-bold);
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      font-variant-numeric: tabular-nums lining-nums;
+      color: var(--c-fg);
+    }
+    .stat--s .stat__value {
+      font-size: var(--fs-xl);
+    }
+    .stat--l .stat__value {
+      font-size: var(--fs-3xl);
+    }
+    .stat__value--est .stat__num {
+      text-decoration: underline dashed var(--c-estimate);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 0.18em;
+    }
+    .stat__unit {
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-muted);
+      letter-spacing: 0;
+    }
+    .stat__est {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      color: var(--c-estimate);
+      border: 1px dashed currentColor;
+      border-radius: var(--radius-s);
+      padding: 0 0.4em;
+      align-self: center;
+    }
+    .stat__delta {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.35em;
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-muted);
+    }
+    .stat__delta--up {
+      color: var(--c-pos);
+    }
+    .stat__delta--down {
+      color: var(--c-neg);
+    }
+    .stat__arrow {
+      font-size: 0.7em;
+    }
+    .stat__note {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      line-height: 1.5;
+    }
+  }
+</style>

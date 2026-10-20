@@ -1,0 +1,169 @@
+---
+/**
+ * /learn/<slug>/ — one page per curriculum article (src/data/curriculum.yaml drives the paths, so every
+ * registered article has a page even before its MDX file exists; such pages render a calm stub).
+ * Owner: pages-learn agent.
+ */
+import { render } from 'astro:content';
+import type { MarkdownHeading } from 'astro';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import Icon from '../../components/ui/Icon.astro';
+import NextSteps from '../../components/content/NextSteps.astro';
+import { mdxComponents } from '../../components/content/mdx-components';
+import { registerSources } from '../../components/content/page-state';
+import LearnScene from '../../components/learn/LearnScene.astro';
+import ArticleStub from '../../components/learn/ArticleStub.astro';
+import ReadToggle from '../../components/learn/ReadToggle.astro';
+import RelatedLinks from '../../components/learn/RelatedLinks.astro';
+import PathNav from '../../components/learn/PathNav.astro';
+import {
+  autoloadSceneOf,
+  bodyHasScene,
+  getLearnContext,
+  getLearnItems,
+  getSuggestedPaths,
+  sceneExists,
+  setSceneAutoload,
+} from '../../components/learn/learn-data';
+import { levelMeta, segmentMeta } from '../../lib/collections';
+import { learnHref, sectionHref } from '../../lib/paths';
+
+export async function getStaticPaths() {
+  const items = await getLearnItems();
+  return items.map((i) => ({ params: { slug: i.slug } }));
+}
+
+const slug = Astro.params.slug as string;
+const items = await getLearnItems();
+const ctx = (await getLearnContext(slug, items))!;
+const { item } = ctx;
+const lv = levelMeta(item.level);
+
+// Render the MDX body when the entry exists; a render failure falls back to the stub instead of a crash.
+let Content: Awaited<ReturnType<typeof render>>['Content'] | undefined;
+let headings: MarkdownHeading[] = [];
+if (item.entry) {
+  try {
+    const r = await render(item.entry);
+    Content = r.Content;
+    headings = r.headings;
+  } catch (err) {
+    console.warn(`[learn] could not render ${slug}: ${(err as Error).message}`);
+  }
+}
+const d = Content ? item.entry?.data : undefined;
+const isStub = !d;
+// Register the sources before the MDX body renders, so <Cite k> numbers match the SourcesList order
+// (Astro renders the page's slot content before the layout frontmatter runs).
+registerSources(Astro, d?.sources);
+
+const description =
+  d?.description ??
+  `「${item.title}」是學習路徑${lv.label}階段的文章（${item.trackLabel}）。本篇內容整理中，${
+    item.prereqs.length ? '可以先閱讀建議先讀的文章，或' : '可以先'
+  }看看相關的產業鏈環節。`;
+const components = { ...mdxComponents, Scene3D: LearnScene };
+// Full article without an in-body scene: show the curriculum scene above the body.
+const heroCandidate = d && !bodyHasScene(item.entry) ? (d.scenes[0] ?? item.scene) : null;
+const heroScene = heroCandidate && sceneExists(heroCandidate.id) ? heroCandidate : null;
+// Only one scene autoloads: the first built body scene outside a <DeepDive> (else the hero or stub scene).
+setSceneAutoload(Astro, d ? autoloadSceneOf(item.entry?.body) : undefined);
+
+const segTitles = ctx.related.segments.map((s) => segmentMeta(s)?.title).filter((t): t is string => !!t);
+const prev = ctx.prev ? { href: learnHref(ctx.prev.slug), title: ctx.prev.title } : undefined;
+const next = ctx.next ? { href: learnHref(ctx.next.slug), title: ctx.next.title } : undefined;
+---
+
+<ArticleLayout
+  title={item.title}
+  subtitle={d?.subtitle}
+  description={description}
+  kicker={`學習路徑 · ${item.trackLabel}`}
+  level={item.level}
+  minutes={d?.estimatedMinutes}
+  headings={headings}
+  prereqs={item.prereqs}
+  keyTakeaways={d?.keyTakeaways ?? []}
+  sources={d?.sources ?? []}
+  lastVerified={d?.lastVerified}
+  updated={d?.updated}
+  breadcrumbs={[{ label: '學習路徑', href: sectionHref('learn') }, { label: item.shortTitle }]}
+  section="learn"
+  articleSection={`學習路徑 · ${lv.label}`}
+  searchFilters={segTitles.length ? { 環節: segTitles } : {}}
+  noindex={isStub}
+>
+  <Fragment slot="header">
+    <a class="la-pos" href={`${sectionHref('learn')}#lc-${item.slug}`}>
+      <Icon name="steps" />
+      <span>學習路徑第 {ctx.index + 1}／{ctx.total} 篇</span>
+    </a>
+    {isStub ? <span class="la-pending">內容整理中</span> : <ReadToggle slug={item.slug} />}
+    {d?.updated && <span hidden data-pagefind-sort={`updated:${d.updated}`} />}
+  </Fragment>
+
+  {
+    heroScene && (
+      <div slot="hero" class="la-hero">
+        <LearnScene id={heroScene.id} variant={heroScene.variant} caption={`互動 3D：${item.shortTitle}`} fallback="none" />
+      </div>
+    )
+  }
+
+  {Content ? <Content components={components} /> : <ArticleStub item={item} items={items} />}
+
+  <Fragment slot="after">
+    {!isStub && <ReadToggle slug={item.slug} variant="panel" />}
+    <RelatedLinks
+      segments={ctx.related.segments}
+      companies={ctx.related.companies}
+      models={ctx.related.models}
+      trends={ctx.related.trends}
+    />
+  </Fragment>
+
+  <NextSteps slot="next" items={ctx.nextSteps} prev={prev} next={next}>
+    <PathNav slug={item.slug} paths={getSuggestedPaths(items)} />
+  </NextSteps>
+</ArticleLayout>
+
+<style>
+  .la-pos,
+  .la-pending {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    min-height: 2.25rem;
+    padding: 0 0.85em;
+    border-radius: var(--radius-pill);
+    font-size: var(--fs-xs);
+    line-height: 1.2;
+    color: var(--c-fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  @media (pointer: coarse) {
+    .la-pos,
+    .la-pending {
+      min-height: var(--tap);
+    }
+  }
+  .la-pos {
+    border: 1px solid var(--c-border);
+    background: var(--c-bg-elev);
+    text-decoration: none;
+    transition:
+      border-color var(--dur-1) ease,
+      color var(--dur-1) ease;
+  }
+  .la-pos:hover {
+    border-color: var(--c-border-strong);
+    color: var(--c-fg);
+  }
+  .la-pending {
+    border: 1px dashed var(--c-border-strong);
+    color: var(--c-fg-subtle);
+  }
+  .la-hero {
+    max-width: 62rem;
+  }
+</style>

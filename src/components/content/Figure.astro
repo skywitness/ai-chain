@@ -1,0 +1,56 @@
+---
+/**
+ * Figure wrapper with caption and source line, for diagrams and embedded media.
+ *   <Figure caption="CoWoS 結構示意" source="TSMC 技術簡報，2025">…svg or diagram…</Figure>
+ */
+interface Props {
+  caption?: string | undefined;
+  source?: string | undefined;
+  /** Allow the figure to use the full column width (default) or the text measure */
+  width?: 'full' | 'measure' | undefined;
+  class?: string | undefined;
+}
+const { caption, source, width = 'full', class: className } = Astro.props;
+---
+
+<figure class:list={['fig', `fig--${width}`, className]}>
+  <div class="fig__media"><slot /></div>
+  {
+    (caption || source) && (
+      <figcaption class="fig__caption">
+        {caption}
+        {source && <span class="fig__source">來源：{source}</span>}
+      </figcaption>
+    )
+  }
+</figure>
+
+<style>
+  @layer components {
+    .fig {
+      margin: 1.8em 0;
+    }
+    .fig--measure {
+      max-width: var(--measure);
+    }
+    .fig__media {
+      overflow-x: auto;
+    }
+    .fig__media > :global(svg) {
+      width: 100%;
+      height: auto;
+    }
+    .fig__caption {
+      margin-block-start: var(--space-2);
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      line-height: 1.6;
+      display: grid;
+      gap: 0.15em;
+    }
+    .fig__source {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+  }
+</style>

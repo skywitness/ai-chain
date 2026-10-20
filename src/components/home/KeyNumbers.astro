@@ -1,0 +1,153 @@
+---
+/**
+ * 「關鍵數字」 tiles: numbers computed from the site's own data (roster, financials) plus dated
+ * facts from the segments' keyMetrics, each with its date and a cited source.
+ *   <KeyNumbers computed={tiles.computed} facts={tiles.facts} />
+ */
+import Icon from '../ui/Icon.astro';
+import type { KeyTile } from './home-data';
+
+interface Props {
+  computed: KeyTile[];
+  facts: KeyTile[];
+  methodHref: string;
+}
+const { computed, facts, methodHref } = Astro.props;
+const tiles = [...computed.map((t) => ({ ...t, kind: 'computed' as const })), ...facts.map((t) => ({ ...t, kind: 'fact' as const }))];
+---
+
+<ul class="kn" role="list">
+  {
+    tiles.map((t) => (
+      <li class:list={['kn__tile', `kn__tile--${t.kind}`]} style={t.accent ? `--kn-c: ${t.accent}` : undefined}>
+        <p class="kn__label">{t.label}</p>
+        <p class="kn__value">{t.value}</p>
+        {t.detail && <p class="kn__detail">{t.detail}</p>}
+        {t.note && <p class="kn__note">{t.note}</p>}
+        <div class="kn__foot">
+          {t.asOf && (
+            <span class="kn__asof">
+              資料截至 <time datetime={t.asOf}>{t.asOf}</time>
+            </span>
+          )}
+          {t.source ? (
+            <span class="kn__src">
+              來源：
+              <a href={t.source.url} rel="noopener noreferrer" title={t.source.title}>
+                {t.source.publisher}
+                <Icon name="external" size="0.8em" />
+              </a>
+            </span>
+          ) : (
+            <span class="kn__src">
+              來源：<a href={methodHref}>本站整理（研究方法）</a>
+            </span>
+          )}
+          {t.link && (
+            <a class="kn__link" href={t.link.href}>
+              {t.link.label}
+              <Icon name="arrow-right" />
+            </a>
+          )}
+        </div>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .kn {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    gap: var(--space-4);
+  }
+  @media (min-width: 1100px) {
+    .kn {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .kn__tile {
+    --kn-c: var(--c-accent);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    min-width: 0;
+  }
+  .kn__tile::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: var(--space-5);
+    inset-block-start: 0;
+    inline-size: 2.5rem;
+    block-size: 3px;
+    border-radius: 0 0 3px 3px;
+    background: var(--kn-c);
+  }
+  .kn__tile--computed {
+    background:
+      linear-gradient(160deg, color-mix(in srgb, var(--kn-c) 8%, transparent), transparent 60%),
+      var(--c-bg-elev);
+  }
+  .kn__label {
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    line-height: 1.55;
+  }
+  .kn__value {
+    font-size: var(--fs-2xl);
+    font-weight: var(--fw-bold);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .kn__detail {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: color-mix(in srgb, var(--kn-c) 70%, var(--c-fg));
+    margin-block-start: calc(-1 * var(--space-1));
+  }
+  .kn__note {
+    font-size: var(--fs-xs);
+    line-height: 1.7;
+    color: var(--c-fg-subtle);
+  }
+  .kn__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    margin-block-start: auto;
+    padding-block-start: var(--space-3);
+    border-block-start: 1px dashed var(--c-border);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .kn__asof time {
+    font-variant-numeric: tabular-nums;
+  }
+  .kn__src a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2em;
+  }
+  .kn__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    margin-inline-start: auto;
+    font-weight: var(--fw-semibold);
+    text-decoration: none;
+  }
+  .kn__link:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+</style>

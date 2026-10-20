@@ -1,0 +1,372 @@
+---
+/**
+ * /trends/[slug]/ — one page per id in src/data/trends-index.yaml.
+ * ArticleLayout: category badge → 「趨勢速覽」 (horizon bar, confidence with
+ * its rationale, impact with the affected segments) → MDX body → 「追蹤重點」 (milestones, 觀察指標 with dates
+ * and sources, 反方觀點, affected segments / companies / models / terms as chips) → 下一步 → 資料來源.
+ * A registered trend whose article is not written yet renders a calm 「內容整理中」 page (noindex).
+ */
+import type { MarkdownHeading } from 'astro';
+import { render } from 'astro:content';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Icon from '../../components/ui/Icon.astro';
+import NextSteps, { type NextItem } from '../../components/content/NextSteps.astro';
+import { mdxComponents } from '../../components/content/mdx-components';
+import TrendSummary from '../../components/trend/TrendSummary.astro';
+import MilestoneList from '../../components/trend/MilestoneList.astro';
+import TrendSignals from '../../components/trend/TrendSignals.astro';
+import TrendAffected from '../../components/trend/TrendAffected.astro';
+import { categoryMeta, getTrendView, getTrendViews, type TrendView } from '../../components/trend/trend-meta';
+import { getTrendsIndex, safeEntry, segmentMeta } from '../../lib/collections';
+import { sectionHref, trendHref } from '../../lib/paths';
+
+export function getStaticPaths() {
+  return getTrendsIndex().map((t) => ({ params: { slug: t.id }, props: { id: t.id } }));
+}
+
+const { id } = Astro.props as { id: string };
+const entry = await safeEntry('trends', id);
+const view = (await getTrendView(id, entry)) as TrendView;
+const all = await getTrendViews();
+const cat = categoryMeta(view.category);
+
+let Content: Awaited<ReturnType<typeof render>>['Content'] | undefined;
+let headings: MarkdownHeading[] = [];
+if (entry) {
+  try {
+    const r = await render(entry);
+    Content = r.Content;
+    headings = r.headings;
+  } catch (err) {
+    console.warn(`[trends/${id}] could not render body: ${(err as Error).message}`);
+  }
+}
+const d = entry?.data;
+const refId = (r: string | { id: string }) => (typeof r === 'string' ? r : r.id);
+
+// Registry neighbours for prev/next; same-category trends for suggestions.
+const idx = all.findIndex((t) => t.id === id);
+const prevT = idx > 0 ? all[idx - 1] : undefined;
+const nextT = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : undefined;
+const sameCat = all.filter((t) => t.category === view.category && t.id !== id);
+const sharedSegs = (t: TrendView) => t.relatedSegments.filter((s) => view.relatedSegments.includes(s)).length;
+const suggestions = [...sameCat]
+  .sort((a, b) => sharedSegs(b) - sharedSegs(a) || Number(b.hasEntry) - Number(a.hasEntry) || a.order - b.order)
+  .slice(0, 2);
+
+const nextItems: NextItem[] = [];
+if (entry) {
+  for (const l of (d?.relatedLearn ?? []).slice(0, 2)) nextItems.push({ learn: refId(l), kicker: '先補基礎' });
+  const firstSeg = view.relatedSegments[0];
+  if (firstSeg && segmentMeta(firstSeg)) nextItems.push({ segment: firstSeg, kicker: '相關環節' });
+  for (const t of suggestions) nextItems.push({ trend: t.id, kicker: `同類趨勢 · ${cat.label}` });
+} else {
+  // Pending page: the box above lists the articles that can be read now; here, the broader entry points.
+  nextItems.push(
+    { href: sectionHref('learn'), title: '學習路徑', description: '從電力、晶片到模型，由淺入深認識 AI 產業鏈。', kicker: '先補基礎' },
+    { href: sectionHref('chain'), title: '產業鏈總覽', description: '14 個環節的上下游關係與代表公司。', kicker: '看全貌' },
+    { href: sectionHref('trends'), title: '所有未來趨勢', description: '依類別、時間範圍與信心程度瀏覽。', kicker: '回到列表' },
+  );
+}
+
+const companies = (d?.relatedCompanies ?? []).map(refId);
+const models = (d?.relatedModels ?? []).map(refId);
+const terms = (d?.glossary ?? []).map(refId);
+const hasAffected = view.relatedSegments.length + companies.length + models.length + terms.length > 0;
+const affectedTitle = `受影響的${['環節', companies.length ? '公司' : null, models.length ? '模型' : null]
+  .filter(Boolean)
+  .join('、')
+  .replace(/、([^、]+)$/, '與$1')}`;
+const hasTrack = !!d || view.milestones.length > 0 || hasAffected;
+
+// The body already has prose sections named 觀察指標 / 反方觀點…; the structured lists join the table of
+// contents as a single entry so the TOC does not repeat those names.
+const tocHeadings: MarkdownHeading[] = [...headings];
+if (hasTrack) tocHeadings.push({ depth: 2, slug: 'trend-track', text: '追蹤重點' });
+
+const title = view.title;
+const description =
+  d?.description ?? `「${view.title}」的趨勢分析正在整理中。完成後會列出時間範圍、信心程度、觀察指標、反方觀點與受影響的公司。`;
+const segFilters = view.relatedSegments.map((s) => segmentMeta(s)?.title).filter((s): s is string => !!s);
+// Pending page: the articles that can be read now (same category first), and the same-category trends
+// that are still being written (plain text, so the page does not send readers on to more empty pages).
+const readyList = all
+  .filter((t) => t.hasEntry && t.id !== id)
+  .sort((a, b) => Number(b.category === view.category) - Number(a.category === view.category) || a.order - b.order)
+  .slice(0, 4);
+const soonSame = sameCat.filter((t) => !t.hasEntry).slice(0, 6);
+const trackParts = [
+  view.milestones.length > 0 ? '里程碑' : null,
+  d ? '觀察指標、反方觀點' : null,
+  hasAffected ? '受影響的環節與公司' : null,
+].filter(Boolean);
+---
+
+<ArticleLayout
+  title={title}
+  description={description}
+  kicker={`未來趨勢 · ${cat.label}`}
+  subtitle={d?.description}
+  headings={tocHeadings}
+  sources={d?.sources ?? []}
+  lastVerified={d?.lastVerified}
+  published={d?.published}
+  breadcrumbs={[{ label: '未來趨勢', href: sectionHref('trends') }, { label: title }]}
+  section="trends"
+  searchType="趨勢"
+  searchFilters={segFilters.length ? { 環節: segFilters } : {}}
+  articleSection="未來趨勢"
+  noindex={!entry}
+  toc={tocHeadings.filter((h) => h.depth === 2).length >= 3}
+>
+  <Fragment slot="header">
+    <span class="tr-badges">
+      <Badge class="tr-cat" title={`類別：${cat.label}`}>
+        <span class="tr-cat__dot" style={`--cc: ${cat.color}`} aria-hidden="true"></span>
+        {cat.label}
+      </Badge>
+      {!entry && <Badge tone="estimate">內容整理中</Badge>}
+    </span>
+  </Fragment>
+
+  {d && <TrendSummary slot="hero" trend={view} rationale={d.confidenceRationale} />}
+
+  {
+    Content ? (
+      <Content components={mdxComponents} />
+    ) : (
+      <div class="tr-pending not-prose" data-pagefind-ignore="all">
+        <p class="tr-pending__title">
+          <Icon name="book" size="1.25em" />
+          內容整理中
+        </p>
+        <p>
+          這篇關於「{view.title}」的趨勢分析正在撰寫與查證。完成後會包含趨勢摘要、關鍵驅動力、時間表與里程碑、觀察指標，以及反方觀點與風險。
+        </p>
+        {readyList.length > 0 ? (
+          <>
+            <p class="tr-pending__sub">現在可以先讀這幾篇已完成的趨勢分析：</p>
+            <ul class="tr-pending__list">
+              {readyList.map((t) => (
+                <li>
+                  <a href={t.href}>{t.title}</a>
+                  <span class="tr-pending__cat">
+                    <i style={`--cc: ${categoryMeta(t.category).color}`} aria-hidden="true" />
+                    {categoryMeta(t.category).label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p>
+            先看看<a href={sectionHref('trends')}>所有未來趨勢</a>的題目與分類。
+          </p>
+        )}
+        {soonSame.length > 0 && (
+          <div class="tr-pending__soon">
+            <p>同屬「{cat.label}」類、也在整理中：</p>
+            <ul role="list">
+              {soonSame.map((t) => (
+                <li>{t.title}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  <Fragment slot="after">
+    {
+      hasTrack && (
+        <section class="tr-track" aria-labelledby="trend-track">
+          <header class="tr-track__head">
+            <h2 id="trend-track" class="tr-track__h">
+              追蹤重點
+            </h2>
+            <p class="tr-track__lede">把這個趨勢的{trackParts.join('、')}整理成清單，方便日後回來對照進度。</p>
+          </header>
+
+          {view.milestones.length > 0 && (
+            <section class="tr-sec" aria-labelledby="trend-milestones">
+              <h3 id="trend-milestones" class="tr-sec__h">
+                里程碑
+              </h3>
+              <p class="tr-sec__lede">
+                實心圓是已發生，空心圓是公司或機構公布的時程，虛線圓是業界推測。所有趨勢的里程碑可以在
+                <a href={`${sectionHref('trends')}#timeline`}>關鍵時間軸</a>一起比較。
+              </p>
+              <MilestoneList milestones={view.milestones} color={cat.color} />
+            </section>
+          )}
+
+          {d && (
+            <div class="tr-sec">
+              <TrendSignals signals={d.signals} counterpoints={d.counterpoints} headingLevel={3} />
+            </div>
+          )}
+
+          {hasAffected && (
+            <section class="tr-sec" aria-labelledby="trend-affected">
+              <h3 id="trend-affected" class="tr-sec__h">
+                {affectedTitle}
+              </h3>
+              <TrendAffected segments={view.relatedSegments} companies={companies} models={models} terms={terms} />
+            </section>
+          )}
+        </section>
+      )
+    }
+  </Fragment>
+
+  <NextSteps
+    slot="next"
+    items={nextItems}
+    prev={prevT ? { href: trendHref(prevT.id), title: prevT.title } : undefined}
+    next={nextT ? { href: trendHref(nextT.id), title: nextT.title } : undefined}
+  />
+</ArticleLayout>
+
+<style>
+  .tr-badges {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .tr-cat__dot {
+    inline-size: 0.55rem;
+    block-size: 0.55rem;
+    border-radius: 50%;
+    background: var(--cc);
+  }
+  .tr-pending {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-5) var(--space-6);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    background: color-mix(in srgb, var(--c-bg-elev) 60%, transparent);
+    color: var(--c-fg-muted);
+  }
+  .tr-pending p {
+    margin: 0;
+  }
+  .tr-pending__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: var(--fs-l);
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+  }
+  .tr-pending__title :global(svg) {
+    flex: none;
+    color: var(--c-fg-subtle);
+  }
+  .tr-pending .tr-pending__sub {
+    margin-block-start: var(--space-2);
+    color: var(--c-fg);
+    font-weight: var(--fw-semibold);
+  }
+  .tr-pending__list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-inline-start: 1.2em;
+  }
+  .tr-pending__cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    margin-inline-start: 0.6em;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    white-space: nowrap;
+  }
+  .tr-pending__cat i {
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-radius: 50%;
+    background: var(--cc);
+  }
+  .tr-pending__soon {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+    margin-block-start: var(--space-2);
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--c-border);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .tr-pending__soon ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: var(--space-1) var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    line-height: 1.7;
+    color: var(--c-fg-subtle);
+  }
+  .tr-pending__soon li {
+    display: flex;
+    gap: 0.5em;
+  }
+  .tr-pending__soon li::before {
+    content: '';
+    flex: none;
+    inline-size: 0.35rem;
+    block-size: 0.35rem;
+    margin-block-start: 0.7em;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.6;
+  }
+  @media (max-width: 479px) {
+    .tr-pending {
+      padding: var(--space-4);
+    }
+  }
+
+  .tr-track {
+    margin-block-start: var(--space-8);
+    padding-block-start: var(--space-6);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .tr-track__head {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-end: var(--space-6);
+  }
+  .tr-track__h {
+    margin: 0;
+    font-size: var(--fs-2xl);
+    line-height: 1.3;
+    scroll-margin-block-start: calc(var(--header-h) + var(--space-4));
+  }
+  .tr-track__lede {
+    margin: 0;
+    color: var(--c-fg-muted);
+    max-width: var(--measure);
+  }
+  .tr-sec + .tr-sec {
+    margin-block-start: var(--space-7);
+  }
+  .tr-sec__h {
+    font-size: var(--fs-xl);
+    line-height: 1.35;
+    margin: 0 0 var(--space-2);
+    scroll-margin-block-start: calc(var(--header-h) + var(--space-4));
+  }
+  .tr-sec__lede {
+    margin: 0 0 var(--space-5);
+    color: var(--c-fg-muted);
+    font-size: var(--fs-s);
+    max-width: var(--measure);
+  }
+</style>

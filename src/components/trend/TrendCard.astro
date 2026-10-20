@@ -1,0 +1,214 @@
+---
+/**
+ * Trend card for /trends/: category dot, horizon years with a time bar, title (whole card clickable),
+ * description, confidence and impact badges. Carries data-* attributes for the client filter.
+ *   <TrendCard trend={view} axis={[2025, 2032]} />
+ * A registered trend whose article is not written yet shows a calm 「內容整理中」 state.
+ */
+import Badge from '../ui/Badge.astro';
+import HorizonBar from './HorizonBar.astro';
+import { CONFIDENCE_META, HORIZON_META, IMPACT_META, categoryMeta, yearsLabel, type TrendView } from './trend-meta';
+
+interface Props {
+  trend: TrendView;
+  axis: readonly [number, number];
+  headingLevel?: 2 | 3 | 4 | undefined;
+  /** show the category label in the top row (default true; off inside a category group) */
+  showCategory?: boolean | undefined;
+  class?: string | undefined;
+}
+const { trend: t, axis, headingLevel = 3, showCategory = true, class: className } = Astro.props;
+const H = `h${headingLevel}` as 'h2' | 'h3' | 'h4';
+const cat = categoryMeta(t.category);
+const hz = t.horizon ? HORIZON_META[t.horizon] : undefined;
+const conf = t.confidence ? CONFIDENCE_META[t.confidence] : undefined;
+const imp = t.impact ? IMPACT_META[t.impact] : undefined;
+const showWhen = !!(hz && t.horizonYears);
+const hasTop = showCategory || showWhen || !t.hasEntry;
+---
+
+<li
+  class:list={['tc', { 'tc--pending': !t.hasEntry }, className]}
+  style={`--tc: ${cat.color}`}
+  data-trend-card
+  data-category={t.category}
+  data-horizon={t.horizon ?? ''}
+  data-confidence={t.confidence ?? ''}
+>
+  {
+    hasTop && (
+      <div class="tc__top">
+        {showCategory && (
+          <span class="tc__cat">
+            <span class="tc__dot" aria-hidden="true" />
+            {cat.label}
+          </span>
+        )}
+        {showWhen ? (
+          <span class="tc__when">
+            {hz!.label}
+            <span class="tc__years">{yearsLabel(t.horizonYears)}</span>
+          </span>
+        ) : (
+          !t.hasEntry && <span class="tc__when tc__when--muted">內容整理中</span>
+        )}
+      </div>
+    )
+  }
+  <H class="tc__title"><a href={t.href} class="tc__link">{t.title}</a></H>
+  {t.description && <p class="tc__desc">{t.description}</p>}
+  {t.hasEntry && <HorizonBar years={t.horizonYears} axis={axis} color={cat.color} class="tc__bar" />}
+  {
+    (conf || imp) && (
+      <div class="tc__badges">
+        {conf && (
+          <Badge tone={conf.tone} title={conf.hint}>
+            信心 {conf.label}
+          </Badge>
+        )}
+        {imp && <Badge tone={imp.tone}>影響 {imp.label}</Badge>}
+        {t.milestones.length > 0 && <span class="tc__ms">{t.milestones.length} 個里程碑</span>}
+      </div>
+    )
+  }
+</li>
+
+<style>
+  .tc {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-4) var(--space-4) var(--space-4) calc(var(--space-4) + 3px);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: var(--shadow-1);
+    list-style: none;
+    transition:
+      border-color var(--dur-2) ease,
+      box-shadow var(--dur-2) ease,
+      transform var(--dur-2) var(--ease-out);
+  }
+  .tc::before {
+    content: '';
+    position: absolute;
+    inset-block: var(--space-4);
+    inset-inline-start: 0;
+    inline-size: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--tc);
+  }
+  .tc:hover {
+    border-color: color-mix(in srgb, var(--tc) 45%, var(--c-border));
+    box-shadow: var(--shadow-2);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tc:hover {
+      transform: translateY(-2px);
+    }
+  }
+  .tc:focus-within {
+    border-color: var(--c-focus);
+  }
+  .tc--pending {
+    background: color-mix(in srgb, var(--c-bg-elev) 55%, var(--c-bg));
+    box-shadow: none;
+  }
+  .tc--pending::before {
+    opacity: 0.45;
+  }
+  .tc__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-3);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.02em;
+    color: var(--c-fg-muted);
+  }
+  .tc__cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+  }
+  .tc__dot {
+    inline-size: 0.6rem;
+    block-size: 0.6rem;
+    border-radius: 50%;
+    background: var(--tc);
+  }
+  .tc__when {
+    display: inline-flex;
+    gap: 0.4em;
+    font-variant-numeric: tabular-nums;
+  }
+  .tc__years {
+    color: var(--c-fg);
+  }
+  .tc__when--muted {
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  .tc__title {
+    font-size: var(--fs-l);
+    line-height: 1.45;
+    /* Same CJK wrapping as ui/Card titles: break at spaces and punctuation, not inside words (「穿／戴」). */
+    text-wrap: pretty;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .tc__link {
+    color: var(--c-fg);
+    text-decoration: none;
+  }
+  .tc__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+  .tc__link:hover {
+    color: var(--c-link);
+  }
+  .tc__link:focus-visible {
+    outline: none;
+  }
+  .tc:has(.tc__link:focus-visible) {
+    outline: 3px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  .tc__desc {
+    margin: 0;
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .tc__desc--muted {
+    color: var(--c-fg-subtle);
+  }
+  /* the bar is a child component (its root carries its own scope), hence :global */
+  .tc > :global(.tc__bar) {
+    margin-block-start: auto;
+  }
+  .tc__badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .tc__ms {
+    margin-inline-start: auto;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

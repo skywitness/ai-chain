@@ -1,0 +1,336 @@
+---
+/**
+ * Card for one model family (directory on /models/). The whole card links to the family page;
+ * data-* attributes drive the client-side filters (ModelFilters).
+ *
+ *   <ModelFamilyCard family={f} />
+ *
+ * Without a content entry it shows the registry title and lab with a calm 「內容整理中」 note.
+ */
+import Icon from '../ui/Icon.astro';
+import { formatDate } from '../../lib/format';
+import {
+  AVAILABILITY_LABELS,
+  KIND_LABELS,
+  STATUS_LABELS,
+  OPENNESS_LABELS,
+  ORIGIN_LABELS,
+  benchmarkInfo,
+  benchmarkMap,
+  formatPricePair,
+  formatScore,
+  formatTokens,
+  kindColor,
+  noBreakParts,
+  opennessBucket,
+  originGroupOf,
+  pickBenchmark,
+  type FamilyView,
+} from './model-data';
+
+interface Props {
+  family: FamilyView;
+  headingLevel?: 3 | 4 | undefined;
+  /** benchmark ids to try for the key score (first hit wins) */
+  benchmarks?: readonly string[] | undefined;
+  as?: 'li' | 'div' | undefined;
+  /** hide the summary (used where the same card appears twice on a page) */
+  compact?: boolean | undefined;
+}
+const { family: f, headingLevel = 3, as = 'li', compact = false } = Astro.props;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+const Wrapper = as;
+const bmap = benchmarkMap();
+const KEY_BENCH: Record<string, string[]> = {
+  llm: ['aa-intelligence-index', 'lmarena-text', 'gpqa-diamond'],
+  image: ['aa-text-to-image-elo'],
+  video: ['aa-text-to-video-elo'],
+};
+const tryBench = Astro.props.benchmarks ?? KEY_BENCH[f.kind] ?? [];
+let key: { label: string; value: string; date: string } | undefined;
+for (const id of tryBench) {
+  const b = pickBenchmark(f.flagship, id);
+  if (b) {
+    const info = benchmarkInfo(id, bmap);
+    key = { label: info.zh.replace(/（.*?）/g, ''), value: formatScore(b.score, info), date: b.date };
+    break;
+  }
+}
+const d = f.data;
+/** Short badge text (the card's top row has little room): 「開放權重（限制授權）」→「有條件開放」 */
+const OPENNESS_SHORT: Record<string, string> = { closed: '封閉', restricted: '有條件開放', open: '開放權重', source: '完全開源', unknown: '整理中' };
+const group = originGroupOf(f.origin);
+const open = opennessBucket(f.opennessClass);
+const kindLabel = KIND_LABELS[f.kind] ?? f.kind;
+const ctx = f.flagship?.contextTokens;
+const fv = f.flagship;
+const facts: Array<{ label: string; value: string; note?: string | undefined }> = [];
+if (key) facts.push({ label: key.label, value: key.value, note: key.date });
+if (f.price) facts.push({ label: '價格（入／出）', value: formatPricePair(f.price), note: '每百萬 tokens' });
+if (ctx) facts.push({ label: '上下文', value: formatTokens(ctx), note: 'tokens' });
+if (fv) facts.push({ label: '狀態', value: STATUS_LABELS[fv.status] ?? fv.status, note: `發表於 ${fv.released}` });
+if (fv) facts.push({ label: '取用方式', value: fv.availability.map((a) => AVAILABILITY_LABELS[a] ?? a).join('、') });
+facts.splice(2);
+---
+
+<Wrapper
+  class:list={['mfc', { 'is-pending': !d }]}
+  data-model-card
+  data-kind={f.kind}
+  data-origin={group.id}
+  data-open={open}
+  style={`--kind-c: ${kindColor(f.kind)}`}
+>
+  <div class="mfc__top">
+    <span class="mfc__kind"><span class="mfc__dot" aria-hidden="true"></span>{kindLabel}</span>
+    <span class="mfc__origin">{ORIGIN_LABELS[f.origin] ?? f.origin}</span>
+    {d && <span class:list={['mfc__open', `is-${f.opennessClass}`]} title={OPENNESS_LABELS[f.opennessClass]}>{OPENNESS_SHORT[f.opennessClass]}</span>}
+  </div>
+  <H class="mfc__title"><a class="mfc__link" href={f.href}>{noBreakParts(f.title).map((p) => (p.keep ? <span class="mfc__nb">{p.text}</span> : p.text))}</a></H>
+  <p class="mfc__lab">{f.labName}</p>
+  {
+    d && f.flagship ? (
+      <>
+        <p class="mfc__flag">
+          <span class="mfc__flag-label">旗艦</span>
+          <strong>{f.flagship.name}</strong>
+          <span class="mfc__flag-date">{formatDate(f.flagship.released, 'ym-short')}</span>
+        </p>
+        {!compact && <p class="mfc__sum">{d.summary}</p>}
+        {facts.length > 0 && (
+          <dl class="mfc__facts">
+            {facts.map((x) => (
+              <div>
+                <dt>{x.label}</dt>
+                <dd>
+                  {x.value}
+                  {x.note && <small>{x.note.split(/(\d{4}-\d{2}-\d{2})/).map((t, i) => (i % 2 ? <span class="mfc__nw">{t}</span> : t))}</small>}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </>
+    ) : (
+      <>
+        <p class="mfc__sum mfc__sum--pending">特性分析、版本演進、價格與評測正在查證與撰寫，完成後會在這裡列出旗艦版本與關鍵指標。</p>
+        <p class="mfc__pending">
+          <Icon name="clock" />
+          <span>內容整理中</span>
+        </p>
+      </>
+    )
+  }
+</Wrapper>
+
+<style>
+  @layer components {
+    .mfc {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      min-width: 0;
+      padding: var(--space-5) var(--space-5) var(--space-4);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      box-shadow: var(--shadow-1);
+      list-style: none;
+      overflow: hidden;
+      transition:
+        border-color var(--dur-2) ease,
+        box-shadow var(--dur-2) ease,
+        transform var(--dur-2) var(--ease-out);
+    }
+    .mfc::before {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      inset-block-start: 0;
+      block-size: 3px;
+      background: var(--kind-c);
+    }
+    .mfc:hover {
+      border-color: var(--c-border-strong);
+      box-shadow: var(--shadow-2);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .mfc:hover {
+        transform: translateY(-2px);
+      }
+    }
+    .mfc:has(.mfc__link:focus-visible) {
+      outline: 2px solid var(--c-focus);
+      outline-offset: 2px;
+    }
+    .mfc__top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-1) var(--space-3);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      font-weight: var(--fw-semibold);
+      letter-spacing: 0.02em;
+    }
+    .mfc__kind {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+      color: var(--c-fg-muted);
+    }
+    .mfc__dot {
+      inline-size: 0.6em;
+      block-size: 0.6em;
+      border-radius: 50%;
+      background: var(--kind-c);
+    }
+    .mfc__open {
+      margin-inline-start: auto;
+      padding: 0.05em 0.55em;
+      border-radius: var(--radius-s);
+      border: 1px solid var(--c-border);
+      background: var(--c-bg-sunken);
+      color: var(--c-fg-muted);
+      white-space: nowrap;
+    }
+    .mfc__open.is-open,
+    .mfc__open.is-restricted,
+    .mfc__open.is-source {
+      color: var(--c-pos);
+      border-color: color-mix(in srgb, var(--c-pos) 35%, transparent);
+      background: color-mix(in srgb, var(--c-pos) 8%, transparent);
+    }
+    .mfc__title {
+      font-size: var(--fs-l);
+      line-height: 1.4;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+    .mfc__nb {
+      white-space: nowrap;
+    }
+    .mfc__link {
+      color: var(--c-fg);
+      text-decoration: none;
+    }
+    .mfc__link:hover {
+      color: var(--c-link-hover);
+    }
+    .mfc__link:focus-visible {
+      outline: none;
+    }
+    .mfc__link::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+    .mfc__lab {
+      margin-block-start: calc(-1 * var(--space-1));
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+    .mfc__flag {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.2em 0.5em;
+      font-size: var(--fs-s);
+    }
+    .mfc__flag-label {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      /* the categorical colour pulled toward the text colour so the small label stays legible */
+      color: color-mix(in srgb, var(--kind-c) 50%, var(--c-fg));
+      letter-spacing: 0.04em;
+    }
+    .mfc__flag-date {
+      color: var(--c-fg-subtle);
+      font-size: var(--fs-xs);
+      font-variant-numeric: tabular-nums;
+    }
+    .mfc__sum {
+      font-size: var(--fs-s);
+      line-height: 1.7;
+      color: var(--c-fg-muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    /* Phones: the directory is a scan list; summaries live on the family pages. */
+    @media (max-width: 639px) {
+      .mfc__sum:not(.mfc__sum--pending) {
+        display: none;
+      }
+      /* 47 cards in one column: keep each one short */
+      .mfc {
+        gap: var(--space-1);
+        padding: var(--space-4) var(--space-4) var(--space-3);
+      }
+      .mfc__title {
+        margin-block-start: var(--space-1);
+      }
+      .mfc__lab {
+        margin-block-start: 0;
+      }
+      .mfc__facts {
+        margin-block-start: var(--space-2);
+        padding-block-start: var(--space-2);
+      }
+    }
+    .mfc__sum--pending {
+      color: var(--c-fg-subtle);
+    }
+    .mfc__facts {
+      margin: auto 0 0;
+      padding-block-start: var(--space-3);
+      border-block-start: 1px solid var(--c-border);
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+    .mfc__facts dt {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      line-height: 1.4;
+    }
+    .mfc__facts dd {
+      margin: 0;
+      font-weight: var(--fw-semibold);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+    .mfc__facts small {
+      display: block;
+      overflow-wrap: normal;
+      font-weight: var(--fw-regular);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .mfc__nw {
+      white-space: nowrap;
+    }
+    .mfc__pending {
+      margin-block-start: auto;
+      display: inline-flex;
+      align-self: flex-start;
+      align-items: center;
+      gap: 0.4em;
+      padding: 0.2em 0.7em;
+      border: 1px dashed var(--c-border-strong);
+      border-radius: var(--radius-pill);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .mfc.is-pending {
+      background: color-mix(in srgb, var(--c-bg-elev) 60%, var(--c-bg));
+      box-shadow: none;
+    }
+    .mfc.is-pending::before {
+      opacity: 0.45;
+    }
+  }
+</style>

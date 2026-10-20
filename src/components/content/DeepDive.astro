@@ -1,0 +1,124 @@
+---
+/**
+ * Expandable advanced section (native <details>, works without JS).
+ *   <DeepDive title="深入一點：為什麼 EUV 要用反射鏡？">…</DeepDive>
+ */
+interface Props {
+  title?: string | undefined;
+  /** Start expanded */
+  open?: boolean | undefined;
+  /** Level hint shown as a small label (default 「深入一點」) */
+  label?: string | undefined;
+  class?: string | undefined;
+}
+const { title = '深入一點', open = false, label = '深入一點', class: className } = Astro.props;
+const showLabel = !title.startsWith(label);
+---
+
+<details class:list={['deepdive', className]} open={open}>
+  <summary class="deepdive__summary">
+    <span class="deepdive__marker" aria-hidden="true"></span>
+    <span class="deepdive__heading">
+      {showLabel && <span class="deepdive__label">{label}</span>}
+      <span class="deepdive__title">{title}</span>
+    </span>
+    <span class="deepdive__hint" aria-hidden="true"><span class="deepdive__hint-open">展開</span><span class="deepdive__hint-close">收合</span></span>
+  </summary>
+  <div class="deepdive__body">
+    <slot />
+  </div>
+</details>
+
+<style>
+  @layer components {
+    .deepdive {
+      margin-block: 1.8em;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      max-width: calc(var(--measure) + 2.5rem);
+      box-shadow: var(--shadow-1);
+    }
+    .deepdive__summary {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-height: 3.25rem;
+      padding: var(--space-3) var(--space-5);
+      cursor: pointer;
+      list-style: none;
+      border-radius: var(--radius-l);
+    }
+    .deepdive__summary::-webkit-details-marker {
+      display: none;
+    }
+    .deepdive__summary:hover {
+      background: var(--c-hover);
+    }
+    .deepdive__marker {
+      flex: none;
+      inline-size: 1.5rem;
+      block-size: 1.5rem;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--level-3) 14%, transparent);
+      position: relative;
+    }
+    .deepdive__marker::before,
+    .deepdive__marker::after {
+      content: '';
+      position: absolute;
+      inset: 50% auto auto 50%;
+      inline-size: 0.7rem;
+      block-size: 2px;
+      border-radius: 1px;
+      background: var(--level-3);
+      translate: -50% -50%;
+      transition: rotate var(--dur-2) var(--ease-out);
+    }
+    .deepdive__marker::after {
+      rotate: 90deg;
+    }
+    .deepdive[open] .deepdive__marker::after {
+      rotate: 0deg;
+    }
+    .deepdive__heading {
+      display: grid;
+      gap: 0.1em;
+      flex: 1;
+      min-width: 0;
+    }
+    .deepdive__label {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--level-3);
+    }
+    .deepdive__title {
+      font-weight: var(--fw-bold);
+      line-height: 1.5;
+    }
+    .deepdive__hint {
+      flex: none;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .deepdive__hint-close,
+    .deepdive[open] .deepdive__hint-open {
+      display: none;
+    }
+    .deepdive[open] .deepdive__hint-close {
+      display: inline;
+    }
+    .deepdive__body {
+      padding: 0 var(--space-5) var(--space-5);
+      border-block-start: 1px dashed var(--c-border);
+      padding-block-start: var(--space-4);
+    }
+    .deepdive__body > :global(* + *) {
+      margin-block-start: 1em;
+    }
+    .deepdive__body :global(:where(ul, ol)) {
+      padding-inline-start: 1.4em;
+    }
+  }
+</style>

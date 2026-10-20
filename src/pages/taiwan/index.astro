@@ -1,0 +1,803 @@
+---
+/**
+ * /taiwan/ 「台灣 AI 供應鏈：從晶圓到伺服器」
+ * Head + key stats → taiwan-map scene with its text companion (sites.yaml by region) and the HQ distribution →
+ * intro (pages entry "taiwan") → AI-server division of labour (the concept first) → segment × company matrix
+ * (the full catalogue) → monthly revenue YoY heatmap → policy and risks → next steps → sources.
+ * Data: roster companies with region TW, `financials` month series, src/data/taiwan/sites.yaml (optional),
+ * pages entry "taiwan" (optional). Every part has a calm fallback while data is missing.
+ */
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Scene3D from '../../components/scene/Scene3D.astro';
+import Stat from '../../components/ui/Stat.astro';
+import Icon from '../../components/ui/Icon.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Heatmap from '../../components/charts/Heatmap.astro';
+import SourcesList from '../../components/content/SourcesList.astro';
+import NextSteps from '../../components/content/NextSteps.astro';
+import { mdxComponents } from '../../components/content/mdx-components';
+import TaiwanMatrix from '../../components/taiwan/TaiwanMatrix.astro';
+import ServerDivision from '../../components/taiwan/ServerDivision.astro';
+import TaiwanPolicy from '../../components/taiwan/TaiwanPolicy.astro';
+import TaiwanSites from '../../components/taiwan/TaiwanSites.astro';
+import TaiwanHqBars from '../../components/taiwan/TaiwanHqBars.astro';
+import TaiwanShareBars from '../../components/taiwan/TaiwanShareBars.astro';
+import {
+  getTaiwanCompanies,
+  getTaiwanFinancials,
+  sizeMap,
+  taiwanHeatmap,
+  taiwanMatrix,
+  taiwanShareByLayer,
+  taiwanStats,
+} from '../../components/taiwan/taiwan-data';
+import { getTrendViews } from '../../components/trend/trend-meta';
+import { buildTaiwanSceneData, readTaiwanSites } from '../../lib/scene-data/taiwan';
+import { getRosterCompany, safeEntry, TIER_LABELS, type RosterCompany } from '../../lib/collections';
+import { formatSignedPercent, monthLabel } from '../../lib/format';
+import { sectionHref } from '../../lib/paths';
+import { DATA_DATE, articleJsonLd, datasetJsonLd } from '../../lib/seo';
+import type { SourceT } from '../../schemas/common';
+
+// ── data ──
+const companies = getTaiwanCompanies();
+const fins = await getTaiwanFinancials(companies);
+const sizes = sizeMap(fins);
+const matrix = taiwanMatrix(companies, sizes);
+const heat = taiwanHeatmap(fins, 24);
+const stats = taiwanStats(companies, fins);
+const shares = taiwanShareByLayer();
+const trends = await getTrendViews();
+
+// taiwan-map scene: sites.yaml + roster companies (undefined → the scene shows its illustrative fixture)
+const sites = readTaiwanSites();
+const sceneInput = (c: RosterCompany) => ({
+  id: c.id,
+  nameZh: c.nameZh,
+  segment: c.segment,
+  lat: c.hq.lat,
+  lon: c.hq.lon,
+  city: c.hq.cityZh,
+  cityEn: c.hq.city,
+});
+const sceneData = buildTaiwanSceneData(companies.map(sceneInput), sites, (id) => {
+  const c = getRosterCompany(id);
+  return c ? sceneInput(c) : undefined;
+});
+
+// pages entry "taiwan" (intro); optional
+const page = await safeEntry('pages', 'taiwan');
+let Intro: Awaited<ReturnType<typeof render>>['Content'] | undefined;
+if (page) {
+  try {
+    Intro = (await render(page)).Content;
+  } catch (err) {
+    console.warn(`[taiwan] could not render pages/taiwan: ${(err as Error).message}`);
+  }
+}
+const pageData = page?.data as { title?: string; description?: string; updated?: string; sources?: SourceT[] } | undefined;
+const pageSources: SourceT[] = pageData?.sources ?? [];
+// sources behind the map sites (sites.yaml), de-duplicated and listed separately from the intro's sources
+const seenUrls = new Set(pageSources.map((s) => s.url));
+const mapSources: SourceT[] = [];
+for (const s of sites ?? [])
+  for (const src of s.sources ?? []) {
+    if (seenUrls.has(src.url)) continue;
+    seenUrls.add(src.url);
+    mapSources.push({ ...src, key: `map-${mapSources.length + 1}` });
+  }
+
+// ── copy ──
+const title = '台灣 AI 供應鏈：從晶圓到伺服器';
+const description =
+  pageData?.description ??
+  '台灣在 AI 產業鏈的位置：晶圓代工與先進封裝、IC 設計、伺服器代工、散熱電源與網通零組件。整理各環節的台灣公司、AI 伺服器分工、月營收年增熱度圖與政策風險。';
+const tierCounts = ([1, 2, 3] as const).map((t) => `${TIER_LABELS[t]} ${stats.tiers[t]}`).join('・');
+const refMonthLabel = stats.refMonth ? monthLabel(stats.refMonth) : '';
+const heatSources = [
+  { title: '各公司每月營業收入（自結數，未經會計師查核）', publisher: '公開資訊觀測站', url: 'https://mops.twse.com.tw/' },
+];
+const firstCol = heat.columns[0];
+const heatNotes = [
+  '年增率＝當月營收相較去年同月的變化。藍色越深代表成長越多，橘色越深代表衰退越多，接近灰色代表與去年同月相近；斜線格代表無資料或尚未公布。',
+  firstCol
+    ? `本站收錄各公司近 24 個月的月營收；計算年增率需要去年同月的數字，所以熱度圖從 ${monthLabel(firstCol)}開始。`
+    : null,
+  heat.latestMonth && heat.latestReported < heat.count
+    ? `${monthLabel(heat.latestMonth)}營收依規定於次月 10 日前公布，截至資料基準日已有 ${heat.latestReported}／${heat.count} 家公布。`
+    : null,
+  '各公司的資料來源與原始數字列於各公司頁面。',
+];
+
+// 「繼續探索」 trend: the Taiwan policy article once it is written, else a written trend that matters most to
+// Taiwanese suppliers (the policy article is already the lead card of 「政策與風險」).
+const NEXT_TREND_PICKS = [
+  { id: 'taiwan-ai-policy', kicker: '政策與算力布局' },
+  { id: 'cowos-capacity-panel-level', kicker: '先進封裝的下一步' },
+  { id: 'memory-supercycle', kicker: '台廠也在其中的記憶體循環' },
+  { id: 'hbm4-custom-base-die', kicker: '晶圓代工切入記憶體' },
+  { id: 'co-packaged-optics', kicker: '光通訊與封裝的交會' },
+];
+const nextTrend = NEXT_TREND_PICKS.find((p) => trends.some((t) => t.id === p.id && t.hasEntry)) ?? NEXT_TREND_PICKS[0]!;
+
+// jump links
+const toc = [
+  { href: '#map', label: '地圖' },
+  { href: '#server', label: 'AI 伺服器分工' },
+  { href: '#matrix', label: '各環節的台灣公司' },
+  { href: '#revenue', label: '月營收熱度圖' },
+  { href: '#policy', label: '政策與風險' },
+];
+
+const jsonLd = [
+  articleJsonLd({
+    title,
+    description,
+    path: Astro.url,
+    site: Astro.site,
+    dateModified: pageData?.updated ?? DATA_DATE,
+    section: '台灣供應鏈',
+  }),
+  ...(heat.count > 0
+    ? [
+        datasetJsonLd({
+          name: '台灣 AI 供應鏈公司月營收年增率',
+          description: `台灣 AI 產業鏈 ${heat.count} 家上市櫃公司的每月營收年增率，依產業鏈環節分組。`,
+          path: Astro.url,
+          site: Astro.site,
+          sources: heatSources,
+          keywords: ['台灣', 'AI 供應鏈', '月營收', '年增率'],
+        }),
+      ]
+    : []),
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  breadcrumbs={[{ label: '台灣供應鏈' }]}
+  section="taiwan"
+  jsonLd={jsonLd}
+  sources={pageSources}
+  modifiedTime={pageData?.updated}
+>
+  <span hidden data-pagefind-filter="類型:產業鏈"></span>
+  <span hidden data-pagefind-filter="地區:台灣"></span>
+
+  <div class="container">
+    <header class="page-head tw-head">
+      <p class="page-head__kicker">台灣供應鏈 · {stats.companies} 家公司 · 14 個環節</p>
+      <h1 data-pagefind-weight="10">{title}</h1>
+      <p class="page-head__lede">
+        從一片晶圓、一顆 GPU，到一整櫃 AI 伺服器，台灣廠商幾乎出現在 AI 硬體的每一個環節。這一頁用地圖、矩陣與月營收熱度圖，看懂台灣在產業鏈上的位置與分工。
+      </p>
+      <div class="tw-head__meta">
+        <DataAsOf date={DATA_DATE} />
+        <nav class="tw-jump" aria-label="本頁段落" data-pagefind-ignore>
+          {toc.map((t) => <a href={t.href}>{t.label}</a>)}
+        </nav>
+      </div>
+    </header>
+
+    <section class="tw-stats" aria-label="關鍵數字">
+      <ul class="tw-stats__list" role="list">
+        <li><Stat label="台灣 AI 產業鏈公司" value={stats.companies} unit="家" note={tierCounts} size="l" /></li>
+        <li><Stat label="涵蓋產業鏈環節" value={stats.segmentsCovered} unit="／14" note="含主要與兼營環節" size="l" /></li>
+        <li><Stat label="公布月營收的公司" value={stats.withMonthly} unit="家" note="上市櫃公司每月公告營收" size="l" /></li>
+        {
+          stats.refMonth && (
+            <li>
+              <Stat
+                label={`${refMonthLabel}營收年增`}
+                value={stats.refUp}
+                unit={`／${stats.refReported} 家`}
+                note={stats.refMedianYoy != null ? `年增率中位數 ${formatSignedPercent(stats.refMedianYoy)}` : undefined}
+                size="l"
+              />
+            </li>
+          )
+        }
+        {
+          stats.refMonth && stats.refRecord > 0 && (
+            <li>
+              <Stat label="單月營收創新高" value={stats.refRecord} unit="家" note={`${refMonthLabel}為資料期間內最高`} size="l" />
+            </li>
+          )
+        }
+      </ul>
+      <p class="tw-stats__note">
+        依本站公司名冊（{stats.companies} 家台灣公司）與各公司公告的月營收計算，資料截至 {DATA_DATE}。數字僅供認識產業之用，不構成投資建議。
+      </p>
+    </section>
+  </div>
+
+  <section class="container section tw-map" id="map" aria-labelledby="map-h">
+    <div class="sec-head">
+      <h2 id="map-h">台灣 AI 供應鏈地圖</h2>
+      <p class="sec-head__lede">
+        北從台北、新竹，經竹南、台中，南到台南、高雄：晶圓廠、封測廠、伺服器與零組件廠沿著西部走廊聚集。旋轉地圖看看高塔分布，或對照園區清單逐一認識各個園區與廠區。
+      </p>
+    </div>
+    <div class:list={['tw-map__grid', { 'tw-map__grid--solo': !sites }]}>
+      <Scene3D
+        id="taiwan-map"
+        variant="map"
+        height="tall"
+        autoload="visible"
+        data={sceneData}
+        caption="立體台灣地圖：高塔代表科學園區、廠區與企業總部聚落，高度是本站名冊的公司數量；園區清單以外的公司，依總部位置併入附近的園區或城市。弧線表示晶片與伺服器出貨到世界各地。"
+        class="tw-map__scene"
+      />
+      {
+        sites ? (
+          <aside class="tw-map__side" aria-labelledby="sites-h">
+            <div class="tw-map__scroll" tabindex="0" role="region" aria-label="園區與廠區清單（可捲動）">
+              <h3 id="sites-h" class="tw-map__side-h">
+                園區與廠區
+                <span class="tw-map__side-n">{sites.length} 處</span>
+              </h3>
+              <TaiwanSites sites={sites} headingLevel={4} />
+            </div>
+          </aside>
+        ) : (
+          <aside class="tw-map__side" aria-labelledby="hq-h-side">
+            <div class="tw-map__scroll" tabindex="0" role="region" aria-label="公司總部分布（可捲動）">
+              <h3 id="hq-h-side" class="tw-map__side-h">公司總部分布</h3>
+              <TaiwanHqBars companies={companies} maxChips={4} class="tw-hq--side" />
+            </div>
+          </aside>
+        )
+      }
+    </div>
+    {
+      sites && (
+        <div class="tw-hq">
+          <div class="tw-hq__head">
+            <h3 id="hq-h" class="tw-hq__title">公司總部分布</h3>
+            <p class="tw-hq__lede">
+              本站名冊的 {companies.length} 家台灣公司依總部所在城市統計，色條長度是公司家數，晶片列出各地的代表公司（一線在前）。
+            </p>
+          </div>
+          <TaiwanHqBars companies={companies} />
+        </div>
+      )
+    }
+  </section>
+
+  <section class="container section tw-intro" aria-label="導讀">
+    {!Intro && <h2 class="sr-only">導讀</h2>}
+    <div class="tw-intro__grid">
+      {
+        Intro ? (
+          <div class="prose tw-intro__prose">
+            <Intro components={mdxComponents} />
+          </div>
+        ) : (
+          <div class="tw-intro__pending">
+            <p class="tw-intro__lead">
+              台灣的強項集中在 AI 硬體：晶圓代工與先進封裝把晶片做出來，IC 設計與設計服務把晶片設計出來，伺服器代工廠再把晶片、電路板、電源與散熱組裝成整櫃系統。下面的矩陣與分工圖，可以一步步看懂每家公司站在哪個位置。
+            </p>
+            <p class="tw-intro__note">
+              <Icon name="info" />
+              更完整的導讀內容整理中。
+            </p>
+          </div>
+        )
+      }
+      <aside class="tw-intro__aside" aria-label="台灣公司在各環節的占比">
+        <TaiwanShareBars layers={shares} headingLevel={2} />
+      </aside>
+    </div>
+  </section>
+
+  <section class="container section" id="server" aria-labelledby="server-h">
+    <div class="sec-head">
+      <h2 id="server-h">一台 AI 伺服器的台灣分工</h2>
+      <p class="sec-head__lede">
+        伺服器業界用 L1 到 L12 描述組裝的完整程度：L6 是主機板層級，L10 是可以開機的整機，L11 是整個機櫃，L12 則是多櫃組成的叢集。從晶片到整櫃，台灣廠商分工合作把 AI 伺服器送進全球的資料中心。
+      </p>
+    </div>
+    <ServerDivision />
+    <p class="tw-fine">代表廠商為示意，依本站名冊中各公司的主要業務整理，並非完整名單，也不代表特定客戶關係。</p>
+  </section>
+
+  <section class="container section" id="matrix" aria-labelledby="matrix-h">
+    <div class="sec-head">
+      <h2 id="matrix-h">各環節的台灣公司</h2>
+      <p class="sec-head__lede">
+        依本站名冊的主要環節分類，一線公司排在最前面，同層級依近 12 個月營收由大到小排列。「兼營」欄是主要業務在其他環節、但也跨足這一環的公司。
+      </p>
+    </div>
+    <div class="tw-legend" aria-hidden="true">
+      <span class="tw-legend__chip tw-legend__chip--t1">一線</span>
+      <span class="tw-legend__chip">二線</span>
+      <span class="tw-legend__chip tw-legend__chip--t3">三線與新創</span>
+      <span class="tw-legend__chip tw-legend__chip--muted">兼營</span>
+    </div>
+    <TaiwanMatrix rows={matrix} />
+  </section>
+
+  <section class="container section" id="revenue" aria-labelledby="revenue-h">
+    <div class="sec-head">
+      <h2 id="revenue-h">月營收熱度圖</h2>
+      <p class="sec-head__lede">
+        台灣上市櫃公司每月公布營收，是觀察 AI 需求最即時的指標之一。每一列是一家公司，每一格是一個月份的營收年增率：藍色代表成長，橘色代表衰退。列依產業鏈環節分組，組內依營收規模排列。
+      </p>
+    </div>
+    {
+      heat.count > 0 ? (
+        <div class="tw-heat" data-pagefind-ignore>
+          <Heatmap
+            title="一線與二線公司：月營收年增率"
+            subtitle={`${heat.main.length} 家公司，${monthLabel(heat.columns[0] ?? '')}至${monthLabel(heat.columns.at(-1) ?? '')}`}
+            columns={heat.columns}
+            rows={heat.main}
+            asOf={DATA_DATE}
+            sources={heatSources}
+            notes={heatNotes}
+            clip={60}
+            as="h3"
+          />
+          {heat.rest.length > 0 && (
+            <details class="tw-more">
+              <summary>
+                <span>展開其餘 {heat.rest.length} 家三線與新創公司</span>
+                <Icon name="chevron-down" />
+              </summary>
+              <Heatmap
+                title="三線與新創公司：月營收年增率"
+                subtitle={`${heat.rest.length} 家公司`}
+                columns={heat.columns}
+                rows={heat.rest}
+                asOf={DATA_DATE}
+                sources={heatSources}
+                clip={60}
+                as="h3"
+              />
+            </details>
+          )}
+        </div>
+      ) : (
+        <p class="tw-empty">
+          <Icon name="data" /> 月營收資料整理中。
+        </p>
+      )
+    }
+  </section>
+
+  <section class="container section" id="policy" aria-labelledby="policy-h">
+    <div class="sec-head">
+      <h2 id="policy-h">政策與風險</h2>
+      <p class="sec-head__lede">
+        台灣在 AI 硬體的關鍵地位，也帶來集中與外部環境的風險。下面整理最常被討論的幾個面向，詳細的時間表與觀察指標請見各篇趨勢分析。
+      </p>
+    </div>
+    <TaiwanPolicy trends={trends} />
+  </section>
+
+  <section class="container section tw-next">
+    <NextSteps
+      title="繼續探索"
+      items={[
+        { segment: 'foundry-packaging', kicker: '台灣最關鍵的一環' },
+        { segment: 'servers-systems', kicker: '伺服器代工與零組件' },
+        { trend: nextTrend.id, kicker: nextTrend.kicker },
+        {
+          href: sectionHref('companies'),
+          title: '公司資料庫',
+          description: '用「地區」篩選台灣公司，查看產品、技術與營收。',
+          kicker: '公司',
+        },
+      ]}
+    />
+    {pageSources.length > 0 && <SourcesList sources={pageSources} />}
+    {
+      mapSources.length > 0 && (
+        <details class="tw-mapsrc">
+          <summary>
+            <span>地圖園區與廠區的資料來源（{mapSources.length} 筆）</span>
+            <Icon name="chevron-down" />
+          </summary>
+          <SourcesList
+            sources={mapSources}
+            title="園區與廠區資料來源"
+            id="map-sources"
+            headingLevel={3}
+            note="地圖與園區清單的位置、說明與進駐公司整理自下列來源；科學園區的座標是園區代表點，不是單一廠房。"
+            class="tw-mapsrc__list"
+          />
+        </details>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .tw-head {
+    padding-block-end: var(--space-5);
+  }
+  .tw-head__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-5);
+    margin-block-start: var(--space-2);
+  }
+  .tw-jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+  }
+  .tw-jump a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2.25rem;
+    padding: 0 0.8em;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    background: var(--c-bg-elev);
+    color: var(--c-fg);
+    font-size: var(--fs-s);
+    text-decoration: none;
+  }
+  .tw-jump a:hover {
+    border-color: var(--c-border-strong);
+    background: var(--c-hover);
+  }
+
+  .tw-stats {
+    margin-block: var(--space-4) var(--space-2);
+  }
+  .tw-stats__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--c-border);
+    border-block-start: 3px solid var(--scene-tw-accent);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: var(--shadow-1);
+    overflow: hidden;
+  }
+  .tw-stats__list > li {
+    padding: var(--space-4) var(--space-5);
+    border-block-end: 1px solid var(--c-border);
+    border-inline-end: 1px solid var(--c-border);
+    margin: 0 -1px -1px 0;
+  }
+  @media (max-width: 599px) {
+    .tw-stats__list > li {
+      padding: var(--space-3) var(--space-4);
+    }
+  }
+  /* two columns on phones: an odd last tile spans the row instead of leaving an empty cell */
+  @media (min-width: 360px) and (max-width: 599px) {
+    .tw-stats__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .tw-stats__list > li:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+  }
+  .tw-stats__note {
+    margin: var(--space-3) 0 0;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+
+  .sec-head {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-end: var(--space-5);
+  }
+  .sec-head h2 {
+    font-size: var(--fs-2xl);
+    scroll-margin-block-start: calc(var(--header-h) + var(--space-4));
+  }
+  .sec-head__lede {
+    margin: 0;
+    max-width: 46em;
+    color: var(--c-fg-muted);
+  }
+  section[id] {
+    scroll-margin-block-start: calc(var(--header-h) + var(--space-2));
+  }
+
+  /* ── map ── */
+  .tw-map__grid {
+    display: grid;
+    gap: var(--space-5);
+  }
+  @media (min-width: 1000px) {
+    .tw-map__grid {
+      grid-template-columns: minmax(0, 1.7fr) minmax(18rem, 1fr);
+      align-items: start;
+    }
+  }
+  .tw-map__grid :global(.tw-map__scene) {
+    margin: 0;
+  }
+  .tw-map__side {
+    position: relative;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    overflow: hidden;
+  }
+  .tw-map__scroll {
+    padding: var(--space-4) var(--space-4) var(--space-6);
+    max-block-size: 30rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .tw-map__scroll:focus-visible {
+    outline: 3px solid var(--c-focus);
+    outline-offset: -3px;
+    border-radius: var(--radius-l);
+  }
+  .tw-map__side::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    block-size: 2.5rem;
+    background: linear-gradient(transparent, var(--c-bg-elev));
+    pointer-events: none;
+    border-radius: 0 0 var(--radius-l) var(--radius-l);
+  }
+  .tw-map__side-h {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    margin: 0 0 var(--space-3);
+    font-size: var(--fs-l);
+  }
+  .tw-map__side-n {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  @media (min-width: 1000px) {
+    .tw-map__side {
+      align-self: stretch;
+      min-block-size: 20rem;
+    }
+    .tw-map__scroll {
+      position: absolute;
+      inset: 0;
+      max-block-size: none;
+    }
+  }
+
+  .tw-hq {
+    display: grid;
+    gap: var(--space-4);
+    margin-block-start: var(--space-6);
+    padding: var(--space-5);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .tw-hq__head {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .tw-hq__title {
+    margin: 0;
+    font-size: var(--fs-l);
+  }
+  .tw-hq__lede {
+    margin: 0;
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+    max-width: 46em;
+  }
+  .tw-map__side :global(.tw-hq--side ol) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* ── intro ── */
+  .tw-intro {
+    padding-block-start: 0;
+  }
+  .tw-intro__grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+  @media (min-width: 1100px) {
+    .tw-intro__grid {
+      grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+      gap: var(--space-8);
+      align-items: start;
+    }
+    .tw-intro__aside {
+      position: sticky;
+      inset-block-start: calc(var(--header-h) + var(--space-4));
+    }
+  }
+  .tw-intro__prose {
+    max-width: 48rem;
+    min-width: 0;
+  }
+  /* next to the share panel the intro column is narrow: two stat tiles per row instead of four cramped ones */
+  @media (min-width: 1100px) {
+    .tw-intro__prose :global(.stat-grid__list) {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    }
+  }
+  .tw-intro__pending {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 48rem;
+    padding: var(--space-5) var(--space-6);
+    border-inline-start: 3px solid var(--scene-tw-accent);
+    border-radius: 0 var(--radius-l) var(--radius-l) 0;
+    background: color-mix(in srgb, var(--scene-tw-accent) 4%, var(--c-bg-elev));
+  }
+  .tw-intro__lead {
+    margin: 0;
+    font-size: var(--fs-l);
+    line-height: 1.8;
+  }
+  .tw-intro__note {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    margin: 0;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+
+  /* ── matrix ── */
+  .tw-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-block-end: var(--space-4);
+    font-size: var(--fs-xs);
+  }
+  .tw-legend__chip {
+    padding: 0.15em 0.6em;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-s);
+    background: var(--c-bg-elev);
+  }
+  .tw-legend__chip--t1 {
+    border-color: color-mix(in srgb, var(--c-accent) 45%, var(--c-border));
+    background: color-mix(in srgb, var(--c-accent) 7%, var(--c-bg-elev));
+    font-weight: var(--fw-semibold);
+  }
+  .tw-legend__chip--t3 {
+    background: transparent;
+    color: var(--c-fg-muted);
+  }
+  .tw-legend__chip--muted {
+    border-style: dashed;
+    border-color: var(--c-border-strong);
+    background: transparent;
+    color: var(--c-fg-muted);
+  }
+
+  .tw-fine {
+    margin: var(--space-4) 0 0;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+
+  /* ── heatmap ── */
+  .tw-heat {
+    display: grid;
+    gap: var(--space-5);
+  }
+  /* Company names in the heatmap are links: give each row a 24px target (WCAG 2.5.8) instead of the
+     chart's default 20px rows, and make the whole label cell clickable. */
+  .tw-heat :global(.ch-hm__rl) {
+    line-height: 24px;
+  }
+  .tw-heat :global(.ch-hm__rl a) {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tw-heat :global(.ch-hm__cell) {
+    height: 24px;
+  }
+  .tw-more {
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .tw-more > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-block-size: var(--tap);
+    padding: var(--space-2) var(--space-5);
+    font-weight: var(--fw-semibold);
+    cursor: pointer;
+    list-style: none;
+  }
+  .tw-more > summary::-webkit-details-marker {
+    display: none;
+  }
+  .tw-more > summary :global(svg) {
+    flex: none;
+    transition: transform var(--dur-2) ease;
+  }
+  .tw-more[open] > summary :global(svg) {
+    transform: rotate(180deg);
+  }
+  .tw-more > summary:focus-visible {
+    outline: 3px solid var(--c-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-l);
+  }
+  .tw-more[open] {
+    padding-block-end: var(--space-4);
+  }
+  .tw-more > :global(:not(summary)) {
+    margin-inline: var(--space-4);
+  }
+  /* ── map sources ── */
+  .tw-mapsrc {
+    margin-block-start: var(--space-6);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .tw-mapsrc > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-block-size: var(--tap);
+    padding: var(--space-2) var(--space-5);
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+    cursor: pointer;
+    list-style: none;
+  }
+  .tw-mapsrc > summary::-webkit-details-marker {
+    display: none;
+  }
+  .tw-mapsrc > summary:hover {
+    color: var(--c-fg);
+  }
+  .tw-mapsrc > summary :global(svg) {
+    flex: none;
+    transition: transform var(--dur-2) ease;
+  }
+  .tw-mapsrc[open] > summary :global(svg) {
+    transform: rotate(180deg);
+  }
+  .tw-mapsrc > summary:focus-visible {
+    outline: 3px solid var(--c-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-l);
+  }
+  .tw-mapsrc :global(.tw-mapsrc__list) {
+    margin: 0;
+    padding: var(--space-2) var(--space-5) var(--space-5);
+    border-block-start: 1px solid var(--c-border);
+  }
+  /* the policy section above already ends with generous padding */
+  .tw-next :global(.next) {
+    margin-block-start: 0;
+  }
+  .tw-empty {
+    display: flex;
+    gap: 0.5em;
+    align-items: center;
+    padding: var(--space-5);
+    border: 1px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    color: var(--c-fg-muted);
+  }
+</style>

@@ -1,0 +1,135 @@
+/*
+ * Utilities: small single-purpose helpers. Highest cascade layer, so they beat component defaults.
+ * Owner: design-system agent.
+ */
+@layer utilities {
+  .sr-only,
+  .visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  /* Hidden until JS has run (theme-init adds html.js) / shown only without JS */
+  html:not(.js) .js-only {
+    display: none !important;
+  }
+  html.js .no-js-only {
+    display: none !important;
+  }
+
+  .muted {
+    color: var(--c-fg-muted);
+  }
+  .subtle {
+    color: var(--c-fg-subtle);
+  }
+  .pos {
+    color: var(--c-pos);
+  }
+  .neg {
+    color: var(--c-neg);
+  }
+  .warn {
+    color: var(--c-warn);
+  }
+
+  .num,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .mono {
+    font-family: var(--font-mono);
+  }
+  .nowrap {
+    white-space: nowrap;
+  }
+  /* Added by src/lib/remark-cjk.mjs: keeps a citation with the character before it, and closing
+     punctuation with the chip / term before it, so neither starts a line. Popover cards inside wrap normally. */
+  .cjk-glue {
+    white-space: nowrap;
+  }
+  /* The chip or term is an atomic box that may already be as wide as the line (「AI 晶片與加速器（GPU／ASIC／
+     CPU）」 on a 320px phone): leave room for the punctuation glued after it; the chip ellipsizes, the term wraps. */
+  .cjk-glue > :where(.chip),
+  .cjk-glue :where(.term) {
+    max-width: calc(100% - 2em);
+  }
+  .cjk-glue :where([popover]) {
+    white-space: normal;
+  }
+  .balance {
+    text-wrap: balance;
+  }
+
+  .fs-xs {
+    font-size: var(--fs-xs);
+  }
+  .fs-s {
+    font-size: var(--fs-s);
+  }
+  .fs-m {
+    font-size: var(--fs-m);
+  }
+  .fs-l {
+    font-size: var(--fs-l);
+  }
+  .fs-xl {
+    font-size: var(--fs-xl);
+  }
+
+  /* Half-width spacing helpers for mixed CJK/Latin runs when a literal space is not wanted
+     (e.g. around inline components). Prefer typing a real half-width space in prose. */
+  .sp-before {
+    margin-inline-start: 0.25em;
+  }
+  .sp-after {
+    margin-inline-end: 0.25em;
+  }
+  .sp-x {
+    margin-inline: 0.25em;
+  }
+
+  .mt-0 {
+    margin-block-start: 0 !important;
+  }
+  .mb-0 {
+    margin-block-end: 0 !important;
+  }
+  .mt-s {
+    margin-block-start: var(--space-3);
+  }
+  .mt-m {
+    margin-block-start: var(--space-5);
+  }
+  .mt-l {
+    margin-block-start: var(--space-7);
+  }
+
+  .text-center {
+    text-align: center;
+  }
+  .w-full {
+    width: 100%;
+  }
+
+  /* Segment colour helper: style="--seg: var(--seg-foundry-packaging)" then use .seg-dot / .seg-rule */
+  .seg-dot {
+    display: inline-block;
+    inline-size: 0.6em;
+    block-size: 0.6em;
+    border-radius: 50%;
+    background: var(--seg, var(--c-accent));
+    flex: none;
+  }
+  .seg-rule {
+    border-inline-start: 3px solid var(--seg, var(--c-accent));
+    padding-inline-start: var(--space-3);
+  }
+}

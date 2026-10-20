@@ -1,0 +1,257 @@
+---
+title: "神經網路入門：神經元、權重與層"
+subtitle: "從一個人工神經元，到上兆個參數的大模型"
+description: "神經網路是由許多人工神經元一層層串起來的數學函數。本文從單一神經元的加權加總講起，說明激勵函數、層與前向傳播，再看參數規模如何成長，以及為什麼神經網路需要 GPU 與 HBM。"
+level: 1
+order: 104
+track: foundations
+prerequisites: [how-machines-learn]
+next: [what-is-llm, why-gpus]
+relatedSegments: [ai-accelerators, memory-storage, foundry-packaging, foundation-models]
+relatedCompanies: [nvidia, amd, alphabet, broadcom, tsmc, sk-hynix, samsung-electronics, micron, deepseek, meta, openai]
+relatedModels: [deepseek, meta-muse-llama, openai-gpt]
+relatedTrends: [open-weights-race, custom-asic-rise, memory-supercycle]
+glossary:
+  - neural-network
+  - parameter
+  - deep-learning
+  - activation-function
+  - softmax
+  - inference
+  - training
+  - loss-function
+  - backpropagation
+  - gradient-descent
+  - llm
+  - token
+  - transformer
+  - moe
+  - active-parameters
+  - matrix-multiplication
+  - gpu
+  - tensor-core
+  - tpu
+  - asic
+  - hbm
+scenes:
+  - id: neural-net
+    variant: forward
+keyTakeaways:
+  - "神經網路由許多人工神經元組成，每個神經元把輸入乘上權重、加總，再經過激勵函數輸出。"
+  - "神經元排成輸入層、隱藏層與輸出層；隱藏層疊得越多，網路就越「深」，這就是深度學習。"
+  - "所有權重與偏差就是參數；訓練靠反向傳播與梯度下降，把它們調到能做出正確預測。"
+  - "參數規模快速放大：2012 年 AlexNet 有 6,000 萬個，2026 年的 DeepSeek-V4-Pro 已達 1.6 兆。"
+  - "神經網路的核心運算是矩陣乘法，因此需要 GPU 等加速器，以及裝得下大量權重的 HBM。"
+estimatedMinutes: 11
+sources:
+  - key: 3b1b
+    title: "But what is a Neural Network?"
+    publisher: 3Blue1Brown
+    url: "https://www.3blue1brown.com/lessons/neural-networks"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "784–16–16–10 的手寫數字辨識網路共有 13,002 個權重與偏差，作者稱之為 13,002 個可以調整的旋鈕與轉盤。"
+  - key: wiki-perceptron
+    title: "Perceptron"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Perceptron"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "1943 年 McCulloch 與 Pitts 提出人工神經元；1957 年 Rosenblatt 在康乃爾航空實驗室以 IBM 704 模擬感知器。"
+  - key: rumelhart-1986
+    title: "Learning representations by back-propagating errors"
+    publisher: Nature
+    url: "https://www.nature.com/articles/323533a0"
+    type: paper
+    lang: en
+    published: "1986-10-09"
+    accessed: "2026-10-06"
+    note: "Rumelhart、Hinton、Williams，Nature 323 卷 533–536 頁。"
+  - key: nobel-2024
+    title: "Press release: The Nobel Prize in Physics 2024"
+    publisher: NobelPrize.org
+    url: "https://www.nobelprize.org/prizes/physics/2024/press-release/"
+    type: press-release
+    lang: en
+    published: "2024-10-08"
+    accessed: "2026-10-06"
+    note: "得獎理由：for foundational discoveries and inventions that enable machine learning with artificial neural networks。"
+  - key: alexnet
+    title: "ImageNet Classification with Deep Convolutional Neural Networks"
+    publisher: NeurIPS Proceedings
+    url: "https://papers.nips.cc/paper_files/paper/2012/file/c399862d3b9d6b76c8436e924a68c45b-Paper.pdf"
+    type: paper
+    lang: en
+    accessed: "2026-10-06"
+    note: "論文 PDF 摘要：6,000 萬個參數、65 萬個神經元；以此模型的變體參加 ILSVRC-2012，top-5 錯誤率 15.3%（第二名 26.2%）；以兩張 GTX 580 3GB 訓練 5–6 天。論文集摘要頁仍是較早版本的摘要（50 萬個神經元），故改連 PDF。"
+  - key: gpt3
+    title: "Language Models are Few-Shot Learners"
+    publisher: OpenAI（arXiv）
+    url: "https://arxiv.org/abs/2005.14165"
+    type: paper
+    lang: en
+    published: "2020-05-28"
+    accessed: "2026-10-06"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: Meta AI（arXiv）
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-06"
+    note: "旗艦模型 405B 參數；訓練用的每顆 H100 配備 80GB HBM3。"
+  - key: deepseek-v4
+    title: "DeepSeek-V4-Pro model card"
+    publisher: DeepSeek（Hugging Face）
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-06"
+    note: "MoE 架構，總參數 1.6T、啟用 49B；DeepSeek API 於 2026-04-24 開始提供 V4-Pro 預覽版。"
+  - key: gpt4
+    title: "GPT-4 Technical Report"
+    publisher: OpenAI（arXiv）
+    url: "https://arxiv.org/abs/2303.08774"
+    type: paper
+    lang: en
+    published: "2023-03-15"
+    accessed: "2026-10-06"
+  - key: eleuther
+    title: "Transformer Math 101"
+    publisher: EleutherAI
+    url: "https://blog.eleuther.ai/transformer-math/"
+    type: other
+    lang: en
+    published: "2023-04-18"
+    accessed: "2026-10-06"
+    note: "前向傳播約 2 × 參數量 × token 數次浮點運算；fp16／bf16 每個參數占 2 位元組；訓練另需存放梯度與最佳化器狀態（AdamW 每個參數約 12 位元組）。"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: learn-02
+  checkedBy: "learn-02-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：3Blue1Brown、維基百科 Perceptron、Nature 1986 摘要、諾貝爾新聞稿、AlexNet 論文 PDF、GPT-3／GPT-4／Llama 3 論文、DeepSeek-V4-Pro 模型卡、EleutherAI 皆逐一核對；範例算式與 93 個參數已重算。AlexNet 來源改連論文 PDF（論文集摘要頁為舊版摘要）；DeepSeek-V4-Pro 發布日更正為 2026-04-24。"
+---
+
+## 一句話解釋
+
+<Term id="neural-network">神經網路</Term>是由很多「人工神經元」一層一層串起來的數學函數：每個神經元把收到的數字乘上各自的權重、加總起來，再決定要輸出多少。整個網路裡所有的權重（加上每個神經元的偏差），就是模型的<Term id="parameter">參數</Term>。上一篇<LearnLink id="how-machines-learn">機器如何學習</LearnLink>說的「訓練」，放到神經網路裡，就是把這些權重調到對的數值。
+
+## 生活化比喻
+
+<Callout type="analogy" title="把神經網路想成一間層層開會的公司">
+
+公司要決定「要不要推出新產品」：
+
+- **第一線員工＝輸入層**：每人回報一項數字，例如市調分數、成本、對手動態。
+- **中階主管＝隱藏層**：每位主管都會聽所有員工的報告，但各有偏好，有人特別重視成本、有人幾乎不看市調。這個「重視程度」就是**權重**，可以是正的（數字越高越支持），也可以是負的（數字越高越反對）。主管心裡還有一道門檻，也就是**偏差**，總分沒過門檻就不表態。
+- **高層＝輸出層**：彙整各層主管的意見，給出最後結論。
+- **事後檢討＝訓練**：決策錯了就回頭追查，哪位主管太相信哪份報告，下次把重視程度調一調。
+
+公司裡沒有任何一個人知道「全局規則」，但每個人把自己的重視程度調好之後，整體就能做出好決策。3Blue1Brown 的教學則把權重與偏差比喻成一顆顆可以轉動的旋鈕：一個辨識手寫數字的小網路，就有 13,002 顆這樣的旋鈕<Cite k="3b1b" />。
+
+</Callout>
+
+## 原理
+
+### 一個人工神經元在做什麼
+
+用一個生活例子：判斷「今天要不要去跑步」。神經元收到三個介於 0 到 1 的輸入：天氣好不好（x₁）、有沒有空（x₂）、腿有多痠（x₃）。它替每個輸入配一個權重：天氣 w₁ = 0.6，有空 w₂ = 0.8（最重要），腿痠 w₃ = −0.5（越痠越不想去，所以是負的），再加上偏差 b = −0.4。計算方式是：
+
+<MathTeX tex="y = f(w_1 x_1 + w_2 x_2 + w_3 x_3 + b)" display label="輸出等於激勵函數作用在加權加總加上偏差" />
+
+- 天氣很好、有空、腿有點痠（1、1、0.6）：0.6 + 0.8 − 0.3 − 0.4 = 0.7，大於 0，傾向去跑步。
+- 天氣差、只有一點空、腿很痠（0.1、0.5、1）：0.06 + 0.4 − 0.5 − 0.4 = −0.44，小於 0，今天休息。
+
+這就是一個人工神經元的全部工作：**加權加總，再過一道關卡**。這個想法很早就出現了：1943 年 McCulloch 與 Pitts 提出人工神經元的數學模型，1957 年 Rosenblatt 在 IBM 704 電腦上模擬出能學習的「感知器」<Cite k="wiki-perceptron" />。今天大模型裡的神經元，骨子裡仍是同一套概念。
+
+### 激勵函數：讓網路學會「彎曲」的規律
+
+公式裡的 f 叫<Term id="activation-function">激勵函數</Term>（也譯作啟動函數）。如果沒有它，每個神經元只是在做加權加總，不管疊幾層，整個網路在數學上都等於一次大的加權加總，只能表示直線式（線性）的關係，學不會「天氣太熱反而不想跑」這種轉彎的規律。最常用的激勵函數叫 ReLU，規則很簡單：負數一律變成 0，正數維持原樣。
+
+<MathTeX tex="f(z) = \max(0, z)" display label="ReLU 等於 0 與 z 之中較大的那一個" />
+
+輸出層則常用 <Term id="softmax">Softmax</Term>，把幾個分數轉成加總為 100% 的機率，例如「貓 70%、狗 25%、鳥 5%」。
+
+### 層：輸入層、隱藏層、輸出層
+
+神經元會排成一層一層：**輸入層**接收原始資料，**輸出層**給出答案，中間的叫**隱藏層**，因為它們不直接接觸外界的輸入或輸出，訓練資料也不會告訴它們該算出什麼，要由網路自己學出有用的中間特徵。下面這個 3D 場景是一個小型網路：左邊 4 個輸入代表動物特徵（耳朵尖、體型大、有羽毛、叫聲高），中間兩個隱藏層各 6 個神經元，右邊 3 個輸出代表貓、狗、鳥的機率。
+
+<Scene3D id="neural-net" variant="forward" caption="4–6–6–3 小型神經網路：光點由左往右流動就是前向傳播。連線越粗代表權重的絕對值越大，青色為正、橘色為負；神經元越亮代表輸出越大。資料為示意。" />
+
+這個網路有幾個參數？每條連線是一個權重，每個隱藏層與輸出層的神經元各有一個偏差：
+
+| 連接 | 權重 | 偏差 | 小計 |
+|---|---|---|---|
+| 輸入層 → 第一隱藏層 | 4 × 6 = 24 | 6 | 30 |
+| 第一隱藏層 → 第二隱藏層 | 6 × 6 = 36 | 6 | 42 |
+| 第二隱藏層 → 輸出層 | 6 × 3 = 18 | 3 | 21 |
+| **合計** | | | **93** |
+
+這個示意網路只有 93 個旋鈕，已經足以練習區分三種動物。3Blue1Brown 示範的手寫數字網路（784 個輸入、兩層各 16 個神經元、10 個輸出）則有 13,002 個<Cite k="3b1b" />。常見的直覺是：前面的層負責抓簡單特徵，後面的層把它們組合成更抽象的概念。隱藏層疊得越多，網路就越「深」，這正是<Term id="deep-learning">深度學習</Term>名稱的由來。
+
+### 前向傳播：資料由左往右流
+
+<FlowSteps
+  title="前向傳播的步驟"
+  steps={[
+    { title: "輸入", detail: "把特徵轉成數字，例如「有羽毛」記為 1" },
+    { title: "加權加總", detail: "每個神經元把上一層的輸出乘上權重、加總、加上偏差" },
+    { title: "激勵函數", detail: "決定這個神經元要「亮」多少" },
+    { title: "逐層傳遞", detail: "這一層的輸出，成為下一層的輸入" },
+    { title: "輸出機率", detail: "用 Softmax 轉成貓、狗、鳥各自的機率" }]}
+/>
+
+我們使用 AI 時發生的<Term id="inference">推論</Term>，本質上就是前向傳播：權重固定不動，資料從頭流到尾，得出答案。大型語言模型每產生一個 <Term id="token">token</Term>，就要完整跑一次前向傳播，所以回答越長，運算越多。
+
+### 權重從哪裡來：反向傳播
+
+剛建好的網路，權重是隨機的，預測就像亂猜。<Term id="training">訓練</Term>時，先做一次前向傳播，把預測和正確答案比較，用<Term id="loss-function">損失函數</Term>算出誤差；接著用<Term id="backpropagation">反向傳播</Term>把誤差從輸出層一路往回傳，算出每個權重對這次錯誤「該負多少責任」；最後用<Term id="gradient-descent">梯度下降</Term>把每個權重往減少誤差的方向微調。這個循環重複非常多次，網路就學會了。
+
+反向傳播的經典論文是 Rumelhart、Hinton 與 Williams 在 1986 年發表於《自然》（Nature）期刊的研究：反覆調整連線的權重，讓網路實際輸出與期望輸出之間的差距越來越小<Cite k="rumelhart-1986" />。2024 年，Hopfield 與 Hinton 因為「讓人工神經網路得以進行機器學習的基礎發現與發明」獲頒諾貝爾物理學獎<Cite k="nobel-2024" />。在上面的 3D 場景中，用導覽的「下一步」走到「反向傳播」步驟，就能看到誤差往回流、權重被調整的過程。
+
+### 從 6,000 萬到 1.6 兆：越來越大的網路
+
+神經網路的轉捩點出現在 2012 年。AlexNet 有 6,000 萬個參數、65 萬個神經元；作者以它的改良版本參加 ImageNet 影像辨識競賽（ILSVRC-2012），拿下 15.3% 的 top-5 錯誤率（模型猜的前五個答案都不對的比例），第二名是 26.2%。這個網路是用兩張輝達（NVIDIA）GTX 580 遊戲顯示卡訓練了五到六天<Cite k="alexnet" />。作者在論文中甚至寫道，只要等更快的 GPU 和更大的資料集出現，結果還能更好。此後十多年，網路規模一路放大：
+
+| 年份 | 模型 | 參數量 | 說明 |
+|---|---|---|---|
+| 2012 | AlexNet | 6,000 萬 | 影像辨識，兩張 GTX 580 訓練 5–6 天 |
+| 2020 | GPT-3 | 1,750 億 | 大型語言模型 |
+| 2024 | Llama 3 405B | 4,050 億 | 稠密模型，每個 token 都用到全部參數 |
+| 2026 | DeepSeek-V4-Pro | 1.6 兆 | MoE 架構，每個 token 只啟用 490 億 |
+
+表中數字分別來自 AlexNet 論文<Cite k="alexnet" />、GPT-3 論文<Cite k="gpt3" />、Llama 3 論文<Cite k="llama3" />與 DeepSeek 官方模型卡<Cite k="deepseek-v4" />。今天的大型語言模型（<Term id="llm">LLM</Term>）大多採用 <Term id="transformer">Transformer</Term> 架構，但拆開來看，仍是由神經元、權重與層組成。最新的大模型還常用 <Term id="moe">MoE</Term>（混合專家）設計：把網路分成許多「專家」，每個 token 只交給其中幾位處理。以 DeepSeek-V4-Pro 為例，總參數雖有 1.6 兆，每個 token 實際動用的<Term id="active-parameters">啟用參數</Term>只有 490 億<Cite k="deepseek-v4" />。
+
+也要注意，並不是每家公司都公開參數量。OpenAI 在 GPT-4 技術報告中就明言，基於競爭與安全考量，不公開模型大小等架構細節<Cite k="gpt4" />。所以我們能精確比較的，多半是開放權重模型。
+
+<DeepDive title="深入一點：一層神經網路，其實就是一次矩陣乘法">
+
+把一整層神經元一起看，每個神經元的加權加總，可以寫成「權重矩陣 W 乘上輸入向量 x」：
+
+<MathTeX tex="y = f(W x + b)" display label="輸出等於激勵函數作用在權重矩陣乘輸入再加偏差" />
+
+W 的每一列（橫的一排）對應一個神經元，每一行（直的一排）對應一個輸入。以 3D 場景的第一個隱藏層為例，W 就是一個 6 列 4 行的矩陣。實務上會一次處理很多筆資料，於是變成「矩陣乘矩陣」。也就是說，神經網路絕大部分的運算都是<Term id="matrix-multiplication">矩陣乘法</Term>：大量彼此獨立、規則一致的「乘完再加」，非常適合交給擁有成千上萬個運算核心的 <Term id="gpu">GPU</Term>，以及專門做矩陣運算的 <Term id="tensor-core">Tensor Core</Term>（張量核心）平行處理。
+
+**運算量有多大？** EleutherAI 整理的經驗法則是：前向傳播每處理一個 token，大約需要「2 × 參數量」次浮點運算，因為每個權重都要做一次乘法和一次加法<Cite k="eleuther" />。以此換算（不計注意力機制等其他運算），Llama 3 405B 每個 token 約需 8,100 億次浮點運算；DeepSeek-V4-Pro 只動用 490 億個啟用參數，每個 token 約 980 億次。這正是 MoE 能省下運算的原因。
+
+**記憶體要多大？** 權重必須放在運算單元旁邊的記憶體裡。若以 16 位元格式儲存，每個參數占 2 位元組<Cite k="eleuther" />，4,050 億個參數就是 810 GB。Meta 訓練 Llama 3 用的每顆 H100 配備 80 GB 的 HBM3 記憶體<Cite k="llama3" />，光是把 16 位元的權重放進去，就需要超過 10 顆 GPU；訓練時還要另外存放梯度與最佳化器的狀態，需要的記憶體更多<Cite k="eleuther" />。而且模型每產生一個 token，都要把用到的權重從記憶體讀過一遍，所以記憶體不只要大，傳輸速度也要夠快。這也是為什麼 AI 晶片離不開<Term id="hbm">HBM</Term>（高頻寬記憶體），細節可以看<LearnLink id="memory-and-hbm">記憶體牆與 HBM</LearnLink>。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+神經網路的三個特性：大量矩陣乘法、大量權重、越做越大，直接決定了 AI 硬體的樣貌：
+
+- **矩陣乘法要算得快** → <SegmentChip id="ai-accelerators" />：<CompanyChip id="nvidia" />、<CompanyChip id="amd" /> 的 GPU 是主力；<CompanyChip id="alphabet" /> 的 <Term id="tpu">TPU</Term>，以及 <CompanyChip id="broadcom" /> 協助雲端業者打造的客製化 <Term id="asic">ASIC</Term>，都是專為這類運算打造的晶片（見<TrendLink id="custom-asic-rise">客製化 ASIC 崛起</TrendLink>）。AlexNet 用兩張遊戲顯示卡就拿下冠軍，讓研究者看見 GPU 在神經網路上的潛力。
+- **權重要放得下、讀得快** → <SegmentChip id="memory-storage" />：HBM 主要由 <CompanyChip id="sk-hynix" />、<CompanyChip id="samsung-electronics" />、<CompanyChip id="micron" /> 供應，模型越大，對記憶體的需求越高（見<TrendLink id="memory-supercycle">記憶體超級循環</TrendLink>）。
+- **晶片要做得出來** → <SegmentChip id="foundry-packaging" />：<CompanyChip id="tsmc" /> 替 GPU 與 ASIC 製造晶片，並用先進封裝把運算晶片和 HBM 放在一起。
+- **網路要設計得好** → <SegmentChip id="foundation-models" />：<CompanyChip id="deepseek" />（<ModelChip id="deepseek" />）、<CompanyChip id="meta" />（<ModelChip id="meta-muse-llama" />）、<CompanyChip id="openai" />（<ModelChip id="openai-gpt" />）等實驗室決定網路要多大、怎麼排列；開放權重模型的參數競賽，見<TrendLink id="open-weights-race">開放權重競賽</TrendLink>。
+
+理解了神經元、權重與層，下一步可以看<LearnLink id="what-is-llm">大型語言模型是什麼</LearnLink>，了解神經網路如何學會「預測下一個字」；或是讀<LearnLink id="why-gpus">為什麼 AI 需要 GPU？</LearnLink>，看矩陣乘法如何帶動整個晶片產業。

@@ -1,0 +1,85 @@
+---
+/**
+ * 「重點整理」 box from frontmatter `keyTakeaways`. ArticleLayout renders it automatically after the body.
+ *   <KeyTakeaways items={entry.data.keyTakeaways} />
+ */
+interface Props {
+  items: readonly string[];
+  title?: string | undefined;
+  headingLevel?: 2 | 3 | undefined;
+  id?: string | undefined;
+  class?: string | undefined;
+}
+const { items, title = '重點整理', headingLevel = 2, id = 'key-takeaways', class: className } = Astro.props;
+const H = `h${headingLevel}` as 'h2' | 'h3';
+---
+
+{
+  items.length > 0 && (
+    <section class:list={['takeaways', className]} aria-labelledby={id}>
+      <H class="takeaways__title" id={id}>
+        {title}
+      </H>
+      <ol class="takeaways__list" role="list">
+        {items.map((t, i) => (
+          <li>
+            <span class="takeaways__n" aria-hidden="true">
+              {i + 1}
+            </span>
+            <span>{t}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
+<style>
+  @layer components {
+    .takeaways {
+      margin-block: var(--space-7) 0;
+      padding: var(--space-5) var(--space-5) var(--space-4);
+      border-radius: var(--radius-l);
+      background: var(--c-accent-soft);
+      border: 1px solid color-mix(in srgb, var(--c-accent) 22%, transparent);
+      max-width: calc(var(--measure) + 2.5rem);
+    }
+    .takeaways__title {
+      font-size: var(--fs-l);
+      margin: 0 0 var(--space-3);
+      padding: 0;
+      letter-spacing: 0.04em;
+    }
+    .takeaways__title::before {
+      display: none;
+    }
+    .takeaways__list {
+      display: grid;
+      gap: var(--space-3);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .takeaways__list li {
+      display: grid;
+      grid-template-columns: 1.75rem minmax(0, 1fr);
+      gap: var(--space-2);
+      align-items: start;
+      line-height: 1.7;
+      margin: 0;
+    }
+    .takeaways__n {
+      display: inline-grid;
+      place-items: center;
+      inline-size: 1.6rem;
+      block-size: 1.6rem;
+      margin-block-start: 0.1em;
+      border-radius: 50%;
+      background: var(--c-accent);
+      color: var(--c-accent-fg);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-bold);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+</style>

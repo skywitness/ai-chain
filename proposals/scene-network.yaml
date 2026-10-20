@@ -1,0 +1,62 @@
+# Proposals from the network scene agent, 2026-10-15.
+# Nothing here blocks the scene: each capability is implemented locally in
+# src/three/scenes/network/ (mostly common.ts) and can move to the kit / core unchanged.
+
+- id: polylines
+  target: src/three/kit/Polylines.ts
+  problem: >
+    Network diagrams draw hundreds of thin cables, fibres, tray outlines and links that must be
+    recoloured and faded one by one (highlight one GPU's six NVLink cables, dim a bay, fade the
+    fibres towards the next rack) while staying one draw call. `ctx.materials.line` gives one
+    colour per LineSegments, so every scene rebuilds per-vertex RGBA buffers by hand.
+  proposal: >
+    `new Polylines(ctx, lines: Vector3[][])` → `{ object: LineSegments, count, set(i, color, alpha),
+    commit() }`: all polylines in one LineSegments with a vertex-colour + alpha attribute
+    (transparent, depthWrite false, toneMapped false); `set` rewrites only that line's range.
+  workaround: src/three/scenes/network/common.ts (class Polylines).
+
+- id: faded-floor
+  target: src/three/kit/Floor.ts
+  problem: >
+    The "technical diorama" floor (a grid whose lines fade out elliptically towards the edges, plus
+    a soft radial contact glow under the subject) is re-implemented per scene with slightly
+    different tints, so floors do not match across scenes and theme tuning is duplicated.
+  proposal: >
+    `addFloor(ctx, parent, { w, d, step, y?, cx?, cz?, glow?: [w, d] })` → `{ apply(palette) }`
+    using --scene-grid / --scene-fg (light) and --scene-flow (dark) with fixed per-theme alphas;
+    called from onPalette.
+  workaround: src/three/scenes/network/common.ts (addFloor).
+
+- id: orbit-pose
+  target: src/three/core/types.ts (helper next to CameraPose)
+  problem: >
+    Step and hotspot poses are easier to tune as (target, distance, azimuth, elevation) than as
+    raw camera positions; every scene writes its own spherical-offset helper.
+  proposal: >
+    `orbitPose(target, dist, azDeg, elDeg, fov?)` → CameraPose (azimuth from +Z towards +X,
+    elevation above the XZ plane), exported from core so poses read the same in every scene.
+  workaround: src/three/scenes/network/common.ts (orbitPose).
+
+- id: rounded-polyline
+  target: src/three/kit/PathFlow.ts (static helper) or kit/shared.ts
+  problem: >
+    Cable and packet routes are Manhattan polylines (tray → rear connector → spine → switch).
+    Catmull-Rom smoothing (`PathFlow smooth: true`) overshoots on such routes, while sharp corners
+    look mechanical; the routes need short, bounded corner bends.
+  proposal: >
+    `roundedPolyline(points, radius, steps)`: each inner corner becomes a quadratic bend clipped to
+    45 % of the adjacent segments; usable both for PathFlow paths and for Polylines / TubeGeometry.
+  workaround: src/three/scenes/network/common.ts (rounded).
+
+- id: cross-variant-hotspots
+  target: src/three/core/hotspots.ts (same request as scene-hbm.yaml / scene-cowos.yaml)
+  problem: >
+    meta.json hotspots span three variants (rack parts, fabric switches, optics). Picking one from
+    the HTML list while another variant is mounted needs "switch variant, then focus + select".
+  proposal: >
+    A `variant` field on meta hotspots (or HotspotSpec): the host switches variant, waits for the
+    new instance, then focuses and selects the hotspot.
+  workaround: >
+    src/three/scenes/network/index.ts registers list-only proxies for the other variants' hotspots;
+    their onSelect dispatches `scene:command {type:'variant'}` and remembers the id, and the new
+    instance focuses / selects it after the host has applied the step.

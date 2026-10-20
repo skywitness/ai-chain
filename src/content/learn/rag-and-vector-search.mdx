@@ -1,0 +1,328 @@
+---
+title: "RAG 與向量檢索：讓模型查資料"
+subtitle: "先翻書、再作答：用向量搜尋替模型找到對的那幾頁"
+description: "語言模型的知識停在訓練那天，也看不到企業內部文件。RAG 讓模型回答前先檢索資料。本文說明切塊、嵌入、向量資料庫與近似最近鄰搜尋，混合檢索與重排序如何提升準確度，以及 RAG 與長上下文的取捨。"
+level: 2
+order: 206
+track: models
+prerequisites: [tokens-and-embeddings]
+next: [agents-and-mcp, inference-optimization, model-evaluation]
+relatedSegments: [devtools-data-mlops, apps-agents, foundation-models, cloud-neocloud, memory-storage]
+relatedCompanies: [pinecone, zilliz, qdrant, weaviate, elastic, mongodb, supabase, databricks, langchain, openai, alphabet, cohere, anthropic, meta, microsoft, glean, perplexity, thomson-reuters, harvey, apmic]
+relatedModels: [openai-gpt, google-gemini, anthropic-claude, cohere-command, meta-muse-llama]
+relatedTrends: [long-context-memory, agentic-ai-standards, ai-monetization, sovereign-ai]
+glossary:
+  - rag
+  - prompt
+  - llm
+  - embedding
+  - hallucination
+  - parameter
+  - fine-tuning
+  - token
+  - vector-database
+  - context-window
+  - prompt-caching
+  - function-calling
+  - mcp
+  - agent
+  - prompt-injection
+  - dram
+  - ssd
+scenes:
+  - { id: embedding-space, variant: rag }
+keyTakeaways:
+  - "RAG 是「先查再答」：回答前先從外部資料找出最相關的段落，貼進提示，讓模型依資料作答並附出處。"
+  - "只要更新資料庫就能更新知識，不必重新訓練；RAG 論文換用新索引後，答對新領導人的比例從 4% 升到 68%。"
+  - "建索引要先切塊、再轉成嵌入向量存進向量資料庫；提問時找出意思最接近的段落。"
+  - "近似最近鄰演算法如 HNSW 用多層鄰居圖，以些微準確度換取在大量向量中快速搜尋。"
+  - "混合關鍵字檢索與重排序可再降低漏找：Anthropic 實驗的檢索失敗率從 5.7% 降到 1.9%。"
+  - "小型知識庫可直接放進長上下文；資料一大，RAG 在成本與準確度上仍有優勢。"
+estimatedMinutes: 15
+sources:
+  - key: rag-2020
+    title: "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"
+    publisher: "arXiv（Lewis et al., Facebook AI Research、University College London、New York University；NeurIPS 2020）"
+    url: "https://arxiv.org/abs/2005.11401"
+    type: paper
+    lang: en
+    published: "2020-05-22"
+    accessed: "2026-10-15"
+    note: "結合預訓練 seq2seq 模型（參數記憶）與維基百科稠密向量索引（非參數記憶）；在三項開放領域問答創下最佳成績，生成內容比只靠參數的模型更具體、多樣且符合事實。以 2018 年 12 月的維基百科切成不重疊、每段 100 個英文單字的段落，共 2,100 萬段；索引放在 CPU 記憶體約需 100 GB，以 Faiss 壓縮後降到 36 GB。索引抽換實驗：另以 2016 年 12 月的維基百科（DrQA 版本）建立索引，詢問 82 位在兩個版本之間更換的各國領導人，2016 索引答 2016 領導人 70%、2018 索引答 2018 領導人 68%，索引錯配時僅 12% 與 4%。"
+  - key: dpr
+    title: "Dense Passage Retrieval for Open-Domain Question Answering"
+    publisher: "arXiv（Karpukhin et al., Facebook AI 等；EMNLP 2020）"
+    url: "https://arxiv.org/abs/2004.04906"
+    type: paper
+    lang: en
+    published: "2020-04-10"
+    accessed: "2026-10-15"
+    note: "以雙編碼器學出的稠密向量檢索，在多個開放領域問答資料集上，前 20 筆段落的檢索準確率比 Lucene-BM25 高出 9% 到 19%（絕對值）。"
+  - key: hnsw
+    title: "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs"
+    publisher: "arXiv（Malkov, Yashunin）"
+    url: "https://arxiv.org/abs/1603.09320"
+    type: paper
+    lang: en
+    published: "2016-03-30"
+    accessed: "2026-10-15"
+    note: "以多層鄰近圖做近似 K 最近鄰搜尋：每個元素出現的最高層以指數遞減的機率隨機決定，從最上層開始搜尋，達到對數等級的複雜度；結構類似跳躍串列（skip list）。"
+  - key: faiss
+    title: "The Faiss library"
+    publisher: "arXiv（Douze et al., Meta FAIR 等）"
+    url: "https://arxiv.org/abs/2401.08281"
+    type: paper
+    lang: en
+    published: "2024-01-16"
+    accessed: "2026-10-15"
+    note: "Faiss 是專門做向量相似度搜尋的工具庫，提供索引、分群、壓縮與轉換；Zilliz、Pinecone 等主要向量資料庫業者以 Faiss 為核心引擎或重新實作其演算法。第 7.1 節示範為 1.5 兆個 144 維向量建立索引，每個向量壓縮到 54 個位元組（PCA 降到 72 維加 6 位元純量量化）；先在數百台伺服器（每台 256 GB RAM）上分片建立，最後由中央機器以記憶體映射方式載入放在分散式檔案系統上的倒排串列（共 83 TiB）。相關研究中，Microsoft 的 DiskANN 原本即為同時利用 RAM 與快閃記憶體而設計。"
+  - key: lost-middle
+    title: "Lost in the Middle: How Language Models Use Long Contexts"
+    publisher: "arXiv（Liu et al., Stanford University 等；TACL）"
+    url: "https://arxiv.org/abs/2307.03172"
+    type: paper
+    lang: en
+    published: "2023-07-06"
+    accessed: "2026-10-15"
+    note: "相關資訊放在輸入開頭或結尾時表現最好，放在長上下文中間時明顯變差（U 型曲線）；GPT-3.5-Turbo 的多文件問答表現可下降超過 20%，在 20 與 30 份文件的最差情況下，甚至低於完全不給文件的閉卷表現（56.1%）。"
+  - key: graphrag
+    title: "From Local to Global: A Graph RAG Approach to Query-Focused Summarization"
+    publisher: "arXiv（Edge et al., Microsoft Research 等）"
+    url: "https://arxiv.org/abs/2404.16130"
+    type: paper
+    lang: en
+    published: "2024-04-24"
+    accessed: "2026-10-15"
+    note: "一般 RAG 不擅長回答「資料集的主要議題是什麼」這類全局問題；GraphRAG 先用語言模型從文件建立實體知識圖譜，再預先生成各群組摘要；在約 100 萬 Token 規模的資料上，答案的完整度與多樣性明顯優於一般 RAG。"
+  - key: contextual-retrieval
+    title: "Introducing Contextual Retrieval"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/engineering/contextual-retrieval"
+    type: company-site
+    lang: en
+    published: "2024-09-19"
+    accessed: "2026-10-15"
+    note: "知識庫小於 20 萬 Token（約 500 頁）可直接整份放進提示，搭配提示快取延遲減半、成本最多省 90%；RAG 通常把文件切成不超過數百 Token 的段落。段落脫離上下文的例子：「公司營收比上一季成長 3%」；為每段加上 50–100 Token 的說明後再嵌入與建立 BM25 索引。BM25 能精準命中錯誤代碼 TS-999 這類字串。前 20 筆的檢索失敗率（1 − recall@20）：5.7% → 3.7%（上下文嵌入，減 35%）→ 2.9%（加上下文 BM25，減 49%）→ 1.9%（再加重排序，減 67%）；圖表為各知識領域（程式碼庫、小說、arXiv 論文、科學論文）的平均，使用表現最佳的 Gemini Text 004 嵌入模型；重排序測試使用 Cohere reranker。"
+  - key: openai-retrieval
+    title: "Retrieval"
+    publisher: OpenAI API Docs
+    url: "https://developers.openai.com/api/docs/guides/retrieval"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "向量儲存預設把每個檔案切成 800 Token 的段落、相鄰段落重疊 400 Token；混合搜尋以 reciprocal rank fusion 合併語意與關鍵字結果，可調整兩者權重；儲存費用：所有向量儲存合計 1 GB 以內免費，超過部分每 GB 每天 0.10 美元。"
+  - key: openai-emb
+    title: "text-embedding-3-small model page"
+    publisher: OpenAI API Docs
+    url: "https://developers.openai.com/api/docs/models/text-embedding-3-small"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "text-embedding-3-small 價格為每百萬 Token 0.02 美元。"
+  - key: gemini-embedding
+    title: "Embeddings"
+    publisher: Google AI for Developers
+    url: "https://ai.google.dev/gemini-api/docs/embeddings"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "gemini-embedding-2 是 Gemini API 第一個多模態嵌入模型，把文字、圖片、影片、音訊與文件映射到同一個嵌入空間，可跨模態搜尋；文件以 RAG 為常見用途。"
+  - key: qdrant-quant
+    title: "Quantization"
+    publisher: Qdrant Documentation
+    url: "https://qdrant.tech/documentation/guides/quantization/"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "純量量化把每個分量從 32 位元浮點數轉成 8 位元整數，壓縮 4 倍、準確度損失很小；二元量化每個分量只存 1 到 2 個位元，最多壓縮 32 倍、比對最多可快 40 倍，但只適合高維且分量分布以零為中心的向量，準確度會略降。"
+  - key: mongodb-voyage
+    title: "Redefining the Database for AI: Why MongoDB Acquired Voyage AI"
+    publisher: MongoDB
+    url: "https://www.mongodb.com/company/blog/news/redefining-database-ai-why-mongodb-acquired-voyage-ai"
+    type: company-site
+    lang: en
+    published: "2025-02-24"
+    accessed: "2026-10-15"
+    note: "宣布收購嵌入與重排序模型業者 Voyage AI；認為嵌入生成、重排序與 AI 搜尋應屬於資料庫層，以減少幻覺、提高可信度；文中指出幻覺常源於檢索不良或不精確。"
+  - key: apmic
+    title: "APMIC：提煉知識力・轉化商業力"
+    publisher: "亞太智能機器（APMIC）"
+    url: "https://www.apmic.ai/"
+    type: company-site
+    lang: zh-TW
+    accessed: "2026-10-15"
+    note: "PrivStation 採用 CaiGunn X PrivAI 多功能 RAG 系統，可全程本地部署、資料不出機房，能解析 Word、PDF、Excel 與流程圖、零件示意圖等圖像；官網企業消息：2026-03-12 宣布完成 700 萬美元 A 輪融資，由美國私募基金 AIPO 領投、趨勢科技共同投資。"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: learn-08
+  checkedBy: "learn-08-check"
+  checkedOn: "2026-10-06"
+  notes: "內容以 2026-10-06 為資料基準日；各來源的 accessed 為實際讀取日 2026-10-15。Lost in the Middle 為 2023 年的模型測試結果，內文已註明新模型的長上下文能力已有改善。向量資料庫的記憶體與運算量為依論文數字的試算。查核（learn-08-check）：RAG、DPR、HNSW、Faiss、Lost in the Middle、GraphRAG 數字逐一對照 arXiv 原文，Anthropic、OpenAI、Google、Qdrant、MongoDB、APMIC 對照官方頁面，皆相符；修正兆級索引段落（論文實際以數百台伺服器分片並記憶體映射約 83 TiB，DiskANN 為另一途徑）、刪除未經證實的「Anthropic 提供託管向量儲存」說法、補上 100 個英文單字與二元量化適用條件等細節。"
+---
+
+## 一句話解釋
+
+<Term id="rag">RAG</Term>（Retrieval-Augmented Generation，檢索增強生成）就是「先查資料、再回答」：使用者提問後，系統先從外部資料庫找出最相關的幾段文字，貼進<Term id="prompt">提示詞</Term>，再讓<Term id="llm">大型語言模型</Term>根據這些資料作答，並附上出處。負責「找資料」的核心技術是向量檢索：把文字轉成<Term id="embedding">嵌入向量</Term>，依「意思」而不只是關鍵字來搜尋。
+
+## 生活化比喻
+
+<Callout type="analogy" title="從閉卷考變成開卷考">
+
+沒有 RAG 的模型像在考閉卷考：只能憑訓練時「背」下來的知識作答。背錯了自己不會發現，考試範圍之後才發生的事一概不知，還可能自信滿滿地編出答案，也就是<Term id="hallucination">幻覺</Term>。
+
+RAG 把它變成開卷考。但考試時間有限，不可能把整座圖書館讀完，所以需要：
+
+- **一套好索引**（向量資料庫）：事先把每本書拆成段落，替每段標上「主題座標」。
+- **快速翻頁的本事**（檢索）：看到題目，立刻翻到最相關的幾頁。
+- **作答時註明頁碼**（引用出處）：讓閱卷老師可以回頭查證。
+
+答案好不好，一半取決於模型的理解力，另一半取決於有沒有翻到對的那幾頁。
+
+</Callout>
+
+## 原理
+
+### 模型為什麼需要「查資料」？
+
+語言模型的知識存在<Term id="parameter">參數</Term>裡，有三個先天限制：知識停在訓練資料截止的那一天；看不到企業內部的文件；也說不出某句話是從哪裡學來的。
+
+2020 年，Facebook AI Research（今 Meta 的 FAIR）與倫敦大學學院、紐約大學的研究人員發表論文，正式提出 RAG 這個名稱：把模型參數視為「參數記憶」，再外掛一個維基百科的向量索引當「非參數記憶」，回答前先用檢索器找出相關段落<Cite k="rag-2020" />。這個組合在三項開放領域問答測試上創下當時最佳成績，生成的內容也比只靠參數的模型更具體、更符合事實<Cite k="rag-2020" />。
+
+更重要的是，知識可以「抽換」。研究人員分別用 2016 年與 2018 年的維基百科建立索引，詢問 82 位在這段期間換人的各國領導人是誰<Cite k="rag-2020" />：
+
+<BarChart
+  title="換掉索引，就能更新模型的知識"
+  unit="%"
+  data={[
+    { label: "2016 索引問 2016 領導人", value: 70 },
+    { label: "2018 索引問 2018 領導人", value: 68 },
+    { label: "2018 索引問 2016 領導人", value: 12 },
+    { label: "2016 索引問 2018 領導人", value: 4 }]}
+  source="rag-2020"
+  note="數字為答對比例；題目形式如「誰是秘魯總統？」。模型本身不變，只換外部索引。"
+  keepOrder
+/>
+
+模型一個參數都沒改，只換了外部資料，答案就跟著更新<Cite k="rag-2020" />。這正是企業喜歡 RAG 的原因：產品手冊改版、法規修訂，只要更新資料庫即可。
+
+讓模型懂得新知識的另一條路是<Term id="fine-tuning">微調</Term>，也就是用新資料繼續訓練、直接改寫參數。兩者各有所長：
+
+<Compare
+  title="讓模型懂你的資料：RAG 還是微調？"
+  left={{ title: "RAG（外掛資料）", items: ["更新知識只要更新文件，不必重新訓練", "回答可以附上出處，方便查證", "可依使用者權限，決定能檢索哪些文件", "多一道檢索步驟；檢索出錯，答案就跟著錯"] }}
+  right={{ title: "微調（改寫參數）", items: ["適合教模型新的格式、語氣或專業任務", "回答時不必額外檢索", "知識寫進參數，更新就要重新訓練", "很難追溯某個答案來自哪份資料"] }}
+  caption="實務上兩者常搭配使用：先微調出懂行話的模型，再用 RAG 提供最新資料。"
+/>
+
+### RAG 的兩條流水線
+
+RAG 系統分成「事先建索引」與「即時回答」兩段：
+
+<FlowSteps
+  title="離線：建立索引"
+  steps={[
+    { title: "收集文件", detail: "手冊、合約、網頁、PDF、客服紀錄" },
+    { title: "切塊", detail: "把長文件切成數百個 Token 的段落" },
+    { title: "嵌入", detail: "用嵌入模型把每一段轉成向量" },
+    { title: "存入向量資料庫", detail: "建立可以快速搜尋的索引" }]}
+/>
+
+<FlowSteps
+  title="線上：回答問題"
+  steps={[
+    { title: "問題轉向量", detail: "用同一個嵌入模型處理使用者的問題" },
+    { title: "找最近鄰", detail: "取出意思最接近的前幾十段" },
+    { title: "重排序", detail: "更仔細地重新評分，只留最相關的幾段" },
+    { title: "組合提示並生成", detail: "把段落貼進提示，請模型作答並附出處" }]}
+/>
+
+**切塊**看似簡單，其實很講究。切太大，一段裡混雜太多主題，向量變得模糊；切太小，又會把前因後果切斷。OpenAI 的檔案檢索服務預設把文件切成每段 800 個 <Term id="token">Token</Term>，相鄰兩段重疊 400 個 Token，避免關鍵句剛好被切在交界處<Cite k="openai-retrieval" />。
+
+切塊還有一個隱藏問題：段落離開原文後，會「失去上下文」。Anthropic 舉例，財報資料庫裡有一段寫著「公司營收比上一季成長 3%」，單看這段，根本不知道是哪家公司、哪一季<Cite k="contextual-retrieval" />。他們的解法是在建索引時，先請模型替每一段寫一段 50 到 100 個 Token 的說明，例如「這段摘自 ACME 公司 2023 年第二季的 SEC 申報文件；上一季營收為 3.14 億美元」，接在段落前面，再拿去做嵌入與建立關鍵字索引<Cite k="contextual-retrieval" />。
+
+### 向量檢索：在意義地圖上找最近的鄰居
+
+<Scene3D id="embedding-space" variant="rag" caption="RAG 的檢索步驟：問題被轉成向量，在嵌入空間中找出距離最近的文件片段，再交給模型作答。位置與距離皆為示意。" />
+
+在<LearnLink id="tokens-and-embeddings">Token 與嵌入向量</LearnLink>中提過，意思相近的文字，向量的方向也相近。向量檢索就是把問題也轉成向量，再找出和它最接近的文件向量。好處是不必字面相同：問「筆電充不了電」，也能找到寫著「筆記型電腦電池無法充電」的段落。2020 年的 DPR 研究顯示，在多個開放領域問答資料集上，以嵌入向量檢索的「前 20 筆含有答案段落」的比例，比傳統關鍵字系統 BM25 高出 9 到 19 個百分點<Cite k="dpr" />。
+
+問題在於速度。最直接的做法是把問題和資料庫裡每一個向量逐一比較，資料一多就太慢。因此實務上多用「近似最近鄰」（ANN）搜尋：犧牲一點點準確度，換取快上許多倍的速度。最常見的演算法之一是 2016 年提出的 HNSW，它把向量串成多層的「鄰居關係圖」，最上層節點少、連線跨得遠，越往下層越密<Cite k="hnsw" />。搜尋時從最上層大步跳躍，再逐層往下細找，就像找路時先走高速公路到對的城市，再改走市區道路找門牌；需要走的步數，只隨資料量的對數成長<Cite k="hnsw" />。
+
+存放這些向量並提供搜尋的系統，就是<Term id="vector-database">向量資料庫</Term>。Meta 開源的 Faiss 函式庫把各種索引、壓縮與搜尋方法整合在一起；Faiss 論文指出，Zilliz、Pinecone 等主要向量資料庫業者，不是以 Faiss 為核心引擎，就是重新實作了它的演算法<Cite k="faiss" />。
+
+### 混合檢索與重排序：把漏網之魚撈回來
+
+向量檢索擅長「意思相近」，卻不擅長「一字不差」。Anthropic 的例子是：使用者查詢錯誤代碼「TS-999」，嵌入模型可能找到一堆談錯誤代碼的文件，卻漏掉剛好寫著 TS-999 的那一份；這時以關鍵字比對為主的 BM25 反而能精準命中<Cite k="contextual-retrieval" />。所以成熟的系統多半採用**混合檢索**：同時跑向量與關鍵字兩種搜尋，再把兩份排名合併。OpenAI 的檔案檢索就提供參數，讓開發者調整語意與關鍵字兩種結果在合併排名時的權重<Cite k="openai-retrieval" />。
+
+最後再加一道**重排序**（rerank）。向量檢索為了速度，問題與文件是各自轉成向量再比較；重排序模型則把問題和候選段落放在一起仔細閱讀、重新打分，比較準但也比較慢，所以只用在前幾十筆候選上。Anthropic 的實驗把這幾招疊起來，觀察前 20 筆結果漏掉正確資料的比例：
+
+<BarChart
+  title="檢索失敗率：一層一層降下來"
+  unit="%"
+  data={[
+    { label: "一般嵌入檢索", value: 5.7 },
+    { label: "加上段落說明", value: 3.7 },
+    { label: "再加上下文 BM25", value: 2.9 },
+    { label: "再加重排序", value: 1.9 }]}
+  source="contextual-retrieval"
+  note="Anthropic 2024 年 9 月的實驗，為程式碼、小說、論文等多個知識領域的平均，使用表現最佳的 Gemini 嵌入模型；取前 20 個段落，數字為「1 − 前 20 筆召回率」。「上下文 BM25」指段落加上說明後再建立的關鍵字索引。"
+  keepOrder
+/>
+
+三招合計，檢索失敗率從 5.7% 降到 1.9%，減少 67%<Cite k="contextual-retrieval" />。換句話說，RAG 的準確度不只看模型多聰明，「檢索工程」同樣關鍵。
+
+### RAG 會在哪裡出錯？
+
+RAG 能大幅減少幻覺，但不是萬靈丹。一套 RAG 系統出錯，通常是以下幾種情況之一：
+
+- **該找的沒找到**：切塊不當、用詞差太多，或正確段落排在第 21 名，模型根本沒看到。上面那張圖量的就是這一種。
+- **找到的是過期或錯的資料**：資料庫裡同時有新舊兩版規章，模型可能引用到舊版。RAG 的答案品質，取決於資料本身的品質與更新頻率。
+- **找到了卻沒用好**：模型可能忽略檢索到的段落，或把幾段資料拼湊成原文沒說過的結論。所以實務上會要求模型「只能根據提供的資料回答，找不到就說不知道」，並逐句附上出處。
+- **權限與安全**：檢索前要先依使用者身分過濾文件，否則員工可能透過聊天機器人看到不該看的薪資或合約。被檢索進來的網頁或文件若藏有惡意指令，也可能誘導模型做出不當行為，這類攻擊稱為<Term id="prompt-injection">提示注入</Term>。
+
+因此評估一套 RAG 系統，要分開檢查「檢索」與「生成」兩段：前者看有沒有找對資料，後者看有沒有忠於資料作答。
+
+### RAG 與長上下文：要查，還是全部塞進去？
+
+近年模型的<Term id="context-window">上下文視窗</Term>越來越大，有人會問：何不把整個知識庫直接塞進提示？Anthropic 在 2024 年 9 月的建議很務實：如果知識庫小於 20 萬個 Token（約 500 頁），直接整份放進提示就好，再搭配<Term id="prompt-caching">提示快取</Term>，延遲可降到一半以下、成本最多省九成<Cite k="contextual-retrieval" />。
+
+但知識庫一大，RAG 仍有兩個優勢。第一是成本：每次問答若都附上 100 萬個 Token，和只附上 20 段、每段 800 個 Token（共 1.6 萬個）相比，輸入量相差約 60 倍，而 API 正是按 Token 計費；就算整份資料都用上快取、成本省九成，仍差約 6 倍。第二是準確度：2023 年的「迷失在中間」（Lost in the Middle）研究發現，相關資料放在長提示的開頭或結尾時，模型表現最好，放在中間時明顯變差；GPT-3.5-Turbo 的多文件問答表現可下降超過 20%，最差時甚至低於完全不給文件的 56.1%<Cite k="lost-middle" />。這是當年模型的測試結果，新模型的長上下文能力已改善不少，但「少而精」的資料通常仍比「多而雜」好處理。
+
+<Compare
+  title="長上下文 vs RAG"
+  left={{ title: "整份放進上下文", items: ["做法簡單，不必建索引", "適合小型、常重複使用的資料，可搭配快取", "每次問答的 Token 多、延遲高", "資料一多，重點容易被淹沒"] }}
+  right={{ title: "RAG 檢索", items: ["資料量可以到數百萬份文件", "每次只送進最相關的幾段，省錢又省時", "需要建索引、調整切塊與檢索", "檢索漏掉的段落，模型就看不到"] }}
+/>
+
+### RAG 的新變化
+
+- **GraphRAG**：一般 RAG 不擅長回答「這批文件的主要議題有哪些？」這類需要綜觀全局的問題。Microsoft 研究團隊 2024 年提出 GraphRAG，先用語言模型從文件抽出人物、組織等實體，建立知識圖譜，並預先寫好各群組的摘要；在約 100 萬 Token 規模的資料上，答案的完整度與多樣性都明顯勝過一般 RAG<Cite k="graphrag" />。
+- **Agent 式檢索**：不再是固定的「查一次、答一次」，而是讓模型自己判斷要不要查、查什麼、查完夠不夠，必要時換個說法再查。這需要模型會使用工具，例如 <Term id="function-calling">Function Calling</Term> 或 <Term id="mcp">MCP</Term>，也是 <Term id="agent">Agent</Term> 的基本功，見<LearnLink id="agents-and-mcp">AI Agent 與 MCP</LearnLink>。
+- **多模態 RAG**：檢索對象不只文字。Google 的 gemini-embedding-2 能把文字、圖片、影片、音訊與文件映射到同一個向量空間，可以用一句話搜出相關的影片或圖片<Cite k="gemini-embedding" />，原理見<LearnLink id="multimodal-models">多模態模型</LearnLink>。
+
+<DeepDive title="深入一點：召回率、運算量與記憶體">
+
+**怎麼衡量檢索好不好？** 最常用的是「前 k 筆召回率」（recall@k）：所有應該找到的相關段落裡，有多少出現在前 k 筆結果中。
+
+<MathTeX tex={"\\text{recall@}k=\\frac{\\lvert\\,\\text{相關段落}\\cap\\text{前 }k\\text{ 筆結果}\\,\\rvert}{\\lvert\\,\\text{相關段落}\\,\\rvert}"} display label="前 k 筆召回率，等於前 k 筆結果中的相關段落數，除以全部相關段落數" />
+
+前面 Anthropic 的實驗用的就是「1 − recall@20」，也就是前 20 筆裡漏掉的比例<Cite k="contextual-retrieval" />。召回率之外，還要看模型拿到資料後是否忠於資料作答，這部分屬於模型評測的範圍。
+
+**逐一比對有多慢？** 做個試算：資料庫有 10 億個 1,536 維的向量，逐一計算內積，每次查詢就要做約 1.5 兆次乘加運算；若同時有上千人查詢，運算量再乘上千倍。HNSW 這類近似搜尋，把每次查詢需要比對的向量數，從「全部」降到極小的一部分<Cite k="hnsw" />。
+
+**向量要占多少記憶體？** 2020 年的 RAG 論文把 2018 年 12 月的英文維基百科切成每段 100 個英文單字、共 2,100 萬段，整個索引放在 CPU 記憶體約需 100 GB；用 Faiss 的壓縮工具後降到 36 GB<Cite k="rag-2020" />。壓縮是向量資料庫的必備技巧。Qdrant 的文件說明，把每個數字從 32 位元浮點數改存成 8 位元整數，記憶體可省 4 倍；更極端的二元量化每個維度只存 1 個位元，記憶體最多省 32 倍、比對最多快 40 倍，代價是準確度略降，而且只適合維度高、數值分布以零為中心的向量<Cite k="qdrant-quant" />。
+
+**到了兆級規模。** Faiss 論文示範過為 1.5 兆個 144 維向量建立索引，每個向量壓縮到 54 個位元組<Cite k="faiss" />。粗略試算，總量約 81 TB；若不壓縮、以 32 位元浮點數儲存，則約 864 TB。這種規模遠超過單台伺服器的 <Term id="dram">DRAM</Term>：論文的做法是先在數百台伺服器上分片建立索引，再把總計約 83 TiB 的資料放在分散式檔案系統上，由負責查詢的機器以記憶體映射方式按需讀取<Cite k="faiss" />。另一條路是 Microsoft 的 DiskANN 這類圖索引，它原本就是為同時利用記憶體與快閃記憶體而設計<Cite k="faiss" />，讓 <Term id="ssd">SSD</Term> 分擔儲存。
+
+**雲端怎麼收費？** 以 OpenAI 為例，嵌入模型 text-embedding-3-small 每百萬 Token 0.02 美元<Cite k="openai-emb" />；託管的向量儲存空間合計 1 GB 以內免費，超過部分每 GB 每天 0.10 美元<Cite k="openai-retrieval" />。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+- **向量資料庫與檢索層** → <SegmentChip id="devtools-data-mlops" />：專門的向量資料庫有 <CompanyChip id="pinecone" />、<CompanyChip id="zilliz" />（開源 Milvus 的開發商）、<CompanyChip id="qdrant" /> 與 <CompanyChip id="weaviate" />；既有的資料庫與搜尋業者也紛紛內建向量搜尋，例如 <CompanyChip id="elastic" />、<CompanyChip id="mongodb" />、<CompanyChip id="supabase" />（Postgres 的 pgvector）與 <CompanyChip id="databricks" />。MongoDB 在 2025 年 2 月收購嵌入與重排序模型業者 Voyage AI，理由是這兩項技術應該放進資料庫層，以減少幻覺、提高可信度<Cite k="mongodb-voyage" />。開發框架如 <CompanyChip id="langchain" /> 則把切塊、檢索、重排序做成現成元件。
+- **嵌入與重排序模型** → <SegmentChip id="foundation-models" />、<SegmentChip id="cloud-neocloud" />：<CompanyChip id="openai" />、<CompanyChip id="alphabet" />、<CompanyChip id="cohere" /> 等業者提供嵌入與重排序模型，<CompanyChip id="anthropic" /> 公開的上下文檢索實驗，就同時用了 Google 的嵌入模型與 Cohere 的重排序模型<Cite k="contextual-retrieval" />。OpenAI 等業者也把檔案檢索、向量儲存包成託管服務，依儲存量與 Token 計費<Cite k="openai-retrieval" />。
+- **應用層的「知識引擎」** → <SegmentChip id="apps-agents" />：企業知識搜尋的 <CompanyChip id="glean" />、AI 搜尋的 <CompanyChip id="perplexity" />、法律領域的 <CompanyChip id="thomson-reuters" /> 與 <CompanyChip id="harvey" />，核心都是「先找到可靠的資料，再生成答案」。台灣的 <CompanyChip id="apmic" full /> 提供可在企業機房內部署的 RAG 系統，強調資料不出機房，也能解析流程圖、零件示意圖等圖像文件，並於 2026 年 3 月完成 700 萬美元 A 輪融資<Cite k="apmic" />。資料不能離開機房或國境的需求，與<TrendLink id="sovereign-ai">主權 AI</TrendLink>的討論息息相關。
+- **向量也吃記憶體與儲存** → <SegmentChip id="memory-storage" />：大型向量索引要常駐 DRAM 才夠快，更大的規模得借重 SSD；知識庫越建越大、上下文越拉越長，也推升伺服器記憶體與儲存的需求，見<TrendLink id="long-context-memory">長上下文與模型記憶</TrendLink>。RAG 讓企業願意付費的 AI 應用大增，則與<TrendLink id="ai-monetization">AI 營收化</TrendLink>、<TrendLink id="agentic-ai-standards">Agent 生態與標準化</TrendLink>緊密相連。

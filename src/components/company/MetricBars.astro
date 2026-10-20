@@ -1,0 +1,99 @@
+---
+/**
+ * Revenue-like series for companies without reported revenue (owner: pages-companies): annualised
+ * revenue run-rate (arr), remaining performance obligations (rpo) or backlog, one BarChart per
+ * series. Used on profiles of private companies whose financials file has no `revenue` series,
+ * where <CompanyFinancials> would have nothing to draw. All bars are dated disclosures; estimates
+ * are hatched by BarChart.
+ *
+ *   <MetricBars financials={fin} company="Anthropic " />
+ */
+import BarChart from '../charts/BarChart.astro';
+import { enrichPoints, type FinancialsInput } from '../../lib/financial-metrics';
+import { currencyName, monthLabel } from '../../lib/format';
+
+interface Props {
+  financials: FinancialsInput;
+  /** display name; may end with a space when it is a Latin name */
+  company: string;
+}
+const { financials: fin, company } = Astro.props;
+
+const METRIC_ZH: Record<string, string> = {
+  arr: '年化營收（run-rate）',
+  rpo: '剩餘履約義務（RPO）',
+  backlog: '未交貨訂單（backlog）',
+};
+const NOTE: Record<string, string> = {
+  arr: '年化營收（run-rate）是把最近一個月或一季的營收乘以 12 或 4 推算的全年規模，不是實際認列的年度營收，也未經會計師查核。',
+  rpo: '剩餘履約義務是已簽約、尚未認列的營收，代表未來營收的能見度。',
+  backlog: '未交貨訂單是已接單、尚未出貨的金額。',
+};
+const sources = fin.sources as Record<string, { title: string; url: string; publisher: string }>;
+
+const seen = new Set<string>();
+const end = (t: string) => (/[。！？]$/.test(t) ? t : `${t}。`);
+const charts = fin.series
+  .filter((s) => s.metric in METRIC_ZH && s.points.length > 0 && s.unit !== 'percent')
+  .map((s) => {
+    const firstOfMetric = !seen.has(s.metric);
+    seen.add(s.metric);
+    const pts = enrichPoints(s);
+    const cur = s.currency ?? fin.reportingCurrency;
+    const max = Math.max(...pts.map((p) => p.value));
+    const big = max >= 100; // ≥ 1 億 (in millions) → 億
+    const div = big ? 100 : 1;
+    const unit = cur === 'USD' ? (big ? '億美元' : '百萬美元') : `${big ? '億' : '百萬'}元（${currencyName(cur)}）`;
+    const label = (period: string, fallback: string) => (/^\d{4}-\d{2}$/.test(period) ? monthLabel(period, 'short') : fallback);
+    const srcKeys = [...new Set(pts.map((p) => p.src))];
+    const bases = [...new Set(pts.map((p) => p.estimateBasis).filter((x): x is string => !!x))];
+    return {
+      key: `${s.metric}-${s.label ?? ''}`,
+      title: `${company}${s.label ?? METRIC_ZH[s.metric]}`,
+      unit,
+      data: pts.map((p) => ({
+        label: label(p.period, p.label),
+        value: Math.round((p.value / div) * 10) / 10,
+        estimate: p.estimate,
+        note: p.estimateBasis,
+      })),
+      source: srcKeys.map((k) => sources[k]).filter((x) => !!x),
+      note: [firstOfMetric ? NOTE[s.metric] : '', bases.length === 1 ? end(`依據：${bases[0]}`) : ''].filter(Boolean).join(''),
+      asOf: fin.lastVerified,
+    };
+  });
+---
+
+{
+  charts.length > 0 ? (
+    <div class="mb">
+      {charts.map((c) => (
+        <BarChart
+          title={c.title}
+          unit={c.unit}
+          data={c.data}
+          source={c.source}
+          note={c.note}
+          asOf={c.asOf}
+          orientation="vertical"
+          keepOrder
+        />
+      ))}
+    </div>
+  ) : (
+    <p class="mb__none">尚無可繪製的營收資料。</p>
+  )
+}
+
+<style>
+  .mb {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: var(--space-4);
+    align-items: start;
+  }
+  .mb__none {
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+</style>

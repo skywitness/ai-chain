@@ -1,0 +1,45 @@
+term: "MoE"
+zh: "混合專家模型"
+en: "Mixture of Experts"
+aliases:
+  - "混合專家模型"
+  - "Mixture of Experts"
+  - "Mixture-of-Experts"
+  - "專家混合"
+  - "稀疏模型"
+category: llm
+level: 2
+short: "模型內含多組「專家」子網路，每個 Token 只啟用其中少數幾組，以較低運算量換得更大的模型容量。"
+definition: "MoE（混合專家模型）把 Transformer 中的前饋層拆成多個「專家」子網路，由路由器（router）替每個 Token 挑選少數專家計算，其餘專家不參與。因此模型總參數很大，每個 Token 的實際運算量卻較小：Mistral 的 Mixtral 8x7B 總參數約 470 億，每個 Token 只用約 130 億；DeepSeek-V3 總參數 6,710 億，每個 Token 啟用 370 億。MoE 已是前沿模型的主流設計之一，但所有專家權重仍須放在記憶體中，專家分散在多顆 GPU 時還需要大量跨晶片通訊，因此提高了對 HBM 容量與高速互連（如 NVLink 等 Scale-up 網路）的需求。"
+example: "像一家大型醫院有各科專科醫師，掛號櫃台（路由器）依病症把病人分給一兩位醫師看診，不必讓全院醫師同時看同一位病人。"
+related:
+  - active-parameters
+  - dense-model
+  - expert-parallelism
+  - nvlink
+learnMore:
+  - mixture-of-experts
+segments:
+  - foundation-models
+  - ai-accelerators
+  - networking-optics
+sources:
+  - title: "Mixtral of Experts"
+    publisher: "arXiv (Mistral AI)"
+    url: "https://arxiv.org/abs/2401.04088"
+    type: paper
+    lang: en
+    published: "2024-01-08"
+    accessed: "2026-10-06"
+  - title: "DeepSeek-V3 Technical Report"
+    publisher: "arXiv (DeepSeek)"
+    url: "https://arxiv.org/abs/2412.19437"
+    type: paper
+    lang: en
+    published: "2024-12-27"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-llm
+  checkedBy: "gloss-llm-check"
+  checkedOn: "2026-10-06"

@@ -1,0 +1,548 @@
+---
+title: "推論最佳化：KV Cache、量化、推測解碼與分離式推論"
+subtitle: "瓶頸在搬資料，不在算數學：讓每個 Token 更便宜、更快的四類工具"
+description: "大型語言模型推論的瓶頸多半是搬資料而不是運算。本文從 Prefill 與 Decode 的差異出發，拆解 KV Cache 管理、量化、推測解碼與分離式推論的原理與實測數字，並說明這些技巧如何牽動 HBM、儲存、網路與推論晶片的需求。"
+level: 3
+order: 304
+track: infra-business
+prerequisites: [training-vs-inference-economics, memory-and-hbm]
+next: [hbm-deep, ai-capex-economics, interconnect-deep]
+relatedSegments: [ai-accelerators, memory-storage, networking-optics, cloud-neocloud, devtools-data-mlops, foundation-models]
+relatedCompanies: [nvidia, amd, groq, sk-hynix, samsung-electronics, micron, sandisk, kioxia, vast-data, weka, inferact, radixark, together-ai, fireworks-ai, coreweave, lambda, nebius, deepseek, moonshot-ai, openai, anthropic, alphabet, meta, microsoft]
+relatedModels: [deepseek, moonshot-kimi, openai-gpt-oss, meta-muse-llama, anthropic-claude, google-gemini]
+relatedTrends: [inference-demand, inference-chips-new-paradigms, memory-supercycle, long-context-memory, reasoning-test-time-compute, custom-asic-rise, ai-monetization]
+glossary:
+  - inference
+  - token
+  - decode
+  - prefill
+  - kv-cache
+  - hbm
+  - quantization
+  - speculative-decoding
+  - disaggregated-inference
+  - batching
+  - throughput
+  - latency
+  - ttft
+  - flops
+  - gpu
+  - attention
+  - flash-attention
+  - sram
+  - prompt-caching
+  - context-window
+  - dram
+  - ssd
+  - fp8
+  - fp4
+  - moe
+  - distillation
+  - rdma
+  - inference-engine
+  - reasoning-model
+  - agent
+keyTakeaways:
+  - "Prefill 受算力限制、Decode 受記憶體頻寬限制；H100 每讀 1 位元組要算約 295 次才不閒置。"
+  - "KV Cache 隨上下文線性成長，Llama 3.1 70B 一段 128K 對話約需 43 GB；GQA 與 MLA 能大幅縮小它。"
+  - "分頁管理、連續批次與前綴快取減少浪費與重算；DeepSeek 一天的輸入 Token 有 56.3% 命中快取。"
+  - "量化正從事後壓縮走向量化感知訓練；NVFP4 的權重記憶體約為 FP16 的 1/3.5。"
+  - "推測解碼先猜再驗、輸出分布不變，常見 2 到 3 倍加速；DeepSeek-V3 的多 Token 預測提速 1.8 倍。"
+  - "分離式推論把 Prefill 與 Decode 拆給不同硬體，正延伸成 GPU 與 LPU 分工的異質架構。"
+estimatedMinutes: 22
+sources:
+  - key: h100
+    title: "NVIDIA H100 Tensor Core GPU"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/h100/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "H100 SXM：BF16 Tensor Core 1,979 TFLOPS（含稀疏加速，稠密約為一半，989 TFLOPS）；80 GB；記憶體頻寬 3.35 TB/s。"
+  - key: pope-inference
+    title: "Efficiently Scaling Transformer Inference"
+    publisher: "Pope et al.（arXiv）"
+    url: "https://arxiv.org/abs/2211.05102"
+    type: paper
+    lang: en
+    published: "2022-11-09"
+    accessed: "2026-10-15"
+    note: "在 PaLM 540B 上，低批次生成時每個 Token 延遲 29 毫秒（int8 權重量化）；大批次處理輸入 Token 時模型運算使用率達 76%；多查詢注意力的記憶體需求較低，可支援長 32 倍的上下文。"
+  - key: distserve
+    title: "DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving"
+    publisher: "Zhong et al.（arXiv，OSDI 2024）"
+    url: "https://arxiv.org/abs/2401.09670"
+    type: paper
+    lang: en
+    published: "2024-01-18"
+    accessed: "2026-10-15"
+    note: "Prefill 階段以首 Token 時間（TTFT）、Decode 階段以每個輸出 Token 時間（TPOT）衡量；兩階段放在同一批 GPU 上會互相干擾，資源配置與平行策略也被綁在一起；把兩階段分給不同 GPU 後，在 90% 以上請求符合延遲要求的前提下，可服務的請求量最多提高 7.4 倍，或把延遲要求收緊 12.6 倍。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "Meta AI（arXiv）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-15"
+    note: "表 3：70B 模型 80 層、模型維度 8,192、64 個注意力頭、8 個 Key/Value 頭；使用 8 個 KV 頭的 GQA，以提升推論速度並縮小 Decode 時的 KV Cache；上下文最長 128K。6.2 節：以 H100 原生 FP8 做低精度推論，量化前饋網路的大部分參數與啟用值（約占推論運算時間的 50%），不量化自注意力層，也不量化第一層與最後一層；以 10 萬筆回答的獎勵模型分數比較，FP8 的影響可忽略；Prefill 吞吐量最多提高 50%，Decode 的吞吐量與延遲取捨明顯改善。"
+  - key: mqa
+    title: "Fast Transformer Decoding: One Write-Head is All You Need"
+    publisher: "Noam Shazeer（arXiv）"
+    url: "https://arxiv.org/abs/1911.02150"
+    type: paper
+    lang: en
+    published: "2019-11-06"
+    accessed: "2026-10-15"
+    note: "提出多查詢注意力（MQA）：所有注意力頭共用同一組 Key 與 Value，大幅縮小這些張量與逐步解碼的記憶體頻寬需求；解碼快很多，品質只略為下降。"
+  - key: gqa
+    title: "GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints"
+    publisher: "Google Research（arXiv）"
+    url: "https://arxiv.org/abs/2305.13245"
+    type: paper
+    lang: en
+    published: "2023-05-22"
+    accessed: "2026-10-15"
+    note: "可用原本預訓練運算量的 5%，把既有多頭模型再訓練成 MQA；提出分組查詢注意力（GQA），KV 頭數介於 1 與查詢頭數之間；GQA 的品質接近多頭注意力，速度與 MQA 相當。"
+  - key: deepseek-v2
+    title: "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model"
+    publisher: "DeepSeek-AI（arXiv）"
+    url: "https://arxiv.org/abs/2405.04434"
+    type: paper
+    lang: en
+    published: "2024-05-07"
+    accessed: "2026-10-15"
+    note: "多頭潛在注意力（MLA）把 KV Cache 壓縮成潛在向量；與 DeepSeek 67B 相比，KV Cache 減少 93.3%，最大生成吞吐量提高到 5.76 倍。多頭注意力每個 Token 要快取 2 × 頭數 × 頭維度 × 層數個數值，MLA 只需（d_c + d_h^R）× 層數個，相當於只有 2.25 組的 GQA，表現卻比多頭注意力更強。"
+  - key: deepseek-v3
+    title: "DeepSeek-V3 Technical Report"
+    publisher: "DeepSeek-AI（arXiv）"
+    url: "https://arxiv.org/abs/2412.19437"
+    type: paper
+    lang: en
+    published: "2024-12-27"
+    accessed: "2026-10-15"
+    note: "61 層；MLA 的 KV 壓縮維度 d_c 為 512，解耦 Key 的每頭維度 d_h^R 為 64；多 Token 預測深度為 1。評估顯示第二個 Token 預測的接受率在 85% 到 90% 之間，使解碼速度（每秒 Token 數）提高為 1.8 倍。"
+  - key: deepseek-v4
+    title: "DeepSeek-V4-Pro model card"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-15"
+    note: "預覽版：V4-Pro 總參數 1.6T、啟用 49B，支援 100 萬 Token 上下文；混合壓縮稀疏注意力（CSA）與高度壓縮注意力（HCA），在 100 萬 Token 情境下，單一 Token 推論運算量只需 DeepSeek-V3.2 的 27%，KV Cache 只需 10%；MoE 專家參數用 FP4，其他多數參數用 FP8；config.json 保留 1 層多 Token 預測（num_nextn_predict_layers 1）。"
+  - key: vllm
+    title: "Efficient Memory Management for Large Language Model Serving with PagedAttention"
+    publisher: "Kwon et al.（arXiv，SOSP 2023）"
+    url: "https://arxiv.org/abs/2309.06180"
+    type: paper
+    lang: en
+    published: "2023-09-12"
+    accessed: "2026-10-15"
+    note: "高吞吐量服務需要一次批次處理足夠多的請求，但每個請求的 KV Cache 很大且動態增減；借鏡作業系統的虛擬記憶體與分頁，KV Cache 浪費接近零，並可在請求內外共享；在相同延遲下吞吐量比 FasterTransformer、Orca 等系統高 2 到 4 倍。以 OPT-13B 為例，每個 Token 的 KV Cache 為 800 KB；既有系統只有 20.4% 到 38.2% 的 KV Cache 記憶體真正存放 Token 狀態。"
+  - key: orca
+    title: "Orca: A Distributed Serving System for Transformer-Based Generative Models"
+    publisher: "首爾大學、FriendliAI（USENIX OSDI 2022）"
+    url: "https://www.usenix.org/conference/osdi22/presentation/yu"
+    type: paper
+    lang: en
+    published: "2022-07-11"
+    accessed: "2026-10-15"
+    note: "提出迭代層級排程（每次只讓模型對整批請求跑一次迭代）與選擇性批次處理；在 GPT-3 175B 上，相同延遲下吞吐量為 NVIDIA FasterTransformer 的 36.9 倍。"
+  - key: sglang
+    title: "SGLang: Efficient Execution of Structured Language Model Programs"
+    publisher: "Zheng et al.（arXiv）"
+    url: "https://arxiv.org/abs/2312.07104"
+    type: paper
+    lang: en
+    published: "2023-12-12"
+    accessed: "2026-10-15"
+    note: "執行階段以 RadixAttention 重用 KV Cache，並以壓縮有限狀態機加速結構化輸出；在 Agent 控制、少樣本學習、JSON 解碼、RAG 與多輪對話等任務上，吞吐量最高為既有推論系統的 6.4 倍。"
+  - key: deepseek-infer
+    title: "Day 6: One More Thing, DeepSeek-V3/R1 Inference System Overview"
+    publisher: "DeepSeek（GitHub open-infra-index）"
+    url: "https://github.com/deepseek-ai/open-infra-index/blob/main/202502OpenSourceWeek/day_6_one_more_thing_deepseekV3R1_inference_system_overview.md"
+    type: docs
+    lang: en
+    published: "2025-03-01"
+    accessed: "2026-10-15"
+    note: "採 Prefill／Decode 分離與跨節點專家平行；矩陣乘法與 dispatch 傳輸用 FP8，MLA 核心運算與 combine 傳輸用 BF16。統計期間 2025-02-27 12:00 至 02-28 12:00（UTC+8）：V3 與 R1 推論服務尖峰占用 278 個節點、平均 226.75 個（每節點 8 顆 H800），以每 GPU 小時 2 美元計每日成本 87,072 美元；輸入 6,080 億個 Token，其中 3,420 億個（56.3%）命中磁碟上的 KV Cache；輸出 1,680 億個 Token，平均輸出速度每秒 20 到 22 個，每個輸出 Token 平均的 KV Cache 長度 4,989；每個 H800 節點 Prefill 平均每秒約 7.37 萬個輸入 Token（含快取命中），Decode 約每秒 1.48 萬個輸出 Token。若全部以 R1 價格計費（快取命中輸入每百萬 0.14 美元、未命中 0.55 美元、輸出 2.19 美元），每日營收 562,027 美元，成本利潤率 545%；實際營收遠低於此，因為 V3 較便宜、網頁與 App 免費、離峰有折扣。"
+  - key: anthropic-cache
+    title: "Prompt caching"
+    publisher: "Anthropic（Claude Platform Docs）"
+    url: "https://platform.claude.com/docs/en/build-with-claude/prompt-caching"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "快取預設存活 5 分鐘，可選 1 小時；5 分鐘快取寫入為基本輸入價格的 1.25 倍，1 小時為 2 倍；快取讀取為基本輸入價格的 0.1 倍，部分模型另有更低的倍率。"
+  - key: nv-cmx
+    title: "Introducing NVIDIA BlueField-4-Powered CMX Context Memory Storage Platform for the Next Frontier of AI"
+    publisher: "NVIDIA Technical Blog"
+    url: "https://developer.nvidia.com/blog/introducing-nvidia-bluefield-4-powered-inference-context-memory-storage-platform-for-the-next-frontier-of-ai/"
+    type: company-site
+    lang: en
+    published: "2026-03-16"
+    accessed: "2026-10-15"
+    note: "推論情境（KV Cache）的四層存放：G1 GPU HBM（生成中的熱資料）、G2 系統記憶體、G3 本機 SSD、G4 共享儲存；以 BlueField-4 驅動的 CMX 平台建立 G3.5 層，即以乙太網路連接、專為 KV Cache 最佳化的快閃記憶體層，並以 Spectrum-X 乙太網路的 RDMA 連接 GPU 節點；NVIDIA 稱比傳統儲存的每秒 Token 數最多高 5 倍、能源效率高 5 倍。KV Cache 隨序列長度線性成長，重算歷史所需的運算則成長得更快。"
+  - key: mooncake
+    title: "Mooncake: A KVCache-centric Disaggregated Architecture for LLM Serving"
+    publisher: "Moonshot AI 等（arXiv）"
+    url: "https://arxiv.org/abs/2407.00079"
+    type: paper
+    lang: en
+    published: "2024-06-24"
+    accessed: "2026-10-15"
+    note: "Kimi 的服務平台，以 KV Cache 為中心、分離 Prefill 與 Decode 叢集，並利用 GPU 叢集中閒置的 CPU、DRAM 與 SSD 組成分離式 KV Cache；在部分模擬情境中吞吐量最多提高 525%，在真實負載下讓 Kimi 多處理 75% 的請求。"
+  - key: flashattention
+    title: "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness"
+    publisher: "Dao et al.（arXiv）"
+    url: "https://arxiv.org/abs/2205.14135"
+    type: paper
+    lang: en
+    published: "2022-05-27"
+    accessed: "2026-10-15"
+    note: "以分塊（tiling）減少 GPU HBM 與晶片內 SRAM 之間的讀寫，是不做近似的精確注意力；GPT-2（序列長度 1K）訓練加速 3 倍。"
+  - key: flashattention3
+    title: "FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision"
+    publisher: "Shah et al.（arXiv）"
+    url: "https://arxiv.org/abs/2407.08608"
+    type: paper
+    lang: en
+    published: "2024-07-11"
+    accessed: "2026-10-15"
+    note: "FlashAttention-2 在 H100 上只有 35% 使用率；FlashAttention-3 在 H100 上加速 1.5 到 2.0 倍，FP16 最高 740 TFLOPS（75% 使用率），FP8 接近 1.2 PFLOPS。"
+  - key: llm-int8
+    title: "LLM.int8(): 8-bit Matrix Multiplication for Transformers at Scale"
+    publisher: "Dettmers et al.（arXiv）"
+    url: "https://arxiv.org/abs/2208.07339"
+    type: paper
+    lang: en
+    published: "2022-08-15"
+    accessed: "2026-10-15"
+    note: "推論記憶體減半而保持完整精度的表現；1,750 億參數模型可直接轉成 Int8 使用、無表現下降；少數離群特徵維度以 16 位元計算，超過 99.9% 的數值以 8 位元相乘。"
+  - key: gptq
+    title: "GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers"
+    publisher: "Frantar et al.（arXiv）"
+    url: "https://arxiv.org/abs/2210.17323"
+    type: paper
+    lang: en
+    published: "2022-10-31"
+    accessed: "2026-10-15"
+    note: "約 4 個 GPU 小時把 1,750 億參數模型量化到每個權重 3 或 4 位元，準確度損失可忽略，首次能在單顆 GPU 上推論；相較 FP16 的端到端推論加速，A100 約 3.25 倍、A6000 約 4.5 倍。"
+  - key: nvfp4
+    title: "Introducing NVFP4 for Efficient and Accurate Low-Precision Inference"
+    publisher: "NVIDIA Technical Blog"
+    url: "https://developer.nvidia.com/blog/introducing-nvfp4-for-efficient-and-accurate-low-precision-inference/"
+    type: company-site
+    lang: en
+    published: "2025-06-24"
+    accessed: "2026-10-15"
+    note: "NVFP4 為 Blackwell 支援的 4 位元浮點格式：每 16 個數值共用一個 E4M3 FP8 縮放因子，另加每個張量一個 FP32 縮放因子，平均約 4.5 位元；MXFP4 則是每 32 個數值共用一個 2 的冪次（E8M0）縮放因子。記憶體約為 FP16 的 1/3.5、FP8 的 1/1.8；DeepSeek-R1-0528 由 FP8 事後量化到 NVFP4，主要任務的準確度下降在 1% 以內。"
+  - key: gptoss-card
+    title: "openai/gpt-oss-120b model card"
+    publisher: "OpenAI（Hugging Face）"
+    url: "https://huggingface.co/openai/gpt-oss-120b"
+    type: docs
+    lang: en
+    published: "2025-08-05"
+    accessed: "2026-10-15"
+    note: "1,170 億參數、每個 Token 啟用 51 億；後訓練階段即以 MXFP4 量化 MoE 權重，因此可放進單張 80 GB GPU（如 NVIDIA H100 或 AMD MI300X）；所有評測都以 MXFP4 進行。"
+  - key: kimi-k2-thinking
+    title: "moonshotai/Kimi-K2-Thinking model card"
+    publisher: "Moonshot AI（Hugging Face）"
+    url: "https://huggingface.co/moonshotai/Kimi-K2-Thinking"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "思考模型的解碼長度很長，量化常造成明顯的表現下降；後訓練階段採量化感知訓練（QAT），對 MoE 元件做 INT4 僅權重量化，原生支援 INT4 推論，生成速度約提高 2 倍；所有評測結果都在 INT4 精度下取得。"
+  - key: kimi-k3
+    title: "moonshotai/Kimi-K3 model card"
+    publisher: "Moonshot AI（Hugging Face）"
+    url: "https://huggingface.co/moonshotai/Kimi-K3"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "總參數 2.8T、啟用 104B、上下文 100 萬 Token；自 SFT 階段起量化感知訓練，權重 MXFP4、啟用值 MXFP8，以求廣泛的硬體相容性；建議以 vLLM、SGLang 等推論引擎部署。"
+  - key: leviathan
+    title: "Fast Inference from Transformers via Speculative Decoding"
+    publisher: "Leviathan et al.，Google Research（arXiv，ICML 2023）"
+    url: "https://arxiv.org/abs/2211.17192"
+    type: paper
+    lang: en
+    published: "2022-11-30"
+    accessed: "2026-10-15"
+    note: "以較小的近似模型產生候選 Token，再讓大模型平行計算，並以新的取樣方法保證輸出分布不變；不需重新訓練或修改架構；在 T5-XXL 上比標準 T5X 實作快 2 到 3 倍，輸出完全相同。式 (1)：若每個猜測被接受的機率為 α、每輪猜 γ 個，每輪預期產生 (1 − α^(γ+1)) / (1 − α) 個 Token。"
+  - key: chen-spec
+    title: "Accelerating Large Language Model Decoding with Speculative Sampling"
+    publisher: "DeepMind（arXiv）"
+    url: "https://arxiv.org/abs/2302.01318"
+    type: paper
+    lang: en
+    published: "2023-02-02"
+    accessed: "2026-10-15"
+    note: "以修正的拒絕取樣保持大模型的輸出分布；在 700 億參數的 Chinchilla 上，分散式設定下解碼加速 2 到 2.5 倍，不影響樣本品質。"
+  - key: google-spec
+    title: "Looking back at speculative decoding"
+    publisher: "Google Research Blog"
+    url: "https://research.google/blog/looking-back-at-speculative-decoding/"
+    type: company-site
+    lang: en
+    published: "2024-12-06"
+    accessed: "2026-10-15"
+    note: "以 6,000 萬參數的 T5-small 為 110 億參數 T5-XXL 猜字，翻譯任務約快 3 倍；推測解碼已用於多項 Google 產品，讓 Google 搜尋的 AI 摘要在品質不變下更快產生結果。"
+  - key: medusa
+    title: "Medusa: Simple LLM Inference Acceleration Framework with Multiple Decoding Heads"
+    publisher: "Cai et al.（arXiv）"
+    url: "https://arxiv.org/abs/2401.10774"
+    type: paper
+    lang: en
+    published: "2024-01-19"
+    accessed: "2026-10-15"
+    note: "在原模型上加多個解碼頭平行預測後續 Token，以樹狀注意力同時驗證多個候選；Medusa-1 不影響生成品質，加速超過 2.2 倍，Medusa-2 為 2.3 到 3.6 倍。"
+  - key: eagle3
+    title: "EAGLE-3: Scaling up Inference Acceleration of Large Language Models via Training-Time Test"
+    publisher: "Li et al.（arXiv）"
+    url: "https://arxiv.org/abs/2503.01840"
+    type: paper
+    lang: en
+    published: "2025-03-03"
+    accessed: "2026-10-15"
+    note: "加速比最高 6.5 倍，約為 EAGLE-2 的 1.4 倍；在 SGLang 框架中，批次大小 64 時吞吐量提高 1.38 倍。"
+  - key: splitwise
+    title: "Splitwise: Efficient generative LLM inference using phase splitting"
+    publisher: "Microsoft、University of Washington（arXiv，ISCA 2024）"
+    url: "https://arxiv.org/abs/2311.18677"
+    type: paper
+    lang: en
+    published: "2023-11-30"
+    accessed: "2026-10-15"
+    note: "提示運算階段運算密集、Token 生成階段記憶體密集；生成階段用不到最新 GPU 的運算能力，可改用較低功耗、較低成本的硬體；把兩階段拆到不同機器並以高速互連傳遞狀態，可在成本低 20% 下達到 1.4 倍吞吐量，或在相同成本與功耗預算下達到 2.35 倍吞吐量。"
+  - key: dynamo
+    title: "NVIDIA Dynamo Open-Source Library Accelerates and Scales AI Reasoning Models"
+    publisher: "NVIDIA Newsroom"
+    url: "https://nvidianews.nvidia.com/news/nvidia-dynamo-open-source-library-accelerates-and-scales-ai-reasoning-models"
+    type: press-release
+    lang: en
+    published: "2025-03-18"
+    accessed: "2026-10-15"
+    note: "Dynamo 為 Triton Inference Server 的後繼者，以分離式服務把 Prefill 與 Decode 放在不同 GPU，並追蹤可能多達數千顆 GPU 上的 KV Cache；完全開源，支援 PyTorch、SGLang、TensorRT-LLM 與 vLLM；相同 GPU 數下，在 Hopper 上服務 Llama 的效能加倍；在大型 GB200 NVL72 叢集上執行 DeepSeek-R1，每顆 GPU 產生的 Token 數提高 30 倍以上。新聞稿列名將協助推廣採用的業者包括 AWS、Cohere、CoreWeave、Dell、Fireworks、Google Cloud、Lambda、Meta、Microsoft Azure、Nebius、NetApp、OCI、Perplexity、Together AI 與 VAST。"
+  - key: lpx-inside
+    title: "Inside NVIDIA Groq 3 LPX: The Low-Latency Inference Accelerator for the NVIDIA Vera Rubin Platform"
+    publisher: "NVIDIA Technical Blog"
+    url: "https://developer.nvidia.com/blog/inside-nvidia-groq-3-lpx-the-low-latency-inference-accelerator-for-the-nvidia-vera-rubin-platform/"
+    type: company-site
+    lang: en
+    published: "2026-03-16"
+    accessed: "2026-10-15"
+    note: "LPX 機櫃有 256 顆 LPU，合計 128 GB 晶片內 SRAM、40 PB/s SRAM 頻寬、640 TB/s Scale-up 頻寬；每顆 LPU 有 500 MB 由編譯器管理的 SRAM。與 Vera Rubin NVL72 搭配時，Rubin GPU 負責 Prefill 與 Decode 階段的注意力運算，LPX 負責對延遲敏感的前饋網路與 MoE 專家運算（注意力與前饋網路分離，AFD），由 Dynamo 協調中間啟用值的交接；LPX 也可擔任推測解碼的草稿引擎，由 Rubin GPU 驗證。NVIDIA 稱對兆級參數模型，每百萬瓦推論吞吐量最多為 GB200 NVL72 的 35 倍。"
+  - key: lpx-pr
+    title: "NVIDIA Groq 3 LPX Now in Full Production With World-Class Speed for Agentic AI"
+    publisher: "NVIDIA Newsroom"
+    url: "https://nvidianews.nvidia.com/news/nvidia-groq-3-lpx-now-in-full-production-with-world-class-speed-for-agentic-ai"
+    type: press-release
+    lang: en
+    published: "2026-08-24"
+    accessed: "2026-10-15"
+    note: "Groq 3 LPX 全面量產，作為 Vera Rubin 平台的延伸、提高 Token 生成速度；在 Artificial Analysis 測試中，以 10 萬 Token 上下文執行 Gemma 4 31B，達到每秒 3,400 個輸出 Token；Nebius 為首家採用的 AI 雲，將導入其 Token Factory 推論平台；Groq 與 LPU 名稱經 Groq, Inc. 授權使用。"
+  - key: amd-mi400
+    title: "AMD Instinct MI400 Series"
+    publisher: AMD
+    url: "https://www.amd.com/en/products/accelerators/instinct/mi400.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "Helios 機櫃（72 顆 MI455X）峰值 OCP MXFP4 運算 2.9 exaFLOPS、MXFP8 1.4 exaFLOPS，合計 31 TB HBM4；每顆 MI455X 有 432 GB HBM4、23.3 TB/s，可讓更大的模型與 KV Cache 常駐本機記憶體。"
+updated: "2026-10-15"
+lastVerified: "2026-10-15"
+editorial:
+  status: fact-checked
+  author: learn-14
+  checkedBy: "learn-14-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：數字逐一與原始來源核對（arXiv 論文全文、Llama 3 論文 6.2 節、DeepSeek open-infra-index、Hugging Face 模型卡與 config.json、NVIDIA、AMD 與 Anthropic 官方頁面），並重算 KV Cache、屋頂線與推測解碼期望值。修正 vLLM 論文對 Orca 的描述（兩者互補，非「典型做法」）、800 KB 為計算值而非量測值、CMX 平台的發表時間（改為不寫月份）、Dynamo 名單為「列名協助推廣」而非已採用、gpt-oss 與 Kimi K2 Thinking 的量化描述，並把部分誇飾或無來源的最高級說法改為中性措辭。"
+---
+
+## 一句話解釋
+
+推論最佳化，是在不降低（或幾乎不降低）回答品質的前提下，讓模型每產生一個 <Term id="token">Token</Term> 都更便宜、更快的一整套工程技巧。它們大多在對付同一個瓶頸：<Term id="decode">Decode</Term> 階段每產生一個 Token，都要把模型權重與累積的 <Term id="kv-cache">KV Cache</Term> 從 <Term id="hbm">HBM</Term> 搬一遍，<Term id="gpu">GPU</Term> 的運算單元卻大多在等資料。主要工具有四類：管好 KV Cache（少存、少重算、少浪費）、<Term id="quantization">量化</Term>（每個數字少用幾個位元）、<Term id="speculative-decoding">推測解碼</Term>（一次驗證好幾個 Token）、<Term id="disaggregated-inference">分離式推論</Term>（把兩個階段交給不同的硬體）。這些技巧疊起來，決定了推論業者的毛利，也決定資料中心要買什麼樣的晶片、記憶體與網路。
+
+本文假設你已讀過<LearnLink id="training-vs-inference-economics">訓練與推論的經濟學</LearnLink>與<LearnLink id="memory-and-hbm">記憶體牆與 HBM</LearnLink>，知道推論成本為什麼取決於批次與記憶體頻寬；這裡把重點放在各種技巧的原理、實測數字與彼此的取捨。
+
+## 生活化比喻
+
+<Callout type="analogy" title="一間同時接幾千張單的中央廚房">
+
+- **每出一道菜，都得把整本食譜從倉庫搬出來翻一遍**：這就是 Decode。真正下鍋的時間很短，時間都花在搬食譜（讀取權重）上。一次接很多張單、翻一次食譜就一起做（批次處理），最劃算。
+- **每桌的點菜紀錄要放在手邊（KV Cache）**：不然每上一道菜，都得重問一次整桌點了什麼。但客人越多、坐得越久，檯面就越擠。把紀錄寫得精簡（GQA、MLA）、用活頁夾分頁收好（PagedAttention）、熟客的固定套餐直接沿用（前綴快取），都是在省檯面。
+- **把精確到 0.01 克的配方，改成用量匙標示（量化）**：食譜變薄、翻得更快；只要量匙夠準，味道幾乎不變。
+- **學徒先把接下來幾道菜擺好盤，主廚一眼檢查（推測解碼）**：對的直接出餐，從第一道錯的開始重做。主廚看一眼的時間，和自己做一道差不多。
+- **把備料區和出餐線分開（分離式推論）**：備料（Prefill）一次處理大量食材，需要力氣；出餐（Decode）講求穩定快速。兩者擠在同一條線上，遇到大單備料，出餐就會卡住。
+
+</Callout>
+
+## 原理
+
+### 先找瓶頸：兩個階段、兩種限制
+
+一個請求會經過兩個階段。<Term id="prefill">Prefill</Term> 一次讀完整段提示詞，所有輸入 Token 可以平行計算，屬於大型矩陣乘法，GPU 的運算單元可以接近滿載；它決定使用者要等多久才看到第一個字，也就是 <Term id="ttft">TTFT</Term>（首 Token 延遲）。Decode 則一次只產生一個 Token，每一步都要把權重與 KV Cache 讀一遍，速度受記憶體頻寬限制；它決定之後每個字之間的間隔，DistServe 論文稱為 TPOT（每個輸出 Token 的時間）<Cite k="distserve" />。
+
+用屋頂線（roofline）的角度看最清楚。以每秒浮點運算次數（<Term id="flops">FLOPS</Term>）計，H100 SXM 的 BF16 稠密算力約 989 TFLOPS，HBM 頻寬則是 3.35 TB/s<Cite k="h100" />，兩者相除約 295：每從記憶體讀 1 位元組，要做將近 300 次運算，運算單元才不會閒著（本站換算）。Decode 時每個參數以 2 位元組存放、只做一次乘法與一次加法，同時只服務一個請求時，每讀 1 位元組只做約 1 次運算，離 295 差了近 300 倍。
+
+<Term id="batching">批次處理</Term>能救回權重這一半：讀一次權重、同時替 B 個請求各算一個 Token，運算強度就變成約 B。代價是批次越大，整體<Term id="throughput">吞吐量</Term>越高，每位使用者等下一個字的<Term id="latency">延遲</Term>卻可能變長，推論服務永遠在兩者之間取捨。另一個限制是 KV Cache 每個請求各自一份，批次再大也無法共用；上下文越長，KV Cache 的讀取量占比越高，這是長上下文推論特別貴的原因之一。Google 研究者在 5,400 億參數的 PaLM 上，分別量測了兩種極端：小批次生成時每個 Token 29 毫秒（用了 int8 權重量化），大批次處理輸入時的運算使用率達 76%<Cite k="pope-inference" />。
+
+<Compare
+  title="Prefill 與 Decode"
+  left={{ title: "Prefill", items: ["一次處理整段提示詞，Token 可平行計算", "矩陣乘矩陣，主要受算力限制", "決定首 Token 延遲（TTFT）", "提示詞越長，耗時越久", "最佳化重點：算力、FlashAttention、前綴快取"] }}
+  right={{ title: "Decode", items: ["一次產生一個 Token，前後相依", "每一步都要讀權重與 KV Cache，主要受頻寬限制", "決定每個 Token 的間隔（TPOT）", "輸出越長、同時服務越多人，KV Cache 越吃記憶體", "最佳化重點：批次、KV Cache 管理、量化、推測解碼"] }}
+/>
+
+<Scene3D id="train-infer" variant="inference" caption="推論視角：多個請求排成批次，Prefill 一次讀完提示詞並建立 KV Cache，Decode 再逐字產生，並把新 Token 的 Key 與 Value 加進快取。請求數量與比例為示意。" />
+
+### KV Cache：用記憶體換運算
+
+<Term id="attention">注意力機制</Term>要讓每個新 Token 回頭看前面所有 Token 的 Key 與 Value。如果每產生一個字都把它們重算一遍，運算量會隨長度急遽增加；KV Cache 把每個 Token 在每一層算出的 Key 與 Value 存起來，之後只需替新 Token 計算一次。代價是記憶體，每個 Token 要存的大小為：
+
+<MathTeX tex={"\\text{KV}_{\\text{token}}=2\\times L\\times H_{\\mathrm{kv}}\\times d_{\\mathrm{head}}\\times b"} display label="每個 Token 的 KV Cache 大小，等於 2（Key 與 Value）乘以層數 L、KV 頭數、每個頭的維度，再乘以每個數字的位元組數 b" />
+
+以 Llama 3.1 70B 為例：80 層、64 個查詢頭、8 個 KV 頭，模型維度 8,192，每個頭的維度是 128<Cite k="llama3" />。以 BF16（2 位元組）存放，每個 Token 的 KV Cache 為 2 × 80 × 8 × 128 × 2 = 327,680 位元組，約 320 KB；一段用滿 128K（131,072 個 Token）的對話就要約 43 GB，而模型權重本身約 140 GB（本站換算）。如果每個查詢頭都保留自己的 Key 與 Value（64 個 KV 頭），每個 Token 會變成約 2.5 MB，同樣一段對話要 344 GB，是權重的 2.5 倍。
+
+早期的推論系統還浪費了大半空間。vLLM 論文以 130 億參數的 OPT 模型為例，算出每個 Token 的 KV Cache 就要 800 KB；而實測既有系統時，因為記憶體碎片與預留過多，只有 20.4% 到 38.2% 的 KV Cache 空間真正存放了 Token 資料<Cite k="vllm" />。
+
+### 讓 KV Cache 變小：MQA、GQA 與 MLA
+
+<BarChart
+  title="每個 Token 的 KV Cache 大小（BF16）"
+  unit="KB"
+  data={[{ label: "Llama 3.1 70B（若 64 個頭各存一份）", value: 2560 }, { label: "Llama 3.1 70B（GQA，8 個 KV 頭）", value: 320 }, { label: "DeepSeek-V3（MLA）", value: 69 }]}
+  source="llama3"
+  note="本站依 Llama 3 與 DeepSeek-V3 論文列出的模型維度換算，1 KB 以 1,024 位元組計；DeepSeek-V3 總參數約為 Llama 3.1 70B 的 10 倍。"
+  keepOrder
+/>
+
+縮小 KV Cache 的主線，是讓多個注意力頭共用 Key 與 Value：
+
+- **MQA（多查詢注意力）**：Noam Shazeer 在 2019 年提出，所有注意力頭共用同一組 Key 與 Value，大幅減少逐步解碼時要搬運的資料，解碼快很多，品質只略為下降<Cite k="mqa" />。
+- **GQA（分組查詢注意力）**：2023 年的折衷方案，把查詢頭分成幾組、每組共用一組 Key 與 Value。品質接近一般的多頭注意力，速度與 MQA 相當；既有模型只要再用原本預訓練約 5% 的運算量就能改造<Cite k="gqa" />。Llama 3 就以 8 個 KV 頭的 GQA 縮小 Decode 時的 KV Cache<Cite k="llama3" />。
+- **MLA（多頭潛在注意力）**：<CompanyChip id="deepseek" /> 在 2024 年 5 月的 DeepSeek-V2 提出，把 Key 與 Value 壓縮成一個低維度的潛在向量，只快取這個向量。與自家前代 DeepSeek 67B 相比，KV Cache 減少 93.3%，最大生成吞吐量提高到 5.76 倍；論文指出它的快取量只相當於 2.25 組的 GQA，表現卻比一般多頭注意力更好<Cite k="deepseek-v2" />。DeepSeek-V3 每層每個 Token 只需存 512 + 64 = 576 個數字<Cite k="deepseek-v3" />，以 BF16 計，61 層合計約 69 KB，比只有其 1/10 大小的 Llama 3.1 70B 還小（本站換算）。
+
+到了百萬 Token 的上下文，連 MLA 都不夠。2026 年 4 月的 DeepSeek-V4 改用混合了壓縮稀疏注意力與高度壓縮注意力的架構，官方表示在 100 萬 Token 的情境下，V4-Pro 每個 Token 的推論運算量只需 DeepSeek-V3.2 的 27%，KV Cache 只需 10%<Cite k="deepseek-v4" />。滑動視窗、線性注意力等其他做法，見<LearnLink id="transformer-and-attention">Transformer 與注意力機制</LearnLink>。
+
+### 不浪費、不重算：分頁、連續批次與前綴快取
+
+KV Cache 縮小之後，還要管得好。這一層的技巧多半做在<Term id="inference-engine">推論引擎</Term>裡：
+
+- **分頁管理（PagedAttention）**：vLLM 借用作業系統虛擬記憶體的分頁概念，把 KV Cache 切成固定大小的區塊、用到才配置，不必占用連續空間，浪費接近零，還能讓不同請求共用相同的區塊。在相同延遲下，吞吐量比 FasterTransformer、Orca 等系統高 2 到 4 倍<Cite k="vllm" />。
+- **連續批次（迭代層級排程）**：傳統做法要等一整批請求都寫完才換下一批，短回答只能乾等長回答。2022 年的 Orca 改成每跑完一次迭代就重新排班，寫完的請求立刻離開、新請求立刻加入；在 GPT-3 175B 上，相同延遲下的吞吐量是 NVIDIA FasterTransformer 的 36.9 倍<Cite k="orca" />。vLLM 論文也指出，Orca 的迭代層級排程與 PagedAttention 是互補的技術：前者讓更多請求能同時處理，後者讓記憶體裝得下更多請求<Cite k="vllm" />。
+- **前綴快取**：許多請求的開頭一模一樣，例如系統提示詞、同一份文件、多輪對話的歷史，或 <Term id="agent">Agent</Term> 每一步都要帶上的工具說明。只要把這段前綴的 KV Cache 留下來，下一個請求就能跳過這部分的 Prefill。SGLang 以 RadixAttention 用樹狀結構管理可重用的 KV Cache，在 Agent 控制、少樣本學習、多輪對話等任務上，吞吐量最高為既有系統的 6.4 倍<Cite k="sglang" />。
+
+前綴快取在真實服務中的效果相當可觀。DeepSeek 公布的 24 小時統計中，6,080 億個輸入 Token 有 56.3% 命中存放在磁碟上的 KV Cache；當時 DeepSeek-R1 的定價，快取命中的輸入每百萬 Token 0.14 美元，未命中則要 0.55 美元<Cite k="deepseek-infer" />。Anthropic 的<Term id="prompt-caching">提示快取</Term>也有類似的價差：讀取快取的價格是一般輸入的 0.1 倍（部分模型更低），寫入 5 分鐘有效的快取則是 1.25 倍<Cite k="anthropic-cache" />。
+
+快取要放在哪裡，也成了硬體問題。NVIDIA 把 KV Cache 的存放位置分成四層：G1 是 GPU 的 HBM，放正在生成中的熱資料；G2 是主機的 <Term id="dram">DRAM</Term>；G3 是本機 <Term id="ssd">SSD</Term>；G4 是共享儲存。以 BlueField-4 驅動的 CMX 平台，則在 G3 與 G4 之間加入一層「G3.5」：以乙太網路連接、專為 KV Cache 最佳化的快閃記憶體層，NVIDIA 稱它的每秒 Token 數與能源效率都最多是傳統儲存的 5 倍<Cite k="nv-cmx" />。月之暗面的 Mooncake 走的也是類似路線，把 GPU 叢集裡閒置的 CPU、DRAM 與 SSD 組成分離式的 KV Cache 池<Cite k="mooncake" />。
+
+### 注意力本身也要省搬運：FlashAttention
+
+Prefill 與長上下文的注意力運算，同樣卡在搬資料。標準做法會把一個「每個 Token 對每個 Token」的大矩陣寫回 HBM 再讀出來；<Term id="flash-attention">FlashAttention</Term> 把運算切成小塊，在晶片內的 <Term id="sram">SRAM</Term> 裡一次做完，大幅減少 HBM 的讀寫，而且結果完全精確，不是近似。它在 GPT-2 上帶來 3 倍的訓練加速<Cite k="flashattention" />；針對 H100 改寫的 FlashAttention-3，以 FP16 計算時最高達 740 TFLOPS（約 75% 使用率），以 FP8 計算時接近 1.2 PFLOPS<Cite k="flashattention3" />。
+
+### 量化：每個數字少用幾個位元
+
+<BarChart
+  title="Llama 3.1 70B 的權重大小"
+  unit="GB"
+  data={[{ label: "BF16（16 位元）", value: 140 }, { label: "FP8（8 位元）", value: 70 }, { label: "NVFP4（平均約 4.5 位元）", value: 39 }]}
+  source="nvfp4"
+  note="本站以 700 億參數乘以每個參數的位元數換算，未計 KV Cache 與保留較高精度的層；NVFP4 平均位元數依 NVIDIA 說明。"
+  keepOrder
+/>
+
+Decode 的速度上限，大致由每一步要讀多少位元組決定。把權重從 16 位元壓到 8 位元，要搬的資料減半，小批次時的速度上限就接近翻倍，需要的 GPU 數也跟著減少。量化可以只壓權重，也可以連同啟用值與 KV Cache 一起壓，越激進越省，風險也越高。
+
+- **事後量化**：2022 年的 LLM.int8() 讓 1,750 億參數的模型直接轉成 8 位元整數使用，記憶體減半而表現不降，關鍵是把少數數值特別大的「離群」維度留在 16 位元計算<Cite k="llm-int8" />。同年的 GPTQ 只花約 4 個 GPU 小時，就把 1,750 億參數模型的權重壓到 3 或 4 位元，準確度損失可忽略，首次能在單顆 GPU 上推論；端到端推論在 A100 上比 FP16 快約 3.25 倍<Cite k="gptq" />。
+- **硬體原生的低精度格式**：Hopper 世代支援 <Term id="fp8">FP8</Term>。<CompanyChip id="meta" /> 以 FP8 推論 Llama 3 405B 時，只量化約占推論運算時間一半的前饋網路，注意力層與第一、最後一層維持較高精度；以 10 萬筆回答的獎勵模型分數比對，影響可忽略，Prefill 吞吐量最多提高 50%<Cite k="llama3" />。Blackwell 世代再支援 <Term id="fp4">FP4</Term>：MXFP4 每 32 個數值共用一個 2 的冪次縮放因子；NVIDIA 的 NVFP4 改為每 16 個數值共用一個 FP8 縮放因子，平均約 4.5 位元，記憶體約為 FP16 的 1/3.5。NVIDIA 把 DeepSeek-R1-0528 從 FP8 量化到 NVFP4，主要任務的準確度下降在 1% 以內<Cite k="nvfp4" />。
+- **量化感知訓練**：與其訓練完再壓縮，不如在訓練時就讓模型適應低精度。<CompanyChip id="openai" /> 的 gpt-oss-120b 在後訓練階段就把 MoE 權重量化為 MXFP4，因此能放進單張 80 GB GPU<Cite k="gptoss-card" />。<CompanyChip id="moonshot-ai" /> 指出，<Term id="reasoning-model">推理模型</Term>的解碼長度很長，量化常造成明顯退步，因此 Kimi K2 Thinking 在後訓練階段就對 MoE 權重做 INT4 量化感知訓練，生成速度約提高 2 倍，所有評測也都在 INT4 下取得<Cite k="kimi-k2-thinking" />；Kimi K3 更從 SFT 階段起就以 MXFP4 權重、MXFP8 啟用值訓練<Cite k="kimi-k3" />。DeepSeek-V4 的 MoE 專家參數也直接以 FP4 發布<Cite k="deepseek-v4" />。
+
+量化不是免費的。月之暗面的經驗顯示，解碼長度很長的思考模型特別容易被量化誤差拖累；不同模型、不同任務對精度的敏感度也不一樣，部署前仍需要在自己的任務上驗證。
+
+### 推測解碼：先猜再驗
+
+Decode 受頻寬限制，代表大模型一次「驗證」好幾個 Token 的成本，跟產生一個 Token 差不多：權重反正都要讀一遍。推測解碼利用這一點，讓一個便宜的草稿機制先猜，再由大模型一次驗收。
+
+<FlowSteps
+  title="推測解碼的一輪"
+  steps={[
+    { title: "草稿", detail: "小模型或額外的預測頭，快速猜出接下來的幾個 Token" },
+    { title: "平行驗證", detail: "大模型一次算出這幾個位置的機率，成本接近產生 1 個 Token" },
+    { title: "接受", detail: "從頭逐一比對，以修正過的拒絕取樣決定是否接受" },
+    { title: "修正", detail: "在第一個被拒絕的位置，由大模型重新取樣 1 個 Token" },
+    { title: "下一輪", detail: "每輪至少前進 1 個 Token，猜得越準，一次前進越多" }]}
+  caption="依 Leviathan 等人（2022）與 Chen 等人（2023）的論文整理。"
+/>
+
+關鍵在「修正過的拒絕取樣」：它保證最終輸出的機率分布與大模型自己逐字產生完全相同，所以是不犧牲品質的加速。Google 研究者 2022 年的論文在 T5-XXL 上達到 2 到 3 倍加速且輸出完全相同<Cite k="leviathan" />；DeepMind 在 700 億參數的 Chinchilla 上達到 2 到 2.5 倍<Cite k="chen-spec" />。Google 後來表示，推測解碼已用在多項產品中，讓 Google 搜尋的 AI 摘要在品質不變下更快產生<Cite k="google-spec" />。
+
+草稿不一定要另一個模型。Medusa 在原模型上加幾個額外的預測頭，加速 2.2 到 3.6 倍<Cite k="medusa" />；EAGLE-3 最高可達 6.5 倍<Cite k="eagle3" />。DeepSeek-V3 則在訓練時就加入「多 Token 預測」（MTP），讓模型順便預測下一個之後的 Token；這個額外預測的接受率在 85% 到 90% 之間，解碼速度因此提高為 1.8 倍<Cite k="deepseek-v3" />，DeepSeek-V4 也保留了一層 MTP<Cite k="deepseek-v4" />。概念上，這和用小模型模仿大模型的<Term id="distillation">蒸餾</Term>相通：草稿越像大模型，猜中率越高。
+
+推測解碼也有極限。批次很大時，GPU 已接近算力上限，多驗證的 Token 不再免費，加速幅度通常會縮小：EAGLE-3 在 SGLang 中、批次大小 64 時的吞吐量提升為 1.38 倍<Cite k="eagle3" />。
+
+### 分離式推論：把備料區和出餐線分開
+
+傳統的推論服務讓同一組 GPU 同時跑 Prefill 與 Decode。問題是兩者互相干擾：一個長提示詞的 Prefill 進來，正在 Decode 的請求就得等；兩個階段的資源配置與平行策略也被綁在一起，只能為了同時滿足 TTFT 與 TPOT 而多買硬體<Cite k="distserve" />。分離式推論把兩個階段交給不同的機器：
+
+<FlowSteps
+  title="分離式推論下的一個請求"
+  steps={[
+    { title: "排程", detail: "依提示詞長度與快取命中情況，把請求送到合適的 Prefill 節點" },
+    { title: "Prefill", detail: "一次讀完提示詞、建立 KV Cache，並產生第一個 Token" },
+    { title: "傳送 KV Cache", detail: "透過 RDMA 等高速網路，把 KV Cache 搬到 Decode 節點" },
+    { title: "Decode", detail: "以大批次逐字產生，可搭配推測解碼" },
+    { title: "保留快取", detail: "請求結束後，KV Cache 可下放到 DRAM 或 SSD，等下一輪對話重用" }]}
+  caption="綜合 DistServe、Mooncake 與 NVIDIA Dynamo 的說明整理。"
+/>
+
+學術界的結果相當一致。DistServe 在 90% 以上請求符合延遲要求的前提下，可服務的請求量最多提高 7.4 倍<Cite k="distserve" />。<CompanyChip id="microsoft" /> 的 Splitwise 指出，Token 生成階段用不到最新 GPU 的算力，可以改用較低功耗、較便宜的硬體；拆開後可在成本低 20% 下達到 1.4 倍吞吐量，或在相同成本與功耗下達到 2.35 倍<Cite k="splitwise" />。代價是多了一段 KV Cache 的跨機器傳輸，必須仰賴 <Term id="rdma">RDMA</Term> 這類高速網路。
+
+業界很快跟進。月之暗面的 Mooncake 是 Kimi 的服務平台，在真實負載下讓 Kimi 多處理 75% 的請求<Cite k="mooncake" />；DeepSeek 的線上服務同樣採 Prefill／Decode 分離<Cite k="deepseek-infer" />。<CompanyChip id="nvidia" /> 在 2025 年 3 月推出開源的 Dynamo 推論框架，把分離式服務與跨數千顆 GPU 的 KV Cache 管理做成通用元件，支援 vLLM、SGLang 與 TensorRT-LLM；NVIDIA 稱在 GB200 NVL72 叢集上執行 DeepSeek-R1 時，每顆 GPU 產生的 Token 數提高 30 倍以上，這是綜合多項最佳化與新硬體的廠商數字<Cite k="dynamo" />。
+
+下一步是連硬體都分家。NVIDIA 的 Groq 3 LPX 機櫃有 256 顆 LPU、合計 128 GB 的晶片內 SRAM，頻寬 40 PB/s；與 Vera Rubin NVL72 搭配時，Rubin GPU 負責 Prefill 與 Decode 階段的注意力運算（需要大容量 HBM 存放 KV Cache），LPX 負責對延遲敏感的前饋網路與 <Term id="moe">MoE</Term> 專家運算，也可以擔任推測解碼的草稿引擎<Cite k="lpx-inside" />。LPX 在 2026 年 8 月宣布全面量產，以 10 萬 Token 上下文執行 Gemma 4 31B 時，在 Artificial Analysis 測試中達到每秒 3,400 個輸出 Token<Cite k="lpx-pr" />。MoE 為什麼特別適合這樣拆，見<LearnLink id="mixture-of-experts">混合專家模型深入</LearnLink>。
+
+### 組合起來：DeepSeek 的一天
+
+這些技巧在真實服務中是疊在一起用的。DeepSeek 在 2025 年公開了 V3 與 R1 推論服務的 24 小時統計：模型本身用 MLA 縮小 KV Cache、用 MoE 降低運算；服務端採 Prefill／Decode 分離與跨節點專家平行，矩陣乘法以 FP8 計算，並把 KV Cache 存到磁碟上重用<Cite k="deepseek-infer" />。
+
+<StatGrid
+  title="DeepSeek V3／R1 推論服務的 24 小時（2025-02-27 至 02-28）"
+  items={[
+    { label: "平均使用節點", value: "226.75", unit: "台", note: "每台 8 顆 H800，尖峰 278 台" },
+    { label: "一天的輸入 Token", value: "6,080 億", note: "56.3% 命中磁碟上的 KV Cache" },
+    { label: "每台節點 Prefill 吞吐量", value: "約 7.37 萬", unit: "Token／秒", note: "含快取命中" },
+    { label: "每台節點 Decode 吞吐量", value: "約 1.48 萬", unit: "Token／秒", note: "使用者看到的速度約每秒 20 到 22 個" },
+    { label: "理論成本利潤率", value: "545%", note: "假設全部以 R1 價格計費的理論值" }]}
+  caption="資料來源：DeepSeek open-infra-index。每日 GPU 成本以每 GPU 小時 2 美元計為 87,072 美元；DeepSeek 說明實際營收遠低於理論值，因為 V3 較便宜、網頁與 App 免費，離峰時段也有折扣。"
+/>
+
+每台節點 Decode 每秒產生約 1.48 萬個 Token，每位使用者卻只看到每秒 20 到 22 個，代表同一時間約有 700 個請求在共用一台節點（本站推算），平均每個輸出 Token 背後還帶著 4,989 個 Token 的 KV Cache<Cite k="deepseek-infer" />。批次、KV Cache 管理與記憶體頻寬之間的拉鋸，在這組數字裡一覽無遺。
+
+<DeepDive title="深入一點：屋頂線、KV Cache 的運算強度，與推測解碼的期望值">
+
+**屋頂線模型。** 一段程式能達到的效能，等於「峰值算力」與「記憶體頻寬 × 運算強度」兩者中較小的那個；運算強度是每讀 1 位元組做幾次運算：
+
+<MathTeX tex={"P=\\min\\left(P_{\\mathrm{peak}},\\;BW\\times I\\right),\\qquad I^{*}=\\frac{P_{\\mathrm{peak}}}{BW}\\approx\\frac{989\\ \\mathrm{TFLOPS}}{3.35\\ \\mathrm{TB/s}}\\approx 295"} display label="可達效能 P 等於峰值算力與頻寬乘以運算強度兩者的較小值；H100 的轉折點約為每位元組 295 次運算" />
+
+運算強度低於 295，H100 就受頻寬限制<Cite k="h100" />。
+
+**權重與 KV Cache 的不同命運。** Decode 時，權重被批次裡的 B 個請求共用，運算強度約為 B；KV Cache 卻只屬於單一請求。以 GQA 的 Llama 3.1 70B 為例，每個 KV 頭被 8 個查詢頭共用，讀進來的每個數值大約只做 8 次乘加，換算運算強度約為 8，而且不會因批次變大而提高（本站推算）。所以批次可以把權重的部分推向算力上限，長上下文的注意力運算卻始終受頻寬限制，這正是 GQA、MLA 與 KV Cache 量化持續有價值的原因，也是 NVIDIA 把注意力留在大容量 HBM 的 GPU、把前饋網路交給 LPU 的背景<Cite k="lpx-inside" />。
+
+**推測解碼的期望值。** 假設每個猜測被接受的機率為 α、每輪猜 γ 個 Token，每輪大模型前向一次，預期能前進的 Token 數為<Cite k="leviathan" />：
+
+<MathTeX tex={"\\mathbb{E}[\\text{tokens}]=\\frac{1-\\alpha^{\\gamma+1}}{1-\\alpha}"} display label="每輪預期產生的 Token 數，等於一減 alpha 的 gamma 加一次方，再除以一減 alpha" />
+
+α = 0.8、γ = 4 時，每輪約前進 3.4 個 Token。DeepSeek-V3 的 MTP 相當於每輪只猜 1 個（γ = 1）、接受率 85% 到 90%，代入得每輪 1.85 到 1.9 個 Token，與實測的 1.8 倍速度相當接近；差距來自草稿與驗證本身的額外開銷（本站推算）<Cite k="deepseek-v3" />。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+- **KV Cache 吃掉 HBM 與快閃記憶體** → <SegmentChip id="memory-storage" />：<Term id="context-window">上下文視窗</Term>越長、Agent 與推理模型的對話越多輪，KV Cache 就越大。熱資料要放在 <CompanyChip id="sk-hynix" />、<CompanyChip id="samsung-electronics" />、<CompanyChip id="micron" /> 的 HBM 裡；溫資料一路下放到 DRAM、企業級 SSD 與共享儲存，NVIDIA 甚至為它新增 G3.5 的快閃記憶體層<Cite k="nv-cmx" />，讓 <CompanyChip id="sandisk" />、<CompanyChip id="kioxia" /> 等 NAND 業者與 <CompanyChip id="vast-data" />、<CompanyChip id="weka" /> 等儲存系統業者和推論需求的連結更緊密，見<TrendLink id="memory-supercycle">記憶體超級循環</TrendLink>與<TrendLink id="long-context-memory">長上下文與 AI 記憶</TrendLink>。
+- **低精度格式與推論專用晶片** → <SegmentChip id="ai-accelerators" />：FP8、NVFP4、MXFP4 都要硬體原生支援才有速度，<CompanyChip id="amd" /> 的 Helios 機櫃同樣以 MXFP4 算力（峰值 2.9 exaFLOPS）為主打規格<Cite k="amd-mi400" />。Decode 受頻寬限制，也讓以 SRAM 為主的架構重新受到重視：NVIDIA 的 LPX 以 LPU 為核心（Groq 與 LPU 名稱經 <CompanyChip id="groq" /> 授權使用）<Cite k="lpx-pr" />，見<TrendLink id="inference-chips-new-paradigms">推論專用晶片</TrendLink>與<TrendLink id="custom-asic-rise">客製化 ASIC 崛起</TrendLink>。
+- **分離式推論吃網路** → <SegmentChip id="networking-optics" />：Prefill 與 Decode 節點之間要搬 KV Cache，GPU 與 LPU 之間每個 Token 都要交接中間結果，快取還要在 GPU 與儲存之間往返；CMX 就以 RDMA 乙太網路連接 GPU 節點與快閃記憶體<Cite k="nv-cmx" />。推論流量因此不再只發生在單一伺服器內。
+- **推論引擎與推論雲** → <SegmentChip id="devtools-data-mlops" />、<SegmentChip id="cloud-neocloud" />：vLLM 與 SGLang 是兩個主要的開源推論引擎，背後的公司分別是 <CompanyChip id="inferact" /> 與 <CompanyChip id="radixark" />，Kimi K3 的模型卡建議的推論引擎也包括這兩者<Cite k="kimi-k3" />。Dynamo 發表時列名協助推廣的業者，包括 <CompanyChip id="coreweave" />、<CompanyChip id="fireworks-ai" />、<CompanyChip id="lambda" />、<CompanyChip id="nebius" />、<CompanyChip id="together-ai" /> 等推論與雲端業者<Cite k="dynamo" />；Nebius 也是第一家導入 LPX 的 AI 雲<Cite k="lpx-pr" />。對按 Token 收費的業者來說，這些技巧直接決定毛利，見<TrendLink id="ai-monetization">AI 營收化</TrendLink>。
+- **模型公司把推論成本寫進架構** → <SegmentChip id="foundation-models" />：MLA、MTP（<CompanyChip id="deepseek" />，<ModelChip id="deepseek" />）、原生 INT4 與 MXFP4（<CompanyChip id="moonshot-ai" />，<ModelChip id="moonshot-kimi" />；<CompanyChip id="openai" />，<ModelChip id="openai-gpt-oss" />）、GQA（<ModelChip id="meta-muse-llama" />），都是在設計模型時就為推論省錢；<CompanyChip id="anthropic" />（<ModelChip id="anthropic-claude" />）以提示快取的價差鼓勵開發者重用前綴，<CompanyChip id="alphabet" />（<ModelChip id="google-gemini" />）則把推測解碼用在搜尋產品上。<Term id="inference">推論</Term>需求隨推理模型與 Agent 快速成長，見<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>與<TrendLink id="reasoning-test-time-compute">推理模型與推論時運算</TrendLink>。

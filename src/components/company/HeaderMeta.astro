@@ -1,0 +1,131 @@
+---
+/**
+ * Header extras for a company profile (owner: pages-companies): ticker chips and a one-line
+ * 「總部 · 成立 · 員工」 row.
+ *
+ *   <HeaderMeta listings={…} hq={…} founded={1987} employees={{ value: 90557, asOf: '2025-12-31' }} />
+ */
+import { formatNumber } from '../../lib/format';
+import { EXCHANGE_LABELS, countryLabel } from './labels';
+
+interface Props {
+  listings: ReadonlyArray<{ exchange: string; ticker: string; adr?: boolean | undefined; primary?: boolean | undefined }>;
+  hq: { city: string; cityZh: string; country: string };
+  founded?: number | null | undefined;
+  employees?: { value: number; asOf: string } | undefined;
+  website?: string | undefined;
+}
+const { listings, hq, founded, employees } = Astro.props;
+const country = countryLabel(hq.country);
+const place = hq.cityZh && hq.cityZh !== country ? `${hq.cityZh}，${country}` : country;
+---
+
+<div class="hm">
+  {
+    listings.length > 0 && (
+      <ul class="hm__tickers" role="list" aria-label="股票代號">
+        {listings.map((l) => (
+          <li class="hm__tk" title={`${EXCHANGE_LABELS[l.exchange] ?? l.exchange}${l.adr ? '（美國存託憑證）' : ''}`}>
+            <span class="hm__ex">{l.exchange}</span>
+            <span class="hm__code">{l.ticker}</span>
+            {l.adr && <span class="hm__adr">ADR</span>}
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  <p class="hm__facts">
+    <span class="hm__fact">
+      <span class="hm__k">總部</span>
+      {place}
+      {hq.city && hq.city !== hq.cityZh && <span class="hm__en" lang="en">（{hq.city}）</span>}
+    </span>
+    {
+      founded && (
+        <span class="hm__fact">
+          <span class="hm__k">成立</span>
+          {founded} 年
+        </span>
+      )
+    }
+    {
+      employees && (
+        <span class="hm__fact" title={`員工人數截至 ${employees.asOf}`}>
+          <span class="hm__k">員工</span>
+          約 {formatNumber(employees.value)} 人
+          <span class="hm__asof">（{employees.asOf.slice(0, 7).replace('-', '/')}）</span>
+        </span>
+      )
+    }
+  </p>
+</div>
+
+<style>
+  .hm {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+  }
+  .hm__tickers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hm__tk {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-s);
+    overflow: hidden;
+    font-size: var(--fs-xs);
+    line-height: 1.9;
+  }
+  .hm__ex {
+    padding-inline: 0.45rem;
+    background: var(--c-bg-sunken);
+    color: var(--c-fg-muted);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.02em;
+  }
+  .hm__code {
+    padding-inline: 0.5rem;
+    font-family: var(--font-mono);
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+  }
+  .hm__adr {
+    padding-inline: 0.4rem;
+    border-inline-start: 1px solid var(--c-border);
+    color: var(--c-fg-subtle);
+    font-size: 0.68rem;
+    align-self: center;
+  }
+  .hm__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .hm__fact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    color: var(--c-fg);
+  }
+  .hm__k {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-subtle);
+    margin-inline-end: 0.15em;
+  }
+  .hm__en,
+  .hm__asof {
+    color: var(--c-fg-subtle);
+    font-size: var(--fs-xs);
+  }
+</style>

@@ -1,0 +1,127 @@
+# Proposals from the cloud-globe scene agent (scene-cloud-globe), 2026-10-09 (updated 2026-10-15 by the reviewer).
+# Nothing here blocks the scene: each item has a local workaround in src/three/scenes/cloud-globe/.
+
+- id: arcribbons-backface-culling
+  target: src/three/kit/ArcRibbons.ts
+  severity: bug (same finding as proposals/scene-agent-loop.yaml and scene-attention.yaml)
+  problem: >
+    The ribbon strip's winding flips with the on-screen direction of the arc, and the ShaderMaterial
+    keeps the default FrontSide, so every arc that runs left → right on screen is culled. On the
+    globe this showed as arcs that vanish halfway or only appear after the camera turns around.
+  proposal: >
+    `side: DoubleSide` and `forceSinglePass: true` on the ArcRibbons material (depthWrite is already
+    false, so one pass is enough and the draw-call count does not change).
+  workaround: >
+    index.ts sets `arcs.object.material.side = DoubleSide` and `forceSinglePass = true` right after
+    constructing the kit object.
+
+- id: arcribbons-reversed-smoothstep
+  target: src/three/kit/ArcRibbons.ts (FRAG)
+  severity: robustness
+  problem: >
+    `smoothstep(1.0, 0.96, vT)` has edge0 > edge1, which is undefined behaviour in GLSL ES 3.00
+    (§8.3). ANGLE/SwiftShader happen to evaluate the formula, but other drivers may not.
+  proposal: Replace with `1.0 - smoothstep(0.96, 1.0, vT)` (same curve, defined behaviour).
+  workaround: none needed today (renders correctly in Chromium/ANGLE and SwiftShader).
+
+- id: arcribbons-flow-setter
+  target: src/three/kit/ArcRibbons.ts
+  severity: enhancement
+  problem: >
+    The travelling highlight speed (`flow`) is constructor-only. Under reduced motion the scene must
+    stop it while keeping the arcs visible; `update(t)` with a frozen clock still shows a static
+    highlight, which reads as a glitch on long arcs.
+  proposal: "`setFlow(speed: number)` that writes the existing uFlow uniform."
+  workaround: index.ts writes `arcs.object.material.uniforms.uFlow.value` directly (0 when motion is off).
+
+- id: globe-oblique-pose
+  target: src/three/kit/Globe.ts
+  severity: enhancement
+  problem: >
+    `Globe.poseFor(lat, lon, d)` always looks straight down the radius, so radial pillars at the
+    focus point are seen end-on and their height (the data) disappears. Regional views need a
+    camera that looks at the surface point from the south at an angle, like a tilted map.
+  proposal: >
+    `globe.obliquePose(lat, lon, { distance, elevation = 40, from = 'south' })` returning a
+    CameraPose whose target is the surface point and whose camera sits `elevation`° above the local
+    horizon (local frame: n = normal, east = up × n, north = n × east).
+  workaround: index.ts implements `obliquePose()` locally (same maths) and `clusterPose()` that
+    frames the densest group of campuses.
+
+- id: globe-marker-spread
+  target: src/three/kit/Globe.ts
+  severity: enhancement
+  problem: >
+    `setMarkers` stacks markers that share a 0.25° bucket along the normal, which suits company HQs
+    in one city but not campus pillars whose height is the data: stacking would add heights. Nearby
+    campuses (e.g. several in Texas or around Chicago) need to be fanned out sideways instead.
+  proposal: >
+    An option `layout: 'stack' | 'fan'` (fan = members of a cluster within N° placed on a small ring
+    around the cluster centre), exported as a pure helper `spreadLatLon(items, minDeg, ringDeg)` so
+    labels and picking can reuse the same positions.
+  workaround: index.ts `spreadNormals()` fans campuses closer than 1.25° onto a 0.72° ring.
+
+- id: instanced-alpha-helper
+  target: src/three/core/materials.ts (or a kit helper)
+  severity: enhancement
+  problem: >
+    Fading individual instances (filtered campuses, GW rings, footprint discs) needs a per-instance
+    alpha. Each scene patches `onBeforeCompile` itself with a custom program cache key.
+  proposal: >
+    `materials.instancedAlpha(material, attributeName = 'aAlpha')` that injects the attribute and
+    multiplies `diffuseColor.a`, with a stable cache key, for Basic and Standard materials.
+  workaround: index.ts `withInstanceAlpha()` (and `withBoost()` for a small emissive lift of
+    instance colours in dark theme).
+
+- id: globe-ocean-tint
+  target: src/three/kit/Globe.ts
+  severity: enhancement (visual)
+  problem: >
+    The kit ocean colour is bg.lerp(coolant, 0.12) in linear space, which renders as a fairly bright,
+    saturated blue in the dark theme (about #193b65): pillars and arcs lose contrast against it and the
+    globe reads less "calm technical diorama". The atmosphere strength (0.55) is also fixed.
+  proposal: >
+    GlobeOptions `ocean?: ColorRef` (default unchanged) and `atmosphere?: number` (strength), or a
+    deeper default such as bg.lerp(coolant, 0.055) for dark and bg.lerp(grid, 0.42) for light.
+  workaround: >
+    index.ts finds the ocean mesh (SphereGeometry + MeshBasicMaterial) in globe.group and binds its
+    colour again with ctx.materials.bind (the later binding wins on every theme change); it sets the
+    atmosphere ShaderMaterial's uStrength uniform to 0.42.
+
+- id: labels-auto-align
+  target: src/three/core/labels.ts
+  severity: enhancement
+  problem: >
+    LabelLayer places each label at its one fixed `align` and culls it on collision. On the globe the
+    US campus belt (and the Gulf in the sovereign step) packs a dozen pillars into a few hundred
+    pixels, so most names were culled although free space existed beside the pillar tops.
+  proposal: >
+    `align: 'auto'` (or `align: ['above', 'right', 'left', 'below']`): in the existing greedy pass,
+    try the label's previous side first, then the listed alternatives, and keep the first spot that
+    fits (sticky, so labels do not flicker while the camera moves).
+  workaround: >
+    index.ts `layoutLabels()` runs the same greedy test every ~200 ms (campus, user-city and HQ
+    labels), with label sizes estimated per kind from the .scene-label CSS and the host's 4 px
+    collision cells reproduced, and sets `align` on each label through `LabelHandle.set`. An
+    underestimated size (e.g. the larger 'strong' 台北 label) made the host cull neighbours that the
+    scene thought fitted, which is why the sizes must match; the host knows them exactly.
+
+- id: campus-mw-now
+  target: src/lib/scene-data/campuses.ts (buildCampusesSceneData) and docs/SCENES.md (cloud-globe data)
+  severity: accuracy (data the scene needs for its 建置進度 step)
+  problem: >
+    src/data/campuses.yaml has `mwNow` (Epoch AI's estimate of the IT power already online) for every
+    campus, but buildCampusesSceneData() passes only name/lat/lon/operator/mw/status. Without it
+    the scene can only draw an "operating" campus as fully built and sum planned power per status,
+    while the registry shows, for example, Microsoft Fairwater Wisconsin at about 370 of 2,263 MW
+    online. 「宣布不等於完工」 is the point of the last step, so the online share matters.
+  proposal: >
+    Add an optional `mwNow: number | null` to CampusDatum and to the docs/SCENES.md shape
+    (`{ campuses: [{ name, lat, lon, operator, mw, mwNow?, status }] }`); in toCampus():
+    `mwNow: num(r['mwNow'] ?? r['onlineMw']) ?? null`.
+  workaround: >
+    The scene already accepts `mwNow` (data.ts guard + normalise). With it, each pillar's solid lower
+    part is mwNow / mw, the card shows 「已上線」, and the 建置進度 panel splits planned power into
+    已上線 / 興建或擴建中 / 尚未動工. Without it (today's page data) the pillars use the status
+    defaults (示意) and the panel sums planned power per status, with a note that operating campuses
+    are usually still expanding. The fixture carries illustrative mwNow values.

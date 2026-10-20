@@ -1,0 +1,257 @@
+---
+title: "晶片是怎麼做出來的？"
+subtitle: "從一粒沙到一顆 AI 晶片：設計、光罩、晶圓製造、封裝與測試"
+description: "一顆 AI 晶片要經過設計、光罩、晶圓製造、封裝與測試，在矽晶圓上用光一層層「印」出上千億個電晶體。本文用生活化比喻說明每一步在做什麼、由誰負責，以及台灣站在哪個位置。"
+level: 1
+order: 107
+track: hardware
+prerequisites: [ai-supply-chain-map]
+next: [semiconductor-process-nodes, gpu-architecture, advanced-packaging-intro]
+relatedSegments: [semi-equipment-materials, eda-ip-design, foundry-packaging, ai-accelerators]
+relatedCompanies: [tsmc, asml, applied-materials, lam-research, tokyo-electron, kla, synopsys, cadence, globalwafers, shin-etsu-chemical, ase, amkor, kyec, intel, samsung-electronics, nvidia]
+relatedModels: []
+relatedTrends: [process-roadmap-2nm-and-beyond, cowos-capacity-panel-level, ai-chip-design-eda, export-controls-us-china]
+glossary:
+  - wafer
+  - transistor
+  - eda
+  - silicon-ip
+  - fabless
+  - idm
+  - tape-out
+  - photomask
+  - deposition
+  - photoresist
+  - lithography
+  - euv
+  - etching
+  - metrology
+  - process-node
+  - probe-card
+  - die
+  - packaging-and-testing
+  - ate
+  - advanced-packaging
+  - cowos
+  - hbm
+  - yield
+  - reticle-limit
+  - chiplet
+  - foundry
+  - osat
+scenes:
+  - { id: wafer-transistor, variant: wafer }
+keyTakeaways:
+  - "晶片的誕生分四段：設計、光罩、晶圓製造（前段）、封裝與測試（後段）。"
+  - "晶圓廠用「沉積、塗光阻、曝光、蝕刻」的循環一層層蓋出電路，共有數千道步驟。"
+  - "光的波長決定能印多細，EUV 的 13.5 奈米光源只有 ASML 的機台能提供。"
+  - "晶粒越大，一片晶圓切得越少、良率也越低，所以 AI 晶片特別貴，也更依賴先進封裝。"
+  - "台灣在製造這一段最強：晶圓代工、封測、測試與矽晶圓都有全球要角。"
+estimatedMinutes: 10
+sources:
+  - key: asml-steps
+    title: "6 crucial steps in semiconductor manufacturing"
+    publisher: ASML
+    url: "https://www.asml.com/en/news/stories/2021/semiconductor-manufacturing-process-steps"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "頁面標示更新日期 2023-10-04；晶片由數十層結構組成，製造需數千道步驟；微影光源波長從 365 奈米到 13.5 奈米；Apple A16 Bionic 約 160 億個電晶體；封裝步驟為切割、置於載板並加上散熱蓋"
+  - key: asml-euv
+    title: "EUV lithography systems"
+    publisher: ASML
+    url: "https://www.asml.com/en/products/euv-lithography-systems"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: nvidia-blackwell
+    title: "NVIDIA Blackwell Architecture"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "Blackwell GPU 有 2,080 億個電晶體，採台積電客製 4NP 製程；兩顆達光罩極限的晶粒以每秒 10 TB 的晶片間連結合為一顆 GPU"
+  - key: wiki-wafer
+    title: "Wafer (electronics)"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Wafer_(electronics)"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "矽晶圓純度 99.9999999%（9N）以上；柴可拉斯基法拉晶；300 毫米晶圓典型厚度 775 微米；每片晶粒數（DPW）估算公式含邊緣修正項"
+  - key: wiki-fab
+    title: "Semiconductor device fabrication"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Semiconductor_device_fabrication"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "14/10/7 奈米等先進製程的製造週期最長約 15 週，業界平均 11–13 週；FEOL 形成電晶體、BEOL 製作金屬連線；晶圓探針測試與封裝後最終測試；台積電 2019 年 12 月公布 5 奈米測試晶片平均良率約 80%（17.92 平方毫米與 100 平方毫米時 32% 兩個數字出自 AnandTech 的估算，見 anandtech-5nm-yield）"
+  - key: anandtech-5nm-yield
+    title: "Early TSMC 5nm Test Chip Yields 80%, HVM Coming in H1 2020"
+    publisher: AnandTech
+    url: "https://web.archive.org/web/20200322200029/https://www.anandtech.com/show/15219/early-tsmc-5nm-test-chip-yields-80-hvm-coming-in-h1-2020"
+    type: news
+    lang: en
+    published: "2019-12-11"
+    accessed: "2026-10-06"
+    note: "原網址已停止服務，改用網際網路檔案館存檔。台積電公布 5 奈米測試晶片平均良率約 80%；AnandTech 依 SRAM 容量估算晶片約 17.92 平方毫米，反推缺陷密度每平方公分 1.271 個，再推算 100 平方毫米晶粒良率約 32.0%"
+  - key: wiki-mp
+    title: "Multiple patterning"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Multiple_patterning"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "標準曝光場尺寸為 26 × 33 毫米"
+  - key: wiki-2nm
+    title: "2 nm process"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/2_nm_process"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "製程名稱與電晶體的閘極長度、金屬間距等實際尺寸無關"
+  - key: tsmc-n2
+    title: "2nm Technology"
+    publisher: TSMC
+    url: "https://www.tsmc.com/english/dedicatedFoundry/technology/logic/l_2nm"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "N2 採第一代奈米片（nanosheet）電晶體，已於 2025 年第四季如期進入量產"
+  - key: tsmc-profile
+    title: "Company Info"
+    publisher: TSMC
+    url: "https://www.tsmc.com/english/aboutTSMC/company_profile"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "2025 年年產能超過 1,700 萬片 12 吋約當晶圓；以 305 種製程技術為 534 個客戶生產 12,682 種產品"
+  - key: tsmc-q2-2026
+    title: "TSMC Reports Second Quarter EPS of NT$27.25 (Form 6-K)"
+    publisher: TSMC
+    url: "https://www.sec.gov/Archives/edgar/data/1046179/000104617926000451/a2q26e_withguidancexfinal.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-16"
+    accessed: "2026-10-06"
+    note: "第二季營收 402.0 億美元；晶圓營收中 2 奈米 3%、3 奈米 30%、5 奈米 33%、7 奈米 11%"
+  - key: trendforce-foundry-2q26
+    title: "Global Foundry Revenue Approaches US$53.49 Billion in 2Q26 as SMIC Narrows Market Share Gap with Samsung, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260909-13225.html"
+    type: analyst
+    lang: en
+    published: "2026-09-09"
+    accessed: "2026-10-06"
+    note: "2026 年第二季全球前十大晶圓代工營收中，台積電市占 72.5%、三星 5.9%"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial: { status: fact-checked, author: learn-04, checkedBy: "learn-04-check", checkedOn: "2026-10-06" }
+---
+
+## 一句話解釋
+
+**晶片是在一片高純度的矽<Term id="wafer">晶圓</Term>上，用光把電路圖案一層層「印」上去，再經過切割、封裝與測試做出來的。** 整個過程分成四大段：設計、光罩、晶圓製造（前段）、封裝與測試（後段）。一顆頂尖的 AI 晶片上有超過 2,000 億個<Term id="transistor">電晶體</Term>，每一個都是肉眼看不見的電子開關<Cite k="nvidia-blackwell" />。
+
+## 生活化比喻
+
+<Callout type="analogy" title="用「照相」在一片圓盤上蓋城市">
+
+想像你要在一片薄薄的圓盤上，蓋出一座有好幾十層樓的微縮城市，而且不用磚頭，而是用光來蓋：
+
+- **設計圖**：建築師（晶片設計公司）用專業軟體畫出整座城市的藍圖，標出每一棟房子（電晶體）和每一條道路（金屬導線）。
+- **光罩**：把每一層樓的藍圖做成一張「底片」。
+- **晶圓廠**：像沖洗照片或網版印刷。先鋪一層材料，塗上感光劑，讓光穿過底片照下去，再把不要的部分挖掉。一層完成再蓋下一層，城市就從最底層的電晶體，一路往上蓋出層層交錯的道路網。
+- **封裝**：把切下來的每座城市裝進有接腳的外殼，才能接上電路板。
+- **測試**：每座城市都要逐一驗收，不合格的就淘汰。
+
+和蓋房子最大的不同是：這座城市小到肉眼看不見，而且一片圓盤上同時蓋了幾十到上千座一模一樣的城市。
+
+</Callout>
+
+## 原理：從沙子到 AI 晶片
+
+先看全貌。一顆晶片從無到有，大致會經過這六站，下面再分成四段說明：
+
+<FlowSteps title="一顆晶片的誕生" steps={[{ title: "設計", detail: "用 EDA 軟體畫出電路" }, { title: "光罩", detail: "把每一層電路做成底片" }, { title: "晶圓製造", detail: "微影、蝕刻、沉積一層層反覆" }, { title: "晶圓測試", detail: "探針逐顆檢查晶粒" }, { title: "切割與封裝", detail: "裝上載板與外殼，或用先進封裝組合" }, { title: "最終測試", detail: "確認功能與效能後出貨" }]} />
+
+### 設計與光罩：畫出城市藍圖
+
+晶片公司先決定晶片要做什麼，再用 <Term id="eda">EDA</Term>（電子設計自動化）軟體把功能轉成電路，並搭配向其他公司授權的現成電路模組，也就是<Term id="silicon-ip">矽智財</Term>。像輝達這種只做設計、不自己蓋工廠的公司，稱為 <Term id="fabless">Fabless</Term>（無晶圓廠）公司。
+
+現代晶片複雜到不可能用手畫：輝達的 Blackwell GPU 有 2,080 億個電晶體<Cite k="nvidia-blackwell" />，iPhone 使用的 A16 Bionic 晶片則約有 160 億個<Cite k="asml-steps" />。設計完成、交給晶圓廠的那一刻稱為 <Term id="tape-out">Tape-out</Term>（設計定案）。接著，設計圖會被拆成許多層，每一層做成一片<Term id="photomask">光罩</Term>，就像照片的底片。
+
+### 準備晶圓：打好地基
+
+開始製造之前，要先備好地基，也就是由矽晶圓廠供應的晶圓。矽原料先被提煉到純度 99.9999999%（9 個 9）以上，熔化後用一小塊晶種慢慢旋轉、往上拉出圓柱形的單晶矽棒，再切成薄片、拋光到像鏡面一樣平整，就成了晶圓<Cite k="wiki-wafer" />。先進晶片使用的晶圓直徑 300 毫米（12 吋），典型厚度約 775 微米，比 1 毫米還薄<Cite k="wiki-wafer" />。
+
+### 晶圓製造：用光一層層蓋城市
+
+這是最複雜、也最花錢的一段。晶圓廠會反覆執行同一套循環，每做一次，就多完成一層：
+
+<FlowSteps title="前段製程的基本循環（每一層都重複）" steps={[{ title: "沉積", detail: "鋪上一層薄膜材料" }, { title: "塗光阻", detail: "塗上感光材料" }, { title: "曝光顯影", detail: "光穿過光罩，把圖案印上去" }, { title: "蝕刻", detail: "挖掉沒有保護的部分" }, { title: "離子佈植", detail: "改變矽的導電特性" }, { title: "清洗與量測", detail: "去除殘留並檢查缺陷" }]} />
+
+1. **<Term id="deposition">薄膜沉積</Term>**：在晶圓表面鋪上一層極薄的導體、絕緣體或半導體材料。
+2. **塗上<Term id="photoresist">光阻</Term>**：一種照到光就會改變性質的材料，像相紙上的感光層。
+3. **<Term id="lithography">微影</Term>**：曝光機讓光穿過光罩，把圖案縮小投射到晶圓上，再經顯影留下圖案。光的波長決定能印多細，業界從 365 奈米的光源，一路推進到極紫外光（<Term id="euv">EUV</Term>）的 13.5 奈米<Cite k="asml-steps" />。
+4. **<Term id="etching">蝕刻</Term>**：用化學液體或電漿，把沒有光阻保護的地方挖掉，圖案就刻進材料裡。
+5. **離子佈植**：把特定原子打進矽裡，調整導電特性，做出電晶體的關鍵部位<Cite k="asml-steps" />。
+6. **清洗與<Term id="metrology">量測</Term>**：去除殘留物，並檢查尺寸與缺陷，及早發現問題。
+
+最底層先做出電晶體，上方再用許多層金屬導線把它們連起來<Cite k="wiki-fab" />。一顆晶片由數十層結構組成，整個製造過程有數千道步驟<Cite k="asml-steps" />；以 14、10、7 奈米等先進製程為例，從投片到完成，業界平均要 11–13 週，最長可達約 15 週<Cite k="wiki-fab" />。
+
+<Scene3D id="wafer-transistor" variant="wafer" caption="從晶圓到電晶體：一片 12 吋晶圓上排滿方格狀的晶粒，逐級放大就能看到晶粒裡的電晶體。可切換導覽步驟，由外而內觀察。" />
+
+你常聽到的「3 奈米」「2 奈米」是<Term id="process-node">製程節點</Term>，也就是製程世代的名稱。數字越小，代表同樣面積能放進更多、更省電的電晶體；但今天的節點名稱，已經不對應電晶體任何部位的實際尺寸<Cite k="wiki-2nm" />。台積電的 2 奈米（N2）採用奈米片電晶體，已在 2025 年第四季如期量產<Cite k="tsmc-n2" />。
+
+<StatGrid title="晶片製造的幾個關鍵數字" items={[{ label: "先進晶圓直徑", value: "300 毫米", note: "12 吋，厚約 775 微米" }, { label: "EUV 光源波長", value: "13.5 奈米", note: "ASML" }, { label: "Blackwell 電晶體數", value: "2,080 億個", note: "輝達" }, { label: "先進製程製造週期", value: "11–13 週", note: "業界平均，最長約 15 週" }]} />
+
+### 測試、切割與封裝
+
+晶圓完成後，測試機台會先用<Term id="probe-card">探針卡</Term>接觸每一顆晶片做電性測試，把不良品標記起來<Cite k="wiki-fab" />。接著沿著切割道把晶圓切成一顆顆<Term id="die">晶粒</Term>，進入<Term id="packaging-and-testing">封測</Term>：把晶粒固定在載板上、接好線路、加上散熱蓋<Cite k="asml-steps" />，最後再用 <Term id="ate">ATE</Term>（自動測試設備）做最終測試，因為封裝過程本身也可能造成新的問題<Cite k="wiki-fab" />。
+
+AI 晶片還多了一道關鍵工序：<Term id="advanced-packaging">先進封裝</Term>。例如台積電的 <Term id="cowos">CoWoS</Term>，會把 GPU 晶粒和多顆 <Term id="hbm">HBM</Term>（高頻寬記憶體）並排放在同一片中介層上，讓運算與記憶體之間能高速交換資料。輝達的 Blackwell GPU 更是由兩顆晶粒組成，以每秒 10 TB 的晶片間連結合為一顆 GPU<Cite k="nvidia-blackwell" />。
+
+### 誰來做？四種分工模式
+
+這麼長的流程，很少由一家公司從頭做到尾，產業因此分出四種角色：
+
+- **Fabless（無晶圓廠）**：只做設計，把製造外包，例如<CompanyChip id="nvidia">輝達</CompanyChip>。
+- **晶圓代工**：不賣自有品牌晶片，專門替客戶製造，例如<CompanyChip id="tsmc">台積電</CompanyChip>。
+- **<Term id="idm">IDM</Term>（整合元件製造商）**：設計、製造自己包辦，例如<CompanyChip id="intel">英特爾</CompanyChip>與<CompanyChip id="samsung-electronics">三星電子</CompanyChip>，兩者也都對外提供代工服務。
+- **封測代工**：專門承接後段的封裝與測試，例如<CompanyChip id="ase">日月光投控</CompanyChip>與<CompanyChip id="amkor">艾克爾（Amkor）</CompanyChip>。
+
+分工的好處是各自專精：設計公司不必花大錢蓋晶圓廠，代工廠則能把龐大的建廠成本分攤給許多客戶。
+
+<DeepDive title="深入一點：為什麼大晶片特別貴？晶粒面積與良率">
+
+晶圓廠通常以「一整片晶圓」計價，所以一片晶圓能切出幾顆**能用的**晶片，直接決定每顆晶片的成本。這取決於兩件事。
+
+**第一，一片晶圓切得出幾顆？** 12 吋晶圓的面積約 70,686 平方毫米。常用的估算公式會扣掉邊緣切不完整的部分（d 是晶圓直徑，S 是晶粒面積）<Cite k="wiki-wafer" />：
+
+<MathTeX tex={"\\mathrm{DPW}\\approx\\frac{\\pi d^2}{4S}-\\frac{\\pi d}{\\sqrt{2S}}"} display label="每片晶圓可切出的晶粒數，約等於晶圓面積除以晶粒面積，再減去邊緣損失" />
+
+代入計算：100 平方毫米的手機晶片，一片約可切出 640 顆；800 平方毫米的大型 AI 晶粒，只能切出約 64 顆。
+
+**第二，其中幾顆是好的？** 製造時難免有微小缺陷隨機落在晶圓上，晶粒越大，「中獎」的機會越高。常見的簡化模型是泊松模型，良率 Y 約等於：
+
+<MathTeX tex="Y \approx \exp(-D_0 \cdot A)" display label="良率約等於 e 的負缺陷密度乘以晶粒面積次方" />
+
+其中 D₀ 是每平方公分的缺陷數，A 是晶粒面積。假設 D₀ 為 0.1，1 平方公分的晶粒良率約 90%，8 平方公分的晶粒則只剩約 45%。真實案例也呈現同樣趨勢：台積電在 2019 年 12 月公布，5 奈米測試晶片的平均<Term id="yield">良率</Term>約 80%<Cite k="wiki-fab" />。科技媒體 AnandTech 估算這顆測試晶片約 17.92 平方毫米，據此反推缺陷密度，再推算同樣條件下 100 平方毫米的晶粒，良率只剩約 32%<Cite k="anandtech-5nm-yield" />。這是媒體的推算，不是台積電公布的數字，但面積越大、良率越低的方向很清楚。
+
+兩件事加在一起，差距就被放大：在上面的假設下，小晶片一片晶圓約有 580 顆好晶粒，大晶粒卻只有約 29 顆，相差約 20 倍。更麻煩的是，晶粒不能無限放大：微影機單次曝光的最大範圍是 26 × 33 毫米<Cite k="wiki-mp" />，這就是<Term id="reticle-limit">光罩尺寸極限</Term>。所以 AI 晶片越來越常把一顆大晶片拆成幾顆晶粒，也就是 <Term id="chiplet">Chiplet</Term>，再用先進封裝接起來：每顆晶粒較小、良率較高，合起來又能突破單次曝光的面積上限。輝達 Blackwell 用兩顆都已達光罩極限的晶粒組成一顆 GPU，就是突破這個上限的例子<Cite k="nvidia-blackwell" />。想了解這一步，可以接著讀<LearnLink id="advanced-packaging-intro">先進封裝入門</LearnLink>。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+晶片製造的每一站，都對應到產業鏈上的不同環節：
+
+- **設計**：EDA 軟體與矽智財屬於 <SegmentChip id="eda-ip-design" />，由<CompanyChip id="synopsys">新思科技（Synopsys）</CompanyChip>與<CompanyChip id="cadence">益華電腦（Cadence）</CompanyChip>主導；設計 AI 晶片的<CompanyChip id="nvidia">輝達</CompanyChip>等公司則在 <SegmentChip id="ai-accelerators" />。
+- **設備與材料**：<SegmentChip id="semi-equipment-materials" /> 提供機台與原料。EUV 曝光機只有<CompanyChip id="asml">艾司摩爾（ASML）</CompanyChip>能製造<Cite k="asml-euv" />；沉積與蝕刻設備有<CompanyChip id="applied-materials">應用材料</CompanyChip>、<CompanyChip id="lam-research">科林研發</CompanyChip>與<CompanyChip id="tokyo-electron">東京威力科創</CompanyChip>，量測檢測以<CompanyChip id="kla">科磊</CompanyChip>為代表；矽晶圓則來自<CompanyChip id="shin-etsu-chemical">信越化學</CompanyChip>與台灣的<CompanyChip id="globalwafers">環球晶</CompanyChip>等廠商。
+- **製造與封測**：<SegmentChip id="foundry-packaging" /> 是<Term id="foundry">晶圓代工</Term>與封測代工（<Term id="osat">OSAT</Term>）所在。<CompanyChip id="tsmc">台積電</CompanyChip> 2025 年產能超過 1,700 萬片 12 吋約當晶圓，為 534 個客戶生產 12,682 種產品<Cite k="tsmc-profile" />；2026 年第二季，它拿下全球前十大晶圓代工營收的 72.5%<Cite k="trendforce-foundry-2q26" />，而 3 奈米與 2 奈米合計已佔其晶圓營收的 33%<Cite k="tsmc-q2-2026" />。後段則有<CompanyChip id="ase">日月光投控</CompanyChip>負責封裝，<CompanyChip id="kyec">京元電</CompanyChip>專攻晶片測試。
+
+可以看出，台灣在「製造」這一段特別集中：從矽晶圓、晶圓代工、封裝到測試，都有全球要角。此外，EUV 等關鍵設備與先進製程，也是各國<TrendLink id="export-controls-us-china">晶片出口管制</TrendLink>的焦點。想知道 2 奈米之後怎麼走，可以看<TrendLink id="process-roadmap-2nm-and-beyond">2 奈米之後的製程藍圖</TrendLink>；想知道封裝產能為何吃緊，可以看<TrendLink id="cowos-capacity-panel-level">CoWoS 擴產與面板級封裝</TrendLink>。下一步，建議閱讀<LearnLink id="semiconductor-process-nodes">製程節點：從 7 奈米到 2 奈米代表什麼</LearnLink>。

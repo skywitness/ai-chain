@@ -1,0 +1,415 @@
+---
+title: "字節跳動 Seed／豆包系列"
+family: "Seed（豆包大模型／Dola Seed）"
+kind: llm
+lab: bytedance
+labName: "字節跳動 Seed 團隊"
+origin: CN
+summary: "字節跳動 Seed 團隊開發的通用大型語言模型家族。在中國以「豆包大模型」之名透過火山引擎與豆包 App 提供，海外以 Dola 品牌經 BytePlus 銷售。2026-02-14 推出 Seed 2.0（Pro、Lite、Mini，另有 Code 版），2026-06-23 推出主打 Agent 與程式交付的 Seed 2.1（Pro、Turbo）。主力模型皆為封閉權重，原生支援圖片與影片理解、可開關深度思考，API 價格明顯低於美國前沿模型；另有 Apache 2.0 授權的 Seed-OSS-36B 開放權重模型。"
+strengths:
+  - "多模態理解是長項：Seed 2.0 起原生支援圖片與影片輸入，2026-04-28 更新的 Seed 2.0 Lite 再加入音訊，成為系列第一個全模態理解模型。"
+  - "價格低：BytePlus 標準價下 Seed 2.0 Pro 每百萬 tokens 輸入 0.50 美元、輸出 3 美元，Seed 2.0 Mini 為 0.10／0.40 美元；原廠模型卡稱其 token 價格約比前沿模型低一個數量級。"
+  - "Agent 與電腦操作能力強化：原廠模型卡報告 Seed 2.1 Pro 在 Terminal-Bench 2.1 達 71.0%（同表 GPT-5.5 為 73.8%、Claude Opus 4.7 為 71.7%），OSWorld 約 78%（同表 GPT-5.5 為 78.7%、Claude Opus 4.7 為 82.8%），已接近 2026 上半年的美國旗艦。"
+  - "API 版本支援 256K 上下文，並可用參數開啟或關閉深度思考，在品質與延遲之間取捨。"
+weaknesses:
+  - "主力模型為封閉權重，無法自行部署、微調或稽核；開放權重的 Seed-OSS-36B 已屬上一代。"
+  - "缺乏第三方綜合評測：截至 2026-10-06，Seed 2.0 與 2.1 未列入 Artificial Analysis 智慧指數，公開數字多為原廠自測，且大量使用自建評測。"
+  - "人類偏好排名下滑：模型卡稱 2026-02-16 時在 LMArena 文字總榜排第 6，到 2026-10-02 Seed 2.0 Pro 依分數排第 66（共 413 個模型）。"
+  - "旗艦 Seed 2.1 Pro 發布時只開放給豆包與火山引擎（中國）使用者，BytePlus 國際站僅上架 Seed 2.1 Turbo；Seed 1.6 與 1.8 已在 BytePlus 標示為即將退役，版本汰換快，整合者需定期遷移。"
+bestFor:
+  - "文件、圖表、截圖與影片的理解和資訊擷取"
+  - "客服、內容處理、批次標註等對單價敏感的大量呼叫"
+  - "需要操作圖形介面或串接多種工具的 Agent 流程"
+  - "進入中國市場、已使用火山引擎或豆包生態的應用"
+positioning:
+  capability: 33
+  costIndex: 41
+  openness: 0
+  method: editorial
+  asOf: "2026-10-06"
+  note: "Seed 2.0／2.1 未列入 Artificial Analysis 智慧指數（2026-10-06 查核），capability 為編輯估計：Seed 2.1 Pro 原廠自測的 Terminal-Bench 2.1（71.0）與 SWE-bench Pro（57.5）接近同表的 GPT-5.5（AA 指數 38）與 Claude Opus 4.7（AA 指數 41，估計值），但缺乏第三方複驗；LMArena 文字榜上 Seed 2.0 Pro 與 AA 指數 25 的 Hy3 同分。取兩者之間約 33。costIndex 以 BytePlus 官方標準價 Seed 2.0 Pro（輸入 0.50、輸出 3.00 美元／百萬 tokens，128K 以內）按輸入：輸出 3：1 混合為 1.125 美元，依對數換算（0.05 美元 = 0、100 美元 = 100）約 41；Seed 2.1 Pro 尚無美元定價。旗艦為封閉權重，openness = 0（Seed-OSS-36B 為 Apache 2.0 開放權重，但非旗艦）。"
+versions:
+  - id: seed-1-6
+    name: "Seed 1.6／1.6 Flash（豆包 1.6）"
+    released: "2025-06-25"
+    status: deprecated
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: moe
+    params: { totalB: 230, activeB: 23, disclosed: true }
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    reasoning: hybrid
+    availability: [api, chat-app]
+    notes: "官方技術部落格（2025-06-25）說明：預訓練即納入多模態，採 MoE 架構（總參數 230B、啟用 23B），支援 256K 上下文，並以 AdaCoT 依題目難度決定是否啟動思考。日期為技術部落格發布日。BytePlus 模型清單已將 seed-1-6 與 seed-1-6-flash 各版本標示為即將退役（Retiring），建議改用 Seed 2.0 Lite／Mini（260428）。"
+  - id: seed-oss-36b
+    name: "Seed-OSS-36B"
+    released: "2025-08-20"
+    status: ga
+    tier: mid
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 36, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 524288
+    reasoning: hybrid
+    availability: [self-host]
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 12
+        setting: "Seed-OSS-36B-Instruct；AA 標示為估計值"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "Seed-OSS-36B-Instruct — Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/seed-oss-36b-instruct", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "2025-08-20 於 Hugging Face 以 Apache 2.0 釋出 Base（含與不含合成指令資料兩版）及 Instruct 模型；36B 密集架構，原生 512K 上下文，可設定思考預算，訓練資料 12T tokens。沒有官方付費 API，AA 彙整的第三方託管中位價為輸入 0.21、輸出 0.57 美元／百萬 tokens。"
+  - id: seed-1-8
+    name: "Seed 1.8"
+    released: "2025-12-17"
+    status: deprecated
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    reasoning: hybrid
+    availability: [api, chat-app]
+    notes: "定位為通用 Agent 模型：在單一模型內整合搜尋、程式生成與執行、視覺介面操作，並提供可調思考模式與更省 token 的影像編碼。日期以官方 GitHub 範例庫建立日（2025-12-17）為準。BytePlus 已將 seed-1-8-251228 標示為即將退役（Retiring），建議改用 seed-2-0-lite-260428。"
+  - id: seed-2-0-pro
+    name: "Seed 2.0 Pro"
+    released: "2026-02-14"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    maxOutputTokens: 131072
+    reasoning: hybrid
+    availability: [api, chat-app]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.5
+        outputPerMTok: 3
+        cachedInputPerMTok: 0.1
+        currency: USD
+        tierNote: "BytePlus ModelArk 線上推論標準價（seed-2-0-pro-260328），輸入長度 128K 以內；128K 至 256K 為輸入 1.00、輸出 6.00 美元；批次推論約半價。"
+        source: { title: "Pricing — ModelArk", publisher: "BytePlus", url: "https://docs.byteplus.com/en/docs/ModelArk/1544106", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-09-28 更新" }
+    benchmarks:
+      - benchmark: gpqa-diamond
+        score: 88.9
+        setting: "原廠自測，Seed2.0 Pro（0215）"
+        reportedBy: lab
+        date: "2026-02-14"
+        source: { title: "Seed2.0", publisher: "ByteDance Seed", url: "https://seed.bytedance.com/en/seed2", type: company-site, lang: en, accessed: "2026-10-06" }
+      - benchmark: hle
+        score: 32.4
+        setting: "原廠自測，不使用工具、僅文字題"
+        reportedBy: lab
+        date: "2026-02-14"
+        source: { title: "Seed2.0", publisher: "ByteDance Seed", url: "https://seed.bytedance.com/en/seed2", type: company-site, lang: en, accessed: "2026-10-06" }
+      - benchmark: swe-bench-pro
+        score: 46.9
+        setting: "原廠自測"
+        reportedBy: lab
+        date: "2026-02-14"
+        source: { title: "Seed2.0", publisher: "ByteDance Seed", url: "https://seed.bytedance.com/en/seed2", type: company-site, lang: en, accessed: "2026-10-06" }
+      - benchmark: terminal-bench
+        score: 55.8
+        setting: "原廠自測，Terminal-Bench 2.0"
+        reportedBy: lab
+        date: "2026-02-14"
+        source: { title: "Seed2.0", publisher: "ByteDance Seed", url: "https://seed.bytedance.com/en/seed2", type: company-site, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1456
+        setting: "dola-seed-2.0-pro；文字總榜，投票截至 2026-10-02；依分數排第 66（共 413 個模型），78,890 票"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "2026-02-14 與 Lite、Mini 同時發布，另有程式專用的 Seed 2.0 Code（BytePlus 上為 seed-2-0-code-preview）。官方定位為長鏈推理與複雜工作流程。模型卡稱 2026-02-16 時 Seed 在 LMArena 文字總榜排第 6、視覺榜排第 3。"
+  - id: seed-2-0-lite
+    name: "Seed 2.0 Lite（含 2026-04-28 全模態更新）"
+    released: "2026-02-14"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, audio, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    maxOutputTokens: 131072
+    reasoning: hybrid
+    availability: [api, chat-app]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.25
+        outputPerMTok: 2
+        cachedInputPerMTok: 0.05
+        currency: USD
+        tierNote: "BytePlus 標準價（seed-2-0-lite-260428），輸入長度 128K 以內；音訊輸入每百萬 tokens 3.75 美元；128K 至 256K 價格加倍。"
+        source: { title: "Pricing — ModelArk", publisher: "BytePlus", url: "https://docs.byteplus.com/en/docs/ModelArk/1544106", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-09-28 更新" }
+    benchmarks:
+      - benchmark: gpqa-diamond
+        score: 88.4
+        setting: "原廠自測，Seed2.0 Lite（0428）"
+        reportedBy: lab
+        date: "2026-04-28"
+        source: { title: "Seed2.0", publisher: "ByteDance Seed", url: "https://seed.bytedance.com/en/seed2", type: company-site, lang: en, accessed: "2026-10-06" }
+      - benchmark: osworld
+        score: 64.4
+        setting: "原廠自測，OSWorld-Verified，Seed2.0 Lite（0428）"
+        reportedBy: lab
+        date: "2026-04-28"
+        source: { title: "Seed2.0", publisher: "ByteDance Seed", url: "https://seed.bytedance.com/en/seed2", type: company-site, lang: en, accessed: "2026-10-06" }
+    notes: "官方定位為兼顧品質與速度的通用生產模型。2026-04 底的更新版（260428）原生支援影片、圖片、音訊與文字的統一理解，並升級 Agent、程式與 GUI 能力。"
+  - id: seed-2-0-mini
+    name: "Seed 2.0 Mini"
+    released: "2026-02-14"
+    status: ga
+    tier: small
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, audio, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    maxOutputTokens: 131072
+    reasoning: hybrid
+    availability: [api]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.1
+        outputPerMTok: 0.4
+        cachedInputPerMTok: 0.02
+        currency: USD
+        tierNote: "BytePlus 標準價（seed-2-0-mini-260428），輸入長度 128K 以內；音訊輸入每百萬 tokens 1.50 美元。"
+        source: { title: "Pricing — ModelArk", publisher: "BytePlus", url: "https://docs.byteplus.com/en/docs/ModelArk/1544106", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-09-28 更新" }
+    notes: "針對高併發、批次生成與低延遲場景最佳化；260428 版加入音訊理解並縮短推理長度、提高 token 效率。"
+  - id: seed-2-1-turbo
+    name: "Seed 2.1 Turbo（Dola-Seed-2.1-Turbo）"
+    released: "2026-06-23"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    maxOutputTokens: 262144
+    reasoning: hybrid
+    availability: [api, chat-app]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.5
+        outputPerMTok: 2.5
+        cachedInputPerMTok: 0.1
+        currency: USD
+        tierNote: "BytePlus 標準線上推論（dola-seed-2-1-turbo，0 至 256K 同價）；Flex 層與批次推論為輸入 0.25、輸出 1.25 美元。"
+        source: { title: "Pricing — ModelArk", publisher: "BytePlus", url: "https://docs.byteplus.com/en/docs/ModelArk/1544106", type: docs, lang: en, accessed: "2026-10-06", note: "頁面標示 2026-09-28 更新" }
+    benchmarks:
+      - benchmark: terminal-bench
+        score: 67.6
+        setting: "原廠自測，Terminal-Bench 2.1"
+        reportedBy: lab
+        date: "2026-06-23"
+        source: { title: "Seed2.1 Model Card: Agentic Intelligence for Productivity", publisher: "ByteDance Seed", url: "https://lf3-static.bytednsdoc.com/obj/eden-cn/lapzild-tss/ljhwZthlaukjlkulzlp/seed2.1/Seed2_1_Model_Card.pdf", type: paper, lang: en, accessed: "2026-10-06" }
+      - benchmark: swe-bench-pro
+        score: 57
+        setting: "原廠自測"
+        reportedBy: lab
+        date: "2026-06-23"
+        source: { title: "Seed2.1 Model Card: Agentic Intelligence for Productivity", publisher: "ByteDance Seed", url: "https://lf3-static.bytednsdoc.com/obj/eden-cn/lapzild-tss/ljhwZthlaukjlkulzlp/seed2.1/Seed2_1_Model_Card.pdf", type: paper, lang: en, accessed: "2026-10-06" }
+    notes: "官方定位為高吞吐量產品場景的版本。BytePlus 文件確認可用參數開啟（預設）或關閉深度思考，最長輸出（含思考）256K。"
+  - id: seed-2-1-pro
+    name: "Seed 2.1 Pro"
+    released: "2026-06-23"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    reasoning: hybrid
+    availability: [api, chat-app]
+    benchmarks:
+      - benchmark: terminal-bench
+        score: 71
+        setting: "原廠自測，Terminal-Bench 2.1；同表 GPT-5.5 為 73.8、Claude Opus 4.7 為 71.7"
+        reportedBy: lab
+        date: "2026-06-23"
+        source: { title: "Seed2.1 Model Card: Agentic Intelligence for Productivity", publisher: "ByteDance Seed", url: "https://lf3-static.bytednsdoc.com/obj/eden-cn/lapzild-tss/ljhwZthlaukjlkulzlp/seed2.1/Seed2_1_Model_Card.pdf", type: paper, lang: en, accessed: "2026-10-06" }
+      - benchmark: swe-bench-pro
+        score: 57.5
+        setting: "原廠自測；同表 GPT-5.5 為 58.6、Claude Opus 4.7 為 64.3"
+        reportedBy: lab
+        date: "2026-06-23"
+        source: { title: "Seed2.1 Model Card: Agentic Intelligence for Productivity", publisher: "ByteDance Seed", url: "https://lf3-static.bytednsdoc.com/obj/eden-cn/lapzild-tss/ljhwZthlaukjlkulzlp/seed2.1/Seed2_1_Model_Card.pdf", type: paper, lang: en, accessed: "2026-10-06" }
+      - benchmark: osworld
+        score: 78.2
+        setting: "原廠自測，Generalist CUA 設定（可同時用圖形介面、指令與工具）；模型卡內文為 78.2，表 4 列 78.8；同表 GPT-5.5 為 78.7、Claude Opus 4.7 為 82.8"
+        reportedBy: lab
+        date: "2026-06-23"
+        source: { title: "Seed2.1 Model Card: Agentic Intelligence for Productivity", publisher: "ByteDance Seed", url: "https://lf3-static.bytednsdoc.com/obj/eden-cn/lapzild-tss/ljhwZthlaukjlkulzlp/seed2.1/Seed2_1_Model_Card.pdf", type: paper, lang: en, accessed: "2026-10-06" }
+    notes: "官方定位為面向真實生產力的 Agent 模型，強調跨工具、跨環境的任務交付與企業級端到端程式開發。發布時豆包與火山引擎使用者即可使用；BytePlus 國際站（2026-07 起）與 OpenRouter 目前只上架 Turbo，Pro 的美元定價與上下文長度未公布。思考模式依 BytePlus 文件對 Seed 2.0 全系列與 2.1 Turbo 的說明推定為可開關，Pro 版未單獨揭露。Seed 2.1 Preview 曾在 Code Arena 前端榜以 1,539 分排第 8。"
+flagshipVersion: seed-2-1-pro
+relatedLearn: [what-is-llm, multimodal-models, reasoning-models, agents-and-mcp, model-evaluation]
+glossary: [llm, moe, token, reasoning-model, computer-use, context-window, agent, multimodal, elo-rating, open-weights]
+sources:
+  - key: seed2-page
+    title: "Seed2.0"
+    publisher: "ByteDance Seed"
+    url: "https://seed.bytedance.com/en/seed2"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "含 Seed2.0 Pro／Lite（0215、0428）評測表"
+  - key: seed2-card
+    title: "Seed2.0 Model Card"
+    publisher: "ByteDance Seed"
+    url: "https://lf3-static.bytednsdoc.com/obj/eden-cn/lapzild-tss/ljhwZthlaukjlkulzlp/seed2/0214/Seed2.0%20Model%20Card.pdf"
+    type: paper
+    lang: en
+    published: "2026-02-14"
+    accessed: "2026-10-06"
+  - key: seed21-blog
+    title: "Seed2.1 Officially Released: Advancing AI Productivity"
+    publisher: "ByteDance Seed"
+    url: "https://seed.bytedance.com/en/blog/seed2-1-officially-released-advancing-ai-productivity"
+    type: press-release
+    lang: en
+    published: "2026-06-23"
+    accessed: "2026-10-06"
+  - key: seed21-card
+    title: "Seed2.1 Model Card: Agentic Intelligence for Productivity"
+    publisher: "ByteDance Seed"
+    url: "https://lf3-static.bytednsdoc.com/obj/eden-cn/lapzild-tss/ljhwZthlaukjlkulzlp/seed2.1/Seed2_1_Model_Card.pdf"
+    type: paper
+    lang: en
+    published: "2026-06-23"
+    accessed: "2026-10-06"
+  - key: seed16-blog
+    title: "Introduction to Techniques Used in Seed1.6"
+    publisher: "ByteDance Seed"
+    url: "https://seed.bytedance.com/en/blog/introduction-to-techniques-used-in-seed1-6"
+    type: press-release
+    lang: en
+    published: "2025-06-25"
+    accessed: "2026-10-06"
+  - key: gh-seed18
+    title: "ByteDance-Seed/Seed-1.8"
+    publisher: "ByteDance Seed (GitHub)"
+    url: "https://github.com/ByteDance-Seed/Seed-1.8"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: hf-seed-oss
+    title: "ByteDance-Seed/Seed-OSS-36B-Instruct"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/ByteDance-Seed/Seed-OSS-36B-Instruct"
+    type: docs
+    lang: en
+    published: "2025-08-20"
+    accessed: "2026-10-06"
+  - key: bp-pricing
+    title: "Pricing — ModelArk"
+    publisher: "BytePlus"
+    url: "https://docs.byteplus.com/en/docs/ModelArk/1544106"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "頁面標示 2026-09-28 更新"
+  - key: bp-list
+    title: "Model list — ModelArk"
+    publisher: "BytePlus"
+    url: "https://docs.byteplus.com/en/docs/ModelArk/1330310"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: "頁面標示 2026-09-28 更新；含上下文長度與即將退役（Retiring）標示"
+  - key: bp-thinking
+    title: "Deep reasoning — ModelArk"
+    publisher: "BytePlus"
+    url: "https://docs.byteplus.com/en/docs/ModelArk/deep-thinking"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: aa-models
+    title: "LLM Leaderboard — Comparison of AI models"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "智慧指數 v4.3；未收錄 Seed 2.0／2.1"
+  - key: aa-seed-oss
+    title: "Seed-OSS-36B-Instruct — Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/seed-oss-36b-instruct"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+  - key: arena-text
+    title: "Text Arena Leaderboard"
+    publisher: "Arena (LMArena)"
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "lmarena.ai 轉址至 arena.ai；投票截至 2026-10-02，413 個模型、8,626,731 票"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: models-12
+  checkedBy: "models-12-check"
+  checkedOn: "2026-10-06"
+  notes: "查核修正：Seed 1.6／1.8 在 BytePlus 為即將退役（Retiring）而非已退役，狀態改為 deprecated；OSWorld 比較改用模型卡表 4 的同表數字（GPT-5.5 78.7、Claude Opus 4.7 82.8），並註明內文 78.2 與表格 78.8 不一致。"
+---
+
+## 系列概覽
+
+Seed 是<CompanyChip id="bytedance">字節跳動（ByteDance）</CompanyChip>Seed 團隊的通用<Term id="llm">大型語言模型</Term>家族。在中國，它以「豆包大模型」之名透過雲端事業火山引擎與豆包 App 提供；海外則以 Dola 品牌經 BytePlus ModelArk 銷售<Cite k="bp-list" />。和多數中國同業不同，字節跳動的主力模型一直維持封閉權重，另在 2025-08-20 以 Apache 2.0 釋出 360 億參數的開放權重模型 Seed-OSS-36B<Cite k="hf-seed-oss" />。
+
+近 18 個月的節奏很快：2025-06 的 Seed 1.6 採用<Term id="moe">MoE</Term>架構（總參數 2,300 億、每次啟用 230 億），支援 256K 上下文與自適應思考<Cite k="seed16-blog" />；2025-12 的 Seed 1.8 把搜尋、程式執行與視覺介面操作整合進單一模型<Cite k="gh-seed18" />；2026-02-14 的 Seed 2.0 分為 Pro、Lite、Mini 三種尺寸<Cite k="seed2-card" />；2026-06-23 的 Seed 2.1 則把重心轉向「真實生產力」，強調 Agent 與端到端程式交付<Cite k="seed21-blog" />。
+
+## 特性分析
+
+- **多模態理解是長項**：Seed 2.0 起原生支援圖片與影片等<Term id="multimodal">多模態</Term>輸入；2026-04 底更新的 Seed 2.0 Lite 成為系列第一個全模態理解模型，可同時理解影片、圖片、音訊與文字<Cite k="seed2-page" />。原廠在 VideoMME、TVBench 等影片理解評測上報告領先成績，但都屬自測。
+- **價格低**：BytePlus 標準價下，Seed 2.0 Pro 每百萬 <Term id="token">tokens</Term> 輸入 0.50 美元、輸出 3 美元，Mini 只要 0.10／0.40 美元，Seed 2.1 Turbo 為 0.50／2.50 美元<Cite k="bp-pricing" />。Seed 2.0 模型卡直言，其 token 價格約比前沿模型低一個數量級<Cite k="seed2-card" />。
+- **可開關深度思考**：Seed 1.6 起的 API 版本都能用參數開啟（預設）或關閉深度思考，屬於混合型<Term id="reasoning-model">推理模型</Term>，讓開發者在品質與延遲之間取捨<Cite k="bp-thinking" />。
+- **Agent 與電腦操作**：Seed 2.1 模型卡報告 Pro 版在 Terminal-Bench 2.1 達 71.0%，與同表 GPT-5.5（73.8%）、Claude Opus 4.7（71.7%）接近；OSWorld 約 78%（內文寫 78.2%、表格列 78.8%），與 GPT-5.5（78.7%）相當、低於 Claude Opus 4.7（82.8%）<Cite k="seed21-card" />。這個 OSWorld 分數採「通用電腦操作 Agent」設定，模型除了點擊畫面，也能直接下指令、呼叫工具，與只靠圖形介面操作的成績不宜直接比較。這類<Term id="computer-use">電腦操作</Term>能力也被用在 Seed 團隊自己的評測建構、資料合成與訓練迭代上，官方稱為「Seed for Seed」<Cite k="seed21-blog" />。
+- **規格**：API 版本的<Term id="context-window">上下文長度</Term>為 256K，Seed 2.1 Turbo 的最長輸出（含思考）也可達 256K<Cite k="bp-list" />。
+
+## 適合與不適合的用途
+
+**適合**：大量文件、圖表、截圖與影片的理解和資訊擷取；客服、內容處理、批次標註等對單價敏感的大量呼叫；需要操作圖形介面或串接多種工具的 <Term id="agent">Agent</Term> 流程；以及要進入中國市場、已使用火山引擎或豆包生態的應用。
+
+**不適合**：需要自行部署、微調或稽核權重的場景——Seed 2.x 全為封閉權重，而<Term id="open-weights">開放權重</Term>的 Seed-OSS-36B 已屬上一代，Artificial Analysis 估計其綜合智慧指數約 12<Cite k="aa-seed-oss" />。需要在國際區域使用最新旗艦的團隊也要注意：Seed 2.1 Pro 發布時只開放給豆包與火山引擎使用者<Cite k="seed21-blog" />，BytePlus 國際站目前僅上架 Turbo。此外版本汰換很快，Seed 1.6 與 1.8 在 BytePlus 已標示為即將退役，官方建議改用 Seed 2.0 Lite 或 Mini，整合時要預留遷移成本<Cite k="bp-list" />。
+
+## 版本演進
+
+| 版本 | 時間 | 重點 |
+|---|---|---|
+| Seed 1.6／1.6 Flash | 2025-06 | MoE（230B，啟用 23B）、256K、自適應思考；即將退役 |
+| Seed-OSS-36B | 2025-08-20 | Apache 2.0 開放權重、原生 512K 上下文 |
+| Seed 1.8 | 2025-12 | 搜尋、程式執行與視覺介面操作整合；即將退役 |
+| Seed 2.0 Pro／Lite／Mini | 2026-02-14 | 三種尺寸，另有 Code 版 |
+| Seed 2.0 Lite 更新 | 2026-04-28 | 加入音訊輸入，成為全模態理解模型 |
+| Seed 2.1 Pro／Turbo | 2026-06-23 | 主打真實工作流程的 Agent 與程式交付 |
+
+演進方向相當一致：從 1.6 的「多模態加可調思考」，到 1.8、2.0 把搜尋、程式與圖形介面操作收進同一個模型，再到 2.1 改以使用者實際工作流程與群眾開發者盲測作為主要開發目標，而不只是追求靜態評測分數<Cite k="seed21-card" />。
+
+## 評測解讀
+
+Seed 系列最大的解讀難點是**缺少獨立的綜合評測**。截至 2026-10-06，Artificial Analysis 智慧指數尚未收錄 Seed 2.0 與 2.1<Cite k="aa-models" />；公開數字多為原廠自測，而 Seed 2.1 又大量使用自建評測（Workspace Bench、CreativeWork、xDailyBench 等），難以和其他實驗室直接比較<Cite k="seed21-blog" />。以通用題庫來看，Seed 2.0 Pro 自測 GPQA Diamond 88.9%、Humanity's Last Exam（不用工具）32.4%、SWE-bench Pro 46.9%<Cite k="seed2-page" />；Seed 2.1 Pro 的 SWE-bench Pro 升到 57.5%，Terminal-Bench 2.1 為 71.0%<Cite k="seed21-card" />。Seed 2.0 公布的是 Terminal-Bench 2.0，與 2.1 題目不同，兩個數字不能直接相減。
+
+人類偏好榜提供了另一個角度。Seed 2.0 模型卡稱，2026-02-16 時 Seed 在 LMArena 文字總榜排第 6、視覺榜排第 3<Cite k="seed2-card" />；但到 2026-10-02 的投票截止點，dola-seed-2.0-pro 以 1,456 分（<Term id="elo-rating">Elo 制</Term>）在 413 個模型中依分數排第 66，與騰訊 <ModelChip id="tencent-hunyuan">Hy3</ModelChip> 幾乎同分，落後榜首約 69 分<Cite k="arena-text" />。短短 8 個月排名大幅滑落，較可能反映的是其他實驗室密集推出新模型，而 Seed 2.1 尚未出現在該榜；分數也會隨投票持續變動，引用時要註明日期。綜合來看，Seed 2.1 Pro 的原廠數字接近 2026 上半年的美國旗艦，但缺乏第三方複驗，本站的能力座標因此採編輯估計，並在附註說明依據。

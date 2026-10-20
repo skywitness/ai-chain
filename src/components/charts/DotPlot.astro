@@ -1,0 +1,171 @@
+---
+/**
+ * <DotPlot title="SWE-bench Verified" scale="% 解決率" rows={[{ label: 'Claude …', value: 80.9, date: '2026-08-05', series: '實驗室自評' }]} />
+ * One dot per row on a shared axis (model benchmarks). Each row shows its snapshot date; a note
+ * warns when dates are more than `dateWarningDays` apart. Up to 3 colour series (e.g. who
+ * reported the score); more fold into the third.
+ */
+import './charts.css';
+import ChartFrame from './ChartFrame.astro';
+import { fmtTick, isNum, niceTicks, pct, slot, tickDigits, tip, vars } from './chart-utils';
+import { axisStep } from './chart-utils';
+import type { ChartSourceLink, LegendItem, TableSpec } from './types';
+import { formatDate, formatNumber } from '../../lib/format';
+import { dayNumber } from '../../lib/fiscal';
+
+export interface DotRow {
+  label: string;
+  value: number;
+  sublabel?: string | undefined;
+  /** snapshot date (YYYY-MM-DD) */
+  date?: string | undefined;
+  href?: string | undefined;
+  highlight?: boolean | undefined;
+  /** colour group, e.g. 「實驗室自評」「第三方」 */
+  series?: string | undefined;
+  note?: string | undefined;
+}
+
+interface Props {
+  title: string;
+  rows: DotRow[];
+  subtitle?: string | undefined;
+  /** what the axis measures, e.g. 「% 正確率」「Elo」 */
+  scale?: string | undefined;
+  asOf?: string | undefined;
+  sources?: ChartSourceLink[] | undefined;
+  notes?: Array<string | null | undefined> | undefined;
+  badge?: string | undefined;
+  domain?: [number, number] | undefined;
+  higherIsBetter?: boolean | undefined;
+  sort?: boolean | undefined;
+  format?: 'number' | 'percent' | undefined;
+  digits?: number | undefined;
+  dateWarningDays?: number | undefined;
+  /** Fixed series → colour order (slot by position here, not by first appearance), so the same
+   *  series keeps its colour across charts; with it, a one-series chart still shows its legend. */
+  seriesOrder?: readonly string[] | undefined;
+  bare?: boolean | undefined;
+  as?: 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | undefined;
+  class?: string | undefined;
+}
+
+const {
+  title,
+  rows: inRows = [],
+  subtitle,
+  scale,
+  asOf,
+  sources = [],
+  notes = [],
+  badge,
+  higherIsBetter = true,
+  sort = true,
+  format = 'number',
+  dateWarningDays = 90,
+  seriesOrder,
+  bare,
+  as,
+  class: className,
+} = Astro.props;
+const percent = format === 'percent' || /%/.test(scale ?? '');
+const rows = inRows.filter((r) => isNum(r.value));
+if (sort) rows.sort((a, b) => (higherIsBetter ? b.value - a.value : a.value - b.value));
+const digits = Astro.props.digits ?? (rows.every((r) => Number.isInteger(r.value)) ? 0 : 1);
+const fmt = (v: number) => `${formatNumber(v, { digits })}${percent ? '%' : ''}`;
+
+const vals = rows.map((r) => r.value);
+const lo = Math.min(...vals);
+const hi = Math.max(...vals);
+const ticks = Astro.props.domain
+  ? niceTicks(Astro.props.domain[0], Astro.props.domain[1], 4, { includeZero: false })
+  : percent
+    ? niceTicks(Math.max(0, lo - (hi - lo) * 0.15), Math.min(100, hi + (hi - lo) * 0.1), 4, { includeZero: lo < 25 })
+    : niceTicks(lo - (hi - lo) * 0.15, hi + (hi - lo) * 0.1, 4, { includeZero: false });
+const tDigits = tickDigits(ticks.ticks);
+
+const present = [...new Set(rows.map((r) => r.series).filter((s): s is string => !!s))];
+const seriesNames = seriesOrder ? [...seriesOrder.filter((s) => present.includes(s)), ...present.filter((s) => !seriesOrder.includes(s))] : present;
+const colorIdx = (s: string) => (seriesOrder?.includes(s) ? seriesOrder.indexOf(s) : seriesNames.indexOf(s));
+const colorOf = (s?: string) => (s ? slot(Math.min(2, colorIdx(s))) : slot(0));
+const legend: LegendItem[] =
+  seriesNames.length > 1 || (seriesOrder && seriesNames.length > 0) ? seriesNames.slice(0, 3).map((s) => ({ label: s, kind: 'dot', color: colorOf(s) })) : [];
+
+const dates = rows.map((r) => r.date).filter((d): d is string => !!d).sort();
+const spread = dates.length > 1 ? dayNumber(dates.at(-1)!) - dayNumber(dates[0]!) : 0;
+const warn = spread > dateWarningDays ? `注意：各列評測日期相差 ${spread} 天（${dates[0]} 至 ${dates.at(-1)}），分數可能因版本與評測設定不同而無法直接比較。` : null;
+
+const hasLinks = rows.some((r) => r.href);
+const best = rows[0];
+const aria = rows.length
+  ? `${title}點圖，共 ${rows.length} 項${scale ? `（${scale}）` : ''}。` +
+    rows
+      .slice(0, 6)
+      .map((r) => `${r.label} ${fmt(r.value)}${r.date ? `（${r.date}）` : ''}`)
+      .join('、') +
+    (rows.length > 6 ? '等。' : '。') +
+    (best ? `${higherIsBetter ? '最高' : '最佳'}為 ${best.label}。` : '')
+  : '';
+
+const table: TableSpec = {
+  columns: [
+    { key: 'l', label: '項目' },
+    { key: 'v', label: scale ? `分數（${scale}）` : '分數', numeric: true },
+    { key: 'd', label: '日期' },
+    ...(seriesNames.length ? [{ key: 's', label: '來源類型' }] : []),
+    ...(rows.some((r) => r.note) ? [{ key: 'n', label: '附註' }] : []),
+  ],
+  rows: rows.map((r) => ({ l: r.sublabel ? `${r.label}（${r.sublabel}）` : r.label, v: fmt(r.value), d: r.date ?? '', s: r.series ?? '', n: r.note ?? '' })),
+};
+---
+
+<ChartFrame
+  title={title}
+  as={as}
+  subtitle={subtitle}
+  badge={badge}
+  asOf={asOf}
+  unit={scale}
+  legend={legend}
+  notes={[warn, ...notes]}
+  sources={sources}
+  table={table}
+  empty={rows.length === 0}
+  bare={bare}
+  class={className}
+>
+  <div class="ch-hb" role={hasLinks ? 'group' : 'img'} aria-label={aria}>
+    {
+      rows.map((r) => (
+        <div class:list={['ch-hb__row', r.highlight && 'is-hl']}>
+          <span class="ch-hb__label">
+            {r.href ? <a href={r.href}>{r.label}</a> : r.label}
+            {(r.sublabel || r.date) && <small>{[r.sublabel, r.date ? formatDate(r.date, 'iso') : ''].filter(Boolean).join('・')}</small>}
+          </span>
+          <span
+            class="ch-hb__track"
+            aria-hidden="true"
+            data-tip={tip(r.label, [
+              [scale ?? '分數', fmt(r.value)],
+              r.date ? ['日期', r.date] : null,
+              r.series ? ['來源類型', r.series] : null,
+              r.note ? ['附註', r.note] : null,
+            ])}
+          >
+            {ticks.ticks.map((t) => (
+              <i class="ch-hb__tick" style={`--x:${pct(t, ticks.domain)}%`} />
+            ))}
+            <i class="ch-dp__stem" style={`--x:${pct(r.value, ticks.domain)}%`} />
+            <i class:list={['ch-dp__dot', r.highlight && 'ch-dp__dot--hl']} style={vars({ '--x': `${pct(r.value, ticks.domain)}%`, '--k': colorOf(r.series) })} />
+          </span>
+          <span class="ch-hb__val">
+            {fmt(r.value)}
+          </span>
+        </div>
+      ))
+    }
+    <div class="ch-hb__axis" aria-hidden="true">
+      {ticks.ticks.map((t, k) => <span style={`--x:${pct(t, ticks.domain)}%`} hidden={k % axisStep(ticks.ticks.length) !== 0 ? true : undefined}>{fmtTick(t, { percent, digits: tDigits })}</span>)}
+    </div>
+  </div>
+</ChartFrame>

@@ -1,0 +1,39 @@
+term: "批次處理"
+zh: "批次處理"
+en: "Batching"
+aliases:
+  - "批次"
+  - "連續批次"
+  - "動態批次"
+  - "Continuous Batching"
+  - "In-flight Batching"
+category: inference
+level: 2
+short: >-
+  把多位使用者的請求合在一起讓 GPU 一次算完，提高硬體利用率、降低每個 token 的成本。
+definition: >-
+  GPU 每讀一次模型權重若只服務一個請求非常浪費，批次處理就是把多個請求合併成一批同時計算，攤平記憶體讀取成本，是推論服務降低單位成本最重要的手段之一。早期的靜態批次要等整批中最長的回答完成，才能換下一批；2022 年 OSDI 會議的 Orca 論文改以「每一次迭代」為單位排程，完成的請求立刻移出、新請求立刻補上，業界稱為連續批次或 in-flight batching。在 1,750 億參數的 GPT-3 上，Orca 在相同延遲下的吞吐量是 NVIDIA FasterTransformer 的 36.9 倍；Anyscale 2023 年以 OPT-13B 在單張 A100 上的模擬測試也顯示，連續批次搭配 vLLM 的記憶體最佳化，吞吐量最多可達基本靜態批次的 23 倍。代價是批次越大，個別使用者的延遲可能上升。
+example: >-
+  像公車與計程車：計程車一次只載一位乘客，公車一次載很多人，每人分攤的成本低很多，但可能要多等一下。
+related: [throughput, latency, kv-cache, inference-engine, decode]
+learnMore: [inference-optimization, training-vs-inference-economics]
+segments: [cloud-neocloud, devtools-data-mlops]
+sources:
+  - title: "Orca: A Distributed Serving System for Transformer-Based Generative Models"
+    publisher: "USENIX OSDI 2022"
+    url: "https://www.usenix.org/conference/osdi22/presentation/yu"
+    type: paper
+    lang: en
+    accessed: "2026-10-06"
+  - title: "How continuous batching enables 23x throughput in LLM inference while reducing p50 latency"
+    publisher: "Anyscale"
+    url: "https://www.anyscale.com/blog/continuous-batching-llm-inference"
+    type: company-site
+    lang: en
+    published: "2023-06-22"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-inference
+  checkedBy: "gloss-inference-check"
+  checkedOn: "2026-10-06"

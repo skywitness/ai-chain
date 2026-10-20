@@ -1,0 +1,136 @@
+---
+/**
+ * Side-by-side comparison (stacks on narrow screens).
+ *   <Compare title="FinFET 與 GAA" left={{ title: "FinFET", items: ["…"] }} right={{ title: "GAA", items: ["…"] }} />
+ * Optional `note` for each side and a shared `caption` line.
+ */
+interface Side {
+  title: string;
+  items: readonly string[];
+  note?: string | undefined;
+}
+interface Props {
+  left: Side;
+  right: Side;
+  title?: string | undefined;
+  caption?: string | undefined;
+  /** Label between the columns (default 「vs」) */
+  versus?: string | undefined;
+  class?: string | undefined;
+}
+const { left, right, title, caption, versus = 'vs', class: className } = Astro.props;
+const sides = [
+  { ...left, key: 'left' },
+  { ...right, key: 'right' },
+];
+---
+
+<figure class:list={['compare', className]}>
+  {title && <figcaption class="compare__title">{title}</figcaption>}
+  <div class="compare__grid">
+    {
+      sides.map((s, i) => (
+        <>
+          {i === 1 && (
+            <span class="compare__vs" aria-hidden="true">
+              {versus}
+            </span>
+          )}
+          <div class:list={["compare__side", `compare__side--${s.key}`]} role="group" aria-label={s.title}>
+            <p class="compare__heading">{s.title}</p>
+            <ul class="compare__items">
+              {s.items.map((it) => (
+                <li>{it}</li>
+              ))}
+            </ul>
+            {s.note && <p class="compare__note">{s.note}</p>}
+          </div>
+        </>
+      ))
+    }
+  </div>
+  {caption && <p class="compare__caption">{caption}</p>}
+</figure>
+
+<style>
+  @layer components {
+    .compare {
+      container-type: inline-size;
+      margin: 1.8em 0;
+    }
+    .compare__title {
+      margin-block-end: var(--space-3);
+      font-size: var(--fs-s);
+      font-weight: var(--fw-bold);
+    }
+    .compare__grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-3);
+      align-items: stretch;
+    }
+    .compare__side {
+      padding: var(--space-4) var(--space-5);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      min-width: 0;
+    }
+    .compare__side--left {
+      border-block-start: 3px solid var(--chart-1);
+    }
+    .compare__side--right {
+      border-block-start: 3px solid var(--chart-2);
+    }
+    .compare__heading {
+      font-weight: var(--fw-bold);
+      font-size: var(--fs-l);
+      line-height: 1.4;
+      margin: 0 0 var(--space-2);
+      padding: 0;
+    }
+    .compare__heading::before {
+      display: none;
+    }
+    .compare__items {
+      margin: 0;
+      padding-inline-start: 1.2em;
+      font-size: var(--fs-s);
+      line-height: 1.75;
+      color: var(--c-fg);
+    }
+    .compare__items li + li {
+      margin-block-start: 0.35em;
+    }
+    .compare__items li::marker {
+      color: var(--c-fg-subtle);
+    }
+    .compare__note {
+      margin-block-start: var(--space-3);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .compare__vs {
+      justify-self: center;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-bold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--c-fg-subtle);
+      text-transform: uppercase;
+    }
+    .compare__caption {
+      margin-block-start: var(--space-2);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    @container (min-width: 34rem) {
+      .compare__grid {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        gap: var(--space-3);
+      }
+      .compare__vs {
+        align-self: center;
+      }
+    }
+  }
+</style>

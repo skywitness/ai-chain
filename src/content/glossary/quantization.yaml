@@ -1,0 +1,40 @@
+term: "量化"
+zh: "模型量化"
+en: "Quantization"
+aliases:
+  - "模型量化"
+  - "低精度推論"
+  - "權重量化"
+  - "Model Quantization"
+  - "INT4／INT8 量化"
+category: inference
+level: 2
+short: >-
+  把模型裡的數字從 16 位元改用 8 位元或 4 位元來存放與計算，讓模型更小、更快、更省電。
+definition: >-
+  量化是降低模型權重（有時也包括激勵值與 KV Cache）的數值精度，例如從 16 位元的 FP16、BF16 改成 8 位元的 FP8、INT8 或 4 位元格式。以 700 億參數模型為例，FP16 權重約需 140 GB，至少要兩張 80 GB 的 GPU 才放得下；改成 4 位元後約 35 GB，一張就夠（尚未計入 KV Cache），也減輕 Decode 階段的記憶體頻寬壓力。GPTQ 論文把 1,750 億參數模型量化到 3–4 位元，準確度損失很小，並稱首次能在單張 GPU 上執行這種規模的模型，在 A100 上比 FP16 快約 3.25 倍。硬體也跟著演進：NVIDIA Blackwell 支援 NVFP4 格式，官方稱記憶體用量約為 FP16 的 1/3.5、FP8 的 1/1.8。量化過度會傷害準確度，因此需要校準與重新評測。
+example: >-
+  像把高解析照片壓成較小的 JPEG：檔案小很多、傳得更快，肉眼幾乎看不出差別；但壓縮過頭，畫面就會失真。
+related: [fp8, fp4, parameter, distillation, decode]
+learnMore: [inference-optimization, gpu-architecture]
+segments: [ai-accelerators, devtools-data-mlops]
+sources:
+  - title: "GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers"
+    publisher: "arXiv（ICLR 2023）"
+    url: "https://arxiv.org/abs/2210.17323"
+    type: paper
+    lang: en
+    published: "2022-10-31"
+    accessed: "2026-10-06"
+  - title: "Introducing NVFP4 for Efficient and Accurate Low-Precision Inference"
+    publisher: "NVIDIA Technical Blog"
+    url: "https://developer.nvidia.com/blog/introducing-nvfp4-for-efficient-and-accurate-low-precision-inference/"
+    type: company-site
+    lang: en
+    published: "2025-06-24"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-inference
+  checkedBy: "gloss-inference-check"
+  checkedOn: "2026-10-06"

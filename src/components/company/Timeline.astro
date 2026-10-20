@@ -1,0 +1,127 @@
+---
+/**
+ * 大事記: a vertical timeline, newest first (owner: pages-companies).
+ *
+ *   <Timeline events={d.timeline} />
+ */
+import { TIMELINE_KIND, partialDateZh } from './labels';
+
+interface EventLike {
+  date: string;
+  title: string;
+  detail?: string | undefined;
+  kind: string;
+  source?: { title: string; url: string; publisher: string } | undefined;
+}
+interface Props {
+  events: readonly EventLike[];
+  /** show the newest first (default true) */
+  newestFirst?: boolean | undefined;
+}
+const { events, newestFirst = true } = Astro.props;
+const sorted = [...events].sort((a, b) => (newestFirst ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date)));
+const isoDate = (d: string) => (d.length === 4 ? d : d.length === 7 ? d : d.slice(0, 10));
+---
+
+<ol class="tl" role="list">
+  {
+    sorted.map((e) => (
+      <li class:list={['tl__item', `tl__item--${e.kind}`]}>
+        <span class="tl__node" aria-hidden="true" />
+        <p class="tl__when">
+          <time datetime={isoDate(e.date)}>{partialDateZh(e.date)}</time>
+          <span class="tl__kind">{TIMELINE_KIND[e.kind] ?? e.kind}</span>
+        </p>
+        <p class="tl__title">{e.title}</p>
+        {e.detail && <p class="tl__detail">{e.detail}</p>}
+        {e.source && (
+          <p class="tl__src">
+            <a href={e.source.url} rel="noopener noreferrer" target="_blank">
+              {e.source.publisher}
+              <span class="sr-only">：{e.source.title}（另開新視窗）</span>
+            </a>
+          </p>
+        )}
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .tl {
+    position: relative;
+    display: grid;
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0 0 0 1.5rem;
+    list-style: none;
+  }
+  .tl::before {
+    content: '';
+    position: absolute;
+    inset-block: 0.5rem 0.5rem;
+    inset-inline-start: 0.36rem;
+    inline-size: 2px;
+    border-radius: 1px;
+    background: linear-gradient(var(--profile-accent, var(--c-accent)), var(--c-border) 70%);
+    opacity: 0.6;
+  }
+  .tl__item {
+    position: relative;
+    display: grid;
+    gap: 0.2rem;
+    max-width: 46rem;
+  }
+  .tl__node {
+    position: absolute;
+    inset-inline-start: -1.5rem;
+    inset-block-start: 0.4rem;
+    inline-size: 0.8rem;
+    block-size: 0.8rem;
+    border: 2px solid var(--profile-accent, var(--c-accent));
+    border-radius: 50%;
+    background: var(--c-bg);
+  }
+  .tl__item--founding .tl__node,
+  .tl__item--ipo .tl__node,
+  .tl__item--acquisition .tl__node,
+  .tl__item--milestone .tl__node {
+    background: var(--profile-accent, var(--c-accent));
+  }
+  .tl__when {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .tl__when time {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg);
+  }
+  .tl__kind {
+    padding: 0 0.45rem;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    font-size: 0.7rem;
+    line-height: 1.6;
+  }
+  .tl__title {
+    font-weight: var(--fw-semibold);
+    line-height: 1.6;
+    color: var(--c-fg);
+  }
+  .tl__detail {
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .tl__src {
+    font-size: var(--fs-xs);
+  }
+  .tl__src a {
+    color: var(--c-fg-subtle);
+  }
+</style>

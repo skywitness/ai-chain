@@ -1,0 +1,363 @@
+---
+title: "Apple 基礎模型（AFM）"
+family: "Apple Foundation Models"
+kind: "llm"
+lab: "apple"
+labName: "Apple"
+origin: "US"
+summary: "Apple 為 Apple Intelligence 打造的基礎模型家族，分為在 iPhone、Mac 上執行的裝置端模型，以及在 Private Cloud Compute（私有雲端運算）上執行的伺服器模型。2026-06-08 發表的第三代 AFM 3 共五款：30 億參數的 AFM 3 Core、200 億參數稀疏架構的 Core Advanced、AFM 3 Cloud、影像模型 ADM 3 Cloud，以及在 Google Cloud 的 NVIDIA GPU 上執行的 AFM 3 Cloud Pro。第三代與 Google 合作打造，2026-09-14 隨 iOS 27 推出並驅動新版 Siri AI。"
+strengths:
+  - "隱私設計：裝置端直接在 Apple 晶片上執行，雲端走可供外部研究者驗證的 Private Cloud Compute；Apple 表示除非使用者主動選擇協助改進，否則不以私人資料訓練模型"
+  - "極致的裝置端最佳化：2025 年的 30 億參數模型以 2 位元量化感知訓練壓縮；AFM 3 Core Advanced 把完整權重放在快閃記憶體，每次只啟用 10 億至 40 億參數"
+  - "開發者免費使用：Foundation Models 框架可直接呼叫裝置端模型；符合條件的小型開發者使用雲端模型也不需支付 API 費用"
+  - "隨作業系統內建於 iPhone、iPad、Mac 等裝置，與 Siri、照片、聽寫等系統功能深度整合"
+weaknesses:
+  - "幾乎沒有標準化公開評測：Apple 主要公布內部人評勝率，AA 與 LMArena 都未收錄，難以和其他模型比較"
+  - "裝置端模型容量小：開發者文件指出裝置端模型每個工作階段只有 4,096 tokens 上下文"
+  - "倚重合作夥伴：第三代運用 Google Gemini 的技術打造，最強的 Cloud Pro 跑在 Google Cloud 的 NVIDIA GPU 上"
+  - "只在 Apple 生態系內提供，沒有一般雲端 API；依賴伺服器模型的功能有每日用量上限"
+bestFor:
+  - "iOS、macOS App 中不需連網、保護隱私的摘要、分類、資訊擷取與改寫"
+  - "以 guided generation 產生結構化資料、並呼叫 App 內工具的輕量功能"
+  - "Apple 裝置上的語音合成、聽寫與具個人情境的 Siri 助理"
+  - "小型開發者以零 API 成本試做雲端等級的 AI 功能"
+positioning:
+  capability: 15
+  costIndex: 0
+  openness: 0
+  method: "editorial"
+  asOf: "2026-10-06"
+  note: "Apple 未公開可與他牌對照的標準化評測，AA 與 LMArena 均未收錄，capability 為編輯估計（低信心）：Apple 自評 2025 年伺服器模型的文字能力優於規模相近的 Llama 4 Scout（AA 指數約 6.5，2026-10-17 讀取），AFM 3 Cloud 在人評中以 64.7% 對 8.7% 勝過前代，故保守估為 15。Apple 主管另稱 AFM 3 Cloud Pro 品質接近 Gemini 前沿模型，但未經第三方驗證；若屬實，實際能力可能明顯高於此估計。裝置端與 Private Cloud Compute 不按 tokens 向使用者收費，符合條件的小型開發者亦免 API 費用，costIndex 設為 0；權重封閉，openness = 0。"
+versions:
+  - id: "afm-3-cloud-pro"
+    name: "AFM 3 Cloud Pro"
+    released: "2026-06-08"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    availability:
+      - "chat-app"
+    notes: "AFM 3 中最強的伺服器模型，負責 Agent 工具使用與複雜推理等最吃重的任務；針對 NVIDIA GPU 最佳化，在延伸到 Google Cloud 的 Private Cloud Compute 上執行。Apple 人評中整體滿意度比 AFM 3 Cloud 再提高約 10%（文字）與 14%（影像理解）。2026-06-08 發表並開放開發者測試，2026-09-14 隨 iOS 27 等系統正式推出。"
+  - id: "afm-3-cloud"
+    name: "AFM 3 Cloud"
+    released: "2026-06-08"
+    status: "ga"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    availability:
+      - "chat-app"
+      - "api"
+    notes: "伺服器端主力模型，延續並改良 2025 年的 Parallel-Track MoE（PT-MoE）架構，在 Apple 晶片的 Private Cloud Compute 上執行；人評中以 64.7% 對 8.7% 勝過 2025 年伺服器模型。開發者可透過 Foundation Models 框架呼叫 Private Cloud Compute 上的模型（Apple 未明確標示對應哪一款雲端模型）。"
+  - id: "afm-3-core-advanced"
+    name: "AFM 3 Core Advanced"
+    released: "2026-06-08"
+    status: "ga"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "moe"
+    params:
+      totalB: 20
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "audio"
+    modalitiesOut:
+      - "text"
+      - "audio"
+    availability:
+      - "on-device"
+    notes: "最強的裝置端模型，原生多模態，用於表情豐富的 Siri 語音與高準確度聽寫。總參數 200 億，以 Instruction-Following Pruning 稀疏架構依提示一次選定專家，每次只啟用 10 億至 40 億參數；完整權重存放在 NAND 快閃記憶體。限 iPhone 17 Pro 與 18 Pro 系列、iPhone Air、iPhone Duo，以及至少 12GB 統一記憶體的 M4 以後 iPad 與 M3 以後 Mac（另含 M5 版 Apple Vision Pro）。"
+  - id: "afm-3-core"
+    name: "AFM 3 Core"
+    released: "2026-06-08"
+    status: "ga"
+    tier: "small"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "dense"
+    params:
+      totalB: 3
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    availability:
+      - "on-device"
+    notes: "第二代約 30 億參數稠密裝置端模型的下一代，人評中以 45.6% 對 23.3% 勝過 2025 年版本；開發者可透過 Foundation Models 框架離線呼叫。"
+  - id: "adm-3-cloud-image"
+    name: "ADM 3 Cloud（Image）"
+    released: "2026-06-08"
+    status: "ga"
+    tier: "specialized"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "image"
+    availability:
+      - "chat-app"
+      - "api"
+    notes: "在 Private Cloud Compute 上執行的影像生成與編輯模型，驅動新版 Image Playground、Genmoji 與照片中的 Spatial Reframing 等工具；開發者可透過 Image Playground API 使用。"
+  - id: "afm-server-2025"
+    name: "AFM 伺服器模型（2025）"
+    released: "2025-06-09"
+    status: "ga"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "moe"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    availability:
+      - "chat-app"
+    notes: "採新設計的 Parallel-Track MoE 架構，以 14 兆個文字 tokens 從零訓練，權重以 ASTC 壓縮到每個權重約 3.56 位元；Apple 稱文字能力優於規模相近的 Llama 4 Scout，影像理解則落後 Scout 與 GPT-4o。iOS 27 起由 AFM 3 系列接替。"
+  - id: "afm-on-device-2025"
+    name: "AFM 裝置端模型（2025）"
+    released: "2025-06-09"
+    status: "ga"
+    tier: "small"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "dense"
+    params:
+      totalB: 3
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 4096
+    availability:
+      - "on-device"
+    notes: "約 30 億參數，以量化感知訓練壓到每個權重 2 位元，並共享 KV 快取以降低記憶體用量；首度透過 Foundation Models 框架開放給 App 開發者（支援 guided generation、工具呼叫與 LoRA 轉接器）。上下文為每個工作階段 4,096 tokens。iOS 27 起由 AFM 3 Core 接替。"
+flagshipVersion: "afm-3-cloud-pro"
+relatedLearn:
+  - "multimodal-models"
+  - "inference-optimization"
+  - "mixture-of-experts"
+  - "open-vs-closed-models"
+  - "model-evaluation"
+glossary:
+  - "edge-ai"
+  - "quantization"
+  - "moe"
+  - "nand-flash"
+  - "dram"
+  - "tpu"
+  - "context-window"
+  - "function-calling"
+sources:
+  - key: "apple-afm3"
+    title: "Introducing the Third Generation of Apple's Foundation Models"
+    publisher: "Apple Machine Learning Research"
+    url: "https://machinelearning.apple.com/research/introducing-third-generation-of-apple-foundation-models"
+    type: "company-site"
+    published: "2026-06-08"
+    note: "2026-09-09 更新"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "apple-afm-2025"
+    title: "Updates to Apple's On-Device and Server Foundation Language Models"
+    publisher: "Apple Machine Learning Research"
+    url: "https://machinelearning.apple.com/research/apple-foundation-models-2025-updates"
+    type: "company-site"
+    published: "2025-06-09"
+    note: "2025-07-17 依技術報告更新數字"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "apple-afm-2025-report"
+    title: "Apple Intelligence Foundation Language Models: Tech Report 2025"
+    publisher: "Apple (arXiv)"
+    url: "https://arxiv.org/abs/2507.13575"
+    type: "paper"
+    published: "2025-07-17"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "apple-pcc-google"
+    title: "Expanding Private Cloud Compute"
+    publisher: "Apple Security Research"
+    url: "https://security.apple.com/blog/expanding-pcc/"
+    type: "company-site"
+    published: "2026-06-08"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "apple-siri-ai-wwdc"
+    title: "Apple introduces Siri AI, a profoundly more capable and personal assistant"
+    publisher: "Apple Newsroom"
+    url: "https://www.apple.com/newsroom/2026/06/apple-introduces-siri-ai-a-profoundly-more-capable-and-personal-assistant/"
+    type: "press-release"
+    published: "2026-06-08"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "apple-siri-ai-launch"
+    title: "Siri AI, a profoundly more capable and personal assistant, is here"
+    publisher: "Apple Newsroom"
+    url: "https://www.apple.com/newsroom/2026/09/siri-ai-a-profoundly-more-capable-and-personal-assistant-is-here/"
+    type: "press-release"
+    published: "2026-09-14"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "apple-os-27"
+    title: "Major updates for Apple's software platforms are now available"
+    publisher: "Apple Newsroom"
+    url: "https://www.apple.com/newsroom/2026/09/major-updates-for-apples-software-platforms-are-now-available/"
+    type: "press-release"
+    published: "2026-09-14"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "apple-dev-ai"
+    title: "Apple Intelligence - Apple Developer"
+    publisher: "Apple"
+    url: "https://developer.apple.com/apple-intelligence/"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "apple-fm-docs"
+    title: "Foundation Models | Apple Developer Documentation"
+    publisher: "Apple"
+    url: "https://developer.apple.com/documentation/foundationmodels"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "apple-tn3193"
+    title: "TN3193: Managing the on-device foundation model's context window"
+    publisher: "Apple"
+    url: "https://developer.apple.com/documentation/technotes/tn3193-managing-the-on-device-foundation-model-s-context-window"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "google-apple-joint"
+    title: "Joint statement from Google and Apple"
+    publisher: "Google"
+    url: "https://blog.google/company-news/inside-google/company-announcements/joint-statement-google-apple/"
+    type: "press-release"
+    published: "2026-01-12"
+    lang: "en"
+    accessed: "2026-10-17"
+  - key: "macrumors-afm3-gemini"
+    title: "Apple's New AI Models Contain 'None' of Google's Gemini Assistant"
+    publisher: "MacRumors"
+    url: "https://www.macrumors.com/2026/06/09/apples-new-ai-contains-no-gemini/"
+    type: "news"
+    published: "2026-06-09"
+    lang: "en"
+    accessed: "2026-10-17"
+  - key: "wiki-apple-intelligence"
+    title: "Apple Intelligence"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Apple_Intelligence"
+    type: "other"
+    lang: "en"
+    accessed: "2026-10-06"
+  - key: "aa-leaderboard"
+    title: "LLM Leaderboard - Comparison of AI models"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    note: "Artificial Analysis Intelligence Index v4.3.2；未收錄 Apple 模型；Llama 4 Scout 指數於 2026-10-17 複查"
+    lang: "en"
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: "fact-checked"
+  author: "models-05"
+  checkedBy: "models-05-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+Apple 基礎模型（Apple Foundation Models，AFM）是 <CompanyChip id="apple">Apple</CompanyChip> 為 Apple Intelligence 打造的模型家族，特色是「裝置端加私有雲端」的雙層架構：簡單任務直接在 iPhone、iPad、Mac 的 Apple 晶片上執行，屬於<Term id="edge-ai">邊緣 AI</Term>；較重的任務送到 Apple 的 Private Cloud Compute（PCC，私有雲端運算），Apple 表示使用者資料不會被儲存，也不會分享給任何人，包括 Apple 自己<Cite k="apple-afm3" />。
+
+AFM 已經歷三代。2024-06-10 發表第一代；2025-06-09 的第二代包含約 30 億參數的裝置端模型與新架構的伺服器模型，並首度透過 Foundation Models 框架開放給 App 開發者<Cite k="apple-afm-2025" />；2026-06-08 發表的第三代 AFM 3 擴大為五款模型<Cite k="apple-afm3" />，2026-09-14 隨 iOS 27 等系統正式推出，驅動全新的 Siri AI（先以英文 beta 上線）<Cite k="apple-os-27" />。
+
+| 模型 | 執行位置 | 規模與架構 | 主要用途 |
+|---|---|---|---|
+| AFM 3 Core | 裝置端 | 30 億參數，稠密 | 一般文字與影像理解 |
+| AFM 3 Core Advanced | 裝置端（較新機種） | 200 億參數，稀疏，每次啟用 10 億至 40 億 | 原生多模態、語音、聽寫 |
+| AFM 3 Cloud | PCC（Apple 晶片） | 改良的 PT-MoE，未公布參數 | 伺服器端主力 |
+| ADM 3 Cloud（Image） | PCC（Apple 晶片） | 未公布 | 影像生成與編輯 |
+| AFM 3 Cloud Pro | PCC（Google Cloud 的 NVIDIA GPU） | 未公布 | Agent 工具使用、複雜推理 |
+
+## 特性分析
+
+**與 Google 合作的第三代。** 2026-01-12，Apple 與 <CompanyChip id="alphabet">Google</CompanyChip> 發表聯合聲明，宣布多年期合作：下一代 Apple 基礎模型將以 Google 的 Gemini 模型與雲端技術為基礎，而 Apple Intelligence 仍在 Apple 裝置與 PCC 上執行<Cite k="google-apple-joint" />。Apple 說明第三代模型「與 Google 合作客製打造」，並在最新一代雲端 <Term id="tpu">TPU</Term> 上大幅擴大預訓練規模<Cite k="apple-afm3" />；安全研究部落格則寫明，Apple 運用 Gemini 系列背後的技術打造新模型，並與 Google、<CompanyChip id="nvidia">NVIDIA</CompanyChip> 合作，把 PCC 延伸到 Google Cloud 的 NVIDIA GPU<Cite k="apple-pcc-google" />。
+
+至於「是不是 Gemini」，據 MacRumors 報導，Apple 在 WWDC 後的媒體技術說明中解釋：AI 副總裁 Amar Subramanya 表示，前四款模型為 Apple 晶片客製，以自有資料做強化學習，再用 Gemini 前沿模型的輸出精修；軟體工程資深副總裁 Craig Federighi 則強調，Apple 沒有使用 Google 部署給客戶的 Gemini 模型、用戶端程式或 Google 搜尋<Cite k="macrumors-afm3-gemini" />。換句話說，就模型本身而言，Gemini 比較像「老師」（以輸出協助訓練，屬於蒸餾的一種），而不是直接被搬進 iPhone；Google 另外提供了 TPU 訓練算力與 Cloud Pro 的執行環境。
+
+**把模型塞進手機的工程。** 2025 年的裝置端模型以<Term id="quantization">量化</Term>感知訓練壓到每個權重 2 位元<Cite k="apple-afm-2025" />。AFM 3 Core Advanced 更進一步：完整模型存放在 <Term id="nand-flash">NAND 快閃記憶體</Term>，每個提示只挑一組專家載入 <Term id="dram">DRAM</Term>，生成過程中再定期更換<Cite k="apple-afm3" />。一般 <Term id="moe">MoE</Term> 每個 token 都可能換專家，快閃記憶體頻寬跟不上；改成「每個提示選一次」，才能用 200 億的總參數、10 億至 40 億的啟用量在手機上運作。它只開放給 iPhone 17 Pro 與 18 Pro 系列、iPhone Air、iPhone Duo，以及至少 12GB 統一記憶體的 M4 以後 iPad 與 M3 以後 Mac<Cite k="apple-siri-ai-launch" />，一般款 iPhone 17 不在名單內。
+
+**開發者入口。** Foundation Models 框架讓 App 用 Swift 直接呼叫裝置端模型，支援 guided generation（直接產生結構化資料）與<Term id="function-calling">工具呼叫</Term><Cite k="apple-afm-2025" />；裝置端模型每個工作階段的<Term id="context-window">上下文視窗</Term>為 4,096 tokens<Cite k="apple-tn3193" />。框架現在也能呼叫 PCC 上的雲端模型，加入 App Store 小型企業計畫、且首次下載數少於 200 萬次的 App，不需支付雲端 API 費用<Cite k="apple-dev-ai" />。
+
+**雲端有額度。** Siri AI、照片編輯工具、Image Playground 與捷徑中的 AFM 3 Cloud 等依賴伺服器模型的功能有每日用量上限，Apple 表示未來會推出付費的擴充方案<Cite k="apple-os-27" />。
+
+## 適合與不適合的用途
+
+適合：
+
+- **重視隱私的 App 功能**：摘要、分類、資訊擷取與改寫在裝置上完成，不需連網，也沒有 token 費用。
+- **結構化輸出與 App 內工具呼叫**：guided generation 可直接產生 Swift 資料型別，減少解析錯誤。
+- **語音與聽寫**：AFM 3 Core Advanced 在 Apple 的人評中，把一般語音的自然度（MOS，滿分 5）從 3.87 提高到 4.15<Cite k="apple-afm3" />。
+- **小型開發者試做雲端 AI 功能**：符合條件即可免 API 費用。
+
+不適合：
+
+- **需要大量世界知識或長篇推理的任務**：Apple 文件也建議，需要更強推理與更大上下文時改用 PCC 或其他伺服器模型<Cite k="apple-fm-docs" />。
+- **跨平台或後端服務**：模型只在 Apple 作業系統中提供，沒有一般的雲端 API。
+- **需要客觀比較能力的採購評估**：缺乏第三方評測結果（見下文）。
+- **非英語或歐盟 iPhone 使用者的 Siri AI**：首波只有英文 beta，Apple 預告法、日、韓、葡、西語於 10 月加入；歐盟的 iPhone、iPad 與 Apple Watch 一開始不提供，中國也暫不提供<Cite k="apple-os-27" />。
+
+## 版本演進
+
+| 日期 | 版本 | 重點 |
+|---|---|---|
+| 2024-06-10 | 第一代 AFM | 裝置端與伺服器模型，搭配 iOS 18 |
+| 2025-06-09 | 第二代（2025） | 約 30 億參數裝置端模型、PT-MoE 伺服器模型，加入影像理解，開放 Foundation Models 框架 |
+| 2025-07-17 | 2025 技術報告 | 公開架構、訓練資料與評測細節 |
+| 2026-01-12 | 與 Google 合作 | 聯合聲明：下一代模型以 Gemini 模型與雲端技術為基礎 |
+| 2026-06-08 | 第三代 AFM 3 | 五款模型，PCC 首度延伸到第三方資料中心 |
+| 2026-09-14 | iOS 27 正式版 | Siri AI 以英文 beta 推出 |
+
+第二代的伺服器模型以 14 兆個文字 tokens 從零訓練<Cite k="apple-afm-2025" />，技術報告則公開了 PT-MoE 架構與 2 位元量化等細節<Cite k="apple-afm-2025-report" />。WWDC 2026 發表 Siri AI 時，Apple 同步開放開發者測試<Cite k="apple-siri-ai-wwdc" />。三代下來的方向很明確：裝置端追求在固定記憶體內塞進更多能力，雲端則從「全部自建」轉為「自建加上 Google 的技術與算力」。
+
+## 評測解讀
+
+<Callout type="info" title="為什麼這頁沒有分數表">本站的評測欄只收錄 AA 綜合指數、LMArena、GPQA 等標準化項目。Apple 目前公布的主要是內部人評勝率，而 AA 與 LMArena 都沒有收錄 Apple 模型<Cite k="aa-leaderboard" />，因此無法放進同一張比較表。</Callout>
+
+Apple 在 2026-06-08 公布的人評結果<Cite k="apple-afm3" />：
+
+- AFM 3 Core 對 2025 年裝置端模型：45.6% 的提示偏好新版，23.3% 偏好舊版。
+- AFM 3 Cloud 對 2025 年伺服器模型：文字 64.7% 對 8.7%，影像理解 37.8% 對 9.6%。
+- AFM 3 Cloud Pro 比 AFM 3 Cloud 的整體滿意度再提高約 10%（文字）與 14%（影像理解），數學類別約 14%。
+
+讀這些數字時要注意：
+
+- **只和自己比**：這些都是新版對舊版的勝率，說明進步幅度，卻無法告訴你它和 <ModelChip id="google-gemini" />、<ModelChip id="openai-gpt" /> 或 <ModelChip id="anthropic-claude" /> 相比如何。
+- **評審與題目不公開**：由 Apple 內部評分員判斷指令遵循、真實性與呈現方式，題庫與評分標準未公開，外界無法重現。
+- **2025 年的參考點**：Apple 當時表示，文字能力方面裝置端模型優於 Qwen-2.5-3B、伺服器模型優於規模相近的 Llama 4 Scout，但影像理解仍落後 Scout 與 GPT-4o<Cite k="apple-afm-2025" />；而 Llama 4 Scout 在 AA 指數只有約 6.5 分<Cite k="aa-leaderboard" />，可見當時的伺服器模型並非前沿等級。
+- **自評的「接近前沿」**：Apple 主管形容 AFM 3 Cloud Pro 的品質與 Gemini 前沿模型相近<Cite k="macrumors-afm3-gemini" />，但沒有公布可重現的標準化分數；在第三方評測出現前，本站的能力定位仍採保守估計。
+- **等待技術報告**：Apple 在 6 月表示，含更新評測與基準測試的技術報告會在夏季稍晚公布<Cite k="apple-afm3" />；截至 2026-10-06，本站在 Apple 機器學習研究網站上尚未查到 2026 年版報告。

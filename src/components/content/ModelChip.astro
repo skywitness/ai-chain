@@ -1,0 +1,27 @@
+---
+/**
+ * Model-family link chip.  <ModelChip id="anthropic-claude" />  or with custom text as children.
+ * Title from the `models` collection, falling back to src/data/models-index.yaml.
+ */
+import { getModelFamily, safeEntry } from '../../lib/collections';
+import { modelHref } from '../../lib/paths';
+import Chip from './Chip.astro';
+
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+const entry = await safeEntry('models', id);
+const idx = entry ? undefined : getModelFamily(id);
+const title = entry ? (entry.data as { title: string }).title : idx?.title;
+const lab = entry ? (entry.data as { labName: string }).labName : idx?.labName;
+const exists = !!(entry || idx);
+if (!exists && import.meta.env.DEV) console.warn(`[ModelChip] unknown model family "${id}" on ${Astro.url.pathname}`);
+const hasSlot = Astro.slots.has('default');
+---
+
+<Chip
+  kind="model"
+  href={exists ? modelHref(id) : undefined}
+  color="var(--seg-foundation-models)"
+  title={[title, lab].filter(Boolean).join(' · ') || undefined}>{hasSlot ? <slot /> : (title ?? id)}</Chip>

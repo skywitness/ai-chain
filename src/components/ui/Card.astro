@@ -1,0 +1,224 @@
+---
+/**
+ * Content card. With `href` the whole card is clickable (stretched title link), while links inside
+ * the `meta` slot stay independently clickable.
+ *
+ *   <Card href={learnHref('what-is-ai')} kicker="入門 · 8 分鐘" title="什麼是 AI？" level={1}>
+ *     從寫規則到從資料學習。
+ *     <Fragment slot="meta"><Badge level={1} /></Fragment>
+ *   </Card>
+ *
+ * Slots: default (body text), `media` (above the title), `meta` (footer row), `aside` (top-right corner).
+ */
+import { levelMeta, type SegmentId } from '../../lib/collections';
+
+interface Props {
+  title?: string | undefined;
+  href?: string | undefined;
+  kicker?: string | undefined;
+  /** Plain-text description (alternative to the default slot) */
+  description?: string | undefined;
+  /** Segment colour accent along the top edge */
+  segment?: SegmentId | string | undefined;
+  /** Level colour accent along the top edge */
+  level?: 1 | 2 | 3 | undefined;
+  /** Heading level of the title (default 3) */
+  headingLevel?: 2 | 3 | 4 | 5 | undefined;
+  as?: 'article' | 'div' | 'li' | 'section' | undefined;
+  /** Visual variant */
+  variant?: 'default' | 'flat' | 'sunken' | undefined;
+  class?: string | undefined;
+  /** Open link in a new tab (adds rel and an sr-only hint) */
+  external?: boolean | undefined;
+}
+
+const {
+  title,
+  href,
+  kicker,
+  description,
+  segment,
+  level,
+  headingLevel = 3,
+  as = 'article',
+  variant = 'default',
+  class: className,
+  external = false,
+} = Astro.props;
+const Wrapper = as;
+const H = `h${headingLevel}` as 'h2' | 'h3' | 'h4' | 'h5';
+const accent = segment ? `var(--seg-${segment})` : level ? levelMeta(level).color : undefined;
+const style = accent ? `--card-accent: ${accent}` : undefined;
+const hasMedia = Astro.slots.has('media');
+const hasMeta = Astro.slots.has('meta');
+const hasAside = Astro.slots.has('aside');
+const hasBody = Astro.slots.has('default') || !!description;
+---
+
+<Wrapper
+  class:list={['card', `card--${variant}`, { 'card--link': !!href, 'card--accent': !!accent }, className]}
+  style={style}
+>
+  {hasMedia && <div class="card__media"><slot name="media" /></div>}
+  <div class="card__body">
+    {hasAside && <div class="card__aside"><slot name="aside" /></div>}
+    {kicker && <p class="card__kicker">{kicker}</p>}
+    {
+      title && (
+        <H class="card__title">
+          {href ? (
+            <a
+              href={href}
+              class="card__link"
+              target={external ? '_blank' : undefined}
+              rel={external ? 'noopener noreferrer' : undefined}
+            >
+              {title}
+              {external && <span class="sr-only">（另開新視窗）</span>}
+            </a>
+          ) : (
+            title
+          )}
+        </H>
+      )
+    }
+    {
+      hasBody && (
+        <div class="card__text">
+          {description && <p>{description}</p>}
+          <slot />
+        </div>
+      )
+    }
+    {hasMeta && <div class="card__meta"><slot name="meta" /></div>}
+  </div>
+</Wrapper>
+
+<style>
+  @layer components {
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      box-shadow: var(--shadow-1);
+      overflow: hidden;
+      transition:
+        border-color var(--dur-2) ease,
+        box-shadow var(--dur-2) ease,
+        transform var(--dur-2) var(--ease-out);
+      list-style: none;
+    }
+    .card--flat {
+      box-shadow: none;
+    }
+    .card--sunken {
+      background: var(--c-bg-sunken);
+      box-shadow: none;
+    }
+    .card--accent::before {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      inset-block-start: 0;
+      block-size: 3px;
+      background: var(--card-accent);
+    }
+    .card--link:hover {
+      border-color: var(--c-border-strong);
+      box-shadow: var(--shadow-2);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .card--link:hover {
+        transform: translateY(-2px);
+      }
+    }
+    .card--link:has(.card__link:focus-visible) {
+      outline: 2px solid var(--c-focus);
+      outline-offset: 2px;
+    }
+    .card__media {
+      border-block-end: 1px solid var(--c-border);
+    }
+    .card__media :global(img) {
+      width: 100%;
+      display: block;
+    }
+    .card__body {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      padding: var(--space-5) var(--space-5) var(--space-4);
+      flex: 1;
+    }
+    .card__aside {
+      float: right;
+      margin-inline-start: var(--space-3);
+      position: relative;
+      z-index: 1;
+    }
+    .card__kicker {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--c-fg-subtle);
+      line-height: 1.4;
+    }
+    .card__title {
+      font-size: var(--fs-l);
+      line-height: 1.4;
+      letter-spacing: 0.01em;
+      /* CJK-friendly wrapping: `balance` evens out line lengths by breaking inside words
+         (「人形機／器人」). keep-all only breaks at spaces and punctuation (the CJK–Latin spaces
+         included), `pretty` avoids a lone last character, and overflow-wrap still breaks an
+         unbroken run that would not fit on one line. */
+      text-wrap: pretty;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+    .card__link {
+      color: var(--c-fg);
+      text-decoration: none;
+    }
+    .card__link:hover {
+      color: var(--c-fg);
+    }
+    .card__link:focus-visible {
+      outline: none;
+    }
+    /* stretched link: the whole card is the click target */
+    .card__link::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+    .card__text {
+      color: var(--c-fg-muted);
+      font-size: var(--fs-s);
+      line-height: 1.7;
+      display: grid;
+      gap: var(--space-2);
+    }
+    .card__meta {
+      margin-block-start: auto;
+      padding-block-start: var(--space-3);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      align-items: center;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    /* interactive elements in meta sit above the stretched link */
+    .card__meta :global(a),
+    .card__meta :global(button),
+    .card__text :global(a) {
+      position: relative;
+      z-index: 1;
+    }
+  }
+</style>

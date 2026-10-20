@@ -1,0 +1,291 @@
+---
+title: "機櫃即電腦：從 NVL72 到 Kyber"
+description: "AI 運算的基本單位已從單顆 GPU 變成整個機櫃。從 2024 年的 GB200 NVL72、2026 年的 Vera Rubin 到 2027 年的 Kyber，機櫃功率由約 120 kW 邁向 MW 級，重塑伺服器、電源與散熱供應鏈。"
+category: hardware
+horizon: near
+horizonYears: [2024, 2028]
+confidence: high
+confidenceRationale: "整櫃系統已量產多代，輝達、超微、AWS 與華為都公開了機櫃級產品與路線圖，2026 年 Vera Rubin 也已全面量產；不確定的主要是 Kyber 與 Rubin Ultra 的最終規格，以及 MW 級機櫃的量產時程。"
+impact: high
+milestones:
+  - { date: "2024-03", label: "輝達發表 GB200 NVL72：72 顆 GPU、36 顆 CPU、整櫃液冷", status: done }
+  - { date: "2025-02", label: "Blackwell 整櫃系統量產，首季營收即達數十億美元", status: done }
+  - { date: "2025-03", label: "GTC 2025 展示 Kyber 機櫃與 Rubin Ultra NVL576 樣機", status: done }
+  - { date: "2025-04", label: "Google Ironwood TPU 發表，單一 pod 最多 9,216 顆晶片", status: done }
+  - { date: "2025-05", label: "輝達提出 800V 直流供電架構，目標支援 1 MW 機櫃", status: done }
+  - { date: "2025-12", label: "AWS Trn3 UltraServer 上線，單一系統 144 顆 Trainium3", status: done }
+  - { date: "2026-01", label: "Vera Rubin NVL72 發表，整櫃 NVLink 頻寬 260 TB/s", status: done }
+  - { date: "2026-07", label: "超微推出 MI400 系列，Helios 機櫃參考設計搭載 72 顆 MI455X", status: done }
+  - { date: "2026-08", label: "Vera Rubin 全面量產，機櫃已在 CoreWeave、Azure、OCI 等雲端運轉", status: done }
+  - { date: "2026-12", label: "華為 Atlas 950 SuperPoD 預定第四季推出，最多 8,192 顆 NPU", status: expected }
+  - { date: "2027", label: "Kyber 機櫃（Rubin Ultra）與 800V 直流資料中心全面量產", status: expected }
+  - { date: "2028", label: "Feynman 世代 Kyber 機櫃，scale-up 同時採用銅線與 CPO", status: expected }
+signals:
+  - text: "TrendForce：含 GB 與 VR 平台的 NVL72 機櫃 2027 年出貨年增逾 50%，GB300、VR200 與 VR300 NVL72 合計產值將超過 7,100 億美元；Vera Rubin 系統均價約為 GB300 的 2 倍"
+    date: "2026-08-28"
+    source: { title: "NVIDIA's AI Rack Transition Accelerates; NVL72 Output Value to Exceed US$710 Billion in 2027, Says TrendForce", publisher: TrendForce, url: "https://www.trendforce.com/presscenter/news/20260828-13204.html", type: analyst, lang: en, published: "2026-08-28", accessed: "2026-10-06" }
+  - text: "輝達 FY2027 第二季資料中心營收 890 億美元、年增 117%，Vera Rubin 機櫃已在 CoreWeave、Google Cloud、Azure、OCI 與 Nebius 運轉"
+    date: "2026-08-26"
+    source: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2027", publisher: NVIDIA, url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000073/q2fy27pr.htm", type: press-release, lang: en, published: "2026-08-26", accessed: "2026-10-06" }
+  - text: "TrendForce：DRAM 短缺延續到 2027 年，輝達自 2026 年第三季初開始評估調降 Rubin Ultra 的 HBM 配置"
+    date: "2026-08-04"
+    source: { title: "DRAM Supply to Remain Tight in 2027, Prompting NVIDIA to Lower HBM Configurations for Rubin Ultra, Says TrendForce", publisher: TrendForce, url: "https://www.trendforce.com/presscenter/news/20260804-13166.html", type: analyst, lang: en, published: "2026-08-04", accessed: "2026-10-06" }
+  - text: "中央社：鴻海佔全球 AI 伺服器市場逾 40%，預估 2026 年 AI 機櫃出貨量較前一年增加一倍以上；與輝達以機器人組裝 GB300 NVL72 關鍵工序，成功率逾 90%"
+    date: "2026-10-05"
+    source: { title: "Nvidia, Hon Hai use robots to improve GB300 assembly success rates", publisher: Focus Taiwan (CNA), url: "https://focustaiwan.tw/sci-tech/202610050008", type: news, lang: en, published: "2026-10-05", accessed: "2026-10-06" }
+  - text: "AWS Trn3 UltraServer 單一系統 144 顆 Trainium3、362 PFLOPS（FP8），UltraClusters 3.0 最多可連接 100 萬顆 Trainium"
+    date: "2025-12-02"
+    source: { title: "AWS Trainium3 UltraServers now available: Enabling customers to train and deploy AI models faster at lower cost", publisher: Amazon, url: "https://www.aboutamazon.com/news/aws/trainium-3-ultraserver-faster-ai-training-lower-cost", type: press-release, lang: en, published: "2025-12-02", accessed: "2026-10-06" }
+counterpoints:
+  - "整櫃系統把故障域、良率與測試風險都集中在一起：單一零件出錯就要整櫃返工。輝達與鴻海 2026 年 10 月說明以機器人組裝 GB300 NVL72 測試托盤的成果時也指出，設計更新快、單一機型產量不大，固定式自動化不可行，整櫃製造仍需仰賴彈性製程。"
+  - "記憶體與電力是硬限制：TrendForce 指出 Rubin Ultra 可能因 DRAM 短缺而調降 HBM 配置；MW 級機櫃需要 800V 直流與液冷，現有資料中心改建速度未必跟得上晶片節奏。"
+  - "機櫃不一定是唯一的邊界：Google 以專屬互連把 9,216 顆 TPU 連成一個 pod，華為規劃上萬顆 NPU 的超節點，scale-up 的單位可能跨出單一機櫃，而不是固定在 NVL72 這種形式。"
+  - "單價越來越高：Vera Rubin 系統均價約為 GB300 的 2 倍（TrendForce 估計），客戶的資本支出若放緩，整櫃需求的波動也會被放大。"
+relatedSegments: [servers-systems, ai-accelerators, datacenter-infra, networking-optics]
+relatedCompanies: [nvidia, amd, foxconn, quanta, wistron, wiwynn, inventec, gigabyte, supermicro, dell, hpe, delta-electronics, vertiv, coreweave, amazon, alphabet, microsoft, huawei]
+relatedModels: []
+relatedLearn: [data-centers-101, datacenter-power-cooling, gpu-architecture, networking-for-ai, interconnect-deep]
+glossary: [rack, nvl72, ai-factory, scale-up, nvlink, liquid-cooling, 800v-dc, rack-power-density, odm, l10-l11, hbm, cpo, ai-server]
+sources:
+  - key: nv-gb200
+    title: "NVIDIA Blackwell Platform Arrives to Power a New Era of Computing"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-blackwell-platform-arrives-to-power-a-new-era-of-computing"
+    type: press-release
+    lang: en
+    published: "2024-03-18"
+    accessed: "2026-10-06"
+  - key: nv-q4fy25
+    title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2025"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2025"
+    type: press-release
+    lang: en
+    published: "2025-02-26"
+    accessed: "2026-10-06"
+  - key: nv-gb300
+    title: "NVIDIA GB300 NVL72"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/gb300-nvl72/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: nv-rubin
+    title: "NVIDIA Kicks Off the Next Generation of AI With Rubin — Six New Chips, One Incredible AI Supercomputer"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/rubin-platform-ai-supercomputer"
+    type: press-release
+    lang: en
+    published: "2026-01-05"
+    accessed: "2026-10-06"
+  - key: nv-vr-gtc
+    title: "NVIDIA Vera Rubin Opens Agentic AI Frontier"
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-vera-rubin-platform"
+    type: press-release
+    lang: en
+    published: "2026-03-16"
+    accessed: "2026-10-06"
+  - key: nv-q2fy27
+    title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2027"
+    publisher: NVIDIA
+    url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000073/q2fy27pr.htm"
+    type: press-release
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-06"
+  - key: nv-800v
+    title: "NVIDIA 800 VDC Architecture Will Power the Next Generation of AI Factories"
+    publisher: NVIDIA
+    url: "https://developer.nvidia.com/blog/nvidia-800-v-hvdc-architecture-will-power-the-next-generation-of-ai-factories/"
+    type: company-site
+    lang: en
+    published: "2025-05-20"
+    accessed: "2026-10-06"
+  - key: nv-gtc26
+    title: "NVIDIA GTC 2026: Live Updates on What's Next in AI"
+    publisher: NVIDIA
+    url: "https://blogs.nvidia.com/blog/gtc-2026-news/"
+    type: company-site
+    lang: en
+    published: "2026-03-19"
+    accessed: "2026-10-06"
+  - key: nv-us-mfg
+    title: "NVIDIA to Manufacture American-Made AI Supercomputers in US for First Time"
+    publisher: NVIDIA
+    url: "https://blogs.nvidia.com/blog/nvidia-manufacture-american-made-ai-supercomputers-us/"
+    type: company-site
+    lang: en
+    published: "2025-04-14"
+    accessed: "2026-10-06"
+  - key: th-kyber
+    title: "Nvidia shows off Rubin Ultra with 600,000-Watt Kyber racks and infrastructure, coming in 2027"
+    publisher: Tom's Hardware
+    url: "https://www.tomshardware.com/pc-components/gpus/nvidia-shows-off-rubin-ultra-with-600-000-watt-kyber-racks-and-infrastructure-coming-in-2027"
+    type: news
+    lang: en
+    published: "2025-03-19"
+    accessed: "2026-10-06"
+  - key: wiki-feynman
+    title: "Feynman (microarchitecture)"
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Feynman_(microarchitecture)"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "Feynman 預定 2028 年推出（次要來源）"
+  - key: delloro-rack
+    title: "Dell'Oro Group Raises Market Forecast for Data Center Liquid Cooling and Rack Power Distribution"
+    publisher: Dell'Oro Group
+    url: "https://www.delloro.com/news/delloro-group-raises-market-forecast-for-data-center-liquid-cooling-and-rack-power-distribution/"
+    type: analyst
+    lang: en
+    published: "2025-02-05"
+    accessed: "2026-10-06"
+  - key: amd-mi400
+    title: "AMD Instinct MI400 Series"
+    publisher: AMD
+    url: "https://www.amd.com/en/products/accelerators/instinct/mi400.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: amd-aai26
+    title: "AAI 2026: AMD Launches AMD Instinct MI400 Series GPUs for Frontier AI, HPC"
+    publisher: AMD
+    url: "https://newsroom.amd.com/news/aai-2026-mi400-instinct-update/"
+    type: press-release
+    lang: en
+    published: "2026-07-23"
+    accessed: "2026-10-06"
+  - key: aws-trn3
+    title: "AWS Trainium3 UltraServers now available: Enabling customers to train and deploy AI models faster at lower cost"
+    publisher: Amazon
+    url: "https://www.aboutamazon.com/news/aws/trainium-3-ultraserver-faster-ai-training-lower-cost"
+    type: press-release
+    lang: en
+    published: "2025-12-02"
+    accessed: "2026-10-06"
+  - key: google-ironwood
+    title: "Ironwood: The first Google TPU for the age of inference"
+    publisher: Google
+    url: "https://blog.google/products/google-cloud/ironwood-tpu-age-of-inference/"
+    type: company-site
+    lang: en
+    published: "2025-04-09"
+    accessed: "2026-10-06"
+  - key: huawei-hc25
+    title: "Groundbreaking SuperPoD Interconnect: Leading a New Paradigm for AI Infrastructure"
+    publisher: Huawei
+    url: "https://www.huawei.com/en/news/2025/9/hc-xu-keynote-speech"
+    type: company-site
+    lang: en
+    published: "2025-09-18"
+    accessed: "2026-10-06"
+  - key: tf-nvl72
+    title: "NVIDIA's AI Rack Transition Accelerates; NVL72 Output Value to Exceed US$710 Billion in 2027, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260828-13204.html"
+    type: analyst
+    lang: en
+    published: "2026-08-28"
+    accessed: "2026-10-06"
+  - key: tf-rubin-hbm
+    title: "DRAM Supply to Remain Tight in 2027, Prompting NVIDIA to Lower HBM Configurations for Rubin Ultra, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260804-13166.html"
+    type: analyst
+    lang: en
+    published: "2026-08-04"
+    accessed: "2026-10-06"
+  - key: tf-mar26
+    title: "NVIDIA Expands Product Portfolio to Address AI Training and Inference, Responding to an ASIC Push from CSPs, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260318-12976.html"
+    type: analyst
+    lang: en
+    published: "2026-03-18"
+    accessed: "2026-10-06"
+  - key: tf-aug26
+    title: "AI Server Shipments Forecast Raised to Nearly 31% YoY in 2026 as 90% Surge in CSP CapEx Fuels Infrastructure Expansion, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260803-13161.html"
+    type: analyst
+    lang: en
+    published: "2026-08-03"
+    accessed: "2026-10-06"
+  - key: cna-robot
+    title: "Nvidia, Hon Hai use robots to improve GB300 assembly success rates"
+    publisher: Focus Taiwan (CNA)
+    url: "https://focustaiwan.tw/sci-tech/202610050008"
+    type: news
+    lang: en
+    published: "2026-10-05"
+    accessed: "2026-10-06"
+published: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial: { status: fact-checked, author: trends-03, checkedBy: "trends-03-check", checkedOn: "2026-10-06", notes: "數字已與輝達新聞稿與官網規格、SEC 財報新聞稿、AMD、AWS、Google、華為、TrendForce、Dell'Oro、Tom's Hardware 與中央社原文逐一核對；Feynman 世代 Kyber 依輝達 GTC 2026 官方路線圖改列為預期，並補上 Dell'Oro 來源日期。" }
+---
+
+## 趨勢摘要
+
+AI 運算的基本單位，正從「一顆 GPU」變成「一整個<Term id="rack">機櫃</Term>」。2024 年 3 月，<CompanyChip id="nvidia">輝達（NVIDIA）</CompanyChip>發表 GB200 <Term id="nvl72">NVL72</Term>：72 顆 GPU 與 36 顆 CPU 以 <Term id="nvlink">NVLink</Term> 連成單一運算域，整櫃<Term id="liquid-cooling">液冷</Term>，輝達形容它像一顆擁有 1.4 exaflops AI 算力的超大 GPU<Cite k="nv-gb200" />。之後的 GB300、Vera Rubin，一直到 2027 年的 Kyber，都延續「整櫃設計、整櫃出貨」的模式。<CompanyChip id="amd">超微（AMD）</CompanyChip>的 Helios、AWS 的 Trn3 UltraServer 與華為的 SuperPoD 也走向同一個方向。
+
+<Callout type="analogy" title="從買零件到買整台">過去資料中心像在組桌上型電腦：分別買 CPU、GPU、網路卡，再自己裝進機櫃。現在買的是一整台出廠前就裝好、灌好冷卻液、測試完成的「冰箱大小」電腦，運到機房接上電源與水管就能開機。</Callout>
+
+- **已發生的事實**：Blackwell 整櫃系統在 FY2025 第四季（約 2024 年 11 月至 2025 年 1 月）量產，首季營收即達數十億美元<Cite k="nv-q4fy25" />；FY2027 第二季（約當 2026 年 5–7 月）輝達資料中心營收 890 億美元、年增 117%，Vera Rubin 已全面量產，機櫃在 CoreWeave、Google Cloud、Microsoft Azure、OCI 與 Nebius 運轉<Cite k="nv-q2fy27" />。
+- **預期與推測**：Kyber 機櫃預定 2027 年量產，最終規格仍未定案。
+
+## 為什麼重要
+
+把機櫃當成一台電腦來設計，晶片之間就能以最短的銅線高速互連，讓兆級參數的模型在同一個 <Term id="scale-up">scale-up</Term> 域內運算。代價是功率密度暴增。Dell'Oro 在 2025 年初指出，當時機櫃的平均功率密度約 15 kW，AI 工作負載則需要 60–120 kW<Cite k="delloro-rack" />；輝達表示，機櫃超過 200 kW 後，現行 54V 直流配電就會碰到物理極限，因此要改用 <Term id="800v-dc">800V 直流</Term>，支援 1 MW 以上的機櫃<Cite k="nv-800v" />。
+
+<BarChart title="單一機櫃的功率規模" unit="kW" data={[{ label: "平均機櫃", value: 15 }, { label: "GB200 NVL72", value: 120, estimate: true }, { label: "Kyber", value: 600, estimate: true }, { label: "800V 架構", value: 1000, estimate: true }]} source={["delloro-rack", "th-kyber", "nv-800v"]} note="平均機櫃為 Dell'Oro 2025 年初的平均功率密度；GB200 NVL72 為媒體估計的約略值；Kyber 為 2025 年 GTC 時黃仁勳證實「最高約 600 kW」的報導；800V 架構為輝達規劃支援的 1 MW 等級" />
+
+這也改變了整條供應鏈的分工：GPU 廠負責定義整櫃規格，<Term id="odm">ODM</Term> 負責 <Term id="l10-l11">L10／L11</Term> 的整櫃組裝、灌液與測試，電源、散熱與連接器廠商都必須跟著換代。
+
+## 關鍵驅動力
+
+**一、模型規模與推論需求。** Vera Rubin NVL72 每顆 GPU 的 NVLink 6 頻寬為 3.6 TB/s、整櫃 260 TB/s，輝達宣稱推論的每 token 成本最多可比 Blackwell 降低 10 倍<Cite k="nv-rubin" />。GB300 NVL72 已有 20 TB 的 GPU 記憶體、整櫃 130 TB/s 的 NVLink 頻寬<Cite k="nv-gb300" />。
+
+**二、從晶片賣到系統。** 輝達在 2026 年 3 月把 Vera Rubin 擴充為五種機櫃：GPU 機櫃、256 顆 Vera CPU 的 CPU 機櫃、256 顆 LPU 的 Groq 3 LPX 推論機櫃、儲存機櫃與乙太網路機櫃，ODM 夥伴包括鴻海、廣達（QCT）、緯創、緯穎、英業達、技嘉等<Cite k="nv-vr-gtc" />。超微的 Helios 是 72 顆 MI455X 的參考設計，FP4 算力最高 2.9 exaFLOPS、HBM4 共 31 TB，採 Meta 提出的雙倍寬 ORW 機櫃標準<Cite k="amd-mi400" />。
+
+**三、對手也走向「超節點」。** AWS Trn3 UltraServer 一套 144 顆 Trainium3<Cite k="aws-trn3" />；Google Ironwood 一個 pod 最多 9,216 顆 TPU、42.5 exaflops<Cite k="google-ironwood" />；華為規劃 Atlas 950 SuperPoD 最多 8,192 顆、Atlas 960 SuperPoD 最多 15,488 顆<Cite k="huawei-hc25" />。
+
+## 時間表與里程碑
+
+| 時間 | 系統 | 重點 | 狀態 |
+|---|---|---|---|
+| 2024 年 3 月 | GB200 NVL72 | 72 顆 GPU、單一 NVLink 域 | 已量產 |
+| 2026 年主力 | GB300 NVL72 | 20 TB GPU 記憶體<Cite k="nv-gb300" /> | 2026 年出貨主力<Cite k="tf-nvl72" /> |
+| 2026 年下半年 | Vera Rubin NVL72 | NVLink 6、整櫃 260 TB/s | 全面量產 |
+| 2026 年第四季 | 華為 Atlas 950 SuperPoD | 最多 8,192 顆 NPU | 預期 |
+| 2027 年 | Kyber（Rubin Ultra） | 800V 直流、MW 級 | 預期 |
+| 2028 年 | Feynman 世代 Kyber | 銅線加 CPO 的 scale-up | 預期 |
+
+TrendForce 指出，GB300 在 2025 年第四季取代 GB200 成為輝達的主力機櫃，2026 年出貨占比接近八成；VR200 機櫃預計 2026 年第三季末開始放量，實際時程取決於 ODM 的生產進度<Cite k="tf-mar26" />。
+
+2025 年 GTC 展示的 Kyber 原型以「NVL576」稱呼 576 顆 Rubin Ultra GPU，預計 2027 年下半年推出，目標 FP4 算力 15 exaflops<Cite k="th-kyber" />；輝達表示 800V 直流資料中心的全面量產將與 2027 年的 Kyber 同步<Cite k="nv-800v" />。2026 年 GTC 再預告 Feynman 世代的 Kyber 將以銅線加 <Term id="cpo">CPO</Term> 做 scale-up<Cite k="nv-gtc26" />，Feynman 預定 2028 年推出<Cite k="wiki-feynman" />。
+
+## 受影響的環節與公司
+
+- <SegmentChip id="servers-systems" />：整櫃組裝集中在台灣 ODM。中央社報導，<CompanyChip id="foxconn">鴻海</CompanyChip>佔全球 AI 伺服器市場逾 40%，並預估 2026 年 AI 機櫃出貨增加一倍以上<Cite k="cna-robot" />；<CompanyChip id="quanta">廣達</CompanyChip>（QCT）、<CompanyChip id="wistron">緯創</CompanyChip>、<CompanyChip id="wiwynn">緯穎</CompanyChip>與<CompanyChip id="inventec">英業達</CompanyChip>同為 Vera Rubin 的 ODM 夥伴<Cite k="nv-vr-gtc" />。輝達也與鴻海（休士頓）、緯創（達拉斯）在美國設立超級電腦工廠<Cite k="nv-us-mfg" />。
+- <SegmentChip id="datacenter-infra" />：MW 級機櫃需要 800V 直流配電、CDU 與液冷管路，相關的電源與散熱供應商包括<CompanyChip id="delta-electronics">台達電</CompanyChip>、<CompanyChip id="vertiv">Vertiv</CompanyChip> 等。
+- <SegmentChip id="networking-optics" />：機櫃內的 NVLink 交換器與背板銅纜，以及之後的 CPO。
+- <SegmentChip id="ai-accelerators" />：晶片廠的競爭單位從晶片變成整櫃，能否提供完整機櫃方案成為門檻。TrendForce 指出，Meta 在 2026 年主要採用輝達 GB／VR 與超微 Helios 等機櫃級系統<Cite k="tf-aug26" />。
+
+延伸閱讀：<TrendLink id="scale-up-fabric-wars">Scale-up 互連標準之爭</TrendLink>、<TrendLink id="800v-dc-power">800V 直流供電</TrendLink>、<TrendLink id="liquid-cooling-mainstream">液冷成為主流</TrendLink>。
+
+## 反方觀點與風險
+
+1. **製造複雜度**：整櫃零件多、單價高，任何一個接頭出錯都要返工。輝達與鴻海以機器人組裝 GB300 NVL72 測試托盤，匯流排組裝成功率逾 95%、多接頭插接約 90%–95%，並指出設計更新快、單一機型產量不大，固定式自動化不可行<Cite k="cna-robot" />。
+2. **記憶體瓶頸**：TrendForce 指出輝達自 2026 年第三季初起評估調降 Rubin Ultra 的 <Term id="hbm">HBM</Term> 配置，最終規格未定<Cite k="tf-rubin-hbm" />；VR300（Rubin Ultra）在 2027 年的出貨占比預期偏小<Cite k="tf-nvl72" />。
+3. **機房跟不上**：MW 級機櫃需要電力與散熱基礎設施同步改造，舊機房很難直接沿用。
+4. **單價與景氣**：TrendForce 估計 Vera Rubin 系統均價約為 GB300 的 2 倍<Cite k="tf-nvl72" />，整櫃需求會放大客戶資本支出的波動。
+
+## 觀察指標
+
+- TrendForce 等機構對 NVL72 機櫃出貨的預估：2027 年出貨年增逾 50%、產值超過 7,100 億美元<Cite k="tf-nvl72" />，能否兌現。
+- Rubin Ultra 的 HBM 配置定案，以及 Kyber 是否如期在 2027 年量產。
+- 800V 直流電源架、液冷 CDU 的量產與新機房設計採用率。
+- 超微 Helios 的出貨進度與客戶名單<Cite k="amd-aai26" />。
+- 鴻海、廣達、緯創等 ODM 的月營收與 AI 機櫃出貨變化。

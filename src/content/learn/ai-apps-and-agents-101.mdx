@@ -1,0 +1,291 @@
+---
+title: "AI 能做什麼？從聊天機器人到 Agent 與機器人"
+subtitle: "AI 的自主程度階梯：回答問題、協助工作、自己完成任務、走進真實世界"
+description: "生成式 AI 已從回答問題的聊天機器人，走向能自己規劃、使用工具的 Agent，再延伸到自駕車與機器人。本文用「自主程度階梯」介紹四類 AI 應用、Agent 如何運作、MCP 是什麼，以及目前的能力、限制與產業鏈連結。"
+level: 1
+order: 110
+track: models
+prerequisites: [what-is-llm]
+next: [agents-and-mcp, cloud-and-ai-business, physical-ai-deep]
+relatedSegments: [apps-agents, foundation-models, devtools-data-mlops, cloud-neocloud, physical-ai]
+relatedCompanies: [openai, anthropic, alphabet, microsoft, amazon, glean, anysphere, cognition, perplexity, sierra, decagon, harvey, openevidence, abridge, midjourney, runway, suno, elevenlabs, salesforce, servicenow, langchain, tesla, figure-ai, unitree, hiwin, techman-robot, advantech]
+relatedModels: [openai-gpt, anthropic-claude, google-gemini]
+relatedTrends: [agentic-ai-standards, ai-coding, physical-ai-commercialization, inference-demand, ai-monetization]
+glossary:
+  - agent
+  - llm
+  - generative-ai
+  - multimodal
+  - hallucination
+  - function-calling
+  - computer-use
+  - mcp
+  - benchmark
+  - prompt-injection
+  - physical-ai
+  - robotaxi
+  - autonomous-driving
+  - humanoid-robot
+  - lidar
+  - edge-ai
+  - token
+  - inference
+scenes: []
+keyTakeaways:
+  - "依自主程度，AI 應用可分四級：聊天機器人、Copilot、Agent 與實體 AI。"
+  - "生成式 AI 普及極快：OpenAI 產品每週逾 10 億人使用，推出三年內人口普及率達 53%。"
+  - "Agent 會規劃、呼叫工具、觀察結果再調整；MCP 是讓 AI 連接各種工具的開放標準。"
+  - "Agent 能完成的任務長度約每 4 個多月翻倍，但步驟越多越容易出錯，重要動作仍要由人把關。"
+  - "實體 AI 讓模型走進真實世界：Waymo 已累積逾 2.7 億英里自駕里程，人形機器人仍在初期。"
+  - "Agent 完成一個任務要反覆呼叫模型、消耗大量 Token，推升推論算力與雲端需求。"
+estimatedMinutes: 11
+sources:
+  - key: oa-storage
+    title: "Rapidly scaling online storage to serve over 1 billion ChatGPT users"
+    publisher: OpenAI
+    url: "https://openai.com/index/scaling-storage-one-billion-users-part-one/"
+    type: company-site
+    lang: en
+    published: "2026-09-11"
+    accessed: "2026-10-15"
+    note: "OpenAI 的儲存平台 Habitat 支援每週逾 10 億人使用的產品，橫跨近 40 個地理區域"
+  - key: goog-q2-2026
+    title: "Alphabet Announces Second Quarter 2026 Results (Form 8-K Exhibit 99.1)"
+    publisher: Alphabet
+    url: "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-15"
+    note: "Gemini App 每月活躍使用者 9.5 億；Gemini 模型每分鐘處理 220 億個 API Token"
+  - key: ai-index-2026
+    title: "The 2026 AI Index Report"
+    publisher: "Stanford HAI"
+    url: "https://hai.stanford.edu/ai-index/2026-ai-index-report"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "重點摘要：組織採用率達 88%；生成式 AI 三年內達到 53% 人口普及率，快於個人電腦與網際網路，但各國差異大、與人均 GDP 高度相關；Gemini Deep Think 在國際數學奧林匹亞獲得金牌，但最佳模型讀類比時鐘的正確率僅 50.1%；Agent 在 OSWorld 的任務成功率從 12% 提升到約 66%，但在結構化評測中仍約有三分之一失敗；摘要中的模型比較以 2026 年 3 月為準"
+  - key: msft-fy26-q4
+    title: "Microsoft Cloud and AI Strength Fuels Fourth Quarter Results (Form 8-K Exhibit 99.1)"
+    publisher: Microsoft
+    url: "https://www.sec.gov/Archives/edgar/data/789019/000119312526323632/msft-ex99_1.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-29"
+    accessed: "2026-10-15"
+    note: "Microsoft 365 Copilot 付費席位逾 3,000 萬"
+  - key: mcp-intro
+    title: "Introducing the Model Context Protocol"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/model-context-protocol"
+    type: press-release
+    lang: en
+    published: "2024-11-25"
+    accessed: "2026-10-15"
+    note: "開源 MCP，作為把 AI 助理連接到資料所在系統（內容庫、商業工具、開發環境）的開放標準；開發者可透過 MCP 伺服器開放資料，或建立連接這些伺服器的 AI 應用（MCP 用戶端）"
+  - key: mcp-docs
+    title: "What is the Model Context Protocol (MCP)?"
+    publisher: "Model Context Protocol"
+    url: "https://modelcontextprotocol.io/docs/getting-started/intro"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "官方文件把 MCP 比喻為 AI 應用的 USB-C 連接埠：以標準化方式把 AI 應用連接到外部系統"
+  - key: mcp-aaif
+    title: "Donating the Model Context Protocol and establishing the Agentic AI Foundation"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation"
+    type: press-release
+    lang: en
+    published: "2025-12-09"
+    accessed: "2026-10-15"
+    note: "活躍的公開 MCP 伺服器逾 1 萬個；ChatGPT、Cursor、Gemini、Microsoft Copilot、Visual Studio Code 等產品已採用；MCP 捐給 Linux 基金會旗下、由 Anthropic、Block 與 OpenAI 共同創立的 Agentic AI Foundation"
+  - key: an-series-g
+    title: "Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation"
+    publisher: Anthropic
+    url: "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation"
+    type: press-release
+    lang: en
+    published: "2026-02-12"
+    accessed: "2026-10-15"
+    note: "Claude Code 於 2025 年 5 月全面開放，年化營收已逾 25 億美元"
+  - key: oa-funding
+    title: "Accelerating the next phase of AI"
+    publisher: OpenAI
+    url: "https://openai.com/index/accelerating-the-next-phase-ai/"
+    type: press-release
+    lang: en
+    published: "2026-03-31"
+    accessed: "2026-10-15"
+    note: "Codex 每週使用者逾 200 萬，三個月成長 5 倍"
+  - key: metr-paper
+    title: "Measuring AI Ability to Complete Long Software Tasks"
+    publisher: "METR（arXiv:2503.14499）"
+    url: "https://arxiv.org/abs/2503.14499"
+    type: paper
+    lang: en
+    published: "2025-03-18"
+    accessed: "2026-10-15"
+    note: "2025-03-18 首次發表（原題 Measuring AI Ability to Complete Long Tasks），2026-07-10 修訂為第 4 版並改用現題。提出「50% 任務完成時間長度」指標；人類基準由具相關專業的人實際完成 RE-Bench、HCAST 與 66 個較短的新任務並計時：AI 能以 50% 成功率完成的任務，人類通常需要花多久；2019 年以來前沿模型的時間長度約每 7 個月翻倍；增長主要來自可靠度提升、從錯誤中調整的能力，以及更好的推理與工具使用"
+  - key: metr-th
+    title: "Task-Completion Time Horizons of Frontier AI Models"
+    publisher: METR
+    url: "https://metr.org/time-horizons/"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-15"
+    note: "METR-Horizon v1.1 結果檔（benchmark_results_1_1.yaml）的 50% 時間長度估計值：GPT-4（2023-03）4.0 分鐘、GPT-4o（2024-05）7.0 分鐘、Claude 3.5 Sonnet（2024-10）20.5 分鐘、Claude 3.7 Sonnet（2025-02）60.4 分鐘、GPT-5（2025-08）203 分鐘、Claude Opus 4.6（2026-02）718.8 分鐘（信賴區間 317–3,634 分鐘）、Claude Mythos Preview 早期版本（2026-04）1,044.8 分鐘；2023 年以來的翻倍時間約 129 天（信賴區間 104–158 天，計算時排除估計值超過 16 小時的資料點）。頁面註明以目前題庫，超過 16 小時的測量並不可靠；2026-09-08 起頁面不再持續更新"
+  - key: waymo-safety
+    title: "From the road — September 24, 2026"
+    publisher: Waymo
+    url: "https://waymo.com/blog/shorts/safetydata-september26/"
+    type: company-site
+    lang: en
+    published: "2026-09-24"
+    accessed: "2026-10-15"
+    note: "截至 2026 年 6 月底累積逾 2.7 億英里完全自動駕駛里程，涵蓋亞特蘭大、奧斯汀、洛杉磯、鳳凰城與舊金山；不論肇責，涉及人員受傷的事故比人類駕駛基準少 82%（Waymo 自行分析）"
+  - key: amzn-q2-2026
+    title: "Amazon.com Announces Second Quarter Results (Form 8-K Exhibit 99.1)"
+    publisher: Amazon
+    url: "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000024/amzn-20260630xex991.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-30"
+    accessed: "2026-10-15"
+    note: "Bedrock AgentCore 提供企業部署與營運 Agent 的基礎元件，新增讓 Agent 自主執行交易的付款（Payments）功能"
+  - key: spacex-cursor
+    title: "Space Exploration Technologies Corp. Form 8-K (completion of merger with Anysphere, Inc.)"
+    publisher: SpaceX
+    url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026056945/spcx-20260814.htm"
+    type: filing
+    lang: en
+    published: "2026-08-14"
+    accessed: "2026-10-15"
+    note: "2026-08-14 合併生效，Anysphere（Cursor）成為 SpaceX 全資子公司；以 389,289,254 股 A 類普通股支付，隱含股權價值 600 億美元"
+updated: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial: { status: fact-checked, author: learn-05, checkedBy: "learn-05-check", checkedOn: "2026-10-06", notes: "內容以 2026-10-06 為資料基準日；各來源的 accessed 為實際讀取日 2026-10-15。METR 時間長度頁面自 2026-09-08 起不再更新，較新的模型沒有可比較的數字。" }
+---
+
+## 一句話解釋
+
+**AI 應用就是把模型包裝成能解決實際問題的產品。** 從「你問它答」的聊天機器人，到交代目標就能自己規劃、使用工具完成任務的 <Term id="agent">Agent</Term>，再到能在真實世界移動與動手的機器人，AI 的「自主程度」正一級一級往上爬。
+
+## 生活化比喻
+
+<Callout type="analogy" title="從諮詢台到能跑腿的助理">
+
+假設你想安排一趟三天兩夜的花蓮旅行，可以找四種幫手：
+
+- **諮詢台**（聊天機器人）：你問「花蓮怎麼玩？」，它給你一份建議行程，但訂票、訂房都要自己來。
+- **副駕駛**（Copilot）：你在電腦前訂票時，它在旁邊幫你比價、填表、提醒漏掉的步驟，方向盤仍在你手上。
+- **能跑腿的助理**（Agent）：你只說「預算 2 萬元，幫我安排好」，它自己查車票、比較飯店、排好行程，遇到要付款的步驟再回來問你。
+- **有手有腳的幫手**（實體 AI）：自駕車載你到車站，機器人幫你把行李搬上車。
+
+四種幫手的「大腦」可能是同一類模型，差別在於它看得到什麼、能動用哪些工具，以及你願意放手讓它做多少事。
+
+</Callout>
+
+## 原理
+
+### AI 應用的自主程度階梯
+
+<FlowSteps title="AI 應用的四個層級" steps={[{ title: "聊天機器人", detail: "回答問題，由人去執行" }, { title: "Copilot", detail: "嵌在工作中協助，人做決定" }, { title: "Agent", detail: "自己規劃、使用工具完成任務" }, { title: "實體 AI", detail: "在真實世界感知與行動" }]} />
+
+越往右，AI 能替你做的事越多，但出錯的代價也越高，所以需要更多的權限控管與人為把關。
+
+### 第一級：聊天機器人與生成式 AI
+
+聊天機器人背後是<Term id="llm">大型語言模型</Term>，屬於<Term id="generative-ai">生成式 AI</Term>：能寫作、翻譯、摘要、寫程式；加上<Term id="multimodal">多模態</Term>能力後，也能看圖、聽語音，甚至生成圖片與影片。它普及得非常快：
+
+<StatGrid title="生成式 AI 有多普及？" items={[{ label: "OpenAI 產品每週使用者", value: "逾 10 億人", note: "2026 年 9 月" }, { label: "Gemini App 每月使用者", value: "9.5 億人", note: "2026 年第二季" }, { label: "人口普及率", value: "53%", note: "推出三年內，史丹佛 AI Index 2026" }, { label: "組織採用率", value: "88%", note: "史丹佛 AI Index 2026" }]} />
+
+OpenAI 表示，旗下產品每週有超過 10 億人使用<Cite k="oa-storage" />；Google 的 Gemini App 每月使用者達 9.5 億<Cite k="goog-q2-2026" />。史丹佛大學《AI Index 2026》估計，生成式 AI 推出三年內就達到 53% 的人口普及率，比個人電腦與網際網路還快，不過各國差異很大，和人均 GDP 高度相關；採用 AI 的組織比例也達到 88%<Cite k="ai-index-2026" />。
+
+不過聊天機器人有個老問題：<Term id="hallucination">幻覺</Term>，也就是一本正經地說出錯誤的內容。所以重要資訊仍要查證來源。
+
+### 第二級：Copilot，嵌進每天的工作
+
+Copilot（副駕駛）把 AI 放進你原本就在用的軟體：在文件裡幫你寫草稿，在程式編輯器裡幫你補完程式碼，在客服系統裡幫你草擬回覆。微軟表示，Microsoft 365 Copilot 的付費席位已超過 3,000 萬<Cite k="msft-fy26-q4" />。各行各業都出現了專門的 AI 應用：
+
+| 領域 | AI 在做什麼 | 代表公司 |
+|---|---|---|
+| 辦公與知識工作 | 寫信、做簡報、整理會議紀錄、搜尋公司內部文件 | <CompanyChip id="microsoft">微軟</CompanyChip>、<CompanyChip id="glean">Glean</CompanyChip> |
+| 寫程式 | 補全程式碼、修正錯誤、完成整個功能 | <CompanyChip id="anysphere">Anysphere（Cursor）</CompanyChip>（2026 年 8 月成為 SpaceX 子公司<Cite k="spacex-cursor" />）、<CompanyChip id="cognition">Cognition</CompanyChip> |
+| 搜尋 | 直接整理答案並附上來源 | <CompanyChip id="perplexity">Perplexity</CompanyChip>、<CompanyChip id="alphabet">Google</CompanyChip> |
+| 客服 | 全天候回答顧客、處理訂單與退換貨 | <CompanyChip id="sierra">Sierra</CompanyChip>、<CompanyChip id="decagon">Decagon</CompanyChip> |
+| 法律與醫療 | 審閱合約、查詢醫學文獻、把看診對話整理成病歷 | <CompanyChip id="harvey">Harvey</CompanyChip>、<CompanyChip id="openevidence">OpenEvidence</CompanyChip>、<CompanyChip id="abridge">Abridge</CompanyChip> |
+| 創作 | 生成圖片、影片、音樂與配音 | <CompanyChip id="midjourney">Midjourney</CompanyChip>、<CompanyChip id="runway">Runway</CompanyChip>、<CompanyChip id="suno">Suno</CompanyChip>、<CompanyChip id="elevenlabs">ElevenLabs</CompanyChip> |
+
+### 第三級：Agent，交代目標就自己做
+
+Agent 和聊天機器人最大的差別，是它會「動手」。它的運作是一個不斷重複的迴圈：
+
+<FlowSteps title="Agent 的工作迴圈" steps={[{ title: "理解目標", detail: "例如「整理上週的銷售報告」" }, { title: "規劃步驟", detail: "拆成查資料、計算、寫報告" }, { title: "使用工具", detail: "搜尋、讀檔案、執行程式" }, { title: "觀察結果", detail: "檢查工具回傳了什麼" }, { title: "調整或完成", detail: "不夠就再試，完成就回報" }]} />
+
+模型本身只會產生文字，要「動手」得靠工具。<Term id="function-calling">Function Calling</Term>（函式呼叫）讓模型輸出一段格式固定的「呼叫請求」，例如「查天氣，地點台北」，再由程式真正去執行，並把結果交回模型。<Term id="computer-use">Computer Use</Term> 更進一步，讓模型看著螢幕畫面，像人一樣移動滑鼠、點按鈕、輸入文字。
+
+**MCP：AI 的萬用插座。** 每個 AI 應用都要接上不同的工具與資料（雲端硬碟、通訊軟體、程式碼庫、公司資料庫），如果每一種都要各寫一套連接程式，會非常沒有效率。2024 年 11 月，<CompanyChip id="anthropic">Anthropic</CompanyChip> 開源了 <Term id="mcp">MCP</Term>（Model Context Protocol，模型上下文協定），想把這些連接方式統一起來<Cite k="mcp-intro" />；官方文件把它比喻成 AI 應用的 USB-C 接頭<Cite k="mcp-docs" />。到了 2025 年 12 月，活躍的公開 MCP 伺服器已超過 1 萬個，ChatGPT、Cursor、Gemini、Microsoft Copilot 等產品都已支援；Anthropic 並把 MCP 捐給 Linux 基金會旗下、由 Anthropic、Block 與 OpenAI 共同創立的 Agentic AI Foundation 管理<Cite k="mcp-aaif" />。
+
+寫程式是目前最成熟的 Agent 應用之一。Anthropic 的 Claude Code 在 2025 年 5 月全面開放，到 2026 年 2 月年化營收已超過 25 億美元<Cite k="an-series-g" />；<CompanyChip id="openai">OpenAI</CompanyChip> 的 Codex 在 2026 年 3 月每週使用者超過 200 萬<Cite k="oa-funding" />。
+
+Agent 的能力進步得很快。研究機構 METR 用「時間長度」來衡量：先請專業人士實際完成一批軟體與研究任務並計時，再看 AI 能以 50% 的成功率完成多長的任務<Cite k="metr-paper" />。
+
+<BarChart title="AI Agent 能完成多長的任務？（50% 成功率）" unit="分鐘" data={[{ label: "GPT-4（2023-03）", value: 4 }, { label: "GPT-4o（2024-05）", value: 7 }, { label: "Claude 3.5 Sonnet（2024-10）", value: 21 }, { label: "Claude 3.7 Sonnet（2025-02）", value: 60 }, { label: "GPT-5（2025-08）", value: 203 }, { label: "Claude Opus 4.6（2026-02）", value: 719 }]} source="metr-th" keepOrder note="以人類專家完成同樣任務所需的時間計算；任務以軟體工程與研究為主，越長的任務誤差範圍越大" />
+
+不到三年，Agent 能處理的任務從幾分鐘的小工作，成長到人類專家約需 12 小時的工作。METR 估計，2023 年以來這個長度大約每 4 個多月就翻倍一次<Cite k="metr-th" />。
+
+讀這張圖要注意兩點。第一，任務越長，估計越不精確：Claude Opus 4.6 的 719 分鐘，信賴區間從約 5 小時到 60 小時都有可能；METR 也提醒，以目前的題庫，超過 16 小時的測量並不可靠。第二，這份榜單已停止更新：METR 最後加入的是只限受邀使用的 Claude Mythos Preview 早期版本，估計約 1,045 分鐘，已超出可靠範圍；2026 年 9 月起頁面不再持續更新，之後推出的新模型沒有可比較的數字<Cite k="metr-th" />。
+
+### 第四級：實體 AI，走進真實世界
+
+<Term id="physical-ai">實體 AI</Term>讓模型長出「眼睛」和「手腳」：透過攝影機、<Term id="lidar">光達</Term>等感測器看懂環境，再控制車輛或機械手臂行動。目前最成熟的例子是 <Term id="robotaxi">Robotaxi</Term>（無人計程車）。Alphabet 旗下的 Waymo 截至 2026 年 6 月底，已累積超過 2.7 億英里的完全<Term id="autonomous-driving">自動駕駛</Term>里程；根據 Waymo 自己對五個主要都會區的分析，不論肇責歸屬，它涉及人員受傷的事故比人類駕駛基準少 82%<Cite k="waymo-safety" />。這是公司自行公布的統計，比較方法仍值得外界持續檢驗。
+
+<Term id="humanoid-robot">人形機器人</Term>則還在發展初期，<CompanyChip id="tesla">特斯拉</CompanyChip>、<CompanyChip id="figure-ai">Figure</CompanyChip>、<CompanyChip id="unitree">宇樹科技</CompanyChip>等公司都投入開發；要走進一般家庭，還需要更可靠的模型，以及更便宜、更耐用的硬體。
+
+### 能力與限制：參差不齊的前沿
+
+史丹佛《AI Index 2026》用一組對比說明 AI 的能力有多「參差不齊」：Google 的 Gemini Deep Think 在國際數學奧林匹亞拿到金牌，但最好的模型判讀指針時鐘的正確率只有 50.1%；Agent 在 OSWorld 這類操作電腦的測試中，成功率從 12% 提升到約 66%，但在結構化的 <Term id="benchmark">Benchmark</Term>（評測）上，仍有大約三分之一的任務會失敗<Cite k="ai-index-2026" />。評測成績更新得很快，這份報告反映的大致是 2026 年初的狀況，之後推出的模型可能已有不同表現。
+
+<Compare title="聊天機器人與 Agent 的風險不同" left={{ title: "聊天機器人", items: ["只產生文字，由人決定要不要採用", "主要風險是幻覺：答錯但說得很肯定", "一問一答，錯誤比較容易被發現"] }} right={{ title: "Agent", items: ["會實際操作檔案、網頁與帳號", "可能被網頁或信件中的惡意指令誤導", "步驟一多，小錯誤會一路累積"] }} />
+
+右邊第二點稱為<Term id="prompt-injection">提示注入</Term>：攻擊者把指令藏在網頁或電子郵件裡，讓讀到它的 Agent 誤以為是使用者的命令。因此，設計良好的 Agent 會限制權限，遇到付款、寄信、刪除檔案等重要動作時，先停下來請人確認。
+
+<DeepDive title="深入一點：Agent 怎麼呼叫工具？為什麼長任務容易失敗？">
+
+以「明天台北會下雨嗎？要不要帶傘？」為例，一個會查天氣的 AI 助理，背後大致經過四步：
+
+1. **告訴模型有哪些工具**：程式把使用者的問題，連同一份「工具說明書」一起送給模型，例如有個叫 get_weather 的工具，需要填入城市與日期。
+2. **模型決定呼叫工具**：模型判斷自己不知道明天的天氣，於是不直接回答，而是輸出一段格式固定的呼叫請求：
+
+```json
+{ "tool": "get_weather", "city": "台北", "date": "明天" }
+```
+
+3. **程式執行工具**：應用程式拿這段請求去查氣象資料，得到「降雨機率 70%」，再把結果交回模型。
+4. **模型產生回答**：「明天台北降雨機率 70%，建議帶傘。」
+
+Agent 就是把這個迴圈重複很多次。一個任務可能要呼叫幾十次工具，而且每一輪都要把先前的對話與工具結果再送進模型，所以 Agent 消耗的 <Term id="token">Token</Term> 往往比一問一答多出許多倍。這也是 Agent 普及會推高<Term id="inference">推論</Term>算力需求的原因。
+
+長任務為什麼容易失敗？假設 Agent 每一步做對的機率是 p，一個任務需要連續做對 n 步，而且每一步互不影響，那麼整個任務成功的機率是：
+
+<MathTeX tex={"P_{\\text{成功}}=p^{n}"} display label="整個任務成功的機率等於每一步成功率的 n 次方" />
+
+如果每一步有 95% 的把握，連做 20 步之後，整體成功率只剩 0.95 的 20 次方，約 36%；就算每一步提高到 99%，20 步後也還有約 18% 的機會出錯。
+
+這說明了兩件事：第一，提高每一步的可靠度非常重要；第二，Agent 必須學會檢查自己的結果，發現錯誤就回頭修正。METR 的研究也指出，Agent 能處理的任務越來越長，主要來自可靠度提升、從錯誤中調整的能力，以及更好的推理與工具使用能力<Cite k="metr-paper" />。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+AI 應用位在產業鏈的最頂端，是使用者真正看得到的地方，也是整條鏈的收入來源：
+
+- **應用與 Agent**：<SegmentChip id="apps-agents" /> 包括把 Agent 放進企業軟體的 <CompanyChip id="salesforce">Salesforce</CompanyChip>、<CompanyChip id="servicenow">ServiceNow</CompanyChip>，以及前面表格中各領域的應用公司。
+- **開發工具**：<SegmentChip id="devtools-data-mlops" /> 提供打造 AI 應用的工具，例如程式開發工具 Cursor，以及 Agent 開發框架 <CompanyChip id="langchain">LangChain</CompanyChip>。
+- **模型**：<SegmentChip id="foundation-models" /> 的 OpenAI、Anthropic，以及 Google 的 <ModelChip id="google-gemini">Gemini</ModelChip>，是多數應用的「大腦」；模型公司也直接推出自己的應用，例如 ChatGPT 與 <ModelChip id="anthropic-claude">Claude</ModelChip>。
+- **雲端**：<SegmentChip id="cloud-neocloud" /> 除了出租算力，也提供 Agent 開發平台，例如<CompanyChip id="amazon">亞馬遜</CompanyChip>的 Bedrock AgentCore 就新增了讓 Agent 自主完成交易的付款功能<Cite k="amzn-q2-2026" />。Agent 用掉的大量 Token，最後都變成資料中心裡 GPU 的工作量，金流細節可參考<LearnLink id="cloud-and-ai-business">雲端與 AI 的商業模式</LearnLink>。
+- **實體 AI**：<SegmentChip id="physical-ai" /> 需要感測器、馬達、傳動元件，以及在裝置端執行模型的<Term id="edge-ai">邊緣 AI</Term> 電腦，台灣的<CompanyChip id="hiwin">上銀</CompanyChip>（滾珠螺桿、線性滑軌與機械手臂）、<CompanyChip id="techman-robot">達明機器人</CompanyChip>與<CompanyChip id="advantech">研華</CompanyChip>都在這條供應鏈上。
+
+想繼續深入，可以看趨勢文章<TrendLink id="agentic-ai-standards">Agent 生態與標準化</TrendLink>、<TrendLink id="ai-coding">AI 寫程式</TrendLink>、<TrendLink id="physical-ai-commercialization">人形機器人與 Robotaxi 商業化</TrendLink>與<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>。進階文章<LearnLink id="agents-and-mcp">AI Agent 與 MCP</LearnLink>會拆解 Agent 的架構，<LearnLink id="physical-ai-deep">實體 AI 深入</LearnLink>則介紹機器人與自駕背後的技術。

@@ -1,0 +1,383 @@
+---
+/**
+ * / — home. Hero (H1 = LCP) → chain-panorama scene (variant hero, autoload idle) → 由淺入深 entry
+ * cards → 14-segment strip → 關鍵數字 (computed + cited) → hyperscaler capex (when capex series
+ * exist) → featured trends → Taiwan and models callouts → intro from the `pages` entry "home".
+ */
+import { render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Button from '../components/ui/Button.astro';
+import Scene3D from '../components/scene/Scene3D.astro';
+import MultiLine from '../components/charts/MultiLine.astro';
+import SourcesList from '../components/content/SourcesList.astro';
+import { mdxComponents } from '../components/content/mdx-components';
+import { registerSources } from '../components/content/page-state';
+import BodyScene from '../components/chain/BodyScene.astro';
+import SectionHead from '../components/chain/SectionHead.astro';
+import SegmentStrip from '../components/chain/SegmentStrip.astro';
+import EntryCards from '../components/home/EntryCards.astro';
+import KeyNumbers from '../components/home/KeyNumbers.astro';
+import FeaturedTrends from '../components/home/FeaturedTrends.astro';
+import TaiwanCallout from '../components/home/TaiwanCallout.astro';
+import ModelsCallout from '../components/home/ModelsCallout.astro';
+import SiteGuide from '../components/home/SiteGuide.astro';
+import {
+  getCapexChart,
+  getFeaturedTrends,
+  getKeyTiles,
+  getModelsSummary,
+  getTaiwanSummary,
+} from '../components/home/home-data';
+import { getCurriculum, getRoster, safeEntry, SEGMENTS } from '../lib/collections';
+import { learnHref, sectionHref, segmentHref } from '../lib/paths';
+import { DATA_DATE, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, websiteJsonLd } from '../lib/seo';
+import { buildSegmentsSceneData } from '../lib/scene-data/segments';
+import type { SourceT } from '../schemas/common';
+
+const [sceneData, tiles, capex, trends, taiwan, models] = await Promise.all([
+  buildSegmentsSceneData(4),
+  getKeyTiles((id) => segmentHref(id)),
+  getCapexChart('2023-Q1'),
+  getFeaturedTrends(6),
+  getTaiwanSummary(),
+  getModelsSummary(),
+]);
+const roster = getRoster();
+const curriculum = getCurriculum();
+const firstArticle = curriculum.articles[0];
+const counts: Record<string, number> = {};
+for (const c of roster) counts[c.segment] = (counts[c.segment] ?? 0) + 1;
+
+const page = await safeEntry('pages', 'home');
+let Intro: Awaited<ReturnType<typeof render>>['Content'] | undefined;
+if (page) {
+  try {
+    Intro = (await render(page)).Content;
+  } catch {
+    Intro = undefined;
+  }
+}
+const pageData = page?.data as { title: string; description: string; sources: SourceT[] } | undefined;
+const sources = pageData?.sources ?? [];
+// The intro MDX renders before BaseLayout's frontmatter (head propagation): register here so <Cite>
+// numbers follow the sources list.
+registerSources(Astro, sources);
+const facts = [
+  { n: 5, label: '層' },
+  { n: SEGMENTS.length, label: '個環節' },
+  { n: roster.length, label: '家公司' },
+  { n: models.families, label: '個模型系列' },
+  { n: curriculum.articles.length, label: '篇學習文章' },
+];
+---
+
+<BaseLayout
+  title={`${SITE_NAME}｜${SITE_TAGLINE}`}
+  description={pageData?.description ?? SITE_DESCRIPTION}
+  jsonLd={websiteJsonLd(Astro.site)}
+  sources={sources}
+  pagefind={false}
+  section="home"
+>
+  <section class="hero" aria-labelledby="home-title">
+    <div class="container hero__inner">
+      <p class="hero__kicker">
+        <span class="hero__kicker-dots" aria-hidden="true">
+          {SEGMENTS.map((s) => <span style={`--c: ${s.color}`} />)}
+        </span>
+        給每個人的 AI 產業地圖
+      </p>
+      <h1 id="home-title" class="hero__title">{SITE_NAME}</h1>
+      <p class="hero__promise">由淺入深看懂從電力、晶片到模型與應用的 AI 產業</p>
+      <div class="hero__cta">
+        {
+          firstArticle && (
+            <Button href={learnHref(firstArticle.slug)} variant="primary" icon="book">
+              從入門開始
+            </Button>
+          )
+        }
+        <Button href={sectionHref('chain')} icon="layers">產業鏈總覽</Button>
+        <Button href={sectionHref('companies')} variant="ghost" icon="arrow-right" iconPosition="end">公司資料庫</Button>
+      </div>
+      <ul class="hero__facts" role="list" aria-label="本站收錄範圍">
+        {
+          facts.map((f) => (
+            <li>
+              <strong>{f.n}</strong>
+              {f.label}
+            </li>
+          ))
+        }
+        <li class="hero__asof">資料基準日 <time datetime={DATA_DATE}>{DATA_DATE}</time></li>
+      </ul>
+    </div>
+    <div class="container container--wide hero__scene">
+      <Scene3D
+        id="chain-panorama"
+        variant="hero"
+        height="hero"
+        autoload="idle"
+        data={sceneData}
+        caption="AI 產業鏈全景塔：五層十四環節由下而上，光點代表價值流動。點選環節可前往介紹頁。"
+      />
+    </div>
+  </section>
+
+  <section class="container home-section" aria-labelledby="home-levels">
+    <SectionHead
+      id="home-levels"
+      kicker="學習路徑"
+      title="由淺入深，三種起點"
+      lede="不論你是第一次接觸 AI，或是想看懂財報與技術細節，都可以從適合的程度開始，一路往下讀。"
+      href={sectionHref('learn')}
+      linkLabel="完整學習路徑"
+      accent="var(--level-1)"
+    />
+    <EntryCards />
+  </section>
+
+  <section class="container home-section home-intro" aria-label="關於本站">
+    <div class="home-intro__main">
+      {
+        Intro ? (
+          <div class="prose">
+            <Intro components={{ ...mdxComponents, Scene3D: BodyScene }} />
+          </div>
+        ) : (
+          <div class="prose">
+            <h2>歡迎來到 {SITE_NAME}</h2>
+            <p>{SITE_DESCRIPTION}</p>
+          </div>
+        )
+      }
+    </div>
+    <div class="home-intro__aside">
+      <div class="home-intro__sticky">
+        <SiteGuide />
+      </div>
+    </div>
+  </section>
+
+  <section class="home-band" aria-labelledby="home-chain">
+    <div class="container">
+      <SectionHead
+        id="home-chain"
+        kicker="產業鏈地圖"
+        title="五層十四環節，由下往上"
+        lede="依產業鏈由下往上的依存順序排列：電力 → 晶片 → 系統與資料中心 → 雲端與模型 → 應用。點選任一環節，看它在做什麼、誰是關鍵公司、台灣扮演什麼角色。"
+        href={sectionHref('chain')}
+        linkLabel="產業鏈總覽"
+      />
+      <SegmentStrip counts={counts} />
+    </div>
+  </section>
+
+  <section class="container home-section" aria-labelledby="home-numbers">
+    <SectionHead
+      id="home-numbers"
+      kicker="用數字看產業鏈"
+      title="關鍵數字"
+      lede="前兩項由本站資料計算，其餘取自各環節頁的關鍵數字；每個數字都標示日期與出處。"
+      accent="var(--layer-silicon)"
+    />
+    <KeyNumbers computed={tiles.computed} facts={tiles.facts} methodHref={sectionHref('sources')} />
+  </section>
+
+  {
+    capex && (
+      <section class="container home-section" aria-labelledby="home-capex">
+        <SectionHead
+          id="home-capex"
+          kicker="AI 投資的引擎"
+          title="雲端巨頭的資本支出"
+          lede="雲端業者買伺服器、蓋資料中心的錢，是整條 AI 硬體鏈營收的源頭。下圖依日曆季度對齊各公司的資本支出。"
+          accent="var(--layer-cloud-models)"
+        />
+        <MultiLine
+          title="大型雲端業者季度資本支出"
+          subtitle="依日曆季度對齊；非日曆年度的財季以重疊天數最多的季度歸類"
+          unit="億美元"
+          series={capex.series}
+          categories={capex.categories}
+          asOf={capex.asOf}
+          sources={capex.sources}
+          valueSuffix=" 億美元"
+          xTitle="季度"
+          height={260}
+          endLabels
+          notes={[
+            '資本支出以各公司財報口徑為準（是否含融資租賃各家不同）；虛線為估計值。',
+            capex.missing.length ? `${capex.missing.join('、')} 的資本支出資料整理中，完成後會自動加入。` : null,
+          ]}
+        />
+      </section>
+    )
+  }
+
+  <section class="container home-section" aria-labelledby="home-trends">
+    <SectionHead
+      id="home-trends"
+      kicker="未來 2–5 年"
+      title="值得關注的趨勢"
+      lede="硬體、軟體、市場與政策的關鍵變化，每篇都附上觀察指標與反方觀點。"
+      href={sectionHref('trends')}
+      linkLabel="全部趨勢"
+      accent="var(--layer-applications)"
+    />
+    <FeaturedTrends items={trends} />
+  </section>
+
+  <!-- Each callout is its own labelled section with an H2. -->
+  <div class="container home-section">
+    <div class="home-duo">
+      <TaiwanCallout summary={taiwan} />
+      <ModelsCallout summary={models} />
+    </div>
+  </div>
+
+  {
+    sources.length > 0 && (
+      <div class="container home-sources">
+        <SourcesList sources={sources} />
+      </div>
+    )
+  }
+</BaseLayout>
+
+<style>
+  .hero {
+    position: relative;
+    padding-block: var(--space-7) var(--space-5);
+    background:
+      radial-gradient(60rem 26rem at 85% -10%, color-mix(in srgb, var(--layer-silicon) 10%, transparent), transparent 70%),
+      radial-gradient(50rem 24rem at 5% 0%, color-mix(in srgb, var(--layer-foundation) 9%, transparent), transparent 70%);
+  }
+  .hero__inner {
+    display: grid;
+    gap: var(--space-4);
+    justify-items: start;
+  }
+  .hero__kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-muted);
+  }
+  .hero__kicker-dots {
+    display: inline-flex;
+    gap: 3px;
+  }
+  .hero__kicker-dots span {
+    inline-size: 6px;
+    block-size: 14px;
+    border-radius: 2px;
+    background: var(--c);
+  }
+  .hero__title {
+    font-size: clamp(2.5rem, 1.5rem + 4.2vw, 4.75rem);
+    line-height: 1.1;
+    letter-spacing: 0.02em;
+    font-weight: var(--fw-bold);
+  }
+  .hero__promise {
+    font-size: clamp(1.15rem, 1rem + 0.7vw, 1.6rem);
+    line-height: 1.6;
+    color: var(--c-fg-muted);
+    max-width: 30em;
+    text-wrap: balance;
+  }
+  /* Short CJK titles break only at punctuation and spaces (「晶片」「伺服器」 never split across lines);
+     overflow-wrap still breaks a run that cannot fit at all. */
+  .hero__promise,
+  .home-section :global(:is(h2, h3, h4)),
+  .home-band :global(:is(h2, h3, h4)) {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-block-start: var(--space-2);
+  }
+  /* Phones: the text-style link wraps onto its own row; drop its side padding so its label lines up with the
+     buttons' left edge instead of floating in from the gutter. */
+  @media (max-width: 479px) {
+    .hero__cta > :global(.btn--ghost) {
+      padding-inline: 0;
+    }
+  }
+  .hero__facts {
+    list-style: none;
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .hero__facts strong {
+    font-size: var(--fs-l);
+    color: var(--c-fg);
+    margin-inline-end: 0.2em;
+    font-variant-numeric: tabular-nums;
+  }
+  .hero__asof {
+    align-self: center;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .hero__scene {
+    margin-block-start: var(--space-6);
+  }
+  .hero + .home-section {
+    padding-block-start: var(--space-7);
+  }
+
+  /* Section rhythm: 96px on wide screens, 48px on phones (where 96px reads as a gap). */
+  .home-section {
+    padding-block-start: clamp(var(--space-7), 7vw, var(--space-9));
+  }
+  .home-band {
+    margin-block-start: clamp(var(--space-7), 7vw, var(--space-9));
+    padding-block: clamp(var(--space-6), 5vw, var(--space-8));
+    background: var(--c-bg-sunken);
+    border-block: 1px solid var(--c-border);
+  }
+  .home-intro {
+    display: grid;
+    gap: var(--space-7);
+  }
+  .home-intro__main {
+    min-width: 0;
+    max-width: 48rem;
+  }
+  @media (min-width: 1100px) {
+    .home-intro {
+      grid-template-columns: minmax(0, 48rem) minmax(18rem, 22rem);
+      justify-content: space-between;
+      column-gap: var(--space-8);
+    }
+    .home-intro__sticky {
+      position: sticky;
+      top: calc(var(--header-h) + var(--space-5));
+    }
+  }
+  .home-duo {
+    display: grid;
+    gap: var(--space-5);
+  }
+  @media (min-width: 960px) {
+    .home-duo {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .home-sources > :global(.sources) {
+    max-width: 52rem;
+  }
+</style>

@@ -1,0 +1,94 @@
+# Proposals from the wafer-transistor scene agent (scene-wafer-transistor), 2026-10-09; updated 2026-10-15
+# (compact-landscape-pose workaround revised by the scene reviewer).
+# Nothing here blocks the scene: each item has a local workaround in src/three/scenes/wafer-transistor/.
+
+- id: setpose-homepose-double-scaled-on-portrait
+  target: src/three/core/host.ts (fitPose / ctx.setPose)
+  severity: bug (affects every scene that calls ctx.setPose(ctx.homePose) and defines camera.portrait,
+    including the exemplars neural-net and chain-panorama)
+  problem: >
+    On a portrait stage, ctx.homePose already returns the camera.portrait pose, but ctx.setPose()
+    passes every pose through fitPose(), which scales the camera distance by |portrait| / |main|
+    again. A scene that "returns to the home pose" on step 0 or after a variant switch therefore
+    ends up k² instead of k times further away (k ≈ 1.4–1.5 for typical poses): the subject shrinks
+    to about two thirds of the intended size on phones and tall stages. Verified in the sandbox at
+    900×1125 with height=tall: the wafer filled 54 % of the stage width instead of the authored ~85 %.
+  proposal: >
+    Either let fitPose() skip poses that are (reference-)equal to homePose(), or add an option
+    `ctx.setPose(pose, { exact: true })` / a `ctx.goHome(opts)` helper that tweens to homePose()
+    without re-fitting. The contract text "Step 0 should return to ctx.homePose" then works as
+    written on every stage shape.
+  workaround: >
+    common.ts `exactPose(ctx, pose)` pre-divides the portrait factor, and `homePoseShifted(ctx, dx,
+    dy, dz)` returns the home pose (optionally nudged) through exactPose; every setPose call in the
+    scene goes through one of them.
+
+- id: screen-anchored-labels
+  target: src/three/core/labels.ts (LabelLayer)
+  severity: enhancement
+  problem: >
+    LabelLayer only places labels at world positions. Titles, legends and short status lines
+    ("閘極電壓：開 → 導通（1）", an architecture timeline row) belong to the stage, not to a 3D point:
+    anchored in the world they drift, leave the frame when the camera orbits, and need different
+    world positions per stage shape.
+  proposal: >
+    Optional `screen: { x, y }` on LabelSpec (stage fraction plus px offset, e.g.
+    `{ fx: 0.5, fy: 1, dx: 0, dy: -28 }`) that bypasses projection, still uses the pool, styles and
+    the visible budget, and is never collision-culled.
+  workaround: >
+    common.ts `Hud` re-places ordinary labels at a world point a fixed depth in front of the camera
+    under the wanted stage pixel (`screenPoint`). It only calls label.set() when the camera actually
+    moved, so a still camera requests no frames and reduced motion stays idle.
+
+- id: label-leader-lines
+  target: src/three/core/labels.ts (LabelSpec)
+  severity: enhancement
+  problem: >
+    Parts that are small on screen (a nanosheet's cut face, a 1-px high-k sleeve) cannot carry a
+    label at their own anchor: the chip covers the part it names. Technical drawings solve this with
+    a leader line to a label placed in free space.
+  proposal: >
+    Optional `leader: Vec3Like` on LabelSpec (world point, or local when `object` is set): the layer
+    draws a hairline (an SVG line in the label container, styled by kind) from that point to the
+    nearest edge of the placed label box, and hides it together with the label.
+  workaround: >
+    transistor.ts draws the leaders itself as one LineSegments (common.ts `Lines`) from the part to
+    the label anchor, re-laid out whenever the device morphs.
+
+- id: compact-landscape-pose
+  target: src/three/core/host.ts (homePose / fitFov), CameraMeta
+  severity: enhancement
+  problem: >
+    Phones show `height="normal"` stages at 4:3 (≈ 355 × 266 px). The host knows two stage shapes
+    (portrait < 1, otherwise landscape), so a 16:9 composition with labels beside the subject keeps
+    its horizontal extent at 4:3: the subject shrinks to about half the stage width and drifts off
+    centre, and the reset button returns to that pose.
+  proposal: >
+    Optional `camera.compact?: Partial<CameraPose>` (fov specified at 4:3) used by homePose(),
+    resetView() and fitPose() when 1 ≤ aspect < 1.5, plus `size.compact` on StageSize.
+  workaround: >
+    common.ts `isCompact`. wafer.ts has its own COMPACT pose per level (wafer, die, metal stack)
+    with the overview labels above, on and below the wafer; transistor.ts frames each architecture
+    10 % closer and merges its two heading rows into one; bspdn.ts moves its colour legend to the
+    bottom edge and names the carrier wafer on the slab. (Labels are fixed-size DOM, so on a
+    ~355 px stage they take three times the share of a 1280 px one; a host-level compact pose would
+    let every scene do this without per-step bookkeeping.)
+
+- id: shared-studio-environment
+  target: src/three/core/lights.ts (or a kit module), SceneContext
+  severity: enhancement (plus a dev-only false-positive leak warning)
+  problem: >
+    scenes3d.md A14 promises "the shared RoomEnvironment PMREM" for soft reflections on metal parts
+    (mid and high tiers), but the engine has none, so a scene that wants it builds its own. Assigning
+    an equirect texture to scene.environment lets the renderer build and cache the PMREM itself; its
+    PMREMGenerator (blur planes + ping-pong target) then outlives the scene, and the host's dev leak
+    check reports "9 geometries, 2 textures left after dispose" on every remount / variant switch.
+  proposal: >
+    `addStudioEnvironment(ctx, { intensity })` next to addStudioLights: a procedural, palette-tinted
+    studio environment built once per theme with a private PMREMGenerator (disposed immediately),
+    skipped on the low tier, returning { apply(p), dispose() }; or have the host own one per renderer
+    and expose `ctx.environment(on, intensity)`.
+  workaround: >
+    common.ts `studioEnvironment(ctx)` paints a small equirect canvas from the palette, converts it
+    with its own PMREMGenerator (disposed right away) and keeps only the cube-UV render target, which
+    it disposes on theme change and on dispose; index.ts skips it on the low tier.

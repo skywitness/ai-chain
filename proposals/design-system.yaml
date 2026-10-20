@@ -1,0 +1,21 @@
+# Proposals from the design-system agent (2026-10-06). None block the build.
+proposals:
+  - id: robots-sitemap-endpoint
+    kind: new-file
+    owner: pages agent (SEO / sitemap) or integrator
+    why: >
+      public/robots.txt cannot know SITE_URL/BASE_PATH, so it has no Sitemap line (every page links the
+      sitemap via <link rel="sitemap">). A generated src/pages/robots.txt.ts using Astro.site + withBase()
+      could add `Sitemap: <site>/<base>/sitemap-index.xml`; public/robots.txt would then be deleted.
+  - id: og-section-images
+    kind: new-files
+    owner: integrator (architecture §2 lists public/og/<section>.png under DS, but it is not in this task's ownership)
+    why: >
+      lib/seo.ts emits og:image only when a page passes `image`. DEFAULT_OG_IMAGE is undefined until
+      public/og/default.png (1200×630) and per-section images exist; set it in lib/seo.ts afterwards
+      (ogImageFor('learn') → '/og/learn.png').
+  - id: segment-colour-eda
+    kind: note
+    why: >
+      research/design/scenes3d.md §A14 lists 13 hues for 14 segments; eda-ip-design was missing. tokens.css
+      adds --seg-eda-ip-design: #c65fe0 (dark) / #8e3aa8 (light), between memory (magenta) and accelerators (violet).

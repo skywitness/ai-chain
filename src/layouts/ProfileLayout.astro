@@ -1,0 +1,362 @@
+---
+/**
+ * Profile layout for companies and model families: header block, key-facts sidebar, main column.
+ *
+ *   <ProfileLayout title={`${d.nameZh}（${d.name}）：產品、技術與營收`} description={d.summary}
+ *                  name={d.nameZh} nameAlt={d.name} kicker="公司資料庫 · 晶圓代工與先進封裝"
+ *                  segment={d.primarySegment.id} aliases={['TSMC', '2330', '台積']}
+ *                  facts={[{ label: '總部', value: '新竹' }, { label: '成立', value: '1987' }]}
+ *                  lastVerified={d.lastVerified} sources={d.sources}
+ *                  breadcrumbs={[{ label: '公司資料庫', href: sectionHref('companies') }, { label: d.nameZh }]}>
+ *     <Fragment slot="badges"><Badge tone="accent">一線</Badge></Fragment>
+ *     …sections…
+ *   </ProfileLayout>
+ *
+ * Slots: default (main column) · `badges` (row under the name) · `header` (extra header content, e.g.
+ * ticker chips) · `sidebar` (after the facts) · `sidebar-top` (before the facts) · `after` (after the
+ * main column, before sources).
+ *
+ * DOM order is header → main column → sidebar → sources, so keyboard and screen-reader users reach
+ * the content first and phones show the facts after it; wide screens still place the sidebar in a
+ * right-hand column beside the content and sources.
+ */
+import BaseLayout from './BaseLayout.astro';
+import DataAsOf from '../components/ui/DataAsOf.astro';
+import SourcesList from '../components/content/SourcesList.astro';
+import { segmentMeta } from '../lib/collections';
+import type { BreadcrumbItem, JsonLd } from '../lib/seo';
+import type { RouteKey } from '../lib/paths';
+import type { SourceT } from '../schemas/common';
+
+export interface Fact {
+  label: string;
+  value: string | number;
+  href?: string | undefined;
+  /** small grey note after the value */
+  note?: string | undefined;
+}
+
+export interface Props {
+  /** <title> text (without the site suffix) */
+  title: string;
+  description: string;
+  /** H1 (e.g. Chinese name) */
+  name: string;
+  /** Secondary name line (e.g. English name) */
+  nameAlt?: string | undefined;
+  kicker?: string | undefined;
+  /** One-paragraph summary under the name */
+  summary?: string | undefined;
+  /** Segment colour for the header accent */
+  segment?: string | undefined;
+  /** CSS colour override for the header accent */
+  accent?: string | undefined;
+  /** Visible 「別名／代號」 line (helps search: TSMC, 2330, 台積) */
+  aliases?: readonly string[] | undefined;
+  facts?: readonly Fact[] | undefined;
+  factsTitle?: string | undefined;
+  lastVerified?: string | undefined;
+  sources?: readonly SourceT[] | undefined;
+  breadcrumbs?: BreadcrumbItem[] | undefined;
+  image?: string | undefined;
+  jsonLd?: JsonLd | JsonLd[] | undefined;
+  section?: RouteKey | null | undefined;
+  /** Pagefind 類型 filter (default 公司) */
+  searchType?: string | undefined;
+  searchFilters?: Record<string, string | readonly string[]> | undefined;
+  noindex?: boolean | undefined;
+}
+
+const {
+  title,
+  description,
+  name,
+  nameAlt,
+  kicker,
+  summary,
+  segment,
+  accent,
+  aliases = [],
+  facts = [],
+  factsTitle = '基本資料',
+  lastVerified,
+  sources = [],
+  breadcrumbs,
+  image,
+  jsonLd,
+  section,
+  searchType = '公司',
+  searchFilters = {},
+  noindex,
+} = Astro.props;
+
+const seg = segment ? segmentMeta(segment) : undefined;
+const accentColor = accent ?? seg?.color ?? 'var(--c-accent)';
+const filters: Array<[string, string]> = [['類型', searchType]];
+if (seg) filters.push(['環節', seg.title]);
+for (const [k, v] of Object.entries(searchFilters)) {
+  for (const val of typeof v === 'string' ? [v] : v) filters.push([k, val]);
+}
+const hasSidebar = facts.length > 0 || Astro.slots.has('sidebar') || Astro.slots.has('sidebar-top');
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  image={image}
+  type="profile"
+  jsonLd={jsonLd}
+  breadcrumbs={breadcrumbs}
+  section={section}
+  sources={sources}
+  modifiedTime={lastVerified}
+  noindex={noindex}
+>
+  <div class="profile container" style={`--profile-accent: ${accentColor}`}>
+    <header class="profile__head">
+      {kicker && <p class="profile__kicker"><span class="profile__dot" aria-hidden="true" />{kicker}</p>}
+      <h1 class="profile__name" data-pagefind-weight="10">
+        {name}
+        {/* The space keeps the text "台積電 TSMC" (not "台積電TSMC") for Pagefind's title meta,
+            search tokens and the accessible name; the flex layout ignores it visually. */}
+        {nameAlt && nameAlt !== name && <>{' '}<span class="profile__alt" lang="en">{nameAlt}</span></>}
+      </h1>
+      {Astro.slots.has('badges') && <div class="profile__badges"><slot name="badges" /></div>}
+      {summary && <p class="profile__summary">{summary}</p>}
+      {
+        aliases.length > 0 && (
+          <p class="profile__aliases" data-pagefind-weight="8">
+            <span class="profile__aliases-label">別名／代號</span>
+            {aliases.join('、')}
+          </p>
+        )
+      }
+      {Astro.slots.has('header') && <div class="profile__header-extra"><slot name="header" /></div>}
+      {lastVerified && <DataAsOf date={lastVerified} />}
+      {filters.map(([k, v]) => <span hidden data-pagefind-filter={`${k}:${v}`} />)}
+    </header>
+
+    <div class:list={['profile__grid', { 'profile__grid--sidebar': hasSidebar }]}>
+      {/* DOM / focus order: main column → facts sidebar → sources. On wide screens the grid puts the
+          sidebar in the right-hand column next to both; on phones the facts follow the content. */}
+      <div class="profile__main">
+        <slot />
+        <slot name="after" />
+      </div>
+      {
+        hasSidebar && (
+          <aside class="profile__side" aria-label={factsTitle}>
+            <div class="profile__side-sticky">
+              <slot name="sidebar-top" />
+              {facts.length > 0 && (
+                <section class="facts" aria-labelledby="profile-facts-title">
+                  <h2 class="facts__title" id="profile-facts-title">
+                    {factsTitle}
+                  </h2>
+                  <dl class="facts__list">
+                    {facts.map((f) => (
+                      <div class="facts__row">
+                        <dt>{f.label}</dt>
+                        <dd>
+                          {f.href ? <a href={f.href}>{f.value}</a> : f.value}
+                          {f.note && <span class="facts__note">{f.note}</span>}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              )}
+              <slot name="sidebar" />
+            </div>
+          </aside>
+        )
+      }
+      {
+        sources.length > 0 && (
+          <div class="profile__sources">
+            <SourcesList sources={sources} />
+          </div>
+        )
+      }
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  @layer layout {
+    .profile {
+      padding-block-end: var(--space-8);
+    }
+    .profile__head {
+      position: relative;
+      display: grid;
+      gap: var(--space-3);
+      margin-block: var(--space-5) var(--space-6);
+      padding: var(--space-6) var(--space-5) var(--space-5);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background:
+        linear-gradient(
+          135deg,
+          color-mix(in srgb, var(--profile-accent) 9%, transparent),
+          transparent 55%
+        ),
+        var(--c-bg-elev);
+      overflow: hidden;
+    }
+    .profile__head::before {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      inset-block-start: 0;
+      block-size: 4px;
+      background: var(--profile-accent);
+    }
+    @media (min-width: 768px) {
+      .profile__head {
+        padding: var(--space-7) var(--space-7) var(--space-6);
+      }
+    }
+    .profile__kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+      font-size: var(--fs-s);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-muted);
+      letter-spacing: 0.03em;
+    }
+    .profile__dot {
+      inline-size: 0.65em;
+      block-size: 0.65em;
+      border-radius: 50%;
+      background: var(--profile-accent);
+    }
+    .profile__name {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.15em 0.6em;
+      font-size: var(--fs-3xl);
+      line-height: 1.2;
+    }
+    .profile__alt {
+      font-size: 0.5em;
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-muted);
+      letter-spacing: 0.01em;
+    }
+    .profile__badges,
+    .profile__header-extra {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      align-items: center;
+    }
+    .profile__summary {
+      max-width: var(--measure);
+      font-size: var(--fs-m);
+      line-height: 1.8;
+      color: var(--c-fg);
+    }
+    .profile__aliases {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+    }
+    .profile__aliases-label {
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-subtle);
+      margin-inline-end: 0.6em;
+    }
+
+    /* Rows carry no gap: SourcesList brings its own top margin (--space-8), and on phones only the
+       sidebar, which follows the main column, needs a gap above it. */
+    .profile__grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      column-gap: var(--space-6);
+    }
+    .profile__main,
+    .profile__sources {
+      min-width: 0;
+    }
+    .profile__side {
+      margin-block-start: var(--space-6);
+    }
+    @media (min-width: 1000px) {
+      /* Two columns: content (row 1) and sources (row 2) on the left, the sidebar spanning both rows
+         on the right, so the sticky facts box can travel the full height of the page. The flexible
+         second row absorbs any extra height of a tall sidebar, keeping sources right under the content. */
+      .profile__grid--sidebar {
+        grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
+        grid-template-rows: auto 1fr;
+        column-gap: var(--space-7);
+      }
+      .profile__grid--sidebar .profile__main,
+      .profile__grid--sidebar .profile__sources {
+        grid-column: 1;
+      }
+      .profile__grid--sidebar .profile__sources {
+        grid-row: 2;
+        align-self: start;
+      }
+      .profile__side {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        margin-block-start: 0;
+      }
+      .profile__side-sticky {
+        position: sticky;
+        inset-block-start: calc(var(--header-h) + var(--space-5));
+        display: grid;
+        gap: var(--space-5);
+      }
+    }
+
+    .facts {
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      padding: var(--space-4) var(--space-5);
+    }
+    .facts__title {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--c-fg-subtle);
+      margin-block-end: var(--space-2);
+    }
+    .facts__list {
+      margin: 0;
+      display: grid;
+    }
+    .facts__row {
+      display: grid;
+      grid-template-columns: minmax(5.5em, auto) minmax(0, 1fr);
+      gap: var(--space-3);
+      padding-block: var(--space-2);
+      border-block-start: 1px solid var(--c-border);
+      font-size: var(--fs-s);
+      line-height: 1.6;
+    }
+    .facts__row:first-child {
+      border-block-start: 0;
+    }
+    .facts__row dt {
+      color: var(--c-fg-muted);
+    }
+    .facts__row dd {
+      margin: 0;
+      color: var(--c-fg);
+      font-weight: var(--fw-semibold);
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+    .facts__note {
+      display: block;
+      font-weight: var(--fw-regular);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+  }
+</style>

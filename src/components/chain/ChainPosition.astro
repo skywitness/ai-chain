@@ -1,0 +1,126 @@
+---
+/**
+ * Small 「在產業鏈中的位置」 tower for the segment hero: the five layers stacked (應用 on top, 能源 at
+ * the bottom), one cell per segment, the current one filled and labelled. Each cell links to its
+ * segment page, so it doubles as a compact chain navigator.
+ *   <ChainPosition current="memory-storage" />
+ */
+import { segmentHref } from '../../lib/paths';
+import type { SegmentId } from '../../lib/collections';
+import { layersWithSegments } from './chain-data';
+
+interface Props {
+  current: SegmentId;
+  class?: string | undefined;
+}
+const { current, class: className } = Astro.props;
+const layers = [...layersWithSegments()].reverse();
+---
+
+<nav class:list={['cpos', className]} aria-label="在產業鏈中的位置" data-pagefind-ignore>
+  <p class="cpos__title" aria-hidden="true">在產業鏈中的位置</p>
+  <ol class="cpos__layers" role="list">
+    {
+      layers.map((l) => {
+        const hasCur = l.segs.some((s) => s.id === current);
+        return (
+          <li class:list={['cpos__layer', { 'has-current': hasCur }]} style={`--lc: ${l.color}`}>
+            <span class="cpos__name">{l.title}</span>
+            <ol class="cpos__segs" role="list">
+              {l.segs.map((s) => (
+                <li>
+                  <a
+                    class:list={['cpos__seg', { 'is-current': s.id === current }]}
+                    href={segmentHref(s.id)}
+                    style={`--sc: ${s.color}`}
+                    aria-current={s.id === current ? 'page' : undefined}
+                    title={s.title}
+                  >
+                    <span class="sr-only">{s.title}</span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </li>
+        );
+      })
+    }
+  </ol>
+  <p class="cpos__hint" aria-hidden="true">↑ 價值由下往上流動</p>
+</nav>
+
+<style>
+  .cpos {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: var(--shadow-1);
+    min-width: 0;
+  }
+  .cpos__title {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-subtle);
+  }
+  .cpos__layers,
+  .cpos__segs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .cpos__layers {
+    display: grid;
+    gap: 5px;
+  }
+  .cpos__layer {
+    display: grid;
+    grid-template-columns: 6.5em minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .cpos__name {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    white-space: nowrap;
+  }
+  .has-current .cpos__name {
+    color: var(--c-fg);
+    font-weight: var(--fw-semibold);
+  }
+  .cpos__segs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: var(--radius-s);
+    background: color-mix(in srgb, var(--lc) 10%, transparent);
+  }
+  .cpos__segs > li {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .cpos__seg {
+    display: block;
+    block-size: 24px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--sc) 22%, var(--c-bg-elev));
+    border: 1px solid color-mix(in srgb, var(--sc) 35%, transparent);
+    transition: background var(--dur-1) ease;
+  }
+  .cpos__seg:hover {
+    background: color-mix(in srgb, var(--sc) 55%, var(--c-bg-elev));
+  }
+  .cpos__seg.is-current {
+    background: var(--sc);
+    border-color: var(--sc);
+    box-shadow: 0 0 0 2px var(--c-bg-elev), 0 0 0 4px var(--sc);
+  }
+  .cpos__hint {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    text-align: end;
+  }
+</style>

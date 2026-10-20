@@ -1,0 +1,41 @@
+---
+/** 「跳到主要內容」 skip link; first focusable element on every page. */
+interface Props {
+  target?: string | undefined;
+}
+const { target = 'main' } = Astro.props;
+---
+
+<a class="skip-link" href={`#${target}`}>跳到主要內容</a>
+
+<style>
+  @layer components {
+    .skip-link {
+      position: fixed;
+      inset-block-start: var(--space-2);
+      inset-inline-start: var(--space-2);
+      z-index: var(--z-skip);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-m);
+      background: var(--c-accent);
+      color: var(--c-accent-fg);
+      font-weight: var(--fw-semibold);
+      text-decoration: none;
+    }
+    /* visually hidden until focused (robust against any viewport/capture size) */
+    .skip-link:not(:focus) {
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .skip-link:focus,
+    .skip-link:focus-visible {
+      color: var(--c-accent-fg);
+      outline: 2px solid var(--c-focus);
+      outline-offset: 2px;
+    }
+  }
+</style>

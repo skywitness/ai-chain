@@ -1,0 +1,199 @@
+---
+/**
+ * Every page renders inside BaseLayout: <html lang="zh-TW">, SEO/OG/JSON-LD head, the pre-paint theme
+ * script, skip link, Header, <main id="main">, Footer and cross-document view transitions (CSS).
+ *
+ *   <BaseLayout title="產業鏈總覽" description="…" breadcrumbs={[{ label: '產業鏈' }]}>
+ *     <div class="container">…</div>
+ *   </BaseLayout>
+ *
+ * Props: see `Props` below. Slots: default (main content), `head` (extra <head> elements),
+ * `after-main` (full-width content between </main> and the footer, rarely needed).
+ * `breadcrumbs` gets 「首頁」 prepended automatically and also produces BreadcrumbList JSON-LD.
+ * `sources` registers the page's sources so <Cite k> numbers match <SourcesList>.
+ */
+import '../styles/global.css';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import SkipLink from '../components/layout/SkipLink.astro';
+import Breadcrumbs from '../components/ui/Breadcrumbs.astro';
+import { registerSources } from '../components/content/page-state';
+import { THEME_INIT_SCRIPT } from '../client/theme-init';
+import { sectionOf, withBase, type RouteKey } from '../lib/paths';
+import {
+  breadcrumbJsonLd,
+  buildSeo,
+  ogImageFor,
+  THEME_COLORS,
+  type BreadcrumbItem,
+  type JsonLd,
+} from '../lib/seo';
+import type { SourceT } from '../schemas/common';
+
+export interface Props {
+  /** Page title without the site suffix (「{title}｜AI 產業鏈全景」 is applied) */
+  title: string;
+  description?: string | undefined;
+  /** Site-relative or absolute social image */
+  image?: string | undefined;
+  imageAlt?: string | undefined;
+  type?: 'website' | 'article' | 'profile' | undefined;
+  /** Override the canonical path (default: current URL) */
+  canonical?: string | undefined;
+  noindex?: boolean | undefined;
+  jsonLd?: JsonLd | JsonLd[] | undefined;
+  /** Trail after 首頁; the last item is the current page (no href needed) */
+  breadcrumbs?: BreadcrumbItem[] | undefined;
+  /** Highlighted header section (derived from the URL when omitted) */
+  section?: RouteKey | null | undefined;
+  /** Register sources for <Cite> numbering */
+  sources?: readonly SourceT[] | undefined;
+  publishedTime?: string | undefined;
+  modifiedTime?: string | undefined;
+  /** Put data-pagefind-body on <main> (default true). Set false for listing pages. */
+  pagefind?: boolean | undefined;
+  mainClass?: string | undefined;
+  bodyClass?: string | undefined;
+}
+
+const {
+  title,
+  description,
+  image,
+  imageAlt,
+  type = 'website',
+  canonical,
+  noindex = false,
+  jsonLd,
+  breadcrumbs,
+  section,
+  sources,
+  publishedTime,
+  modifiedTime,
+  pagefind = true,
+  mainClass,
+  bodyClass,
+} = Astro.props;
+
+registerSources(Astro, sources);
+
+const home = withBase('/');
+const crumbs: BreadcrumbItem[] | undefined = breadcrumbs?.length
+  ? breadcrumbs[0]?.href === home
+    ? breadcrumbs
+    : [{ label: '首頁', href: home }, ...breadcrumbs]
+  : undefined;
+
+const extraLd: JsonLd[] = [];
+if (jsonLd) extraLd.push(...(Array.isArray(jsonLd) ? jsonLd : [jsonLd]));
+if (crumbs) extraLd.push(breadcrumbJsonLd(crumbs, Astro.site));
+
+// Pages without their own image share their section's card (public/og/<section>.png), else default.png.
+const OG_SECTIONS: ReadonlySet<RouteKey> = new Set<RouteKey>(['learn', 'chain', 'companies', 'models', 'trends', 'taiwan', 'glossary']);
+const ogSection = section ?? sectionOf(Astro.url.pathname);
+const socialImage = image ?? (ogSection && OG_SECTIONS.has(ogSection) ? ogImageFor(ogSection) : undefined);
+
+const seo = buildSeo({
+  title,
+  description,
+  path: canonical ?? Astro.url,
+  site: Astro.site,
+  image: socialImage,
+  imageAlt,
+  type,
+  noindex,
+  publishedTime,
+  modifiedTime,
+  jsonLd: extraLd,
+});
+---
+
+<!doctype html>
+<html lang="zh-TW" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <style is:inline>
+      @layer reset, tokens, base, layout, prose, components, utilities;
+    </style>
+    <script is:inline set:html={THEME_INIT_SCRIPT} />
+    <title>{seo.title}</title>
+    <meta name="description" content={seo.description} />
+    <link rel="canonical" href={seo.canonical} />
+    <meta name="robots" content={seo.robots} />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content={THEME_COLORS.light} data-scheme="light" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content={THEME_COLORS.dark} data-scheme="dark" />
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <link rel="sitemap" href={withBase('/sitemap-index.xml')} />
+    <meta name="generator" content={Astro.generator} />
+    {seo.og.map(([property, content]) => <meta property={property} content={content} />)}
+    {seo.twitter.map(([name, content]) => <meta name={name} content={content} />)}
+    {seo.jsonLd.map((json) => <script type="application/ld+json" is:inline set:html={json} />)}
+    <slot name="head" />
+  </head>
+  <body class={bodyClass}>
+    <SkipLink />
+    <Header section={section ?? undefined} />
+    <main
+      id="main"
+      class:list={['site-main', mainClass]}
+      tabindex="-1"
+      data-pagefind-body={pagefind ? '' : undefined}
+    >
+      {
+        crumbs && (
+          <div class="container site-crumbs">
+            <Breadcrumbs items={crumbs} />
+          </div>
+        )
+      }
+      <slot />
+    </main>
+    <slot name="after-main" />
+    <Footer />
+  </body>
+</html>
+
+<script>
+  // Wide tables and .scroll-x boxes that actually overflow become keyboard-focusable (WCAG 2.1.1),
+  // so keyboard users can scroll them. Re-checked on resize.
+  const SEL = '.prose table, .scroll-x';
+  const sync = () => {
+    document.querySelectorAll<HTMLElement>(SEL).forEach((el) => {
+      const overflows = el.scrollWidth > el.clientWidth + 1;
+      if (overflows && !el.hasAttribute('tabindex')) {
+        el.tabIndex = 0;
+        el.dataset['scrollFocus'] = '';
+      } else if (!overflows && el.dataset['scrollFocus'] !== undefined) {
+        el.removeAttribute('tabindex');
+        delete el.dataset['scrollFocus'];
+      }
+    });
+  };
+  let t = 0;
+  sync();
+  window.addEventListener('resize', () => {
+    window.clearTimeout(t);
+    t = window.setTimeout(sync, 150);
+  });
+</script>
+
+<style>
+  @layer layout {
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+    .site-main {
+      flex: 1 0 auto;
+    }
+    .site-main:focus,
+    .site-main:focus-visible {
+      outline: none;
+    }
+    .site-crumbs {
+      padding-block-start: var(--space-4);
+    }
+  }
+</style>

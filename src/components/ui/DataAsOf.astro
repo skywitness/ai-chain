@@ -1,0 +1,43 @@
+---
+/**
+ * 「資料截至 2026-10-06」 line. Use on every data-bearing page/section (from `lastVerified`).
+ *
+ *   <DataAsOf date={entry.data.lastVerified} />
+ *   <DataAsOf date="2026-07-17" label="財報期間截至" note="未經查核的月營收" />
+ */
+import Icon from './Icon.astro';
+
+interface Props {
+  date: string | Date;
+  label?: string | undefined;
+  note?: string | undefined;
+  class?: string | undefined;
+}
+const { date, label = '資料截至', note, class: className } = Astro.props;
+const iso = typeof date === 'string' ? date : date.toISOString().slice(0, 10);
+---
+
+<p class:list={['as-of', className]}>
+  <Icon name="calendar" />
+  <span>{label}{' '}<time datetime={iso}>{iso}</time></span>
+  {note && <span class="as-of__note">· {note}</span>}
+</p>
+
+<style>
+  @layer components {
+    .as-of {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4em;
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+      line-height: 1.5;
+      font-variant-numeric: tabular-nums;
+    }
+    .as-of time {
+      color: var(--c-fg-muted);
+      font-weight: var(--fw-semibold);
+    }
+  }
+</style>

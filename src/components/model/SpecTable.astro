@@ -1,0 +1,208 @@
+---
+/**
+ * Spec table of a model family: one row per version (newest first) with weights/licence,
+ * architecture and parameters (when disclosed), modalities, context, knowledge cutoff, reasoning
+ * and availability. Scrolls inside its own container; the version column stays visible.
+ *
+ *   <SpecTable versions={family.versions} flagship={family.flagship?.id} caption="GPT 系列規格表" />
+ */
+import { formatDate } from '../../lib/format';
+import {
+  ARCH_LABELS,
+  AVAILABILITY_LABELS,
+  REASONING_LABELS,
+  STATUS_LABELS,
+  TIER_LABELS,
+  WEIGHTS_LABELS,
+  formatParams,
+  formatTokens,
+  modalitiesText,
+  type ModelVersion,
+} from './model-data';
+
+interface Props {
+  versions: ModelVersion[];
+  flagship?: string | undefined;
+  caption: string;
+  /** family kind: non-language families drop the context and reasoning columns when empty */
+  kind?: string | undefined;
+}
+const { versions, flagship, caption, kind = 'llm' } = Astro.props;
+const license = (l: string) => (l === 'proprietary' ? '專有授權' : l);
+const archKnown = (v: ModelVersion) => v.architecture !== 'unknown' || formatParams(v) !== '未公開';
+// A column of 「未公開」 only takes room: drop it and say so once under the table.
+const showArch = versions.some(archKnown);
+// Image, video and robotics models have no token context and rarely a reasoning mode: drop
+// columns that would only hold dashes (and say so under the table).
+const showCtx = versions.some((v) => v.contextTokens || v.maxOutputTokens);
+const showReasoning = kind === 'llm' || versions.some((v) => v.reasoning !== 'none');
+const hidden = [!showCtx && '上下文長度', !showReasoning && '推理模式'].filter(Boolean).join('與');
+---
+
+<div class="st scroll-x" role="region" aria-label={`${caption}（可左右捲動）`} data-pagefind-ignore>
+  <table class="st__table">
+    <caption class="sr-only">{caption}</caption>
+    <thead>
+      <tr>
+        <th scope="col" class="st__sticky">版本</th>
+        <th scope="col">發表日<span class="st__unit">知識截止</span></th>
+        <th scope="col">權重／授權</th>
+        {showArch && <th scope="col">架構／參數量</th>}
+        <th scope="col">輸入 → 輸出</th>
+        {showCtx && <th scope="col" class="num">上下文<span class="st__unit">最大輸出（tokens）</span></th>}
+        {showReasoning && <th scope="col">推理</th>}
+        <th scope="col">取用方式</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        versions.map((v) => (
+          <tr class:list={{ 'is-flagship': v.id === flagship, 'is-old': v.status === 'retired' || v.status === 'deprecated' }}>
+            <th scope="row" class="st__sticky">
+              <span class="st__name">{v.name}</span>
+              <span class="st__sub">
+                {v.id === flagship ? '目前旗艦' : (TIER_LABELS[v.tier] ?? v.tier)}・{STATUS_LABELS[v.status] ?? v.status}
+              </span>
+            </th>
+            <td class="nw">
+              {formatDate(v.released, 'iso')}
+              <span class="st__sub">{v.knowledgeCutoff ? `截至 ${formatDate(String(v.knowledgeCutoff), 'ym-short')}` : '截止未公開'}</span>
+            </td>
+            <td class="nw">
+              <span class:list={['st__w', `is-${v.weights}`]}>{WEIGHTS_LABELS[v.weights] ?? v.weights}</span>
+              <span class="st__sub">{license(v.license)}</span>
+            </td>
+            {showArch && (
+              <td>
+                {!archKnown(v) ? (
+                  <span class="st__na">未公開</span>
+                ) : (
+                  <>
+                    {ARCH_LABELS[v.architecture] ?? v.architecture}
+                    <span class="st__sub">{formatParams(v)}</span>
+                  </>
+                )}
+              </td>
+            )}
+            <td class="nw">
+              {modalitiesText(v.modalitiesIn)}
+              <span class="st__sub">→ {modalitiesText(v.modalitiesOut)}</span>
+            </td>
+            {showCtx && (
+              <td class="num">
+                {formatTokens(v.contextTokens)}
+                <span class="st__sub">{v.maxOutputTokens ? formatTokens(v.maxOutputTokens) : '—'}</span>
+              </td>
+            )}
+            {showReasoning && <td class="nw">{REASONING_LABELS[v.reasoning] ?? v.reasoning}</td>}
+            <td class="st__avail">{v.availability.map((a) => AVAILABILITY_LABELS[a] ?? a).join('、')}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+{!showArch && <p class="st-note">各版本的模型架構與參數量皆未公開，因此不列出該欄。</p>}
+{
+  hidden && (
+    <p class="st-note">
+      {kind === 'llm' ? `各版本皆未公開${hidden}，因此不列出該欄。` : `${hidden}是語言模型的規格，這個系列不適用，因此不列出。`}
+    </p>
+  )
+}
+
+<style>
+  @layer components {
+    .st-note {
+      margin-block-start: calc(-1 * var(--space-2));
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+    .st {
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+    }
+    .st__table {
+      width: 100%;
+      min-width: 46rem;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: var(--fs-s);
+      line-height: 1.5;
+    }
+    .st__table th,
+    .st__table td {
+      padding: var(--space-3);
+      text-align: start;
+      vertical-align: top;
+      border-block-end: 1px solid var(--c-border);
+    }
+    .st__table tbody tr:last-child > * {
+      border-block-end: 0;
+    }
+    .st__table thead th {
+      background: var(--c-bg-sunken);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      color: var(--c-fg-muted);
+      vertical-align: bottom;
+      white-space: nowrap;
+    }
+    .st__table tbody th {
+      font-weight: var(--fw-regular);
+    }
+    .st__table .num {
+      text-align: end;
+      font-variant-numeric: tabular-nums;
+    }
+    .st__table .nw {
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .st__sticky {
+      position: sticky;
+      inset-inline-start: 0;
+      z-index: 1;
+      background: var(--c-bg-elev);
+      min-width: 10rem;
+      max-width: 14rem;
+      box-shadow: 1px 0 0 var(--c-border);
+    }
+    .st__table thead .st__sticky {
+      background: var(--c-bg-sunken);
+    }
+    .st__name {
+      font-weight: var(--fw-semibold);
+    }
+    .st__unit,
+    .st__sub {
+      display: block;
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-regular);
+      color: var(--c-fg-subtle);
+    }
+    .st__na {
+      color: var(--c-fg-subtle);
+    }
+    .st__avail {
+      min-width: 9.5em;
+    }
+    .st__w.is-open-weights,
+    .st__w.is-open-source {
+      color: var(--c-pos);
+      font-weight: var(--fw-semibold);
+    }
+    tr.is-flagship > * {
+      background: color-mix(in srgb, var(--profile-accent, var(--c-accent)) 7%, var(--c-bg-elev));
+    }
+    tr.is-flagship > .st__sticky {
+      box-shadow:
+        inset 3px 0 0 var(--profile-accent, var(--c-accent)),
+        1px 0 0 var(--c-border);
+    }
+    tr.is-old > :not(.st__sticky) {
+      color: var(--c-fg-muted);
+    }
+  }
+</style>

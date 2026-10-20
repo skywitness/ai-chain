@@ -1,0 +1,39 @@
+term: "TTFT"
+zh: "首 Token 延遲"
+en: "Time to First Token"
+aliases:
+  - "首 token 時間"
+  - "首字延遲"
+  - "首 Token 延遲"
+  - "Time to First Token"
+  - "First Token Latency"
+category: inference
+level: 3
+short: >-
+  從送出請求到看見第一個字出現的等待時間，是聊天類 AI「感覺快不快」的關鍵指標。
+definition: >-
+  TTFT 衡量使用者送出請求後，要等多久才收到第一個輸出 token。依 NVIDIA 推論評測文件的定義，它包含請求排隊時間、Prefill 計算時間與網路延遲；之後每個 token 的間隔另以 ITL（token 間延遲，也稱 TPOT）衡量，端到端延遲等於 TTFT 加上後續的生成時間。提示越長、伺服器越忙，TTFT 就越長。DistServe 論文指出，把 Prefill 與 Decode 放在同一批 GPU 上會互相干擾，很難同時滿足 TTFT 與 TPOT 的要求；改成分開配置後，在符合延遲限制下可服務的請求量最多提高 7.4 倍。此外，提示快取可以跳過重複前綴的 Prefill 計算，也是縮短 TTFT 的常見做法。
+example: >-
+  像打電話給客服：從撥通到真人接起來說出第一句話的等待時間就是 TTFT；接通後對方講話的語速，則是另一個指標。
+related: [latency, prefill, decode, prompt-caching, throughput]
+learnMore: [inference-optimization]
+segments: [cloud-neocloud]
+sources:
+  - title: "Metrics — NVIDIA NIM LLMs Benchmarking"
+    publisher: "NVIDIA"
+    url: "https://docs.nvidia.com/nim/benchmarking/llm/latest/metrics.html"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - title: "DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving"
+    publisher: "arXiv（OSDI 2024）"
+    url: "https://arxiv.org/abs/2401.09670"
+    type: paper
+    lang: en
+    published: "2024-01-18"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-inference
+  checkedBy: "gloss-inference-check"
+  checkedOn: "2026-10-06"

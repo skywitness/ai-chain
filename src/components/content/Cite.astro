@@ -1,0 +1,57 @@
+---
+/**
+ * Citation marker: <Cite k="tsmc-q2-2026" /> → superscript [n] linking to #src-tsmc-q2-2026
+ * (rendered by SourcesList). n is the source's position in the page's `sources` list when the layout
+ * registered them (ArticleLayout / ProfileLayout / BaseLayout `sources` prop), otherwise the order of
+ * first citation on the page.
+ */
+import { citeNumber, pageState, sourceAnchor } from './page-state';
+
+interface Props {
+  /** sources[].key */
+  k: string;
+  /** Optional page/locator note, e.g. 「第 12 頁」 */
+  note?: string | undefined;
+}
+const { k, note } = Astro.props;
+const { n } = citeNumber(Astro, k);
+const state = pageState(Astro);
+const src = state.sources.get(k);
+const firstAnchor = !state.citeAnchors.has(k);
+if (firstAnchor) state.citeAnchors.add(k);
+const label = `來源 ${n}${src ? `：${src.publisher}〈${src.title}〉` : ''}${note ? `，${note}` : ''}`;
+---
+
+<sup class="cite"><a
+    href={`#${sourceAnchor(k)}`}
+    id={firstAnchor ? `cite-${k}` : undefined}
+    aria-label={label}
+    title={src ? `${src.publisher}：${src.title}${note ? `（${note}）` : ''}` : note}
+    data-cite={k}>[{n}]</a></sup>
+
+<style>
+  @layer components {
+    .cite {
+      font-size: 0.68em;
+      line-height: 0;
+      vertical-align: super;
+      margin-inline: 0.08em;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .cite a {
+      /* inline, not inline-block: an atomic box is a line-break opportunity of its own, and the word joiner
+         that src/lib/mdast-cjk.mjs puts before each marker could not keep 「…兩倍[2]」 together. */
+      display: inline;
+      padding: 0.1em 0.12em;
+      color: var(--c-link);
+      font-weight: var(--fw-semibold);
+      text-decoration: none;
+      border-radius: 3px;
+    }
+    .cite a:hover {
+      background: color-mix(in srgb, var(--c-accent) 12%, transparent);
+      text-decoration: underline;
+    }
+  }
+</style>

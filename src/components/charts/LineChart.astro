@@ -1,0 +1,42 @@
+---
+/**
+ * Simple MDX line chart (docs/CONTENT-GUIDE.md §3):
+ *   <LineChart title="…" unit="十億美元" series={[{ name: "Microsoft", points: [{ x: "2024", y: 55.7 }] }]} source="key" note="…" />
+ * `source` may be a citation key, a URL or a Source object; keys resolve against `sources`
+ * (or the page's sources registered by the layout via registerSources).
+ */
+import MultiLine, { type MultiLineSeries } from './MultiLine.astro';
+import { pageSources, resolveSources, type SourceInput } from './sources';
+import type { SourceLike } from './types';
+
+interface Props {
+  title: string;
+  unit?: string | undefined;
+  series: Array<{ name: string; points: Array<{ x: string | number; y: number | null; estimate?: boolean | undefined }> }>;
+  source?: SourceInput;
+  sources?: SourceLike[] | undefined;
+  note?: string | undefined;
+  asOf?: string | undefined;
+  subtitle?: string | undefined;
+  format?: 'number' | 'percent' | undefined;
+  includeZero?: boolean | undefined;
+}
+
+const { title, unit, series = [], source, sources, note, asOf, subtitle, format, includeZero } = Astro.props;
+const resolved = resolveSources(source, sources ?? pageSources(Astro));
+const isPercent = format === 'percent' || unit === '%' || unit === '百分比';
+---
+
+<MultiLine
+  title={title}
+  subtitle={subtitle}
+  unit={unit}
+  asOf={asOf}
+  series={series as MultiLineSeries[]}
+  sources={resolved}
+  notes={[note]}
+  format={isPercent ? 'percent' : 'number'}
+  valueSuffix={!isPercent && unit ? ` ${unit}` : ''}
+  includeZero={includeZero ?? true}
+  xTitle="期間"
+/>

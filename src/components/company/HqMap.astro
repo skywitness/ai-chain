@@ -1,0 +1,323 @@
+---
+/**
+ * 2D world map of company headquarters (owner: pages-companies). Static SVG, build time only.
+ * Used on /companies/ while the `company-globe` 3D scene is unavailable, and as a no-WebGL view.
+ *
+ * - Land: the Natural Earth dot lattice (src/data/geo/land-dots.json) snapped to a 2° grid.
+ * - Each metro cluster (hqClusters) is a sunflower of dots, one dot per company, coloured by
+ *   chain layer (inner rings = lower layers). Overlapping clusters are pushed apart (a small
+ *   Dorling relaxation) and a hairline leads back to the true location.
+ * - The largest clusters get labels on wide containers; <HqClusters> lists them as HTML.
+ *
+ *   <HqMap clusters={clusters} total={710} />
+ */
+import landDots from '../../data/geo/land-dots.json';
+import { LAYERS, type LayerId } from '../../lib/collections';
+import type { HqCluster } from '../../lib/scene-data/companies';
+
+interface Props {
+  clusters: readonly HqCluster[];
+  total: number;
+  /** how many clusters get a text label (wide containers only) */
+  labels?: number | undefined;
+  class?: string | undefined;
+}
+const { clusters, total, labels: labelCount = 9, class: className } = Astro.props;
+
+// ── projection: equirectangular, 2 units per degree, cropped to where the HQs are
+//    (140°W … 160°E, 72°N … 46°S; the extra room west of California keeps the Bay Area cluster
+//    and its label inside the frame) ──
+const K = 2;
+const LAT_TOP = 72;
+const LAT_BOTTOM = -46;
+const LON_LEFT = -140;
+const LON_RIGHT = 160;
+const W = (LON_RIGHT - LON_LEFT) * K;
+const H = (LAT_TOP - LAT_BOTTOM) * K;
+const px = (lon: number) => (lon - LON_LEFT) * K;
+const py = (lat: number) => (LAT_TOP - lat) * K;
+const r1 = (n: number) => Math.round(n * 10) / 10;
+
+// ── land dots on a 2° grid, as one path of zero-length round-capped segments ──
+const pts = (landDots as { points: number[] }).points;
+const STEP = 2;
+const cells = new Set<string>();
+for (let i = 0; i + 1 < pts.length; i += 2) {
+  const lat = pts[i]!;
+  const lon = pts[i + 1]!;
+  if (lat > LAT_TOP - 1 || lat < LAT_BOTTOM + 1 || lon < LON_LEFT + 1 || lon > LON_RIGHT - 1) continue;
+  const gx = Math.round((lon - LON_LEFT) / STEP);
+  const gy = Math.round((LAT_TOP - lat) / STEP);
+  cells.add(`${gy},${gx}`);
+}
+const rows = new Map<number, number[]>();
+for (const c of cells) {
+  const [gy, gx] = c.split(',').map(Number) as [number, number];
+  const row = rows.get(gy) ?? [];
+  row.push(gx);
+  rows.set(gy, row);
+}
+let land = '';
+for (const gy of [...rows.keys()].sort((a, b) => a - b)) {
+  const xs = rows.get(gy)!.sort((a, b) => a - b);
+  let prev = -1;
+  for (const gx of xs) {
+    const x = gx * STEP * K;
+    land += prev < 0 ? `M${x} ${gy * STEP * K}h0` : `m${x - prev} 0h0`;
+    prev = x;
+  }
+}
+
+// ── cluster discs (sunflower packing) + Dorling relaxation ──
+const DOT = 1.05; // dot radius (units)
+const C = 1.7; // phyllotaxis spacing
+const GOLDEN = Math.PI * (3 - Math.sqrt(5));
+const radiusFor = (n: number) => C * Math.sqrt(n) + DOT + 0.6;
+type Node = { c: HqCluster; x0: number; y0: number; x: number; y: number; r: number };
+const nodes: Node[] = clusters.map((c) => {
+  const x = px(c.lon);
+  const y = py(c.lat);
+  return { c, x0: x, y0: y, x, y, r: radiusFor(c.count) };
+});
+const GAP = 1.6;
+for (let it = 0; it < 220; it++) {
+  for (let i = 0; i < nodes.length; i++) {
+    const a = nodes[i]!;
+    for (let j = i + 1; j < nodes.length; j++) {
+      const b = nodes[j]!;
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const d = Math.hypot(dx, dy) || 0.01;
+      const min = a.r + b.r + GAP;
+      if (d >= min) continue;
+      const push = (min - d) / 2;
+      const ux = dx / d;
+      const uy = dy / d;
+      // the larger disc moves less
+      const wa = b.r / (a.r + b.r);
+      const wb = a.r / (a.r + b.r);
+      a.x -= ux * push * 2 * wa;
+      a.y -= uy * push * 2 * wa;
+      b.x += ux * push * 2 * wb;
+      b.y += uy * push * 2 * wb;
+    }
+  }
+  for (const n of nodes) {
+    // gentle spring back to the true position, and stay inside the frame
+    n.x += (n.x0 - n.x) * 0.02;
+    n.y += (n.y0 - n.y) * 0.02;
+    n.x = Math.min(W - n.r - 1, Math.max(n.r + 1, n.x));
+    n.y = Math.min(H - n.r - 1, Math.max(n.r + 1, n.y));
+  }
+}
+
+const dotPaths = new Map<LayerId, string>(LAYERS.map((l) => [l.id, '']));
+for (const n of nodes) {
+  n.c.members.forEach((m, i) => {
+    const rr = C * Math.sqrt(i + (n.c.count === 1 ? 0 : 0.5));
+    const th = i * GOLDEN;
+    const x = r1(n.x + rr * Math.cos(th));
+    const y = r1(n.y + rr * Math.sin(th));
+    dotPaths.set(m.layer, `${dotPaths.get(m.layer) ?? ''}M${x} ${y}h0`);
+  });
+}
+const leaders = nodes
+  .filter((n) => Math.hypot(n.x - n.x0, n.y - n.y0) > n.r * 0.6 + 2)
+  .map((n) => {
+    const dx = n.x - n.x0;
+    const dy = n.y - n.y0;
+    const d = Math.hypot(dx, dy);
+    return { x1: r1(n.x0), y1: r1(n.y0), x2: r1(n.x - (dx / d) * n.r), y2: r1(n.y - (dy / d) * n.r) };
+  });
+
+// ── labels for the largest clusters: try right, left, above, below (near, then further out); skip on collision ──
+const FS = 7.5;
+type Box = { x: number; y: number; w: number; h: number };
+const hit = (a: Box, b: Box) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const textW = (s: string) => [...s].reduce((w, ch) => w + (/[⺀-￿]/.test(ch) ? FS : FS * 0.58), 0);
+const obstacles = nodes.slice(0, 40);
+/** true when the label box overlaps a cluster disc (circle test, so corners next to a disc stay usable) */
+const hitsDisc = (b: Box, d: Node) => {
+  const nx = Math.max(b.x, Math.min(d.x, b.x + b.w));
+  const ny = Math.max(b.y, Math.min(d.y, b.y + b.h));
+  return Math.hypot(d.x - nx, d.y - ny) < d.r + 0.5;
+};
+const placed: Box[] = [];
+const labels: Array<{ x: number; y: number; anchor: 'start' | 'middle' | 'end'; name: string; n: number }> = [];
+for (const n of nodes.slice(0, labelCount)) {
+  const name = n.c.name;
+  const w = textW(name) + textW(` ${n.c.count}`) + 2;
+  const h = FS * 1.3;
+  const pad = 2.5;
+  // labels above / below a disc near the frame edge slide sideways to stay inside
+  const cx = Math.min(W - w - 1, Math.max(1, n.x - w / 2));
+  const options: Array<{ box: Box; x: number; y: number; anchor: 'start' | 'middle' | 'end' }> = [
+    { box: { x: n.x + n.r + pad, y: n.y - h / 2, w, h }, x: n.x + n.r + pad, y: n.y, anchor: 'start' },
+    { box: { x: n.x - n.r - pad - w, y: n.y - h / 2, w, h }, x: n.x - n.r - pad, y: n.y, anchor: 'end' },
+    // above / below, first close to the disc, then a little further out (clears a small neighbour)
+    ...[pad, pad * 2.5].flatMap((p) => [
+      { box: { x: cx, y: n.y - n.r - p - h, w, h }, x: cx + w / 2, y: n.y - n.r - p - h / 2, anchor: 'middle' as const },
+      { box: { x: cx, y: n.y + n.r + p, w, h }, x: cx + w / 2, y: n.y + n.r + p + h / 2, anchor: 'middle' as const },
+    ]),
+  ];
+  // strict pass: no overlap with any other disc; for the three largest clusters a second pass may
+  // cover clusters of one to three companies (the label has a halo, so the dots stay visible around it)
+  const fits = (o: (typeof options)[number], minCount: number) =>
+    o.box.x >= 0 &&
+    o.box.x + o.box.w <= W &&
+    o.box.y >= 0 &&
+    o.box.y + o.box.h <= H &&
+    !placed.some((p) => hit(p, o.box)) &&
+    !obstacles.some((d) => d !== n && d.c.count >= minCount && hitsDisc(o.box, d));
+  const ok = options.find((o) => fits(o, 0)) ?? (nodes.indexOf(n) < 3 ? options.find((o) => fits(o, 4)) : undefined);
+  if (!ok) continue;
+  placed.push(ok.box);
+  labels.push({ x: r1(ok.x), y: r1(ok.y), anchor: ok.anchor, name, n: n.c.count });
+}
+
+const top = clusters.slice(0, 3).map((c) => `${c.name} ${c.count} 家`).join('、');
+const aria = `世界地圖：${total} 家 AI 產業鏈企業的總部位置，依城市聚落分組，每一點代表一家公司，顏色代表產業鏈層。最大的聚落是${top}。`;
+---
+
+<figure class:list={['hq', className]}>
+  <div class="hq__frame" tabindex="0" role="group" aria-label="總部分布地圖">
+    <svg class="hq__svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={aria} preserveAspectRatio="xMidYMid meet">
+      <path class="hq__land" d={land} />
+      <g class="hq__leaders" aria-hidden="true">
+        {
+          leaders.map((l) => (
+            <>
+              <line x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} />
+              <circle cx={l.x1} cy={l.y1} r="0.9" />
+            </>
+          ))
+        }
+      </g>
+      <g class="hq__halos" aria-hidden="true">
+        {nodes.filter((n) => n.c.count >= 6).map((n) => <circle cx={r1(n.x)} cy={r1(n.y)} r={r1(n.r + 0.8)} />)}
+      </g>
+      {LAYERS.map((l) => <path class="hq__dots" d={dotPaths.get(l.id)} style={`--lc:${l.color}`} />)}
+      <g class="hq__hits">
+        {
+          nodes.map((n) => (
+            <circle cx={r1(n.x)} cy={r1(n.y)} r={r1(Math.max(n.r, 3))}>
+              <title>
+                {n.c.name}：{n.c.count} 家
+                {n.c.cities.length > 1 ? `（${n.c.cities.slice(0, 4).map((c) => `${c.name} ${c.count}`).join('、')}${n.c.cities.length > 4 ? '…' : ''}）` : ''}
+              </title>
+            </circle>
+          ))
+        }
+      </g>
+      <g class="hq__labels" aria-hidden="true">
+        {
+          labels.map((l) => (
+            <text x={l.x} y={l.y} text-anchor={l.anchor} dominant-baseline="central" font-size={FS}>
+              <tspan class="hq__lname">{l.name}</tspan>
+              <tspan class="hq__lnum" dx="2">{l.n}</tspan>
+            </text>
+          ))
+        }
+      </g>
+    </svg>
+  </div>
+  <figcaption class="hq__cap">
+    <span class="hq__swipe">地圖可左右滑動。</span>一點代表一家公司，同一都會區的公司聚成一團；為了避免重疊，部分聚落稍微錯開，並以虛線連回實際所在地。
+  </figcaption>
+</figure>
+
+<style>
+  .hq {
+    container-type: inline-size;
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+  }
+  .hq__frame {
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background:
+      radial-gradient(120% 90% at 30% 20%, color-mix(in srgb, var(--layer-cloud-models) 6%, transparent), transparent 60%),
+      radial-gradient(90% 80% at 80% 70%, color-mix(in srgb, var(--layer-silicon) 6%, transparent), transparent 60%),
+      var(--c-bg-elev);
+    overflow: hidden;
+  }
+  .hq__svg {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+  }
+  .hq__land {
+    fill: none;
+    stroke: color-mix(in srgb, var(--c-fg) 16%, transparent);
+    stroke-width: 1.45;
+    stroke-linecap: round;
+  }
+  .hq__leaders line {
+    stroke: var(--c-fg-subtle);
+    stroke-width: 0.45;
+    stroke-dasharray: 1.2 1;
+  }
+  .hq__leaders circle {
+    fill: var(--c-fg-subtle);
+  }
+  .hq__halos circle {
+    fill: color-mix(in srgb, var(--c-bg-elev) 82%, transparent);
+    stroke: color-mix(in srgb, var(--c-fg) 12%, transparent);
+    stroke-width: 0.5;
+  }
+  .hq__dots {
+    fill: none;
+    stroke: var(--lc);
+    stroke-width: 2.1;
+    stroke-linecap: round;
+  }
+  .hq__hits circle {
+    fill: transparent;
+    stroke: none;
+  }
+  .hq__hits circle:hover {
+    stroke: var(--c-fg);
+    stroke-width: 0.6;
+  }
+  .hq__labels text {
+    paint-order: stroke;
+    stroke: var(--c-bg-elev);
+    stroke-width: 2.4;
+    stroke-linejoin: round;
+  }
+  .hq__lname {
+    fill: var(--c-fg);
+    font-weight: 700;
+  }
+  .hq__lnum {
+    fill: var(--c-fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .hq__frame:focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  .hq__swipe {
+    display: none;
+  }
+  /* phones: keep the map legible (scroll sideways inside the frame instead of shrinking it) */
+  @container (max-width: 620px) {
+    .hq__frame {
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+    }
+    .hq__svg {
+      inline-size: 50rem;
+      max-inline-size: none;
+    }
+    .hq__swipe {
+      display: inline;
+    }
+  }
+  .hq__cap {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    line-height: 1.7;
+  }
+</style>

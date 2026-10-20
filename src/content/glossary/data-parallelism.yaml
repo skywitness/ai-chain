@@ -1,0 +1,47 @@
+term: "資料平行"
+zh: "資料平行化"
+en: "Data Parallelism"
+aliases:
+  - "資料並行"
+  - "DP"
+  - "Data Parallel"
+  - "DDP"
+  - "FSDP"
+category: training
+level: 3
+short: "把同一個模型複製到多顆 GPU，各自處理不同批資料，再同步梯度，藉此加快訓練。"
+definition: "資料平行是最基本的分散式訓練方式：每顆 GPU 都持有一份模型，各自計算不同小批次資料的梯度，再透過 All-Reduce 等集體通訊把梯度加總平均，讓所有副本保持一致。它容易實作、可擴展到數千顆 GPU，但每一步都要同步大量梯度，對叢集網路頻寬要求很高，而且每顆 GPU 都得放得下模型與最佳化器狀態。微軟提出的 ZeRO 與後來 PyTorch 的 FSDP，把這些狀態分片存放在各 GPU 上以節省記憶體。Meta 訓練 Llama 3 405B 時，16,384 顆 GPU 的資料平行維度為 128，並與張量、管線等平行方式組合使用。"
+example: "像 128 位老師同時批改不同疊考卷，每改完一輪就開會統一評分標準，大家再用同一套標準改下一批。"
+related:
+  - tensor-parallelism
+  - expert-parallelism
+  - all-reduce
+  - scale-out
+  - gradient-descent
+learnMore:
+  - networking-for-ai
+  - interconnect-deep
+segments:
+  - networking-optics
+  - ai-accelerators
+  - foundation-models
+sources:
+  - title: "ZeRO: Memory Optimizations Toward Training Trillion Parameter Models"
+    publisher: Microsoft
+    url: "https://arxiv.org/abs/1910.02054"
+    type: paper
+    lang: en
+    published: "2019-10-04"
+    accessed: "2026-10-06"
+  - title: "The Llama 3 Herd of Models"
+    publisher: Meta
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: gloss-training
+  checkedBy: "gloss-training-check"
+  checkedOn: "2026-10-06"

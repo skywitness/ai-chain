@@ -1,0 +1,354 @@
+---
+title: "Runway Gen 與世界模型"
+family: "Runway Gen / Aleph / GWM"
+kind: video
+lab: runway
+labName: "Runway"
+origin: US
+summary: "紐約 AI 公司 Runway 的影片生成、編輯與世界模型家族。主力是 2025-12 推出的文生／圖生影片模型 Gen-4.5，以及 2026-05 推出、修改一格畫面即可延續到整段影片的編輯模型 Aleph 2.0，另有表演轉移模型 Act-Two。2025-12 起推出通用世界模型 GWM-1，2026 年下半年再發表即時互動的 GWM Worlds 2、介面世界模型 Solaris，並宣布將以開放權重釋出機器人模型 Praxis-1。"
+strengths:
+  - "Gen-4.5 發表時在 AA 舊版文生影片榜（2025-11-30）以 1,247 分排第 1；官方強調物理、動態、時間一致性與提示詞遵循的進步。"
+  - "專業交付能力強：2026-08-20 起 Gen-4.5 可直接輸出 HDR10、HLG、ProRes 與 OpenEXR；Aleph 2.0 可編輯最長 30 秒、1080p 影片，並把修改套用到多個鏡頭。"
+  - "工作流程完整：網頁 App、Runway Dev API、MCP、Adobe Premiere Pro／After Effects 與 DaVinci Resolve 外掛，平台上也提供 Veo、Seedance、Wan 等第三方模型與自動選模型的 Model Router。"
+  - "世界模型路線明確：GWM-1（2025-12）分出 Worlds、Avatars 與 Robotics 三個變體，Avatars 已以 Runway Characters 之名開放 API；GWM Worlds 2 可即時生成 720p、24 fps 畫面與 48 kHz 音訊。"
+weaknesses:
+  - "Gen-4.5 目前不生成音訊：官方 2025-12 曾預告原生音訊生成與編輯，但截至 2026-10-06 的 API 與更新紀錄都還沒有這項功能。AA 只把它列在無音訊榜，2026-10-06 的 AA-Video-T2V-Silent v2.0 上以 921 分排第 23 名（共 31 個），已被 Wan 3.0、MiniMax H3、Seedance 2.5 等超越。"
+  - "API 提示詞上限 1,000 字元，AA 只能用 61% 的測試題目評測 Gen-4.5。"
+  - "單段影片短：Gen-4.5 為 2–10 秒，長片需靠剪接拼接；全系列目前為封閉權重，一般使用者無法自行部署或微調，只有簽訂模型授權的企業能在自有環境部署並微調。"
+  - "舊模型汰換：Gen-3 Alpha Turbo 與第一代 Aleph 已於 2026-07-30 從 API 下架，整合者需遷移。"
+bestFor:
+  - "廣告、品牌與電商影片的多版本製作（換色、換背景、換季節）"
+  - "影視前製、分鏡與需要 HDR／ProRes 交付的後製流程"
+  - "以單張圖片建立可即時對話的虛擬角色（Runway Characters）"
+  - "遊戲、互動體驗與機器人模擬的世界模型應用"
+positioning:
+  capability: 33
+  costIndex: 59
+  openness: 0
+  method: computed
+  asOf: "2026-10-06"
+  note: "capability 以旗艦 Gen-4.5（720p）在 AA-Video-T2V-Silent v2.0（無音訊）榜的 Elo 921 做最小—最大正規化：(921−821)÷(1128−821)×100≈33（榜上最低 821、最高 1,128，2026-10-06 讀取）；Gen-4.5 不生成音訊，未列入含音訊主榜，且只以 61% 的題目評測。Runway 依每秒點數計價（API 每點 0.01 美元，Gen-4.5 每秒 12 點），無法直接套用每百萬 tokens 公式，因此以本站 Google Veo 頁面 Gemini Omni 1.1 Flash 的 costIndex 62（依官方 token 價計算）為錨點，按 AA 生成 1 分鐘影片的價格比（Gen-4.5 7.20 美元、Omni 1.1 Flash 9.12 美元）在同一對數尺度換算：62 + 100 × log10(7.20÷9.12) ÷ log10(2000) ≈ 59；注意 AA 對 Gen-4.5 以 720p 計價。全系列目前為封閉權重（Praxis-1 宣布將開放權重但尚未釋出），openness 為 0。"
+versions:
+  - id: gen-3-alpha-turbo
+    name: "Gen-3 Alpha Turbo"
+    released: "2024-08-14"
+    status: retired
+    tier: small
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image]
+    modalitiesOut: [video]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "Runway 更新紀錄顯示 2024-08-14 開放所有方案使用，官方稱比 Gen-3 Alpha 快 7 倍、價格減半。2024-09-16 Runway 推出 API，Gen-3 Alpha Turbo 是早期透過 API 提供的模型。2026-07-30 起 API 不再提供 gen3a_turbo，官方建議改用 Gen-4.5 或 Gen-4 Turbo。"
+  - id: gen-4
+    name: "Gen-4／Gen-4 Turbo"
+    released: "2025-03-31"
+    status: ga
+    tier: mid
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image]
+    modalitiesOut: [video]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "主打以單張參考圖在不同光線、場景中維持角色、物件與場景一致。Gen-4 Turbo 於 2025-04-07 開放所有使用者；API 的 gen4_turbo 只接受圖片輸入（圖生影片），每秒 5 點（約 0.05 美元），2025-10-08 起可選 2–10 秒長度。"
+  - id: gen-4-image
+    name: "Gen-4 Image／References"
+    released: "2025-04-30"
+    status: ga
+    tier: specialized
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image]
+    modalitiesOut: [image]
+    reasoning: none
+    availability: [api, chat-app]
+    benchmarks:
+      - benchmark: aa-text-to-image-elo
+        score: 792
+        setting: "Gen-4 Image；AA-Image-T2I v2.0，95% 信賴區間 783–801，第 146 名；榜首 GPT Image 2.5 Sunburst 為 1,197"
+        reportedBy: leaderboard
+        date: "2026-10-06"
+        source: { title: "AA-Image-T2I v2.0 Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/image/leaderboard/text-to-image", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "以參考圖生成一致角色與場景的圖像模型，Runway 更新紀錄顯示 2025-04-30 對付費方案推出 References。2025-05-16 上架 API（720p 每張 5 點、1080p 每張 8 點）；2025-08-19 推出 Gen-4 Image Turbo（每張 2 點）。"
+  - id: act-two
+    name: "Act-Two"
+    released: "2025-07-17"
+    status: ga
+    tier: specialized
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [image, video]
+    modalitiesOut: [video]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "新一代表演捕捉模型，以一段驅動影片把頭、臉、身體與手部動作轉移到角色圖片或影片上，生成品質較 Act-One 大幅提升。2025-07-21 上架 API（每秒 5 點），2025-08-20 起可在介面中直接替表演換聲。"
+  - id: aleph
+    name: "Aleph（Gen-4 Aleph）"
+    released: "2025-07-25"
+    status: retired
+    tier: specialized
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [video]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "情境式（in-context）影片模型，可對輸入影片新增、移除或轉換物件、生成其他角度，並改變風格與打光。2025-07-31 開放所有付費方案，2025-08-01 上架 API。API 的 gen4_aleph 已於 2026-07-30 停止提供，由 Aleph 2.0 取代。"
+  - id: gen-4-5
+    name: "Gen-4.5"
+    released: "2025-12-01"
+    status: ga
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: diffusion
+    modalitiesIn: [text, image]
+    modalitiesOut: [video]
+    reasoning: none
+    availability: [api, chat-app]
+    benchmarks:
+      - benchmark: aa-text-to-video-elo
+        score: 921
+        setting: "Gen-4.5（720p）；AA-Video-T2V-Silent v2.0（無音訊），Overall；Elo 以 Kling 3.0 1080p (Pro) 固定為 1000；第 23 名（共 31 個模型）；受 1,000 字元提示詞上限影響，只以 61% 題目評測"
+        reportedBy: leaderboard
+        date: "2026-10-06"
+        source: { title: "AA-Video-T2V v2.0 Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/video/leaderboard/text-to-video", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: aa-text-to-video-elo
+        score: 1247
+        setting: "發表時引用的 AA 文生影片舊版榜（截至 2025-11-30），第 1 名；分數尺度與 v2.0 不同，不可直接比較"
+        reportedBy: lab
+        date: "2025-11-30"
+        source: { title: "Runway Gen-4.5: State-of-the-Art AI Video Generation", publisher: "Runway", url: "https://runway.com/research/introducing-runway-gen-4.5", type: company-site, lang: en, accessed: "2026-10-06" }
+    notes: "官方稱在預訓練資料效率與後訓練技術都有進展，改善物理、動態與時間一致性；全程以 NVIDIA GPU 開發，推論跑在 Hopper 與 Blackwell。2025-12-11 開放所有付費方案，2026-01-21 加入圖生影片，2026-02-10 上架 API（文生與圖生影片，2–10 秒，每秒 12 點，約 0.12 美元）；2026-08-20 起 API 可直接輸出 HDR10、HLG、HDR ProRes 與 OpenEXR 等 HDR 格式（每秒另加 20 點，超過約 4K 為 40 點）。2025-12 發表 GWM-1 時，官方也預告 Gen-4.5 將加入原生音訊生成、音訊編輯與多鏡頭編輯，但截至 2026-10-06 API 仍未提供音訊輸出。官方列出的限制包括因果順序錯亂、物件憑空出現或消失，以及動作過度容易成功。"
+  - id: gwm-1
+    name: "GWM-1（Worlds／Avatars／Robotics）"
+    released: "2025-12-11"
+    status: ga
+    tier: specialized
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, audio]
+    modalitiesOut: [video, audio]
+    reasoning: none
+    availability: [api]
+    notes: "建立在 Gen-4.5 之上的自迴歸世界模型，逐格生成、即時運行，可用相機姿態、機器人指令與音訊等動作控制。分為 GWM Worlds（可探索環境）、GWM Avatars（對話角色）與 GWM Robotics（機器人操作）三個後訓練變體。Avatars 於 2026-03-09 以 Runway Characters 之名開放 API（gwm1_avatars：起始 2 點，之後每 6 秒 2 點）；Robotics 提供 Python SDK；Worlds 屬研究展示。"
+  - id: aleph-2
+    name: "Aleph 2.0"
+    released: "2026-05-21"
+    status: ga
+    tier: specialized
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [video]
+    reasoning: none
+    availability: [api, chat-app]
+    notes: "升級版情境式影片編輯模型：修改一格畫面即可把效果延續到整段影片，只改動指定元素，可跨多個鏡頭套用，支援最長 30 秒、1080p。2026-05-21 在 Edit Studio 推出，2026-06-02 上架 API（aleph2：輸入 2–30 秒、最多 5 張關鍵影格，每秒 28 點、每次至少 56 點）。不支援原生 HDR，需另經 SDR 轉 HDR 模型 Ruby 處理。"
+flagshipVersion: gen-4-5
+relatedLearn: [multimodal-models, model-evaluation, open-vs-closed-models, physical-ai-deep]
+glossary: [diffusion-model, world-model, elo-rating, api, physical-ai]
+sources:
+  - key: rw-gen4
+    title: "Introducing Runway Gen-4"
+    publisher: "Runway"
+    url: "https://runway.com/research/introducing-runway-gen-4"
+    type: company-site
+    lang: en
+    published: "2025-03-31"
+    accessed: "2026-10-06"
+  - key: rw-aleph
+    title: "Introducing Runway Aleph"
+    publisher: "Runway"
+    url: "https://runway.com/research/introducing-runway-aleph"
+    type: company-site
+    lang: en
+    published: "2025-07-25"
+    accessed: "2026-10-06"
+  - key: rw-gen45
+    title: "Runway Gen-4.5: State-of-the-Art AI Video Generation"
+    publisher: "Runway"
+    url: "https://runway.com/research/introducing-runway-gen-4.5"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "頁面引用截至 2025-11-30 的 AA 文生影片榜"
+  - key: rw-gwm1
+    title: "Introducing Runway GWM-1"
+    publisher: "Runway"
+    url: "https://runway.com/research/introducing-runway-gwm-1"
+    type: company-site
+    lang: en
+    published: "2025-12-11"
+    accessed: "2026-10-06"
+    note: "同頁預告 Gen-4.5 將支援原生音訊生成、音訊編輯與多鏡頭編輯（標示 coming soon）"
+  - key: rw-characters
+    title: "Introducing Runway Characters"
+    publisher: "Runway"
+    url: "https://runway.com/news/introducing-runway-characters"
+    type: press-release
+    lang: en
+    published: "2026-03-09"
+    accessed: "2026-10-06"
+  - key: rw-aleph2
+    title: "Aleph 2.0"
+    publisher: "Runway"
+    url: "https://runway.com/product/aleph-2"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: rw-solaris
+    title: "Introducing Solaris"
+    publisher: "Runway"
+    url: "https://runway.com/news/research/introducing-solaris"
+    type: company-site
+    lang: en
+    published: "2026-08-31"
+    accessed: "2026-10-06"
+  - key: rw-worlds2
+    title: "Introducing GWM Worlds 2"
+    publisher: "Runway"
+    url: "https://runway.com/research/introducing-gwm-worlds-2"
+    type: company-site
+    lang: en
+    published: "2026-09-03"
+    accessed: "2026-10-06"
+  - key: rw-praxis
+    title: "Introducing Praxis-1"
+    publisher: "Runway"
+    url: "https://runway.com/research/introducing-praxis-1"
+    type: company-site
+    lang: en
+    published: "2026-09-30"
+    accessed: "2026-10-06"
+  - key: rw-enterprise
+    title: "The Next Phase of Enterprise Video Generation"
+    publisher: "Runway"
+    url: "https://runway.com/news/company-news/the-next-phase-of-enterprise-video-generation"
+    type: company-site
+    lang: en
+    published: "2026-08-20"
+    accessed: "2026-10-06"
+  - key: rw-api-pricing
+    title: "API Pricing & Costs"
+    publisher: "Runway Dev"
+    url: "https://docs.dev.runwayml.com/guides/pricing/"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: rw-api-models
+    title: "Available AI Models"
+    publisher: "Runway Dev"
+    url: "https://docs.dev.runwayml.com/guides/models/"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: rw-api-pro
+    title: "Professional outputs"
+    publisher: "Runway Dev"
+    url: "https://docs.dev.runwayml.com/guides/professional-outputs/"
+    type: docs
+    lang: en
+    accessed: "2026-10-16"
+    note: "Gen-4.5 可原生輸出 HDR；Aleph 2.0 只支援 ProRes、PNG 序列與 10 位元 SDR，HDR 需經 Ruby 轉換"
+  - key: rw-api-changelog
+    title: "API Changelog"
+    publisher: "Runway Dev"
+    url: "https://docs.dev.runwayml.com/api-details/api_changelog/"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: rw-changelog
+    title: "Runway Changelog"
+    publisher: "Runway"
+    url: "https://runway.com/changelog"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+    note: "Gen-3 Alpha Turbo（2024-08-14）、Gen-4 Turbo、References、Act-Two、Aleph、Gen-4.5 等上線日期"
+  - key: wiki-runway
+    title: "Runway (company)"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Runway_(company)"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "2026-02 以約 53 億美元估值募資 3.15 億美元（引用媒體報導）"
+  - key: aa-t2v
+    title: "AA-Video-T2V v2.0 Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/video/leaderboard/text-to-video"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "含音訊主榜 28 個模型；無音訊榜（AA-Video-T2V-Silent v2.0）31 個模型"
+  - key: aa-i2v
+    title: "AA Image to Video Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/video/leaderboard/image-to-video"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+  - key: arena-t2v
+    title: "Text-to-Video Arena: Best AI Video Generators"
+    publisher: "Arena (LMArena)"
+    url: "https://arena.ai/leaderboard/text-to-video"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "lmarena.ai 轉址至 arena.ai；榜單標示 2026-09-21 更新，48 個模型"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: models-14
+  checkedBy: "models-14-check"
+  checkedOn: "2026-10-06"
+  notes: "版本日期、API 價格與功能已對照 Runway 研究頁、產品更新紀錄、API 更新紀錄與定價頁；募資數字來自維基百科引述的 TechCrunch 報導。AA v2.0／v1.0 與 Arena 榜單數字為 2026-10-06 讀取值；查核時 AA 已改版、Arena 需通過 Cloudflare 驗證，無法逐筆重新比對。"
+---
+
+## 系列概覽
+
+<CompanyChip id="runway">Runway</CompanyChip> 是 2018 年成立於紐約的 AI 影片公司，早在 2023 年就提出「通用世界模型」的研究方向<Cite k="rw-gwm1" />。它的模型可分成三條線：生成影片的 Gen 系列（目前旗艦為 Gen-4.5）、編輯既有影片的 Aleph 系列（目前為 Aleph 2.0），以及可即時互動的 GWM 世界模型。2026-02，Runway 以約 53 億美元估值募得 3.15 億美元<Cite k="wiki-runway" />；官方 2026-08 表示今年業務規模成長超過一倍，淨收入留存率（NRR）超過 300%，並開始提供模型授權：把封閉權重與訓練、推論框架交給企業，在客戶自有環境部署並以自家資料微調<Cite k="rw-enterprise" />。
+
+Gen-4.5 於 2025-12 推出，官方稱它在預訓練資料效率與後訓練技術上都有進展，全程以 <CompanyChip id="nvidia">NVIDIA</CompanyChip> GPU 開發，推論跑在 Hopper 與 Blackwell 上；官方也把它描述為影片<Term id="diffusion-model">擴散模型</Term><Cite k="rw-gen45" />。2025-12-11 發表的 GWM-1 則建立在 Gen-4.5 之上，改為逐格生成的自迴歸架構，以便即時回應操作<Cite k="rw-gwm1" />。
+
+## 特性分析
+
+- **一致性與控制**：Gen-4（2025-03-31）主打只用一張參考圖，就能在不同場景中維持角色、物件與場景一致<Cite k="rw-gen4" />；Gen-4.5 改善物理、動態與提示詞遵循，API 支援文生與圖生影片，長度 2–10 秒<Cite k="rw-api-changelog" />。
+- **影片編輯**：第一代 Aleph（2025-07）能對既有影片新增或移除物件、改變角度與打光<Cite k="rw-aleph" />；Aleph 2.0 只要修改一格畫面，就能把修改延續到整段影片，並保留未要求變動的部分，可處理最長 30 秒、1080p 與多鏡頭影片<Cite k="rw-aleph2" />。
+- **專業交付**：2026-08-20 起，Gen-4.5 可直接輸出 HDR10、HLG、HDR ProRes 與 OpenEXR<Cite k="rw-api-changelog" />；Aleph 2.0 可輸出 ProRes 等 SDR 格式，但不支援原生 HDR，需再經 SDR 轉 HDR 模型 Ruby 處理<Cite k="rw-api-pro" />。
+- **計價**：API 每點 0.01 美元；Gen-4.5 每秒 12 點（約 0.12 美元）、Gen-4 Turbo 每秒 5 點、Aleph 2.0 每秒 28 點<Cite k="rw-api-pricing" />。平台同時提供 Veo、Seedance、Wan 等第三方模型，2026-07-23 推出依成本、延遲或品質自動選模型的 Model Router<Cite k="rw-api-changelog" />。
+
+## 適合與不適合的用途
+
+**適合**：廣告與品牌影片的多版本製作——官方示範用 Aleph 2.0 換產品顏色、換背景或換季節<Cite k="rw-aleph2" />；影視前製，以及需要 HDR、ProRes 交付的後製流程；以單張圖片建立可即時對話的虛擬角色，也就是建立在 GWM-1 上的 Runway Characters，可透過 <Term id="api">API</Term> 自訂聲音、個性與知識庫<Cite k="rw-characters" />。
+
+**不適合**：需要原生對白與音效的成片——Gen-4.5 目前不生成音訊，AA 只把它列在無音訊榜<Cite k="aa-t2v" />，官方 2025-12 預告的原生音訊功能截至 2026-10-06 尚未在 API 推出<Cite k="rw-gwm1" />；需要一鏡到底的長片，單段最長 10 秒；需要自行部署或微調、又沒有企業授權預算的團隊，因為全系列都是封閉權重。官方也坦承 Gen-4.5 仍有因果順序錯亂、物件憑空出現或消失，以及「動作總是成功」等限制<Cite k="rw-gen45" />。
+
+## 版本演進
+
+| 版本 | 時間 | 重點 |
+|---|---|---|
+| Gen-4／Gen-4 Turbo | 2025-03-31 | 以參考圖維持角色與場景一致 |
+| Gen-4 Image／References | 2025-04 | 參考圖生成，2025-05 上架 API |
+| Act-Two | 2025-07 | 表演捕捉，頭、臉、身體與手部 |
+| Aleph | 2025-07-25 | 情境式影片編輯；API 版 2026-07-30 下架 |
+| Gen-4.5 | 2025-12-01 | 新旗艦，2026-02-10 上架 API |
+| GWM-1 | 2025-12-11 | 世界模型，分 Worlds、Avatars、Robotics |
+| Aleph 2.0 | 2026-05-21 | 30 秒、1080p、多鏡頭編輯 |
+
+2026 年下半年，Runway 的研究重心明顯轉向即時與互動。GWM Worlds 2（2026-09-03）可依文字動作即時生成 720p、24 fps 的畫面與 48 kHz 音訊，場景沒有固定長度<Cite k="rw-worlds2" />；Solaris（2026-08-31）則是逐格生成整個軟體介面的「介面世界模型」，也可用來訓練操作電腦的 Agent<Cite k="rw-solaris" />。2026-09-30 宣布的 Praxis-1 是以影片預訓練為基礎、控制真實機器人的「世界動作模型」，屬於<Term id="physical-ai">實體 AI</Term>的布局，目前與合作夥伴測試，官方表示公開發布時會釋出開放權重<Cite k="rw-praxis" />。舊模型則陸續退場：Gen-3 Alpha Turbo 與第一代 Aleph 已於 2026-07-30 從 API 停止提供<Cite k="rw-api-changelog" />。這條路線與 <ModelChip id="google-genie" />、<ModelChip id="nvidia-cosmos" /> 同屬<Term id="world-model">世界模型</Term>競賽，背景可參考 <TrendLink id="world-models-spatial-intelligence">世界模型與空間智慧</TrendLink>。
+
+## 評測解讀
+
+Gen-4.5 發表時，Runway 引用 AA 文生影片榜（截至 2025-11-30）以 1,247 分排第 1，領先 Veo 3（1,226）、Kling 2.5（1,225）與 Sora 2 Pro（1,206）<Cite k="rw-gen45" />。十個月後情況已大不相同：AA 改版為 v2.0，並把含音訊與無音訊分成兩個榜，Gen-4.5 只出現在無音訊榜，2026-10-06 以 921 分排第 23 名（共 31 個），榜首阿里巴巴 Wan 3.0 為 1,128 分<Cite k="aa-t2v" />。兩次分數的尺度不同（v2.0 以 Kling 3.0 固定為 1,000 分），不能直接相減；AA 也註明 Runway API 的提示詞上限為 1,000 字元，因此 Gen-4.5 只用了 61% 的題目評測。其他榜單上，Arena（原 LMArena）文生影片榜（2026-09-21 更新）Gen-4.5 為 1,225 分、排第 27 名（共 48 個）<Cite k="arena-t2v" />；AA 無音訊圖生影片榜為 1,265 分、排第 27 名（共 83 個）<Cite k="aa-i2v" />。
+
+這些 <Term id="elo-rating">Elo 分數</Term>反映的是單段生成的人類偏好，無法衡量 Aleph 的編輯能力、HDR 交付或 GWM 的即時互動，而這些正是 Runway 近一年投入的方向。官方在 2026-08 也表示，各家模型的品質正在收斂，競爭重點轉向產品、工作流程與成本效率<Cite k="rw-enterprise" />。引用排名時，務必註明日期、榜單版本與是否含音訊。

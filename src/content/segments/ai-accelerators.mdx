@@ -1,0 +1,559 @@
+---
+title: AI 晶片與加速器（GPU／ASIC／CPU）
+titleEn: "AI Chips & Accelerators (GPU / ASIC / CPU)"
+order: 6
+layer: silicon
+tagline: 把電力變成算力的引擎：GPU、客製 ASIC 與 CPU 的競合
+description: AI 晶片是產業鏈中獲利最高、集中度也最高的環節。本章從 GPU 為何適合 AI 談起，解析 NVIDIA、Broadcom、AMD、雲端自研 ASIC 與中國晶片的競爭，以及產能瓶頸、出口管制與台灣的角色。
+upstream: [eda-ip-design, foundry-packaging, memory-storage]
+downstream: [servers-systems, cloud-neocloud, physical-ai]
+scene: { id: gpu-scale, variant: chip }
+scope:
+  includes:
+    - 資料中心 GPU（NVIDIA、AMD 等商用加速器）
+    - 雲端業者自研 AI ASIC／XPU（Google TPU、AWS Trainium、Microsoft Maia、Meta MTIA）與其設計夥伴的客製晶片業務
+    - 伺服器 CPU（x86 與 Arm 架構，例如 Xeon、EPYC、Grace／Vera、Axion）
+    - 推論專用晶片新創（晶圓級晶片、LPU、資料流架構、記憶體內運算等）
+    - 中國 AI 晶片（華為昇騰、寒武紀、海光、摩爾線程、沐曦、壁仞、燧原、崑崙芯等）
+    - 邊緣 AI 晶片與手機、PC、車用 SoC 內建的 NPU
+  excludes:
+    - EDA、矽智財與 ASIC 設計服務（世芯、創意），歸「晶片設計工具、矽智財與設計服務」
+    - 晶圓代工、CoWoS 等先進封裝與 IC 載板，歸「晶圓代工與先進封裝」
+    - HBM 與其他記憶體，歸「記憶體與儲存」
+    - 交換器晶片、網卡、DPU 與光通訊元件，歸「網通與光通訊」
+    - 伺服器與整櫃系統的組裝製造（ODM／OEM），歸「伺服器、系統與關鍵零組件」
+concentration: oligopoly
+bottleneck:
+  level: 4
+  note: 晶片設計本身不缺人，真正卡住出貨的是供應端的先進製程、CoWoS 封裝與 HBM 產能；加上 CUDA 軟體生態的轉換成本與美國出口管制造成的市場分割，使這一環的供給彈性很低，價格與分配權集中在少數廠商手上。
+keyMetrics:
+  - label: NVIDIA 單季資料中心營收（FY2027 第二季）
+    value: 890 億美元（年增 117%）
+    asOf: "2026-07-26"
+    note: 同季總營收 962 億美元；FY2027 第二季約當 2026 年 5–7 月。
+    source:
+      title: NVIDIA Announces Financial Results for Second Quarter Fiscal 2027
+      publisher: NVIDIA
+      url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2027"
+      type: press-release
+      lang: en
+      published: "2026-08-26"
+      accessed: "2026-10-06"
+  - label: NVIDIA 毛利率（FY2027 第二季，GAAP）
+    value: "75.0%"
+    asOf: "2026-07-26"
+    source:
+      title: NVIDIA Announces Financial Results for Second Quarter Fiscal 2027
+      publisher: NVIDIA
+      url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2027"
+      type: press-release
+      lang: en
+      published: "2026-08-26"
+      accessed: "2026-10-06"
+  - label: Broadcom 單季 AI 半導體營收（FY2026 第三季）
+    value: 167 億美元（年增 221%）
+    asOf: "2026-08-02"
+    note: 含客製加速器（XPU）與 AI 網路晶片；公司預估第四季達 217 億美元。
+    source:
+      title: Broadcom Inc. Announces Third Quarter Fiscal Year 2026 Financial Results and Quarterly Dividend
+      publisher: Broadcom
+      url: "https://www.prnewswire.com/news-releases/broadcom-inc-announces-third-quarter-fiscal-year-2026-financial-results-and-quarterly-dividend-302868129.html"
+      type: press-release
+      lang: en
+      published: "2026-09-02"
+      accessed: "2026-10-06"
+  - label: AMD 資料中心事業單季營收（2026 Q2）
+    value: 67 億美元（年增 107%）
+    asOf: "2026-06-27"
+    note: 含 EPYC 伺服器 CPU 與 Instinct GPU。
+    source:
+      title: AMD Reports Second Quarter 2026 Financial Results
+      publisher: AMD
+      url: "https://ir.amd.com/news-events/press-releases/detail/1295/amd-reports-second-quarter-2026-financial-results"
+      type: press-release
+      lang: en
+      published: "2026-08-04"
+      accessed: "2026-10-06"
+  - label: NVIDIA 在 AI 晶片市場的市佔率（估計）
+    value: 約 70%
+    asOf: "2025-10-30"
+    note: TrendForce 於 2025 年 10 月對 2025 年的估計；其「AI 晶片市場」把客製 ASIC 也算在內，各研究機構口徑差異大。
+    source:
+      title: Strong Demand from CSPs and Sovereign Cloud to Drive Over 20% Growth in AI Server Shipments by 2026, Says TrendForce
+      publisher: TrendForce
+      url: "https://www.trendforce.com/presscenter/news/20251030-12762.html"
+      type: analyst
+      lang: en
+      published: "2025-10-30"
+      accessed: "2026-10-06"
+  - label: NVIDIA 佔伺服器 GPU 營收比重（2024 年）
+    value: "93%"
+    asOf: "2025-08-12"
+    note: Yole Group 估計，只計伺服器 GPU，不含 ASIC。
+    source:
+      title: "Data center semiconductor trends 2025: Artificial Intelligence reshapes compute and memory markets"
+      publisher: Yole Group
+      url: "https://www.yolegroup.com/press-release/data-center-semiconductor-trends-2025-artificial-intelligence-reshapes-compute-and-memory-markets/"
+      type: analyst
+      lang: en
+      published: "2025-08-12"
+      accessed: "2026-10-06"
+  - label: 寒武紀 2025 年營收
+    value: 64.97 億人民幣（約為 2024 年的 5.5 倍）
+    asOf: "2025-12-31"
+    note: 2024 年為 11.74 億人民幣。
+    source:
+      title: Cambricon annual income statement (SHA:688256)
+      publisher: Stock Analysis
+      url: "https://stockanalysis.com/quote/sha/688256/financials/"
+      type: dataset
+      lang: en
+      accessed: "2026-10-06"
+      note: 彙整自公司年報
+marketSize:
+  - year: 2024
+    value: 147
+    unit: billion
+    currency: USD
+    status: estimate
+    definition: 全球資料中心處理器市場（伺服器 GPU、AI ASIC、伺服器 CPU、FPGA、DPU／網路 ASIC 等），Yole Group 估計。
+    source:
+      title: Generative AI at the core of a $372 billion data center processor revolution
+      publisher: Yole Group
+      url: "https://www.yolegroup.com/press-release/generative-ai-at-the-core-of-a-372-billion-data-center-processor-revolution/"
+      type: analyst
+      lang: en
+      published: "2025-07-18"
+      accessed: "2026-10-06"
+  - year: 2025
+    value: 200
+    unit: billion
+    currency: USD
+    status: estimate
+    definition: Gartner 初步統計的全球「AI 處理半導體」營收，原文為「超過 2,000 億美元」；口徑與 Yole 的資料中心處理器市場不同，不宜直接比較。
+    source:
+      title: Semiconductor revenue 2025 hits $793 billion as AI reshuffles the rankings
+      publisher: eeNews Europe
+      url: "https://www.eenewseurope.com/en/semiconductor-revenue-2025-793-billion-ai"
+      type: news
+      lang: en
+      published: "2026-01-14"
+      accessed: "2026-10-06"
+      note: 引述 Gartner 2026-01-12 發布的 2025 年半導體營收初步統計
+  - year: 2030
+    value: 372
+    unit: billion
+    currency: USD
+    status: forecast
+    definition: 全球資料中心處理器市場（伺服器 GPU、AI ASIC、伺服器 CPU、FPGA、DPU／網路 ASIC 等），Yole Group 2025 年 7 月預測。
+    source:
+      title: Generative AI at the core of a $372 billion data center processor revolution
+      publisher: Yole Group
+      url: "https://www.yolegroup.com/press-release/generative-ai-at-the-core-of-a-372-billion-data-center-processor-revolution/"
+      type: analyst
+      lang: en
+      published: "2025-07-18"
+      accessed: "2026-10-06"
+featuredCompanies:
+  - nvidia
+  - broadcom
+  - amd
+  - huawei
+  - marvell
+  - mediatek
+  - qualcomm
+  - cambricon
+  - hygon
+  - moore-threads
+  - cerebras
+taiwanRole: 台灣是全球 AI 加速器的製造中樞：台積電以先進製程與 CoWoS 封裝生產 NVIDIA、AMD 與雲端業者的自研晶片；聯發科、創意、世芯參與客製 ASIC 的設計，後段的鴻海、廣達、緯創再把晶片組裝成整櫃 AI 伺服器。
+relatedLearn:
+  - why-gpus
+  - gpu-architecture
+  - training-vs-inference-economics
+  - memory-and-hbm
+  - advanced-packaging-intro
+  - inference-optimization
+  - networking-for-ai
+relatedTrends:
+  - gpu-roadmap-rubin-feynman
+  - custom-asic-rise
+  - inference-chips-new-paradigms
+  - rack-scale-systems
+  - export-controls-us-china
+  - china-self-sufficiency
+  - edge-ai-devices
+glossary:
+  - training
+  - inference
+  - cpu
+  - gpu
+  - parallel-computing
+  - asic
+  - tpu
+  - xpu
+  - npu
+  - hbm
+  - tensor-core
+  - systolic-array
+  - fp8
+  - fp4
+  - reticle-limit
+  - chiplet
+  - cowos
+  - memory-wall
+  - sram
+  - scale-up
+  - nvlink
+  - nvl72
+  - fabless
+  - foundry
+  - cuda
+  - gross-margin
+  - hyperscaler
+  - tco
+  - wafer-scale-engine
+  - export-controls
+  - edge-ai
+sources:
+  - key: nv-q2fy27
+    title: NVIDIA Announces Financial Results for Second Quarter Fiscal 2027
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2027"
+    type: press-release
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-06"
+  - key: nv-q4fy26
+    title: NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2026
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2026"
+    type: press-release
+    lang: en
+    published: "2026-02-25"
+    accessed: "2026-10-06"
+  - key: nv-q4fy25
+    title: NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2025
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2025"
+    type: press-release
+    lang: en
+    published: "2025-02-26"
+    accessed: "2026-10-06"
+  - key: nv-q4fy24
+    title: NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2024
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2024"
+    type: press-release
+    lang: en
+    published: "2024-02-21"
+    accessed: "2026-10-06"
+  - key: nv-blackwell
+    title: NVIDIA Blackwell Architecture
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: nv-rubin
+    title: NVIDIA Kicks Off the Next Generation of AI With Rubin — Six New Chips, One Incredible AI Supercomputer
+    publisher: NVIDIA
+    url: "https://nvidianews.nvidia.com/news/rubin-platform-ai-supercomputer"
+    type: press-release
+    lang: en
+    published: "2026-01-05"
+    accessed: "2026-10-06"
+  - key: avgo-q3fy26
+    title: Broadcom Inc. Announces Third Quarter Fiscal Year 2026 Financial Results and Quarterly Dividend
+    publisher: Broadcom
+    url: "https://www.prnewswire.com/news-releases/broadcom-inc-announces-third-quarter-fiscal-year-2026-financial-results-and-quarterly-dividend-302868129.html"
+    type: press-release
+    lang: en
+    published: "2026-09-02"
+    accessed: "2026-10-06"
+  - key: amd-q2-2026
+    title: AMD Reports Second Quarter 2026 Financial Results
+    publisher: AMD
+    url: "https://ir.amd.com/news-events/press-releases/detail/1295/amd-reports-second-quarter-2026-financial-results"
+    type: press-release
+    lang: en
+    published: "2026-08-04"
+    accessed: "2026-10-06"
+  - key: amd-openai
+    title: AMD and OpenAI Announce Strategic Partnership to Deploy 6 Gigawatts of AMD GPUs
+    publisher: AMD
+    url: "https://ir.amd.com/news-events/press-releases/detail/1260/amd-and-openai-announce-strategic-partnership-to-deploy-6-gigawatts-of-amd-gpus"
+    type: press-release
+    lang: en
+    published: "2025-10-06"
+    accessed: "2026-10-06"
+  - key: amd-meta
+    title: AMD and Meta Announce Expanded Strategic Partnership to Deploy 6 Gigawatts of AMD GPUs
+    publisher: AMD
+    url: "https://ir.amd.com/news-events/press-releases/detail/1279"
+    type: press-release
+    lang: en
+    published: "2026-02-24"
+    accessed: "2026-10-06"
+  - key: amd-anthropic
+    title: AMD and Anthropic Announce Strategic Partnership to Deploy up to 2 Gigawatts of AMD Instinct MI450 Series GPUs
+    publisher: AMD
+    url: "https://ir.amd.com/news-events/press-releases/detail/1292/amd-and-anthropic-announce-strategic-partnership-to-deploy-up-to-2-gigawatts-of-amd-instinct-mi450-series-gpus"
+    type: press-release
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-06"
+  - key: trendforce-2025-10
+    title: Strong Demand from CSPs and Sovereign Cloud to Drive Over 20% Growth in AI Server Shipments by 2026, Says TrendForce
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20251030-12762.html"
+    type: analyst
+    lang: en
+    published: "2025-10-30"
+    accessed: "2026-10-06"
+  - key: yole-proc
+    title: Generative AI at the core of a $372 billion data center processor revolution
+    publisher: Yole Group
+    url: "https://www.yolegroup.com/press-release/generative-ai-at-the-core-of-a-372-billion-data-center-processor-revolution/"
+    type: analyst
+    lang: en
+    published: "2025-07-18"
+    accessed: "2026-10-06"
+  - key: yole-dcsemi
+    title: "Data center semiconductor trends 2025: Artificial Intelligence reshapes compute and memory markets"
+    publisher: Yole Group
+    url: "https://www.yolegroup.com/press-release/data-center-semiconductor-trends-2025-artificial-intelligence-reshapes-compute-and-memory-markets/"
+    type: analyst
+    lang: en
+    published: "2025-08-12"
+    accessed: "2026-10-06"
+  - key: gartner-2025
+    title: Semiconductor revenue 2025 hits $793 billion as AI reshuffles the rankings
+    publisher: eeNews Europe
+    url: "https://www.eenewseurope.com/en/semiconductor-revenue-2025-793-billion-ai"
+    type: news
+    lang: en
+    published: "2026-01-14"
+    accessed: "2026-10-06"
+    note: 引述 Gartner 2026-01-12 發布的 2025 年半導體營收初步統計
+  - key: google-ironwood
+    title: "Ironwood: The first Google TPU for the age of inference"
+    publisher: Google
+    url: "https://blog.google/products/google-cloud/ironwood-tpu-age-of-inference/"
+    type: company-site
+    lang: en
+    published: "2025-04-09"
+    accessed: "2026-10-06"
+  - key: tpu-wiki
+    title: Tensor Processing Unit
+    publisher: Wikipedia
+    url: "https://en.wikipedia.org/wiki/Tensor_Processing_Unit"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: 二手來源（引述 CNBC、The Register 等報導）；用於 Broadcom 參與歷代 TPU 開發的描述
+  - key: google-tpu8
+    title: "Our eighth generation TPUs: two chips for the agentic era"
+    publisher: Google
+    url: "https://blog.google/innovation-and-ai/infrastructure-and-cloud/google-cloud/eighth-generation-tpu-agentic-era/"
+    type: company-site
+    lang: en
+    published: "2026-04-22"
+    accessed: "2026-10-06"
+  - key: ms-maia200
+    title: "Maia 200: The AI accelerator built for inference"
+    publisher: Microsoft
+    url: "https://blogs.microsoft.com/blog/2026/01/26/maia-200-the-ai-accelerator-built-for-inference/"
+    type: company-site
+    lang: en
+    published: "2026-01-26"
+    accessed: "2026-10-06"
+  - key: huawei-connect-2025
+    title: "Groundbreaking SuperPoD Interconnect: Leading a New Paradigm for AI Infrastructure (Keynote Speech by Eric Xu at Huawei Connect 2025)"
+    publisher: Huawei
+    url: "https://www.huawei.com/en/news/2025/9/hc-xu-keynote-speech"
+    type: company-site
+    lang: en
+    published: "2025-09-18"
+    accessed: "2026-10-06"
+  - key: cerebras-ipo
+    title: Cerebras Systems Announces Pricing of Initial Public Offering
+    publisher: Cerebras Systems
+    url: "https://www.cerebras.ai/press-release/cerebras-systems-announces-pricing-of-initial-public-offering"
+    type: press-release
+    lang: en
+    published: "2026-05-13"
+    accessed: "2026-10-06"
+  - key: groq-nvidia
+    title: Groq and Nvidia Enter Non-Exclusive Inference Technology Licensing Agreement to Accelerate AI Inference at Global Scale
+    publisher: Groq
+    url: "https://groq.com/newsroom/groq-and-nvidia-enter-non-exclusive-inference-technology-licensing-agreement-to-accelerate-ai-inference-at-global-scale"
+    type: press-release
+    lang: en
+    published: "2025-12-24"
+    accessed: "2026-10-06"
+  - key: cnbc-groq
+    title: "Nvidia buying AI chip startup Groq's assets for about $20 billion in its largest deal on record"
+    publisher: CNBC
+    url: "https://www.cnbc.com/2025/12/24/nvidia-buying-ai-chip-startup-groq-for-about-20-billion-biggest-deal.html"
+    type: news
+    lang: en
+    published: "2025-12-24"
+    accessed: "2026-10-06"
+    note: 約 200 億美元為媒體報導值，雙方未公布金額
+  - key: cambricon-sa
+    title: Cambricon annual income statement (SHA:688256)
+    publisher: Stock Analysis
+    url: "https://stockanalysis.com/quote/sha/688256/financials/"
+    type: dataset
+    lang: en
+    accessed: "2026-10-06"
+    note: 彙整自公司年報
+  - key: tsmc-q2-2026
+    title: TSMC Reports Second Quarter EPS of NT$27.25
+    publisher: TSMC
+    url: "https://www.sec.gov/Archives/edgar/data/1046179/000104617926000451/a2q26e_withguidancexfinal.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-16"
+    accessed: "2026-10-06"
+    note: 公司 2026 年第二季財報新聞稿（SEC Form 6-K 附件）
+  - key: guc-monthly
+    title: 創意（3443）月營收
+    publisher: Yahoo 股市（資料源：公開資訊觀測站）
+    url: "https://tw.stock.yahoo.com/quote/3443.TW/revenue"
+    type: monthly-revenue
+    lang: zh-TW
+    accessed: "2026-10-06"
+    note: 2026 年 1–9 月累計營收由各月自結數字加總
+  - key: neuchips-site
+    title: "Purpose-Built AI Inference ASICs for On-Premise LLM"
+    publisher: Neuchips
+    url: "https://www.neuchips.ai/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: kneron-about
+    title: About us | Kneron – Full Stack Edge AI
+    publisher: Kneron
+    url: "https://www.kneron.com/en/about/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: seg-ai-accelerators
+  checkedBy: "seg-ai-accelerators-check"
+  checkedOn: "2026-10-06"
+  notes: 查核：NVIDIA、Broadcom、AMD、台積電、創意等數字已與一手來源逐一核對；Groq 與第八代 TPU 改引官方新聞稿；Gartner 原始新聞稿無法直接讀取，沿用 eeNews Europe 轉述。
+---
+
+<LevelSection level={1} title="這一環在做什麼">
+
+如果把 AI 產業鏈想成一座工廠，AI 晶片就是廠房裡真正在轉動的引擎。不論是<Term id="training">訓練</Term>一個新模型，還是你每次向聊天機器人提問時的<Term id="inference">推論</Term>，背後都是數以兆計的乘法與加法。這一環的公司負責設計這些專門「算數學」的晶片，再交給晶圓代工廠生產。
+
+為什麼一般電腦裡的 <Term id="cpu">CPU</Term> 不夠用？因為神經網路的運算，主要是巨大的矩陣乘法：成千上萬個彼此獨立的小計算，可以同時進行。<Term id="gpu">GPU</Term> 原本是為了繪製遊戲畫面而設計，天生擅長這種<Term id="parallel-computing">平行運算</Term>，於是成為 AI 時代的主力。想從頭了解，可以先讀<LearnLink id="why-gpus">為什麼 AI 需要 GPU？</LearnLink>。
+
+<Callout type="analogy" title="幾位大廚 vs. 一萬名幫廚">
+CPU 像幾位什麼菜都會做的大廚，能處理步驟複雜、變化多端的工作，但一次只能顧幾道菜。GPU 像一萬名只會切菜的幫廚，單人能力普通，可是同時開工時，切完一卡車洋蔥的速度遠勝大廚。客製 ASIC 則像只做一道招牌菜的中央廚房生產線：換菜色很麻煩，但做那道菜最快、也最省。AI 的工作恰好就是「切一卡車洋蔥」，所以幫廚與生產線最吃香，而大廚負責排班與出菜。
+</Callout>
+
+這一環主要有四類產品：
+
+- **GPU**：通用的 AI 加速器，代表是<CompanyChip id="nvidia">輝達（NVIDIA）</CompanyChip>與<CompanyChip id="amd">超微（AMD）</CompanyChip>。任何客戶都買得到，軟體工具也最成熟。
+- **客製 ASIC**：雲端業者為自家服務量身打造的 <Term id="asic">ASIC</Term>，最有名的是 Google 的 <Term id="tpu">TPU</Term>。它們常由<CompanyChip id="broadcom">博通（Broadcom）</CompanyChip>、<CompanyChip id="marvell">邁威爾（Marvell）</CompanyChip>等設計夥伴協助實作，業界也稱為 <Term id="xpu">XPU</Term>。
+- **伺服器 CPU**：負責調度工作、把資料送進加速器的「總管」，以<CompanyChip id="intel">英特爾（Intel）</CompanyChip>與 AMD 為主，兩家合計約佔八成市場；Amazon 的 Graviton、Google 的 Axion、NVIDIA 的 Grace 等 Arm 架構 CPU 也在擴大<Cite k="yole-proc" />。業界也普遍認為，AI Agent 需要大量呼叫工具、處理前後步驟，讓 CPU 重新受到重視。
+- **邊緣 AI 晶片**：手機、筆電與汽車晶片裡內建的 <Term id="npu">NPU</Term>，讓 AI 不必連上雲端也能在裝置上執行，代表廠商是<CompanyChip id="qualcomm">高通（Qualcomm）</CompanyChip>與<CompanyChip id="mediatek">聯發科</CompanyChip>。
+
+在產業鏈中，這一環向上依賴<SegmentChip id="eda-ip-design" />的設計工具與矽智財、<SegmentChip id="foundry-packaging" />的製造與封裝，以及<SegmentChip id="memory-storage" />供應的 <Term id="hbm">HBM</Term>（高頻寬記憶體）；向下則把晶片交給<SegmentChip id="servers-systems" />組裝成伺服器，最後進入<SegmentChip id="cloud-neocloud" />的資料中心。
+
+</LevelSection>
+
+<LevelSection level={2} title="關鍵技術與商業模式" data-lint="level==2">
+
+### 關鍵技術：算得快、餵得飽、連得廣
+
+一顆 AI 加速器的實力，取決於三件事。完整的架構說明可參考<LearnLink id="gpu-architecture">GPU 與 AI 加速器架構</LearnLink>。
+
+**算得快。** GPU 內部有專做矩陣運算的 <Term id="tensor-core">Tensor Core</Term>，TPU 則用<Term id="systolic-array">脈動陣列</Term>讓資料像流水線一樣穿過運算單元。另一個關鍵是降低數字精度：從 16 位元降到 <Term id="fp8">FP8</Term>、再到 <Term id="fp4">FP4</Term>，同樣的電路就能多算好幾倍。NVIDIA Blackwell GPU 內含 2,080 億顆電晶體，由兩顆尺寸已達<Term id="reticle-limit">光罩尺寸極限</Term>的晶粒，以每秒 10 TB 的介面連成一顆 GPU，採用台積電客製的 4NP 製程<Cite k="nv-blackwell" />。這種把多顆晶粒拼在一起的 <Term id="chiplet">Chiplet</Term> 設計，必須仰賴 <Term id="cowos">CoWoS</Term> 先進封裝。
+
+**餵得飽。** 運算單元再快，資料送不進來也是白搭，這就是<Term id="memory-wall">記憶體牆</Term>。高階加速器都會把多疊 HBM 放在晶片旁邊。例如 Microsoft 的推論晶片 Maia 200 採用台積電 3 奈米製程，配備 216GB HBM3e、頻寬每秒 7 TB，另有 272MB 的晶片內 <Term id="sram">SRAM</Term><Cite k="ms-maia200" />。
+
+**連得廣。** 大模型需要成千上萬顆晶片協同工作，晶片之間的 <Term id="scale-up">Scale-up</Term> 互連成了核心競爭力。NVIDIA 以 <Term id="nvlink">NVLink</Term> 把 72 顆 GPU 連成一台 <Term id="nvl72">NVL72</Term> 機櫃；2026 年 1 月發表的 Rubin 平台一次推出 6 顆晶片（Vera CPU、Rubin GPU、NVLink 6 交換器、ConnectX-9 網卡、BlueField-4 DPU、Spectrum-6 交換器），NVIDIA 宣稱推論的每 Token 成本可比 Blackwell 平台降低最多 10 倍<Cite k="nv-rubin" />。Google 第七代 TPU Ironwood 則可在單一 Pod 內擴展到 9,216 顆晶片，峰值運算力達 42.5 EFLOPS<Cite k="google-ironwood" />。
+
+### 商業模式與成本結構
+
+這一環的龍頭幾乎都是 <Term id="fabless">Fabless</Term>（無晶圓廠）公司：自己負責架構設計與軟體，晶圓交給<Term id="foundry">晶圓代工</Term>廠生產，HBM 向記憶體廠採購，再委託先進封裝。因此主要成本是研發人力、先進製程晶圓、封裝與 HBM，而價值的核心在設計與軟體。NVIDIA 的 <Term id="cuda">CUDA</Term> 累積了龐大的開發者工具與函式庫，客戶要換平台就得改寫或重新調校程式，這份轉換成本就是它最深的護城河。
+
+商業模式也從「賣晶片」走向「賣整櫃系統」：NVIDIA 把 CPU、GPU、交換器、網卡與液冷整合成 NVL72 等機櫃方案出貨，AMD 的 Helios 機櫃也預計在 2026 年下半年開始放量<Cite k="amd-q2-2026" />。這門生意的獲利能力極高，NVIDIA 2027 財年第二季（約當 2026 年 5–7 月）營收 962 億美元，<Term id="gross-margin">毛利率</Term>達 75.0%<Cite k="nv-q2fy27" />。
+
+正因為 GPU 很貴，<Term id="hyperscaler">超大規模業者</Term>紛紛自研 ASIC，以降低 <Term id="tco">TCO</Term>（總持有成本）。分工方式是雲端業者定義架構，設計夥伴把規格轉成可量產的晶片。例如 Broadcom 參與了歷代 TPU 的開發，負責高速介面等關鍵技術，並透過台積電等代工廠安排製造與封裝<Cite k="tpu-wiki" />。這讓設計夥伴的營收和少數大客戶的晶片專案高度連動。
+
+### 市場規模
+
+<StatGrid items={[{ label: "資料中心處理器市場（2024）", value: "1,470 億美元", note: "Yole 估計，含 GPU、ASIC、CPU 等" }, { label: "資料中心處理器市場（2030）", value: "3,720 億美元", note: "Yole 預測" }, { label: "AI ASIC 營收（2030）", value: "845 億美元", note: "Yole 預測" }, { label: "AI 處理半導體營收（2025）", value: "逾 2,000 億美元", note: "Gartner 初步統計，口徑不同" }]} caption="資料來源：Yole Group（2025 年 7 月、8 月）、Gartner 經 eeNews Europe 報導（2026 年 1 月）" />
+
+研究機構 Yole Group 估計，2024 年資料中心處理器市場約 1,470 億美元，2030 年將達 3,720 億美元<Cite k="yole-proc" />；其中伺服器 GPU 將從 2024 年的 1,000 億美元成長到 2030 年的 2,150 億美元，AI ASIC 則在 2030 年達到 845 億美元<Cite k="yole-dcsemi" />。Gartner 的初步統計則顯示，2025 年 AI 處理半導體營收已超過 2,000 億美元<Cite k="gartner-2025" />。
+
+不過，實際成長常跑在預測前面。NVIDIA 一家公司 2026 財年（約當 2025 年 2 月至 2026 年 1 月）的資料中心營收就達 1,937 億美元<Cite k="nv-q4fy26" />；雖然它包含網路產品、口徑不同，卻已逼近 Yole 對 2030 年伺服器 GPU 市場的預測。閱讀市場規模數字時，務必先確認定義與發布時間。
+
+<BarChart title="NVIDIA 資料中心營收（財年）" unit="十億美元" data={[{ label: "FY2024", value: 47.5 }, { label: "FY2025", value: 115.2 }, { label: "FY2026", value: 193.7 }]} source={["nv-q4fy24", "nv-q4fy25", "nv-q4fy26"]} note="NVIDIA 財年約當前一年 2 月至當年 1 月；含運算與網路產品。" />
+
+### 競爭格局
+
+TrendForce 估計 NVIDIA 2025 年約佔 AI 晶片市場 70%<Cite k="trendforce-2025-10" />；若只看伺服器 GPU，Yole 估計 NVIDIA 在 2024 年拿下 93% 的營收<Cite k="yole-dcsemi" />。兩個數字的年份與統計範圍都不同，但落差大致反映了客製 ASIC 的份量：把 TPU 等自研晶片算進來，NVIDIA 的佔比就明顯較低。
+
+<BarChart title="單季 AI／資料中心晶片營收（2026 年年中）" unit="億美元" data={[{ label: "NVIDIA 資料中心", value: 890 }, { label: "Broadcom AI 半導體", value: 167 }, { label: "AMD 資料中心", value: 67 }]} source={["nv-q2fy27", "avgo-q3fy26", "amd-q2-2026"]} note="NVIDIA 為 2026-07-26 止之季度、Broadcom 為 2026-08-02 止、AMD 為 2026 年第二季；AMD 含 EPYC CPU，Broadcom 含 AI 網路晶片，口徑不同，僅供量級比較。" />
+
+- **NVIDIA**：GPU、CPU、網路與軟體一手包辦。2026 年 8 月的財報指出，Vera Rubin 已全面量產、合作夥伴的機櫃已開始運作，Groq 3 LPX 推論加速器也已進入全面量產<Cite k="nv-q2fy27" />。在此之前，NVIDIA 於 2025 年 12 月與推論晶片新創 Groq 簽下非獨家的推論技術授權協議，Groq 創辦人等主管轉往 NVIDIA，Groq 則繼續獨立營運<Cite k="groq-nvidia" />；雙方未公布金額，媒體報導約 200 億美元<Cite k="cnbc-groq" />。
+- **Broadcom**：客製加速器龍頭，2026 財年第三季 AI 半導體營收 167 億美元、年增 221%，並預估第四季達 217 億美元<Cite k="avgo-q3fy26" />。
+- **AMD**：第二大商用 GPU 供應商，2026 年第二季資料中心營收 67 億美元、年增 107%<Cite k="amd-q2-2026" />。它靠「GW 級」合約打開市場：與 OpenAI 簽下 6GW、首批 1GW 的 MI450 預定 2026 年下半年開始部署<Cite k="amd-openai" />；與 Meta 簽下 6GW<Cite k="amd-meta" />；與 Anthropic 簽下最高 2GW<Cite k="amd-anthropic" />。
+- **雲端自研**：Google 在 2026 年 4 月發表第八代 TPU，分成訓練用的 TPU 8t 與推論用的 TPU 8i 兩種架構<Cite k="google-tpu8" />；Microsoft 則有專攻推論的 Maia 200<Cite k="ms-maia200" />。
+- **中國陣營**：在出口管制下，<CompanyChip id="huawei">華為</CompanyChip>昇騰、<CompanyChip id="cambricon">寒武紀</CompanyChip>、<CompanyChip id="hygon">海光（Hygon）</CompanyChip>、<CompanyChip id="moore-threads">摩爾線程</CompanyChip>等國產晶片快速成長。寒武紀 2025 年營收 64.97 億人民幣，約為 2024 年的 5.5 倍<Cite k="cambricon-sa" />。
+- **新創**：<CompanyChip id="cerebras">Cerebras</CompanyChip> 以整片晶圓做成的<Term id="wafer-scale-engine">晶圓級晶片</Term>主打低延遲推論，2026 年 5 月以每股 185 美元發行 3,000 萬股，在 Nasdaq 上市<Cite k="cerebras-ipo" />。
+
+</LevelSection>
+
+<LevelSection level={3} title="深入議題" data-lint="level===3">
+
+### 瓶頸：不缺設計，缺產能
+
+AI 晶片的供給瓶頸，多半不在設計端，而在供應端：最先進的製程產能、CoWoS 封裝與 HBM。TrendForce 預估 2026 年 HBM 消耗量將成長逾 70%<Cite k="trendforce-2025-10" />。三者任何一項跟不上，晶片設計得再好也出不了貨，這也是各家晶片商與雲端業者爭相簽訂長期產能與供貨協議的原因。再往下一層看，AMD 與客戶的合約規模直接以 GW（十億瓦）表示，代表晶片部署的速度最終也受資料中心能否接上電力牽動（見<SegmentChip id="energy-power" />）。
+
+### 供需：GPU 與 ASIC 雙軌並行
+
+需求集中在少數超大規模業者與頂尖模型實驗室，形成「客戶少、訂單大」的結構。為了鎖定客戶，供應商甚至用股權綁訂單：AMD 發給 OpenAI 最多 1.6 億股的認股權證，依部署進度分批生效，並與 AMD 股價目標掛鉤<Cite k="amd-openai" />；對 Meta 也有最多 1.6 億股、條件類似的認股權證<Cite k="amd-meta" />；又承諾對 Anthropic 進行最高 50 億美元的策略性股權投資<Cite k="amd-anthropic" />。另一方面，TrendForce 預期隨著北美雲端業者與中國業者擴大部署自研 ASIC，ASIC 出貨量將超越 GPU，NVIDIA 的市佔率會逐步下滑<Cite k="trendforce-2025-10" />。推論需求快速成長，也讓專攻推論的架構有了空間，從 Microsoft 強調推論經濟性的 Maia 200，到 NVIDIA 自家的 LPX 推論加速器，都是同一股趨勢的產物。
+
+<DeepDive title="深入一點：為什麼 NVIDIA 的毛利率能達到 75%？">
+一般硬體公司很難長期維持七成以上的毛利率，NVIDIA 的 75.0%<Cite k="nv-q2fy27" /> 來自三層優勢疊加。第一是軟體：CUDA 與上層函式庫讓客戶的程式碼、工程師技能都綁在同一個平台上。第二是系統整合：從 GPU、CPU、NVLink 交換器到網卡一起設計，客戶買到的是一台「調校好的 AI 工廠」，而不是一堆零件。第三是稀缺性：在 CoWoS 與 HBM 供不應求時，能拿到最多產能的廠商就掌握定價權。
+
+客製 ASIC 的經濟邏輯正是反過來：雲端業者自己承擔設計風險與軟體投資，換取更低的單位成本，只要規模夠大就值得。因此「NVIDIA 對上 ASIC」不是誰取代誰，而是規模最大的幾家業者走向自研、其他客戶仍以 GPU 為主的雙軌格局。
+</DeepDive>
+
+### 地緣政治：出口管制把市場切成兩半
+
+美國的<Term id="export-controls">出口管制</Term>限制先進 AI 晶片銷往中國。NVIDIA 在 2027 財年第三季財測中，明確表示不計入任何來自中國的資料中心運算營收<Cite k="nv-q2fy27" />。中國則加速自主化：華為的徐直軍在 2025 年 9 月的華為全聯接大會上重申，中國大陸在半導體製程節點上將在相當長一段時間內落後，因此華為改以大量晶片互連的「超節點」彌補單晶片的差距。依當時公布的規劃，Atlas 950 SuperPoD 最多整合 8,192 顆昇騰 950DT、FP8 算力 8 EFLOPS，預定 2026 年第四季上市；昇騰 950PR 則採用華為自研的低成本 HBM，預定 2026 年第一季推出<Cite k="huawei-connect-2025" />。結果是全球 AI 晶片市場愈來愈像兩套平行的生態系：一套以 NVIDIA 與台積電為核心，另一套以華為與中國本土製造為核心。
+
+### 2026–2028 年觀察重點
+
+- **Rubin 放量**：NVIDIA 在 2026 年 8 月的財報中表示 Vera Rubin 已全面量產<Cite k="nv-q2fy27" />，能否兌現「每 Token 成本降低最多 10 倍」的宣稱，將影響推論價格下降的速度。
+- **AMD 的 GW 合約交付**：OpenAI 與 Meta 的首批 MI450 系列部署都排在 2026 年下半年<Cite k="amd-openai" /><Cite k="amd-meta" />，Anthropic 的第一個 GW 則從 2027 年上半年開始<Cite k="amd-anthropic" />。
+- **ASIC 的規模**：Broadcom 的 AI 營收走勢與 Google TPU 對外供應的進展，是衡量客製晶片能分走多少市場的指標（見<TrendLink id="custom-asic-rise">客製化 ASIC 崛起</TrendLink>）。
+- **華為路線圖**：華為規劃一年推出一代、每代算力倍增，昇騰 960 預定 2027 年第四季、昇騰 970 預定 2028 年第四季上市<Cite k="huawei-connect-2025" />。
+- **推論晶片新創的去向**：在 Groq 技術授權與 Cerebras 上市之後，值得觀察是否有更多新創被大廠以收購或授權方式收編（見<TrendLink id="inference-chips-new-paradigms">推論專用晶片與後 GPU 運算範式</TrendLink>）。
+- **<Term id="edge-ai">邊緣 AI</Term>**：手機與 AI PC 內建 NPU 的算力提升，決定有多少推論能從雲端移到裝置上。
+
+</LevelSection>
+
+## 台灣的角色
+
+台灣在這一環的分量，主要來自「製造」與「設計」兩端，再加上下游的伺服器組裝。
+
+**製造：幾乎所有頂尖 AI 晶片都經過台積電。** NVIDIA Blackwell 採用台積電 4NP 製程<Cite k="nv-blackwell" />，Microsoft Maia 200 採用台積電 3 奈米<Cite k="ms-maia200" />，Broadcom 為 Google 開發的 TPU 也透過台積電等代工廠生產<Cite k="tpu-wiki" />。<CompanyChip id="tsmc">台積電</CompanyChip> 2026 年第二季營收 402 億美元，7 奈米及更先進製程佔晶圓營收 77%，其中 3 奈米佔 30%<Cite k="tsmc-q2-2026" />。晶圓製造完成後，還要經過 CoWoS 先進封裝，把運算晶粒與 HBM 並排放在同一片矽中介層（interposer）上，這道工序同樣以台灣為重心（見<SegmentChip id="foundry-packaging" />）。
+
+**設計：從手機 NPU 到雲端 ASIC。** 聯發科在手機 SoC 的 NPU 上與高通並列要角，也跨入資料中心客製晶片；Yole 點名的 AI ASIC 共同開發夥伴中，除了 Broadcom 與 Marvell，就包括台灣的<CompanyChip id="guc">創意</CompanyChip>、<CompanyChip id="alchip">世芯-KY</CompanyChip>與聯發科<Cite k="yole-proc" />。客製晶片需求直接反映在營收上：創意 2026 年 1–9 月累計營收 440.99 億元新台幣，年增 102.8%<Cite k="guc-monthly" />。新創方面，新竹的<CompanyChip id="neuchips">創鑫智慧</CompanyChip>開發企業地端 LLM 推論用的 ASIC 與加速卡<Cite k="neuchips-site" />；總部在美國聖地牙哥、創辦人畢業於成功大學的<CompanyChip id="kneron">耐能智慧</CompanyChip>則專注邊緣 AI 晶片與 NPU<Cite k="kneron-about" />。
+
+**組裝：把晶片變成伺服器。** <CompanyChip id="foxconn">鴻海</CompanyChip>、<CompanyChip id="quanta">廣達</CompanyChip>、<CompanyChip id="wistron">緯創</CompanyChip>等代工廠把加速器、CPU 與交換器組裝成整櫃 AI 伺服器（見<SegmentChip id="servers-systems" />）。
+
+這種高度集中，一方面讓台灣在 AI 供應鏈中難以被取代，另一方面也意味著地緣政治、天災或電力供應的任何變數，都可能牽動全球 AI 晶片的出貨。

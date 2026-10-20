@@ -1,0 +1,223 @@
+---
+/**
+ * 入門／進階／深入 entry cards: each opens the first article of its level (curriculum order) and
+ * previews the next few titles. Driven by src/data/curriculum.yaml, so it works before the learn
+ * articles are written.
+ *   <EntryCards />
+ */
+import Icon from '../ui/Icon.astro';
+import { getCurriculum, LEVELS, type Level } from '../../lib/collections';
+import { learnHref, sectionHref } from '../../lib/paths';
+
+interface Props {
+  headingLevel?: 3 | 4 | undefined;
+}
+const { headingLevel = 3 } = Astro.props;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+
+const BLURB: Record<Level, { promise: string; who: string }> = {
+  1: { promise: '不需要任何背景：AI 是什麼、晶片怎麼做、資料中心長什麼樣子。', who: '適合第一次接觸 AI 產業的讀者' },
+  2: { promise: '打開黑盒子：Transformer、GPU 架構、先進封裝與 HBM 如何運作。', who: '適合想看懂新聞與財報的讀者' },
+  3: { promise: '產業級細節：縮放定律、MoE、EUV 微影、CoWoS 與 AI 資本支出的經濟學。', who: '適合想深入研究產業的讀者' },
+};
+
+const { articles } = getCurriculum();
+const levels = LEVELS.map((lv) => {
+  const list = articles.filter((a) => a.level === lv.level);
+  return { lv, first: list[0], next: list.slice(1, 4), count: list.length };
+});
+---
+
+<ol class="entry" role="list">
+  {
+    levels.map(({ lv, first, next, count }) => (
+      <li class="entry__card" style={`--lv: ${lv.color}`}>
+        <div class="entry__top">
+          <span class="entry__steps" aria-hidden="true">
+            {[1, 2, 3].map((i) => (
+              <span class:list={{ on: i <= lv.level }} />
+            ))}
+          </span>
+          <span class="entry__level">{lv.label}</span>
+          <span class="entry__count">{count} 篇</span>
+        </div>
+        <p class="entry__promise">{BLURB[lv.level].promise}</p>
+        {first ? (
+          <>
+            <p class="entry__first-label">從這篇開始</p>
+            <H class="entry__title">
+              <a class="entry__link" href={learnHref(first.slug)}>
+                {first.title}
+              </a>
+            </H>
+            {next.length > 0 && (
+              <ul class="entry__next" role="list" aria-label={`${lv.label}的下一篇`}>
+                {next.map((a) => (
+                  <li>{a.title}</li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <H class="entry__title">
+            <a class="entry__link" href={sectionHref('learn')}>
+              {lv.label}文章整理中
+            </a>
+          </H>
+        )}
+        <p class="entry__foot">
+          <span>{BLURB[lv.level].who}</span>
+          <Icon name="arrow-right" class="entry__arrow" />
+        </p>
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .entry {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: var(--space-4);
+  }
+  .entry__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--lv) 9%, transparent), transparent 9rem),
+      var(--c-bg-elev);
+    box-shadow: var(--shadow-1);
+    transition:
+      box-shadow var(--dur-2) ease,
+      border-color var(--dur-2) ease,
+      transform var(--dur-2) var(--ease-out);
+  }
+  .entry__card:hover {
+    box-shadow: var(--shadow-2);
+    border-color: color-mix(in srgb, var(--lv) 45%, var(--c-border));
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .entry__card:hover {
+      transform: translateY(-2px);
+    }
+  }
+  .entry__card:has(.entry__link:focus-visible) {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+  .entry__top {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .entry__steps {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    block-size: 1rem;
+  }
+  .entry__steps span {
+    inline-size: 5px;
+    border-radius: 1px;
+    background: color-mix(in srgb, var(--lv) 25%, transparent);
+  }
+  .entry__steps span:nth-child(1) {
+    block-size: 40%;
+  }
+  .entry__steps span:nth-child(2) {
+    block-size: 70%;
+  }
+  .entry__steps span:nth-child(3) {
+    block-size: 100%;
+  }
+  .entry__steps span.on {
+    background: var(--lv);
+  }
+  .entry__level {
+    font-size: var(--fs-l);
+    font-weight: var(--fw-bold);
+    color: var(--lv);
+  }
+  .entry__count {
+    margin-inline-start: auto;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .entry__promise {
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .entry__first-label {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-subtle);
+    margin-block-start: var(--space-1);
+  }
+  .entry__title {
+    font-size: var(--fs-l);
+    line-height: 1.45;
+    margin-block-start: calc(-1 * var(--space-2));
+  }
+  .entry__link {
+    color: var(--c-fg);
+    text-decoration: none;
+  }
+  .entry__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .entry__link:focus-visible {
+    outline: none;
+  }
+  .entry__next {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-1);
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .entry__next li {
+    position: relative;
+    padding-inline-start: 1.1em;
+    line-height: 1.6;
+  }
+  .entry__next li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0.2em;
+    inset-block-start: 0.7em;
+    inline-size: 0.4em;
+    block-size: 0.4em;
+    border-radius: 50%;
+    border: 1.5px solid var(--lv);
+  }
+  .entry__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-block-start: auto;
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--c-border);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .entry__foot :global(.entry__arrow) {
+    color: var(--lv);
+    font-size: 1.3em;
+  }
+</style>

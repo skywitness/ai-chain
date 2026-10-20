@@ -1,0 +1,138 @@
+---
+/** Site footer: section links, about/sources, 資料基準日 and the investment disclaimer. */
+import { NAV_ITEMS, withBase } from '../../lib/paths';
+import { DATA_DATE, DISCLAIMER, SITE_NAME, SITE_NAME_EN } from '../../lib/seo';
+import LogoMark from './LogoMark.astro';
+
+const year = DATA_DATE.slice(0, 4);
+---
+
+<footer class="site-footer" data-pagefind-ignore>
+  <div class="container site-footer__grid">
+    <div class="site-footer__brand">
+      <a class="site-footer__logo" href={withBase('/')}>
+        <LogoMark size="24px" />
+        <span>{SITE_NAME}</span>
+      </a>
+      <p>由淺入深認識 AI 產業鏈：從電力、晶片、伺服器到雲端、模型與應用。</p>
+    </div>
+
+    <nav class="site-footer__nav" aria-label="網站地圖">
+      <h2 class="site-footer__heading">探索</h2>
+      <ul role="list">
+        {NAV_ITEMS.map((item) => <li><a href={withBase(item.path)}>{item.label}</a></li>)}
+      </ul>
+    </nav>
+
+    <nav class="site-footer__nav" aria-label="關於與來源">
+      <h2 class="site-footer__heading">關於</h2>
+      <ul role="list">
+        <li><a href={withBase('/about/')}>關於本站</a></li>
+        <li><a href={withBase('/sources/')}>資料來源與研究方法</a></li>
+      </ul>
+    </nav>
+
+    <div class="site-footer__meta">
+      <p class="site-footer__date">
+        資料基準日 <time datetime={DATA_DATE}>{DATA_DATE}</time>
+      </p>
+      <p class="site-footer__disclaimer">{DISCLAIMER}。</p>
+      <p class="site-footer__fine">
+        數字皆附來源與日期；估計值另行標示。© {year} {SITE_NAME}（{SITE_NAME_EN}）
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  @layer components {
+    .site-footer {
+      margin-block-start: auto;
+      border-block-start: 1px solid var(--c-border);
+      background: var(--c-bg-sunken);
+      color: var(--c-fg-muted);
+      font-size: var(--fs-s);
+      line-height: 1.7;
+    }
+    .site-footer__grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+      padding-block: var(--space-7) var(--space-6);
+    }
+    @media (min-width: 640px) {
+      .site-footer__grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .site-footer__brand,
+      .site-footer__meta {
+        grid-column: 1 / -1;
+      }
+    }
+    @media (min-width: 1000px) {
+      .site-footer__grid {
+        grid-template-columns: 1.4fr 1fr 1fr 1.4fr;
+      }
+      .site-footer__brand,
+      .site-footer__meta {
+        grid-column: auto;
+      }
+    }
+    .site-footer__logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55em;
+      min-height: var(--tap);
+      color: var(--c-fg);
+      font-weight: var(--fw-bold);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+    }
+    .site-footer__brand p {
+      max-width: 24em;
+    }
+    .site-footer__heading {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tracking-wide);
+      color: var(--c-fg-subtle);
+      margin-block-end: var(--space-2);
+    }
+    .site-footer__nav ul {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, max-content));
+      gap: 0 var(--space-5);
+      margin: 0;
+    }
+    .site-footer__nav a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.5rem;
+      color: var(--c-fg-muted);
+      text-decoration: none;
+    }
+    .site-footer__nav a:hover {
+      color: var(--c-link);
+      text-decoration: underline;
+    }
+    .site-footer__meta {
+      display: grid;
+      gap: var(--space-2);
+      align-content: start;
+    }
+    .site-footer__date {
+      color: var(--c-fg);
+      font-weight: var(--fw-semibold);
+      font-variant-numeric: tabular-nums;
+    }
+    .site-footer__disclaimer {
+      color: var(--c-fg);
+      padding-inline-start: var(--space-3);
+      border-inline-start: 3px solid var(--c-warn);
+    }
+    .site-footer__fine {
+      font-size: var(--fs-xs);
+      color: var(--c-fg-subtle);
+    }
+  }
+</style>

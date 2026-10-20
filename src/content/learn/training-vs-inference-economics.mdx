@@ -1,0 +1,358 @@
+---
+title: "訓練與推論的經濟學"
+subtitle: "一次性的大投資，與每天都在跑的帳單：AI 的成本從哪裡來"
+description: "訓練像研發一道招牌菜，是一次性的巨額投入；推論像每天出餐，成本隨使用量累積。本文用 6ND 與 2N 兩個公式估算運算量，說明 GPU 租金、批次與記憶體頻寬如何決定每個 Token 的成本，以及這筆帳如何牽動晶片、雲端與電力。"
+level: 2
+order: 210
+track: infra-business
+prerequisites: [cloud-and-ai-business, gpu-architecture]
+next: [inference-optimization, scaling-laws, ai-capex-economics]
+relatedSegments: [cloud-neocloud, foundation-models, ai-accelerators, memory-storage, devtools-data-mlops, datacenter-infra, energy-power]
+relatedCompanies: [openai, anthropic, meta, deepseek, alphabet, microsoft, nvidia, amd, broadcom, coreweave, lambda, together-ai, groq, fireworks-ai, baseten, sk-hynix, samsung-electronics, micron]
+relatedModels: [meta-muse-llama, deepseek, google-gemini, openai-gpt]
+relatedTrends: [inference-demand, reasoning-test-time-compute, small-models-distillation, inference-chips-new-paradigms, custom-asic-rise, ai-monetization, hyperscaler-capex]
+glossary:
+  - training
+  - inference
+  - token
+  - parameter
+  - flops
+  - gpu
+  - pretraining
+  - mfu
+  - hbm
+  - data-parallelism
+  - tensor-parallelism
+  - all-reduce
+  - gpu-as-a-service
+  - moe
+  - active-parameters
+  - prefill
+  - decode
+  - kv-cache
+  - batching
+  - throughput
+  - latency
+  - memory-wall
+  - inference-engine
+  - gigawatt
+  - arr
+  - scaling-laws
+  - compute-optimal
+  - asic
+  - tpu
+  - post-training
+  - neocloud
+  - hyperscaler
+  - gross-margin
+  - capex
+  - reasoning-model
+  - test-time-compute
+scenes:
+  - id: train-infer
+    variant: training
+keyTakeaways:
+  - "訓練是一次性投資，運算量約 6 × 參數量 × 訓練 Token 數；推論每產生一個 Token 約需 2 × 參數量。"
+  - "Llama 3 405B 預訓練約用 3.8 × 10²⁵ 次運算，與 6ND 公式的估算一致。"
+  - "推論成本高度取決於批次：一次讀取權重服務越多請求，每個 Token 分攤的 GPU 租金就越低。"
+  - "粗估來說，模型上線後處理的 Token 數超過訓練資料的 3 倍，推論累積的運算量就超過訓練。"
+  - "Epoch AI 2025 年的分析：達到同一能力水準的推論價格每年下降 9 到 900 倍，依任務而異。"
+  - "訓練拚規模與同步，推論拚每個 Token 的成本與延遲，因此帶動客製 ASIC、HBM 與推論雲的需求。"
+estimatedMinutes: 16
+sources:
+  - key: eleuther
+    title: "Transformer Math 101"
+    publisher: EleutherAI
+    url: "https://blog.eleuther.ai/transformer-math/"
+    type: other
+    lang: en
+    published: "2023-04-18"
+    accessed: "2026-10-15"
+    note: "訓練運算量 C ≈ 6PD（P 為參數量、D 為 Token 數），其中前向傳播約 2PD、反向傳播約 4PD；混合精度搭配 AdamW 訓練時，權重 2 位元組、梯度 2 位元組、優化器狀態 12 位元組，合計每個參數約 16 位元組（不含啟動值）。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "Meta AI（arXiv）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-15"
+    note: "405B 旗艦模型以 15.6T 個文字 Token 預訓練，用了 3.8 × 10^25 FLOPs；最多以 1.6 萬顆 H100（每顆 700W、80GB HBM3）訓練；BF16 模型運算使用率（MFU）38–43%；54 天的觀察期間有 419 次非預期中斷，GPU 相關問題占 58.7%；有效訓練時間高於 90%。論文說明文中結果皆為 Llama 3.1 模型。"
+  - key: llama31-card
+    title: "Llama 3.1 Model Card"
+    publisher: "Meta（GitHub meta-llama/llama-models）"
+    url: "https://github.com/meta-llama/llama-models/blob/main/models/llama3_1/MODEL_CARD.md"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "訓練共用 3,930 萬 H100-80GB GPU 小時：8B 為 146 萬、70B 為 700 萬、405B 為 3,084 萬；預訓練資料約 15 兆個 Token。"
+  - key: deepseek-v3
+    title: "DeepSeek-V3 Technical Report"
+    publisher: "DeepSeek-AI（arXiv）"
+    url: "https://arxiv.org/abs/2412.19437"
+    type: paper
+    lang: en
+    published: "2024-12-27"
+    accessed: "2026-10-15"
+    note: "MoE 模型，總參數 6,710 億、每個 Token 啟用 370 億；以 14.8 兆個 Token 預訓練；在 2,048 顆 H800 的叢集上訓練，預訓練不到兩個月；完整訓練共 278.8 萬 H800 GPU 小時（預訓練 266.4 萬、上下文延長 11.9 萬、後訓練 0.5 萬）；假設每 GPU 小時租金 2 美元，總成本 557.6 萬美元，不含先前研究與消融實驗的成本。"
+  - key: epoch-train-cost
+    title: "How Much Does It Cost to Train Frontier AI Models?"
+    publisher: Epoch AI
+    url: "https://epoch.ai/publications/how-much-does-it-cost-to-train-frontier-ai-models"
+    type: analyst
+    lang: en
+    published: "2024-06-03"
+    accessed: "2026-10-15"
+    note: "前沿模型最終訓練的攤提硬體與能源成本，自 2016 年起每年成長 2.4 倍（95% 信賴區間 2.0–3.1 倍）；若趨勢延續，最大型訓練到 2027 年將超過 10 億美元；GPT-4、Gemini Ultra 等前沿模型的開發成本中，硬體占 47–67%、研發人員 29–49%（含股權）、能源 2–6%。"
+  - key: epoch-price
+    title: "LLM inference prices have fallen rapidly but unequally across tasks"
+    publisher: Epoch AI
+    url: "https://epoch.ai/data-insights/llm-inference-price-trends"
+    type: analyst
+    lang: en
+    published: "2025-03-12"
+    accessed: "2026-10-15"
+    note: "達到特定效能門檻的最低推論價格，每年下降 9 倍到 900 倍，依門檻而異；例如在博士級科學問題上達到 GPT-4 水準的價格每年下降 40 倍；最快的降幅集中在最近一年，未必能持續。"
+  - key: pope-inference
+    title: "Efficiently Scaling Transformer Inference"
+    publisher: "Pope et al.（arXiv）"
+    url: "https://arxiv.org/abs/2211.05102"
+    type: paper
+    lang: en
+    published: "2022-11-09"
+    accessed: "2026-10-15"
+    note: "在 PaLM 540B 上，低批次生成時每個 Token 延遲 29 毫秒（int8 權重量化）；大批次處理輸入 Token 時模型運算使用率達 76%；支援 2,048 個 Token 的上下文。"
+  - key: vllm
+    title: "Efficient Memory Management for Large Language Model Serving with PagedAttention"
+    publisher: "Kwon et al.（arXiv）"
+    url: "https://arxiv.org/abs/2309.06180"
+    type: paper
+    lang: en
+    published: "2023-09-12"
+    accessed: "2026-10-15"
+    note: "高吞吐量服務需要一次批次處理足夠多的請求；每個請求的 KV Cache 很大，而且會動態增減；vLLM 在相同延遲下把吞吐量提高 2–4 倍。"
+  - key: nvidia-h100
+    title: "NVIDIA H100 Tensor Core GPU"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/h100/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "H100 SXM：BF16 Tensor Core 1,979 TFLOPS（含稀疏加速，稠密約 989 TFLOPS）；80 GB；記憶體頻寬 3.35 TB/s。"
+  - key: lambda-pricing
+    title: "AI cloud pricing"
+    publisher: Lambda
+    url: "https://lambda.ai/pricing"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    archiveUrl: "https://web.archive.org/web/20261006150056/https://lambda.ai/pricing"
+    note: "隨選執行個體（8 顆 GPU 方案）每 GPU 小時：H100 SXM 3.99 美元、B200 SXM6 6.69 美元、A100 SXM 80GB 2.79 美元（未稅）。2026-10-06 的網頁存檔價格相同。"
+  - key: goog-q2-2026
+    title: "Alphabet Announces Second Quarter 2026 Results (Form 8-K Exhibit 99.1)"
+    publisher: Alphabet
+    url: "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm"
+    type: press-release
+    lang: en
+    published: "2026-07-22"
+    accessed: "2026-10-15"
+    note: "Gemini 模型每分鐘處理 220 億個 API Token；Gemini App 每月活躍使用者 9.5 億；Google Cloud 的產品營收主要來自銷售 TPU 系統。"
+  - key: oa-business
+    title: "A business that scales with the value of intelligence"
+    publisher: OpenAI
+    url: "https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/"
+    type: company-site
+    lang: en
+    published: "2026-01-18"
+    accessed: "2026-10-15"
+    archiveUrl: "https://web.archive.org/web/20261001144751/https://openai.com/index/a-business-that-scales-with-the-value-of-intelligence/"
+    note: "財務長 Sarah Friar 署名。可用算力 2023 年 0.2 GW、2024 年 0.6 GW、2025 年約 1.9 GW；年化經常性營收 2023 年 20 億美元、2024 年 60 億美元、2025 年逾 200 億美元；在高階硬體上訓練前沿模型，在較低成本的基礎設施上服務大量工作負載，成本以每百萬 Token 幾美分計。"
+  - key: chinchilla
+    title: "Training Compute-Optimal Large Language Models"
+    publisher: "Hoffmann et al.（arXiv）"
+    url: "https://arxiv.org/abs/2203.15556"
+    type: paper
+    lang: en
+    published: "2022-03-29"
+    accessed: "2026-10-15"
+    note: "訓練逾 400 個模型後發現，模型大小與訓練 Token 數應等比例放大；700 億參數的 Chinchilla 與 2,800 億參數的 Gopher 用相同運算預算、資料多 4 倍，表現全面勝出，而且微調與推論所需運算少得多。"
+  - key: sardana
+    title: "Beyond Chinchilla-Optimal: Accounting for Inference in Language Model Scaling Laws"
+    publisher: "Sardana et al.（arXiv，ICML 2024）"
+    url: "https://arxiv.org/abs/2401.00448"
+    type: paper
+    lang: en
+    published: "2023-12-31"
+    accessed: "2026-10-15"
+    note: "把推論成本納入縮放定律；預期推論需求相當大（約 10 億次請求）時，應訓練比 Chinchilla 最適更小、訓練更久的模型；實驗中每個參數的訓練 Token 數擴大到 10,000，模型品質仍持續提升。"
+  - key: google-cloud-tpu
+    title: "Tensor Processing Units (TPUs)"
+    publisher: Google Cloud
+    url: "https://cloud.google.com/tpu"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "TPU 8t 為大規模預訓練打造，單一 superpod 9,600 顆晶片；TPU 8i 針對後訓練與推論最佳化，在大型 MoE 模型的低延遲推論上每美元效能比前代高 80%；兩者標示為即將推出。"
+  - key: ms-maia200
+    title: "Maia 200: The AI accelerator built for inference"
+    publisher: Microsoft
+    url: "https://blogs.microsoft.com/blog/2026/01/26/maia-200-the-ai-accelerator-built-for-inference/"
+    type: press-release
+    lang: en
+    published: "2026-01-26"
+    accessed: "2026-10-15"
+    note: "專為推論設計，目標是大幅改善 AI Token 生成的經濟效益；每美元效能比微軟機群中最新一代硬體高 30%；216 GB HBM3e、7 TB/s、272 MB 晶片上 SRAM。"
+  - key: openai-broadcom
+    title: "OpenAI and Broadcom announce strategic collaboration to deploy 10 gigawatts of OpenAI-designed AI accelerators"
+    publisher: OpenAI
+    url: "https://openai.com/index/openai-and-broadcom-announce-strategic-collaboration/"
+    type: press-release
+    lang: en
+    published: "2025-10-13"
+    accessed: "2026-10-15"
+    note: "OpenAI 設計加速器與系統，與博通共同開發與部署，共 10 GW；目標 2026 年下半年開始部署，2029 年底前完成。"
+updated: "2026-10-15"
+lastVerified: "2026-10-15"
+editorial:
+  status: fact-checked
+  author: learn-10
+  checkedBy: "learn-10-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：所有數字已於 2026-10-15 對照原始論文、模型卡、Alphabet 8-K、OpenAI、Google Cloud、微軟官方頁面與 Epoch AI；Lambda 價格另以 2026-10-06 網頁存檔確認相同。6ND 驗算、租金粗估、批次成本表與 Token 量比較等換算值已重算。修正 Epoch AI 網址，補上 Llama 3 與 Llama 3.1 的對應、MoE 的記憶體限制、TPU 8t／8i 的上市狀態，並把 OpenAI 營收與算力的關係改為引述公司說法。"
+---
+
+## 一句話解釋
+
+<Term id="training">訓練</Term>是「做出」模型的一次性投資：運算量大約等於 6 × 參數量 × 訓練 Token 數，必須在幾週到幾個月內集中投入成千上萬顆 GPU。<Term id="inference">推論</Term>是「使用」模型的持續成本：每產生一個 <Term id="token">Token</Term> 大約要做 2 × 參數量次運算，用的人越多，帳單就越大。前者像研發費用，後者像每賣出一份商品的成本，兩者需要的硬體與商業邏輯都不一樣。
+
+## 生活化比喻
+
+<Callout type="analogy" title="研發一道招牌菜，與每天出餐">
+
+想像一家連鎖餐廳推出新的招牌菜：
+
+- **訓練像研發菜色**：主廚團隊關在實驗廚房好幾個月，試做上千次、用掉大量食材，最後得到的只是一份食譜（模型的權重）。這筆錢不管之後賣出幾份，都已經花掉了。
+- **推論像每天出餐**：菜單上線後，每來一位客人，廚房就要開火做一份。單份成本不高，但一天賣出幾百萬份，累積起來可能比研發還貴。
+- **一鍋炒十份，比一份一份炒便宜得多**：這就是推論時的批次處理。
+- **預期客人很多時，值得多花研發時間把食譜改得更簡單**：做菜步驟少一點，每份的成本就低一點。這對應到「把小模型訓練得更久」的策略。
+
+</Callout>
+
+## 原理
+
+### 訓練的帳：6ND
+
+EleutherAI 整理的經驗公式是：訓練一個模型的總運算量 C，約等於 6 × 參數量 N × 訓練 Token 數 D。其中前向傳播（讓資料流過模型、算出預測）約占 2ND，反向傳播（算出每個<Term id="parameter">參數</Term>該怎麼調整）約占 4ND<Cite k="eleuther" />。
+
+<MathTeX tex="C \approx 6 N D" display label="訓練運算量約等於 6 乘以參數量乘以訓練 Token 數" />
+
+用 Meta 的 Llama 3 論文驗算（論文中的結果皆屬於 2024 年 7 月發布的 Llama 3.1 系列）：旗艦模型有 4,050 億個參數，以 15.6 兆個 Token <Term id="pretraining">預訓練</Term>。代入公式，6 × 4,050 億 × 15.6 兆 ≈ 3.8 × 10²⁵ 次運算，和論文公布的 3.8 × 10²⁵ <Term id="flops">FLOPs</Term> 一致<Cite k="llama3" />。這個數字有多大？就算一顆 H100 的 16 位元稠密算力每秒約 989 兆次<Cite k="nvidia-h100" />，也要算上 1,200 多年。
+
+所以訓練一定要「人多」。Llama 3 最多同時用了 1.6 萬顆 H100，但並不是每一顆都能全速運轉：衡量實際效率的<Term id="mfu">模型運算使用率（MFU）</Term>為 38–43%<Cite k="llama3" />，也就是峰值算力有一半以上沒有變成有用的訓練運算：GPU 會花時間等資料、等其他 GPU 傳來結果，也要處理矩陣乘法以外的工作。大型叢集也很容易出狀況：在 54 天的觀察期間，Llama 3 的訓練遇到 419 次非預期中斷，其中 58.7% 和 GPU 有關，靠著自動化的故障處理，有效訓練時間才維持在 90% 以上<Cite k="llama3" />。
+
+為什麼一定要切給這麼多 GPU？除了算力，還有記憶體。用常見的混合精度搭配 AdamW 優化器訓練時，每個參數要存權重、梯度與優化器狀態，合計約 16 位元組<Cite k="eleuther" />。4,050 億個參數就是約 6.5 TB，而一顆 H100 只有 80 GB 的 <Term id="hbm">HBM</Term><Cite k="nvidia-h100" />，光是放下這些狀態就要 80 多顆。因此訓練要把資料切給不同 GPU（<Term id="data-parallelism">資料平行</Term>）、把模型本身切開（<Term id="tensor-parallelism">張量平行</Term>），再用 <Term id="all-reduce">All-Reduce</Term> 讓所有 GPU 交換、平均梯度。
+
+<Scene3D id="train-infer" variant="training" caption="訓練視角：小批次資料分給多張 GPU，各自前向傳播、算出損失、反向傳播算梯度，再以環狀 All-Reduce 交換並平均梯度，所有副本做出相同的更新。切換到推論視角，可以看到批次處理、Prefill／Decode 與 KV Cache。GPU 數量與曲線皆為示意。" />
+
+### 把 GPU 時數換成錢
+
+最直接的估算方式是「GPU 時數 × 每小時租金」。DeepSeek 在 DeepSeek-V3 的技術報告中公開了這筆帳：完整訓練用了 278.8 萬個 H800 GPU 小時，以每 GPU 小時 2 美元的租金計算，約 557.6 萬美元；報告也強調，這只是正式訓練那一次的成本，不含先前的研究與實驗<Cite k="deepseek-v3" />。
+
+<StatGrid
+  title="幾個公開的訓練帳"
+  items={[
+    { label: "Llama 3 405B 預訓練運算量", value: "3.8 × 10²⁵", unit: "FLOPs", note: "15.6 兆個 Token" },
+    { label: "Llama 3.1 405B 訓練時數", value: "3,084 萬", unit: "H100 小時", note: "官方模型卡" },
+    { label: "DeepSeek-V3 訓練時數", value: "278.8 萬", unit: "H800 小時", note: "含後訓練" },
+    { label: "DeepSeek-V3 租金估算", value: "557.6 萬", unit: "美元", note: "以每小時 2 美元計" }]}
+  caption="資料來源：Llama 3 論文、Llama 3.1 模型卡、DeepSeek-V3 技術報告。"
+/>
+
+Meta 的模型卡顯示，Llama 3.1 405B 的訓練用了 3,084 萬個 H100 GPU 小時<Cite k="llama31-card" />。若套用 DeepSeek 的 2 美元假設，約 6,200 萬美元；若改用 Lambda 在 2026 年 10 月的 H100 隨選牌價（每 GPU 小時 3.99 美元）<Cite k="lambda-pricing" />，約 1.2 億美元。這兩個數字是本站的粗估，只計算 GPU 租金，用來感受數量級。
+
+真實的開發成本遠不只最後一次訓練。研究機構 Epoch AI 在 2024 年的分析中估計，GPT-4、Gemini Ultra 等前沿模型的開發成本裡，硬體占 47–67%、研發人員占 29–49%、能源只占 2–6%；前沿模型最終訓練的硬體與能源攤提成本，自 2016 年起每年成長約 2.4 倍，並推估若趨勢延續，最大型的訓練在 2027 年將超過 10 億美元<Cite k="epoch-train-cost" />。對模型公司來說，訓練比較像一筆研發投資，或是租用 <Term id="gpu-as-a-service">GPU 算力服務</Term>的大額支出，而不是隨營收增減的成本。
+
+### 推論的帳：每個 Token 都要付錢
+
+推論只需要前向傳播，所以每產生一個 Token，約需 2 × 參數量次運算<Cite k="eleuther" />。這也是 <Term id="moe">MoE</Term>（混合專家）架構在經濟上的意義：DeepSeek-V3 總共有 6,710 億個參數，但每個 Token 只啟用其中 370 億個<Cite k="deepseek-v3" />。以<Term id="active-parameters">啟用參數</Term>計算，每個 Token 約 740 億次運算，只有同樣大小稠密模型的 18 分之 1 左右。不過，全部 6,710 億個參數仍要放在記憶體裡，所以 MoE 省下的是運算量，而不是記憶體容量。
+
+推論又分成兩個階段。<Term id="prefill">Prefill</Term> 一次讀完整段提示詞，可以大量平行計算，屬於「算力受限」；Google 研究者在 5,400 億參數的 PaLM 上，大批次處理輸入時的運算使用率達 76%<Cite k="pope-inference" />。<Term id="decode">Decode</Term> 則是一個 Token 接一個 Token 產生，每一步都得把權重從記憶體讀一遍；同一篇研究在小批次生成時，把每個 Token 的延遲壓到 29 毫秒，用的方法之一正是把權重量化成 8 位元整數，減少每一步要讀的資料量<Cite k="pope-inference" />。<LearnLink id="gpu-architecture">GPU 與 AI 加速器架構</LearnLink>提到的<Term id="memory-wall">記憶體牆</Term>，在 Decode 階段最明顯。
+
+推論的成本可以用一個簡單的公式表示：每百萬個 Token 的成本 c，等於 GPU 每小時成本 p，除以每小時能產生的 Token 數，再乘以一百萬（r 是每秒產生的 Token 數）。
+
+<MathTeX tex="c = p / (3600 \times r) \times 10^6" display label="每百萬 Token 成本等於每小時 GPU 成本除以每小時產生的 Token 數，再乘以一百萬" />
+
+關鍵在 r。以 80 億參數的 Llama 3.1 8B 為例，用 16 位元儲存時權重約 16 GB；放在記憶體頻寬每秒 3.35 TB 的 H100 上<Cite k="nvidia-h100" />，讀一遍權重約需 4.8 毫秒。<Term id="batching">批次處理</Term>讓讀一次權重就能同時替許多請求各產生一個 Token，於是：
+
+| 同時處理的請求數 | 每秒產生的 Token 數（理想上限） | 每百萬 Token 的 GPU 租金 |
+|---|---|---|
+| 1 | 約 210 | 約 5.3 美元 |
+| 8 | 約 1,680 | 約 0.66 美元 |
+| 64 | 約 13,400 | 約 0.08 美元 |
+
+這張表是本站以 H100 頻寬規格與 Lambda 每小時 3.99 美元的隨選價格<Cite k="lambda-pricing" />推算的理想化示意，沒有計入 KV Cache 讀取、注意力運算與排程開銷，實際<Term id="throughput">吞吐量</Term>會更低。但方向很清楚：同一張 GPU、同一個模型，批次越大，每個 Token 的成本就越低。vLLM 的論文也指出，高吞吐量的服務必須一次批次處理足夠多的請求；難處在於每個請求的 <Term id="kv-cache">KV Cache</Term> 都很大，而且會隨對話長度動態增減。vLLM 改善記憶體管理後，在相同延遲下把吞吐量提高 2–4 倍<Cite k="vllm" />。這類<Term id="inference-engine">推論引擎</Term>軟體，直接決定了推論業者的毛利。
+
+不過批次不能無限加大。批次越大，每位使用者等下一個字的時間通常越長，也就是<Term id="latency">延遲</Term>變差。推論的經濟學，就是在成本、吞吐量與延遲之間找平衡。
+
+### 推論什麼時候超過訓練？
+
+把兩個公式擺在一起，可以算出一個有趣的交叉點：
+
+<MathTeX tex="6ND = 2NT \Rightarrow T = 3D" display label="當推論處理的 Token 數 T 等於訓練 Token 數 D 的 3 倍時，推論累積的運算量就等於訓練" />
+
+也就是說，一個稠密模型在上線後處理的 Token 數，只要超過訓練資料的 3 倍，推論花掉的運算就超過訓練。以 Llama 3 405B 為例，門檻約是 47 兆個 Token。這個量大嗎？Alphabet 在 2026 年 7 月公布的第二季財報中表示，Gemini 模型每分鐘處理 220 億個 API Token<Cite k="goog-q2-2026" />，換算每天約 31.7 兆個，大約 1.5 天就會處理 47 兆個 Token。兩者是不同的模型，這裡只是比較 Token 的數量級：一個熱門模型上線服務幾個月，推論累積的運算量很容易遠遠超過當初的訓練。
+
+推論量這麼大，算力多寡也就直接限制了模型公司能賣出多少服務。OpenAI 財務長 Sarah Friar 在 2026 年 1 月撰文指出，公司營收與可用算力幾乎同步成長：可用算力從 2023 年的 0.2 <Term id="gigawatt">GW</Term> 增加到 2025 年約 1.9 GW，<Term id="arr">年化經常性營收</Term>則從 20 億美元成長到逾 200 億美元<Cite k="oa-business" />。下圖把兩者換算成以 2023 年為 1 的倍數（數字皆為 OpenAI 自行公布）：
+
+<LineChart
+  title="OpenAI 的算力與營收（以 2023 年為 1）"
+  unit="倍"
+  series={[
+    { name: "可用算力", points: [{ x: "2023", y: 1 }, { x: "2024", y: 3 }, { x: "2025", y: 9.5 }] },
+    { name: "年化經常性營收", points: [{ x: "2023", y: 1 }, { x: "2024", y: 3 }, { x: "2025", y: 10 }] }]}
+  source="oa-business"
+  note="本站以 OpenAI 公布的數字換算：算力 0.2、0.6、約 1.9 GW；年化營收 20 億、60 億、逾 200 億美元。"
+/>
+
+同一篇文章也描述了他們的分工：在高階硬體上訓練前沿模型，在成本較低的基礎設施上服務大量的推論工作，讓成本降到每百萬 Token 只要幾美分<Cite k="oa-business" />。
+
+### 價格一路往下掉
+
+推論的單價下降得非常快。Epoch AI 追蹤多項評測後發現，要達到某個固定的能力水準，最便宜的推論價格每年下降 9 倍到 900 倍，依任務而異；例如在博士級科學問題上達到 GPT-4 水準的價格，每年下降約 40 倍。不過最快的降幅集中在最近一年，未必能一直持續<Cite k="epoch-price" />。
+
+降價來自三個方向：硬體（更低精度的運算格式、更大更快的 HBM）、軟體（更好的批次與 KV Cache 管理），以及模型本身（MoE、較小但訓練更久的模型）。但單價下降不代表總帳單變小：<Term id="reasoning-model">推理模型</Term>會先產生大量思考用的 Token 才給出答案，這種<Term id="test-time-compute">推論時運算</Term>讓每個問題消耗的 Token 數大增，詳見<LearnLink id="reasoning-models">推理模型</LearnLink>。
+
+### 訓練與推論，需要不同的硬體
+
+<Compare
+  title="訓練與推論的差異"
+  left={{ title: "訓練", items: ["一次性投入，集中在數週到數月內完成", "運算量約 6 × 參數量 × 訓練 Token 數", "數千到數萬顆 GPU 必須同步，網路與穩定性是關鍵", "每個參數要存權重、梯度與優化器狀態，約 16 位元組", "追求整體吞吐量與運算使用率"] }}
+  right={{ title: "推論", items: ["上線後持續發生，成本隨使用量累積", "每個 Token 約 2 × 參數量（MoE 只算啟用參數）", "可以分散在各地機房，延遲直接影響使用者體驗", "記憶體主要放權重與 KV Cache，Decode 受頻寬限制", "追求每個 Token 的成本、延遲與每瓦效能"] }}
+/>
+
+需求不同，晶片也開始分家。Google 第八代 <Term id="tpu">TPU</Term> 分成兩款：8t 為大規模預訓練打造，單一 superpod 有 9,600 顆晶片；8i 則針對<Term id="post-training">後訓練</Term>與推論最佳化，Google 表示它在大型 MoE 模型的低延遲推論上，每美元效能比前代高 80%；截至 2026 年 10 月，兩款在 Google Cloud 網站上仍標示為即將推出<Cite k="google-cloud-tpu" />。微軟的 Maia 200 是專為推論打造的 <Term id="asic">ASIC</Term>，微軟稱它的每美元效能比自家機群中最新一代硬體高 30%<Cite k="ms-maia200" />。
+
+衡量推論硬體的標準，最後都會回到「每個 Token 的成本」。以 Lambda 的隨選價格為例，B200 每 GPU 小時 6.69 美元，比 H100 的 3.99 美元貴<Cite k="lambda-pricing" />；新晶片每小時比較貴，只要每小時產生的 Token 夠多，每個 Token 反而可能更便宜。
+
+<DeepDive title="深入一點：為什麼要把小模型訓練得更久？">
+
+把訓練與推論合起來看，一個模型一生的總運算量約為：
+
+<MathTeX tex="C \approx 6ND + 2NT" display label="總運算量約等於訓練的 6ND 加上推論的 2NT" />
+
+2022 年的 Chinchilla 研究訓練了 400 多個模型，結論是：在固定的訓練預算下，參數量與訓練 Token 數應該等比例放大。依此訓練的 700 億參數 Chinchilla，用和 2,800 億參數 Gopher 相同的運算預算、多 4 倍的資料，表現全面勝出，而且因為模型小，微調與推論都便宜得多<Cite k="chinchilla" />。這就是<Term id="compute-optimal">運算最適化</Term>的概念，也是<Term id="scaling-laws">縮放定律</Term>最常被引用的結果之一。
+
+但 Chinchilla 只最小化公式的第一項。如果預期推論量 T 很大，第二項 2NT 會主導總成本，這時比較省錢的做法是縮小 N、加大 D：多花一點訓練運算，換來之後每個 Token 都更便宜。Sardana 等人把推論成本納入縮放定律後發現，預期推論需求相當大（例如約 10 億次請求）時，就應該訓練比 Chinchilla 最適更小、訓練更久的模型；他們的實驗把每個參數的訓練 Token 數拉到 10,000，模型品質仍在提升<Cite k="sardana" />。
+
+實際的例子是 Llama 3.1 8B：只有 80 億個參數，卻用了約 15 兆個 Token 訓練<Cite k="llama31-card" />，換算每個參數約 1,900 個 Token，遠多於 Chinchilla 的配置。小模型、大資料，正是為了讓推論更便宜。更進一步的技巧，例如量化、推測解碼與分離式推論，見<LearnLink id="inference-optimization">推論最佳化</LearnLink>；縮放定律的細節見<LearnLink id="scaling-laws">縮放定律與運算最適化</LearnLink>。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+訓練與推論的帳，決定了錢往產業鏈的哪裡流：
+
+- **訓練帶動「大而集中」的需求** → <SegmentChip id="ai-accelerators" />、<SegmentChip id="networking-optics" />、<SegmentChip id="datacenter-infra" />、<SegmentChip id="energy-power" />：上萬顆 GPU 必須擠在同一個園區同步運作，需要 <CompanyChip id="nvidia" />、<CompanyChip id="amd" /> 的加速器、高速網路，以及 GW 等級的電力與液冷。OpenAI 2025 年的可用算力已達約 1.9 GW<Cite k="oa-business" />。
+- **推論帶動「便宜而分散」的需求** → <SegmentChip id="ai-accelerators" />、<SegmentChip id="memory-storage" />：追求每個 Token 的成本，讓雲端業者自研晶片更有吸引力，例如 <CompanyChip id="alphabet" /> 的 TPU 8i、<CompanyChip id="microsoft" /> 的 Maia 200，以及 <CompanyChip id="openai" /> 與 <CompanyChip id="broadcom" /> 合作、規模 10 GW 的自研加速器<Cite k="openai-broadcom" />。Alphabet 也在財報中說明，Google Cloud 的產品營收主要來自銷售 TPU 系統<Cite k="goog-q2-2026" />。Decode 受記憶體頻寬限制，則讓 <CompanyChip id="sk-hynix" />、<CompanyChip id="samsung-electronics" />、<CompanyChip id="micron" /> 的 HBM 更加關鍵。延伸閱讀：<TrendLink id="custom-asic-rise">客製化 ASIC 崛起</TrendLink>、<TrendLink id="inference-chips-new-paradigms">推論專用晶片</TrendLink>。
+- **雲端與推論平台** → <SegmentChip id="cloud-neocloud" />、<SegmentChip id="devtools-data-mlops" />：<Term id="hyperscaler">超大規模業者</Term>與 <CompanyChip id="coreweave" />、<CompanyChip id="lambda" /> 等<Term id="neocloud">新雲</Term>按 GPU 小時出租算力；<CompanyChip id="together-ai" />、<CompanyChip id="groq" />、<CompanyChip id="fireworks-ai" />、<CompanyChip id="baseten" /> 等推論平台則按 Token 收費，靠批次處理與推論引擎把成本壓低，賺取中間的差價。
+- **模型公司** → <SegmentChip id="foundation-models" />：對 <CompanyChip id="openai" />、<CompanyChip id="anthropic" />、<CompanyChip id="deepseek" /> 這些按用量或訂閱收費的模型公司來說，訓練像研發投資，推論則接近銷貨成本，直接決定<Term id="gross-margin">毛利率</Term>；<CompanyChip id="meta" /> 在自家產品中提供 AI 功能，同樣要負擔龐大的推論成本。推論量越大，越需要預先簽下長期算力合約，推升整條產業鏈的<Term id="capex">資本支出</Term>。延伸閱讀：<LearnLink id="ai-capex-economics">AI 資本支出與雲端經濟學</LearnLink>、<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>、<TrendLink id="ai-monetization">AI 營收化</TrendLink>、<TrendLink id="reasoning-test-time-compute">推理模型與推論時運算</TrendLink>、<TrendLink id="small-models-distillation">小模型與蒸餾</TrendLink>、<TrendLink id="hyperscaler-capex">超大規模業者的 AI 資本支出</TrendLink>。

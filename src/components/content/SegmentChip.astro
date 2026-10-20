@@ -1,0 +1,25 @@
+---
+/**
+ * Segment link chip with the segment colour.  <SegmentChip id="foundry-packaging" />
+ * Default text is the full segment title; `short` uses the compact label (「代工封裝」).
+ */
+import { layerMeta, segmentMeta } from '../../lib/collections';
+import { segmentHref } from '../../lib/paths';
+import Chip from './Chip.astro';
+
+interface Props {
+  id: string;
+  short?: boolean | undefined;
+}
+const { id, short = false } = Astro.props;
+const seg = segmentMeta(id);
+if (!seg && import.meta.env.DEV) console.warn(`[SegmentChip] unknown segment id "${id}" on ${Astro.url.pathname}`);
+const layer = seg ? layerMeta(seg.layer) : undefined;
+const hasSlot = Astro.slots.has('default');
+---
+
+<Chip
+  kind="segment"
+  href={seg ? segmentHref(id) : undefined}
+  color={seg?.color}
+  title={seg ? `產業鏈第 ${seg.order} 環 · ${layer?.title ?? ''}` : undefined}>{hasSlot ? <slot /> : seg ? (short ? seg.short : seg.title) : id}</Chip>

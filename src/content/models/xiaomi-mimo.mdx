@@ -1,0 +1,431 @@
+---
+title: "小米 MiMo 系列"
+family: "MiMo"
+kind: llm
+lab: xiaomi
+labName: "小米 MiMo 團隊"
+origin: CN
+summary: "小米自研的大型語言模型家族。2025 年 4 月以 70 億參數的推理模型 MiMo-7B 起步，2025 年 12 月的 MiMo-V2-Flash 轉向大型 MoE，2026 年再推出兆級參數的 V2-Pro、V2.5-Pro 與 V2.6 系列。2026-09-21 以 MIT 授權開放的 MiMo-V2.6-Pro 在 Artificial Analysis 智慧指數拿下 46.3 分，是 2026-10-06 榜上分數最高的開放權重模型，API 價格每百萬 tokens 輸入 0.435、輸出 0.87 美元。"
+strengths:
+  - "開放權重的第一梯隊：MiMo-V2.6-Pro 在 AA 智慧指數 v4.3.2 為 46.3 分（2026-10-06），高於 Qwen3.8-Max 的 45.4 分；AA 自測 HLE 49.4%。"
+  - "價格極低：V2.6-Pro 每百萬 tokens 輸入 0.435、輸出 0.87 美元，快取命中輸入僅 0.0036 美元；AA 估算每題智慧指數任務平均成本約 0.13 美元。"
+  - "授權寬鬆、公開程度高：除 V2-Pro、V2-Omni 等少數封閉版本外，主力模型都以 MIT 授權開放權重並附 Base 模型；V2.6 另公開技術報告、RL 訓練環境與程式碼。"
+  - "原生全模態與長上下文：V2.6 單一模型可理解文字、圖片、影片與音訊，上下文 100 萬 tokens。"
+weaknesses:
+  - "版本汰換極快：V2-Pro、V2-Omni、V2-Flash 上市僅約 3 到 7 個月就於 2026-06-30 停用；V2.5 與 V2.5-Pro 將於 2026-10-21 停用，屆時原模型名稱失效。"
+  - "推論速度偏慢：AA 測得 V2.6-Pro 每秒約 47 tokens；官方另以 10 倍價格提供最快 20 倍的 UltraSpeed 版本。"
+  - "原廠表格中，Terminal-Bench 4.0（34.9%）與 ExploitBench（47.9%）等項目仍明顯落後 Claude Opus 5（49.0%、70.0%）。"
+  - "兆級參數的 Pro 版自行部署門檻高；Arena 文字榜上 V2.6-Pro 只有約 4,000 票，名次區間寬。"
+bestFor:
+  - "成本敏感、需要大量呼叫的 Agent 與程式開發工作流程"
+  - "需要可商用、可微調開放權重（MIT）的企業與研究單位"
+  - "長文件、大型程式碼庫與上千輪工具呼叫的長任務"
+  - "結合圖片、影片、音訊理解的多模態應用"
+positioning:
+  capability: 46
+  costIndex: 31
+  openness: 0.8
+  method: computed
+  asOf: "2026-10-06"
+  note: "以旗艦 MiMo-V2.6-Pro 計算。capability 取 Artificial Analysis 智慧指數 v4.3.2 的 46.3 分（推理模式，2026-10-06）。costIndex 以小米官方海外定價（輸入 0.435、輸出 0.87 美元／百萬 tokens）按 3:1 混合為 0.544 美元，再依 0.05 美元 → 0、100 美元 → 100 的對數尺度換算得 31.4，取 31。openness 0.8：MIT 授權開放權重，並公開技術報告與 RL 訓練程式，但預訓練資料未公開。"
+versions:
+  - id: mimo-7b
+    name: "MiMo-7B"
+    released: "2025-04-30"
+    status: ga
+    tier: small
+    weights: open-weights
+    license: "MIT"
+    architecture: dense
+    params: { totalB: 7, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    reasoning: always
+    availability: [self-host]
+    notes: "小米第一個開源語言模型，專攻數學與程式推理：Base 以約 25 兆 tokens 預訓練，RL 版再以 13 萬題數學與程式題做強化學習。2025-05-30 推出 RL-0530 更新與視覺語言版 MiMo-VL-7B。"
+  - id: mimo-v2-flash
+    name: "MiMo-V2-Flash"
+    released: "2025-12-16"
+    status: retired
+    tier: mid
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 309, activeB: 15, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    reasoning: hybrid
+    availability: [self-host]
+    benchmarks:
+      - benchmark: swe-bench-verified
+        score: 73.4
+        setting: "初版，非思考模式"
+        reportedBy: lab
+        date: "2025-12-16"
+        source: { title: "XiaomiMiMo/MiMo-V2-Flash model card", publisher: "Hugging Face (Xiaomi MiMo)", url: "https://huggingface.co/XiaomiMiMo/MiMo-V2-Flash", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: swe-bench-verified
+        score: 78.6
+        setting: "2026-02-04 更新版，思考模式"
+        reportedBy: lab
+        date: "2026-02-04"
+        source: { title: "Xiaomi MiMo Model Release log", publisher: "Xiaomi MiMo API Open Platform", url: "https://mimo.mi.com/static/docs/updates/model.md", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: gpqa-diamond
+        score: 83.7
+        reportedBy: lab
+        date: "2025-12-16"
+        source: { title: "XiaomiMiMo/MiMo-V2-Flash model card", publisher: "Hugging Face (Xiaomi MiMo)", url: "https://huggingface.co/XiaomiMiMo/MiMo-V2-Flash", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: aime-2025
+        score: 94.1
+        reportedBy: lab
+        date: "2025-12-16"
+        source: { title: "XiaomiMiMo/MiMo-V2-Flash model card", publisher: "Hugging Face (Xiaomi MiMo)", url: "https://huggingface.co/XiaomiMiMo/MiMo-V2-Flash", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1387
+        setting: "mimo-v2-flash（thinking）；±6；第 180 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "混合注意力（全域：滑動視窗 1:5，視窗 128 tokens）加 3 層 MTP，官方稱實測加速 2.5 至 3.7 倍；以 27 兆 tokens、FP8 混合精度預訓練。上市 API 價每百萬 tokens 輸入 0.1、輸出 0.3 美元。2026-01-12、02-04 兩度更新。API 自 2026-06-18 起自動轉送至 mimo-v2.5，2026-06-30 停用；權重仍可在 Hugging Face 下載。"
+  - id: mimo-v2-pro
+    name: "MiMo-V2-Pro"
+    released: "2026-03-18"
+    status: retired
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: moe
+    params: { totalB: 1000, activeB: 42, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 1000000
+    reasoning: hybrid
+    availability: [api]
+    benchmarks:
+      - benchmark: lmarena-text
+        score: 1448
+        setting: "±5；第 83 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "總參數逾 1 兆、啟用 420 億，全域與滑動視窗注意力的比例提高到 1:7，支援 100 萬 tokens。上線前以代號 Hunter Alpha 匿名出現在 OpenRouter。同日發表全模態的 MiMo-V2-Omni（256K 上下文）與語音合成 MiMo-V2-TTS。三者皆為封閉模型，2026-06 起分別自動轉送至 V2.5 系列，2026-06-30 停用。"
+  - id: mimo-v2-5-pro
+    name: "MiMo-V2.5-Pro"
+    released: "2026-04-23"
+    status: deprecated
+    tier: flagship
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 1020, activeB: 42, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 1000000
+    reasoning: hybrid
+    availability: [api, self-host]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.435
+        outputPerMTok: 0.87
+        cachedInputPerMTok: 0.0036
+        currency: USD
+        tierNote: "海外即時 API；與 mimo-v2.6-pro 同價。2026-10-21 停用。"
+        source: { title: "Xiaomi MiMo API Pricing (Pay-As-You-Go)", publisher: "Xiaomi MiMo API Open Platform", url: "https://mimo.mi.com/static/docs/price/pay-as-you-go.md", type: docs, lang: en, accessed: "2026-10-06" }
+    benchmarks:
+      - benchmark: terminal-bench
+        score: 65.2
+        setting: "Terminal-Bench 2.1（引自 V2.6 模型卡對照欄）"
+        reportedBy: lab
+        date: "2026-09-21"
+        source: { title: "XiaomiMiMo/MiMo-V2.6-Pro-RL model card", publisher: "Hugging Face (Xiaomi MiMo)", url: "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1468
+        setting: "±4；第 49 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "2026-04-23 開放公測，4 月底以 MIT 授權開源（含 Base 模型）。混合注意力（滑動視窗：全域 6:1、視窗 128），KV 快取約縮小 7 倍；以 27 兆 tokens、FP8 預訓練，後訓練採 SFT、大規模 Agent RL 與多教師線上蒸餾（MOPD）。2026-05-27 起 API 永久降價，最多降 99%。官方公告 2026-10-21 停用，後繼為 MiMo-V2.6-Pro。"
+  - id: mimo-v2-5
+    name: "MiMo-V2.5"
+    released: "2026-04-23"
+    status: deprecated
+    tier: mid
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 310, activeB: 15, disclosed: true }
+    modalitiesIn: [text, image, video, audio]
+    modalitiesOut: [text]
+    contextTokens: 1000000
+    reasoning: hybrid
+    availability: [api, self-host]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.14
+        outputPerMTok: 0.28
+        cachedInputPerMTok: 0.0028
+        currency: USD
+        tierNote: "海外即時 API；與 mimo-v2.6-flash 同價。2026-10-21 停用。"
+        source: { title: "Xiaomi MiMo API Pricing (Pay-As-You-Go)", publisher: "Xiaomi MiMo API Open Platform", url: "https://mimo.mi.com/static/docs/price/pay-as-you-go.md", type: docs, lang: en, accessed: "2026-10-06" }
+    notes: "原生全模態 Agent 模型，可理解圖片、影片、音訊與文字；2026-06 起舊的 mimo-v2-omni 與 mimo-v2-flash 請求自動轉送至此。官方公告 2026-10-21 停用。"
+  - id: mimo-v2-6-pro
+    name: "MiMo-V2.6-Pro"
+    released: "2026-09-21"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 1020, activeB: 42, disclosed: true }
+    modalitiesIn: [text, image, video, audio]
+    modalitiesOut: [text]
+    contextTokens: 1000000
+    reasoning: hybrid
+    availability: [api, chat-app, self-host]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.435
+        outputPerMTok: 0.87
+        cachedInputPerMTok: 0.0036
+        currency: USD
+        tierNote: "海外即時 API；Batch API 半價（0.2175／0.435 美元）。另有 mimo-v2.6-pro-ultraspeed 為 4.35／8.7 美元。"
+        source: { title: "Xiaomi MiMo API Pricing (Pay-As-You-Go)", publisher: "Xiaomi MiMo API Open Platform", url: "https://mimo.mi.com/static/docs/price/pay-as-you-go.md", type: docs, lang: en, accessed: "2026-10-06" }
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 46.3
+        setting: "推理模式；AA 智慧指數 v4.3.2；開放權重模型最高分"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "MiMo-V2.6-Pro - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/mimo-v2-6-pro", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: hle
+        score: 49.4
+        setting: "AA 自行測試"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "MiMo-V2.6-Pro - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/mimo-v2-6-pro", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: terminal-bench
+        score: 34.8
+        setting: "Terminal-Bench 4.0，AA 自行測試"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "MiMo-V2.6-Pro - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/mimo-v2-6-pro", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: terminal-bench
+        score: 89.9
+        setting: "Terminal-Bench 2.1，原廠自評"
+        reportedBy: lab
+        date: "2026-09-21"
+        source: { title: "XiaomiMiMo/MiMo-V2.6-Pro-RL model card", publisher: "Hugging Face (Xiaomi MiMo)", url: "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: osworld
+        score: 82.0
+        setting: "OSWorld-Verified"
+        reportedBy: lab
+        date: "2026-09-21"
+        source: { title: "XiaomiMiMo/MiMo-V2.6-Pro-RL model card", publisher: "Hugging Face (Xiaomi MiMo)", url: "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1480
+        setting: "±9；第 26 名（排名區間 10–50，共 413 個模型）；約 4,056 票"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "V2.6 系列旗艦，Hugging Face 權重名為 MiMo-V2.6-Pro-RL，平台 API 於 2026-09-22 上架。70 層（60 層滑動視窗、10 層全域注意力），384 個路由專家、每 token 啟用 8 個；6.81 億參數視覺編碼器與音訊編碼器；5 層 MTP 草稿模型一次預測 7 個 token。後訓練以單一混合 RL 涵蓋程式、通用 Agent、視覺與資安任務。"
+  - id: mimo-v2-6-flash
+    name: "MiMo-V2.6-Flash"
+    released: "2026-09-21"
+    status: ga
+    tier: mid
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 309, activeB: 15, disclosed: true }
+    modalitiesIn: [text, image, video, audio]
+    modalitiesOut: [text]
+    contextTokens: 1000000
+    reasoning: hybrid
+    availability: [api, chat-app, self-host]
+    pricing:
+      - asOf: "2026-10-06"
+        inputPerMTok: 0.14
+        outputPerMTok: 0.28
+        cachedInputPerMTok: 0.0028
+        currency: USD
+        tierNote: "海外即時 API；Batch API 半價（0.07／0.14 美元）。"
+        source: { title: "Xiaomi MiMo API Pricing (Pay-As-You-Go)", publisher: "Xiaomi MiMo API Open Platform", url: "https://mimo.mi.com/static/docs/price/pay-as-you-go.md", type: docs, lang: en, accessed: "2026-10-06" }
+    benchmarks:
+      - benchmark: aa-intelligence-index
+        score: 37.9
+        setting: "推理模式；AA 智慧指數 v4.3.2"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "MiMo-V2.6-Flash - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/mimo-v2-6-flash", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: hle
+        score: 35.1
+        setting: "AA 自行測試"
+        reportedBy: third-party
+        date: "2026-10-06"
+        source: { title: "MiMo-V2.6-Flash - Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/mimo-v2-6-flash", type: leaderboard, lang: en, accessed: "2026-10-06" }
+      - benchmark: osworld
+        score: 80.8
+        setting: "OSWorld-Verified"
+        reportedBy: lab
+        date: "2026-09-21"
+        source: { title: "XiaomiMiMo/MiMo-V2.6-Flash-RL model card", publisher: "Hugging Face (Xiaomi MiMo)", url: "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Flash-RL", type: docs, lang: en, accessed: "2026-10-06" }
+      - benchmark: lmarena-text
+        score: 1452
+        setting: "±8；第 77 名（共 413 個模型）"
+        reportedBy: leaderboard
+        date: "2026-10-02"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
+    notes: "與 Pro 共用架構設計的較小版本，官方稱整體已超越 MiMo-V2.5-Pro。小米另在 Hugging Face 釋出以 Qwen 9B 為底的蒸餾模型 MiMo-V2.6-Distill-Qwen-9B。"
+flagshipVersion: mimo-v2-6-pro
+relatedLearn: [open-vs-closed-models, mixture-of-experts, reasoning-models, post-training-deep, model-evaluation, agents-and-mcp]
+glossary: [moe, open-weights, kv-cache, speculative-decoding, grpo, agent, benchmark, elo-rating]
+sources:
+  - key: wiki-mimo
+    title: "Xiaomi MiMo"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Xiaomi_MiMo"
+    type: other
+    lang: en
+    accessed: "2026-10-06"
+    note: "版本時間軸，引用 Reuters、Digitimes、SCMP 等報導與 arXiv 技術報告"
+  - key: v26-blog
+    title: "MiMo-V2.6: Scaling Up Reinforcement Learning for Self-Improvement"
+    publisher: "Xiaomi MiMo"
+    url: "https://mimo.mi.com/static/docs/news/latest/v2-6.md"
+    type: press-release
+    lang: en
+    published: "2026-09-21"
+    accessed: "2026-10-06"
+    note: "官方部落格頁面另見 https://mimo.xiaomi.com/mimo-v2-6"
+  - key: hf-v26pro
+    title: "XiaomiMiMo/MiMo-V2.6-Pro-RL"
+    publisher: "Hugging Face (Xiaomi MiMo)"
+    url: "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL"
+    type: docs
+    lang: en
+    published: "2026-09-21"
+    accessed: "2026-10-06"
+  - key: hf-v25pro
+    title: "XiaomiMiMo/MiMo-V2.5-Pro"
+    publisher: "Hugging Face (Xiaomi MiMo)"
+    url: "https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: hf-mimo-org
+    title: "XiaomiMiMo on Hugging Face"
+    publisher: "Hugging Face (Xiaomi MiMo)"
+    url: "https://huggingface.co/XiaomiMiMo"
+    type: company-site
+    lang: en
+    accessed: "2026-10-06"
+  - key: v2flash-news
+    title: "MiMo-V2-Flash: High-Efficiency Inference, Code & Agent Foundation Model"
+    publisher: "Xiaomi MiMo"
+    url: "https://mimo.mi.com/static/docs/news/previous-news/news20251216.md"
+    type: press-release
+    lang: en
+    published: "2025-12-16"
+    accessed: "2026-10-06"
+  - key: v25-open
+    title: "Xiaomi MiMo-V2.5 series open-sourced & Orbit 100 trillion token plan launched"
+    publisher: "Xiaomi MiMo"
+    url: "https://mimo.mi.com/static/docs/news/latest/v2.5-open-sourced.md"
+    type: press-release
+    lang: en
+    accessed: "2026-10-06"
+  - key: mimo-price-cut
+    title: "MiMo-V2.5 Series Price Adjustment Announcement"
+    publisher: "Xiaomi MiMo"
+    url: "https://mimo.mi.com/static/docs/news/latest/v2.5-price-update.md"
+    type: press-release
+    lang: en
+    accessed: "2026-10-06"
+  - key: mimo-pricing
+    title: "Xiaomi MiMo API Pricing (Pay-As-You-Go)"
+    publisher: "Xiaomi MiMo API Open Platform"
+    url: "https://mimo.mi.com/static/docs/price/pay-as-you-go.md"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: mimo-release-log
+    title: "Xiaomi MiMo Model Release log"
+    publisher: "Xiaomi MiMo API Open Platform"
+    url: "https://mimo.mi.com/static/docs/updates/model.md"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: mimo-deprecate
+    title: "Xiaomi MiMo Model Deprecation"
+    publisher: "Xiaomi MiMo API Open Platform"
+    url: "https://mimo.mi.com/static/docs/updates/deprecate.md"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+  - key: aa-v26pro
+    title: "MiMo-V2.6-Pro - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/mimo-v2-6-pro"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+  - key: aa-lb
+    title: "LLM Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+  - key: arena-text
+    title: "Text Arena Leaderboard"
+    publisher: "Arena (LMArena)"
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    accessed: "2026-10-06"
+    note: "lmarena.ai 轉址至 arena.ai；榜單標示 2026-10-02 更新，413 個模型、8,626,731 票"
+lastVerified: "2026-10-06"
+editorial:
+  status: fact-checked
+  author: models-10
+  checkedBy: "models-10-check"
+  checkedOn: "2026-10-06"
+---
+
+## 系列概覽
+
+MiMo 是<CompanyChip id="xiaomi">小米（Xiaomi）</CompanyChip>自研的大型語言模型家族，近兩年版本更新的節奏相當快。2025-04-30 以 70 億參數、專攻數學與程式推理的 MiMo-7B 起步<Cite k="wiki-mimo" />；2025-12-16 推出 3,090 億參數的<Term id="moe">混合專家（MoE）</Term>模型 MiMo-V2-Flash，並以 MIT 授權開源<Cite k="v2flash-news" />。據 Digitimes 等媒體報導，前 <CompanyChip id="deepseek">DeepSeek</CompanyChip> 研究員羅福莉於 2025 年 11 月加入並帶領 MiMo 團隊<Cite k="wiki-mimo" />。
+
+2026-03-18 發表的兆級旗艦 MiMo-V2-Pro，上線前曾以代號「Hunter Alpha」匿名出現在 OpenRouter，一度被開發者誤認為 DeepSeek 的新模型（Reuters 報導）<Cite k="wiki-mimo" />。4 月的 V2.5 系列改以 MIT 授權開放<Term id="open-weights">權重</Term><Cite k="v25-open" />，9 月 21 日的 V2.6 系列（Pro 與 Flash）則把重心放在擴大強化學習<Cite k="v26-blog" />。小米把 MiMo 定位為「人×車×家」生態系的核心模型，執行長雷軍 2026 年 3 月表示未來三年將在 AI 投入至少 87 億美元（Reuters 報導）<Cite k="wiki-mimo" />。
+
+## 特性分析
+
+- **混合滑動視窗注意力**：從 V2-Flash 起，MiMo 讓大多數層只看最近 128 個 tokens（滑動視窗注意力），每隔幾層才放一層全域注意力（V2-Flash 為 5:1、V2.5-Pro 為 6:1），<Term id="kv-cache">KV 快取</Term>因此縮小約 6 到 7 倍；V2-Flash 支援 256K tokens 上下文，V2.5-Pro 起擴大到 100 萬 tokens<Cite k="v2flash-news" /><Cite k="hf-v25pro" />。
+- **多 token 預測加速**：V2-Flash 以 3 層 MTP 模組做<Term id="speculative-decoding">推測解碼</Term>，官方稱實測加速 2.5 到 3.7 倍；V2.6 改用 5 層草稿模型，一次預測 7 個後續 token<Cite k="v2flash-news" /><Cite k="hf-v26pro" />。
+- **大規模強化學習**：V2.6 以完全非同步的 <Term id="grpo">GRPO</Term> 訓練，每步 1,568 個提示、各取 16 條軌跡，並由 Agent 評分器在同一組答案之間互相比較，給出比「過或不過」更細的獎勵。官方公布不到 6 天的線上 RL 階段，Flash 與 Pro 分別花費約 85 萬與 262 萬美元<Cite k="v26-blog" /><Cite k="hf-v26pro" />。
+- **原生全模態**：V2.6 的 Pro 與 Flash 都能理解文字、圖片、影片與音訊，視覺編碼器 6.81 億參數，另有獨立的音訊編碼器<Cite k="hf-v26pro" />。
+- **價格**：海外每百萬 tokens，V2.6-Pro 輸入 0.435、輸出 0.87 美元，V2.6-Flash 為 0.14／0.28 美元，快取命中的輸入只要 0.0036 與 0.0028 美元；另有速度最多快 20 倍、價格 10 倍的 V2.6-Pro-UltraSpeed<Cite k="mimo-pricing" /><Cite k="mimo-release-log" />。
+
+## 適合與不適合的用途
+
+**適合**：大量呼叫的 <Term id="agent">Agent</Term>、程式開發與辦公自動化——AA 估算 V2.6-Pro 跑完一題智慧指數任務平均只要約 0.13 美元<Cite k="aa-v26pro" />；需要可商用、可微調的 MIT 授權權重；長文件、大型程式碼庫與上千輪工具呼叫的長任務；結合圖片、影片與音訊理解的應用。資源有限時，可考慮小米在 Hugging Face 釋出、以 Qwen 9B 為底的蒸餾版 MiMo-V2.6-Distill-Qwen-9B<Cite k="hf-mimo-org" />。
+
+**不適合**：需要長期穩定介面的正式系統。MiMo 汰換極快：V2-Pro、V2-Omni、V2-Flash 在 2026-06-30 停用；V2.5 與 V2.5-Pro 預定 2026-10-21 停用，屆時舊模型名稱將失效，整合時要預留遷移與重新測試的成本<Cite k="mimo-deprecate" />。對延遲敏感的即時互動也要注意，AA 測得 V2.6-Pro 每秒約 47 tokens<Cite k="aa-v26pro" />。資安攻防類任務上，原廠自報的 ExploitBench 47.9% 仍明顯落後 Claude Opus 5 的 70.0%<Cite k="hf-v26pro" />。
+
+## 版本演進
+
+| 版本 | 時間 | 重點 |
+|---|---|---|
+| MiMo-7B | 2025-04-30 | 7B 數學與程式推理模型，MIT |
+| MiMo-V2-Flash | 2025-12-16 | 309B-A15B MoE，MIT；API 已停用 |
+| MiMo-V2-Pro／V2-Omni／V2-TTS | 2026-03-18 | 兆級封閉旗艦、全模態與語音模型；已停用 |
+| MiMo-V2.5／V2.5-Pro | 2026-04-23 | 改以 MIT 開放權重；2026-10-21 停用 |
+| MiMo-V2.6-Pro／Flash | 2026-09-21 | 大規模 RL、原生全模態，MIT |
+
+一年多之間，MiMo 從「小而專」的推理模型走到兆級 MoE；V2-Pro 短暫採封閉路線後，自 V2.5 起又回到全面開放權重。價格也一路下探：V2.5 系列自 2026-05-27 起永久降價，官方稱最多降 99%，V2.6 沿用同樣價格<Cite k="mimo-price-cut" /><Cite k="v26-blog" />。
+
+## 評測解讀
+
+截至 2026-10-06，Artificial Analysis（AA）智慧指數 v4.3.2 中，MiMo-V2.6-Pro 為 46.3 分，是榜上最高的開放權重模型，略高於 <ModelChip id="alibaba-qwen">Qwen3.8-Max</ModelChip> 的 45.4 分，但仍落後約 58 分的頂尖封閉模型；V2.6-Flash 為 37.9 分<Cite k="aa-v26pro" /><Cite k="aa-lb" />。AA 自測的 Terminal-Bench 4.0 為 34.8%，與原廠自報的 34.9% 幾乎一致，可信度較高<Cite k="aa-v26pro" /><Cite k="hf-v26pro" />。Arena 文字榜（2026-10-02 更新）上，V2.6-Pro 為 1,480 ±9 分、第 26 名，但只有約 4,000 票，名次區間落在 10 到 50<Cite k="arena-text" />。
+
+解讀時要注意三點。第一，原廠表格大量使用自家評測（MiMo Code Bench、MiMo Cyber Bench）或剛推出的新<Term id="benchmark">評測</Term>（DeepSWE v1.1、ProgramBench），缺乏長期對照。第二，同一評測的不同版本落差極大：V2.6-Pro 在 Terminal-Bench 2.1 自報 89.9%，到 4.0 版只剩 34.9%。第三，官方部落格「同等智慧下價格只有海外模型 1/20 到 1/60」屬原廠說法，實際成本仍取決於任務消耗的輸出 tokens。人類偏好榜的 <Term id="elo-rating">Elo 分數</Term>與各榜單每週變動，引用時務必附上日期。

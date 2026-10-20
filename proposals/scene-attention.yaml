@@ -1,0 +1,45 @@
+# Proposals from the attention scene agent (scene-attention), 2026-10-07.
+# Nothing here blocks the scene: each item has a local workaround in src/three/scenes/attention/.
+
+- id: arcribbons-backface-culling
+  target: src/three/kit/ArcRibbons.ts
+  severity: bug (same finding as proposals/scene-agent-loop.yaml → arcribbons-backface-culling)
+  problem: >
+    ArcRibbons' ShaderMaterial keeps the default FrontSide. The strip winding is clockwise on screen
+    whenever an arc runs left → right, so those ribbons are back-face culled: in the attention scene
+    every arc from an earlier token to the query token (all left → right) drew triangles but no
+    pixels (renderer.info showed the 5 arcs, the canvas showed none).
+  proposal: >
+    Set `side: DoubleSide` and `forceSinglePass: true` on the ArcRibbons material (depthWrite is
+    already false, so one pass is enough and the draw-call count does not double).
+  workaround: >
+    attention.ts, layers.ts and moe.ts set `material.side = DoubleSide` and
+    `material.forceSinglePass = true` right after constructing each ArcRibbons (no kit edits).
+
+- id: arcribbons-up-and-flow-setters
+  target: src/three/kit/ArcRibbons.ts
+  severity: enhancement
+  problem: >
+    The planar lift direction (`up`) and the travelling-highlight speed (`flow`) are constructor-only.
+    The multi-head step fans four heads' arcs apart by tilting each head's `up` vector, and the
+    V-flow / multi-head steps switch the travelling highlight off to keep the picture calm.
+  proposal: >
+    Public setters `setUp(v: Vec3Like)` and `setFlow(speed: number)` (they only write the existing
+    uUp / uFlow uniforms). Optionally a per-instance `up` attribute so several fans fit one draw call.
+  workaround: >
+    attention.ts writes `arcs.object.material.uniforms['uUp'].value` and `['uFlow'].value` directly,
+    and uses one ArcRibbons per attention head (4 draw calls instead of 1).
+
+- id: pathflow-rebuild-paths
+  target: src/three/kit/PathFlow.ts
+  severity: enhancement
+  problem: >
+    Paths are baked at construction. The attention step sends value particles along the focused
+    token's arcs, so every focus change (hover) needs new paths with new densities.
+  proposal: >
+    `flow.setPaths(paths, { weights })` that rewrites the position / colour DataTextures and
+    re-allocates particles to paths without recreating the material (the textures are already
+    samples × pathCount, so a capacity-bounded rewrite is cheap).
+  workaround: >
+    attention.ts disposes and recreates its small PathFlow (≤ 260 particles) when the focused token
+    changes during the 注意力權重 step only.

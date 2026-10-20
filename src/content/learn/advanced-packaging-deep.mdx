@@ -1,0 +1,360 @@
+---
+title: "先進封裝深入：CoWoS-L、SoIC、混合鍵合與面板級封裝"
+subtitle: "AI 晶片撐破光罩之後，封裝如何往更大、更密、更立體三個方向突破"
+description: "AI 晶片早已大過單一光罩，封裝成了延續效能的主戰場。本文拆解 CoWoS-S、R、L 的結構與取捨，說明 SoIC 混合鍵合如何把接點間距縮到 10 微米以下、封裝為何從晶圓走向面板，以及產能、良率與供應鏈的關鍵數字。"
+level: 3
+order: 308
+track: hardware
+prerequisites: [advanced-packaging-intro]
+next: [hbm-deep, interconnect-deep]
+relatedSegments: [foundry-packaging, semi-equipment-materials, ai-accelerators, memory-storage, networking-optics]
+relatedCompanies: [tsmc, intel, ase, amkor, besi, applied-materials, asml, disco, ev-group, hanmi-semiconductor, asmpt, gptc, scientech, all-ring, c-sun, ibiden, unimicron, absolics, nvidia, amd, broadcom, sk-hynix, samsung-electronics, micron]
+relatedModels: []
+relatedTrends: [cowos-capacity-panel-level, co-packaged-optics, hbm4-custom-base-die, custom-asic-rise, gpu-roadmap-rubin-feynman]
+glossary:
+  - advanced-packaging
+  - cowos
+  - cowos-l
+  - soic
+  - hybrid-bonding
+  - interposer
+  - 2-5d-packaging
+  - chiplet
+  - die
+  - wafer
+  - reticle-limit
+  - yield
+  - tsv
+  - tcb
+  - hbm
+  - base-die
+  - ic-substrate
+  - abf
+  - osat
+  - panel-level-packaging
+  - glass-substrate
+  - cpo
+  - silicon-photonics
+  - lithography
+scenes:
+  - { id: cowos, variant: soic }
+keyTakeaways:
+  - "CoWoS-S 用整片矽中介層，上限約 3.3 倍光罩；更大的封裝改用只在接縫嵌入矽橋的 CoWoS-L。"
+  - "台積電已量產 5.5 倍光罩的 CoWoS，規劃 2028 年做到 14 倍、容納約 20 疊 HBM。"
+  - "混合鍵合讓銅接點直接熔合，量產間距約 9 微米，接點密度可達數十微米微凸塊的十倍以上。"
+  - "晶片對晶圓鍵合能先挑出良品晶粒；晶圓對晶圓對準較容易、密度更高，但良率會相乘。"
+  - "面板級封裝把圓形晶圓換成 310 毫米方形面板，TrendForce 預估台積電 2028 年下半年量產。"
+  - "CoWoS 自 2023 年起供不應求；據 TrendForce，台積電計畫到 2027 年擴產六成以上。"
+estimatedMinutes: 20
+sources:
+  - key: tsmc-cowos-page
+    title: "CoWoS®"
+    publisher: TSMC
+    url: "https://3dfabric.tsmc.com/english/dedicatedFoundry/technology/cowos.htm"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "CoWoS 自 2012 年量產；CoWoS-S 中介層最大 3.3 倍光罩（約 2,700 平方毫米），更大尺寸建議採用 CoWoS-L 或 CoWoS-R；CoWoS-S 矽中介層可內嵌深溝槽電容；CoWoS-R 以高分子與銅線組成的 RDL 中介層，2023 年起量產，最小間距 4 微米（線寬／線距 2 微米），較有彈性，可緩衝 SoC 與載板的熱膨脹係數差異；CoWoS-L 結合 RDL 中介層、局部矽互連（LSI）與嵌入式深溝槽電容（eDTC），首款 3.5 倍光罩尺寸於 2024 年量產；LSI 以多層次的次微米銅線提供高密度晶粒間連線，可在多項產品重複使用；生成式 AI 於 2022 年底興起後需求大增；2020-03-03 與博通推出全球首個 2 倍光罩尺寸中介層；ECTC 2021 發表 2,500 平方毫米的第五代 CoWoS-S"
+  - key: tsmc-soic-page
+    title: "TSMC-SoIC®"
+    publisher: TSMC
+    url: "https://3dfabric.tsmc.com/english/dedicatedFoundry/technology/SoIC.htm"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "SoIC 為晶圓級 3D 晶片堆疊平台，可整合不同尺寸、功能與製程的已知良品晶粒（KGD）；接合間距從 10 微米以下起跳，3 奈米晶片堆疊技術 2025 年進入量產；SoIC-X 晶圓對晶圓適合高良率製程與相同晶粒尺寸；SoIC Gen-2 支援 N2 以後的製程，並用於 COUPE 矽光子引擎；堆疊後可再放進 CoWoS 或 InFO"
+  - key: tsmc-info-page
+    title: "Integrated Fan-Out (InFO) Wafer Level Packaging"
+    publisher: TSMC
+    url: "https://3dfabric.tsmc.com/english/dedicatedFoundry/technology/InFO.htm"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "InFO 自 2016 年起大量出貨；InFO-PoP 為業界首個 3D 晶圓級扇出封裝，沒有有機載板與 C4 凸塊；InFO_MS 以 2/2 微米 RDL 整合邏輯與 HBM，是 CoWoS 之外的成本／效能選項"
+  - key: tsmc-symposium-2026
+    title: "TSMC Debuts A13 Technology at 2026 North America Technology Symposium"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3302"
+    type: press-release
+    lang: en
+    published: "2026-04-23"
+    accessed: "2026-10-15"
+    note: "目前量產 5.5 倍光罩尺寸的 CoWoS；14 倍光罩、可整合約 10 顆大型運算晶粒與 20 疊 HBM 的 CoWoS 預定 2028 年量產，2029 年擴大到 14 倍以上；40 倍光罩尺寸的 SoW-X 預期 2029 年；A14 對 A14 的 SoIC 預定 2029 年量產，晶粒間 I/O 密度為 N2 對 N2 SoIC 的 1.8 倍；採 COUPE 的基板上共同封裝光學 2026 年開始生產，相較電路板上的可插拔方案能源效率 2 倍、延遲降低 10 倍"
+  - key: tsmc-symposium-2025
+    title: "TSMC Unveils Next-Generation A14 Process at North America Technology Symposium"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3228"
+    type: press-release
+    lang: en
+    published: "2025-04-24"
+    accessed: "2026-10-15"
+    note: "9.5 倍光罩尺寸的 CoWoS 預定 2027 年量產，可整合 12 疊以上 HBM；SoW-X 為以 CoWoS 為基礎的晶圓尺寸系統，運算能力為當時 CoWoS 的 40 倍，預定 2027 年量產；提供 N12 與 N3 的 HBM4 邏輯基底晶粒；整合式電壓調節器（IVR）的垂直供電密度為電路板上獨立電源晶片的 5 倍"
+  - key: tsmc-symposium-2024
+    title: "TSMC Celebrates 30th North America Technology Symposium with Innovations Powering AI with Silicon Leadership"
+    publisher: TSMC
+    url: "https://pr.tsmc.com/english/news/3136"
+    type: press-release
+    lang: en
+    published: "2024-04-24"
+    accessed: "2026-10-15"
+    note: "SoIC 已成為 3D 晶片堆疊的領先方案，客戶越來越常把 CoWoS 與 SoIC 搭配使用；第一款以 InFO 為基礎、只含邏輯的 SoW 已量產，以 CoWoS 為基礎的晶圓上晶片版本當時規劃 2027 年；COUPE 以 SoIC-X 把電子晶粒堆疊在光子晶粒上，規劃 2026 年整合進 CoWoS 成為共同封裝光學"
+  - key: spectrum-hybrid-bonding
+    title: "Hybrid Bonding Plays Starring Role in 3D Chips"
+    publisher: IEEE Spectrum
+    url: "https://spectrum.ieee.org/hybrid-bonding"
+    type: news
+    lang: en
+    published: "2024-08-11"
+    accessed: "2026-10-15"
+    note: "Samuel K. Moore 撰。量產中的先進 3D 晶片接點間距約 9 微米，前一代微凸塊為數十微米；imec 晶圓對晶圓 400 奈米、晶片對晶圓 2 微米，英特爾晶片對晶圓 3 微米，最緊密的晶圓對晶圓研究為 360–500 奈米；ECTC 2024 有研究成果可望達到每平方毫米約 700 萬個連結的紀錄密度。流程：埋在氧化矽中的銅墊略為內凹，以 CMP 平坦化並控制內凹深度，表面經化學活化後面對面貼合，先以較弱的氫鍵結合，再緩慢加熱到約攝氏 300 度退火，氧化層形成更強的化學鍵、銅膨脹後熔接；應用材料把退火時間從數小時縮到 5 分鐘。晶圓對晶圓需 100 奈米級對準、較成熟；晶片對晶圓可先測試晶粒、堆疊不同尺寸，但密度較低。刀片切割的崩邊碎屑會干擾接合，英特爾與 imec 的研究改用電漿蝕刻切割。HBM 目前 8–12 層，三星展示 16 層混合鍵合 HBM，業界希望做到 20 層以上；混合鍵合可降低堆疊高度與層間熱阻"
+  - key: amd-vcache
+    title: "AMD 3D V-Cache Technology"
+    publisher: AMD
+    url: "https://www.amd.com/en/products/processors/technologies/3d-v-cache.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "銅對銅、無凸塊的混合鍵合：互連密度為封裝上 2D Chiplet 的 200 倍以上、微凸塊 3D 堆疊的 15 倍以上，互連能源效率為微凸塊 3D 的 3 倍以上（依 AMD 內部資料，以接點間距計算的面積密度）"
+  - key: amd-cdna3
+    title: "Introducing AMD CDNA 3 Architecture (white paper)"
+    publisher: AMD
+    url: "https://www.amd.com/content/dam/amd/en/documents/instinct-tech-docs/white-papers/amd-cdna-3-white-paper.pdf"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "MI300 系列整合最多 8 顆垂直堆疊的加速運算晶粒（XCD，台積電 5 奈米）與 4 顆 I/O 晶粒（IOD，台積電 6 奈米），每顆 IOD 上方堆疊兩顆 XCD，並連接 8 疊 HBM；是由十多顆 Chiplet 組成的單一邏輯處理器；MI300X 有 1,530 億個電晶體"
+  - key: nvidia-blackwell
+    title: "NVIDIA Blackwell Architecture"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/technologies/blackwell-architecture/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "Blackwell GPU 有 2,080 億個電晶體，採台積電客製 4NP 製程；由兩顆達光罩極限的晶粒以每秒 10 TB 的晶片間互連組成單一 GPU"
+  - key: intel-packaging
+    title: "Advanced Packaging Innovations"
+    publisher: Intel
+    url: "https://www.intel.com/content/www/us/en/foundry/packaging.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "EMIB 2.5D 自 2017 年起量產，矽橋埋在封裝載板中連接晶粒邊緣；EMIB-M 在矽橋加入 MIM 電容；EMIB-T 在矽橋加入 TSV；Foveros-S 2.5D 採 4 倍光罩的矽中介層，2019 年起量產；Foveros-R 採 RDL 中介層，2027 年可量產；Foveros Direct 3D 採銅對銅混合鍵合；Data Center GPU Max 有超過 1,000 億個電晶體、47 個主動晶片塊（active tiles）、5 種製程；目標 2030 年在單一封裝放進 1 兆個電晶體"
+  - key: tf-cowos-l
+    title: "AI Chip Packaging Pushes Beyond Reticle Limits, with CoWoS-L Set to Remain the Mainstream Advanced Packaging Solution Through 2028, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260918-13241.html"
+    type: analyst
+    lang: en
+    published: "2026-09-18"
+    accessed: "2026-10-15"
+    note: "CoWoS-S 可整合 2 顆 SoC／Chiplet 與 8 個 HBM，仍用於微軟 Maia 200 等 ASIC；晶片變大、HBM 增加，矽中介層製造逼近物理極限；CoWoS-L 嵌入高速矽橋，輝達與超微 AI 加速器已採用，Meta MTIA 400 亦採用，AWS 與微軟預期 2027 年導入；英特爾 EMIB-T 在矽橋加入 TSV，Google 預期 2027 年採用，AWS 正在測試 EMIB；CoWoS-L 中介層越大，封裝成本越高；CoWoS-L 到 2028 年仍是 AI 晶片主流"
+  - key: tf-ap-race
+    title: "AI Competition Turns into a Supply Chain Arms Race, Tightening Advanced Packaging and 3nm Capacity, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260430-13028.html"
+    type: analyst
+    lang: en
+    published: "2026-04-30"
+    accessed: "2026-10-15"
+    note: "CoWoS 自 2023 年起持續短缺，並延伸到上游設備與下游載板、封裝材料；台積電計畫到 2027 年擴充 CoWoS 產能 60% 以上；全球 2.5D 封裝的嚴重短缺預期 2027 年才略為緩解；矽品與艾克爾受惠外溢需求，EMIB 等替代方案獲得關注"
+  - key: tf-cowos-gap
+    title: "[News] TSMC CoWoS Supply-Demand Gap Reportedly Seen Narrowing from 20% to 10% by End-2026"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/news/2026/06/15/news-tsmc-cowos-supply-demand-gap-reportedly-seen-narrowing-from-20-to-10-by-end-2026-as-capacity-expands/"
+    type: news
+    lang: en
+    published: "2026-06-15"
+    accessed: "2026-10-15"
+    note: "引述經濟日報的法人估計：台積電 2026 年 CoWoS 月產能 12–14 萬片，封測夥伴另增 5–6 萬片，合計接近 20 萬片；供需缺口約 20%，可望在 2026 年底縮小到約 10%；另引述路透社，台積電 2026 年 5 月在台灣技術論壇預估 2022–2027 年 CoWoS 產能年複合成長率超過 80%；據報導輝達 Feynman 可能是 CoPoS 首批採用者。屬媒體轉述，非公司公告"
+  - key: tf-copos
+    title: "TSMC Accelerates CoPoS Development; Taiwan Panel Makers and Local Materials and Equipment Suppliers Leverage FOPLP for Glass Core Substrate Opportunity, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20260617-13107.html"
+    type: analyst
+    lang: en
+    published: "2026-06-17"
+    accessed: "2026-10-15"
+    note: "台積電 CoPoS 統一採 310 × 310 毫米面板；2026 年為設備材料驗證期、2027 年試產、2028 年下半年量產；玻璃核心基板的商業規模生產可能在 2030 年後，玻璃穿孔（TGV）面臨 10 微米以下金屬化與 500 × 500 毫米以上面板的奈米級平整度等難題；台灣數家面板廠已量產成熟製程晶片的扇出型面板級封裝（FOPLP），尺寸最大 620 × 750 毫米"
+  - key: asml-nxe3600d
+    title: "TWINSCAN NXE:3600D"
+    publisher: ASML
+    url: "https://www.asml.com/en/products/euv-lithography-systems/twinscan-nxe-3600d"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "以 13.5 奈米 EUV 光曝光 300 毫米晶圓，最大曝光場 26 × 33 毫米"
+  - key: asml-xt260
+    title: "TWINSCAN XT:260"
+    publisher: ASML
+    url: "https://www.asml.com/en/products/duv-lithography-systems/twinscan-xt-260"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "i-line（365 奈米）掃描機，NA 0.25–0.35 可調、縮小倍率 2 倍，搭配選配解析度可達 400 奈米；劑量 340 mJ/cm² 時每小時 270 片以上，生產力最高為現有方案的 4 倍；適用於影像感測器、顯示器、光子元件與包含先進封裝在內的 3D 整合；可處理厚達 1.7 毫米（一般為 775 微米）的晶圓與翹曲晶圓，並可透過 TSV 等深溝槽圖形做穿矽對準"
+  - key: asml-q4-2025-deck
+    title: "ASML 2025 fourth-quarter and full-year results (presentation, Form 6-K Exhibit 99.2)"
+    publisher: ASML
+    url: "https://www.sec.gov/Archives/edgar/data/937966/000162828026003701/a2026_01x28xpresentation.htm"
+    type: ir-presentation
+    lang: en
+    published: "2026-01-28"
+    accessed: "2026-10-15"
+    note: "2025 年出貨並認列首台 XT:260，為 ASML 在 3D 整合市場的第一款產品"
+  - key: besi-hybrid
+    title: "Hybrid Bonding"
+    publisher: BESI
+    url: "https://www.besi.com/products-technology/productgroup/hybrid-bonding/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "混合鍵合平台 Datacon 8800 CHAMEO ultra plus AC 主打超高精度與高產能，用於高密度互連與 3D 整合；強調潔淨度與光學對準；產品線另有熱壓鍵合設備 9800 TC next"
+updated: "2026-10-15"
+lastVerified: "2026-10-15"
+editorial: { status: fact-checked, author: learn-16, checkedBy: "learn-16-check", checkedOn: "2026-10-06", notes: "內容以 2026-10-06 為資料基準日，來源實際讀取日為 2026-10-15。查核已逐項比對台積電 CoWoS、SoIC、InFO 技術頁與 2024–2026 年技術論壇新聞稿、ASML XT:260 產品頁與 2025 年第四季簡報、超微 3D V-Cache 頁與 CDNA 3 白皮書、英特爾封裝技術頁、NVIDIA、BESI、IEEE Spectrum 原文及 TrendForce 各篇。更正：4 微米 RDL 間距標明為 CoWoS-R 規格；英特爾 Data Center GPU Max 的 47 個為主動晶片塊（tile）；英特爾來源標題依頁面更正；700 萬連結／平方毫米改為「可望達到」的研究成果；電漿切割改為英特爾與 imec 的研究做法；面板與晶圓的試算結論改依表格數字重寫；擴產六成標明為 TrendForce 引述。CoWoS 月產能與供需缺口為經濟日報引述法人估計，CoPoS 時程為 TrendForce 預估；接點密度、中介層數量、利用率與堆疊良率為示意計算。" }
+---
+
+## 一句話解釋
+
+**先進封裝的下一步，是同時往三個方向推：做得更大、接得更密、疊得更高。** 做得更大，靠的是 <Term id="cowos-l">CoWoS-L</Term> 這種只在關鍵處嵌入矽橋的<Term id="interposer">中介層</Term>，以及把圓形晶圓換成方形面板的<Term id="panel-level-packaging">面板級封裝</Term>；接得更密、疊得更高，靠的是台積電 <Term id="soic">SoIC</Term> 這類以<Term id="hybrid-bonding">混合鍵合</Term>直接熔接銅接點的 3D 堆疊。<LearnLink id="advanced-packaging-intro">先進封裝入門</LearnLink>說明了為什麼 AI 晶片需要把多顆晶粒封在一起；這篇要拆開來看，這些技術各自怎麼做、卡在哪裡、數字有多大。
+
+## 生活化比喻
+
+<Callout type="analogy" title="蓋一座越來越大的科學園區">
+
+把每顆<Term id="die">晶粒</Term>想成一棟廠房，封裝就是規劃廠房之間的道路。
+
+- **CoWoS-S**：整座園區鋪滿精密的高架快速道路（整片矽中介層）。車流最順，但園區越大，這片高架就越貴、越難蓋。
+- **CoWoS-L**：大部分區域改鋪一般柏油路（有機重布線層），只在廠房與廠房相接的路口，蓋一小段高架匝道（局部矽橋）。該快的地方快，其餘的地方省。
+- **微凸塊堆疊**：兩層樓之間用一根根焊錫柱子撐起並拉線，柱子不能太密，中間還得填東西補強。
+- **混合鍵合**：兩層樓板直接澆灌成一體，水電管線在接縫處對準後直接熔接，沒有柱子，也沒有縫隙。
+- **面板級封裝**：以前在圓形披薩上切方形餅乾，邊緣浪費一大塊；餅乾越切越大，乾脆改用方形烤盤。
+
+</Callout>
+
+## 原理
+
+### 先進封裝的尺度：從數十微米到不到 1 微米
+
+理解先進封裝，先抓住一個數字：接點或線路的「間距」。間距越小，同樣面積能拉的線越多，晶粒之間的<Term id="2-5d-packaging">2.5D</Term> 或 3D 連線就越像晶片內部的線路。
+
+| 連接方式 | 典型間距或線寬 | 代表技術 |
+|---|---|---|
+| 微凸塊（焊錫） | 數十微米<Cite k="spectrum-hybrid-bonding" /> | HBM 堆疊、傳統 3D 堆疊 |
+| 有機重布線層（RDL） | CoWoS-R 最小間距 4 微米（線寬、線距各 2 微米）<Cite k="tsmc-cowos-page" />；InFO_MS 同為 2／2 微米<Cite k="tsmc-info-page" /> | CoWoS-R 與 CoWoS-L 的中介層、InFO |
+| 局部矽互連（LSI） | 多層次的次微米銅線<Cite k="tsmc-cowos-page" /> | CoWoS-L 的矽橋 |
+| 混合鍵合（量產） | 約 9 微米<Cite k="spectrum-hybrid-bonding" />；SoIC 從 10 微米以下起跳<Cite k="tsmc-soic-page" /> | SoIC、AMD 3D V-Cache |
+| 混合鍵合（研究） | 晶片對晶圓 2–3 微米，晶圓對晶圓 0.4 微米<Cite k="spectrum-hybrid-bonding" /> | imec、英特爾等研究成果 |
+
+對照晶圓前段，封裝的尺度大了好幾個數量級，用的設備也不同。前段最精細的層要用 EUV（見<LearnLink id="lithography-euv-high-na">微影深入</LearnLink>）；ASML 鎖定 3D 整合與先進封裝等應用的 XT:260，則是用 365 奈米的 i-line 光源，搭配選配時解析度約 400 奈米，但能處理厚達 1.7 毫米的晶圓（一般晶圓約 775 微米）與翹曲晶圓，還能透過<Term id="tsv">TSV</Term>（矽穿孔）等深溝槽圖形對準<Cite k="asml-xt260" />。封裝要對付的不是「多細」，而是「多大、多厚、多彎」。
+
+### CoWoS 家族：S、R、L 的取捨
+
+<Term id="cowos">CoWoS</Term> 自 2012 年就已量產<Cite k="tsmc-cowos-page" />，但它的「中間那一層」已經換了好幾種材料：
+
+| 版本 | 中介層 | 量產時間 | 重點 |
+|---|---|---|---|
+| CoWoS-S | 整片矽中介層 | 2012 年起 | 最大約 3.3 倍光罩（約 2,700 平方毫米）；可內嵌深溝槽電容<Cite k="tsmc-cowos-page" /> |
+| CoWoS-R | 高分子加銅線的有機 RDL 中介層 | 2023 年起 | 較有彈性，可緩衝晶片與載板之間的熱膨脹差異<Cite k="tsmc-cowos-page" /> |
+| CoWoS-L | RDL 中介層加局部矽互連（LSI）與嵌入式電容 | 2024 年起（3.5 倍光罩） | 只在晶粒交界處放矽橋；矽橋可在不同產品重複使用<Cite k="tsmc-cowos-page" /> |
+
+為什麼 AI 晶片一路從 S 走向 L？關鍵在<Term id="reticle-limit">光罩尺寸極限</Term>。單次曝光的最大範圍是 26 × 33 毫米<Cite k="asml-nxe3600d" />，約 858 平方毫米。輝達的 Blackwell GPU 由兩顆都達光罩極限的晶粒組成<Cite k="nvidia-blackwell" />，光是晶粒就快兩個光罩大，再加上周圍好幾疊 <Term id="hbm">HBM</Term>，中介層面積很容易逼近甚至超過 CoWoS-S 3.3 倍光罩的上限<Cite k="tsmc-cowos-page" />。TrendForce 指出，晶片越做越大、HBM 越放越多，矽中介層的製造已逼近物理極限<Cite k="tf-cowos-l" />。
+
+CoWoS-L 的思路是「該用矽的地方才用矽」。晶粒之間最密的連線（例如 GPU 與 GPU、GPU 與 HBM 的交界）交給一小塊一小塊的 LSI 矽橋，它內含多層次的次微米銅線，金屬種類、層數與間距都與 CoWoS-S 相同；其餘大面積的電源與訊號線，則走在模封材料做成的中介層上下兩面的 RDL 裡，並可在 SoC 下方另外嵌入電容來穩定供電<Cite k="tsmc-cowos-page" />。這樣一來，封裝尺寸不再被一整片矽的製造能力綁住。
+
+台積電的實際進度是：2020 年與博通推出第一個 2 倍光罩尺寸的中介層<Cite k="tsmc-cowos-page" />；2024 年量產 3.5 倍光罩的 CoWoS-L<Cite k="tsmc-cowos-page" />；2026 年 4 月表示已在量產 5.5 倍光罩的 CoWoS（台積電技術頁指出，放大中介層正是 CoWoS-L 的發展方向），並規劃 2028 年量產 14 倍光罩、可整合約 10 顆大型運算晶粒與 20 疊 HBM 的版本，2029 年再擴大到 14 倍以上<Cite k="tsmc-symposium-2026" />。
+
+<BarChart title="台積電 CoWoS 中介層尺寸的演進" unit="倍光罩" data={[{ label: "2020 年（首個 2 倍）", value: 2 }, { label: "2024 年（CoWoS-L 量產）", value: 3.5 }, { label: "2026 年（量產中）", value: 5.5 }, { label: "2027 年（2025 年規劃）", value: 9.5, estimate: true }, { label: "2028 年（2026 年規劃）", value: 14, estimate: true }]} source={["tsmc-cowos-page", "tsmc-symposium-2025", "tsmc-symposium-2026"]} keepOrder note="1 倍光罩約 858 平方毫米。2027 年的 9.5 倍出自台積電 2025 年技術論壇，2026 年新聞稿未重申；後兩項為規劃值。" />
+
+誰在用哪一種？依 TrendForce 2026 年 9 月的整理：<CompanyChip id="nvidia">輝達</CompanyChip>與<CompanyChip id="amd">超微</CompanyChip>的 AI 加速器已採用 CoWoS-L，Meta 的 MTIA 400 也是；AWS 與微軟預期 2027 年導入；能整合 2 顆 SoC 或 Chiplet 與 8 個 HBM 的 CoWoS-S，則仍用於微軟 Maia 200 等客製晶片。它也提醒，CoWoS-L 的中介層越大，封裝成本越高，但到 2028 年仍會是 AI 晶片的主流<Cite k="tf-cowos-l" />。
+
+<Compare title="整片矽中介層與局部矽橋" left={{ title: "CoWoS-S（整片矽）", items: ["整片中介層都是細線路，連線最密", "上限約 3.3 倍光罩", "矽面積大，成本與製造難度隨尺寸攀升", "適合 2 顆晶粒加 8 個 HBM 以內的設計"] }} right={{ title: "CoWoS-L（局部矽橋）", items: ["只在晶粒交界處放 LSI 矽橋", "台積電放大中介層的主要路線；CoWoS 已量產 5.5 倍光罩，規劃 14 倍", "以有機 RDL 中介層取代整片矽", "矽橋可跨產品重複使用，可嵌入電容"] }} caption="資料來源：台積電 CoWoS 技術頁、2026 年技術論壇新聞稿、TrendForce。" />
+
+### 3D 堆疊：從微凸塊到混合鍵合
+
+2.5D 是把晶粒並排，3D 則是把晶粒上下疊。傳統做法用微凸塊：每個接點是一小段銅柱加上焊錫，間距約數十微米<Cite k="spectrum-hybrid-bonding" />，兩顆晶粒之間留有縫隙，還要灌入底部填充膠。HBM 的 DRAM 晶粒堆疊，以及堆疊用的<Term id="tcb">TCB</Term>（熱壓鍵合）設備，都屬於這個世代。
+
+混合鍵合把凸塊整個拿掉：兩顆晶粒的表面都是「埋在絕緣層裡的銅墊」，對準之後直接貼合，絕緣層對絕緣層、銅對銅，形成一個整體。名字裡的「混合」，指的就是同時接合絕緣層與金屬。效果非常明顯：超微表示，它的 3D V-Cache 採用無凸塊的銅對銅接合，依內部資料，互連密度是微凸塊 3D 堆疊的 15 倍以上、封裝上 2D Chiplet 的 200 倍以上，互連能源效率也是微凸塊的 3 倍以上<Cite k="amd-vcache" />。
+
+<FlowSteps title="混合鍵合怎麼做" steps={[{ title: "銅墊埋入絕緣層", detail: "銅墊周圍是氧化矽，銅面刻意比絕緣層表面略低一點" }, { title: "化學機械研磨", detail: "把表面磨到奈米級平坦，並精準控制銅墊內凹的深度" }, { title: "表面活化與清潔", detail: "以化學方式處理絕緣層表面，任何微粒都可能讓一片區域接不上" }, { title: "對準貼合", detail: "面對面壓合，絕緣層先靠較弱的氫鍵黏住" }, { title: "退火", detail: "緩慢加熱到約攝氏 300 度，絕緣層形成強鍵，銅膨脹後填滿間隙並熔接" }]} caption="資料來源：IEEE Spectrum（2024-08-11）。應用材料曾在 2024 年的 ECTC 研討會發表進展，把退火時間從數小時縮短到 5 分鐘。" />
+
+每一步都很嚴苛。銅墊凹得太深，退火後碰不到；凹得太淺，又會把兩片撐開；表面只要稍有凸起或翹曲，整片區域就可能接不上<Cite k="spectrum-hybrid-bonding" />。晶粒切割也得改：傳統刀片切割會崩邊、產生碎屑，干擾接合，英特爾與 imec 的晶片對晶圓研究因此改用電漿蝕刻來切割晶粒<Cite k="spectrum-hybrid-bonding" />。
+
+混合鍵合有兩種做法，取捨正好相反：
+
+<Compare title="晶片對晶圓與晶圓對晶圓" left={{ title: "晶片對晶圓（D2W）", items: ["先切割、測試，只把良品晶粒疊上去", "上下晶粒可以不同尺寸、不同製程", "無法對單顆晶粒做 CMP，表面準備較受限", "研究級間距約 2–3 微米"] }} right={{ title: "晶圓對晶圓（W2W）", items: ["整片晶圓直接對貼，需 100 奈米級對準", "技術較成熟，影像感測器已大量使用", "上下晶粒必須同尺寸，壞的也一起疊", "研究級間距可到 0.4 微米"] }} caption="資料來源：IEEE Spectrum（2024-08-11）、台積電 SoIC 技術頁。" />
+
+台積電的 SoIC 兩種都做。它強調 SoIC 能整合不同尺寸、功能與製程的已知良品晶粒，接合間距從 10 微米以下起跳，3 奈米晶片的堆疊技術已在 2025 年量產；SoIC-X 的晶圓對晶圓版本，則適合高良率製程與相同尺寸的晶粒<Cite k="tsmc-soic-page" />。下一步是 2029 年量產 A14 對 A14 的 SoIC，晶粒間 I/O 密度是 N2 對 N2 的 1.8 倍<Cite k="tsmc-symposium-2026" />。台積電也指出，客戶越來越常把 SoIC 與 CoWoS 搭配<Cite k="tsmc-symposium-2024" />：先在 3D 方向疊好，再整組放進 2.5D 封裝。超微的 MI300 系列就是這種「3D 加 2.5D」的設計：最多 8 顆 5 奈米的運算晶粒疊在 4 顆 6 奈米的 I/O 晶粒上（每顆 I/O 晶粒上方兩顆），再與 8 疊 HBM 封在一起，MI300X 總共有 1,530 億個電晶體<Cite k="amd-cdna3" />。
+
+<Scene3D id="cowos" variant="soic" caption="SoIC 混合鍵合與微凸塊並排比較：左邊以銅柱加焊錫的微凸塊接合，晶粒之間留有間隙並填入底部填充膠；右邊兩顆晶粒面對面直接貼合，銅對銅、介電層對介電層，沒有凸塊也沒有間隙。可切換導覽步驟比較接合前後，也能切回 CoWoS 變體觀察 2.5D 封裝各層。圖中間距與比例為示意。" />
+
+HBM 是混合鍵合的下一個大戰場。IEEE Spectrum 在 2024 年的報導指出，當時的 HBM 以微凸塊堆疊 8 到 12 層 DRAM，業界想做到 20 層以上；混合鍵合能降低堆疊高度，也能減少層與層之間的熱阻。<CompanyChip id="samsung-electronics">三星電子</CompanyChip>已在 2024 年的 ECTC 研討會展示 16 層混合鍵合的 HBM<Cite k="spectrum-hybrid-bonding" />。HBM 的細節，留待<LearnLink id="hbm-deep">HBM 深入</LearnLink>再談。
+
+### 從晶圓到面板：封裝為什麼要換「烤盤」
+
+中介層越做越大，圓形晶圓就越不經濟。一片 12 吋晶圓面積約 70,700 平方毫米，310 × 310 毫米的方形面板約 96,100 平方毫米，多了約 36%（示意計算）；更重要的是，方形中介層排在圓形晶圓上，邊緣會浪費一大圈，中介層越大，浪費的比例通常越高（見文末深入一點的試算）。
+
+台積電的答案是 CoPoS（基板上面板上晶片）。TrendForce 指出，台積電已統一採用 310 × 310 毫米的方形面板，2026 年是設備與材料的驗證期，預估 2027 年試產、2028 年下半年量產<Cite k="tf-copos" />；另有報導稱輝達的 Feynman 世代可能是首批採用者<Cite k="tf-cowos-gap" />。面板級封裝本身並不新：台灣已有數家面板廠以最大 620 × 750 毫米的面板，量產電源管理、射頻等成熟製程晶片的扇出型面板級封裝<Cite k="tf-copos" />。難的是把它用在線路最密、尺寸最大的 AI 晶片上。
+
+再往後是<Term id="glass-substrate">玻璃基板</Term>。玻璃比有機材料平整、不易翹曲，但在玻璃上鑽出並填滿 10 微米以下的穿孔、讓 500 × 500 毫米以上的面板維持奈米級平整度，都還是難題。TrendForce 預期玻璃核心基板會是台積電在 CoPoS 之後的下一個重點，但商業規模生產可能要到 2030 年後<Cite k="tf-copos" />。
+
+### 封裝變成系統：SoW、COUPE 與整合式電壓調節器
+
+當封裝大到一整片晶圓，它就不只是「包裝」，而是一台小型電腦。台積電的 SoW（System-on-Wafer，晶圓級系統）有一條清楚的時間軸，也看得出規劃會隨時調整：
+
+- **2024 年**：第一款以 InFO 為基礎、只含邏輯晶粒的 SoW 已在量產；以 CoWoS 為基礎、可整合 SoIC 與 HBM 的版本規劃 2027 年<Cite k="tsmc-symposium-2024" />。
+- **2025 年**：推出 SoW-X，運算能力是當時 CoWoS 的 40 倍，預定 2027 年量產<Cite k="tsmc-symposium-2025" />。
+- **2026 年**：新聞稿改以光罩倍數描述，寫明 40 倍光罩尺寸的 SoW-X 預期在 2029 年推出<Cite k="tsmc-symposium-2026" />，時間點比前一年所說的 2027 年量產晚兩年。
+
+光也開始進入封裝。台積電的 COUPE 以 SoIC-X 把電子晶粒疊在光子晶粒上<Cite k="tsmc-symposium-2024" />，屬於<Term id="silicon-photonics">矽光子</Term>技術；基板上的<Term id="cpo">CPO</Term>（共同封裝光學）方案 2026 年開始生產，相較裝在電路板上的可插拔光模組，能源效率高 2 倍、延遲低 10 倍<Cite k="tsmc-symposium-2026" />。供電也往封裝裡搬：台積電的整合式電壓調節器（IVR），垂直供電密度是電路板上獨立電源晶片的 5 倍；台積電也提供 N12 與 N3 邏輯製程的 HBM4 <Term id="base-die">基底晶粒</Term><Cite k="tsmc-symposium-2025" />。記憶體、光通訊與電源，都在往 AI 晶片的封裝裡集中。
+
+### 另一條路：英特爾的 EMIB 與 Foveros
+
+台積電之外，<CompanyChip id="intel">英特爾</CompanyChip>有自己的一套。EMIB 把小塊矽橋直接埋在封裝載板裡、連接晶粒邊緣，2017 年起量產；EMIB-T 再在矽橋裡加入 TSV。Foveros-S 用 4 倍光罩的矽中介層，2019 年起量產；改用 RDL 中介層的 Foveros-R 預計 2027 年可量產；3D 堆疊的 Foveros Direct 同樣採用銅對銅混合鍵合。英特爾的 Data Center GPU Max 就由 47 個主動晶片塊（tile）、5 種製程組成，電晶體超過 1,000 億個，公司目標是 2030 年在一個封裝裡放進 1 兆個電晶體<Cite k="intel-packaging" />。
+
+在 CoWoS 吃緊之際，EMIB 成了替代選項。TrendForce 預期 Google 將在 2027 年採用 EMIB-T，AWS 也在測試 EMIB<Cite k="tf-cowos-l" />。
+
+### 產能：AI 晶片出貨的閘門
+
+先進封裝是過去幾年 AI 供應鏈中最常被點名的瓶頸之一。TrendForce 指出，CoWoS 自 2023 年起持續短缺，短缺還延伸到上游設備與下游載板、封裝材料；台積電計畫到 2027 年把 CoWoS 產能擴充六成以上，全球 2.5D 封裝的嚴重短缺預期要到 2027 年才略為緩解<Cite k="tf-ap-race" />。據經濟日報引述法人估計，台積電 2026 年 CoWoS 月產能可達 12 萬到 14 萬片，封測夥伴再增加 5 萬到 6 萬片，合計接近 20 萬片，供需缺口可望從約 20% 縮小到年底的約 10%<Cite k="tf-cowos-gap" />。這些是媒體轉述的估計，不是公司公告。台積電自己的說法則較宏觀：據路透社報導，台積電 2026 年 5 月在台灣技術論壇預估，2022 到 2027 年 CoWoS 產能的年複合成長率將超過 80%<Cite k="tf-cowos-gap" />。
+
+<StatGrid title="先進封裝的幾個關鍵數字" items={[{ label: "台積電量產中的 CoWoS", value: "5.5 倍光罩", note: "2028 年規劃 14 倍" }, { label: "混合鍵合量產間距", value: "約 9 微米", note: "微凸塊為數十微米" }, { label: "2026 年 CoWoS 月產能（台積電）", value: "12–14 萬片", note: "法人估計，媒體轉述", estimate: true }, { label: "台積電 CoWoS 擴產目標", value: "60% 以上", note: "到 2027 年，TrendForce 引述" }]} caption="資料來源：台積電 2026 年技術論壇新聞稿、IEEE Spectrum、TrendForce。" />
+
+<DeepDive title="深入一點：接點密度、面積利用率與堆疊良率的算術">
+
+**一、間距縮一半，接點變四倍。** 接點排成方格時，每平方毫米的接點數約為間距平方的倒數：
+
+<MathTeX tex={"N\\approx\\frac{1}{p^{2}}"} display label="每平方毫米的接點數約等於間距平方的倒數" />
+
+以 40 微米代表微凸塊、其餘套用前面表格的間距（示意計算）：40 微米約每平方毫米 625 個；9 微米的量產混合鍵合約 12,300 個；3 微米約 11 萬個；0.4 微米約 625 萬個。IEEE Spectrum 報導，2024 年有研究成果可望達到每平方毫米約 700 萬個連結的紀錄密度<Cite k="spectrum-hybrid-bonding" />，用同一公式反推，間距約 0.38 微米，正好落在晶圓對晶圓研究的 360 到 500 奈米之間<Cite k="spectrum-hybrid-bonding" />。從 40 微米到 9 微米，密度約增加 20 倍，與超微所說「混合鍵合密度可達微凸塊 15 倍以上」是同一個數量級<Cite k="amd-vcache" />。
+
+**二、晶圓還是面板？** 假設中介層是正方形、面積為光罩的倍數（1 倍約 858 平方毫米），邊緣各保留 3 毫米，一片 12 吋晶圓與一片 310 × 310 毫米面板各能排幾個（示意計算）：
+
+| 中介層大小 | 邊長 | 12 吋晶圓 | 310 毫米面板 |
+|---|---|---|---|
+| 3.3 倍光罩 | 約 53 毫米 | 17 個 | 25 個 |
+| 5.5 倍光罩 | 約 69 毫米 | 10 個 | 16 個 |
+| 9.5 倍光罩 | 約 90 毫米 | 5 個 | 9 個 |
+| 14 倍光罩 | 約 110 毫米 | 3 個 | 4 個 |
+
+面板只比晶圓大 36%，可排的數量卻多了約 3 成到 8 成。換成面積利用率來看更清楚：12 吋晶圓從 3.3 倍光罩時的約 68%，掉到 14 倍光罩時的約 51%；面板則要看尺寸能不能整齊排滿，14 倍光罩在 310 毫米面板上也只排得下 2 × 2 個，利用率同樣約 50%（示意計算）。實際產品是長方形，排法、切割道與邊緣規則都不同，數字只供理解趨勢；但方向很清楚：中介層越大，圓形晶圓邊緣的浪費越嚴重，這是封裝改用方形面板的主要動機之一，面板尺寸與中介層尺寸如何搭配也會變得很重要。
+
+**三、良率會相乘。** 晶圓對晶圓鍵合時，上下兩片晶圓的壞晶粒會隨機配對，堆疊良率約為：
+
+<MathTeX tex={"Y_{\\mathrm{stack}}\\approx Y_{\\mathrm{top}}\\times Y_{\\mathrm{bottom}}\\times Y_{\\mathrm{bond}}"} display label="堆疊良率約等於上層良率乘以下層良率再乘以接合良率" />
+
+若上下層<Term id="yield">良率</Term>都是 90%、接合良率 99%，堆疊良率約 80%（示意計算），等於每 5 組就有 1 組白做。晶片對晶圓則可以先測試、只疊良品晶粒<Cite k="spectrum-hybrid-bonding" />，損失主要來自接合本身；但一個封裝裡的接合步驟很多，假設要接上 2 顆運算晶粒與 8 疊 HBM，每一次接合良率 99.5%，十次相乘後約 95%。這就是為什麼台積電表示，晶圓對晶圓的 SoIC-X 適合高良率製程<Cite k="tsmc-soic-page" />，也是為什麼封裝前的晶粒測試越來越重要。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+先進封裝橫跨好幾個環節，而且正在把原本屬於前段製程的設備與技術拉進後段。
+
+- **晶圓代工與封測**（<SegmentChip id="foundry-packaging" />）：<CompanyChip id="tsmc">台積電</CompanyChip>同時掌握 CoWoS、SoIC 與自 2016 年起大量出貨的 InFO<Cite k="tsmc-info-page" />，是 AI 封裝的核心。CoWoS 的外溢需求讓<CompanyChip id="ase">日月光投控</CompanyChip>旗下矽品與<CompanyChip id="amkor">艾克爾（Amkor）</CompanyChip>等<Term id="osat">封測代工</Term>廠受惠<Cite k="tf-ap-race" />，英特爾則以 EMIB-T 爭取雲端客戶<Cite k="tf-cowos-l" />。
+- **設備**（<SegmentChip id="semi-equipment-materials" />）：混合鍵合讓後段設備出現新主角，例如提供混合鍵合與熱壓鍵合平台的<CompanyChip id="besi">BESI</CompanyChip><Cite k="besi-hybrid" />、發表快速退火技術的<CompanyChip id="applied-materials">應用材料</CompanyChip><Cite k="spectrum-hybrid-bonding" />，以及做晶圓鍵合的<CompanyChip id="ev-group">EV 集團</CompanyChip>。研磨、薄化與切割仰賴<CompanyChip id="disco">迪思科（DISCO）</CompanyChip>；HBM 堆疊用的熱壓鍵合機有<CompanyChip id="hanmi-semiconductor">韓美半導體</CompanyChip>與<CompanyChip id="asmpt">ASMPT</CompanyChip>。微影龍頭<CompanyChip id="asml">ASML</CompanyChip>也在 2025 年出貨首台 3D 整合用的 XT:260<Cite k="asml-q4-2025-deck" />。台灣則有<CompanyChip id="gptc">弘塑</CompanyChip>、<CompanyChip id="scientech">辛耘</CompanyChip>、<CompanyChip id="all-ring">萬潤</CompanyChip>、<CompanyChip id="c-sun">志聖</CompanyChip>等在地設備商，切入 CoWoS 的濕製程、點膠貼合與壓膜烘烤等工序。
+- **載板與材料**：中介層下方仍是 <Term id="abf">ABF</Term> <Term id="ic-substrate">IC 載板</Term>，由<CompanyChip id="ibiden">揖斐電</CompanyChip>、<CompanyChip id="unimicron">欣興</CompanyChip>等供應；SK 集團旗下的<CompanyChip id="absolics">Absolics</CompanyChip>則押注下一代的玻璃基板。TrendForce 指出，CoWoS 的短缺早已延伸到載板與封裝材料<Cite k="tf-ap-race" />。
+- **記憶體**（<SegmentChip id="memory-storage" />）：<CompanyChip id="sk-hynix">SK 海力士</CompanyChip>、三星與<CompanyChip id="micron">美光</CompanyChip>的 HBM 都要和運算晶粒一起完成封裝；HBM 層數往 16 層、20 層推進，混合鍵合是關鍵選項<Cite k="spectrum-hybrid-bonding" />。
+- **AI 晶片**（<SegmentChip id="ai-accelerators" />）：輝達、超微的旗艦加速器採用 CoWoS-L；Google、AWS、微軟與 Meta 的客製晶片（常與<CompanyChip id="broadcom">博通</CompanyChip>等設計夥伴合作），則在 CoWoS-S、CoWoS-L 與 EMIB-T 之間各自選擇<Cite k="tf-cowos-l" />。封裝尺寸直接決定一顆晶片能放幾顆運算晶粒、幾疊 HBM。
+- **網通**（<SegmentChip id="networking-optics" />）：COUPE 等共同封裝光學，把光引擎直接放進封裝<Cite k="tsmc-symposium-2026" />，封裝與光通訊的界線正在消失。
+
+想追蹤產能與面板級封裝的進度，可以看<TrendLink id="cowos-capacity-panel-level">CoWoS 擴產與面板級封裝</TrendLink>與<TrendLink id="co-packaged-optics">共同封裝光學（CPO）走向量產</TrendLink>；想知道 HBM 怎麼疊、基底晶粒為何走向客製，請接著讀<LearnLink id="hbm-deep">HBM 深入：TSV、堆疊與 HBM4 客製化</LearnLink>；晶粒之間與機櫃之間的連線，則在<LearnLink id="interconnect-deep">互連深入</LearnLink>中說明。

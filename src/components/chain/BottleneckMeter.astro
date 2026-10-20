@@ -1,0 +1,73 @@
+---
+/**
+ * 瓶頸程度 1–5 as five pips plus the number, readable without colour.
+ *   <BottleneckMeter level={4} />            → ■■■■□ 4／5
+ *   <BottleneckMeter level={5} label />      → 「瓶頸 ■■■■■ 5／5 極度吃緊」
+ */
+import { BOTTLENECK_WORDS } from './chain-data';
+
+interface Props {
+  level: number;
+  /** show the 「瓶頸」 prefix and the word (吃緊…) */
+  label?: boolean | undefined;
+  /** CSS colour of the filled pips */
+  color?: string | undefined;
+  class?: string | undefined;
+}
+const { level: raw, label = false, color, class: className } = Astro.props;
+const level = Math.max(1, Math.min(5, Math.round(raw)));
+const word = BOTTLENECK_WORDS[level];
+---
+
+<span
+  class:list={['bn', className]}
+  role="img"
+  aria-label={`瓶頸程度 ${level}／5（${word}）`}
+  style={color ? `--bn-c: ${color}` : undefined}
+>
+  {label && <span class="bn__label" aria-hidden="true">瓶頸</span>}
+  <span class="bn__pips" aria-hidden="true">
+    {[1, 2, 3, 4, 5].map((i) => <span class:list={['bn__pip', { 'is-on': i <= level }]} />)}
+  </span>
+  <span class="bn__num" aria-hidden="true">{level}／5</span>
+  {label && <span class="bn__word" aria-hidden="true">{word}</span>}
+</span>
+
+<style>
+  .bn {
+    --bn-c: var(--c-warn);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    font-size: var(--fs-s);
+    line-height: 1;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .bn__label {
+    color: var(--c-fg-muted);
+    font-weight: var(--fw-semibold);
+  }
+  .bn__pips {
+    display: inline-flex;
+    gap: 3px;
+  }
+  .bn__pip {
+    inline-size: 0.62em;
+    block-size: 0.95em;
+    border-radius: 2px;
+    border: 1px solid color-mix(in srgb, var(--bn-c) 55%, var(--c-border));
+    background: transparent;
+  }
+  .bn__pip.is-on {
+    background: var(--bn-c);
+    border-color: var(--bn-c);
+  }
+  .bn__num {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg);
+  }
+  .bn__word {
+    color: var(--c-fg-muted);
+  }
+</style>

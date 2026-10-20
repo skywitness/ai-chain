@@ -1,0 +1,350 @@
+---
+/**
+ * The three suggested routes from curriculum.yaml (模型線／硬體線／產業線) as cards: blurb, level mix,
+ * the ordered steps (first few visible, the rest in a disclosure) and a start link. With JavaScript the
+ * start link becomes 「繼續」 at the first unread step and ✓ marks appear (src/client/progress.ts).
+ *
+ *   <PathCards paths={getSuggestedPaths(items)} />
+ */
+import Icon from '../ui/Icon.astro';
+import { LEVELS } from '../../lib/collections';
+import { learnHref } from '../../lib/paths';
+import type { SuggestedPath } from './learn-data';
+
+interface Props {
+  paths: readonly SuggestedPath[];
+  /** Steps shown before the 「展開」 disclosure */
+  visible?: number | undefined;
+  headingLevel?: 3 | 4 | undefined;
+}
+const { paths, visible = 5, headingLevel = 3 } = Astro.props;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+---
+
+<ul class="pc" role="list" data-paths>
+  {
+    paths.map((p) => {
+      const counts = LEVELS.map((l) => ({ ...l, n: p.items.filter((i) => i.level === l.level).length })).filter((l) => l.n > 0);
+      const minutes = p.items.every((i) => i.minutes) ? p.items.reduce((s, i) => s + (i.minutes ?? 0), 0) : undefined;
+      const head = p.items.slice(0, visible);
+      const rest = p.items.slice(visible);
+      const first = p.items[0]!;
+      const titleId = `path-${p.id}`;
+      return (
+        <li class="pc__card" data-path={p.id} data-slugs={p.items.map((i) => i.slug).join(' ')}>
+          <div class="pc__head">
+            <H class="pc__title" id={titleId}>
+              {p.title}
+            </H>
+            <span class="pc__count">
+              {p.items.length} 篇{minutes ? `・約 ${Math.round(minutes / 6) / 10} 小時` : ''}
+            </span>
+          </div>
+          <p class="pc__blurb">{p.blurb}</p>
+          <div class="pc__mix">
+            <div class="pc__bar" aria-hidden="true">
+              {counts.map((c) => (
+                <span style={`--c: ${c.color}; flex-grow: ${c.n}`} />
+              ))}
+            </div>
+            <p class="pc__legend">
+              {counts.map((c) => (
+                <span style={`--c: ${c.color}`}>
+                  <span class="pc__legend-dot" aria-hidden="true" />
+                  {c.label} {c.n}
+                </span>
+              ))}
+            </p>
+          </div>
+          <ol class="pc__steps" role="list">
+            {head.map((it, i) => (
+              <li data-step={it.slug} style={`--c: ${LEVELS[it.level - 1]!.color}`}>
+                <a href={learnHref(it.slug)} title={it.title}>
+                  <span class="pc__n" aria-hidden="true">
+                    {i + 1}
+                  </span>
+                  <span class="pc__name">{it.shortTitle}</span>
+                  <span class="pc__tick" data-read-mark hidden>
+                    <Icon name="check" strokeWidth={2.5} label="已讀" />
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ol>
+          {rest.length > 0 && (
+            <details class="pc__more">
+              <summary>
+                <Icon name="chevron-down" class="pc__chev" />
+                展開其餘 {rest.length} 篇
+              </summary>
+              <ol class="pc__steps" role="list" start={visible + 1}>
+                {rest.map((it, i) => (
+                  <li data-step={it.slug} style={`--c: ${LEVELS[it.level - 1]!.color}`}>
+                    <a href={learnHref(it.slug)} title={it.title}>
+                      <span class="pc__n" aria-hidden="true">
+                        {visible + i + 1}
+                      </span>
+                      <span class="pc__name">{it.shortTitle}</span>
+                      <span class="pc__tick" data-read-mark hidden>
+                        <Icon name="check" strokeWidth={2.5} label="已讀" />
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
+          <div class="pc__foot">
+            <a class="pc__cta" href={learnHref(first.slug)} data-path-cta>
+              <span data-path-cta-label>從第一篇開始</span>
+              {/* every card has the same visible CTA text; name the route for screen-reader link lists */}
+              <span class="sr-only">{`（${p.title}）`}</span>
+              <Icon name="arrow-right" />
+            </a>
+            <span class="pc__prog" data-path-prog hidden />
+          </div>
+        </li>
+      );
+    })
+  }
+</ul>
+
+<script>
+  import { onProgressChange, readSlugs } from '../../client/progress';
+
+  const BASE_HREF = (a: HTMLAnchorElement) => a.getAttribute('href') ?? '';
+
+  function paint(read: Set<string>) {
+    document.querySelectorAll<HTMLElement>('[data-paths] [data-path]').forEach((card) => {
+      const slugs = (card.dataset['slugs'] ?? '').split(' ').filter(Boolean);
+      const done = slugs.filter((s) => read.has(s)).length;
+      card.querySelectorAll<HTMLElement>('[data-step]').forEach((li) => {
+        const on = read.has(li.dataset['step'] ?? '');
+        li.toggleAttribute('data-read', on);
+        const m = li.querySelector<HTMLElement>('[data-read-mark]');
+        if (m) m.hidden = !on;
+      });
+      const prog = card.querySelector<HTMLElement>('[data-path-prog]');
+      if (prog) {
+        prog.hidden = done === 0;
+        prog.textContent = done === slugs.length ? '全部讀完了' : `已讀 ${done}／${slugs.length}`;
+      }
+      const cta = card.querySelector<HTMLAnchorElement>('[data-path-cta]');
+      const label = card.querySelector<HTMLElement>('[data-path-cta-label]');
+      if (!cta || !label) return;
+      if (!cta.dataset['firstHref']) cta.dataset['firstHref'] = BASE_HREF(cta);
+      const nextSlug = slugs.find((s) => !read.has(s));
+      const nextLi = nextSlug ? card.querySelector<HTMLElement>(`[data-step="${nextSlug}"] a`) : null;
+      if (done > 0 && nextLi instanceof HTMLAnchorElement) {
+        cta.href = BASE_HREF(nextLi);
+        label.textContent = `繼續：${nextLi.querySelector('.pc__name')?.textContent ?? ''}`;
+      } else {
+        cta.href = cta.dataset['firstHref'] ?? cta.href;
+        label.textContent = done > 0 ? '從頭複習' : '從第一篇開始';
+      }
+    });
+  }
+  paint(readSlugs());
+  onProgressChange(paint);
+</script>
+
+<style>
+  @layer components {
+    .pc {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+      gap: var(--space-4);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .pc__card {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      margin: 0;
+      padding: var(--space-5);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-l);
+      background: var(--c-bg-elev);
+      box-shadow: var(--shadow-1);
+      min-width: 0;
+    }
+    .pc__head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+    .pc__title {
+      font-size: var(--fs-xl);
+      line-height: 1.3;
+      margin: 0;
+    }
+    .pc__count {
+      font-size: var(--fs-s);
+      color: var(--c-fg-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+    .pc__blurb {
+      font-size: var(--fs-s);
+      color: var(--c-fg-muted);
+      line-height: 1.7;
+    }
+    .pc__mix {
+      display: grid;
+      gap: var(--space-2);
+    }
+    .pc__bar {
+      display: flex;
+      gap: 3px;
+      block-size: 6px;
+    }
+    .pc__bar span {
+      flex-basis: 0;
+      border-radius: var(--radius-pill);
+      background: var(--c);
+    }
+    .pc__legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1) var(--space-3);
+      font-size: var(--fs-xs);
+      color: var(--c-fg-muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .pc__legend > span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35em;
+    }
+    .pc__legend-dot {
+      inline-size: 0.6em;
+      block-size: 0.6em;
+      border-radius: 50%;
+      background: var(--c);
+    }
+    .pc__steps {
+      display: grid;
+      gap: 2px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: none;
+    }
+    .pc__steps li {
+      margin: 0;
+      min-width: 0;
+    }
+    .pc__steps a {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-height: 2.5rem;
+      padding: 0.2rem var(--space-2);
+      margin-inline: calc(-1 * var(--space-2));
+      border-radius: var(--radius-m);
+      color: var(--c-fg);
+      text-decoration: none;
+      font-size: var(--fs-s);
+      line-height: 1.45;
+    }
+    .pc__steps a:hover {
+      background: var(--c-hover);
+      color: var(--c-link);
+    }
+    .pc__n {
+      position: relative;
+      flex: none;
+      display: inline-grid;
+      place-items: center;
+      inline-size: 1.6rem;
+      block-size: 1.6rem;
+      border-radius: 50%;
+      border: 1.5px solid var(--c);
+      color: var(--c);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      font-variant-numeric: tabular-nums;
+      background: var(--c-bg-elev);
+    }
+    .pc__name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .pc__tick {
+      flex: none;
+      display: inline-flex;
+      color: var(--c-pos);
+    }
+    .pc__tick[hidden] {
+      display: none;
+    }
+    .pc__steps li[data-read] .pc__n {
+      background: var(--c);
+      color: var(--c-bg-elev);
+    }
+    .pc__steps li[data-read] .pc__name {
+      color: var(--c-fg-muted);
+    }
+    .pc__more summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+      min-height: var(--tap);
+      color: var(--c-link);
+      font-size: var(--fs-s);
+      cursor: pointer;
+      list-style: none;
+    }
+    .pc__more summary::-webkit-details-marker {
+      display: none;
+    }
+    .pc__more :global(.pc__chev) {
+      transition: rotate var(--dur-2) ease;
+    }
+    .pc__more[open] :global(.pc__chev) {
+      rotate: 180deg;
+    }
+    .pc__more[open] summary {
+      margin-block-end: var(--space-1);
+    }
+    .pc__foot {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2) var(--space-3);
+      margin-block-start: auto;
+      padding-block-start: var(--space-3);
+      border-block-start: 1px solid var(--c-border);
+    }
+    .pc__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45em;
+      min-height: var(--tap);
+      font-weight: var(--fw-semibold);
+      color: var(--c-link);
+      text-decoration: none;
+      max-width: 100%;
+    }
+    .pc__cta:hover {
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+    .pc__prog {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      color: var(--c-pos);
+      font-variant-numeric: tabular-nums;
+    }
+    .pc__prog[hidden] {
+      display: none;
+    }
+  }
+</style>

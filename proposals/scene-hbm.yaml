@@ -1,0 +1,51 @@
+# Proposals from the hbm scene agent, 2026-10-09.
+# Nothing here blocks the scene: each capability is implemented locally in
+# src/three/scenes/hbm/ and can move to the kit / core unchanged.
+
+- id: stage-toggles
+  target: src/three/kit/StageControls.ts (same request as scene-cowos.yaml `stage-controls`)
+  problem: >
+    The hbm package view needs two small segmented toggles that are not worth a variant: the HBM
+    generation (HBM3E 1,024-bit / HBM4 2,048-bit interface) and the stack height (12 / 16 DRAM
+    core dies). Every scene that needs this hand-rolls DOM, styling and aria-pressed semantics.
+  proposal: >
+    `createStageToggles(ctx, groups: { label, options: { id, text, aria? }[], value, onChange(id) }[])`
+    returning `{ set(groupIndex, value), dispose() }`: real <button aria-pressed> elements in a
+    labelled role="group", pinned top-left, styled only with --scene-* tokens, removed on dispose.
+  workaround: src/three/scenes/hbm/shared.ts (createTogglePanel).
+
+- id: stage-legend
+  target: src/three/kit/StageLegend.ts
+  problem: >
+    Flow colours need a key (read HBM → GPU vs write GPU → HBM) and a 「示意」 note (thickness
+    exaggerated, wiring simplified). The LabelLayer is for world-anchored labels, so a fixed
+    corner legend has to be hand-rolled.
+  proposal: >
+    `createLegend(ctx, items: { color: string /* var(--token) */, text }[])` → `{ show(on), dispose() }`,
+    aria-hidden (the description carries the text), bottom-left, token-styled.
+  workaround: src/three/scenes/hbm/shared.ts (createLegend).
+
+- id: portrait-step-poses
+  target: src/three/core/types.ts (SceneStep pose) or SceneMeta
+  problem: >
+    `ctx.setPose` only scales the camera distance on portrait stages; a step pose aimed off-centre
+    (the hbm cross-section is framed to show the stack AND the path to the GPU) crops the subject
+    on a 4:5 stage. Each scene has to keep a second pose table and re-apply it on rotation.
+  proposal: >
+    Accept `setPose({ ...pose, portrait?: Partial<CameraPose> })`: the host picks the portrait
+    variant when the stage is portrait and re-applies the current step pose when the stage flips
+    between portrait and landscape (unless the reader has orbited).
+  workaround: src/three/scenes/hbm/stack.ts (PORTRAIT_POSES, poseFor, onResize).
+
+- id: cross-variant-hotspots
+  target: src/three/core/hotspots.ts (same request as scene-cowos.yaml)
+  problem: >
+    meta.json hotspots span both variants (package parts vs memory-hierarchy tiers). Picking one
+    from the HTML list while the other variant is mounted has no built-in "switch, then focus".
+  proposal: >
+    `HotspotSpec.variant` / meta hotspot `variant`: the host switches variant first, then focuses.
+  workaround: >
+    src/three/scenes/hbm/links.ts (crossLink): the mounted variant registers list-only stubs whose
+    onSelect dispatches `scene:command {type:'step'}` to the guided step that shows the part (the
+    step's `variant` makes the host switch); the remounted variant then calls resumeFocus(), which
+    waits for that `scene:step` and dispatches `scene:command {type:'focus', id}`.

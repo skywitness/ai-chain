@@ -1,0 +1,236 @@
+---
+/**
+ * Home callout for the models section: family count, origin mix (stacked bar with labels),
+ * representative flagship families and links to /models/ and the compare page.
+ *   <ModelsCallout summary={await getModelsSummary()} />
+ */
+import Button from '../ui/Button.astro';
+import { modelHref, sectionHref } from '../../lib/paths';
+import type { ModelsSummary } from './home-data';
+
+interface Props {
+  summary: ModelsSummary;
+}
+const { summary } = Astro.props;
+const total = Math.max(1, summary.byOrigin.reduce((a, o) => a + o.count, 0));
+const ORIGIN_COLOR: Record<string, string> = {
+  US: 'var(--chart-1)',
+  CN: 'var(--chart-8)',
+  EU: 'var(--chart-7)',
+  TW: 'var(--chart-3)',
+  KR: 'var(--chart-4)',
+};
+const origins = summary.byOrigin.map((o) => ({ ...o, color: ORIGIN_COLOR[o.origin] ?? 'var(--c-fg-subtle)' }));
+---
+
+<section class="callout-md" aria-labelledby="home-models">
+  <p class="md__kicker">大模型</p>
+  <h2 id="home-models" class="md__title">每個大模型擅長什麼？特性、版本、價格與評測一次看懂</h2>
+  <p class="md__text">
+    從 GPT、Claude、Gemini 到 DeepSeek、Qwen 與台灣的繁體中文模型，整理每個系列擅長什麼、不適合什麼，以及評測分數要怎麼讀才不會被誤導。
+  </p>
+  <div class="md__stats">
+    <p class="md__stat">
+      <strong>{summary.families}</strong>
+      <span>個模型系列</span>
+    </p>
+    <p class="md__stat">
+      <strong>{summary.labs}</strong>
+      <span>家實驗室與公司</span>
+    </p>
+  </div>
+  <div>
+    <p class="md__sub" id="home-md-origin">模型系列的來源地</p>
+    <div class="md__stack" role="img" aria-labelledby="home-md-origin" aria-describedby="home-md-legend">
+      {origins.map((o) => <span style={`--w: ${(o.count / total) * 100}%; --oc: ${o.color}`} />)}
+    </div>
+    <ul class="md__legend" id="home-md-legend" role="list">
+      {
+        origins.map((o) => (
+          <li style={`--oc: ${o.color}`}>
+            {o.label} <strong>{o.count}</strong>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+  {
+    summary.byKind.length > 1 && (
+      <div>
+        <p class="md__sub" id="home-md-kinds">依模型類型</p>
+        <ul class="md__kinds" role="list" aria-labelledby="home-md-kinds">
+          {summary.byKind.map((k) => (
+            <li>
+              {k.label}
+              <strong>{k.count}</strong>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+  {
+    summary.featured.length > 0 && (
+      <div>
+        <p class="md__sub">代表性的模型系列</p>
+        <ul class="md__chips" role="list">
+          {summary.featured.map((f) => (
+            <li>
+              <a href={modelHref(f.id)}>{f.title.replace(/ ?系列$/, '')}</a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+  <div class="md__cta">
+    <Button href={sectionHref('models')} variant="primary" icon="arrow-right" iconPosition="end">大模型特性分析</Button>
+    <Button href={sectionHref('modelsCompare')} icon="compare">並排比較</Button>
+  </div>
+</section>
+
+<style>
+  .callout-md {
+    --co-c: var(--layer-cloud-models);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    border-radius: var(--radius-l);
+    border: 1px solid color-mix(in srgb, var(--co-c) 25%, var(--c-border));
+    background:
+      radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--co-c) 12%, transparent), transparent 60%),
+      var(--c-bg-elev);
+    min-width: 0;
+  }
+  .md__kicker {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: color-mix(in srgb, var(--co-c) 80%, var(--c-fg));
+  }
+  .md__title {
+    font-size: var(--fs-xl);
+    line-height: 1.4;
+    text-wrap: balance;
+    margin-block-start: calc(-1 * var(--space-2));
+  }
+  .md__text {
+    color: var(--c-fg-muted);
+    line-height: 1.75;
+    font-size: var(--fs-s);
+  }
+  .md__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+  }
+  .md__stat {
+    display: grid;
+  }
+  .md__stat strong {
+    font-size: var(--fs-2xl);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .md__stat span {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .md__sub {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-subtle);
+    margin-block-end: var(--space-2);
+  }
+  .md__stack {
+    display: flex;
+    gap: 2px;
+    block-size: 14px;
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  .md__stack span {
+    inline-size: var(--w);
+    background: var(--oc);
+  }
+  .md__legend {
+    list-style: none;
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .md__legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+  }
+  .md__legend li::before {
+    content: '';
+    inline-size: 0.6em;
+    block-size: 0.6em;
+    border-radius: 2px;
+    background: var(--oc);
+  }
+  .md__legend strong {
+    color: var(--c-fg);
+    font-variant-numeric: tabular-nums;
+  }
+  .md__kinds {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .md__kinds li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4em;
+    padding: 3px var(--space-3);
+    border-radius: var(--radius-s);
+    background: color-mix(in srgb, var(--co-c) 8%, var(--c-bg));
+    border: 1px solid color-mix(in srgb, var(--co-c) 18%, var(--c-border));
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .md__kinds strong {
+    color: var(--c-fg);
+    font-variant-numeric: tabular-nums;
+  }
+  .md__chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .md__chips a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 36px;
+    padding: 2px var(--space-3);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--c-border);
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font-size: var(--fs-s);
+    text-decoration: none;
+  }
+  .md__chips a:hover {
+    border-color: var(--c-border-strong);
+  }
+  .md__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-block-start: auto;
+    padding-block-start: var(--space-2);
+  }
+</style>

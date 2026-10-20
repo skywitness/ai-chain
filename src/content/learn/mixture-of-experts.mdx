@@ -1,0 +1,464 @@
+---
+title: "混合專家模型（MoE）深入"
+subtitle: "總參數決定記憶體，啟用參數決定運算：拆解路由、負載平衡與專家平行"
+description: "MoE 讓每個 Token 只動用一小部分參數，用較少運算換到更大的模型容量。本文從路由器與 Top-k 選擇講起，說明負載平衡、細粒度與共享專家、專家平行與 All-to-All 通訊，以及 MoE 為何推升 HBM 容量與機櫃級互連的需求。"
+level: 3
+order: 303
+track: models
+prerequisites: [transformer-and-attention, networking-for-ai]
+next: [inference-optimization, interconnect-deep, model-evaluation]
+relatedSegments: [foundation-models, ai-accelerators, networking-optics, memory-storage, servers-systems, devtools-data-mlops]
+relatedCompanies: [deepseek, alibaba, moonshot-ai, openai, meta, mistral-ai, alphabet, nvidia, amd, groq, sk-hynix, samsung-electronics, micron, foxconn, quanta, wiwynn, inferact, radixark]
+relatedModels: [deepseek, alibaba-qwen, moonshot-kimi, openai-gpt-oss, meta-muse-llama, mistral, google-gemini]
+relatedTrends: [open-weights-race, scale-up-fabric-wars, rack-scale-systems, memory-supercycle, inference-chips-new-paradigms, inference-demand]
+glossary:
+  - moe
+  - transformer
+  - token
+  - parameter
+  - active-parameters
+  - dense-model
+  - hbm
+  - gpu
+  - attention
+  - softmax
+  - open-weights
+  - frontier-model
+  - expert-parallelism
+  - all-reduce
+  - nvlink
+  - infiniband
+  - scale-up
+  - nvl72
+  - batching
+  - decode
+  - prefill
+  - fp8
+  - fp4
+  - reinforcement-learning
+  - inference-engine
+keyTakeaways:
+  - "MoE 把前饋網路拆成許多專家，路由器替每個 Token 只挑少數幾位，運算量由啟用參數決定。"
+  - "總參數決定記憶體、啟用參數決定運算：DeepSeek-V3 共 6,710 億參數，每個 Token 只用 370 億。"
+  - "專家越來越多也越來越細：Kimi K3 從 896 位專家中選 16 位，啟用參數只占總參數約 3.7%。"
+  - "負載平衡是核心難題；DeepSeek-V3 以偏置項取代大部分輔助損失，訓練與推論都不丟棄 Token。"
+  - "專家平行每層需要兩次 All-to-All 通訊，DeepSeek-V3 跨節點時運算與通訊的時間比約 1:1。"
+  - "MoE 需要大批次與大容量 HBM，推升 72 顆 GPU 機櫃級互連與推論專用硬體的需求。"
+estimatedMinutes: 20
+sources:
+  - key: deepseek-v3
+    title: "DeepSeek-V3 Technical Report"
+    publisher: "DeepSeek-AI（arXiv）"
+    url: "https://arxiv.org/abs/2412.19437"
+    type: paper
+    lang: en
+    published: "2024-12-27"
+    accessed: "2026-10-15"
+    note: "總參數 671B、每個 Token 啟用 37B；以 14.8T 個 Token 預訓練；61 層，除前三層外的前饋網路都換成 MoE 層，每層 1 位共享專家與 256 位路由專家，每個 Token 啟用 8 位路由專家，且最多送往 4 個節點；親和分數用 sigmoid，再對選中的分數正規化。負載不平衡會導致路由崩塌，並在專家平行時降低運算效率；輔助損失太大會損害表現。無輔助損失負載平衡：每位專家一個偏置項，只用於挑選 Top-K，閘門值仍用原始分數；每步結束時，過載專家的偏置減去 γ、負載不足的加上 γ；另有輕量的序列層級平衡損失；訓練與推論都不丟棄 Token。H800 叢集：節點內 NVLink 160 GB/s，約為 InfiniBand 50 GB/s 的 3.2 倍；跨節點專家平行讓運算與通訊比約 1:1，以 DualPipe 重疊；132 個 SM 中撥 20 個做通訊，並建議硬體廠商以專用硬體承擔通訊。推論：Prefill 最小部署單位 4 節點 32 顆 GPU（EP32），設 32 個冗餘專家，每顆 GPU 放 8 位原本的專家加 1 位冗餘專家，高負載專家約每 10 分鐘依線上統計調整；Decode 階段每位專家的批次通常在 256 個 Token 以內，瓶頸是記憶體存取而非運算。"
+  - key: deepseek-infer
+    title: "Day 6: One More Thing, DeepSeek-V3/R1 Inference System Overview"
+    publisher: "DeepSeek（GitHub open-infra-index）"
+    url: "https://github.com/deepseek-ai/open-infra-index/blob/main/202502OpenSourceWeek/day_6_one_more_thing_deepseekV3R1_inference_system_overview.md"
+    type: docs
+    lang: en
+    published: "2025-03-01"
+    accessed: "2026-10-15"
+    note: "採跨節點專家平行：每層 256 位專家只啟用 8 位，高稀疏度需要極大的整體批次，才能讓每位專家有足夠的批次；EP 一方面放大批次，一方面讓每顆 GPU 只處理少數專家、降低記憶體存取。採 Prefill／Decode 分離：Prefill 為路由專家 EP32，每個部署單位 4 個節點、每顆 GPU 9 位路由專家與 1 位共享專家；Decode 為 EP144，每個單位 18 個節點、每顆 GPU 2 位路由專家與 1 位共享專家；以雙微批次重疊通訊與運算。"
+  - key: deepseekmoe
+    title: "DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models"
+    publisher: "DeepSeek-AI（arXiv）"
+    url: "https://arxiv.org/abs/2401.06066"
+    type: paper
+    lang: en
+    published: "2024-01-11"
+    accessed: "2026-10-15"
+    note: "兩項策略：把專家細分為 mN 位並啟用 mK 位，以及隔離 Ks 位共享專家捕捉共同知識、減少路由專家間的冗餘。16 位專家選 2 位有 120 種組合；每位專家切成 4 份後，64 位選 8 位有 4,426,165,368 種組合。DeepSeekMoE 16B 以約 40% 的運算達到與 LLaMA2 7B 相當的表現。"
+  - key: shazeer2017
+    title: "Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer"
+    publisher: "Google Brain（arXiv）"
+    url: "https://arxiv.org/abs/1701.06538"
+    type: paper
+    lang: en
+    published: "2017-01-23"
+    accessed: "2026-10-15"
+    note: "稀疏閘控 MoE 層由多達數千個前饋子網路組成，由可訓練的閘控網路為每個樣本挑選少數專家；在現代 GPU 叢集上以很小的運算效率損失，把模型容量提高 1,000 倍以上；在堆疊的 LSTM 層之間使用最多 1,370 億參數的 MoE。"
+  - key: gshard
+    title: "GShard: Scaling Giant Models with Conditional Computation and Automatic Sharding"
+    publisher: "Google（arXiv）"
+    url: "https://arxiv.org/abs/2006.16668"
+    type: paper
+    lang: en
+    published: "2020-06-30"
+    accessed: "2026-10-15"
+    note: "以稀疏閘控 MoE 把多語翻譯 Transformer 擴大到超過 6,000 億參數，在 2,048 顆 TPU v3 上用 4 天訓練。"
+  - key: switch
+    title: "Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity"
+    publisher: "Google（arXiv，JMLR）"
+    url: "https://arxiv.org/abs/2101.03961"
+    type: paper
+    lang: en
+    published: "2021-01-11"
+    accessed: "2026-10-15"
+    note: "每個 Token 只送往 1 位專家（k=1）；以相同運算資源使預訓練速度最高快 7 倍；首次以 bfloat16 訓練大型稀疏模型；Switch-C 有 1.6 兆參數、2,048 位專家。專家容量 =（每批 Token 數 ÷ 專家數）× 容量因子，超出容量的 Token 不經計算、經殘差連接直接進入下一層，實驗中被丟棄的 Token 通常不到 1%。輔助負載平衡損失 = α × N × Σ f_i × P_i，f_i 為分給專家 i 的 Token 比例，P_i 為路由機率比例，α 取 0.01。"
+  - key: st-moe
+    title: "ST-MoE: Designing Stable and Transferable Sparse Expert Models"
+    publisher: "Google（arXiv）"
+    url: "https://arxiv.org/abs/2202.08906"
+    type: paper
+    lang: en
+    published: "2022-02-17"
+    accessed: "2026-10-15"
+    note: "把稀疏模型擴大到 2,690 億參數，運算成本相當於 320 億參數的稠密編碼器—解碼器 Transformer（ST-MoE-32B）。"
+  - key: mixtral
+    title: "Mixtral of Experts"
+    publisher: "Mistral AI（arXiv）"
+    url: "https://arxiv.org/abs/2401.04088"
+    type: paper
+    lang: en
+    published: "2024-01-08"
+    accessed: "2026-10-15"
+    note: "論文於 2024 年 1 月發表（模型權重已於 2023 年 12 月釋出，見 mixtral-blog）。每層 8 位專家，路由器為每個 Token 選 2 位；每個 Token 可存取 47B 參數，但推論時只用 13B 啟用參數；表現達到或超過 Llama 2 70B 與 GPT-3.5；Apache 2.0 授權。啟用參數與推論運算成本成正比，但服務時的記憶體成本與總參數（47B）成正比；路由機制與每顆裝置跑多位專家會增加額外負擔，MoE 較適合能達到足夠運算強度的批次工作。路由分析：沒有觀察到依主題分配專家的明顯模式，ArXiv、生物（PubMed）與哲學文件的專家分布非常相似；專家選擇較與語法相關，例如 Python 的 self 與程式縮排常交給同一位專家；連續 Token 常被分到同一位專家。"
+  - key: mixtral-blog
+    title: "Mixtral of experts"
+    publisher: "Mistral AI"
+    url: "https://mistral.ai/news/mixtral-of-experts"
+    type: company-site
+    lang: en
+    published: "2023-12-11"
+    accessed: "2026-10-15"
+    note: "Mistral AI 於 2023-12-11 發布 Mixtral 8x7B，稀疏混合專家模型、開放權重、Apache 2.0 授權；多數評測表現超過 Llama 2 70B，在多數標準評測上與 GPT-3.5 相當或更好。"
+  - key: qwen3
+    title: "Qwen3 Technical Report"
+    publisher: "Qwen Team（arXiv）"
+    url: "https://arxiv.org/abs/2505.09388"
+    type: paper
+    lang: en
+    published: "2025-05-14"
+    accessed: "2026-10-15"
+    note: "沿用細粒度專家切分；Qwen3 MoE 模型共 128 位專家，每個 Token 啟用 8 位；與 Qwen2.5-MoE 不同，不使用共享專家；採用全域批次負載平衡損失以鼓勵專家專精。Hugging Face 上 Qwen3-235B-A22B 的 config.json 為 94 層、128 位專家、每 Token 8 位。"
+  - key: llama4
+    title: "The Llama 4 herd: The beginning of a new era of natively multimodal AI innovation"
+    publisher: "Meta AI"
+    url: "https://ai.meta.com/blog/llama-4-multimodal-intelligence/"
+    type: company-site
+    lang: en
+    published: "2025-04-05"
+    accessed: "2026-10-15"
+    note: "Llama 4 Scout：170 億啟用參數、16 位專家、總參數 1,090 億，以 Int4 量化可放進單顆 H100；Llama 4 Maverick：170 億啟用參數、128 位專家、總參數 4,000 億，可在單台 H100 DGX 主機上執行。為了推論效率，稠密層與 MoE 層交錯；MoE 層有 128 位路由專家與 1 位共享專家，每個 Token 送往共享專家與 128 位路由專家中的 1 位。"
+  - key: llama3
+    title: "The Llama 3 Herd of Models"
+    publisher: "Meta AI（arXiv）"
+    url: "https://arxiv.org/abs/2407.21783"
+    type: paper
+    lang: en
+    published: "2024-07-31"
+    accessed: "2026-10-15"
+    note: "表 3：70B 模型 80 層、模型維度 8,192、前饋網路維度 28,672、64 個注意力頭、8 個 Key/Value 頭，激活函數 SwiGLU。405B 預訓練用了 3.8 × 10^25 FLOPs。"
+  - key: gptoss-card
+    title: "openai/gpt-oss-120b model card"
+    publisher: "OpenAI（Hugging Face）"
+    url: "https://huggingface.co/openai/gpt-oss-120b"
+    type: docs
+    lang: en
+    published: "2025-08-05"
+    accessed: "2026-10-15"
+    note: "gpt-oss-120b 為 1,170 億參數、每個 Token 啟用 51 億；後訓練階段即以 MXFP4 量化 MoE 權重，因此可放進單張 80 GB GPU（如 NVIDIA H100 或 AMD MI300X）；Apache 2.0 授權。config.json：36 層、128 位專家、每個 Token 選 4 位。"
+  - key: kimi-k2
+    title: "moonshotai/Kimi-K2-Instruct model card"
+    publisher: "Moonshot AI（Hugging Face）"
+    url: "https://huggingface.co/moonshotai/Kimi-K2-Instruct"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "MoE 模型，總參數 1 兆、啟用 320 億；384 位專家、每個 Token 選 8 位、1 位共享專家；以 15.5 兆個 Token 預訓練 1 兆參數 MoE 模型，全程沒有訓練不穩定；使用 MuonClip 最佳化器。"
+  - key: qwen35
+    title: "Qwen/Qwen3.5-397B-A17B model card"
+    publisher: "Qwen（Hugging Face）"
+    url: "https://huggingface.co/Qwen/Qwen3.5-397B-A17B"
+    type: docs
+    lang: en
+    published: "2026-02-16"
+    accessed: "2026-10-15"
+    note: "總參數 3,970 億、啟用 170 億；60 層；MoE 共 512 位專家，每個 Token 啟用 10 位路由專家加 1 位共享專家（config.json：num_experts 512、num_experts_per_tok 10）。"
+  - key: deepseek-v4
+    title: "DeepSeek-V4-Pro model card"
+    publisher: "DeepSeek（Hugging Face）"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro"
+    type: docs
+    lang: en
+    published: "2026-04-24"
+    accessed: "2026-10-15"
+    note: "預覽版：DeepSeek-V4-Pro 總參數 1.6T、啟用 49B；V4-Flash 總參數 284B、啟用 13B；皆支援 100 萬 Token 上下文；MoE 專家參數使用 FP4，其他多數參數用 FP8。config.json：61 層、384 位路由專家、1 位共享專家、每個 Token 選 6 位。"
+  - key: kimi-k3
+    title: "moonshotai/Kimi-K3 model card"
+    publisher: "Moonshot AI（Hugging Face）"
+    url: "https://huggingface.co/moonshotai/Kimi-K3"
+    type: docs
+    lang: en
+    accessed: "2026-10-15"
+    note: "MoE 架構，總參數 2.8T、啟用 104B；93 層（1 層稠密）；Latent MoE 維度 3,584，注意力隱藏維度 7,168；896 位專家、每個 Token 選 16 位、2 位共享專家；以 Stable LatentMoE 框架提高稀疏度，官方稱整體縮放效率比 Kimi K2 提高約 2.5 倍；自 SFT 階段起量化感知訓練，權重 MXFP4、啟用值 MXFP8；建議的推論引擎為 vLLM、SGLang 與 TokenSpeed。"
+  - key: gemini25
+    title: "Gemini 2.5: Pushing the Frontier with Advanced Reasoning, Multimodality, Long Context, and Next Generation Agentic Capabilities"
+    publisher: "Google DeepMind（arXiv）"
+    url: "https://arxiv.org/abs/2507.06261"
+    type: paper
+    lang: en
+    published: "2025-07-07"
+    accessed: "2026-10-15"
+    note: "2.1 節：Gemini 2.5 模型是原生多模態的稀疏 MoE Transformer；稀疏 MoE 讓模型總容量與每個 Token 的運算及服務成本脫鉤。"
+  - key: wiki-moe
+    title: "Mixture of experts"
+    publisher: "Wikipedia"
+    url: "https://en.wikipedia.org/wiki/Mixture_of_experts"
+    type: other
+    lang: en
+    accessed: "2026-10-15"
+    note: "二手來源，用於書目資訊：Jacobs、Jordan、Nowlan 與 Hinton 於 1991 年 2 月在 Neural Computation 3(1) 發表〈Adaptive Mixtures of Local Experts〉。"
+  - key: nv-moe
+    title: "Mixture of Experts Powers the Most Intelligent Frontier AI Models, Runs 10x Faster to Deliver 1/10 the Token Cost on NVIDIA Blackwell NVL72"
+    publisher: "NVIDIA Blog"
+    url: "https://blogs.nvidia.com/blog/mixture-of-experts-frontier-models/"
+    type: company-site
+    lang: en
+    published: "2025-12-03"
+    accessed: "2026-10-15"
+    note: "Artificial Analysis 排行榜上最聰明的前 10 個開源模型都採 MoE；MoE 在 2025 年占開源模型發布的 60% 以上（NVIDIA 說法）。GB200 NVL72 以 NVLink Switch 連接 72 顆 Blackwell GPU，NVLink 總頻寬 130 TB/s；把專家分散到最多 72 顆 GPU，可減少每顆 GPU 的專家數與 HBM 載入參數的壓力。NVIDIA 稱 Kimi K2 Thinking、DeepSeek-R1 與 Mistral Large 3 在 GB200 NVL72 上的表現約為 HGX H200 的 10 倍。"
+  - key: lpx-inside
+    title: "Inside NVIDIA Groq 3 LPX: The Low-Latency Inference Accelerator for the NVIDIA Vera Rubin Platform"
+    publisher: "NVIDIA Technical Blog"
+    url: "https://developer.nvidia.com/blog/inside-nvidia-groq-3-lpx-the-low-latency-inference-accelerator-for-the-nvidia-vera-rubin-platform/"
+    type: company-site
+    lang: en
+    published: "2026-03-16"
+    accessed: "2026-10-15"
+    note: "LPX 機櫃有 256 顆 LPU、合計 128 GB 晶片內 SRAM、40 PB/s SRAM 頻寬；與 Vera Rubin NVL72 搭配時，Rubin GPU 負責 Prefill 與 Decode 階段的注意力，LPX 負責對延遲敏感的前饋網路與 MoE 專家運算（注意力與前饋網路分離），由 NVIDIA Dynamo 調度。"
+  - key: lpx-pr
+    title: "NVIDIA Groq 3 LPX Now in Full Production With World-Class Speed for Agentic AI"
+    publisher: "NVIDIA Newsroom"
+    url: "https://nvidianews.nvidia.com/news/nvidia-groq-3-lpx-now-in-full-production-with-world-class-speed-for-agentic-ai"
+    type: press-release
+    lang: en
+    published: "2026-08-24"
+    accessed: "2026-10-15"
+    note: "Groq 3 LPX 全面量產，作為 Vera Rubin 平台的延伸，提高 Token 生成速度；Nebius 為首家採用的 AI 雲；新聞稿註明 Groq 與 LPU 名稱經 Groq, Inc. 授權使用。"
+  - key: amd-mi400
+    title: "AMD Instinct MI400 Series"
+    publisher: AMD
+    url: "https://www.amd.com/en/products/accelerators/instinct/mi400.html"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "AMD Helios 機櫃由 72 顆 Instinct MI455X GPU 組成，合計 31 TB HBM4；每顆 MI455X 有 432 GB HBM4。"
+  - key: h100
+    title: "NVIDIA H100 Tensor Core GPU"
+    publisher: NVIDIA
+    url: "https://www.nvidia.com/en-us/data-center/h100/"
+    type: company-site
+    lang: en
+    accessed: "2026-10-15"
+    note: "H100 SXM：80 GB HBM3，記憶體頻寬 3.35 TB/s。"
+  - key: gspo
+    title: "Group Sequence Policy Optimization"
+    publisher: "Qwen Team, Alibaba（arXiv）"
+    url: "https://arxiv.org/abs/2507.18071"
+    type: paper
+    lang: en
+    published: "2025-07-24"
+    accessed: "2026-10-15"
+    note: "以 GRPO 訓練 MoE 時，專家啟用的變動可能讓強化學習無法正常收斂：48 層的 Qwen3-30B-A3B-Base 每次梯度更新後，同一筆取樣在新舊策略下約有 10% 的啟用專家不同；過去需以 Routing Replay 重用路由模式，但會增加記憶體與通訊負擔；GSPO 不再需要這項技巧。"
+updated: "2026-10-15"
+lastVerified: "2026-10-15"
+editorial:
+  status: fact-checked
+  author: learn-14
+  checkedBy: "learn-14-check"
+  checkedOn: "2026-10-06"
+  notes: "查核：數字逐一與原始來源核對（arXiv 論文全文、Hugging Face 模型卡與 config.json、Meta、NVIDIA、AMD 官方頁面與 DeepSeek open-infra-index）。修正 Mixtral 年份（2023 年 12 月釋出，補 Mistral 官方來源）、Kimi K3 重點整理中「啟用比例」易誤解為專家比例、GSPO 的模型名稱、稠密與 MoE 比較框的記憶體與批次說法、gpt-oss 量化描述與冗餘專家調整頻率的措辭；Llama 4 Maverick 一半層為 MoE 已以 config.json 確認。"
+---
+
+## 一句話解釋
+
+<Term id="moe">MoE</Term>（Mixture of Experts，混合專家）把 <Term id="transformer">Transformer</Term> 每一層裡的前饋網路拆成許多組「專家」，再由一個小小的路由器替每個 <Term id="token">Token</Term> 挑出其中幾位來計算。於是模型的<Term id="parameter">參數</Term>總量可以很大，每個 Token 實際動用的<Term id="active-parameters">啟用參數</Term>卻很小：DeepSeek-V3 總共有 6,710 億個參數，每個 Token 只用其中 370 億個<Cite k="deepseek-v3" />。代價是全部專家都得放在記憶體裡，專家分散在多顆 <Term id="gpu">GPU</Term> 上時，還要不停地跨晶片搬運 Token。所以 MoE 一邊讓運算變便宜，一邊把壓力轉移到 <Term id="hbm">HBM</Term> 容量與互連網路上。
+
+本文假設你已讀過<LearnLink id="transformer-and-attention">Transformer 與注意力機制</LearnLink>與<LearnLink id="networking-for-ai">AI 叢集網路：Scale-up 與 Scale-out</LearnLink>，重點放在路由與負載平衡的機制、專家設計的演變，以及 MoE 對硬體與網路的要求。
+
+## 生活化比喻
+
+<Callout type="analogy" title="一家有幾百位專科醫師的大醫院">
+
+- **稠密模型像一間小診所**：每位病人都要讓所有醫師看過一遍。醫師請得越多，看一位病人就越慢、越貴。
+- **MoE 像一家大醫院**：掛號櫃台（路由器）看一眼病人，就把他分給最適合的兩三位醫師（Top-k 專家）。醫院可以聘幾百位醫師，看一位病人的成本卻只有兩三位醫師的工時。
+- **但每位醫師都要有診間**：今天沒有病人的醫師也占一間（記憶體），醫院規模越大，房租照付。
+- **名醫門口大排長龍**：如果櫃台老是把病人分給同一位醫師，他忙不過來、其他人閒著（負載不平衡）。醫院只好限號（容量上限），或調整分診規則。
+- **家醫科醫師每位病人都看**：基本檢查交給一位固定的醫師（共享專家），專科醫師就能專心看自己擅長的部分。
+- **醫師分散在不同大樓**：病人在大樓之間來回的時間（All-to-All 通訊），常常和看診本身一樣久。
+
+</Callout>
+
+## 原理
+
+### MoE 換掉的是哪一層
+
+Transformer 的每一層有兩個主要部分：負責讓 Token 互相參考的<Term id="attention">注意力機制</Term>，以及對每個 Token 各自做運算的前饋網路。參數大多集中在前饋網路：以 Llama 3 70B 論文列出的維度換算（模型維度 8,192、前饋維度 28,672、SwiGLU 前饋網路含三個權重矩陣），每一層約八成的參數在前饋網路<Cite k="llama3" />。MoE 正是對這一大塊下手：注意力層照舊，前饋網路換成許多個較小的專家。
+
+路由器本身只是一個很小的線性層。它替 Token 與每位專家算出一個「親和分數」，留下分數最高的 k 位，把這幾位專家的輸出依分數加權相加；其他專家這一步完全不參與運算。傳統做法用 <Term id="softmax">softmax</Term> 把分數轉成機率，DeepSeek-V3 則改用 sigmoid 計算分數，再對選中的幾位做正規化<Cite k="deepseek-v3" />。
+
+<MathTeX tex={"y=\\sum_{i\\in\\mathrm{TopK}(s(x),k)}g_i(x)\\,E_i(x)"} display label="MoE 層的輸出 y，等於路由分數最高的 k 位專家 E_i 對輸入 x 的輸出，依閘門權重 g_i 加權後的總和" />
+
+<Scene3D id="attention" variant="moe" caption="MoE 視角：路由器替每個 Token 對所有專家打分數，只把 Token 送給分數最高的幾位，其餘專家這一步不參與運算。專家數量與路由路徑為示意。" />
+
+<FlowSteps
+  title="一個 Token 通過一層 MoE"
+  steps={[
+    { title: "注意力", detail: "Token 先經過注意力層整合上下文，這一段所有 Token 共用同一組參數" },
+    { title: "路由打分", detail: "路由器算出這個 Token 與每位專家的親和分數" },
+    { title: "挑選 Top-k", detail: "只留下分數最高的幾位，例如 DeepSeek-V3 從 256 位路由專家中挑 8 位" },
+    { title: "專家計算", detail: "被選中的專家各做一次前饋運算；若有共享專家，每個 Token 都要經過它" },
+    { title: "加權合併", detail: "把各專家的輸出依分數加權相加，再送往下一層" }]}
+  caption="依 DeepSeek-V3 技術報告的 DeepSeekMoE 架構整理。"
+/>
+
+### 從 1991 到兆級參數：一段簡史
+
+MoE 不是新點子。「混合專家」的想法可以追溯到 1991 年 Jacobs、Jordan、Nowlan 與 Hinton 發表的〈Adaptive Mixtures of Local Experts〉<Cite k="wiki-moe" />。把它帶進大型模型的，先是 2017 年起一連串來自 Google 的研究，再由開放權重模型接手推廣：
+
+| 年份 | 里程碑 | 關鍵數字 |
+|---|---|---|
+| 2017 | 稀疏閘控 MoE 層（Shazeer 等） | 多達數千位專家，最大 1,370 億參數，容量提高千倍以上而運算效率只略降<Cite k="shazeer2017" /> |
+| 2020 | GShard | 超過 6,000 億參數的翻譯模型，2,048 顆 TPU v3 訓練 4 天<Cite k="gshard" /> |
+| 2021 | Switch Transformer | 每個 Token 只送 1 位專家，相同運算下預訓練最快 7 倍；Switch-C 有 1.6 兆參數<Cite k="switch" /> |
+| 2022 | ST-MoE | 2,690 億參數，運算成本相當於 320 億參數的稠密模型<Cite k="st-moe" /> |
+| 2023 | Mixtral 8x7B | 8 位專家選 2 位，總參數 470 億、啟用 130 億，以 Apache 2.0 開放權重<Cite k="mixtral-blog" /><Cite k="mixtral" /> |
+| 2024 | DeepSeekMoE、DeepSeek-V3 | 細粒度專家加共享專家；6,710 億參數、啟用 370 億<Cite k="deepseekmoe" /><Cite k="deepseek-v3" /> |
+
+Mixtral 只用 130 億啟用參數，表現就達到或超過 Llama 2 70B 與 GPT-3.5<Cite k="mixtral" />。到了 2025 年，MoE 已成為<Term id="frontier-model">前沿模型</Term>的主流架構。Google 在 Gemini 2.5 技術報告中明言它是稀疏 MoE Transformer，並說明稀疏 MoE 能讓模型總容量與每個 Token 的運算及服務成本脫鉤<Cite k="gemini25" />。NVIDIA 在 2025 年 12 月指出，Artificial Analysis 排行榜上最聰明的前 10 個開源模型全都採用 MoE，自 2025 年初起領先的前沿模型幾乎都是 MoE 設計，並稱 MoE 占當年開源模型發布的 60% 以上<Cite k="nv-moe" />。
+
+### 專家越來越多，也越來越細
+
+把 2023 年底以來的代表性<Term id="open-weights">開放權重</Term>模型排在一起，可以看到一條清楚的路線：專家數量從個位數增加到數百位，每個 Token 選中的專家數大致從 2 位增加到十幾位，但啟用參數占總參數的比例一路下降。
+
+| 模型 | 總參數 | 啟用參數 | 路由專家數 | 每個 Token 選幾位 | 共享專家 |
+|---|---|---|---|---|---|
+| Mixtral 8x7B | 470 億 | 130 億 | 8 | 2 | 無 |
+| DeepSeek-V3 | 6,710 億 | 370 億 | 256 | 8 | 1 |
+| Qwen3-235B-A22B | 2,350 億 | 220 億 | 128 | 8 | 無 |
+| Llama 4 Maverick | 4,000 億 | 170 億 | 128 | 1 | 1 |
+| gpt-oss-120b | 1,170 億 | 51 億 | 128 | 4 | 無 |
+| Kimi K2 | 1 兆 | 320 億 | 384 | 8 | 1 |
+| Qwen3.5-397B-A17B | 3,970 億 | 170 億 | 512 | 10 | 1 |
+| DeepSeek-V4-Pro | 1.6 兆 | 490 億 | 384 | 6 | 1 |
+| Kimi K3 | 2.8 兆 | 1,040 億 | 896 | 16 | 2 |
+
+上表數字取自各模型的論文、官方部落格與 Hugging Face 模型卡（含 config.json）<Cite k="mixtral" /><Cite k="deepseek-v3" /><Cite k="qwen3" /><Cite k="llama4" /><Cite k="gptoss-card" /><Cite k="kimi-k2" /><Cite k="qwen35" /><Cite k="deepseek-v4" /><Cite k="kimi-k3" />。Llama 4 Maverick 只有一半的層是 MoE 層，稠密層與 MoE 層交錯排列<Cite k="llama4" />。
+
+<BarChart
+  title="啟用參數占總參數的比例"
+  unit="%"
+  data={[{ label: "Mixtral 8x7B", value: 27.7 }, { label: "Qwen3-235B-A22B", value: 9.4 }, { label: "DeepSeek-V3", value: 5.5 }, { label: "gpt-oss-120b", value: 4.4 }, { label: "Llama 4 Maverick", value: 4.3 }, { label: "Qwen3.5-397B-A17B", value: 4.3 }, { label: "Kimi K3", value: 3.7 }, { label: "Kimi K2", value: 3.2 }, { label: "DeepSeek-V4-Pro", value: 3.1 }]}
+  source="deepseek-v3"
+  note="本站以上表的啟用參數除以總參數換算，各模型數字的來源見上表。"
+  digits={1}
+  keepOrder
+/>
+
+為什麼要把專家切細？DeepSeekMoE 論文用排列組合說明：16 位專家選 2 位，只有 120 種組合；把每位專家再切成 4 份、變成 64 位選 8 位，運算量不變，組合卻多達 4,426,165,368 種，每個 Token 能找到更貼切的專家搭配。論文同時把幾位專家設為「共享專家」，讓它們學習每個 Token 都需要的共同知識，路由專家就不必各自重複學這些東西。DeepSeekMoE 16B 只用約 40% 的運算，就達到與 LLaMA2 7B 相當的表現<Cite k="deepseekmoe" />。
+
+不過各家的選擇並不一致。Qwen3 同樣採用細粒度專家，卻拿掉了共享專家，改用全域批次的負載平衡損失來鼓勵專家專精<Cite k="qwen3" />；Llama 4 Maverick 反其道而行，每個 Token 只送給共享專家與 128 位路由專家中的 1 位<Cite k="llama4" />。2026 年的 Kimi K3 則把規模推到 896 位專家選 16 位，月之暗面稱其 Stable LatentMoE 框架讓整體縮放效率比 Kimi K2 提高約 2.5 倍<Cite k="kimi-k3" />。
+
+「專家」這個名字容易讓人誤會。Mistral 分析 Mixtral 的路由結果後發現，專家並沒有依主題分工：ArXiv 論文、生物醫學摘要與哲學文件的專家分布幾乎一樣；專家的選擇反而比較跟語法有關，例如 Python 程式裡的 self 和縮排，常常交給同一位專家處理<Cite k="mixtral" />。MoE 的專家更像是模型自己學出來的分工方式，而不是「數學專家」「法律專家」。
+
+### 負載平衡：別讓明星專家累垮
+
+MoE 最大的工程難題，是讓 Token 平均地分給各位專家。如果放任路由器自由學習，很容易出現惡性循環：某幾位專家一開始稍微好一點，就被選得更多、訓練得更好，最後幾乎所有 Token 都湧向它們，其他專家形同虛設，稱為路由崩塌。在專家平行的部署下，最忙的那顆 GPU 還會拖慢整個系統<Cite k="deepseek-v3" />。業界發展出三種主要對策：
+
+- **輔助損失**：在訓練目標中加一項懲罰，分配不均時懲罰就變大。Switch Transformer 的版本是把「實際分到每位專家的 Token 比例」與「路由機率的比例」相乘再加總，係數取 0.01，大到足以平衡負載、又小到不至於干擾主要的訓練目標<Cite k="switch" />。但 DeepSeek 指出，輔助損失太大會損害模型表現<Cite k="deepseek-v3" />。
+- **容量上限**：每位專家每批最多只處理（每批 Token 數 ÷ 專家數）× 容量因子個 Token，超過的 Token 直接略過這一層的專家運算，經殘差連接進入下一層，稱為丟棄 Token。Switch Transformer 的實驗中，被丟棄的 Token 通常不到 1%<Cite k="switch" />。
+- **偏置項調整（DeepSeek-V3）**：替每位專家加一個只用於「挑選」的偏置項。每個訓練步驟結束時，過載專家的偏置項調低、負載不足的調高，讓下一步的分配自動趨於平均；加權時仍使用原本的分數，所以不會扭曲模型的輸出。DeepSeek-V3 主要依靠這個方法，只保留一項很輕的序列層級平衡損失，訓練與推論都不丟棄任何 Token<Cite k="deepseek-v3" />。
+
+推論時也要平衡。DeepSeek-V3 上線後，會根據線上統計找出熱門專家並複製多份（冗餘專家），並定期調整（例如每 10 分鐘一次）；在 Prefill 階段設了 32 個冗餘專家，每顆 GPU 除了原本的 8 位專家，再多放 1 位冗餘專家<Cite k="deepseek-v3" />。
+
+### MoE 的帳：省運算，不省記憶體
+
+和每個 Token 動用全部參數的<Term id="dense-model">稠密模型</Term>相比，MoE 的帳要分三本來看：運算、記憶體與批次。
+
+<Compare
+  title="稠密模型與 MoE 模型"
+  left={{ title: "稠密模型", items: ["每個 Token 動用全部參數", "每個 Token 的運算量約為 2 × 總參數", "權重記憶體與總參數成正比", "常用張量平行與管線平行切分", "讀進來的權重，批次裡每個 Token 都會用到"] }}
+  right={{ title: "MoE 模型", items: ["每個 Token 只動用被選中的專家", "每個 Token 的運算量約為 2 × 啟用參數", "權重記憶體仍與總參數成正比", "需要專家平行與 All-to-All 通訊", "需要大批次，每位專家才分得到足夠的 Token"] }}
+/>
+
+先看運算。訓練運算量約為 6 × 參數量 × 訓練 Token 數，MoE 只需計算啟用參數。DeepSeek-V3 以 370 億啟用參數、14.8 兆個 Token 預訓練，約 3.3 × 10²⁴ 次運算，約為稠密的 Llama 3 405B（3.8 × 10²⁵）的 1/12<Cite k="deepseek-v3" /><Cite k="llama3" />。這是本站以公式換算的數量級比較，公式的由來見<LearnLink id="training-vs-inference-economics">訓練與推論的經濟學</LearnLink>。
+
+再看記憶體。全部 6,710 億個參數都必須常駐在記憶體裡，就算以 <Term id="fp8">FP8</Term> 存放（每個參數 1 位元組），也要約 671 GB，超過一台 8 顆 H100 伺服器的 640 GB HBM<Cite k="h100" />（本站換算）。Mistral 在 Mixtral 論文中說得很直接：啟用參數決定推論的運算成本，記憶體成本卻與總參數成正比；加上路由與在同一顆裝置上跑多位專家的額外負擔，MoE 比較適合能把批次做大的工作負載<Cite k="mixtral" />。
+
+這也是 MoE 與低精度格式越綁越緊的原因：權重的大頭在專家身上，把專家壓到 4 位元，省下的記憶體最多。gpt-oss-120b 在後訓練階段就把 MoE 權重量化為 MXFP4，因此能放進單張 80 GB GPU<Cite k="gptoss-card" />；DeepSeek-V4 的專家參數用 <Term id="fp4">FP4</Term>、其他多數參數用 FP8<Cite k="deepseek-v4" />；Kimi K3 從 SFT 階段起就以 MXFP4 權重做量化感知訓練<Cite k="kimi-k3" />。
+
+最後是批次。<Term id="decode">Decode</Term> 時，如果同時只處理一個 Token，每層只需讀取 8 位路由專家與 1 位共享專家的權重，延遲很低；但同時處理的 Token 一多，幾乎每位專家都會被選到，而每位專家分到的 Token 卻很少，GPU 大部分時間都在搬權重。DeepSeek 說明，正因為每層 256 位專家只啟用 8 位，必須把整體<Term id="batching">批次</Term>做得極大，才能讓每位專家分到足夠的批次<Cite k="deepseek-infer" />；即使如此，Decode 階段每位專家的批次通常仍在 256 個 Token 以內，瓶頸是記憶體存取而不是運算<Cite k="deepseek-v3" />。
+
+### 專家平行與 All-to-All：MoE 為什麼吃網路
+
+當模型大到一顆 GPU 放不下，就要用<Term id="expert-parallelism">專家平行</Term>：把不同專家放在不同 GPU 上。資料平行用的 <Term id="all-reduce">All-Reduce</Term> 是所有 GPU 交換、平均同一份梯度；MoE 需要的則是 All-to-All，每顆 GPU 要把不同的 Token 分別送給每一顆其他 GPU，而且每一層都要做兩次。
+
+<FlowSteps
+  title="專家平行下，Token 在一層 MoE 的旅程"
+  steps={[
+    { title: "路由", detail: "每顆 GPU 替手上的 Token 選好專家" },
+    { title: "Dispatch（All-to-All）", detail: "把 Token 送往存放目標專家的 GPU，可能跨機器" },
+    { title: "專家計算", detail: "各 GPU 用自己的專家處理收到的 Token" },
+    { title: "Combine（All-to-All）", detail: "把結果送回 Token 原本所在的 GPU，加權合併" },
+    { title: "下一層", detail: "DeepSeek-V3 有 61 層，除前三層外都是 MoE 層，每個 Token 要重複這段旅程 58 次" }]}
+  caption="依 DeepSeek-V3 技術報告整理；層數為本站依報告換算。"
+/>
+
+DeepSeek-V3 的訓練叢集把這個問題攤得很清楚。同一台伺服器內的 8 顆 GPU 以 <Term id="nvlink">NVLink</Term> 相連，頻寬 160 GB/s；跨伺服器改走 <Term id="infiniband">InfiniBand</Term>，只有 50 GB/s，差了 3.2 倍。跨節點的專家平行讓運算與通訊的時間比約為 1:1，若兩者不能重疊，等於一半時間花在通訊上。DeepSeek 的對策包括：限制每個 Token 最多只送往 4 個節點，用自研的 DualPipe 排程讓通訊與運算重疊，並撰寫專用的通訊核心。即便如此，每顆 H800 的 132 個運算單元（SM）中仍有 20 個要撥去處理通訊，DeepSeek 因此在報告中建議硬體廠商用專用硬體承擔這些通訊工作<Cite k="deepseek-v3" />。
+
+推論也一樣依賴大規模專家平行。DeepSeek 在 2025 年公開的線上服務架構中，Prefill 階段以 4 台伺服器、32 顆 GPU 為一組，每顆 GPU 放 9 位路由專家與 1 位共享專家；Decode 階段則擴大到 18 台伺服器、144 顆 GPU，每顆 GPU 只放 2 位路由專家與 1 位共享專家，讓每顆 GPU 要讀的權重更少<Cite k="deepseek-infer" />。
+
+這正是機櫃級 <Term id="scale-up">Scale-up</Term> 系統的賣點。<Term id="nvl72">NVL72</Term> 把 72 顆 GPU 以 NVLink Switch 連成一個整體，NVLink 總頻寬 130 TB/s；專家可以分散到最多 72 顆 GPU 上，每顆 GPU 的專家變少、HBM 要載入的參數也變少。NVIDIA 稱 Kimi K2 Thinking、DeepSeek-R1 與 Mistral Large 3 在 GB200 NVL72 上的表現約為前代 HGX H200 的 10 倍，這是廠商自己的測試<Cite k="nv-moe" />。<CompanyChip id="amd" /> 的 Helios 機櫃同樣以 72 顆 MI455X GPU 為單位，合計 31 TB 的 HBM4<Cite k="amd-mi400" />。
+
+更進一步，硬體也開始依 MoE 的結構分工。NVIDIA 在 2026 年 3 月發表的 Groq 3 LPX 推論機櫃有 256 顆 LPU、合計 128 GB 晶片內 SRAM；與 Vera Rubin NVL72 搭配時，GPU 負責 <Term id="prefill">Prefill</Term> 與 Decode 階段的注意力運算，LPX 則接手對延遲敏感的前饋網路與 MoE 專家運算，NVIDIA 稱為注意力與前饋網路分離<Cite k="lpx-inside" />。細節見<LearnLink id="inference-optimization">推論最佳化</LearnLink>。
+
+### 訓練上的眉角
+
+稀疏模型一度以訓練不穩定聞名。Switch Transformer 的貢獻之一，就是提出一組訓練技巧，首次以 bfloat16 這種較低精度訓練大型稀疏模型<Cite k="switch" />。到了 2025 年，月之暗面表示以 MuonClip 最佳化器、15.5 兆個 Token 預訓練 1 兆參數的 Kimi K2，全程沒有出現訓練不穩定<Cite k="kimi-k2" />。
+
+<Term id="reinforcement-learning">強化學習</Term>階段則出現新的麻煩：路由會隨參數更新而改變。<CompanyChip id="alibaba" /> 的 Qwen 團隊觀察到，以 GRPO 訓練 48 層的 Qwen3-30B-A3B-Base 時，每做一次梯度更新，同一筆回答在新舊模型下約有 10% 的啟用專家不同，使訓練難以正常收斂；過去要靠重播舊路由的 Routing Replay 維持穩定，代價是額外的記憶體與通訊，他們提出的 GSPO 則不再需要這項技巧<Cite k="gspo" />。相關背景見<LearnLink id="post-training-deep">後訓練深入</LearnLink>。
+
+<DeepDive title="深入一點：路由公式、平衡損失，與「批次要多大」">
+
+**DeepSeek-V3 的路由。** 對第 t 個 Token，先以 sigmoid 計算它與第 i 位專家的親和分數 s，加上偏置項 b 之後挑出前 K_r 名；被選中的專家以原始分數正規化成閘門值 g，再與共享專家的輸出相加<Cite k="deepseek-v3" />：
+
+<MathTeX tex={"g^{\\prime}_{i,t}=\\begin{cases}s_{i,t},&s_{i,t}+b_i\\in\\mathrm{TopK}\\left(\\{s_{j,t}+b_j\\},K_r\\right)\\\\0,&\\text{otherwise}\\end{cases},\\qquad g_{i,t}=\\frac{g^{\\prime}_{i,t}}{\\sum_j g^{\\prime}_{j,t}}"} display label="若專家 i 的分數加上偏置項後名列前 K_r 名，暫定閘門值等於原始分數 s，否則為零；最終閘門值是暫定值除以所有暫定值的總和" />
+
+偏置項只影響「選誰」，不影響「加權多少」，這是它不會扭曲模型輸出的關鍵。每一步結束後，過載專家的 b 減去 γ、負載不足的加上 γ，γ 稱為偏置更新速度<Cite k="deepseek-v3" />。
+
+**Switch Transformer 的輔助損失。** 設有 N 位專家，f_i 是這一批 Token 實際分給專家 i 的比例，P_i 是路由器分給專家 i 的平均機率<Cite k="switch" />：
+
+<MathTeX tex={"\\mathcal{L}_{\\mathrm{aux}}=\\alpha\\cdot N\\cdot\\sum_{i=1}^{N}f_i\\cdot P_i"} display label="輔助損失等於係數 alpha 乘以專家數 N，再乘以每位專家的 Token 比例 f_i 與機率比例 P_i 乘積的總和" />
+
+完全平均時 f_i 與 P_i 都是 1/N，總和為 1/N，乘上 N 後恰好為 1；分配越集中，這一項越大。
+
+**批次要多大，每位專家才吃得飽？** 假設路由均勻隨機、彼此獨立，一層有 N 位路由專家、每個 Token 選 k 位，同時處理 B 個 Token 時，被用到的專家數 U 與每位專家平均分到的 Token 數為：
+
+<MathTeX tex={"U=N\\left(1-\\left(1-\\frac{k}{N}\\right)^{B}\\right),\\qquad\\bar{b}=\\frac{Bk}{N}"} display label="被用到的專家數 U 等於 N 乘以一減去（一減 k 除以 N）的 B 次方；每位專家平均分到 B 乘 k 除以 N 個 Token" />
+
+代入 DeepSeek-V3 的 N = 256、k = 8（本站推算）：
+
+| 同時處理的 Token 數 B | 被用到的專家數（共 256 位） | 每位專家平均分到的 Token |
+|---|---|---|
+| 1 | 8 | 0.03 |
+| 16 | 約 102 | 0.5 |
+| 64 | 約 222 | 2 |
+| 256 | 約 256 | 8 |
+
+只要同時處理幾十個 Token，大部分專家的權重都得從 HBM 讀一遍，但每位專家只分到個位數的 Token，運算單元大多在等資料。若要讓每位專家分到 256 個 Token，每一步就要同時處理約 8,192 個 Token。這就是 DeepSeek 強調「整體批次必須極大」，並用上百顆 GPU 做專家平行的原因<Cite k="deepseek-infer" />。
+
+</DeepDive>
+
+## 與產業鏈的連結
+
+- **模型實驗室幾乎全面轉向 MoE** → <SegmentChip id="foundation-models" />：<CompanyChip id="deepseek" />（<ModelChip id="deepseek" />）、<CompanyChip id="alibaba" />（<ModelChip id="alibaba-qwen" />）、<CompanyChip id="moonshot-ai" />（<ModelChip id="moonshot-kimi" />）、<CompanyChip id="openai" />（<ModelChip id="openai-gpt-oss" />）、<CompanyChip id="meta" />（<ModelChip id="meta-muse-llama" />）、<CompanyChip id="mistral-ai" />（<ModelChip id="mistral" />）都以 MoE 推出旗艦或開放模型，<CompanyChip id="alphabet" /> 的 <ModelChip id="google-gemini" /> 也是稀疏 MoE。兆級參數的開放權重模型因此變得可行，見<TrendLink id="open-weights-race">開放權重競賽與兆級參數模型</TrendLink>。
+- **總參數吃記憶體** → <SegmentChip id="memory-storage" />：MoE 用較少運算換到更大的模型，但全部專家都要常駐 HBM。模型越稀疏、總參數越大，對 <CompanyChip id="sk-hynix" />、<CompanyChip id="samsung-electronics" />、<CompanyChip id="micron" /> 的 HBM 容量需求越高，見<TrendLink id="memory-supercycle">記憶體超級循環</TrendLink>。
+- **All-to-All 吃互連** → <SegmentChip id="networking-optics" />、<SegmentChip id="ai-accelerators" />：專家平行讓 Scale-up 網域的大小直接影響效能；<CompanyChip id="nvidia" /> 的 NVL72 與 AMD 的 Helios 都以 72 顆 GPU 組成一個 Scale-up 網域，這也牽動 NVLink、UALink 與乙太網路陣營的標準之爭，見<TrendLink id="scale-up-fabric-wars">Scale-up 互連標準之爭</TrendLink>與<LearnLink id="interconnect-deep">互連深入</LearnLink>。
+- **機櫃級系統的組裝與液冷** → <SegmentChip id="servers-systems" />：72 顆 GPU 的機櫃要在一個機架內完成高密度互連、供電與液冷整合，是 <CompanyChip id="foxconn" />、<CompanyChip id="quanta" />、<CompanyChip id="wiwynn" /> 等台灣伺服器廠的主戰場，見<TrendLink id="rack-scale-systems">機櫃即電腦</TrendLink>。
+- **推論軟體與專用硬體** → <SegmentChip id="devtools-data-mlops" />：大規模專家平行需要成熟的<Term id="inference-engine">推論引擎</Term>，Kimi K3 的模型卡建議的推論引擎就包括 vLLM 與 SGLang<Cite k="kimi-k3" />，兩者背後的公司分別是 <CompanyChip id="inferact" /> 與 <CompanyChip id="radixark" />。硬體端，NVIDIA 的 Groq 3 LPX 以 LPU 為核心（Groq 與 LPU 名稱經 <CompanyChip id="groq" /> 授權使用）<Cite k="lpx-pr" />，可承接 Decode 階段的前饋網路與 MoE 專家運算<Cite k="lpx-inside" />，見<TrendLink id="inference-chips-new-paradigms">推論專用晶片</TrendLink>與<TrendLink id="inference-demand">推論需求超越訓練</TrendLink>。

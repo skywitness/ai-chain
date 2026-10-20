@@ -1,0 +1,27 @@
+---
+/**
+ * Company link chip with the primary-segment colour dot.
+ *   <CompanyChip id="tsmc" />                 → 台積電
+ *   <CompanyChip id="nvidia">輝達</CompanyChip>
+ * Name comes from the `companies` collection, falling back to src/data/roster/*.yaml.
+ * Unknown ids render as plain (dashed) text instead of a broken link.
+ */
+import { companyDisplay, segmentMeta } from '../../lib/collections';
+import { companyHref } from '../../lib/paths';
+import Chip from './Chip.astro';
+
+interface Props {
+  id: string;
+  /** Show 「中文名（English）」 instead of only the Chinese name */
+  full?: boolean | undefined;
+}
+const { id, full = false } = Astro.props;
+const c = await companyDisplay(id);
+if (!c.exists && import.meta.env.DEV) console.warn(`[CompanyChip] unknown company id "${id}" on ${Astro.url.pathname}`);
+const seg = c.segment ? segmentMeta(c.segment) : undefined;
+const label = full && c.name !== c.nameZh ? `${c.nameZh}（${c.name}）` : c.nameZh;
+const title = [c.name !== c.nameZh ? `${c.nameZh}（${c.name}）` : c.nameZh, seg?.title].filter(Boolean).join(' · ');
+const hasSlot = Astro.slots.has('default');
+---
+
+<Chip kind="company" href={c.exists ? companyHref(id) : undefined} color={seg?.color} title={title}>{hasSlot ? <slot /> : label}</Chip>

@@ -1,0 +1,170 @@
+---
+/**
+ * 「趨勢速覽」 panel at the top of a trend article: time range (with a time bar), confidence with its
+ * rationale, and impact with the affected segments.
+ *   <TrendSummary trend={view} rationale={d.confidenceRationale} />
+ */
+import Badge from '../ui/Badge.astro';
+import HorizonBar from './HorizonBar.astro';
+import { segmentMeta } from '../../lib/collections';
+import { segmentHref } from '../../lib/paths';
+import { CONFIDENCE_META, HORIZON_META, IMPACT_META, categoryMeta, yearsLabel, type TrendView } from './trend-meta';
+
+interface Props {
+  trend: TrendView;
+  rationale?: string | undefined;
+  class?: string | undefined;
+}
+const { trend: t, rationale, class: className } = Astro.props;
+const cat = categoryMeta(t.category);
+const hz = t.horizon ? HORIZON_META[t.horizon] : undefined;
+const conf = t.confidence ? CONFIDENCE_META[t.confidence] : undefined;
+const imp = t.impact ? IMPACT_META[t.impact] : undefined;
+const y = t.horizonYears;
+const axis: [number, number] = [Math.min(2025, (y?.[0] ?? 2026) - 1), Math.max(2032, (y?.[1] ?? 2031) + 1)];
+const segs = t.relatedSegments.map((s) => segmentMeta(s)).filter((s): s is NonNullable<typeof s> => !!s);
+---
+
+<section class:list={['ts', className]} style={`--tc: ${cat.color}`} aria-label="趨勢速覽">
+  <div class="ts__cell">
+    <p class="ts__label">時間範圍</p>
+    <p class="ts__value">
+      {hz ? hz.label : '—'}
+      {y && <span class="ts__years">{yearsLabel(y)}</span>}
+    </p>
+    {y && <HorizonBar years={y} axis={axis} color={cat.color} />}
+  </div>
+  <div class="ts__cell">
+    <p class="ts__label">信心程度</p>
+    <p class="ts__value">
+      {conf ? <Badge tone={conf.tone} size="m">{conf.label}</Badge> : '—'}
+      {conf && <span class="ts__hint">{conf.hint}</span>}
+    </p>
+    {rationale && <p class="ts__text">{rationale}</p>}
+  </div>
+  <div class="ts__cell">
+    <p class="ts__label">影響程度</p>
+    <p class="ts__value">{imp ? <Badge tone={imp.tone} size="m">{imp.label}</Badge> : '—'}</p>
+    {
+      segs.length > 0 && (
+        <>
+          <p class="ts__note">影響的環節</p>
+          <ul class="ts__segs" role="list">
+            {segs.map((s) => (
+              <li>
+                <a href={segmentHref(s.id)} style={`--sc: ${s.color}`} title={s.title}>
+                  <i aria-hidden="true" />
+                  {s.short}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .ts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: 0;
+    border: 1px solid var(--c-border);
+    border-block-start: 3px solid var(--tc);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    box-shadow: var(--shadow-1);
+    overflow: hidden;
+  }
+  .ts__cell {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    min-width: 0;
+    border-block-end: 1px solid var(--c-border);
+  }
+  @media (min-width: 760px) {
+    .ts {
+      grid-template-columns: 1fr 1.35fr 1fr;
+    }
+    .ts__cell {
+      border-block-end: 0;
+    }
+    .ts__cell + .ts__cell {
+      border-inline-start: 1px solid var(--c-border);
+    }
+  }
+  .ts__cell:last-child {
+    border-block-end: 0;
+  }
+  .ts p {
+    margin: 0;
+  }
+  .ts__label {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-muted);
+  }
+  .ts__value {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    font-size: var(--fs-l);
+    font-weight: var(--fw-bold);
+    line-height: 1.4;
+  }
+  .ts__years {
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .ts__hint {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-muted);
+  }
+  .ts__text {
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg);
+  }
+  .ts__note {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .ts__segs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .ts__segs a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-block-size: 2rem;
+    padding: 0 0.7em;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font-size: var(--fs-s);
+    text-decoration: none;
+  }
+  .ts__segs a:hover {
+    border-color: color-mix(in srgb, var(--sc) 60%, var(--c-border));
+    background: color-mix(in srgb, var(--sc) 8%, var(--c-bg));
+  }
+  .ts__segs i {
+    inline-size: 0.35em;
+    block-size: 0.9em;
+    border-radius: 1px;
+    background: var(--sc);
+  }
+</style>

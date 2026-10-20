@@ -1,0 +1,49 @@
+# Proposals from the euv-litho scene agent, 2026-10-07.
+# Nothing here blocks the scene: each capability is implemented locally in
+# src/three/scenes/euv-litho/ and can move to the kit / core unchanged.
+
+- id: info-panel
+  target: src/three/core (SceneContext) or src/three/kit/InfoPanel.ts
+  problem: >
+    Guided steps sometimes need a persistent text card that stays on screen for the whole step
+    (euv-litho: the Rayleigh criterion CD = k₁·λ/NA in the 解析度 step, the 4×/8× anamorphic card in
+    變形光學). `ctx.card` is the single hover/selection card: any hover replaces it and Esc / a
+    background click hides it, so it cannot hold step content.
+  proposal: >
+    Add `ctx.panel.show(content | null, { corner?: 'tl' | 'tr' | 'bl' | 'br' })` that renders a
+    second, non-interactive `.scene-card` pinned to a stage corner (aria-hidden, because the step
+    caption carries the same text), with a 220 ms opacity fade (none under reduced motion), a
+    compact layout below ~560 px stage width, and automatic removal on dispose.
+    Content shape: { title, formula?, rows?: { k, v }[], note? }.
+  workaround: >
+    src/three/scenes/euv-litho/panel.ts (InfoPanel) — DOM only, textContent (no innerHTML), reuses
+    the global .scene-card / .scene-card-title / .scene-card-body / .scene-card-sub styles.
+
+- id: optic-beams
+  target: src/three/kit/OpticBeams.ts
+  problem: >
+    Optical scenes (euv-litho now; network/cpo and physical-ai lidar could reuse it) need light
+    beams drawn between mirror footprints: translucent tubes whose end rings lie in each mirror's
+    plane (so beams never poke through tilted mirrors), crisp marginal-ray lines, optional annular
+    (centrally obscured) beams, and per-segment emphasis for guided steps — in two draw calls.
+  proposal: >
+    Kit module `OpticBeams({ elements: { pos, normal, r, rIn? }[], segments?: 40 })` that orients
+    mirrors by the law of reflection (normal = bisector of the incoming and outgoing chief rays),
+    picks tangent signs so marginal rays never cross between finite footprints and pass straight
+    through foci, builds one vertex-RGBA tube mesh + one LineSegments, and exposes
+    `setEmphasis(i, k)`, `rayPath(f)` (for PathFlow pulses) and `setTheme()` (additive on dark,
+    normal on light).
+  workaround: >
+    src/three/scenes/euv-litho/optics.ts (buildTrain, rayPath, buildBeams) plus writeBeams() in
+    index.ts.
+
+- id: pathflow-pulse-trains
+  target: src/three/kit/PathFlow.ts (docs only)
+  problem: >
+    Periodic pulse trains that leave a source in sync with an event (one pulse per droplet hit)
+    are possible today but not documented.
+  proposal: >
+    Document the recipe in SCENE-CONTRACT §7: mode 'once', speedVariance 0, byLength false,
+    path.speed = pathLength / referenceLength (all rays share one parametric speed),
+    onceOffsets = [j·T/travel − i·tail], and drive `setTime(t mod T)`.
+  workaround: Implemented that way in euv-litho (buildSet in index.ts).

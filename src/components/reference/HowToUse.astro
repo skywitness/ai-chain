@@ -1,0 +1,37 @@
+---
+/**
+ * 「怎麼使用本站：由淺入深」: the three reading levels (LevelPath) plus the small reading tools
+ * (Term cards, scene guides, search, 資料截至 and source numbers). Render as direct children of a
+ * .prose container so the prose flow spacing applies; every top-level element carries `data-htu`.
+ * Used by /about/ after the MDX body and by AboutFallback.
+ *   <HowToUse />
+ */
+import LevelPath from './LevelPath.astro';
+import { sectionHref } from '../../lib/paths';
+
+interface Props {
+  id?: string | undefined;
+}
+const { id = 'how-to-use' } = Astro.props;
+---
+
+<h2 id={id} data-htu>怎麼使用本站：由淺入深</h2>
+<p data-htu>
+  <a href={sectionHref('learn')}>學習路徑</a>把文章分成三個難度，每篇都標示建議先讀的文章，讀完會推薦下一步。第一次來，從「入門」的第一篇讀起就好。
+</p>
+<LevelPath class="htu-levels" />
+<h3 data-htu>閱讀時的小工具</h3>
+<ul data-htu>
+  <li>文中加上虛線底線的名詞可以點開說明卡片；完整解釋都收在<a href={sectionHref('glossary')}>名詞解釋</a>。</li>
+  <li>3D 場景都附有「導覽」步驟與文字說明，不能顯示 3D 的裝置也能讀到同樣的內容。</li>
+  <li>按下 Ctrl K（Mac 為 ⌘ K）或頁首的「搜尋」，可以用中文、英文或股票代號找公司、模型與名詞。</li>
+  <li>每頁都標示「資料截至」日期；數字旁的上標編號可以跳到頁面底部的原始來源。</li>
+</ul>
+
+<style>
+  @layer components {
+    :global(.prose) > :global(ol.htu-levels.lp) {
+      margin-block: var(--space-5) var(--space-2);
+    }
+  }
+</style>
