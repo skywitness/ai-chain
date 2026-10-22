@@ -1,0 +1,347 @@
+---
+/**
+ * /memory/ 「記憶體與儲存專題：供需、市占、產能與擴產」 — 由淺入深:
+ * hero → 一分鐘看懂 (pages entry "memory" + 記憶體家族 + click-to-load hbm hierarchy scene) → 供需燈號 (one card
+ * per market, computed) → 全球記憶體產能地圖 (memory-fab-map scene + filterable, sortable fab table) → one section
+ * per market (HBM, DRAM, NAND 與 SSD, HDD 與新興記憶體) → 擴產總表 → 風險與觀察指標 → 下一步 → 資料來源.
+ * Data: src/data/memory/*.yaml via src/lib/memory-data.ts (validated with src/schemas/memory.ts; check with
+ * npx tsx scripts/check-memory.ts). Sources of the intro and of every data file are merged into one numbered list.
+ */
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Scene3D from '../../components/scene/Scene3D.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Icon from '../../components/ui/Icon.astro';
+import SourcesList from '../../components/content/SourcesList.astro';
+import NextSteps from '../../components/content/NextSteps.astro';
+import { mdxComponents } from '../../components/content/mdx-components';
+import { registerSources } from '../../components/content/page-state';
+import CategorySection from '../../components/memory/CategorySection.astro';
+import DashboardCard from '../../components/memory/DashboardCard.astro';
+import ExpansionTable from '../../components/memory/ExpansionTable.astro';
+import FabTable from '../../components/memory/FabTable.astro';
+import MemoryFamily from '../../components/memory/MemoryFamily.astro';
+import MemoryRisks from '../../components/memory/MemoryRisks.astro';
+import '../../components/memory/memory.css';
+import {
+  BALANCE_META,
+  BALANCE_ORDER,
+  CATEGORY_META,
+  COUNTRY_ZH,
+  allExpansions,
+  fabRows,
+  getMemoryData,
+  mergePageSources,
+} from '../../lib/memory-data';
+import { buildMemoryFabsSceneData } from '../../lib/scene-data/memory-fabs';
+import { safeEntry } from '../../lib/collections';
+import { articleJsonLd, datasetJsonLd, ogImageFor } from '../../lib/seo';
+import type { SourceT } from '../../schemas/common';
+
+// ── data ──
+const data = getMemoryData();
+const asOf = data.asOf || '2026-10-22';
+const fabs = fabRows(data);
+const expansions = allExpansions(data);
+const sceneData = buildMemoryFabsSceneData();
+
+// pages entry "memory" (intro prose); optional
+const page = await safeEntry('pages', 'memory');
+let Intro: Awaited<ReturnType<typeof render>>['Content'] | undefined;
+if (page) {
+  try {
+    Intro = (await render(page)).Content;
+  } catch (err) {
+    console.warn(`[memory] could not render pages/memory: ${(err as Error).message}`);
+  }
+}
+const pageData = page?.data as { title?: string; description?: string; updated?: string; sources?: SourceT[] } | undefined;
+const sources = mergePageSources(pageData?.sources ?? [], data.sources);
+// The intro MDX renders before BaseLayout's frontmatter (head propagation): register here so every <Cite> number
+// follows the merged list rendered at the end of the page.
+registerSources(Astro, sources);
+
+// ── copy ──
+const h1 = '記憶體與儲存專題：供需、市占、產能與擴產';
+const description =
+  pageData?.description ??
+  'AI 讓記憶體成為算力瓶頸。整理 HBM、DRAM、NAND Flash 與硬碟的供需燈號、市場規模與市占、全球記憶體產能地圖、擴產時程與技術路線。';
+const countries = [...new Set(fabs.map((f) => f.country))];
+const growthFabs = fabs.filter((f) => f.status !== 'operating').length;
+const byCountry = countries
+  .map((c) => ({ c, n: fabs.filter((f) => f.country === c).length }))
+  .sort((a, b) => b.n - a.n);
+
+const toc = [
+  { href: '#basics', label: '一分鐘看懂' },
+  { href: '#dashboard', label: '供需燈號' },
+  { href: '#fabs', label: '產能地圖' },
+  ...data.markets.map((m) => ({ href: `#${m.category}`, label: CATEGORY_META[m.category].short })),
+  { href: '#expansions', label: '擴產總表' },
+  { href: '#risks', label: '風險與觀察' },
+  { href: '#sources', label: '資料來源' },
+];
+
+const jsonLd = [
+  articleJsonLd({
+    title: h1,
+    description,
+    path: Astro.url,
+    site: Astro.site,
+    dateModified: asOf,
+    section: '專題',
+    keywords: ['記憶體', 'HBM', 'DRAM', 'NAND Flash', 'SSD', 'HDD', '供需', '擴產'],
+  }),
+  ...(fabs.length
+    ? [
+        datasetJsonLd({
+          name: '全球記憶體晶圓廠與擴產計畫',
+          description: `${fabs.length} 座記憶體、HBM 封裝與硬碟廠區的位置、產品、狀態、月產能與擴產時程，以及 ${expansions.length} 項擴產計畫。`,
+          path: Astro.url,
+          site: Astro.site,
+          dateModified: asOf,
+          sources: sources.slice(0, 20).map((s) => ({ title: s.title, url: s.url, publisher: s.publisher })),
+          keywords: ['記憶體', '晶圓廠', '產能', '擴產'],
+        }),
+      ]
+    : []),
+];
+---
+
+<BaseLayout
+  title="記憶體與儲存專題"
+  description={description}
+  image={ogImageFor('chain')}
+  imageAlt="AI 產業鏈全景：記憶體與儲存專題"
+  type="article"
+  breadcrumbs={[{ label: '記憶體與儲存專題' }]}
+  section="memory"
+  jsonLd={jsonLd}
+  sources={sources}
+  modifiedTime={asOf}
+>
+  <span hidden data-pagefind-filter="類型:專題"></span>
+  <span hidden data-pagefind-filter="環節:記憶體與儲存"></span>
+  <span hidden data-pagefind-sort={`updated:${asOf}`}></span>
+
+  <div class="mem-hero">
+    <div class="container">
+      <header class="page-head mem-head">
+        <p class="page-head__kicker mem-head__kicker">
+          <span class="mem-head__badge">專題</span>
+          記憶體與儲存 · HBM、DRAM、NAND、HDD
+        </p>
+        <h1 data-pagefind-weight="10">{h1}</h1>
+        <p class="page-head__lede mem-head__lede">
+          AI 讓記憶體從景氣循環變成算力瓶頸。這一頁用燈號、地圖與時間軸，看懂四大類記憶體與儲存各缺多少貨、誰在供貨、產能在哪裡、新廠何時開出。
+        </p>
+        <div class="mem-head__meta">
+          <DataAsOf date={asOf} note="數字僅供認識產業，不構成投資建議" />
+        </div>
+        <ul class="mem-head__facts" role="list" aria-label="本頁收錄範圍">
+          <li><strong>{data.markets.length}</strong> 大類別</li>
+          <li><strong>{fabs.length}</strong> 座廠區</li>
+          <li><strong>{expansions.length}</strong> 項擴產計畫</li>
+          <li><strong>{sources.length}</strong> 筆來源</li>
+        </ul>
+      </header>
+    </div>
+  </div>
+
+  <!-- The section links stay under the site header while reading (the page is long, especially on phones). -->
+  <nav class="mem-bar" aria-label="本頁段落" data-pagefind-ignore>
+    <div class="container mem-bar__in">
+      {toc.map((t) => <a href={t.href}>{t.label}</a>)}
+    </div>
+  </nav>
+
+  <section class="container section mem-basics" id="basics" aria-label="一分鐘看懂">
+    <p class="mem-sec-kicker">一分鐘看懂</p>
+    <div class="mem-basics__grid">
+      <div class="prose mem-basics__prose">
+        {
+          Intro ? (
+            <Intro components={mdxComponents} />
+          ) : (
+            <>
+              <h2>記憶體與儲存在做什麼</h2>
+              <p>AI 晶片負責計算，記憶體與儲存負責放資料、送資料。資料離晶片越近，讀取越快、每位元越貴，容量也越小。</p>
+            </>
+          )
+        }
+      </div>
+      <aside class="mem-basics__aside" aria-label="記憶體與儲存家族">
+        <MemoryFamily />
+      </aside>
+    </div>
+    <div class="mem-basics__scene">
+      <Scene3D
+        id="hbm"
+        variant="hierarchy"
+        step={5}
+        autoload="click"
+        caption="記憶體階層塔：由上而下是暫存器、SRAM 快取、HBM、DDR／LPDDR、SSD 與 HDD；平台寬度代表容量、左側長條代表延遲、右側管道代表頻寬（皆為對數刻度的數量級示意）。按下「載入 3D」再用「導覽」看記憶體牆。"
+      />
+    </div>
+  </section>
+
+  <section class="container section" id="dashboard" aria-labelledby="dashboard-h">
+    <div class="sec-head">
+      <h2 id="dashboard-h">供需燈號</h2>
+      <p class="sec-head__lede">
+        每張卡片由本頁資料計算：目前這一期的供需狀態與原因、之後幾期的展望、市場規模、最大供應商與最新的價格變化。燈號由左到右是過剩、平衡、吃緊、短缺。
+      </p>
+    </div>
+    <div class="mem-dash-legend" aria-hidden="true">
+      {
+        BALANCE_ORDER.map((s) => (
+          <span class="mem-legend__item">
+            <i class="mem-legend__sw" style={`--k: ${BALANCE_META[s].color}`} />
+            <b>{BALANCE_META[s].label}</b>
+            {BALANCE_META[s].hint}
+          </span>
+        ))
+      }
+    </div>
+    <div class="mem-dash-grid">
+      {data.markets.map((m) => <DashboardCard market={m} asOf={asOf} />)}
+    </div>
+    <p class="mem-fine mem-dash-foot">
+      「目前」是涵蓋資料截至日（{asOf}）的那一期；標示「估計」的是研究機構或公司的推估，「預測」是對未來的預期。各卡片的數字來源不同，請點方括號裡的編號查看出處。
+    </p>
+  </section>
+
+  <section class="container section mem-fabmap" id="fabs" aria-labelledby="fabs-h">
+    <div class="sec-head">
+      <h2 id="fabs-h">全球記憶體產能地圖</h2>
+      <p class="sec-head__lede">
+        記憶體產能高度集中在韓國、台灣、日本與中國，新加坡與美國也有重要廠區。轉動地球儀看看每座廠的產品與規模，或在下方表格依產品、狀態篩選，點欄位標題排序。
+      </p>
+    </div>
+    <Scene3D
+      id="memory-fab-map"
+      variant="globe"
+      height="tall"
+      autoload="visible"
+      data={sceneData}
+      caption="地球儀上每根柱子是一座記憶體、HBM 封裝或硬碟廠區：柱高代表月產能（千片 12 吋晶圓／月），顏色代表主要產品；半透明段與虛線空心柱是擴產中或興建中的產能。可用「導覽」逐步看韓國重鎮、HBM 擴產、NAND 版圖與中國。"
+    />
+    <ul class="mem-fabmap__stats" role="list" aria-label="廠區統計">
+      <li><strong>{fabs.length}</strong> 座廠區</li>
+      <li><strong>{countries.length}</strong> 個國家與地區</li>
+      <li><strong>{growthFabs}</strong> 座擴產、興建或規劃中</li>
+      <li class="mem-fabmap__countries">
+        {byCountry.map((c) => (
+          <span>
+            {COUNTRY_ZH[c.c] ?? c.c} {c.n}
+          </span>
+        ))}
+      </li>
+    </ul>
+    <h3 class="mem-fabmap__h" id="fab-table-h">廠區一覽</h3>
+    <FabTable rows={fabs} />
+  </section>
+
+  {
+    data.markets.map((m, i) => (
+      <div class="container section mem-catwrap">
+        <CategorySection market={m} asOf={asOf} index={i + 1} total={data.markets.length} />
+      </div>
+    ))
+  }
+
+  <section class="container section" id="expansions" aria-labelledby="expansions-h">
+    <div class="sec-head">
+      <h2 id="expansions-h">擴產總表</h2>
+      <p class="sec-head__lede">
+        四大類別的擴產計畫依量產或啟用時間排在一起：哪一年會有多少新產能、由誰開出。用「類別」與「公司」篩選，不需要開啟 JavaScript 也能使用。
+      </p>
+    </div>
+    <ExpansionTable rows={expansions} />
+  </section>
+
+  <section class="container section" id="risks" aria-labelledby="risks-h">
+    <div class="sec-head">
+      <h2 id="risks-h">風險與觀察指標</h2>
+      <p class="sec-head__lede">
+        這一輪缺貨會持續多久，取決於下面幾個問題。每一項列出目前的數字與值得追蹤的指標，方便日後回來對照。
+      </p>
+    </div>
+    <MemoryRisks data={data} />
+    <p class="mem-fine mem-risks__foot">
+      <Icon name="info" size="1em" />
+      本頁整理公開資料以說明產業供需，不預測股價，也不構成投資建議。研究機構的估計與預測可能隨時修正，請以最新來源為準。
+    </p>
+  </section>
+
+  <section class="container section mem-end">
+    <NextSteps
+      title="繼續探索"
+      items={[
+        { segment: 'memory-storage', kicker: '回到產業鏈環節' },
+        { trend: 'memory-supercycle', kicker: '這一輪漲價的來龍去脈' },
+        { trend: 'hbm4-custom-base-die', kicker: 'HBM4 與晶圓代工' },
+        { learn: 'hbm-deep', kicker: '深入 HBM 技術' },
+      ]}
+    />
+    <div class="mem-sources">
+      <SourcesList sources={sources} note={`本頁 ${sources.length} 筆來源合併自導讀與各類別資料；方括號編號對應下列順序，括號內為讀取日期。`} />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .sec-head {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-end: var(--space-5);
+  }
+  .sec-head h2 {
+    font-size: var(--fs-2xl);
+    scroll-margin-block-start: calc(var(--header-h) + var(--mem-bar-h, 0px) + var(--space-4));
+  }
+  .sec-head__lede {
+    margin: 0;
+    max-width: 46em;
+    color: var(--c-fg-muted);
+  }
+  section[id] {
+    scroll-margin-block-start: calc(var(--header-h) + var(--mem-bar-h) + var(--space-2));
+  }
+</style>
+
+<script>
+  // Mark the section being read in the sticky bar and keep its link in view inside the bar.
+  const bar = document.querySelector<HTMLElement>('.mem-bar__in');
+  if (bar && 'IntersectionObserver' in window) {
+    const links = [...bar.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')];
+    const targets = links
+      .map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1))))
+      .filter((el): el is HTMLElement => !!el);
+    const visible = new Set<HTMLElement>();
+    const update = () => {
+      const current = targets.filter((t) => visible.has(t)).at(-1) ?? null;
+      for (const a of links) {
+        const on = !!current && a.hash === `#${current.id}`;
+        if (on) a.setAttribute('aria-current', 'true');
+        else a.removeAttribute('aria-current');
+        if (on) {
+          const left = a.offsetLeft - (bar.clientWidth - a.offsetWidth) / 2;
+          bar.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+        }
+      }
+    };
+    // A section counts as "being read" once its top passes the upper third of the viewport.
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.boundingClientRect.top < window.innerHeight / 3) visible.add(e.target as HTMLElement);
+          else visible.delete(e.target as HTMLElement);
+        }
+        update();
+      },
+      { rootMargin: '0px 0px -66% 0px', threshold: [0, 1] },
+    );
+    for (const t of targets) io.observe(t);
+  }
+</script>

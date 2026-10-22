@@ -1,0 +1,992 @@
+category: storage
+title: HDD、儲存系統與新興記憶體
+asOf: "2026-10-22"
+summary: AI 的訓練資料、模型檢查點與推論產生的內容，大多存放在每 TB 成本最低的近線硬碟（nearline HDD）裡：記憶體與 SSD 負責「快」，硬碟負責「多」。硬碟只剩威騰電子（WD）、希捷（Seagate）與東芝（Toshiba）三家，過去幾年幾乎沒有擴產，AI 需求一來就出現缺貨：2025 年 9 月近線硬碟交期拉長到 52 週以上，希捷表示近線產能大多已分配到 2028 年。廠商不靠多蓋工廠，而是用 HAMR、ePMR 等技術把每片碟片做得更大，希捷預期近線出貨容量每年增加約 25%。介於 HBM 與 SSD 之間的新型記憶體，例如 HBF、CXL 記憶體擴充與 SOCAMM，多數仍在送樣或制定標準的階段。
+keyPoints:
+  - 近線硬碟仍承擔大型資料中心絕大多數的容量：希捷 2026 年第二季出貨 218 EB，其中約九成進入資料中心。
+  - 硬碟只剩三家：TrendForce 預估 2026 年威騰約 48%、希捷約 42%、東芝約 10%；唯一獨立磁頭供應商 TDK 的磁頭事業據報正被競購。
+  - 供給靠「每碟更大」而非「多做硬碟」：希捷 FY2026 硬碟台數持平，碟片與磁頭用量增加 15%–20%，HAMR 已占近線出貨容量約四成。
+  - 缺貨延續：2025 年 9 月近線硬碟交期拉長到 52 週以上；希捷近線產能大多已分配到 2028 年，威騰與客戶洽談的長約延伸到 2029–2031 年。
+  - 價格回升：本站以希捷財報換算，資料中心每 TB 營收一年內約增 11%；威騰稱 2026 年第二季每 TB 混合售價年增近兩成。
+  - 擴產集中在零組件與新技術：東芝菲律賓新產線 2026 年 10 月首批出貨，目標 FY2027 年產能接近 FY2025 的兩倍；豪雅決定在越南新建硬碟玻璃基板廠。
+  - 新興記憶體仍在早期：HBF 第一代單堆疊 512GB、讀取頻寬 1.6TB/s；三星 CXL 3.1 記憶體模組延到 2027 年，先以 CXL 2.0 產品供貨。
+  - SSD 與 HDD 互補：QLC SSD 單顆已達 245.76TB、耗電較低，但成本仍明顯高於硬碟（WD 稱快閃記憶體成本是硬碟的 6–10 倍，日經報導 SSD 價格約為 20 倍）。
+marketSize:
+  - year: 2024
+    value: 6.551
+    unit: billion
+    currency: USD
+    status: actual
+    definition: 希捷全公司營收（FY2024，約當 2023 年 7 月至 2024 年 6 月；以 HDD 為主）
+    src: stx-10k-fy26
+  - year: 2025
+    value: 9.097
+    unit: billion
+    currency: USD
+    status: actual
+    definition: 希捷全公司營收（FY2025，約當 2024 年 7 月至 2025 年 6 月；以 HDD 為主）
+    src: stx-10k-fy26
+  - year: 2026
+    value: 12.195
+    unit: billion
+    currency: USD
+    status: actual
+    definition: 希捷全公司營收（FY2026，約當 2025 年 7 月至 2026 年 7 月初；資料中心市場占 80%）
+    src: stx-10k-fy26
+  - year: 2024
+    value: 6.317
+    unit: billion
+    currency: USD
+    status: actual
+    definition: 威騰電子營收（FY2024，約當 2023 年 7 月至 2024 年 6 月；分拆 Sandisk 後重編，只含 HDD 事業）
+    src: wd-10k-fy26
+  - year: 2025
+    value: 9.52
+    unit: billion
+    currency: USD
+    status: actual
+    definition: 威騰電子營收（FY2025，約當 2024 年 7 月至 2025 年 6 月；分拆 Sandisk 後重編，只含 HDD 事業）
+    src: wd-10k-fy26
+  - year: 2026
+    value: 12.919
+    unit: billion
+    currency: USD
+    status: actual
+    definition: 威騰電子營收（FY2026，約當 2025 年 7 月至 2026 年 7 月初；雲端市場占 89%）
+    src: wd-10k-fy26
+  - year: 2028
+    value: 15
+    unit: billion
+    currency: USD
+    status: forecast
+    definition: Yole Group 2023 年 10 月預測的 CXL 市場總營收（逾 150 億美元，其中 DRAM 逾 120 億美元；屬較早期預測，且以產品路線如期推進為前提）
+    src: yole-cxl
+supply:
+  - label: 希捷 HDD 出貨容量（季）
+    period: "2025 Q2"
+    value: 162
+    unit: EB
+    note: 希捷 FY2025 第四季（2025-03-29 至 06-27）
+    src: stx-sup-q4fy26
+  - label: 希捷 HDD 出貨容量（季）
+    period: "2025 Q3"
+    value: 182
+    unit: EB
+    note: 希捷 FY2026 第一季（2025-06-28 至 10-03，14 週）
+    src: stx-sup-q4fy26
+  - label: 希捷 HDD 出貨容量（季）
+    period: "2025 Q4"
+    value: 190
+    unit: EB
+    note: 希捷 FY2026 第二季
+    src: stx-sup-q4fy26
+  - label: 希捷 HDD 出貨容量（季）
+    period: "2026 Q1"
+    value: 199
+    unit: EB
+    note: 希捷 FY2026 第三季
+    src: stx-sup-q4fy26
+  - label: 希捷 HDD 出貨容量（季）
+    period: "2026 Q2"
+    value: 218
+    unit: EB
+    note: 希捷 FY2026 第四季（2026-04-04 至 07-03），年增 34%
+    src: stx-sup-q4fy26
+  - label: 希捷近線 HDD 出貨容量（季）
+    period: "2025 Q2"
+    value: 137
+    unit: EB
+    src: stx-sup-q4fy26
+  - label: 希捷近線 HDD 出貨容量（季）
+    period: "2025 Q3"
+    value: 159
+    unit: EB
+    note: 14 週的季度
+    src: stx-sup-q4fy26
+  - label: 希捷近線 HDD 出貨容量（季）
+    period: "2025 Q4"
+    value: 165
+    unit: EB
+    src: stx-sup-q4fy26
+  - label: 希捷近線 HDD 出貨容量（季）
+    period: "2026 Q1"
+    value: 175
+    unit: EB
+    src: stx-sup-q4fy26
+  - label: 希捷近線 HDD 出貨容量（季）
+    period: "2026 Q2"
+    value: 195
+    unit: EB
+    note: 年增 43%；近線產品賣給雲端、企業與系統客戶
+    src: stx-sup-q4fy26
+  - label: 希捷 HDD 出貨容量（會計年度）
+    period: FY2023
+    value: 441
+    unit: EB
+    note: 其中大容量（mass capacity）380 EB
+    src: stx-10k-fy24
+  - label: 希捷 HDD 出貨容量（會計年度）
+    period: FY2024
+    value: 398
+    unit: EB
+    note: 需求下滑，出貨容量比前一年減少；其中大容量 355 EB
+    src: stx-10k-fy24
+  - label: 希捷 HDD 出貨容量（會計年度）
+    period: FY2025
+    value: 595
+    unit: EB
+    note: 其中近線 497 EB
+    src: stx-10k-fy26
+  - label: 希捷 HDD 出貨容量（會計年度）
+    period: FY2026
+    value: 789
+    unit: EB
+    note: 其中近線 695 EB
+    src: stx-10k-fy26
+  - label: 威騰電子 HDD 出貨容量（季）
+    period: "2026 Q2"
+    value: 231
+    unit: EB
+    note: 威騰 FY2026 第四季（截至 2026-07-03），年增 22%，低於前幾季約 30% 的增速
+    src: guru-wd-q4fy26
+  - label: 威騰電子 HDD 售出容量年增率
+    period: FY2026
+    value: 25
+    unit: "%"
+    note: 同期每 EB 平均售價年增 8%，營收年增 36%
+    src: wd-10k-fy26
+  - label: 全球 HDD 出貨容量（季）
+    period: "2024 Q2"
+    value: 290
+    unit: EB
+    status: estimate
+    note: Trendfocus 統計，季增 11%；同季出貨 3,028 萬台
+    src: sn-trendfocus-2q24
+  - label: 希捷碟片與磁頭用量年增率
+    period: FY2026
+    value: 17.5
+    unit: "%"
+    status: estimate
+    note: 財務長稱約 15%–20%（取中值），同期硬碟台數「完全持平」；容量成長來自每台裝更多碟片與更高的每碟容量
+    src: stx-call-q4fy26
+  - label: HAMR 占希捷近線出貨容量比重
+    period: "2026-06"
+    value: 40
+    unit: "%"
+    note: FY2026 結束時的出貨速率；達成公司訂下的第一個里程碑
+    src: stx-call-q4fy26
+  - label: 希捷近線出貨容量年增目標
+    period: "2027"
+    value: 25
+    unit: "%"
+    status: forecast
+    note: 公司稱未來幾年近線出貨容量年增約 mid-20%（25% 上下），主要靠提高每碟容量，硬碟台數維持大致穩定
+    src: stx-call-q4fy26
+  - label: 威騰 UltraSMR 占近線出貨容量目標
+    period: FY2027
+    value: 60
+    unit: "%"
+    status: forecast
+    note: 目標在 FY2027 年底（約 2027 年 6 月）達到約六成
+    src: guru-wd-q4fy26
+  - label: 近線 HDD 交期（下限）
+    period: "2025-09"
+    value: 52
+    unit: 週
+    status: estimate
+    note: TrendForce 指出交期由數週拉長到 52 週以上，主因大廠近年未擴產
+    src: tf-hdd-shortage-2025
+  - label: 希捷資本支出
+    period: FY2022
+    value: 381
+    unit: 百萬美元
+    src: stx-10k-fy24
+  - label: 希捷資本支出
+    period: FY2023
+    value: 316
+    unit: 百萬美元
+    src: stx-10k-fy24
+  - label: 希捷資本支出
+    period: FY2024
+    value: 254
+    unit: 百萬美元
+    src: stx-10k-fy24
+  - label: 希捷資本支出
+    period: FY2025
+    value: 265
+    unit: 百萬美元
+    src: stx-10k-fy26
+  - label: 希捷資本支出
+    period: FY2026
+    value: 569
+    unit: 百萬美元
+    note: 占營收 4.7%；公司目標區間為營收的 4%–6%
+    src: stx-10k-fy26
+  - label: 威騰電子資本支出
+    period: FY2026
+    value: 418
+    unit: 百萬美元
+    note: FY2025 為 412 百萬美元（含已分拆快閃記憶體事業的部分）；公司預期未來五年平均為營收的 4%–6%
+    src: wd-10k-fy26
+demand:
+  - label: 全球資料圈規模（IDC 預測）
+    period: "2030"
+    value: 718
+    unit: ZB
+    status: forecast
+    note: IDC 預估全球每年產生的資料量到 2030 年年複合成長約 27%（引自希捷年報）
+    src: stx-10k-fy26
+  - label: 不含 AI 擴建的 HDD 容量需求
+    period: "2026"
+    value: 1654
+    unit: EB
+    status: forecast
+    note: Tom Coughlin（Coughlin Associates）以 2011–2019 年 HDD 出貨容量趨勢外推的模型估計
+    src: coughlin-forbes
+  - label: AI 擴建帶來的額外 HDD 容量需求
+    period: "2026"
+    value: 363
+    unit: EB
+    status: forecast
+    note: 約占 2026 年預期出貨容量的 18%；Coughlin 估計 2028 年升到約 43%、2030 年約 58%
+    src: coughlin-forbes
+  - label: 資料中心資料存放在 HDD 的比重
+    period: "2026"
+    value: 85
+    unit: "%"
+    status: estimate
+    note: Coughlin 稱「逾 85%」
+    src: coughlin-forbes
+  - label: 希捷資料中心出貨容量年增率
+    period: "2026 Q2"
+    value: 43
+    unit: "%"
+    note: 資料中心營收 29.33 億美元、年增 57%
+    src: stx-sup-q4fy26
+  - label: 資料中心占希捷 HDD 出貨容量比重
+    period: "2026 Q2"
+    value: 90
+    unit: "%"
+    note: 公司稱約九成（195 EB／218 EB）；雲端已連續三年每季出貨容量成長
+    src: stx-sup-q4fy26
+  - label: 威騰電子雲端市場售出容量年增率
+    period: FY2026
+    value: 27
+    unit: "%"
+    note: 雲端營收年增 38%、占總營收 89%；每 EB 平均售價年增 8%
+    src: wd-10k-fy26
+  - label: 威騰電子預期儲存需求年增率
+    period: "2027"
+    value: 25
+    unit: "%"
+    status: forecast
+    note: 執行長稱需求未來每年成長逾 25%
+    src: guru-wd-q4fy26
+  - label: 快閃記憶體相對 HDD 的成本倍數
+    period: "2026-02"
+    value: 8
+    unit: 倍
+    status: estimate
+    note: 威騰稱快閃記憶體的成本仍是硬碟的 6–10 倍（公司說法，本站取中值）
+    src: wd-innovation-day
+  - label: SSD 相對 HDD 的價格倍數
+    period: "2026-10"
+    value: 20
+    unit: 倍
+    status: estimate
+    note: 日經報導 SSD 價格約為 HDD 的 20 倍（報導未說明比較基準）
+    src: tf-toshiba-nikkei
+  - label: 戴爾儲存事業營收（季）
+    period: "2026 Q2"
+    value: 4.85
+    unit: 十億美元
+    note: 戴爾 FY2027 第二季（2026 年 5–7 月），年增 26%
+    src: dell-q2-fy27
+  - label: Everpure（原 Pure Storage）營收（季）
+    period: "2026 Q2"
+    value: 1.186
+    unit: 十億美元
+    note: FY2027 第二季（2026 年 5–7 月），年增約 38%；全快閃儲存系統
+    src: ep-q2-fy27
+  - label: NetApp 營收（季）
+    period: "2026 Q2"
+    value: 2.025
+    unit: 十億美元
+    note: FY2027 第一季（2026 年 5–7 月），年增 30%
+    src: ntap-q1-fy27
+  - label: HPE 儲存事業營收（季）
+    period: "2026 Q2"
+    value: 1.291
+    unit: 十億美元
+    note: HPE FY2026 第三季（2026 年 5–7 月）
+    src: hpe-q3-fy26
+  - label: VAST Data 承諾年度經常性收入（CARR）
+    period: "2026-04"
+    value: 0.5
+    unit: 十億美元
+    status: estimate
+    note: 公司 2026 年 4 月宣布 F 輪募資時表示，上一財年結束時 CARR 逾 5 億美元（數值為下限）；F 輪估值 300 億美元
+    src: vast-series-f
+  - label: 豪雅 HDD 玻璃基板營收年增率
+    period: "2026 Q1"
+    value: 25
+    unit: "%"
+    note: 豪雅 FY2025 第四季（2026 年 1–3 月），以固定匯率計年增 20%；公司稱受近線 HDD 需求帶動
+    src: hoya-pres
+  - label: 美光伺服器 SOCAMM 營收季增率
+    period: "2026 Q3"
+    value: 100
+    unit: "%"
+    note: 美光 FY2026 第四季（2026 年 6–8 月）稱「增加一倍以上」
+    src: micron-fq4-26
+demandMix:
+  - period: 希捷 FY2025
+    basis: bit
+    items:
+      - name: 近線（資料中心）
+        share: 83.5
+      - name: 非近線（PC、監控、消費等）
+        share: 16.5
+    src: stx-10k-fy26
+  - period: 希捷 FY2026
+    basis: bit
+    items:
+      - name: 近線（資料中心）
+        share: 88.1
+      - name: 非近線（PC、監控、消費等）
+        share: 11.9
+    src: stx-10k-fy26
+  - period: 威騰 FY2024
+    basis: revenue
+    items:
+      - name: 雲端
+        share: 80
+      - name: 用戶端（PC 等）
+        share: 9.1
+      - name: 消費性
+        share: 10.9
+    src: wd-10k-fy26
+  - period: 威騰 FY2026
+    basis: revenue
+    items:
+      - name: 雲端
+        share: 88.9
+      - name: 用戶端（PC 等）
+        share: 5.6
+      - name: 消費性
+        share: 5.4
+    src: wd-10k-fy26
+  - period: "2026"
+    basis: bit
+    status: forecast
+    items:
+      - name: AI 擴建帶來的新增需求
+        share: 18
+      - name: 其他儲存需求
+        share: 82
+    src: coughlin-forbes
+  - period: "2028"
+    basis: bit
+    status: forecast
+    items:
+      - name: AI 擴建帶來的新增需求
+        share: 43
+      - name: 其他儲存需求
+        share: 57
+    src: coughlin-forbes
+  - period: "2030"
+    basis: bit
+    status: forecast
+    items:
+      - name: AI 擴建帶來的新增需求
+        share: 58
+      - name: 其他儲存需求
+        share: 42
+    src: coughlin-forbes
+balance:
+  - period: "2023"
+    state: oversupply
+    note: 涵蓋希捷 FY2023–FY2024（2022 年 7 月至 2024 年 6 月）：需求普遍下滑，兩個年度都認列工廠產能利用不足費用，FY2024 營收年減 11%
+    src: stx-10k-fy24
+  - period: "2024 H2"
+    state: balanced
+    status: estimate
+    note: 本站判斷：需求自谷底回升，希捷 FY2025（2024 年 7 月至 2025 年 6 月）營收年增 39%，主因近線雲端產品需求增加與調價；年報只在 FY2023 與 FY2024 認列工廠產能利用不足費用
+    src: stx-10k-fy25
+  - period: "2025 Q3"
+    state: shortage
+    note: TrendForce 指出推論 AI 帶動冷資料儲存需求，近線 HDD 交期由數週拉長到 52 週以上；QLC SSD 耗電約低 30%，雲端業者開始評估用 SSD 存放冷資料
+    src: tf-hdd-shortage-2025
+  - period: "2026 Q2"
+    state: shortage
+    note: 希捷財務長稱供需缺口比幾季前更大，執行長稱客戶願付高於既有合約的價格追加容量
+    src: stx-call-q4fy26
+  - period: "2026-06"
+    state: shortage
+    note: PC 與通路市場也受波及：DIGITIMES 報導 2026 年第二季 PC 等用途的 HDD 大宗貿易價格季增約 10%，通路商極難取得 1TB–2TB 低容量硬碟；標題指雲端大廠也缺貨
+    src: dt-hdd-2q26
+  - period: "2026 Q4"
+    state: shortage
+    status: estimate
+    note: 希捷近線產能大多已分配到 2028 年，威騰 2027 年供給大多已承諾、部分延伸到 2028–2029 年；報導認為缺貨短期內將持續
+    src: tf-toshiba-nikkei
+  - period: "2027"
+    state: tight
+    status: forecast
+    note: 本站依公司說法判斷：希捷與資料中心客戶的合約已涵蓋 2027 全年的產品規格與價格，先取得訂單再生產；新增供給主要靠提高每碟容量，硬碟台數大致持平
+    src: stx-call-q4fy26
+  - period: "2028"
+    state: tight
+    status: forecast
+    note: 本站依公司說法判斷：希捷表示近線出貨容量大多已分配到 2028 年，客戶規劃期延伸到 2029 年以後
+    src: stx-sup-q4fy26
+marketShare:
+  - period: "2024 Q2"
+    basis: unit
+    label: Trendfocus 統計的 HDD 出貨台數市占（全部 HDD）
+    items:
+      - company: seagate
+        name: 希捷
+        share: 40.6
+      - company: western-digital
+        name: 威騰電子
+        share: 39.8
+      - company: toshiba
+        name: 東芝
+        share: 19.6
+    src: sn-trendfocus-2q24
+  - period: "2024 Q2"
+    basis: unit
+    label: Trendfocus 統計的近線 HDD 出貨台數市占
+    items:
+      - company: western-digital
+        name: 威騰電子
+        share: 46
+      - company: seagate
+        name: 希捷
+        share: 40.5
+      - company: toshiba
+        name: 東芝
+        share: 13.2
+    src: sn-trendfocus-2q24
+  - period: "2024 Q2"
+    basis: bit
+    label: Trendfocus 統計的 HDD 出貨容量（EB）市占（本站依各廠 EB 除以總量 290.27 EB 換算）
+    items:
+      - company: western-digital
+        name: 威騰電子
+        share: 49.1
+      - company: seagate
+        name: 希捷
+        share: 39.4
+      - company: toshiba
+        name: 東芝
+        share: 11.2
+    src: sn-trendfocus-2q24
+  - period: "2026"
+    basis: bit
+    label: TrendForce 2026 年預估（原文未註明計算基準；日經稱東芝以儲存容量計略高於一成，與此相符）
+    items:
+      - company: western-digital
+        name: 威騰電子
+        share: 48
+      - company: seagate
+        name: 希捷
+        share: 42
+      - company: toshiba
+        name: 東芝
+        share: 10
+    src: tf-hdd-share
+prices:
+  - series: 希捷 HDD 每 TB 平均售價
+    unit: 美元/TB
+    kind: level
+    points:
+      - period: FY2023
+        value: 15
+      - period: FY2024
+        value: 15
+      - period: FY2025
+        value: 14
+    note: 公司年報揭露的 HDD 每 TB 價格（FY2023 數字見 FY2024 年報）；FY2026 年報起不再揭露。高容量機種占比提高時，平均每 TB 價格可能持平或下降
+    src: stx-10k-fy25
+  - series: 希捷資料中心營收 ÷ 近線出貨容量（本站換算）
+    unit: 美元/TB
+    kind: level
+    points:
+      - period: "2025 Q2"
+        value: 13.6
+        status: estimate
+      - period: "2025 Q3"
+        value: 13.3
+        status: estimate
+      - period: "2025 Q4"
+        value: 13.5
+        status: estimate
+      - period: "2026 Q1"
+        value: 14.3
+        status: estimate
+      - period: "2026 Q2"
+        value: 15
+        status: estimate
+    note: 以公司揭露的資料中心營收（百萬美元）除以近線出貨 EB 計算，含少量系統產品營收，只用來觀察趨勢；2026 Q2 比一年前約高 11%
+    src: stx-sup-q4fy26
+capacity:
+  - company: seagate
+    metric: HDD 出貨容量（會計年度）
+    value: 789
+    unit: EB
+    period: FY2026
+    note: 其中近線 695 EB（FY2025 為 497 EB）；硬碟、磁頭與碟片廠分布在中國、馬來西亞、北愛爾蘭、新加坡、泰國與美國
+    src: stx-10k-fy26
+  - company: seagate
+    metric: HDD 出貨容量（季）
+    value: 218
+    unit: EB
+    period: "2026 Q2"
+    note: FY2026 第四季，年增 34%
+    src: stx-sup-q4fy26
+  - company: seagate
+    metric: HAMR 占近線出貨容量
+    value: 40
+    unit: "%"
+    period: "2026-06"
+    note: 目標 2026 年底 HAMR 出貨容量有一半來自第二代 Mozaic 4 平台
+    src: stx-call-q4fy26
+  - company: western-digital
+    metric: HDD 出貨容量（季）
+    value: 231
+    unit: EB
+    period: "2026 Q2"
+    note: FY2026 第四季，年增 22%；40TB ePMR 新機種該季開始出貨。財務長稱該季每 TB 成本年減約 8%，混合每 TB 售價年增近兩成（high teens）
+    src: guru-wd-q4fy26
+  - company: western-digital
+    metric: 資本支出（會計年度）
+    value: 418
+    unit: 百萬美元
+    period: FY2026
+    note: 組裝與測試集中在泰國、馬來西亞、菲律賓、中國與美國加州；幾乎所有磁頭與碟片自製
+    src: wd-10k-fy26
+  - company: seagate
+    metric: 資本支出（會計年度）
+    value: 569
+    unit: 百萬美元
+    period: FY2026
+    note: 一年前為 265 百萬美元
+    src: stx-10k-fy26
+  - company: toshiba
+    metric: HDD 市占（以儲存容量計）
+    value: 10
+    unit: "%"
+    period: "2026"
+    status: estimate
+    note: 日經稱略高於一成，東芝中期目標提高到三成
+    src: tf-toshiba-nikkei
+  - company: toshiba
+    metric: 近線 HDD 年產能（以儲存容量計）
+    value: 2
+    unit: 倍（相對 FY2025）
+    period: FY2027
+    status: forecast
+    note: 東芝新聞稿稱目標 FY2027 年產能（以儲存容量計）接近 FY2025 的兩倍
+    src: toshiba-tip
+expansions:
+  - company: toshiba
+    project: 菲律賓近線 HDD 產線擴建
+    fab: Laguna Technopark（LTI）
+    product: 近線 HDD
+    addCapacity: FY2027 年產能（以儲存容量計）接近 FY2025 的兩倍
+    capex: 約 600 億日圓（約 3.8 億美元，據日經報導，為東芝約五年來首筆大型 HDD 投資）
+    stage: ramping
+    production: "2026-10"
+    note: 東芝 2026-10-02 新聞稿宣布擴建後的近線 HDD 產線首批出貨；日經報導將提高檢測與無塵室作業自動化，使擴產所需新增人力減少約四成
+    src: tf-toshiba-nikkei
+  - company: seagate
+    project: HAMR 磁頭與碟片製程設備投資
+    product: HAMR 近線 HDD（Mozaic 4+／5+）
+    addCapacity: 在硬碟台數大致持平下，近線出貨容量每年增加約 25%
+    capex: FY2027 預計維持在營收 4%–6% 的目標區間內（FY2026 占營收 4.7%）
+    stage: equipping
+    note: 公司稱新購工具主要用於推動技術轉換的磁頭與碟片；HAMR 所需的雷射也自行生產，上一季產出數千萬顆
+    src: stx-call-q4fy26
+  - company: western-digital
+    project: 磁頭與碟片產能及自動化投資
+    product: 近線 HDD（ePMR、UltraSMR、HAMR）
+    capex: FY2027 預計高於 FY2026 的 4.18 億美元；未來五年平均為營收的 4%–6%
+    stage: equipping
+    src: wd-10k-fy26
+  - company: western-digital
+    project: 日本五年投資計畫
+    product: HDD 相關投資（報導未細分用途）
+    capex: 約 10 億美元（至 2030 年的五年間，據日經報導）
+    stage: announced
+    note: 據日經報導（TrendForce 轉述）
+    src: tf-toshiba-nikkei
+  - company: hoya
+    project: 越南 HDD 玻璃基板新廠（第一期）
+    fab: 越南（既有廠區附近）
+    product: 近線 HDD 用玻璃基板
+    capex: 第一期約 500 億日圓（以發表時匯率計），分期擴建
+    stage: announced
+    note: 豪雅稱玻璃基板採用範圍擴大，第二家客戶已宣布 2026 年下半年推出 11 片玻璃碟片機種，並表示 2027 年將推出 12 片機種
+    src: hoya-pres
+technology:
+  - name: HAMR 熱輔助磁記錄（希捷 Mozaic 3+）
+    detail: 寫入時用雷射瞬間加熱碟片的極小區域，讓更小的磁區也能穩定記錄。Mozaic 3+（每碟 3TB 以上）已通過所有主要雲端客戶認證並在正式環境運作，HAMR 機種約占希捷近線出貨容量四成
+    status: volume
+    timing: "2026"
+    src: stx-call-q4fy26
+  - name: 希捷 Mozaic 4+（單機最高 44TB）
+    detail: 第二代 HAMR 平台（每碟約 4TB），正對全球兩大雲端業者爬坡，其他客戶認證中；公司目標 2026 年底 HAMR 出貨容量有一半來自 Mozaic 4
+    status: ramping
+    timing: "2026–2027"
+    src: stx-call-q4fy26
+  - name: 希捷 Mozaic 5+（每碟 5TB 以上）
+    detail: 下一代 HAMR 平台，公司預定 2027 年底開始送出認證樣品
+    status: roadmap
+    timing: "2027 年底送認證樣品"
+    src: stx-sup-q4fy26
+  - name: 威騰 40TB ePMR 與 UltraSMR
+    detail: ePMR 在寫入時給磁頭額外能量、UltraSMR 讓磁軌像屋瓦一樣部分重疊；40TB ePMR 機種 2026 年第二季開始出貨，預計 2027 年占近線出貨容量逾五成，44TB HAMR 機種預計 2027 年上半年出貨
+    status: ramping
+    timing: "2026–2027"
+    src: guru-wd-q4fy26
+  - name: 威騰 HAMR 與 100TB 路線
+    detail: HAMR 硬碟在兩家超大規模客戶認證中，預計 2027 年量產爬坡、2029 年做到 100TB；ePMR 則借用 HAMR 技術延伸到 60TB
+    status: sampling
+    timing: "2027 爬坡、2029 年 100TB"
+    src: wd-innovation-day
+  - name: High Bandwidth Drive 與 Dual Pivot
+    detail: 容量變大後每 TB 分到的讀寫速度會下降。High Bandwidth Drive 讓多個磁頭同時讀寫，頻寬最高為傳統硬碟 2 倍，已交客戶驗證；加裝第二組獨立致動臂的 Dual Pivot 預計 2028 年推出，兩者合計目標把循序 IO 提高到 4 倍
+    status: sampling
+    timing: "2026–2028"
+    src: wd-innovation-day
+  - name: 東芝 65TB 級 HDD
+    detail: 據日經報導，東芝新產品單機容量最多提高 40%，目標 2030 年量產 65TB 級硬碟，之後再推 100TB 級
+    status: roadmap
+    timing: "2030"
+    src: tf-toshiba-nikkei
+  - name: 高容量 QLC 企業級 SSD
+    detail: 每個儲存單元存 4 位元，單顆容量遠超硬碟，例如鎧俠 LC9 系列最大 245.76TB；主要劣勢是每 TB 成本仍明顯高於 HDD
+    status: volume
+    timing: "2026"
+    src: kx-lc9
+  - name: KV Cache 分層儲存
+    detail: 推論時保存上下文的 KV Cache 會隨使用者數與對話長度膨脹；希捷與 SK海力士的白皮書主張把 KV Cache 分散到記憶體、SSD 與 HDD 各層，保留更多上下文、避免重算，因此也帶動硬碟需求
+    status: ramping
+    timing: "2026"
+    src: stx-call-q4fy26
+  - name: KV Cache 專用 SSD
+    detail: 美光 7600 PCIe Gen5 與 9650 PCIe Gen6 SSD 已出貨給主要客戶用於 KV Cache，6600 ION SSD 在 FY2026 第四季大量爬坡
+    status: volume
+    timing: "2026"
+    src: micron-fq4-26
+  - name: WEKA Augmented Memory Grid
+    detail: 以軟體把 GPU 可用記憶體延伸到 NVMe 儲存，讓推論時已算過的 Token 不必重算；2025 年 11 月正式商用，公司稱首個 Token 延遲最多縮短 20 倍
+    status: volume
+    timing: "2025-11 起"
+    src: weka-amg
+  - name: HBF 高頻寬快閃記憶體（第一代）
+    detail: 把 16 顆 NAND 晶粒像 HBM 一樣堆疊、放在運算晶片旁；第一代單堆疊 512GB、讀取頻寬 1.6TB/s，外形、功耗與高度接近 HBM4，公司稱容量是 HBM 的 8–16 倍、成本相近；第二、三代目標頻寬逾 2TB/s 與 3.2TB/s、容量 1TB 與 1.5TB
+    status: roadmap
+    timing: "2026–2027"
+    src: sndk-hbf-factsheet
+  - name: HBF 合作與時程（Sandisk、SK海力士）
+    detail: 2025 年 8 月簽署合作備忘錄推動標準化；Sandisk 當時的目標是 2026 年下半年送出首批 HBF 記憶體樣品，並預期 2027 年初會有首批搭載 HBF 的 AI 推論裝置樣品
+    status: roadmap
+    timing: "2026 下半年送樣、2027 年初裝置"
+    src: sndk-hbf-mou
+  - name: HBF 第一版 OCP 技術規格
+    detail: Sandisk 與 SK海力士在 OCP（開放運算計畫）發布 HBF 第一版技術規格，Google 與 Tenstorrent 也加入推動
+    status: roadmap
+    timing: "2026-08"
+    src: sndk-hbf-spec
+  - name: Astera Labs Leo CXL 記憶體控制器
+    detail: 透過 CXL 介面替伺服器外接 DRAM、擴充記憶體容量；第一代每顆控制器最多 2TB，已用於 Microsoft Azure M 系列虛擬機。2026 年 9 月發表 Leo X（接在 Scorpio 交換網路上，作為 KV Cache 記憶體層）與 Leo 2（CXL 3.2、PCIe 6），已向雲端客戶送樣
+    status: sampling
+    timing: "2026-09 發表"
+    src: alab-leo-2026
+  - name: 三星 CMM-D（CXL 記憶體模組）
+    detail: 三星持續生產 CXL 2.0 的 CMM-D 2.0；CXL 3.1 的 CMM-D 3.0 原訂 2026 年 6 月送樣，因英特爾與超微支援 CXL 3.1 的處理器延後而延期，報導指商用推遲到 2027 年
+    status: roadmap
+    timing: "2027（延後）"
+    src: thelec-cmmd
+  - name: 瀾起 CXL 記憶體擴充控制晶片（MXC）
+    detail: 用於記憶體擴充與池化的 CXL Type 3 控制晶片；2025 年 1 月列入 CXL 2.0 整合商清單，三星與 SK海力士的受測產品都採用，符合 CXL 3.1 的新款 2025 年 9 月推出並向主要客戶送樣
+    status: sampling
+    timing: "2025–2026"
+    src: montage-ar25
+  - name: SOCAMM 伺服器 LPDRAM 模組
+    detail: 以低功耗 LPDDR 晶片組成、可插拔的伺服器記憶體模組，用來擴充 AI 伺服器 CPU 端的記憶體；美光伺服器 SOCAMM 營收在 FY2026 第四季（2026 年 6–8 月）季增一倍以上
+    status: volume
+    timing: "2026"
+    src: micron-fq4-26
+sources:
+  stx-10k-fy26:
+    title: "Seagate Technology Holdings plc Form 10-K for the fiscal year ended July 3, 2026"
+    publisher: Seagate Technology (SEC EDGAR)
+    url: "https://www.sec.gov/Archives/edgar/data/1137789/000113778926000159/stx-20260703.htm"
+    type: filing
+    lang: en
+    published: "2026-08-04"
+    accessed: "2026-10-22"
+  stx-10k-fy25:
+    title: "Seagate Technology Holdings plc Form 10-K for the fiscal year ended June 27, 2025"
+    publisher: Seagate Technology (SEC EDGAR)
+    url: "https://www.sec.gov/Archives/edgar/data/1137789/000113778925000157/stx-20250627.htm"
+    type: filing
+    lang: en
+    published: "2025-08-01"
+    accessed: "2026-10-22"
+  stx-10k-fy24:
+    title: "Seagate Technology Holdings plc Form 10-K for the fiscal year ended June 28, 2024"
+    publisher: Seagate Technology (SEC EDGAR)
+    url: "https://www.sec.gov/Archives/edgar/data/1137789/000113778924000068/stx-20240628.htm"
+    type: filing
+    lang: en
+    published: "2024-08-02"
+    accessed: "2026-10-22"
+  stx-sup-q4fy26:
+    title: "Supplemental Financial Information Q4FY26"
+    publisher: Seagate Technology
+    url: "https://s24.q4cdn.com/101481333/files/doc_financials/2026/q4/v2/STX-FQ4-26-Supplemental.pdf"
+    type: ir-presentation
+    lang: en
+    published: "2026-07-28"
+    accessed: "2026-10-22"
+    note: 含各季 HDD 出貨 EB（近線與非近線）、各市場營收與資本支出
+  stx-call-q4fy26:
+    title: "Seagate Technology Holdings Plc (STX) Q4 2026 Earnings Call, Corrected Transcript"
+    publisher: Seagate Technology（FactSet CallStreet 逐字稿）
+    url: "https://s24.q4cdn.com/101481333/files/doc_financials/2026/q4/STX-US-CORRECTED-TRANSCRIPT-Seagate-Technology-Holdings-PlcSTXUS-Q4-2026-Earnings-Call-28-ET-PM-27-07-2026-2026-07-27-0.pdf"
+    type: earnings-call
+    lang: en
+    published: "2026-07-28"
+    accessed: "2026-10-22"
+  wd-10k-fy26:
+    title: "Western Digital Form 10-K for fiscal year ended July 3, 2026"
+    publisher: U.S. SEC（Western Digital Corporation）
+    url: "https://www.sec.gov/Archives/edgar/data/106040/000162828026057139/wdc-20260703.htm"
+    type: filing
+    lang: en
+    published: "2026-08-14"
+    accessed: "2026-10-22"
+  guru-wd-q4fy26:
+    title: "Western Digital Corp (WDC) (Q4 2026) Earnings Call Highlights: Record Revenue and EPS Soar on AI-Driven Storage Demand"
+    publisher: GuruFocus
+    url: "https://www.gurufocus.com/news/9009786/western-digital-corp-wdc-q4-2026-earnings-call-highlights-record-revenue-and-eps-soar-on-aidriven-storage-demand"
+    type: news
+    lang: en
+    accessed: "2026-10-22"
+    note: 依 2026-08-05 法說會整理的摘要（次要來源）；威騰新聞稿與 10-K 未揭露季度出貨 EB 與每 TB 價格，相關數字以此為準，並與其他媒體的法說會摘要比對一致
+  wd-innovation-day:
+    title: "Western Digital Accelerates Storage Innovation for AI Era"
+    publisher: WD
+    url: "https://www.westerndigital.com/company/newsroom/press-releases/2026/2026-02-03-western-digital-accelerates-storage-innovation-for-ai-era"
+    type: press-release
+    lang: en
+    published: "2026-02-03"
+    accessed: "2026-10-22"
+  toshiba-tip:
+    title: "Toshiba Information Equipment (Philippines) Celebrates 30th Anniversary and First Shipment from Expanded Nearline HDD Production Line"
+    publisher: Toshiba Electronic Devices & Storage
+    url: "https://toshiba.semicon-storage.com/ap-en/company/news/news-topics/2026/10/storage-20261002-1.html"
+    type: press-release
+    lang: en
+    published: "2026-10-02"
+    accessed: "2026-10-22"
+  tf-toshiba-nikkei:
+    title: "Toshiba to Double AI Data Center HDD Capacity by FY2027 With $380M Expansion as AI Storage Demand Surges"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/news/2026/10/02/news-toshiba-to-double-ai-data-center-hdd-capacity-by-fy2027-with-380m-expansion-as-ai-storage-demand-surges/"
+    type: news
+    lang: en
+    published: "2026-10-02"
+    accessed: "2026-10-22"
+    note: 引述日經（投資額、65TB 路線、市占與 SSD 價差、威騰日本投資）與 TechNews（希捷、威騰產能分配）
+  tf-hdd-share:
+    title: "Seagate, Toshiba Reportedly Vie for TDK's HDD Head Unit, a Key Independent Supply Source"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/news/2026/10/06/news-seagate-toshiba-reportedly-vie-for-tdks-hdd-head-unit-a-key-independent-supply-source/"
+    type: news
+    lang: en
+    published: "2026-10-06"
+    accessed: "2026-10-22"
+    note: 市占為 TrendForce 預估，原文未註明計算基準；TDK 磁頭事業競購引述彭博報導，尚未證實
+  tf-hdd-shortage-2025:
+    title: "Soaring Inference AI Demand Triggers Severe Nearline HDD Shortages; QLC SSD Shipments Poised for Breakout in 2026, Says TrendForce"
+    publisher: TrendForce
+    url: "https://www.trendforce.com/presscenter/news/20250915-12714.html"
+    type: analyst
+    lang: en
+    published: "2025-09-15"
+    accessed: "2026-10-22"
+  sn-trendfocus-2q24:
+    title: "2Q24 HDD Capacity Shipped Rises 11% Q/Q to 290EB"
+    publisher: StorageNewsletter
+    url: "https://www.storagenewsletter.com/2024/08/05/2q24-hdd-capacity-shipped-rises-11-q-q-to-290eb/"
+    type: news
+    lang: en
+    published: "2024-08-05"
+    accessed: "2026-10-22"
+    note: 引述 Trendfocus「SDAS HDD Information Service CQ2 '24 Quarterly Update」摘要；2025 年以後的同類季度統計未能取得
+  dt-hdd-2q26:
+    title: "HDD供應吃緊加劇 2Q26大宗貿易價季增10%、雲端巨頭也缺貨"
+    publisher: DIGITIMES
+    url: "https://www.digitimes.com.tw/tech/dt/n/shwnws.asp?CnlID=1&Cat=10&id=0000758749_ZGO6OEXA5SBNZJ8Z7ZXWE"
+    type: news
+    lang: zh-TW
+    published: "2026-06-15"
+    accessed: "2026-10-22"
+    note: 全文需會員，僅使用公開的標題與導言
+  coughlin-forbes:
+    title: "How Has AI Changed Hard Disk Drive Storage Demand?"
+    publisher: Forbes（Yahoo Finance 轉載）
+    url: "https://finance.yahoo.com/sectors/technology/articles/ai-changed-hard-disk-drive-033610614.html"
+    type: analyst
+    lang: en
+    published: "2026-05-30"
+    accessed: "2026-10-22"
+    note: 作者為儲存產業分析師 Tom Coughlin（Coughlin Associates），數字為其模型估計
+  hoya-pres:
+    title: "FY25 Q4 Earnings Presentation"
+    publisher: HOYA
+    url: "https://ssl4.eir-parts.net/doc/7741/tdnet/2797232/00.pdf"
+    type: ir-presentation
+    lang: en
+    published: "2026-04-30"
+    accessed: "2026-10-22"
+  sndk-hbf-factsheet:
+    title: "HBF Fact Sheet"
+    publisher: Sandisk
+    url: "https://documents.sandisk.com/content/dam/asset-library/en_us/assets/public/sandisk/collateral/company/Sandisk-HBF-Fact-Sheet.pdf"
+    type: docs
+    lang: en
+    accessed: "2026-10-22"
+    note: 文件標示日期為 2025 年 7 月
+  sndk-hbf-mou:
+    title: "Sandisk to Collaborate with SK hynix to Drive Standardization of High-Bandwidth Flash Memory Technology"
+    publisher: Sandisk
+    url: "https://www.sandisk.com/company/newsroom/press-releases/2025/2025-08-06-sandisk-to-collaborate-with-sk-hynix-to-drive-standardization-of-high-bandwidth-flash-memory-technology"
+    type: press-release
+    lang: en
+    published: "2025-08-06"
+    accessed: "2026-10-22"
+  sndk-hbf-spec:
+    title: "Sandisk and SK hynix Advance Global Standardization of High Bandwidth Flash with Release of First OCP Technical Specification"
+    publisher: Sandisk
+    url: "https://www.sandisk.com/company/newsroom/press-releases/2026/2026-08-03-Sandisk-and-sk-hynix-advance-global-standardization-of-hbf"
+    type: press-release
+    lang: en
+    published: "2026-08-03"
+    accessed: "2026-10-22"
+  alab-leo-2026:
+    title: "Astera Labs Bolsters Leo Smart Memory Controller Family for Agentic AI and General-Purpose Cloud Workloads"
+    publisher: Astera Labs
+    url: "https://www.asteralabs.com/news/astera-labs-bolsters-leo-smart-memory-controller-family-for-agentic-ai-and-general-purpose-cloud-workloads/"
+    type: press-release
+    lang: en
+    published: "2026-09-15"
+    accessed: "2026-10-22"
+    note: 第一代容量與 Azure 部署、送樣狀態沿用本站 Astera Labs 公司檔案已查核的內容
+  thelec-cmmd:
+    title: "Samsung Electronics delays mass production of CXL 3.1 memory modules"
+    publisher: Design & Reuse（轉載 TheElec）
+    url: "https://www.design-reuse.com/news/202530787-samsung-electronics-delays-mass-production-of-cxl-3-1-memory-modules/"
+    type: news
+    lang: en
+    published: "2026-07-09"
+    accessed: "2026-10-22"
+    note: 原始報導為 TheElec（thelec.net），屬媒體報導、三星未正式公布新時程
+  montage-ar25:
+    title: "Montage Technology Announcement of Annual Results for the Year Ended December 31, 2025"
+    publisher: Montage Technology（HKEXnews）
+    url: "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0330/2026033004300.pdf"
+    type: annual-report
+    lang: en
+    published: "2026-03-30"
+    accessed: "2026-10-06"
+    note: 沿用本站瀾起科技公司檔案已查核的內容
+  yole-cxl:
+    title: "CXL Technology Unlocks Memory Performance"
+    publisher: Yole Group（StorageNewsletter 轉載）
+    url: "https://www.storagenewsletter.com/2023/10/11/cxl-technology-unlocks-memory-performance/"
+    type: analyst
+    lang: en
+    published: "2023-10-11"
+    accessed: "2026-10-22"
+    note: "出自 Yole Intelligence《Memory-Processor Interface 2023: Focus on CXL》報告的新聞稿"
+  micron-fq4-26:
+    title: "Micron Technology, Inc. Reports Record Fiscal Fourth-Quarter and Full-Year 2026 Results"
+    publisher: Micron Technology
+    url: "https://www.sec.gov/Archives/edgar/data/723125/000072312526000018/a2026q4ex991-pressrelease.htm"
+    type: press-release
+    lang: en
+    published: "2026-09-30"
+    accessed: "2026-10-22"
+  kx-lc9:
+    title: "KIOXIA LC9 Series Product Overview"
+    publisher: KIOXIA America
+    url: "https://americas.kioxia.com/content/dam/kioxia/en-us/business/ssd/enterprise-ssd/asset/KIOXIA_LC9_Product_Overview.pdf"
+    type: docs
+    lang: en
+    accessed: "2026-10-06"
+    note: 沿用本站威騰電子公司檔案已查核的內容
+  weka-amg:
+    title: "WEKA Breaks The AI Memory Barrier With Augmented Memory Grid on NeuralMesh"
+    publisher: WEKA
+    url: "https://www.weka.io/news/weka-breaks-the-ai-memory-barrier-with-augmented-memory-grid/"
+    type: press-release
+    lang: en
+    published: "2025-11-18"
+    accessed: "2026-10-22"
+  dell-q2-fy27:
+    title: "Dell Technologies Delivers Second Quarter Fiscal 2027 Financial Results"
+    publisher: Dell Technologies
+    url: "https://investors.delltechnologies.com/news-events/press-releases/detail/1653/dell-technologies-delivers-second-quarter-fiscal-2027-financial-results"
+    type: press-release
+    lang: en
+    published: "2026-09-01"
+    accessed: "2026-10-22"
+  ep-q2-fy27:
+    title: "Everpure Announces Second Quarter Fiscal 2027 Financial Results"
+    publisher: Everpure
+    url: "https://investor.everpuredata.com/news-and-events/press-releases/press-release-details/2026/Everpure-Announces-Second-Quarter-Fiscal-2027-Financial-Results/default.aspx"
+    type: press-release
+    lang: en
+    published: "2026-08-26"
+    accessed: "2026-10-06"
+    note: 沿用本站 Everpure 財務資料已查核的數字（總營收 1,185,898 千美元）
+  ntap-q1-fy27:
+    title: "NetApp Reports First Quarter of Fiscal Year 2027 Results"
+    publisher: NetApp
+    url: "https://investors.netapp.com/news/news-details/2026/NetApp-Reports-First-Quarter-of-Fiscal-Year-2027-Results/default.aspx"
+    type: press-release
+    lang: en
+    published: "2026-09-02"
+    accessed: "2026-10-06"
+    note: 沿用本站 NetApp 財務資料已查核的數字
+  hpe-q3-fy26:
+    title: "HPE reports fiscal 2026 third quarter results (Exhibit 99.1)"
+    publisher: Hewlett Packard Enterprise
+    url: "https://www.sec.gov/Archives/edgar/data/1645590/000164559026000078/ex-991x922026x8k.htm"
+    type: press-release
+    lang: en
+    published: "2026-09-02"
+    accessed: "2026-10-06"
+    note: 沿用本站 HPE 財務資料已查核的數字
+  vast-series-f:
+    title: "VAST Data Valued at $30 Billion as AI Drives a New Infrastructure Stack"
+    publisher: VAST Data
+    url: "https://www.vastdata.com/press-releases/vast-series-f-financing-at-30-billion-valuation"
+    type: press-release
+    lang: en
+    published: "2026-04-22"
+    accessed: "2026-10-22"
+lastVerified: "2026-10-22"
+editorial:
+  status: fact-checked
+  author: mem-storage
+  checkedBy: mem-storage-check
+  checkedOn: "2026-10-22"
+  notes: 查核：希捷 10-K（FY2024–FY2026）、Q4FY26 補充財務資料與法說會逐字稿、威騰 10-K 與財報新聞稿、Trendfocus 摘要、TrendForce、Coughlin、豪雅簡報、東芝新聞稿、Sandisk、美光、戴爾、VAST、WEKA、Astera Labs、TheElec 與 Yole 等來源已逐項核對，市占加總與換算值（EB 市占、需求結構、每 TB 營收）均已重算無誤。修正：日經「SSD 約為 HDD 的 20 倍」刪除未見於原文的「NAND 漲價後」，並改標為價格倍數；Coughlin 1,654 EB 改標為 HDD 容量需求；2024 H2「平衡」與 2027、2028「吃緊」標為本站判斷；豪雅玻璃基板營收成長由產能表移到需求表，擴產產品刪除原文未提的「3.5 吋」；東芝擴產改述為「接近兩倍」並註明首批出貨出自東芝新聞稿；威騰組裝地點補上美國。威騰季度出貨 EB、每 TB 價格與成本、UltraSMR 目標仍只有法說會摘要（次要來源）可用。NetApp、HPE、Everpure、鎧俠 LC9 與瀾起的數字沿用本站已查核資料，存取日保留原值。

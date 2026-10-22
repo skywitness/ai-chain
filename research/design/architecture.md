@@ -1067,7 +1067,7 @@ These are enforced by `scripts/check-budgets.ts` (reads `dist` plus the Vite man
 | Per-scene chunk (scene + kit modules it uses) | ≤ 60 KB gz (`meta.budgetKB`) |
 | Scene runtime assets (geo JSON etc.) | ≤ 300 KB per scene |
 | CSS total | ≤ 35 KB gz |
-| HTML per page | ≤ 120 KB gz. Documented exceptions (single-page `#anchor` targets, not split): `/companies/` ≤ 220 KB, `/glossary/` ≤ 300 KB (~300 terms; `<Term>` popovers and search results link to `/glossary/#<id>`). `/sources/bibliography.json` is fetched only when a publisher group is opened, so it is not part of any page view. |
+| HTML per page | ≤ 120 KB gz. Documented exceptions (single-page `#anchor` targets, not split): `/companies/` ≤ 220 KB, `/glossary/` ≤ 300 KB (~300 terms; `<Term>` popovers and search results link to `/glossary/#<id>`). `/memory/` ≤ 200 KB (memory topic: four markets, 59 fabs and ~213 merged sources; citations link to `/memory/#src-<key>`). `/sources/bibliography.json` is fetched only when a publisher group is opened, so it is not part of any page view. |
 | Web fonts | 0 bytes |
 | LCP (mobile, throttled) | ≤ 2.5 s. LCP is always text or poster, never canvas. |
 | CLS | ≤ 0.05 |

@@ -50,6 +50,7 @@ export const SCENE_IDS = [
   'company-globe',
   'roadmap-tunnel',
   'taiwan-map',
+  'memory-fab-map',
 ] as const;
 export type SceneId = (typeof SCENE_IDS)[number];
 export const SceneIdSchema = z.enum(SCENE_IDS);

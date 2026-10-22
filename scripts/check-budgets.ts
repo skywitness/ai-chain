@@ -59,6 +59,11 @@ const HTML_EXCEPTIONS: Record<string, { budget: number; reason: string }> = {
     budget: 220 * KB,
     reason: 'the whole company table is server-rendered, so filters, sorting and the no-JS view need no data fetch',
   },
+  '/memory/': {
+    budget: 200 * KB,
+    reason:
+      'memory topic: four markets, 59 fabs, 36 expansions and ~213 merged sources on one page; every [n] citation links to /memory/#src-<key> and the topic cards on other pages link to /memory/#<market>; measured ≈ 163 KB on the dev server (2026-10-23)',
+  },
   '/glossary/': {
     budget: 300 * KB,
     reason:

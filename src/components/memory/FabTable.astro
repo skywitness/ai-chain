@@ -1,0 +1,259 @@
+---
+/**
+ * Accessible table of the memory fabs (src/data/memory/fabs.yaml): company, site, products, status, current
+ * monthly capacity, added capacity, timeline and capex, with citations.
+ * Filters are radio buttons read by CSS :has(), so they work without JavaScript; a small script adds sortable
+ * column headers (aria-sort) and the 「顯示 N 座」 count. Under 48rem the rows become cards.
+ *   <FabTable rows={fabRows(data)} />
+ */
+import './memory.css';
+import CiteText from './CiteText.astro';
+import StatusTag from './StatusTag.astro';
+import {
+  COUNTRY_ZH,
+  FAB_FAMILY_META,
+  FAB_FAMILY_ORDER,
+  FAB_PRODUCT_LABEL,
+  FAB_STATUS_LABEL,
+  type FabRow,
+} from '../../lib/memory-data';
+import { companyHref } from '../../lib/paths';
+import { formatNumber } from '../../lib/format';
+
+interface Props {
+  rows: readonly FabRow[];
+  asOf?: string | undefined;
+}
+const { rows } = Astro.props;
+const STATUS_ORDER = ['operating', 'expanding', 'construction', 'planned', 'delayed'];
+const existing = (r: FabRow) => r.status === 'operating' || r.status === 'expanding';
+const growth = (r: FabRow) => r.status !== 'operating';
+// Default order: most fabs have no public per-site capacity, so a capacity sort would bury the largest sites. Instead
+// every company lists its main site first (round-robin over the companies in market order; inside a company:
+// operating before expanding, construction and planned, then the data order), so the first 15 rows cover all makers.
+const COMPANY_ORDER = ['samsung-electronics', 'sk-hynix', 'micron', 'kioxia', 'sandisk', 'cxmt', 'ymtc', 'nanya-tech', 'winbond', 'western-digital', 'seagate', 'toshiba'];
+const rank = (id: string) => (COMPANY_ORDER.includes(id) ? COMPANY_ORDER.indexOf(id) : COMPANY_ORDER.length);
+const byCompany = new Map<string, FabRow[]>();
+for (const r of rows) byCompany.set(r.company, [...(byCompany.get(r.company) ?? []), r]);
+const companyLists = [...byCompany.entries()]
+  .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
+  .map(([, list]) => list.map((r, i) => ({ r, i })).sort((x, y) => STATUS_ORDER.indexOf(x.r.status) - STATUS_ORDER.indexOf(y.r.status) || x.i - y.i).map((x) => x.r));
+const sorted: FabRow[] = [];
+for (let round = 0; sorted.length < rows.length; round++) for (const list of companyLists) if (list[round]) sorted.push(list[round]!);
+const n = (v: number | undefined) => (v == null ? '' : formatNumber(v, { digits: Number.isInteger(v) ? 0 : 1 }));
+const famCount = Object.fromEntries(FAB_FAMILY_ORDER.map((f) => [f, rows.filter((r) => r.families.includes(f)).length]));
+const cols = [
+  { key: 'company', label: '公司', type: 'text' },
+  { key: 'site', label: '廠區', type: 'text' },
+  { key: 'products', label: '產品', type: null },
+  { key: 'status', label: '狀態', type: 'num' },
+  { key: 'cap', label: '現有月產能', type: 'num', unit: '千片/月' },
+  { key: 'add', label: '擴產新增', type: 'num', unit: '千片/月' },
+  { key: 'timeline', label: '時程與投資', type: null },
+] as const;
+---
+
+<div class="mem-fabs" data-fab-table>
+  <form class="mem-filter" aria-label="篩選廠區">
+    <fieldset>
+      <legend>產品</legend>
+      <label><input type="radio" name="fab-fam" id="fabf-all" value="all" checked /><span>全部 {rows.length}</span></label>
+      {
+        FAB_FAMILY_ORDER.map((f) => (
+          <label>
+            <input type="radio" name="fab-fam" id={`fabf-${f}`} value={f} />
+            <span>
+              <i class="mem-sw" style={`--k: ${FAB_FAMILY_META[f].color}`} aria-hidden="true" />
+              {FAB_FAMILY_META[f].label} {famCount[f]}
+            </span>
+          </label>
+        ))
+      }
+    </fieldset>
+    <fieldset>
+      <legend>狀態</legend>
+      <label><input type="radio" name="fab-grp" id="fabg-all" value="all" checked /><span>全部</span></label>
+      <label><input type="radio" name="fab-grp" id="fabg-existing" value="existing" /><span>現有產能（營運、擴產中）</span></label>
+      <label><input type="radio" name="fab-grp" id="fabg-growth" value="growth" /><span>擴產與新建</span></label>
+    </fieldset>
+  </form>
+  <p class="mem-fabs__count" aria-live="polite" data-fab-count>共 {rows.length} 座廠區</p>
+  <p class="mem-fine mem-fabs__order">
+    預設每家公司輪流列出主要廠區（營運中優先），前幾列就涵蓋每一家廠商；點欄位標題可改依公司、月產能等排序。多數廠區（例如三星華城、SK海力士利川）未公開單廠月產能，以「—」表示，不代表規模較小。
+  </p>
+  <div class="mem-tablewrap mem-tablewrap--cards" tabindex="0" role="region" aria-label="全球記憶體廠區表（可捲動）">
+    <table class="mem-table mem-table--fabs">
+      <caption class="sr-only">全球記憶體與儲存廠區：公司、廠區、產品、狀態、月產能、擴產與時程。點選欄位標題可排序。</caption>
+      <thead>
+        <tr>
+          {
+            cols.map((c) => (
+              <th
+                scope="col"
+                class:list={[c.type === 'num' && c.key !== 'status' && 'num']}
+                data-key={c.key}
+                data-type={c.type ?? undefined}
+              >
+                {c.type ? (
+                  <button type="button" class="mem-sort" data-sort={c.key}>
+                    <span>{c.label}</span>
+                    {'unit' in c && <small>（{c.unit}）</small>}
+                    <span class="mem-sort__icon" aria-hidden="true" />
+                  </button>
+                ) : (
+                  c.label
+                )}
+              </th>
+            ))
+          }
+        </tr>
+      </thead>
+      <tbody>
+        {
+          sorted.map((r) => (
+            <tr
+              data-fam={r.families.join(' ')}
+              data-grp={[existing(r) && 'existing', growth(r) && 'growth'].filter(Boolean).join(' ')}
+              data-company={r.companyName}
+              data-site={r.name}
+              data-status={String(STATUS_ORDER.indexOf(r.status))}
+              data-cap={r.capacityKwpm ?? ''}
+              data-add={r.addKwpm ?? ''}
+            >
+              <td data-label="公司">
+                <div class="mem-cell">
+                <a href={companyHref(r.company)}>{r.companyName}</a>
+                </div>
+              </td>
+              <th scope="row" data-label="廠區">
+                <div class="mem-cell">
+                <span class="mem-fabs__site">{r.name}</span>
+                <small>
+                  {r.city}・{COUNTRY_ZH[r.country] ?? r.country}
+                </small>
+                </div>
+              </th>
+              <td data-label="產品">
+                <div class="mem-cell">
+                <span class="mem-prods">
+                  {r.products.map((p) => (
+                    <span class="mem-prod" style={`--k: ${FAB_FAMILY_META[p === 'dram' ? 'dram' : p === 'nand' ? 'nand' : p === 'hbm' || p === 'hbm-packaging' ? 'hbm' : 'other'].color}`}>
+                      {FAB_PRODUCT_LABEL[p]}
+                    </span>
+                  ))}
+                </span>
+                </div>
+              </td>
+              <td data-label="狀態">
+                <div class="mem-cell">
+                <span class="mem-fstatus" data-status={r.status}>
+                  {FAB_STATUS_LABEL[r.status]}
+                </span>
+                </div>
+              </td>
+              <td class="num" data-label="月產能（千片）">
+                <div class="mem-cell">
+                {r.capacityKwpm != null ? (
+                  <>
+                    {n(r.capacityKwpm)}
+                    <StatusTag status={r.capacityStatus} />
+                  </>
+                ) : (
+                  <span class="mem-na" title="未公開">—</span>
+                )}
+                </div>
+              </td>
+              <td class="num" data-label="擴產（千片）">
+                <div class="mem-cell">
+                {r.addKwpm != null ? `+${n(r.addKwpm)}` : <span class="mem-na">—</span>}
+                </div>
+              </td>
+              <td class="mem-fabs__tl" data-label="時程與投資">
+                <div class="mem-cell">
+                {r.timeline && (
+                  <span class="mem-fabs__line">
+                    <CiteText text={r.timeline} />
+                  </span>
+                )}
+                {r.capex && (
+                  <span class="mem-fabs__line mem-fabs__capex">
+                    投資：<CiteText text={r.capex} />
+                  </span>
+                )}
+                {r.note ? (
+                  <details class="mem-fabs__note">
+                    <summary>說明與出處</summary>
+                    <p>
+                      <CiteText text={r.note} src={r.src} />
+                    </p>
+                  </details>
+                ) : (
+                  <span class="mem-fabs__line mem-fine">
+                    出處
+                    <CiteText src={r.src} />
+                  </span>
+                )}
+                </div>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  <label class="mem-showall">
+    <input type="checkbox" id="fab-showall" />
+    <span class="mem-showall__more">顯示全部 {rows.length} 座廠區</span>
+    <span class="mem-showall__less">收合為前 15 座</span>
+  </label>
+  <p class="mem-fabs__empty" data-fab-empty hidden>沒有符合篩選條件的廠區。</p>
+  <p class="mem-fine">
+    月產能以每月投入的 12 吋晶圓千片數表示（千片/月）；「—」代表公司未公開或查無可靠來源。硬碟廠以組裝與零組件為主，沒有晶圓產能數字。
+  </p>
+</div>
+
+<script>
+  // Sortable headers + visible-row count for the fab table. Filtering itself is pure CSS (:has on the radios).
+  function setup(root: HTMLElement) {
+    const tbody = root.querySelector('tbody');
+    const count = root.querySelector<HTMLElement>('[data-fab-count]');
+    const empty = root.querySelector<HTMLElement>('[data-fab-empty]');
+    if (!tbody) return;
+    const total = tbody.rows.length;
+    const updateCount = () => {
+      const visible = [...tbody.rows].filter((r) => getComputedStyle(r).display !== 'none').length;
+      if (count) count.textContent = visible === total ? `共 ${total} 座廠區` : `顯示 ${visible}／${total} 座廠區`;
+      if (empty) empty.hidden = visible > 0;
+    };
+    root.querySelectorAll('input').forEach((i) => i.addEventListener('change', () => requestAnimationFrame(updateCount)));
+    updateCount();
+    root.querySelectorAll<HTMLButtonElement>('button[data-sort]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const th = btn.closest('th')!;
+        const key = btn.dataset.sort!;
+        const type = th.dataset.type;
+        const cur = th.getAttribute('aria-sort');
+        const dir = cur === 'descending' ? 'ascending' : cur === 'ascending' ? 'descending' : type === 'num' && key !== 'status' ? 'descending' : 'ascending';
+        root.querySelectorAll('th[aria-sort]').forEach((x) => x.removeAttribute('aria-sort'));
+        th.setAttribute('aria-sort', dir);
+        const sign = dir === 'ascending' ? 1 : -1;
+        const rows = [...tbody.rows];
+        rows.sort((a, b) => {
+          const va = a.dataset[key] ?? '';
+          const vb = b.dataset[key] ?? '';
+          if (type === 'num') {
+            // empty values always last
+            if (va === '' && vb === '') return 0;
+            if (va === '') return 1;
+            if (vb === '') return -1;
+            return (Number(va) - Number(vb)) * sign;
+          }
+          return va.localeCompare(vb, 'zh-Hant') * sign;
+        });
+        tbody.append(...rows);
+        updateCount();
+      });
+    });
+  }
+  document.querySelectorAll<HTMLElement>('[data-fab-table]').forEach(setup);
+</script>

@@ -1,0 +1,84 @@
+---
+/**
+ * Price trends of one market: quarter-on-quarter contract price changes as one MultiLine (dashed = 估計／預測),
+ * level series (price index, multiples, premiums) as labelled bars.
+ *   <PriceBlock market={m} />
+ */
+import './memory.css';
+import MultiLine from '../charts/MultiLine.astro';
+import MetricBars from './MetricBars.astro';
+import CiteText from './CiteText.astro';
+import { pageSources, resolveSources } from '../charts/sources';
+import { citesIn, comparePeriods, plainText, type MarketData, type PriceSeries } from '../../lib/memory-data';
+
+interface Props {
+  market: MarketData;
+  accent?: string | undefined;
+}
+const { market: m, accent } = Astro.props;
+const qoq = m.prices.filter((p) => p.kind === 'qoq-change');
+const level = m.prices.filter((p) => p.kind === 'level');
+/** the explanatory part of a series note (the per-quarter source list is shown as chart sources instead) */
+const lead = (s: PriceSeries) =>
+  plainText((s.note ?? '').split(/各季出處|出處同|其餘出處/)[0])
+    .replace(/標示 estimate 者/g, '標示估計者')
+    .replace(/[。；]\s*$/, '');
+const all = pageSources(Astro);
+// the chart lists each series' main source; the per-quarter sources named in the notes follow as citation numbers
+const qoqSources = resolveSources([...new Set(qoq.map((s) => s.src))], all);
+const qoqQuarterKeys = [...new Set(qoq.flatMap((s) => citesIn(s.note)))].filter((k) => !qoq.some((s) => s.src === k));
+const cats = [...new Set(qoq.flatMap((s) => s.points.map((p) => p.period)))].sort(comparePeriods);
+const qoqNotes = qoq.map((s) => (lead(s) ? `${s.series}：${lead(s)}。` : null));
+---
+
+{
+  qoq.length > 0 && (
+    <MultiLine
+      title={qoq.length > 1 ? '合約價季增率' : `${qoq[0]!.series}季增率`}
+      subtitle="與前一季相比的漲跌幅；0% 以上代表漲價，以下代表跌價"
+      unit="%"
+      format="percent"
+      series={qoq.map((s) => ({
+        name: s.series,
+        points: s.points.map((p) => ({ x: p.period, y: p.value, estimate: p.status === 'estimate', forecast: p.status === 'forecast' })),
+      }))}
+      categories={cats}
+      includeZero
+      height={260}
+      sources={qoqSources}
+      notes={qoqNotes}
+      xTitle="季度"
+      as="h4"
+      class="mem-chart"
+    />
+  )
+}
+{
+  qoqQuarterKeys.length > 0 && (
+    <p class="mem-fine mem-price-src">
+      上圖各季數字的出處：
+      <CiteText src={qoqQuarterKeys} />
+    </p>
+  )
+}
+{
+  level.length > 0 && (
+    <div class="mem-grid mem-grid--charts">
+      {level.map((s) => (
+        <MetricBars
+          title={s.series}
+          unit={s.unit}
+          accent={accent}
+          series={[
+            {
+              name: s.series,
+              points: [...s.points].map((p) => ({ label: p.period, value: p.value, status: p.status, period: p.period, src: s.src })),
+            },
+          ]}
+          notes={[lead(s) ? `${lead(s)}。` : null]}
+          extraSources={citesIn(s.note)}
+        />
+      ))}
+    </div>
+  )
+}

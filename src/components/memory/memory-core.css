@@ -1,0 +1,245 @@
+/*
+ * Shared core of the memory topic styles: state tokens, 估計／預測 tags, the supply–demand meter and the
+ * topic card shown on other pages (home, memory-storage segment, memory trends). Kept small so those pages do
+ * not load the full /memory/ stylesheet (memory.css imports this file).
+ */
+@layer components {
+  :root {
+    --mem-over: var(--chart-1);
+    --mem-bal: var(--chart-3);
+    --mem-tight: var(--chart-4);
+    --mem-short: var(--c-neg);
+    --mem-supply: var(--chart-1);
+    --mem-demand: var(--chart-2);
+  }
+
+  .mem-st {
+    display: inline-block;
+    margin-inline: 0.3em 0.1em;
+    padding: 0 0.45em;
+    border-radius: var(--radius-s);
+    font-size: 0.72rem;
+    font-weight: var(--fw-semibold);
+    line-height: 1.55;
+    letter-spacing: 0.02em;
+    vertical-align: 0.12em;
+    white-space: nowrap;
+    color: var(--c-fg-muted);
+  }
+  .mem-st--estimate {
+    border: 1px solid color-mix(in srgb, var(--c-estimate) 70%, transparent);
+    background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--c-estimate) 22%, transparent) 0 2px, transparent 2px 5px);
+  }
+  .mem-st--forecast {
+    border: 1px dashed var(--c-border-strong);
+    background: var(--c-bg-elev);
+  }
+  .mem-st--actual {
+    border: 1px solid var(--c-border);
+  }
+  /* ───────────── balance meter ───────────── */
+  .mem-meter {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .mem-meter__track {
+    display: inline-grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+    inline-size: 6.5rem;
+  }
+  .mem-meter--scale .mem-meter__track {
+    inline-size: min(100%, 15rem);
+  }
+  .mem-meter__seg {
+    position: relative;
+    display: block;
+    block-size: 10px;
+    border-radius: 3px;
+    /* inactive steps stay recognisable in dark mode too: a tint plus a hairline of the step colour */
+    background: color-mix(in srgb, var(--k) 24%, var(--c-bg-sunken));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--k) 45%, transparent);
+  }
+  .mem-meter__seg.is-on {
+    background: var(--k);
+    box-shadow: 0 0 0 1.5px var(--c-bg-elev), 0 0 0 3px var(--k);
+  }
+  .mem-meter--scale .mem-meter__seg {
+    block-size: 12px;
+    margin-block-end: 1.3em;
+  }
+  .mem-meter__name {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: calc(100% + 4px);
+    font-size: 0.7rem;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    color: var(--c-fg-subtle);
+  }
+  .mem-meter__seg.is-on .mem-meter__name {
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+  }
+  .mem-meter__label {
+    font-weight: var(--fw-bold);
+    white-space: nowrap;
+  }
+  .mem-meter--scale {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .mem-meter--scale .mem-meter__label {
+    display: none;
+  }
+
+  /* ───────────── topic card (segment, home, trend pages) ───────────── */
+  .mem-topic {
+    display: grid;
+    gap: var(--space-4) var(--space-6);
+    padding: var(--space-5) var(--space-6);
+    border: 1px solid color-mix(in srgb, var(--seg-memory-storage) 35%, var(--c-border));
+    border-radius: var(--radius-l);
+    background:
+      radial-gradient(30rem 14rem at 100% 0%, color-mix(in srgb, var(--seg-memory-storage) 10%, transparent), transparent 70%),
+      var(--c-bg-elev);
+    box-shadow: var(--shadow-1);
+  }
+  @media (min-width: 900px) {
+    .mem-topic--card,
+    .mem-topic--home {
+      grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 1fr);
+      align-items: center;
+    }
+  }
+  .mem-topic__text {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+  }
+  .mem-topic__kicker {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6em;
+    margin: 0;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .mem-topic__title {
+    margin: 0;
+    font-size: var(--fs-xl);
+    line-height: 1.35;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .mem-topic--related .mem-topic__title {
+    font-size: var(--fs-l);
+  }
+  .mem-topic__title a {
+    color: var(--c-fg);
+    text-decoration: none;
+  }
+  .mem-topic__title a:hover {
+    color: var(--c-link);
+    text-decoration: underline;
+  }
+  .mem-topic__desc {
+    margin: 0;
+    font-size: var(--fs-s);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+    max-width: 40em;
+  }
+  .mem-topic__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-block-size: var(--tap);
+    padding: 0 1.1em;
+    border-radius: var(--radius-pill);
+    background: var(--c-fg);
+    color: var(--c-bg);
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    text-decoration: none;
+  }
+  .mem-topic__cta:hover {
+    background: var(--c-accent);
+    color: var(--c-accent-fg);
+  }
+  .mem-topic--related .mem-topic__cta {
+    justify-self: start;
+  }
+  .mem-topic__lights {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .mem-topic__lights li {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, max-content) 6.5rem 2.5em minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--fs-s);
+  }
+  .mem-topic__name {
+    font-weight: var(--fw-semibold);
+  }
+  .mem-topic__state {
+    font-weight: var(--fw-bold);
+  }
+  .mem-topic__period {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    white-space: nowrap;
+  }
+  @media (max-width: 479px) {
+    .mem-topic {
+      padding: var(--space-4);
+    }
+    .mem-topic__lights li {
+      grid-template-columns: minmax(0, 1fr) 6.5rem 2.5em;
+    }
+    .mem-topic__period {
+      grid-column: 1 / -1;
+      margin-block-start: -4px;
+    }
+  }
+  .mem-topic__badge {
+    display: inline-block;
+    padding: 0.05em 0.6em;
+    border-radius: var(--radius-pill);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    letter-spacing: 0.08em;
+  }
+}
+
+@layer components {
+  /* small pills on a category or topic colour: tinted fill + body text, readable in both themes */
+  .mem-head__badge,
+  .mem-topic__badge,
+  .mem-cat__n,
+  .mem-risk__n {
+    border: 1px solid color-mix(in srgb, var(--pill, var(--seg-memory-storage)) 55%, transparent);
+    background: color-mix(in srgb, var(--pill, var(--seg-memory-storage)) 16%, var(--c-bg-elev));
+    color: var(--c-fg);
+  }
+  .mem-cat__n {
+    --pill: var(--cat);
+  }
+  .mem-topic__lights li {
+    grid-template-columns: 9.5rem 6.5rem 2.5em minmax(0, 1fr);
+  }
+  @media (max-width: 479px) {
+    .mem-topic__lights li {
+      grid-template-columns: minmax(0, 1fr) 6.5rem 2.5em;
+    }
+  }
+}

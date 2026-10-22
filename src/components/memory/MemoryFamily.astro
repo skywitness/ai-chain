@@ -1,0 +1,47 @@
+---
+/**
+ * 記憶體家族 ladder for the /memory/ intro: from the fastest, smallest memory next to the chip to the largest,
+ * cheapest storage, each tier linking to its section. Qualitative only (no figures).
+ *   <MemoryFamily />
+ */
+import './memory.css';
+import Icon from '../ui/Icon.astro';
+
+const tiers = [
+  { id: 'sram', name: 'SRAM 快取', where: '做在 GPU、CPU 晶片裡', role: '最快、最貴、容量最小', href: null, color: 'var(--c-fg-subtle)', w: 18 },
+  { id: 'hbm', name: 'HBM', where: '多層 DRAM 疊高，緊貼 AI 晶片', role: '頻寬最高，AI 加速器的主記憶體', href: '#hbm', color: 'var(--seg-memory-storage)', w: 34 },
+  { id: 'dram', name: 'DRAM', where: 'DDR5、LPDDR、GDDR 模組或晶片', role: '伺服器、手機與電腦的工作記憶體', href: '#dram', color: 'var(--chart-1)', w: 52 },
+  { id: 'nand', name: 'NAND Flash 與 SSD', where: '斷電後資料不會消失', role: '資料中心的熱資料、模型與檢索資料', href: '#nand', color: 'var(--chart-3)', w: 74 },
+  { id: 'hdd', name: 'HDD 硬碟', where: '近線硬碟（nearline HDD）', role: '每 TB 成本最低，存放大量冷資料', href: '#storage', color: 'var(--chart-4)', w: 100 },
+] as const;
+---
+
+<figure class="mem-family" aria-labelledby="mem-family-h">
+  <figcaption class="mem-family__head">
+    <p class="mem-family__title" id="mem-family-h">記憶體與儲存家族</p>
+    <p class="mem-family__sub">由上往下：越靠近晶片越快、越貴；越往下容量越大、每位元越便宜</p>
+  </figcaption>
+  <ol class="mem-family__list" role="list">
+    {
+      tiers.map((t) => (
+        <li class="mem-family__tier" style={`--k: ${t.color}; --w: ${t.w}%`}>
+          <span class="mem-family__bar" aria-hidden="true" />
+          <span class="mem-family__text">
+            <span class="mem-family__name">
+              {t.href ? <a href={t.href}>{t.name}</a> : t.name}
+            </span>
+            <span class="mem-family__where">{t.where}</span>
+            <span class="mem-family__role">{t.role}</span>
+          </span>
+        </li>
+      ))
+    }
+  </ol>
+  <p class="mem-family__axis" aria-hidden="true">
+    <span><Icon name="arrow-up-right" size="1em" />更快、更貴</span>
+    <span>容量更大、更便宜</span>
+  </p>
+  <p class="mem-family__note">
+    介於 HBM 與 SSD 之間，還有 HBF、CXL 記憶體擴充、SOCAMM 等新型記憶體，見<a href="#storage-tech">新興記憶體</a>。
+  </p>
+</figure>

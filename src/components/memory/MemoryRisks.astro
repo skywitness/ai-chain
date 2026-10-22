@@ -1,0 +1,141 @@
+---
+/**
+ * 風險與觀察指標 for the /memory/ page: six questions that decide how long the shortage lasts, each with the
+ * figures behind it (cited from the memory data) and the indicators to watch, linking to the section with details.
+ *   <MemoryRisks data={data} />
+ */
+import './memory.css';
+import Cite from '../content/Cite.astro';
+import Icon from '../ui/Icon.astro';
+import { srcKey, type MemoryData } from '../../lib/memory-data';
+
+interface Props {
+  data: MemoryData;
+}
+const { data } = Astro.props;
+const k = (file: Parameters<typeof srcKey>[1], local: string) => srcKey(data, file, local);
+const has = (c: string) => data.markets.some((m) => m.category === c);
+---
+
+<ol class="mem-risks" role="list">
+  {
+    has('dram') && has('nand') && (
+      <li class="mem-risk">
+        <p class="mem-risk__n" aria-hidden="true">1</p>
+        <h3 class="mem-risk__h">供需何時反轉？各家看法不同</h3>
+        <p>
+          TrendForce 估計 2026 年 DRAM 供給充足率約 -1% 至 -2%<Cite k={k('dram', 'tf-outlook-2027')} />，NAND Flash 的供給缺口約 4–5%<Cite k={k('nand', 'tf-nand-2027')} />；但對 2027 年的看法分歧：TrendForce 預期 NAND 在 2027 年下半年轉為寬鬆<Cite k={k('nand', 'tf-outlook-2027')} />，美光則認為 2027、2028 年 DRAM 與 NAND 都會比 2026 年更緊<Cite k={k('dram', 'mu-remarks-fq4-26')} />。
+        </p>
+        <p class="mem-risk__watch-h">觀察指標</p>
+        <ul class="mem-risk__watch">
+          <li>每季合約價季增率是否收斂、甚至轉為下跌</li>
+          <li>研究機構的供給充足率，以及原廠法說對產業位元出貨成長的預估</li>
+          <li>手機、PC 客戶的採購態度與庫存水位</li>
+        </ul>
+        <a class="mem-risk__link" href="#nand-balance">
+          看 NAND 的供需時間軸 <Icon name="arrow-right" />
+        </a>
+      </li>
+    )
+  }
+  {
+    has('dram') && (
+      <li class="mem-risk">
+        <p class="mem-risk__n" aria-hidden="true">2</p>
+        <h3 class="mem-risk__h">新產能多在 2027 年後才開出</h3>
+        <p>
+          TrendForce 指出，新廠要到 2027 年下半年才有意義的爬坡、2028 年才大量貢獻產出<Cite k={k('dram', 'tf-outlook-2027')} />。美光愛達荷 ID1 預計 2027 年年中產出首批晶圓<Cite k={k('dram', 'mu-us-invest')} />，SK海力士龍仁第一座廠的首座無塵室目標 2027 年 2 月啟用<Cite k={k('dram', 'skh-fab')} />，三星平澤 P5 第一座據報 2028 年營運<Cite k={k('dram', 'mt-samsung-p4')} />；NAND 方面，SK海力士清州 M17 首座無塵室 2028 年 12 月啟用<Cite k={k('nand', 'skh-fab')} />，鎧俠北上 Fab3 目標 2029 年度營運<Cite k={k('nand', 'kx-fab3')} />。
+        </p>
+        <p class="mem-risk__watch-h">觀察指標</p>
+        <ul class="mem-risk__watch">
+          <li>無塵室啟用、裝機與首批晶圓產出是否如期</li>
+          <li>原廠資本支出指引，例如美光預估 FY2027 上半年資本支出約 250 億美元<Cite k={k('dram', 'mu-remarks-fq4-26')} /></li>
+          <li>舊廠改造與收購（如美光銅鑼廠）帶來的產能</li>
+        </ul>
+        <a class="mem-risk__link" href="#expansions">
+          看擴產總表 <Icon name="arrow-right" />
+        </a>
+      </li>
+    )
+  }
+  {
+    has('hbm') && has('dram') && (
+      <li class="mem-risk">
+        <p class="mem-risk__n" aria-hidden="true">3</p>
+        <h3 class="mem-risk__h">HBM 吃掉多少晶圓</h3>
+        <p>
+          美光說明，生產同樣位元的 HBM 約需 DDR5 的 3 倍晶圓<Cite k={k('hbm', 'mu-q1-26-call')} />。TrendForce 預估 2026 年底 HBM 佔三大廠 DRAM 晶圓投片約 22%，卻只佔位元供給約 9%<Cite k={k('dram', 'tf-hbm-wafer')} />：HBM 擴產越快，一般型 DRAM 的產能就越吃緊。
+        </p>
+        <p class="mem-risk__watch-h">觀察指標</p>
+        <ul class="mem-risk__watch">
+          <li>HBM 在 DRAM 晶圓投片中的比重</li>
+          <li>HBM4、HBM4E 的良率與客戶認證進度（媒體報導三星 HBM4 良率在 2026 年由約六成升到約八成<Cite k={k('hbm', 'tfn-onyang')} />）</li>
+          <li>HBM 與伺服器 DDR5 的價差，TrendForce 預估 2026 年底縮小到約 1–2 倍<Cite k={k('dram', 'tf-hbm-ddr5-gap')} /></li>
+        </ul>
+        <a class="mem-risk__link" href="#hbm-sd">
+          看 HBM 的供給與需求 <Icon name="arrow-right" />
+        </a>
+      </li>
+    )
+  }
+  {
+    has('dram') && has('nand') && (
+      <li class="mem-risk">
+        <p class="mem-risk__n" aria-hidden="true">4</p>
+        <h3 class="mem-risk__h">中國廠商擴產的速度</h3>
+        <p>
+          Citrini Research 估計長鑫存儲 2026 年底的 DRAM 月產能約 35 萬片，逼近美光的 37.5 萬片<Cite k={k('dram', 'toms-citrini')} />；業界估計 2028 年第四季可達 50–60 萬片<Cite k={k('dram', 'dt-cxmt')} />。TrendForce 預估中國供應商佔全球 NAND 位元產出的比重接近 19%<Cite k={k('nand', 'tf-nand-2027')} />。
+        </p>
+        <p class="mem-risk__watch-h">觀察指標</p>
+        <ul class="mem-risk__watch">
+          <li>長鑫存儲、長江存儲新製程的良率與量產規模</li>
+          <li>中國廠商的 DDR5、LPDDR5X 與企業級 SSD 打進主流客戶的進度</li>
+          <li>中國新廠（長鑫上海、長江存儲武漢三廠）的投產時程</li>
+        </ul>
+        <a class="mem-risk__link" href="#fabs">
+          看產能地圖的中國廠區 <Icon name="arrow-right" />
+        </a>
+      </li>
+    )
+  }
+  {
+    has('dram') && has('hbm') && (
+      <li class="mem-risk">
+        <p class="mem-risk__n" aria-hidden="true">5</p>
+        <h3 class="mem-risk__h">需求能撐多久：雲端投資與價格承受度</h3>
+        <p>
+          TrendForce 估計九大雲端業者 2026 年資本支出約 9,570 億美元、年增 106%<Cite k={k('dram', 'tf-csp-capex-2027')} />，2027 年 DRAM 與 NAND 預估佔主要雲端業者資本支出的 68%<Cite k={k('dram', 'tf-csp-memory')} />。消費端已感受到漲價壓力：TrendForce 預估 2026 年全球手機生產年減約 14%<Cite k={k('dram', 'tf-phone-2026')} />、筆電出貨年減 9.4%<Cite k={k('dram', 'tf-nb-2026')} />。
+        </p>
+        <p class="mem-risk__watch-h">觀察指標</p>
+        <ul class="mem-risk__watch">
+          <li>雲端業者每季的資本支出指引</li>
+          <li>長期供貨協議的覆蓋率，例如美光表示 FY2027 出貨約 75% 已有客戶配額或合約<Cite k={k('hbm', 'mu-q4-26-call')} /></li>
+          <li>手機、PC 的出貨與每台記憶體搭載量是否下修</li>
+        </ul>
+        <a class="mem-risk__link" href="#dram-sd">
+          看 DRAM 的需求面 <Icon name="arrow-right" />
+        </a>
+      </li>
+    )
+  }
+  {
+    has('storage') && (
+      <li class="mem-risk">
+        <p class="mem-risk__n" aria-hidden="true">6</p>
+        <h3 class="mem-risk__h">硬碟靠新技術擴充，跟得上嗎</h3>
+        <p>
+          近線硬碟交期在 2025 年 9 月拉長到 52 週以上<Cite k={k('storage', 'tf-hdd-shortage-2025')} />。硬碟廠不靠多蓋工廠，而是提高每片碟片的容量：HAMR 已占希捷近線出貨容量約四成，希捷的目標是近線出貨容量每年增加約 25%<Cite k={k('storage', 'stx-call-q4fy26')} />。
+        </p>
+        <p class="mem-risk__watch-h">觀察指標</p>
+        <ul class="mem-risk__watch">
+          <li>HAMR 與新一代硬碟的良率和出貨比重</li>
+          <li>近線硬碟交期，以及企業級 QLC SSD 與硬碟的每 TB 價差</li>
+          <li>磁頭、碟片等關鍵零組件的產能</li>
+        </ul>
+        <a class="mem-risk__link" href="#storage">
+          看 HDD 與新興記憶體 <Icon name="arrow-right" />
+        </a>
+      </li>
+    )
+  }
+</ol>

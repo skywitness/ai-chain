@@ -3,7 +3,7 @@
 這份文件說明網站完成後如何持續更新。任何新的 Claude Code session 開啟 `C:\dev2` 時，都會透過根目錄的 `CLAUDE.md` 讀到這裡。
 
 > **使用者偏好（必須遵守）**
-> - 更新工作用 Workflow 執行時，**一次只跑一個 workflow，且 `limit` 設為 1**，也就是同時只有 1 個 agent。這樣可以降低用量消耗。
+> - Workflow 數量與 agent 並行數**不設限**（2026-10-22 使用者要求）：可同時跑多個 workflow，`limit` 依工作量設定。若用量吃緊，再把 `limit` 調低。
 > - 啟動大型 workflow 前，先向使用者說明規模並取得同意。
 
 ---
@@ -31,12 +31,13 @@
 1. **決定新的資料基準日**，例如 `2027-01-31`。
 2. **更新基準日**：修改 `src/lib/seo.ts` 的 `DATA_DATE`，以及 `docs/CONTENT-GUIDE.md`、`docs/STYLE-zh-TW.md` 開頭提到基準日的地方。
 3. **產生參數**：用 `node scripts/plan/make-update-args.mjs …` 產生 `research/plan/update-args.json`，用法見下面各節。
-4. **執行 workflow**：以 `research/plan/workflows/content-wf.js` 為 scriptPath，args 為 `update-args.json` 的內容。一次一個 workflow，limit 1。
+4. **執行 workflow**：以 `research/plan/workflows/content-wf.js` 為 scriptPath，args 為 `update-args.json` 的內容。`limit` 依項目數設定，不設上限。
 5. **驗證**：依 `docs/QA.md` §5 跑完整驗證，至少要跑：
    - `npx astro check`
    - `npx tsx scripts/validate-data.ts`
    - `npx tsx scripts/check-zh.ts`
    - `npx tsx scripts/check-content-rules.ts`
+   - `npx tsx scripts/check-memory.ts`（有改 `src/data/memory/*.yaml` 時）
    - `npm run build`
    - `npx tsx scripts/check-links.ts`
 6. **部署**：本 repo 已設定 GitHub Pages 自動部署。只要 commit 並 push 到 `main`（需經使用者同意），`.github/workflows/deploy.yml` 就會建置並發布到 https://skywitness.github.io/ai-chain/ 。其他平台的部署方式見 `docs/QA-REPORT.md` §6。
@@ -116,17 +117,45 @@ node scripts/plan/make-update-args.mjs --type refresh --collection companies --a
   `research/plan/workflows/scenes-wf.js` 可以用 `skipBuild` 只做審查。
 - **頁面**：修改 `src/pages/`、`src/components/`。修改後跑 e2e 與 a11y 測試，見 `docs/QA.md`。
 
+### 2.8 記憶體與儲存專題（`/memory/`）
+
+專題頁的數字全部來自 `src/data/memory/`，頁面只負責計算與呈現：
+
+| 檔案 | 內容 |
+|---|---|
+| `hbm.yaml`、`dram.yaml`、`nand.yaml`、`storage.yaml` | 各類別的摘要、重點、市場規模、供給與需求、需求結構、供需狀態（`balance`）、市占、價格、產能、擴產與技術路線 |
+| `fabs.yaml` | 全球記憶體廠區（3D 產能地圖 `memory-fab-map` 與「廠區一覽」表格） |
+
+格式定義在 `src/schemas/memory.ts`（strictObject，不允許多餘欄位）。頁面由 `src/lib/memory-data.ts` 讀取並驗證，元件在 `src/components/memory/`，場景資料由 `src/lib/scene-data/memory-fabs.ts` 產生。
+
+更新步驟：
+
+1. 先複製到暫存區（例如 `research/staging/memory/dram.yaml`）修改，數字照 `docs/CONTENT-GUIDE.md` §1–2 附來源與存取日期；每個項目的 `src` 要對到同一檔 `sources` 裡的 key，估計值標 `status: estimate`、預測值標 `status: forecast`。
+2. 更新檔案的 `asOf` 與 `lastVerified`；`balance` 要有一期涵蓋新的資料日期，頁面的「供需燈號」以及首頁、環節頁、趨勢頁的專題卡片都會自動改用那一期。
+3. 驗證暫存檔，通過後再用 `mv` 覆蓋 `src/data/memory/` 的檔案，最後對正式檔再跑一次：
+   ```bash
+   npx tsx scripts/check-memory.ts research/staging/memory/dram.yaml   # 暫存檔
+   npx tsx scripts/check-memory.ts                                      # 全部正式檔
+   npx tsx scripts/check-zh.ts src/data/memory/*.yaml
+   ```
+   `check-memory` 會檢查 schema、公司 id 是否在名冊中、`src` 是否存在、市占加總不超過 100%、需求結構加總約 100%，以及佔位字。
+4. 開啟 `/memory/` 檢查燈號、圖表與表格；頁面導讀在 `src/content/pages/memory.mdx`，引用的數字若有變動也要一起更新。
+
+注意：各檔案的來源會合併成頁末的一份清單（同一網址只列一次），所以同一個 key 在不同檔案中應指向同一網址；公司只能用名冊中的 id（名冊外用 `other`）。
+
 ---
 
 ## 3. 給新 session 的指令範本（直接貼上）
 
-> 請讀 `CLAUDE.md` 與 `docs/UPDATING.md`，把網站的資料基準日更新為 2027-01-31，執行 §2.1 的每季財報更新（一線上市公司），一次只跑一個 workflow、limit 1，完成後跑 `docs/QA.md` §5 的完整驗證並回報。
+> 請讀 `CLAUDE.md` 與 `docs/UPDATING.md`，把網站的資料基準日更新為 2027-01-31，執行 §2.1 的每季財報更新（一線上市公司），完成後跑 `docs/QA.md` §5 的完整驗證並回報。
 
 > 請依 `docs/UPDATING.md` §2.2 更新所有大模型的版本、價格與評測到 2027-01-31，完成後驗證並建置。
 
 > 請依 `docs/UPDATING.md` §2.4 新增以下公司到產業鏈資料庫：○○○（環節：△△）、□□□（環節：▽▽），撰寫並查核後驗證。
 
 > 請依 `docs/UPDATING.md` §2.6 對 foundation-models 環節的公司做一次只查核不改寫的全面查核。
+
+> 請依 `docs/UPDATING.md` §2.8 把記憶體與儲存專題的資料（`src/data/memory/*.yaml`）更新到 2027-01-31，跑 `scripts/check-memory.ts` 後檢查 `/memory/` 頁面並回報。
 
 ---
 
@@ -135,5 +164,5 @@ node scripts/plan/make-update-args.mjs --type refresh --collection companies --a
 - **暫存區**：所有內容變更都要先寫在 `research/staging/content/…`，通過驗證後再用 `mv` 搬進 `src/content/`，避免讓開發伺服器讀到壞檔。workflow 的 agent 已內建這條規則。
 - **WebSearch 額度很少**：每個 workflow 共用約 200 次搜尋。agent 主要使用 WebFetch 讀一手來源，例如 IR、SEC、MOPS、官方定價頁、Hugging Face、Wikipedia。
 - **測試殘檔**：不可在 `src/content` 或 `src/pages` 留下測試檔，例如 `zz-*`。
-- **用量**：大型更新（例如全部 710 家公司）會消耗大量用量。請分批進行，並維持一次一個 workflow、limit 1。中斷後重新產生參數即可接續。
+- **用量**：大型更新（例如全部 710 家公司）會消耗大量用量。請分批進行；若接近用量上限，可調低 `limit`。中斷後重新產生參數即可接續。
 - **暫停**：要暫停時，用 TaskStop 停止 workflow，並關閉 4300–4699 埠上 agent 自行啟動的 node 開發伺服器。

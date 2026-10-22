@@ -1,0 +1,102 @@
+---
+/**
+ * Market share of one market and basis: the latest snapshot as labelled bars (company names, shares, period and
+ * basis), the change over time as 100% stacked rows when there are two or more snapshots, and chips linking to
+ * the roster companies.
+ *   <ShareBlock group={g} title="DRAM" />
+ */
+import './memory.css';
+import StackedShares, { type StackRow } from './StackedShares.astro';
+import CiteText from './CiteText.astro';
+import CompanyChip from '../content/CompanyChip.astro';
+import { uid } from '../content/page-state';
+import { tip, vars } from '../charts/chart-utils';
+import { SHARE_BASIS_LABEL, companyColor, sortedShareItems, type ShareGroup } from '../../lib/memory-data';
+import { formatNumber, zhConcat } from '../../lib/format';
+
+interface Props {
+  group: ShareGroup;
+  /** market name for titles, e.g. 「DRAM」 */
+  name: string;
+  headingLevel?: 3 | 4 | undefined;
+}
+const { group: g, name, headingLevel = 4 } = Astro.props;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+const latest = g.entries.at(-1)!;
+const items = sortedShareItems(latest);
+const max = Math.max(1, ...items.map((i) => i.share));
+const basis = SHARE_BASIS_LABEL[g.basis];
+const subject = g.subject || name;
+const title = zhConcat(subject, `市占（依${basis}）`);
+const pctTxt = (v: number) => `${formatNumber(v, { digits: Number.isInteger(v) ? 0 : 1, trim: true })}%`;
+const companies = [...new Set(g.entries.flatMap((e) => e.items.map((i) => i.company)).filter((c) => c !== 'other'))];
+const color = (id: string, i: number) => companyColor(id, i);
+
+// one company order for every row: the latest snapshot's order, then companies only older rows have, 其他 last
+const order: string[] = [];
+for (const e of [...g.entries].reverse()) for (const it of sortedShareItems(e)) if (!order.includes(it.company)) order.push(it.company);
+const byOrder = (a: { company: string }, b: { company: string }) => (a.company === 'other' ? 1 : 0) - (b.company === 'other' ? 1 : 0) || order.indexOf(a.company) - order.indexOf(b.company);
+const histRows: StackRow[] = [...g.entries].reverse().map((e) => ({
+  label: e.period,
+  sub: /IDC|Counterpoint|TrendForce|Trendfocus|Gartner/.exec(e.label ?? '')?.[0],
+  items: [...e.items].sort(byOrder).map((it) => ({ key: it.company, name: it.company === 'other' ? '其他' : it.name.replace(/（.*$/, ''), share: it.share, color: color(it.company, order.indexOf(it.company)) })),
+  src: e.src,
+}));
+// the sub-label is only useful when publishers differ inside the group
+const pubs = new Set(histRows.map((r) => r.sub ?? ''));
+if (pubs.size <= 1) for (const r of histRows) r.sub = undefined;
+const idHead = uid(Astro, 'mem-share');
+---
+
+<div class:list={['mem-share', g.entries.length < 2 && 'mem-share--solo']}>
+  <div class="mem-share__now">
+    <H class="mem-h4" id={idHead}>
+      {title}
+      <span class="mem-h4__meta">{latest.period}</span>
+    </H>
+    <ol class="mem-sbars" role="list" aria-labelledby={idHead}>
+      {
+        items.map((it) => (
+          <li class="mem-sbars__row">
+            <span class="mem-sbars__name">{it.name}</span>
+            <span class="mem-sbars__track" aria-hidden="true" data-tip={tip(`${latest.period}・${it.name}`, [[`${basis}市占`, pctTxt(it.share)]])}>
+              <span class="mem-sbars__bar" style={vars({ '--w': `${(it.share / max) * 100}%`, '--k': color(it.company, order.indexOf(it.company)) })} />
+            </span>
+            <span class="mem-sbars__val">{pctTxt(it.share)}</span>
+          </li>
+        ))
+      }
+    </ol>
+    {
+      latest.label && (
+        <p class="mem-fine">
+          <CiteText text={latest.label} src={latest.src} />
+        </p>
+      )
+    }
+    {!latest.label && <p class="mem-fine"><CiteText src={latest.src} /></p>}
+    {
+      companies.length > 0 && (
+        <p class="mem-chips">
+          <span class="mem-chips__label">公司</span>
+          {companies.map((c) => (
+            <CompanyChip id={c} />
+          ))}
+        </p>
+      )
+    }
+  </div>
+  {
+    g.entries.length > 1 && (
+      <StackedShares
+        title={zhConcat(subject, `${basis}市占變化`)}
+        subtitle={`${g.entries[0]!.period} 至 ${latest.period}，最新一期在最上方`}
+        rows={histRows}
+        itemTitle="公司"
+        as={`h${headingLevel + 1}` as 'h4' | 'h5'}
+        notes={['各期統計範圍可能不同（例如是否納入中國廠商、是否只列前五大），請以資料表與各期出處為準。']}
+        class="mem-share__hist"
+      />
+    )
+  }
+</div>

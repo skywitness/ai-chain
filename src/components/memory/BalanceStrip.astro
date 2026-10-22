@@ -1,0 +1,115 @@
+---
+/**
+ * Supply–demand timeline of one market: one cell per `balance` entry in time order, coloured from 過剩 to 短缺 and
+ * labelled with the state word; estimates are hatched, forecasts outlined, and the entry that covers the data date
+ * is marked 「目前」. The notes behind every cell sit in a disclosure table below with their citations.
+ *   <BalanceStrip market={m} asOf="2026-10-22" />
+ */
+import './memory.css';
+import CiteText from './CiteText.astro';
+import StatusTag from './StatusTag.astro';
+import Icon from '../ui/Icon.astro';
+import { BALANCE_META, BALANCE_ORDER, STATUS_LABEL, balanceNow, plainText, sortedBalance, type MarketData } from '../../lib/memory-data';
+import { formatNumber } from '../../lib/format';
+
+interface Props {
+  market: MarketData;
+  asOf: string;
+  /** accessible name of the strip */
+  label?: string | undefined;
+}
+const { market: m, asOf, label } = Astro.props;
+const rows = sortedBalance(m);
+const { current } = balanceNow(m, asOf);
+const ratios = rows.filter((r) => r.sufficiencyRatio != null);
+const fmtRatio = (v: number) => `${v > 0 ? '+' : ''}${formatNumber(v, { digits: 1, trim: true })}%`;
+---
+
+{
+  rows.length > 0 && (
+    <div class="mem-balance">
+      <ol class="mem-strip" aria-label={label ?? `${m.title}供需狀態時間軸（由舊到新）`}>
+        {rows.map((r) => (
+          <li
+            class="mem-strip__cell"
+            data-state={r.state}
+            data-status={r.status}
+            data-now={r === current ? '' : undefined}
+            style={`--k: ${BALANCE_META[r.state].color}`}
+            title={plainText(r.note)}
+          >
+            {r === current && <span class="mem-strip__now">目前</span>}
+            <span class="mem-strip__band">
+              <span class="mem-strip__state">{BALANCE_META[r.state].label}</span>
+              {r.sufficiencyRatio != null && <span class="mem-strip__ratio">{fmtRatio(r.sufficiencyRatio)}</span>}
+            </span>
+            <span class="mem-strip__period">{r.period}</span>
+            {r.status !== 'actual' && <span class="mem-strip__st">{STATUS_LABEL[r.status]}</span>}
+            <span class="sr-only">{r.status === 'actual' ? '' : `（${STATUS_LABEL[r.status]}）`}</span>
+          </li>
+        ))}
+      </ol>
+      <div class="mem-legend mem-legend--balance" aria-hidden="true">
+        <span class="mem-legend__scale">
+          {BALANCE_ORDER.map((s) => (
+            <span class="mem-legend__item">
+              <i class="mem-legend__sw" style={`--k: ${BALANCE_META[s].color}`} />
+              {BALANCE_META[s].label}
+            </span>
+          ))}
+        </span>
+        <span class="mem-legend__item">
+          <i class="mem-legend__sw mem-legend__sw--estimate" />
+          估計
+        </span>
+        <span class="mem-legend__item">
+          <i class="mem-legend__sw mem-legend__sw--forecast" />
+          預測
+        </span>
+      </div>
+      {ratios.length > 0 && (
+        <p class="mem-fine">
+          格內百分比是供給充足率（sufficiency ratio）：供給比需求多或少幾 %，負值代表供不應求。
+        </p>
+      )}
+      <details class="mem-more">
+        <summary>
+          <span>各期供需說明（{rows.length} 期）</span>
+          <Icon name="chevron-down" />
+        </summary>
+        <div class="mem-tablewrap" tabindex="0" role="region" aria-label={`${m.title}各期供需說明`}>
+          <table class="mem-table mem-table--notes">
+            <caption class="sr-only">{m.title}各期供需狀態與說明</caption>
+            <thead>
+              <tr>
+                <th scope="col">期間</th>
+                <th scope="col">狀態</th>
+                <th scope="col">說明</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...rows].reverse().map((r) => (
+                <tr>
+                  <th scope="row" class="mem-nowrap">
+                    {r.period}
+                    {r === current && <span class="mem-now-tag">目前</span>}
+                  </th>
+                  <td class="mem-nowrap">
+                    <span class="mem-state" style={`--k: ${BALANCE_META[r.state].color}`}>
+                      {BALANCE_META[r.state].label}
+                    </span>
+                    {r.sufficiencyRatio != null && <span class="mem-ratio">充足率 {fmtRatio(r.sufficiencyRatio)}</span>}
+                    <StatusTag status={r.status} />
+                  </td>
+                  <td>
+                    <CiteText text={r.note} src={r.src} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  )
+}

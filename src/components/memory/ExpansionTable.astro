@@ -1,0 +1,155 @@
+---
+/**
+ * 擴產總表: every expansion of the four markets (HBM and DRAM entries for the same fab merged), sorted by the
+ * production date. Two radio groups (類別, 公司) filter the rows through CSS :has(), so the filter works without
+ * JavaScript; the 「沒有符合的計畫」 message for empty combinations is generated at build time. Under 48rem the
+ * rows become cards.
+ *   <ExpansionTable rows={allExpansions(data)} />
+ */
+import './memory.css';
+import CiteText from './CiteText.astro';
+import { CATEGORY_META, MEMORY_CATEGORIES, STAGE_META, companyName, partialDateZh, type ExpansionRow, type MemoryCategory } from '../../lib/memory-data';
+import { companyHref } from '../../lib/paths';
+
+interface Props {
+  rows: readonly ExpansionRow[];
+}
+const { rows } = Astro.props;
+const cats = MEMORY_CATEGORIES.filter((c) => rows.some((r) => r.categories.includes(c)));
+const companies = [...new Set(rows.map((r) => r.company))]
+  .map((id) => ({ id, name: companyName(id), n: rows.filter((r) => r.company === id).length }))
+  .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name, 'zh-Hant'));
+const safe = (s: string) => s.replace(/[^a-z0-9-]/g, '');
+
+// CSS filters: hide rows that do not match the checked radio; show the empty note for empty combinations.
+const rules: string[] = [];
+for (const c of cats) rules.push(`.mem-xp:has(#xpk-${c}:checked) tbody tr:not([data-cat~="${c}"]){display:none}`);
+for (const co of companies) rules.push(`.mem-xp:has(#xpc-${safe(co.id)}:checked) tbody tr:not([data-co="${safe(co.id)}"]){display:none}`);
+for (const c of cats)
+  for (const co of companies)
+    if (!rows.some((r) => r.company === co.id && r.categories.includes(c)))
+      rules.push(`.mem-xp:has(#xpk-${c}:checked):has(#xpc-${safe(co.id)}:checked) .mem-xp__empty{display:block}`);
+const css = rules.join('\n');
+const catLabel = (c: MemoryCategory) => CATEGORY_META[c].short;
+---
+
+<div class="mem-xp">
+  <style is:inline set:html={css}></style>
+  <form class="mem-filter" aria-label="篩選擴產計畫">
+    <fieldset>
+      <legend>類別</legend>
+      <label><input type="radio" name="xp-cat" id="xpk-all" value="all" checked /><span>全部 {rows.length}</span></label>
+      {
+        cats.map((c) => (
+          <label>
+            <input type="radio" name="xp-cat" id={`xpk-${c}`} value={c} />
+            <span>
+              <i class="mem-sw" style={`--k: ${CATEGORY_META[c].color}`} aria-hidden="true" />
+              {catLabel(c)} {rows.filter((r) => r.categories.includes(c)).length}
+            </span>
+          </label>
+        ))
+      }
+    </fieldset>
+    <fieldset>
+      <legend>公司</legend>
+      <label><input type="radio" name="xp-co" id="xpc-all" value="all" checked /><span>全部</span></label>
+      {
+        companies.map((co) => (
+          <label>
+            <input type="radio" name="xp-co" id={`xpc-${safe(co.id)}`} value={co.id} />
+            <span>
+              {co.name} {co.n}
+            </span>
+          </label>
+        ))
+      }
+    </fieldset>
+  </form>
+  <div class="mem-tablewrap mem-tablewrap--cards" tabindex="0" role="region" aria-label="擴產總表（可捲動）">
+    <table class="mem-table mem-table--xp">
+      <caption class="sr-only">記憶體與儲存擴產總表，依量產或啟用時間排序</caption>
+      <thead>
+        <tr>
+          <th scope="col">量產或啟用</th>
+          <th scope="col">公司</th>
+          <th scope="col">計畫</th>
+          <th scope="col">類別</th>
+          <th scope="col">階段</th>
+          <th scope="col">產能與投資</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          rows.map((r) => (
+            <tr data-cat={r.categories.join(' ')} data-co={safe(r.company)} data-stage={r.stage}>
+              <td class="mem-nowrap mem-xp__date" data-label="量產或啟用">
+                <div class="mem-cell">
+                {r.production ? partialDateZh(r.production) : <span class="mem-na">未公布</span>}
+                {r.start && <small>動工 {partialDateZh(r.start)}</small>}
+                </div>
+              </td>
+              <td data-label="公司">
+                <div class="mem-cell">
+                <a href={companyHref(r.company)}>{companyName(r.company)}</a>
+                </div>
+              </td>
+              <th scope="row" data-label="計畫">
+                <div class="mem-cell">
+                <span class="mem-xp__project">{r.project}</span>
+                <small>{[r.fab, r.product].filter(Boolean).join('・')}</small>
+                </div>
+              </th>
+              <td data-label="類別">
+                <div class="mem-cell">
+                <span class="mem-prods">
+                  {r.categories.map((c) => (
+                    <span class="mem-prod" style={`--k: ${CATEGORY_META[c].color}`}>
+                      {catLabel(c)}
+                    </span>
+                  ))}
+                </span>
+                </div>
+              </td>
+              <td class="mem-nowrap" data-label="階段">
+                <div class="mem-cell">
+                <span class="mem-stage" data-stage={r.stage}>
+                  {STAGE_META[r.stage].label}
+                </span>
+                </div>
+              </td>
+              <td class="mem-xp__detail" data-label="產能與投資">
+                <div class="mem-cell">
+                {r.addCapacity && (
+                  <span class="mem-xp__line">
+                    <CiteText text={r.addCapacity} />
+                  </span>
+                )}
+                {r.capex && (
+                  <span class="mem-xp__line mem-xp__capex">
+                    投資：<CiteText text={r.capex} />
+                  </span>
+                )}
+                <span class="mem-xp__line mem-fine">
+                  {!r.addCapacity && !r.capex && '未公布產能與金額 '}
+                  出處
+                  <CiteText src={r.srcs} />
+                </span>
+                </div>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  <label class="mem-showall">
+    <input type="checkbox" id="xp-showall" />
+    <span class="mem-showall__more">顯示全部 {rows.length} 項計畫</span>
+    <span class="mem-showall__less">收合為前 12 項</span>
+  </label>
+  <p class="mem-xp__empty">這個公司在此類別沒有列入的擴產計畫，請改選其他類別或公司。</p>
+  <p class="mem-fine">
+    同一座廠同時列在 HBM 與 DRAM 段落時合併為一列（HBM 也是 DRAM 晶圓）；各計畫的完整說明見各類別的「擴產時程」。時程以公司公告或媒體報導為準，可能變動。
+  </p>
+</div>

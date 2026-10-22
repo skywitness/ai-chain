@@ -27,6 +27,18 @@
   - 參數產生器：`scripts/plan/make-update-args.mjs`。
   - `content-wf.js` 新增了 `financials-update` 與 `refresh` 兩種類型，以及 `asOf`（資料基準日）參數。
 
+## ✅ 記憶體與儲存專題 `/memory/`（2026-10-23 上線）
+
+使用者要求：新專題頁（加入頂部導覽），討論 HBM／DRAM／NAND 與 SSD／HDD 與儲存的供給量、需求量、市占、產能現況與擴產狀況，並新增 3D 場景「全球記憶體產能地圖」（`memory-fab-map`）。完成後驗證、建置並直接推送上線。執行中使用者改為**不限制 workflow 與 agent 數**。
+
+- **資料**：`src/data/memory/{hbm,dram,nand,storage,fabs}.yaml`，格式 `src/schemas/memory.ts`，檢查 `npx tsx scripts/check-memory.ts`。5 類各由一個撰寫 agent 與一個查核 agent 完成（查核約 936 項、修正 77 處）。資料截至 2026-10-22；`fabs.yaml` 為 2026-10-23（60 座廠區，18 座有月產能，多為研究機構或媒體估計）。
+- **頁面**：`src/pages/memory/index.astro`、`src/components/memory/**`、`src/lib/memory-data.ts`、`src/lib/scene-data/memory-fabs.ts`、導讀 `src/content/pages/memory.mdx`。頂部導覽「記憶體」；環節頁 memory-storage、首頁、兩篇記憶體趨勢都有連結。固定段落列 `.mem-bar`。HTML gzip 約 170 KB（`check-budgets.ts` 對 `/memory/` 設 200 KB 例外）。
+- **3D 場景**：`src/three/scenes/memory-fab-map/`（fixture `src/three/fixtures/memory-fab-map.json` 為示意資料）。產能面板只加總已公開的晶圓廠，部分公開時顯示「≥」與「有數字的廠數／晶圓廠數」，避免中國（數字較齊全）看起來比韓國大。
+- **Workflow**：`research/plan/workflows/memory-wf.js`（run `wf_10e6ad94-530`，12 個 agent）、`scenes-wf.js`（args `research/plan/scenes-args-memory.json`，run `wf_348aad77-fcc`）、`fab-capacity-wf.js`（run `wf_db61d78b-0c5`，3 個區域研究＋1 個查核合併）。
+- **驗證**：`astro check` 0 錯誤；`validate-data` 1,657 檔 0 錯誤；`check-zh`、`check-content-rules`、`check-memory` 0 錯誤；建置 858 頁（含 `BASE_PATH=/ai-chain/`）；連結 32,665 條 0 失效；預算全數通過；路由測試 1,725 項通過；axe（`/memory/` 與相關頁）80 項通過；場景測試 8/8；poster 48 張無問題。
+- **已知限制**：多數韓國廠的月產能只有 2021–2022 年的媒體估計，日本、美國、新加坡多數廠未公開；擴產總表與各類別時間軸有部分重複；手機版頁長約 85,000 px（已有固定段落列）。
+- **之後的更新**：見 `docs/UPDATING.md` §2.8。
+
 ---
 
 ## （歷史紀錄）最新狀態與接手方式（2026-10-18，用量即將用完前記錄）

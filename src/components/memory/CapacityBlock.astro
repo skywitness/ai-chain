@@ -1,0 +1,105 @@
+---
+/**
+ * Current capacity of one market: a bar chart for every metric reported for two or more companies or periods
+ * (each chart's 「顯示資料表」 keeps the notes, its source line the sources), then a table of the remaining
+ * figures (company, metric, value, period, 估計／預測, note, citation) so that no figure is shown twice.
+ *   <CapacityBlock market={m} />
+ */
+import './memory.css';
+import MetricBars from './MetricBars.astro';
+import CiteText from './CiteText.astro';
+import StatusTag from './StatusTag.astro';
+import CompanyChip from '../content/CompanyChip.astro';
+import { capacityGroups, companyName, type MarketData } from '../../lib/memory-data';
+import { fmtWithUnit } from './memory-format';
+
+interface Props {
+  market: MarketData;
+  accent?: string | undefined;
+}
+const { market: m, accent } = Astro.props;
+const groups = capacityGroups(m.capacity).filter((g) => g.rows.length >= 2 && new Set(g.rows.map((r) => r.company)).size >= 2);
+const multiPeriod = (g: (typeof groups)[number]) => new Set(g.rows.map((r) => r.period)).size > 1;
+const charted = new Set(groups.flatMap((g) => g.rows));
+const rest = m.capacity.filter((r) => !charted.has(r));
+---
+
+{
+  groups.length > 0 && (
+    <div class="mem-grid mem-grid--charts">
+      {groups.map((g) => (
+        <MetricBars
+          title={g.metric}
+          unit={g.unit}
+          accent={accent}
+          subtitle={multiPeriod(g) ? undefined : `期間：${g.rows[0]!.period}`}
+          series={[
+            {
+              name: g.metric,
+              points: g.rows.map((r) => ({
+                label: companyName(r.company),
+                sub: multiPeriod(g) ? r.period : undefined,
+                value: r.value,
+                status: r.status,
+                period: r.period,
+                note: r.note,
+                src: r.src,
+              })),
+            },
+          ]}
+        />
+      ))}
+    </div>
+  )
+}
+{rest.length > 0 && groups.length > 0 && <h4 class="mem-cap__h">其他產能數字</h4>}
+{
+  rest.length > 0 && (
+    <div class="mem-tablewrap mem-tablewrap--cards" tabindex="0" role="region" aria-label={`${m.title}${groups.length ? '其他產能數字' : '產能資料表'}`}>
+      <table class="mem-table mem-table--cap">
+        <caption class="sr-only">{m.title}{groups.length ? '：圖表以外的其他產能數字' : '各公司產能'}</caption>
+        <thead>
+          <tr>
+            <th scope="col">公司</th>
+            <th scope="col">項目</th>
+            <th scope="col" class="num">數值</th>
+            <th scope="col">期間</th>
+            <th scope="col">說明</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rest.map((r) => {
+            const v = fmtWithUnit(r.value, r.unit);
+            return (
+              <tr>
+                <th scope="row" class="mem-nowrap" data-label="公司">
+                  <div class="mem-cell">
+                    <CompanyChip id={r.company} />
+                  </div>
+                </th>
+                <td data-label="項目">
+                  <div class="mem-cell">{r.metric}</div>
+                </td>
+                <td class="num mem-nowrap" data-label="數值">
+                  <div class="mem-cell">
+                    {v.num}
+                    {v.unit === '%' ? '%' : ` ${v.unit}`}
+                    <StatusTag status={r.status} />
+                  </div>
+                </td>
+                <td class="mem-nowrap" data-label="期間">
+                  <div class="mem-cell">{r.period}</div>
+                </td>
+                <td class="mem-table__note" data-label="說明">
+                  <div class="mem-cell">
+                    <CiteText text={r.note} src={r.src} />
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}

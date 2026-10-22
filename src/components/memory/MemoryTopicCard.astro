@@ -1,0 +1,80 @@
+---
+/**
+ * Link card to the 記憶體與儲存專題 (/memory/) with the current supply–demand state of each market, computed from
+ * src/data/memory/*.yaml. Used on the memory-storage segment page, the home page and related trend pages.
+ *   <MemoryTopicCard />                       → card (segment page)
+ *   <MemoryTopicCard variant="home" />        → wide callout with an H2 (home)
+ *   <MemoryTopicCard variant="related" />     → compact 「相關專題」 card (trend pages)
+ * Renders nothing when the data is missing.
+ */
+import './memory-core.css';
+import BalanceMeter from './BalanceMeter.astro';
+import StatusTag from './StatusTag.astro';
+import Icon from '../ui/Icon.astro';
+import { BALANCE_META, CATEGORY_META, balanceNow, getMemoryData } from '../../lib/memory-data';
+import { sectionHref } from '../../lib/paths';
+import { uid } from '../content/page-state';
+
+interface Props {
+  variant?: 'card' | 'home' | 'related' | undefined;
+  class?: string | undefined;
+}
+const { variant = 'card', class: className } = Astro.props;
+const data = getMemoryData();
+const rows = data.markets
+  .map((m) => ({ m, now: balanceNow(m, data.asOf).current }))
+  .filter((r): r is { m: (typeof data.markets)[number]; now: NonNullable<typeof r.now> } => !!r.now);
+const href = sectionHref('memory');
+const hid = uid(Astro, 'mem-topic');
+const kicker = variant === 'related' ? '相關專題' : '專題';
+---
+
+{
+  rows.length > 0 && (
+    <section class:list={['mem-topic', `mem-topic--${variant}`, className]} aria-labelledby={hid} data-pagefind-ignore>
+      <div class="mem-topic__text">
+        <p class="mem-topic__kicker">
+          <span class="mem-topic__badge">{kicker}</span>
+          資料截至 {data.asOf}
+        </p>
+        <h2 class="mem-topic__title" id={hid}>
+          <a href={href}>記憶體與儲存專題：供需、市占、產能與擴產</a>
+        </h2>
+        <p class="mem-topic__desc">
+          {variant === 'related'
+            ? '這篇趨勢的數字背景：HBM、DRAM、NAND 與硬碟各自缺多少貨、誰在供貨、全球廠區在哪裡、新產能何時開出。'
+            : 'AI 讓記憶體從景氣循環變成算力瓶頸。一頁看懂 HBM、DRAM、NAND 與硬碟的供需燈號、市占、全球產能地圖與擴產時程。'}
+        </p>
+        {variant !== 'related' && (
+          <a class="mem-topic__cta" href={href}>
+            前往專題
+            <Icon name="arrow-right" />
+          </a>
+        )}
+      </div>
+      <ul class="mem-topic__lights" role="list" aria-label="目前供需燈號">
+        {rows.map(({ m, now }) => (
+          <li>
+            <a href={`${href}#${m.category}`} class="mem-topic__name">
+              {CATEGORY_META[m.category].short}
+            </a>
+            <BalanceMeter state={now.state} bare />
+            <span class="mem-topic__state" style={`--k: ${BALANCE_META[now.state].color}`}>
+              {BALANCE_META[now.state].label}
+            </span>
+            <span class="mem-topic__period">
+              {now.period}
+              <StatusTag status={now.status} />
+            </span>
+          </li>
+        ))}
+      </ul>
+      {variant === 'related' && (
+        <a class="mem-topic__cta" href={href}>
+          前往專題
+          <Icon name="arrow-right" />
+        </a>
+      )}
+    </section>
+  )
+}

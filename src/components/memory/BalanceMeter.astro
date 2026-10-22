@@ -1,0 +1,40 @@
+---
+/**
+ * Four-step supply–demand meter 過剩 → 平衡 → 吃緊 → 短缺. The active step is filled with its colour and the state
+ * is always written out (colour never carries the meaning alone).
+ *   <BalanceMeter state="shortage" />            → meter + 「短缺」
+ *   <BalanceMeter state="tight" scale />          → with the four step names under the meter
+ */
+import './memory-core.css';
+import { BALANCE_META, BALANCE_ORDER, type BalanceState } from '../../lib/memory-data';
+
+interface Props {
+  state: BalanceState;
+  /** show the four step names under the segments */
+  scale?: boolean | undefined;
+  /** hide the state word next to the meter (when the caller prints it) */
+  bare?: boolean | undefined;
+  class?: string | undefined;
+}
+const { state, scale = false, bare = false, class: className } = Astro.props;
+const idx = BALANCE_ORDER.indexOf(state);
+const meta = BALANCE_META[state];
+---
+
+<span
+  class:list={['mem-meter', scale && 'mem-meter--scale', className]}
+  data-state={state}
+  role="img"
+  aria-label={`供需狀態：${meta.label}（由過剩、平衡、吃緊到短缺四級中的第 ${idx + 1} 級）`}
+>
+  <span class="mem-meter__track" aria-hidden="true">
+    {
+      BALANCE_ORDER.map((s, i) => (
+        <span class:list={['mem-meter__seg', i === idx && 'is-on', i < idx && 'is-past']} style={`--k: ${BALANCE_META[s].color}`}>
+          {scale && <span class="mem-meter__name">{BALANCE_META[s].label}</span>}
+        </span>
+      ))
+    }
+  </span>
+  {!bare && <span class="mem-meter__label" aria-hidden="true" style={`--k: ${meta.color}`}>{meta.label}</span>}
+</span>

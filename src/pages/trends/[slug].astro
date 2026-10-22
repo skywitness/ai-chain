@@ -20,12 +20,15 @@ import TrendAffected from '../../components/trend/TrendAffected.astro';
 import { categoryMeta, getTrendView, getTrendViews, type TrendView } from '../../components/trend/trend-meta';
 import { getTrendsIndex, safeEntry, segmentMeta } from '../../lib/collections';
 import { sectionHref, trendHref } from '../../lib/paths';
+import MemoryTopicCard from '../../components/memory/MemoryTopicCard.astro';
 
 export function getStaticPaths() {
   return getTrendsIndex().map((t) => ({ params: { slug: t.id }, props: { id: t.id } }));
 }
 
 const { id } = Astro.props as { id: string };
+// trends whose numbers the 記憶體與儲存專題 (/memory/) tracks: a 「相關專題」 card before 追蹤重點
+const TOPIC_MEMORY = new Set(['memory-supercycle', 'hbm4-custom-base-die']);
 const entry = await safeEntry('trends', id);
 const view = (await getTrendView(id, entry)) as TrendView;
 const all = await getTrendViews();
@@ -179,6 +182,7 @@ const trackParts = [
   }
 
   <Fragment slot="after">
+    {TOPIC_MEMORY.has(id) && <MemoryTopicCard variant="related" class="tr-topic" />}
     {
       hasTrack && (
         <section class="tr-track" aria-labelledby="trend-track">
@@ -333,6 +337,10 @@ const trackParts = [
     }
   }
 
+  /* 「相關專題」 card (memory trends), between the body and 追蹤重點 */
+  :global(.tr-topic) {
+    margin-block-start: var(--space-7);
+  }
   .tr-track {
     margin-block-start: var(--space-8);
     padding-block-start: var(--space-6);

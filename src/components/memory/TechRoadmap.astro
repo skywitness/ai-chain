@@ -1,0 +1,55 @@
+---
+/**
+ * Technology roadmap of one market: cards sorted from 量產 to 研發中, each with a five-step maturity meter
+ * (研發中 → 規劃中 → 送樣 → 爬坡 → 量產) whose step is also written out, the timing, the detail and the citation.
+ *   <TechRoadmap items={m.technology} />
+ */
+import './memory.css';
+import CiteText from './CiteText.astro';
+import { TECH_META, type TechItem, type TechStatus } from '../../lib/memory-data';
+
+interface Props {
+  items: readonly TechItem[];
+  accent?: string | undefined;
+}
+const { items, accent = 'var(--c-accent)' } = Astro.props;
+const steps = (Object.keys(TECH_META) as TechStatus[]).sort((a, b) => TECH_META[a].level - TECH_META[b].level);
+const sorted = [...items].sort((a, b) => TECH_META[b.status].level - TECH_META[a.status].level);
+---
+
+{
+  sorted.length > 0 && (
+    <div class="mem-tech" style={`--k: ${accent}`}>
+      <p class="mem-legend mem-legend--tech" aria-hidden="true">
+        <span class="mem-legend__label">成熟度</span>
+        {steps.map((s, i) => (
+          <span class="mem-legend__item">
+            <i class="mem-tech-key" style={`--n: ${i + 1}`} />
+            {TECH_META[s].label}
+          </span>
+        ))}
+      </p>
+      <ul class="mem-tech__list" role="list">
+        {sorted.map((t) => (
+          <li class="mem-tech__item" data-status={t.status}>
+            <p class="mem-tech__top">
+              <span class="mem-tech__meter" role="img" aria-label={`成熟度：${TECH_META[t.status].label}（五級中的第 ${TECH_META[t.status].level} 級）`}>
+                {steps.map((_, i) => (
+                  <i class:list={[i < TECH_META[t.status].level && 'is-on']} />
+                ))}
+              </span>
+              <span class="mem-tech__status" aria-hidden="true">
+                {TECH_META[t.status].label}
+              </span>
+              {t.timing && <span class="mem-tech__timing">{t.timing}</span>}
+            </p>
+            <h4 class="mem-tech__name">{t.name}</h4>
+            <p class="mem-tech__detail">
+              <CiteText text={t.detail} src={t.src} />
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}

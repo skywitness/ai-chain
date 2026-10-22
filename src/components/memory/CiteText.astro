@@ -1,0 +1,20 @@
+---
+/**
+ * Text from the memory data with its citations: ⟦src:key⟧ markers inside the text become compact <MemCite> links, and the
+ * `src` key(s) are appended at the end (skipped when the text already cites them).
+ *   <CiteText text={metric.note} src={metric.src} />
+ */
+import MemCite from './MemCite.astro';
+import { splitCites } from '../../lib/memory-data';
+
+interface Props {
+  text?: string | null | undefined;
+  src?: string | readonly string[] | null | undefined;
+}
+const { text, src } = Astro.props;
+const parts = splitCites(text);
+const inText = new Set(parts.flatMap((p) => (typeof p === 'string' ? [] : [p.cite])));
+const tail = (src == null ? [] : typeof src === 'string' ? [src] : [...src]).filter((k, i, a) => !!k && !inText.has(k) && a.indexOf(k) === i);
+---
+
+{parts.map((p) => (typeof p === 'string' ? p : <MemCite k={p.cite} />))}{tail.map((k) => <MemCite k={k} />)}

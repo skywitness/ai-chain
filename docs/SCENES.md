@@ -33,6 +33,7 @@
 | `company-globe` | 全球 AI 企業地球儀 | `globe` | `/companies/` | 數百家公司總部點位，依層著色、依營收大小；城市聚集（新竹、矽谷）；篩選 | companies |
 | `roadmap-tunnel` | 技術時光隧道 2024–2031 | `tunnel` | `/trends/` | 四條軌道（硬體／軟體／市場／政策）沿時間隧道排列里程碑 | trends |
 | `taiwan-map` | 台灣 AI 供應鏈地圖 | `map` | `/taiwan/` | 立體台灣地圖，科學園區與產業聚落高塔、出口弧線 | taiwan |
+| `memory-fab-map` | 全球記憶體產能地圖 | `globe` | `/memory/` | 地球儀上的記憶體／HBM 封裝／NAND 晶圓廠，柱高＝月產能，可切換產品別（DRAM／HBM／NAND／全部）與狀態（現有產能／擴產中）；點選顯示產能、擴產規模、時程與資本支出 | custom（`src/data/memory/fabs.yaml` 的 fabs 陣列） |
 
 ## 頁面資料（data）形狀
 - `segments`：`{ id, title, titleEn, layer, order, tagline, href, companies: [{ id, name, nameZh }] }[]`
@@ -42,5 +43,6 @@
 - `trends`：`{ id, title, category, milestones: [{ date, label, status }], href }[]`
 - `taiwan`：`{ sites: [{ id, name, lat, lon, kind, companies: string[] }], companies: [{ id, nameZh, site, segment }] }`
 - `custom`（cloud-globe）：`{ campuses: [{ name, lat, lon, operator, mw, status }] }`
+- `custom`（memory-fab-map）：`{ asOf, fabs: [{ id, company, companyName, href, name, city, country, lat, lon, products: ('dram'|'hbm'|'hbm-packaging'|'nand'|'hdd'|'ssd'|'other')[], status: 'operating'|'expanding'|'construction'|'planned'|'delayed', capacityKwpm?, capacityStatus?: 'actual'|'estimate'|'forecast', addKwpm?, capex?, timeline?, note? }] }`（由 `src/lib/scene-data/memory-fabs.ts` 從 `src/data/memory/fabs.yaml` 產生；`companyName` 取名冊中文名，`href` 為 `/companies/<id>/`，不含 base）
 
 各場景在 `index.ts` 內以 type guard 驗證 data；缺資料時用 `src/three/fixtures/<id>.json` 示意資料（開發／測試用），並在畫面角落標示「示意資料」。

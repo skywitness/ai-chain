@@ -1,0 +1,70 @@
+# Proposals from the memory-fab-map scene agent (scene-memory-fab-map), 2026-10-22.
+# Nothing here blocks the scene: each item has a local workaround in src/three/scenes/memory-fab-map/.
+
+- id: globe-cluster-spread
+  target: src/three/kit/Globe.ts
+  severity: enhancement
+  problem: >
+    Real-world markers crowd into a few clusters (the Korean memory belt: 利川／華城／器興／平澤／龍仁／
+    清州 within ~100 km, 平澤 P1–P5 on one campus; Taiwan; Silicon Valley in company-globe). The kit
+    stacks markers in one 0.25° bucket on top of each other, which hides individual sites, and does
+    nothing for near-but-not-identical sites, which overlap.
+  proposal: >
+    `createSpread(normals, levels, sepAt, pairSep?)` → `{ at(zoom, out) }`: for each zoom level, relax
+    the unit normals apart until no two are closer than `sepAt(zoom)` (with a weak spring back to the
+    true position, and an optional tighter spacing for pairs that belong together, e.g. one campus),
+    then interpolate between levels in log zoom. Pair it with an optional leader-line helper from the
+    true position to the displaced foot.
+  workaround: layout.ts (precomputes four levels at create, < 5 ms for ~40 markers); index.ts draws the leader lines and true-position pins.
+
+- id: globe-semantic-zoom
+  target: src/three/kit/Globe.ts
+  severity: enhancement (same need as company-globe → globe-style-setters)
+  problem: >
+    A data globe that zooms from orbit to a 300 km region needs markers that shrink with the camera
+    altitude (or they swallow the region), land dots that shrink and fade up close, a finer graticule
+    up close, and a near plane that follows the altitude (a fixed near plane clips close-ups or
+    wastes depth precision from orbit).
+  proposal: >
+    `globe.setZoom(altitude)` that scales the land dots (`uDotScale`) and their opacity, fades a
+    2° graticule in below a threshold, and returns a zoom factor scenes can use for their own
+    markers; optionally `globe.fitNear(camera)`.
+  workaround: >
+    index.ts patches the land-dot material (`onBeforeCompile`, `transformed.xy *= uDotScale`, transparent
+    opacity), builds its own fine graticule, and adjusts `camera.near` from the altitude in `update()`.
+
+- id: hatched-ghost-material
+  target: src/three/core/materials.ts
+  severity: enhancement
+  problem: >
+    Several scenes show "not built yet" or "planned" objects (cloud-globe ghosts, roadmap milestones,
+    this scene's construction / planned fabs). A plain translucent ghost reads only through opacity,
+    which is weak in the light theme and close to colour-only.
+  proposal: >
+    `materials.ghost(ref, { hatch: px, dash: worldUnits, lo })`: a translucent, double-sided standard
+    material with screen-space diagonal hatching and optional world-space dashes along local +Y
+    (instance scale aware), plus per-instance alpha. Theme-aware defaults for both themes.
+  workaround: index.ts → `hatched()` (onBeforeCompile: `gl_FragCoord` hatching, `instanceMatrix[1]`-scaled dashes, `aAlpha`).
+
+- id: label-layer-ui-occlusion
+  target: src/three/core/labels.ts
+  severity: enhancement
+  problem: >
+    Scenes with HTML overlays inside the stage (filter chips, legends, bar panels) have to keep scene
+    labels from sliding under them. Each globe scene re-implements this in the occluder and in its
+    own label-side pass.
+  proposal: >
+    `labels.setKeepOut(() => DOMRect[])` (stage-relative rectangles the layout treats as occupied),
+    measured once per layout pass by the label layer.
+  workaround: overlay.ts → `rects()`; index.ts treats them as occupied in its alignment pass and hides labels that have no free side.
+
+- id: memory-fabs-data-fields
+  target: src/lib/scene-data/memory-fabs.ts (page data, built by the /memory/ workflow)
+  severity: suggestion
+  problem: >
+    The scene colours each fab by its first listed product, splits 中國自主 from 外資 by the company's
+    home country (a small map in data.ts), and groups campuses by company + city.
+  proposal: >
+    Keep `products` ordered by importance (main product first), and consider optional `campus`
+    (to group P1–P5 explicitly) and `hq` / `domestic` fields so the scene needs no company table.
+  workaround: data.ts → `primary = products[0]`, `HOME` map of roster ids → country, campus = company + city.

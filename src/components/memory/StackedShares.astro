@@ -1,0 +1,134 @@
+---
+/**
+ * 100% stacked rows (market share over time, demand mix), built on ChartFrame and the chart stack styles.
+ * Rows are given in display order; colours come with the items (same company = same colour across the page).
+ * The legend repeats the first row's shares, the data table lists every period, and a row whose shares add up
+ * to less than 100% shows the remainder as an unlabelled 「未列出」 gap instead of stretching the others.
+ *
+ *   <StackedShares title="DRAM 營收市占變化" rows={[{ label: '2026 Q2', items: [{ key: 'sk-hynix', name: 'SK海力士', share: 24.9, color }] }]} />
+ */
+import './memory.css';
+import ChartFrame from '../charts/ChartFrame.astro';
+import { pageSources, resolveSources } from '../charts/sources';
+import { round, tip, vars } from '../charts/chart-utils';
+import type { LegendItem, TableSpec } from '../charts/types';
+import { STATUS_LABEL, type DataStatus } from '../../lib/memory-data';
+import { formatNumber } from '../../lib/format';
+
+export interface StackItem {
+  key: string;
+  name: string;
+  share: number;
+  color: string;
+}
+export interface StackRow {
+  label: string;
+  sub?: string | undefined;
+  status?: DataStatus | undefined;
+  items: StackItem[];
+  src?: string | undefined;
+}
+interface Props {
+  title: string;
+  rows: StackRow[];
+  subtitle?: string | undefined;
+  unit?: string | undefined;
+  notes?: Array<string | null | undefined> | undefined;
+  as?: 'h3' | 'h4' | 'h5' | 'p' | undefined;
+  /** header of the item column in the data table */
+  itemTitle?: string | undefined;
+  /** legend (default): one shared legend with the first row's shares; inline: every row lists its own items */
+  labels?: 'legend' | 'inline' | undefined;
+  class?: string | undefined;
+}
+const { title, rows, subtitle, unit = '佔比（%）', notes = [], as = 'h4', itemTitle = '項目', labels = 'legend', class: className } = Astro.props;
+const inline = labels === 'inline';
+
+const pctTxt = (v: number) => `${formatNumber(v, { digits: Number.isInteger(v) ? 0 : 1, trim: true })}%`;
+// legend keys: first row order, then keys only later rows have
+const keys: StackItem[] = [];
+for (const r of rows) for (const it of r.items) if (!keys.some((k) => k.key === it.key && k.name === it.name)) keys.push(it);
+const first = rows[0];
+const legend: LegendItem[] = inline ? [] : keys.map((k) => {
+  const v = first?.items.find((i) => i.key === k.key && i.name === k.name)?.share;
+  return { label: k.name, kind: 'bar', color: k.color, value: v != null ? pctTxt(v) : undefined };
+});
+const sum = (r: StackRow) => r.items.reduce((a, b) => a + b.share, 0);
+const anyGap = rows.some((r) => sum(r) < 99.5);
+const sources = resolveSources([...new Set(rows.map((r) => r.src).filter((s): s is string => !!s))], pageSources(Astro));
+const rowName = (r: StackRow) => `${r.label}${r.sub ? `（${r.sub}）` : ''}${r.status && r.status !== 'actual' ? `・${STATUS_LABEL[r.status]}` : ''}`;
+const aria =
+  `${title}，共 ${rows.length} 列。` +
+  rows
+    .slice(0, 6)
+    .map((r) => `${rowName(r)}：${[...r.items].sort((a, b) => b.share - a.share).slice(0, 4).map((i) => `${i.name} ${pctTxt(i.share)}`).join('、')}`)
+    .join('；') +
+  '。';
+const table: TableSpec = {
+  columns: [{ key: 'item', label: itemTitle }, ...rows.map((r, i) => ({ key: `r${i}`, label: rowName(r), numeric: true }))],
+  rows: keys.map((k) => {
+    const row: Record<string, string> = { item: k.name };
+    rows.forEach((r, i) => {
+      const v = r.items.find((x) => x.key === k.key && x.name === k.name)?.share;
+      row[`r${i}`] = v == null ? '' : pctTxt(v);
+    });
+    return row;
+  }),
+};
+---
+
+<ChartFrame
+  title={title}
+  as={as}
+  subtitle={subtitle}
+  unit={unit}
+  legend={legend}
+  notes={[...notes, anyGap ? '長條右端的空白是來源未列出的部分。' : null]}
+  sources={sources}
+  table={table}
+  empty={rows.length === 0}
+  class={['mem-chart', className].filter(Boolean).join(' ')}
+>
+  <div class:list={['mem-stk', inline && 'mem-stk--inline']} role={inline ? undefined : 'img'} aria-label={inline ? undefined : aria}>
+    {
+      rows.map((r) => {
+        const total = Math.max(100, sum(r));
+        return (
+          <div class="mem-stk__row" data-status={r.status}>
+            <span class="mem-stk__label" aria-hidden={inline ? undefined : 'true'}>
+              {r.label}
+              {(r.sub || (r.status && r.status !== 'actual')) && (
+                <small>
+                  {r.sub}
+                  {r.sub && r.status && r.status !== 'actual' ? '・' : ''}
+                  {r.status && r.status !== 'actual' ? STATUS_LABEL[r.status] : ''}
+                </small>
+              )}
+            </span>
+            <span class="mem-stk__track" aria-hidden="true">
+              {r.items.map((it) => (
+                <span
+                  class="mem-stk__seg"
+                  style={vars({ '--f': round((it.share / total) * 100, 3), '--k': it.color })}
+                  data-tip={tip(`${r.label}${r.sub ? `（${r.sub}）` : ''}・${it.name}`, [['佔比', pctTxt(it.share)], r.status && r.status !== 'actual' ? ['狀態', STATUS_LABEL[r.status]] : null])}
+                >
+                  {it.share >= 12 && <span class="mem-stk__pct">{pctTxt(it.share)}</span>}
+                </span>
+              ))}
+            </span>
+            {inline && (
+              <span class="mem-stk__keys">
+                {r.items.map((it) => (
+                  <span class="mem-stk__key">
+                    <i style={vars({ '--k': it.color })} aria-hidden="true" />
+                    {it.name} <b>{pctTxt(it.share)}</b>
+                  </span>
+                ))}
+              </span>
+            )}
+          </div>
+        );
+      })
+    }
+  </div>
+</ChartFrame>

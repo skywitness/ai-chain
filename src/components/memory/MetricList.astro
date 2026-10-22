@@ -1,0 +1,92 @@
+---
+/**
+ * Single figures of the memory data (a label, a value with its unit, the period, 估計／預測, the note and the
+ * citation). The first `visible` items show; the rest sit in a 「更多」 disclosure.
+ *   <MetricList items={singles} visible={6} />
+ */
+import './memory.css';
+import CiteText from './CiteText.astro';
+import StatusTag from './StatusTag.astro';
+import Icon from '../ui/Icon.astro';
+import type { Metric } from '../../lib/memory-data';
+import { fmtWithUnit } from './memory-format';
+
+interface Props {
+  items: readonly Metric[];
+  visible?: number | undefined;
+  moreLabel?: string | undefined;
+  class?: string | undefined;
+}
+const { items, visible = 6, moreLabel = '更多數字', class: className } = Astro.props;
+const head = items.slice(0, visible);
+const rest = items.slice(visible);
+const view = (m: Metric) => {
+  const { num, unit } = fmtWithUnit(m.value, m.unit);
+  return { num, unit: unit === '%' ? '%' : unit };
+};
+---
+
+{
+  items.length > 0 && (
+    <div class:list={['mem-figs', className]}>
+      <ul class="mem-figs__list" role="list">
+        {head.map((m) => {
+          const v = view(m);
+          return (
+            <li class="mem-fig" data-status={m.status}>
+              <p class="mem-fig__label">{m.label}</p>
+              <p class="mem-fig__value">
+                <strong>{v.num}</strong>
+                {v.unit === '%' ? <span class="mem-fig__pct">%</span> : <span class="mem-fig__unit">{v.unit}</span>}
+                <StatusTag status={m.status} />
+              </p>
+              <p class="mem-fig__meta">
+                {m.period}
+                <CiteText src={m.src} />
+              </p>
+              {m.note && (
+                <p class="mem-fig__note">
+                  <CiteText text={m.note} />
+                </p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {rest.length > 0 && (
+        <details class="mem-more">
+          <summary>
+            <span>
+              {moreLabel}（{rest.length} 項）
+            </span>
+            <Icon name="chevron-down" />
+          </summary>
+          <ul class="mem-figs__list" role="list">
+            {rest.map((m) => {
+              const v = view(m);
+              return (
+                <li class="mem-fig" data-status={m.status}>
+                  <p class="mem-fig__label">{m.label}</p>
+                  <p class="mem-fig__value">
+                    <strong>{v.num}</strong>
+                    {v.unit === '%' ? <span class="mem-fig__pct">%</span> : <span class="mem-fig__unit">{v.unit}</span>}
+                    <StatusTag status={m.status} />
+                  </p>
+                  <p class="mem-fig__meta">
+                    {m.period}
+                    <CiteText src={m.src} />
+                  </p>
+                  {m.note && (
+                    <p class="mem-fig__note">
+                      <CiteText text={m.note} />
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </details>
+      )}
+    </div>
+  )
+}

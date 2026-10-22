@@ -1,0 +1,199 @@
+---
+/**
+ * 供需燈號 card for one market, computed from the data: the state that covers the data date (meter + word + note),
+ * the outlook entries after it, the market size for the data year, the largest vendor with a mini share bar,
+ * and the latest price move. Every figure keeps its 估計／預測 tag and its citation.
+ *   <DashboardCard market={m} asOf="2026-10-22" />
+ */
+import './memory.css';
+import BalanceMeter from './BalanceMeter.astro';
+import CiteText from './CiteText.astro';
+import StatusTag from './StatusTag.astro';
+import Icon from '../ui/Icon.astro';
+import {
+  BALANCE_META,
+  CATEGORY_META,
+  SHARE_BASIS_LABEL,
+  balanceNow,
+  companyColor,
+  headlineMarketSize,
+  headlinePrice,
+  isProxySize,
+  latestShare,
+  priceNow,
+  shortDefinition,
+  sizePeriod,
+  sortedShareItems,
+  usdYi,
+  type MarketData,
+} from '../../lib/memory-data';
+import { fmtValue, fmtYi } from './memory-format';
+import { formatNumber, zhConcat } from '../../lib/format';
+
+interface Props {
+  market: MarketData;
+  asOf: string;
+  headingLevel?: 3 | 4 | undefined;
+}
+const { market: m, asOf, headingLevel = 3 } = Astro.props;
+const H = `h${headingLevel}` as 'h3' | 'h4';
+const meta = CATEGORY_META[m.category];
+const { current, outlook } = balanceNow(m, asOf);
+const sizes = headlineMarketSize(m, asOf);
+const share = latestShare(m);
+const shareItems = share ? sortedShareItems(share) : [];
+const top = shareItems.find((i) => i.company !== 'other');
+const price = headlinePrice(m);
+const pnow = price && price.kind === 'qoq-change' ? priceNow(price) : undefined;
+const levelAll = price && price.kind === 'level' ? [...price.points] : [];
+const levelPts = levelAll.length > 2 ? [levelAll[0]!, levelAll.at(-1)!] : levelAll;
+const pctTxt = (v: number) => `${formatNumber(v, { digits: Number.isInteger(v) ? 0 : 1, trim: true })}%`;
+const unitTxt = (u: string) => (u === '%' ? '%' : u === '指數' ? '' : ` ${u}`);
+const moveWord = (v: number) => (v > 0 ? '漲' : v < 0 ? '跌' : '持平');
+const absPct = (v: number) => `${formatNumber(Math.abs(v), { digits: Number.isInteger(v) ? 0 : 1, trim: true })}%`;
+---
+
+<article class="mem-dash" style={`--cat: ${meta.color}`} data-state={current?.state} aria-labelledby={`dash-${m.category}`}>
+  <header class="mem-dash__head">
+    <H class="mem-dash__title" id={`dash-${m.category}`}>
+      <a href={`#${m.category}`}>{meta.short}</a>
+    </H>
+    <p class="mem-dash__role">{meta.role}</p>
+  </header>
+
+  {
+    current ? (
+      <div class="mem-dash__state">
+        <BalanceMeter state={current.state} scale />
+        <p class="mem-dash__now">
+          <span class="mem-dash__word" style={`--k: ${BALANCE_META[current.state].color}`}>
+            {BALANCE_META[current.state].label}
+          </span>
+          <span class="mem-dash__period">
+            {current.period}
+            <StatusTag status={current.status} />
+          </span>
+        </p>
+        <p class="mem-dash__note">
+          <CiteText text={current.note} src={current.src} />
+        </p>
+      </div>
+    ) : (
+      <p class="mem-dash__note">供需狀態資料整理中。</p>
+    )
+  }
+
+  {
+    outlook.length > 0 && (
+      <div class="mem-dash__outlook">
+        <p class="mem-dash__label">展望</p>
+        <ul role="list">
+          {outlook.slice(0, 3).map((o) => (
+            <li>
+              <span class="mem-dash__op">{o.period}</span>
+              <span class="mem-state" style={`--k: ${BALANCE_META[o.state].color}`}>
+                {BALANCE_META[o.state].label}
+              </span>
+              <StatusTag status={o.status} />
+              <CiteText src={o.src} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  <dl class="mem-dash__facts">
+    {
+      sizes.length > 0 && (
+        <div>
+          <dt>
+            {sizes.every(isProxySize) ? '代表廠商營收' : '市場規模'}（{sizePeriod(sizes[0]!)}）
+          </dt>
+          {sizes.slice(0, 2).map((s) => (
+            <dd>
+              <strong>{fmtYi(usdYi(s))}</strong>
+              <StatusTag status={s.status} />
+              <CiteText src={s.src} />
+              <small>{shortDefinition(s.definition)}</small>
+            </dd>
+          ))}
+        </div>
+      )
+    }
+    {
+      share && top && (
+        <div>
+          <dt>
+            最大供應商（{share.period}，依{SHARE_BASIS_LABEL[share.basis]}）
+          </dt>
+          <dd>
+            <strong>{top.name.replace(/（.*$/, '')}</strong> {pctTxt(top.share)}
+            <CiteText src={share.src} />
+            <span class="mem-dash__sbar" aria-hidden="true">
+              {shareItems.map((it, i) => (
+                <i style={`--f: ${it.share}; --k: ${companyColor(it.company, i)}`} title={`${it.name} ${pctTxt(it.share)}`} />
+              ))}
+            </span>
+            <small>
+              {shareItems
+                .filter((i) => i.company !== 'other')
+                .slice(1, 4)
+                .map((i) => `${i.name.replace(/（.*$/, '')} ${pctTxt(i.share)}`)
+                .join('・')}
+            </small>
+          </dd>
+        </div>
+      )
+    }
+    {
+      price && (
+        <div>
+          <dt>{price.series}</dt>
+          {pnow ? (
+            <dd>
+              {pnow.last && (
+                <span class="mem-dash__px">
+                  <span>{pnow.last.period}</span>
+                  <strong class:list={[pnow.last.value > 0 ? 'is-up' : pnow.last.value < 0 ? 'is-down' : '']}>
+                    {moveWord(pnow.last.value)} {absPct(pnow.last.value)}
+                  </strong>
+                  <StatusTag status={pnow.last.status} />
+                </span>
+              )}
+              {pnow.next && (
+                <span class="mem-dash__px">
+                  <span>{pnow.next.period}</span>
+                  <strong>{moveWord(pnow.next.value)} {absPct(pnow.next.value)}</strong>
+                  <StatusTag status={pnow.next.status} />
+                </span>
+              )}
+              <CiteText src={price.src} />
+              <small>季增率（與前一季相比）</small>
+            </dd>
+          ) : (
+            <dd>
+              {levelPts.map((p, i) => (
+                <span class="mem-dash__px">
+                  {i > 0 && <Icon name="arrow-right" size="0.9em" />}
+                  <span>{p.period}</span>
+                  <strong>
+                    {fmtValue(p.value, price.unit === '%' ? '' : price.unit)}
+                    {unitTxt(price.unit)}
+                  </strong>
+                  <StatusTag status={p.status} />
+                </span>
+              ))}
+              <CiteText src={price.src} />
+            </dd>
+          )}
+        </div>
+      )
+    }
+  </dl>
+
+  <a class="mem-dash__more" href={`#${m.category}`}>
+    {zhConcat('看', meta.short, '的供需、市占與擴產')}
+    <Icon name="arrow-right" />
+  </a>
+</article>

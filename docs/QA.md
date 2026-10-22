@@ -14,6 +14,7 @@
 | 內容資料 | `npm run validate` | — | schema、參照、財務規則（§6.3） |
 | 繁中用語 | `npm run lint:zh` | — | 簡體字、中國用語 |
 | 內容規則 | `npm run lint:content` | — | 必要標題、層級段落 |
+| 記憶體專題資料 | `npx tsx scripts/check-memory.ts` | — | `src/data/memory/*.yaml` 的 schema、名冊 id、來源 key、市占與需求結構加總、佔位字 |
 | 覆蓋率報告 | `npm run coverage` | — | 預設只報告；`--strict` 時缺檔即失敗 |
 | 建置 | `npm run build` | — | 建置失敗 |
 | 站內連結 | `npm run links` | `dist/` | 站內失效連結、`#錨點` 不存在 |
@@ -151,12 +152,13 @@ A11Y_ROUTES="company-profile=companies/nvidia/" npx playwright test tests/a11y
 | 每個場景 | `meta.budgetKB`（最多 60 KB） | 場景載入器 `import.meta.glob` 中 `…/scenes/<id>/index.ts` 對應的 chunk ＋ 靜態依賴，扣除 three、所有場景共用的執行環境、頁面初始 JS 與 JSON 資料 chunk |
 | 場景資料 | 300 KB | 檔名對應 `src/data/**/*.json` 的 chunk |
 | 每頁 CSS | 35 KB | `<link rel=stylesheet>` ＋ 內嵌 `<style>`（另列出全站 CSS 總量供參考） |
-| 每頁 HTML | 120 KB；明列例外：`/companies/` 220 KB、`/glossary/` 300 KB | HTML 檔本身 |
+| 每頁 HTML | 120 KB；明列例外：`/companies/` 220 KB、`/glossary/` 300 KB、`/memory/` 200 KB | HTML 檔本身 |
 
 **HTML 例外（`HTML_EXCEPTIONS`）：** 只有「必須是單一頁、深連結指向頁內 `#錨點`」的頁面可以列為例外，例外清單與理由寫在腳本內，摘要表會逐頁列出。
 
 - `/companies/`：220 KB。完整公司表在伺服器端產生，篩選、排序與無 JavaScript 的檢視都不需要另外抓資料。
 - `/glossary/`：300 KB（2026-10-20 實測約 268 KB）。約 300 個名詞必須在同一頁，因為各頁的 `<Term>` 說明卡片、「完整解釋」連結與搜尋結果都連到 `/glossary/#<名詞 id>`，所以不拆頁。
+- `/memory/`：200 KB（2026-10-23 在開發伺服器實測約 163 KB）。記憶體與儲存專題把四大類別、59 座廠區、36 項擴產與約 213 筆合併來源放在同一頁：每個 [n] 引用都連到頁內的 `#src-<key>`，其他頁面的專題卡片也連到 `/memory/#<類別>`，所以不拆頁。
 - `/sources/bibliography.json`（約 2 MB，gzip 約 430 KB）不算頁面預算：`/sources/` 只有在讀者展開某個發布者群組（或網址帶有該群組的 `#錨點`）時才會抓取，一般瀏覽不會載入。
 
 調高例外上限時，請同時更新本文件與 architecture §7.6，並附上實測大小。
@@ -225,6 +227,7 @@ npm run check
 npm run validate
 npm run lint:zh
 npm run lint:content
+npx tsx scripts/check-memory.ts
 npm run coverage
 
 # 2. 建置（只有整合者可以執行；會同時建立 Pagefind 索引）

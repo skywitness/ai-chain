@@ -1,0 +1,139 @@
+---
+/**
+ * Expansion timeline of one market: one row per project on a shared year axis — a bar from 動工 to 量產 when both
+ * are known, a dashed lead from the data date to 量產 otherwise — with the stage written out, the dates in text,
+ * added capacity and capex, and the note in a disclosure.
+ *   <ExpansionTimeline items={m.expansions} asOf="2026-10-22" />
+ */
+import './memory.css';
+import CiteText from './CiteText.astro';
+import CompanyChip from '../content/CompanyChip.astro';
+import { STAGE_META, partialDateYear, partialDateZh, type Expansion } from '../../lib/memory-data';
+import { round, vars } from '../charts/chart-utils';
+
+interface Props {
+  items: readonly Expansion[];
+  asOf: string;
+  label?: string | undefined;
+}
+const { items, asOf, label = '擴產時程' } = Astro.props;
+const nowY = Number(asOf.slice(0, 4)) + (Number(asOf.slice(5, 7)) - 1) / 12 + (Number(asOf.slice(8, 10)) - 1) / 365;
+const years = items.flatMap((x) => [x.start, x.production].filter((d): d is string => !!d).map((d) => Number(d.slice(0, 4))));
+const y0 = Math.min(2024, ...years);
+const y1 = Math.max(2030, ...years) + 1;
+const pos = (y: number) => round(((y - y0) / (y1 - y0)) * 100, 3);
+const ticks = Array.from({ length: y1 - y0 }, (_, i) => y0 + i);
+const sorted = [...items].sort((a, b) => {
+  if (a.production && b.production) return a.production.localeCompare(b.production);
+  if (a.production) return -1;
+  if (b.production) return 1;
+  return STAGE_META[b.stage].order - STAGE_META[a.stage].order;
+});
+---
+
+{
+  sorted.length > 0 && (
+    <div class="mem-tl">
+      <div class="mem-tl__axis" aria-hidden="true">
+        <span class="mem-tl__axis-pad" />
+        <span class="mem-tl__axis-track">
+          {ticks.map((t) => (
+            <span style={`--x: ${pos(t)}%`}>{t}</span>
+          ))}
+        </span>
+      </div>
+      <ol class="mem-tl__list" role="list" aria-label={label}>
+        {sorted.map((x) => {
+          const s = x.start ? partialDateYear(x.start) : null;
+          const p = x.production ? partialDateYear(x.production) : null;
+          const from = s ?? (p != null ? Math.min(nowY, p) : null);
+          return (
+            <li class="mem-tl__item" data-stage={x.stage}>
+              <div class="mem-tl__head">
+                <p class="mem-tl__title">
+                  <CompanyChip id={x.company} />
+                  <span class="mem-tl__project">{x.project}</span>
+                </p>
+                <p class="mem-tl__meta">
+                  <span class="mem-stage" data-stage={x.stage}>
+                    {STAGE_META[x.stage].label}
+                  </span>
+                  <span>{x.product}</span>
+                </p>
+              </div>
+              <div class="mem-tl__track" aria-hidden="true">
+                {ticks.map((t) => (
+                  <i class="mem-tl__tick" style={`--x: ${pos(t)}%`} />
+                ))}
+                <i class="mem-tl__now" style={`--x: ${pos(nowY)}%`} />
+                {from != null && p != null && (
+                  <span class:list={['mem-tl__bar', !s && 'mem-tl__bar--lead']} style={vars({ '--l': `${pos(from)}%`, '--w': `${Math.max(0.8, pos(p) - pos(from))}%` })} />
+                )}
+                {s != null && <span class="mem-tl__dot mem-tl__dot--start" style={`--x: ${pos(s)}%`} />}
+                {p != null && <span class="mem-tl__dot mem-tl__dot--prod" style={`--x: ${pos(p)}%`} />}
+                {s != null && p == null && <span class="mem-tl__open" style={vars({ '--l': `${pos(s)}%` })} />}
+                {s == null && p == null && <span class="mem-tl__nodate">時程未公布</span>}
+              </div>
+              <div class="mem-tl__row2">
+              <p class="mem-tl__dates">
+                {x.start && <span>動工 {partialDateZh(x.start)}</span>}
+                {x.production && <span>量產或啟用 {partialDateZh(x.production)}</span>}
+                {!x.start && !x.production && <span>時程未公布</span>}
+                {x.fab && <span class="mem-tl__fab">{x.fab}</span>}
+              </p>
+              <details class="mem-tl__note">
+                <summary>{[x.addCapacity && '產能', x.capex && '投資', x.note && '說明'].filter(Boolean).join('、') || '出處'}</summary>
+                {(x.addCapacity || x.capex) && (
+                  <dl class="mem-tl__extra">
+                    {x.addCapacity && (
+                      <div>
+                        <dt>產能</dt>
+                        <dd>
+                          <CiteText text={x.addCapacity} />
+                        </dd>
+                      </div>
+                    )}
+                    {x.capex && (
+                      <div>
+                        <dt>投資</dt>
+                        <dd>
+                          <CiteText text={x.capex} />
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
+                <p>
+                  {x.note ? <CiteText text={x.note} src={x.src} /> : <>出處<CiteText src={x.src} /></>}
+                </p>
+              </details>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+      <p class="mem-legend mem-legend--tl" aria-hidden="true">
+        <span class="mem-legend__item">
+          <i class="mem-tl-key mem-tl-key--bar" />
+          動工到量產
+        </span>
+        <span class="mem-legend__item">
+          <i class="mem-tl-key mem-tl-key--lead" />
+          未公布動工日，從今天起算
+        </span>
+        <span class="mem-legend__item">
+          <i class="mem-tl-key mem-tl-key--start" />
+          動工
+        </span>
+        <span class="mem-legend__item">
+          <i class="mem-tl-key mem-tl-key--prod" />
+          量產或啟用
+        </span>
+        <span class="mem-legend__item">
+          <i class="mem-tl-key mem-tl-key--now" />
+          資料截至 {asOf}
+        </span>
+      </p>
+    </div>
+  )
+}

@@ -1,0 +1,248 @@
+---
+/**
+ * One market of the /memory/ page (HBM, DRAM, NAND 與 SSD, HDD 與新興記憶體), 由淺入深:
+ * summary and key points → 供需狀態 (balance timeline) → 供給與需求 (charts and figures, demand mix) →
+ * 市場規模與市占 → 價格走勢 → 產能現況 → 擴產時程 → 技術路線. Blocks without data are left out.
+ *   <CategorySection market={m} asOf={data.asOf} index={1} total={4} />
+ */
+import './memory.css';
+import BalanceStrip from './BalanceStrip.astro';
+import BalanceMeter from './BalanceMeter.astro';
+import MetricBars from './MetricBars.astro';
+import MetricList from './MetricList.astro';
+import StackedShares, { type StackRow } from './StackedShares.astro';
+import ShareBlock from './ShareBlock.astro';
+import PriceBlock from './PriceBlock.astro';
+import CapacityBlock from './CapacityBlock.astro';
+import ExpansionTimeline from './ExpansionTimeline.astro';
+import TechRoadmap from './TechRoadmap.astro';
+import CiteText from './CiteText.astro';
+import StatusTag from './StatusTag.astro';
+import DataAsOf from '../ui/DataAsOf.astro';
+import {
+  BALANCE_META,
+  CATEGORY_META,
+  MIX_BASIS_LABEL,
+  balanceNow,
+  groupMetrics,
+  isProxySize,
+  shareGroups,
+  shortDefinition,
+  sizePeriod,
+  usdYi,
+  type MarketData,
+} from '../../lib/memory-data';
+
+interface Props {
+  market: MarketData;
+  asOf: string;
+  index: number;
+  total: number;
+}
+const { market: m, asOf, index, total } = Astro.props;
+const meta = CATEGORY_META[m.category];
+const id = m.category;
+const accent = meta.color;
+const { current } = balanceNow(m, asOf);
+const supply = groupMetrics(m.supply);
+const demand = groupMetrics(m.demand);
+// groups with a history first (full width), single snapshots after them so they can sit side by side
+const groups = shareGroups(m).sort((a, b) => Number(a.entries.length < 2) - Number(b.entries.length < 2));
+
+// demand mix: one colour per item name inside the chart
+const mixNames: string[] = [];
+for (const d of m.demandMix) for (const it of d.items) if (!mixNames.includes(it.name)) mixNames.push(it.name);
+const OTHER_RE = /^其他/;
+const mixColor = (n: string) => (OTHER_RE.test(n) ? 'color-mix(in oklab, var(--c-fg-subtle) 55%, var(--c-bg-elev))' : `var(--chart-${Math.min(8, mixNames.filter((x) => !OTHER_RE.test(x)).indexOf(n) + 1)})`);
+const mixRows: StackRow[] = m.demandMix.map((d) => {
+  const paren = d.period.match(/^(.*?)（(.*)）$/);
+  return {
+    label: paren ? paren[1]!.trim() : d.period,
+    sub: [paren?.[2], `依${MIX_BASIS_LABEL[d.basis]}`].filter(Boolean).join('，'),
+    status: d.status,
+    items: d.items.map((it) => ({ key: it.name, name: it.name, share: it.share, color: mixColor(it.name) })),
+    src: d.src,
+  };
+});
+
+// market size
+const sizes = [...m.marketSize].sort((a, b) => a.year - b.year);
+const defs = new Set(sizes.map((s) => shortDefinition(s.definition)));
+
+const blocks = [
+  { id: `${id}-balance`, label: '供需狀態', show: m.balance.length > 0 },
+  { id: `${id}-sd`, label: '供給與需求', show: m.supply.length + m.demand.length + m.demandMix.length > 0 },
+  { id: `${id}-share`, label: '市場規模與市占', show: m.marketSize.length + m.marketShare.length > 0 },
+  { id: `${id}-price`, label: '價格走勢', show: m.prices.length > 0 },
+  { id: `${id}-capacity`, label: '產能現況', show: m.capacity.length > 0 },
+  { id: `${id}-expansion`, label: '擴產時程', show: m.expansions.length > 0 },
+  { id: `${id}-tech`, label: '技術路線', show: m.technology.length > 0 },
+].filter((b) => b.show);
+---
+
+<section class="mem-cat" id={id} aria-labelledby={`${id}-h`} style={`--cat: ${accent}`}>
+  <header class="mem-cat__head">
+    <p class="mem-cat__kicker">
+      <span class="mem-cat__n">{index}／{total}</span>
+      <span>{meta.role}</span>
+    </p>
+    <h2 id={`${id}-h`} class="mem-cat__title">{m.title}</h2>
+    <DataAsOf date={m.lastVerified} />
+    <div class="mem-cat__intro">
+      <p class="mem-cat__summary">{m.summary}</p>
+      <div class="mem-cat__points">
+        <p class="mem-cat__points-h">重點</p>
+        <ul>
+          {
+            m.keyPoints.map((k) => (
+              <li>
+                <CiteText text={k} />
+              </li>
+            ))
+          }
+        </ul>
+        <p class="mem-fine">摘要與重點整理自本節的各項資料，出處見各圖表與頁末資料來源。</p>
+      </div>
+    </div>
+    <nav class="mem-cat__nav" aria-label={`${meta.short}段落`} data-pagefind-ignore>
+      {blocks.map((b) => <a href={`#${b.id}`}>{b.label}</a>)}
+    </nav>
+  </header>
+
+  {
+    m.balance.length > 0 && (
+      <div class="mem-block" id={`${id}-balance`}>
+        <h3 class="mem-block__h">供需狀態</h3>
+        {current && (
+          <div class="mem-now">
+            <BalanceMeter state={current.state} scale />
+            <p class="mem-now__text">
+              <strong>
+                {current.period}：{BALANCE_META[current.state].label}
+              </strong>
+              <StatusTag status={current.status} />
+              <span class="mem-now__note">
+                <CiteText text={current.note} src={current.src} />
+              </span>
+            </p>
+          </div>
+        )}
+        <BalanceStrip market={m} asOf={asOf} />
+      </div>
+    )
+  }
+
+  {
+    m.supply.length + m.demand.length + m.demandMix.length > 0 && (
+      <div class="mem-block" id={`${id}-sd`}>
+        <h3 class="mem-block__h">供給與需求</h3>
+        <p class="mem-block__lede">
+          左欄是供給面（位元產出、晶圓投片、資本支出），右欄是需求面（終端出貨、單機搭載量、雲端投資）。各項資料的期間與口徑不同，請搭配圖表下方的說明閱讀。
+        </p>
+        <div class="mem-sd">
+          <div class="mem-sd__col">
+            <h4 class="mem-sd__h">
+              <span class="mem-sd__tag mem-sd__tag--supply">供給面</span>
+            </h4>
+            {supply.charts.map((c) => (
+              <MetricBars title={c.title} unit={c.unit} series={c.series} accent={accent} />
+            ))}
+            <MetricList items={supply.singles} visible={supply.charts.length ? 4 : 6} moreLabel="更多供給面數字" />
+          </div>
+          <div class="mem-sd__col">
+            <h4 class="mem-sd__h">
+              <span class="mem-sd__tag mem-sd__tag--demand">需求面</span>
+            </h4>
+            {demand.charts.map((c) => (
+              <MetricBars title={c.title} unit={c.unit} series={c.series} accent={accent} />
+            ))}
+            <MetricList items={demand.singles} visible={demand.charts.length ? 4 : 6} moreLabel="更多需求面數字" />
+          </div>
+        </div>
+        {mixRows.length > 0 && (
+          <StackedShares
+            title="需求結構"
+            subtitle="各應用或產品佔需求的比重；每一列的分類方式可能不同，請看列名下的說明"
+            rows={mixRows}
+            labels="inline"
+            itemTitle="項目"
+            class="mem-mix"
+          />
+        )}
+      </div>
+    )
+  }
+
+  {
+    m.marketSize.length + m.marketShare.length > 0 && (
+      <div class="mem-block" id={`${id}-share`}>
+        <h3 class="mem-block__h">市場規模與市占</h3>
+        {sizes.length > 0 && (
+          <MetricBars
+            title={`${sizes.some(isProxySize) ? '市場規模與代表廠商營收' : '市場規模'}${defs.size > 1 ? '（各來源定義不同）' : ''}`}
+            subtitle={defs.size > 1 ? '每一列下方是來源與定義；不同來源的數字不能直接相加或比較成長率' : shortDefinition(sizes[0]!.definition)}
+            unit="億美元"
+            accent={accent}
+            series={[
+              {
+                name: '市場規模',
+                points: sizes.map((s) => ({
+                  label: sizePeriod(s),
+                  sub: defs.size > 1 ? shortDefinition(s.definition) : undefined,
+                  value: usdYi(s),
+                  status: s.status,
+                  period: sizePeriod(s),
+                  note: s.definition,
+                  src: s.src,
+                })),
+              },
+            ]}
+            class="mem-size"
+          />
+        )}
+        <div class="mem-shares">
+          {groups.map((g) => (
+            <ShareBlock group={g} name={meta.shareName} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  {
+    m.prices.length > 0 && (
+      <div class="mem-block" id={`${id}-price`}>
+        <h3 class="mem-block__h">價格走勢</h3>
+        <PriceBlock market={m} accent={accent} />
+      </div>
+    )
+  }
+
+  {
+    m.capacity.length > 0 && (
+      <div class="mem-block" id={`${id}-capacity`}>
+        <h3 class="mem-block__h">產能現況</h3>
+        <CapacityBlock market={m} accent={accent} />
+      </div>
+    )
+  }
+
+  {
+    m.expansions.length > 0 && (
+      <div class="mem-block" id={`${id}-expansion`}>
+        <h3 class="mem-block__h">擴產時程</h3>
+        <p class="mem-block__lede">依量產或啟用時間排序；尚未公布時程的計畫排在最後。所有類別的擴產計畫可在下方「擴產總表」一起篩選比較。</p>
+        <ExpansionTimeline items={m.expansions} asOf={asOf} label={`${meta.short}擴產時程`} />
+      </div>
+    )
+  }
+
+  {
+    m.technology.length > 0 && (
+      <div class="mem-block" id={`${id}-tech`}>
+        <h3 class="mem-block__h">技術路線</h3>
+        <TechRoadmap items={m.technology} accent={accent} />
+      </div>
+    )
+  }
+</section>

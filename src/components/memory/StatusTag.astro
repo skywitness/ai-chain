@@ -1,0 +1,19 @@
+---
+/**
+ * 「估計」／「預測」 label for a figure (nothing for actual figures unless `showActual`).
+ * Estimates are hatched, forecasts have a dashed outline: the same two styles the memory charts use.
+ *   <StatusTag status={m.status} />
+ */
+import './memory-core.css';
+import { STATUS_LABEL, type DataStatus } from '../../lib/memory-data';
+
+interface Props {
+  status: DataStatus | null | undefined;
+  showActual?: boolean | undefined;
+  class?: string | undefined;
+}
+const { status, showActual = false, class: className } = Astro.props;
+const show = !!status && (status !== 'actual' || showActual);
+---
+
+{show && <span class:list={['mem-st', `mem-st--${status}`, className]}>{STATUS_LABEL[status!]}</span>}

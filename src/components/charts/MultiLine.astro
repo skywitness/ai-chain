@@ -18,6 +18,8 @@ export interface MultiLinePoint {
   x: string | number;
   y: number | null;
   estimate?: boolean | undefined;
+  /** forecast: drawn like an estimate (dashed), labelled 「預測」 instead of 「估計」 */
+  forecast?: boolean | undefined;
 }
 export interface MultiLineSeries {
   name: string;
@@ -148,6 +150,11 @@ if (isTime) {
 }
 
 const valueAt = (s: MultiLineSeries, k: string) => s.points.find((p) => String(p.x) === k);
+const isEst = (p: MultiLinePoint | undefined) => !!(p?.estimate || p?.forecast);
+const estTag = (p: MultiLinePoint | undefined) => (p?.forecast ? '（預測）' : p?.estimate ? '（估計）' : '');
+const anyEst = series.some((s) => s.points.some((p) => p.estimate && !p.forecast));
+const anyFc = series.some((s) => s.points.some((p) => p.forecast));
+const estLegend = anyEst && anyFc ? '估計與預測值（虛線）' : anyFc ? '預測值（虛線）' : '估計值（虛線）';
 const specs: LineSeriesSpec[] = series.map((s, i) => {
   const vals = keys.map((k) => valueAt(s, k)?.y ?? null);
   const lastV = [...vals].reverse().find(isNum);
@@ -155,7 +162,7 @@ const specs: LineSeriesSpec[] = series.map((s, i) => {
     name: s.name,
     color: s.color ?? slot(i),
     values: vals,
-    estimate: keys.map((k) => !!valueAt(s, k)?.estimate),
+    estimate: keys.map((k) => isEst(valueAt(s, k))),
     endValue: lastV != null ? fmtNum(lastV) : undefined,
     area: area ?? series.length === 1,
   };
@@ -166,16 +173,16 @@ xs = xs.map((x, i) => ({
     display(keys[i]!),
     series.map((s) => {
       const p = valueAt(s, keys[i]!);
-      return [s.name, p && isNum(p.y) ? `${fmtVal(p.y)}${p.estimate ? '（估計）' : ''}` : ''] as const;
+      return [s.name, p && isNum(p.y) ? `${fmtVal(p.y)}${estTag(p)}` : ''] as const;
     }),
   ),
 }));
 
 const legend: LegendItem[] =
-  series.length > 1 || series.some((s) => s.points.some((p) => p.estimate))
+  series.length > 1 || anyEst || anyFc
     ? [
         ...series.map((s, i) => ({ label: s.name, kind: 'line' as const, color: s.color ?? slot(i) })),
-        ...(series.some((s) => s.points.some((p) => p.estimate)) ? [{ label: '估計值（虛線）', kind: 'dash' as const, color: 'var(--c-fg-muted)' }] : []),
+        ...(anyEst || anyFc ? [{ label: estLegend, kind: 'dash' as const, color: 'var(--c-fg-muted)' }] : []),
       ]
     : [];
 const endLabels = Astro.props.endLabels ?? (series.length > 1 && series.length <= 4);
@@ -200,7 +207,7 @@ const table: TableSpec = {
     const row: Record<string, string> = { x: display(k) };
     series.forEach((s, i) => {
       const p = valueAt(s, k);
-      row[`s${i}`] = p && isNum(p.y) ? `${fmtVal(p.y)}${p.estimate ? '（估計）' : ''}` : '';
+      row[`s${i}`] = p && isNum(p.y) ? `${fmtVal(p.y)}${estTag(p)}` : '';
     });
     return row;
   }),

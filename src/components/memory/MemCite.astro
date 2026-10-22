@@ -1,0 +1,18 @@
+---
+/**
+ * Compact citation marker for the data-dense /memory/ components: the same [n] link to #src-<key> as <Cite>
+ * (numbers follow the page's registered source list), but only the publisher in its label and tooltip, so that
+ * hundreds of table and chart citations keep the page light. Prose keeps the full <Cite>.
+ *   <MemCite k="tf-dram-2q26" />
+ */
+import { citeNumber, pageState, sourceAnchor } from '../content/page-state';
+
+interface Props {
+  k: string;
+}
+const { k } = Astro.props;
+const { n } = citeNumber(Astro, k);
+const pub = pageState(Astro).sources.get(k)?.publisher;
+---
+
+<sup class="mem-cite"><a href={`#${sourceAnchor(k)}`} aria-label={`來源 ${n}${pub ? `（${pub}）` : ''}`} title={pub}>[{n}]</a></sup>

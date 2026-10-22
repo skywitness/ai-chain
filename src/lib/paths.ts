@@ -62,6 +62,7 @@ export const ROUTES = {
   modelsCompare: '/models/compare/',
   trends: '/trends/',
   taiwan: '/taiwan/',
+  memory: '/memory/',
   glossary: '/glossary/',
   sources: '/sources/',
   about: '/about/',
@@ -99,6 +100,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { key: 'models', label: '大模型', path: ROUTES.models },
   { key: 'trends', label: '未來趨勢', path: ROUTES.trends },
   { key: 'taiwan', label: '台灣供應鏈', path: ROUTES.taiwan },
+  { key: 'memory', label: '記憶體', path: ROUTES.memory },
   { key: 'glossary', label: '名詞', path: ROUTES.glossary },
 ];
 

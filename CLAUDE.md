@@ -2,7 +2,8 @@
 
 繁體中文（台灣用語）的 AI 產業鏈教學網站，以 Astro 7.3 靜態輸出加上 three.js r186 互動 3D 場景製作。網站已在 2026-10-20 完成，資料基準日是 `src/lib/seo.ts` 的 `DATA_DATE`。
 
-- 內容規模：14 個產業鏈環節、710 家公司（99 家完整檔案含財報）、47 個模型系列、40 篇趨勢、38 篇學習文章、299 個名詞、23 個 3D 場景。
+- 內容規模：14 個產業鏈環節、710 家公司（99 家完整檔案含財報）、47 個模型系列、40 篇趨勢、38 篇學習文章、299 個名詞、24 個 3D 場景，以及記憶體與儲存專題 `/memory/`（2026-10-23 加入）。
+- 記憶體專題的資料在 `src/data/memory/*.yaml`（格式見 `src/schemas/memory.ts`），更新方式見 `docs/UPDATING.md` §2.8。
 - 完成狀態與歷程見 `PROGRESS.md`；驗證結果、已知限制與部署方式見 `docs/QA-REPORT.md`。
 
 ## 要更新網站時
@@ -11,7 +12,7 @@
 
 ## 使用者偏好（必須遵守）
 
-- 用 Workflow 執行更新時，**一次只跑一個 workflow，args 的 `limit` 設為 1**（同時只有 1 個 agent），以降低用量消耗。
+- Workflow 數量與 agent 並行數**不設限**（2026-10-22 使用者要求）：可同時跑多個 workflow，args 的 `limit` 依工作量設定（例如等於項目數）。
 - 啟動大型 workflow 前，先說明規模並取得同意。
 - 所有網站內容都使用繁體中文（台灣用語），回覆使用者也用繁體中文。
 
@@ -25,7 +26,7 @@
 | `docs/SEGMENTS.md` | 14 個環節的定義與邊界 |
 | `docs/SCENES.md`、`docs/SCENE-CONTRACT.md` | 3D 場景的契約與開發 API |
 | `docs/QA.md` | 所有檢查指令與完整驗證流程（§5） |
-| `src/schemas/index.ts`、`src/schemas/roster.ts` | 資料格式（strictObject，不允許多餘欄位） |
+| `src/schemas/index.ts`、`src/schemas/roster.ts`、`src/schemas/memory.ts` | 資料格式（strictObject，不允許多餘欄位） |
 | `research/design/architecture.md`、`research/design/scenes3d.md` | 原始架構設計 |
 
 ## 常用指令
@@ -39,6 +40,7 @@ npx tsx scripts/validate-data.ts           # 內容驗證（加 --only <files> �
 npx tsx scripts/check-zh.ts                # 繁中用字檢查
 npx tsx scripts/check-content-rules.ts     # 內容結構規則
 npx tsx scripts/check-roster.ts            # 公司名冊檢查
+npx tsx scripts/check-memory.ts            # 記憶體專題資料檢查（src/data/memory/*.yaml）
 npx tsx scripts/check-links.ts             # 站內連結檢查（需要先建置）
 node scripts/plan/make-update-args.mjs ... # 產生更新 workflow 的參數（見 docs/UPDATING.md）
 ```
