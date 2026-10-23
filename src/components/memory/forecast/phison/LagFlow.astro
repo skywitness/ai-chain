@@ -1,0 +1,86 @@
+---
+/**
+ * 購入期 → 銷售期 for one sales quarter: the model's estimate of when the goods sold in that quarter were bought
+ * (share by purchase quarter, oldest first, with the contract-price index of each purchase quarter), and how the
+ * resulting average purchase cost compares with the selling-price index of the sales quarter.
+ *   <LagFlow b={bundle} vintage={derivedOf(model, 'purchase-vintage-2026Q2')} />
+ */
+import { derivedOf, periodLabel, type Derived, type FcBundle } from '../../../../lib/forecast-data';
+import { formatNumber } from '../../../../lib/format';
+
+interface Props {
+  b: FcBundle;
+  vintage: Derived;
+}
+const { b, vintage: v } = Astro.props;
+const sale = v.id.replace('purchase-vintage-', '');
+const price = derivedOf(b.model, 'selling-price-index');
+const cost = derivedOf(b.model, 'purchase-cost-index');
+const ratio = derivedOf(b.model, 'cost-price-ratio');
+const at = (d: Derived | undefined, p: string) => d?.points.find((x) => x.period === p)?.value;
+const earlier = Number(/更早買進的占\s*([\d.]+)%/.exec(v.note ?? '')?.[1] ?? Number.NaN);
+const rows = [
+  ...(Number.isFinite(earlier) ? [{ label: `${periodLabel(v.points[0]!.period)} 以前`, share: earlier, px: null as number | null, now: false }] : []),
+  ...v.points.map((p) => ({ label: periodLabel(p.period), share: p.value, px: at(price, p.period) ?? null, now: p.period === sale })),
+];
+const maxShare = Math.max(...rows.map((r) => r.share));
+const maxPx = Math.max(...rows.map((r) => r.px ?? 0), at(price, sale) ?? 0);
+const sell = at(price, sale);
+const c = at(cost, sale);
+const x = at(ratio, sale);
+const fmt1 = (n: number | undefined | null) => (n == null ? '—' : formatNumber(n, { digits: 1 }));
+---
+
+<figure class="fc-vint" aria-label={`${periodLabel(sale)} 賣出商品的進貨季度分布（模型推估）`}>
+  <figcaption class="fc-vint__head">
+    <span class="fc-vint__k">銷售期</span>
+    <strong>{periodLabel(sale)}</strong>
+    <span>賣出的商品，是在哪一季買的</span>
+  </figcaption>
+  <table class="fc-vint__table">
+    <caption class="ch-sr">{periodLabel(sale)} 賣出商品的進貨季度分布</caption>
+    <thead class="fc-vint__thead">
+      <tr><th scope="col">購入期</th><th scope="col">占賣出數量</th><th scope="col" class="fc-vint__px">購入時合約價</th></tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((r) => (
+          <tr class:list={[r.now && 'is-now']}>
+            <th scope="row">{r.label}</th>
+            <td class="fc-vint__barcell">
+              <span class="fc-vint__bar" style={`--w:${formatNumber((r.share / maxShare) * 100, { digits: 1 })}%`} aria-hidden="true" />
+              <span class="fc-vint__share">{fmt1(r.share)}%</span>
+            </td>
+            <td class="fc-vint__px">
+              {r.px == null ? (
+                <span class="mem-na">—</span>
+              ) : (
+                <>
+                  <span class="fc-vint__pxdot" style={`--p:${formatNumber(Math.min(1, r.px / maxPx), { digits: 3 })}`} aria-hidden="true" />
+                  {fmt1(r.px)}
+                </>
+              )}
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+  <div class="fc-vint__out">
+    <p>
+      <span>平均購入成本</span>
+      <b>{fmt1(c)}</b>
+    </p>
+    <p class="fc-vint__op" aria-hidden="true">÷</p>
+    <p>
+      <span>當季售價</span>
+      <b>{fmt1(sell)}</b>
+    </p>
+    <p class="fc-vint__op" aria-hidden="true">=</p>
+    <p class="fc-vint__x">
+      <span>x</span>
+      <b>{x == null ? '—' : formatNumber(x, { digits: 2 })}</b>
+    </p>
+  </div>
+  <p class="fc-vint__foot">價格為 TrendForce NAND 合約價指數（2016Q1＝100）；比例以數量計，模型推估。</p>
+</figure>

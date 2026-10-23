@@ -1,0 +1,67 @@
+---
+/**
+ * 模型怎麼做: one card per candidate model — role (選定／候選／對照組／診斷用), the idea in plain zh, its equations as
+ * readable text with sub- and superscripts, the headline test errors, and the model's own note behind a disclosure.
+ *   <CandidateCards b={bundle} />
+ */
+import FcText from './FcText.astro';
+import FcSentences from './FcSentences.astro';
+import Icon from '../../ui/Icon.astro';
+import { candidateRole, eqRuns, errHeadline, TARGET_SHORT, type Target } from './fc-labels';
+import type { FcBundle } from '../../../lib/forecast-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const ORDER = { selected: 0, candidate: 1, guidance: 2, baseline: 3, diagnostic: 4 } as const;
+const cards = b.model.candidates
+  .map((c, i) => ({ c, i, role: candidateRole(c) }))
+  .sort((x, y) => ORDER[x.role.kind] - ORDER[y.role.kind] || x.i - y.i);
+const HEAD: Target[] = ['revenue', 'grossMargin', 'eps'];
+---
+
+<ol class="fc-cands" role="list">
+  {
+    cards.map(({ c, role }) => (
+      <li class:list={['fc-cand', `fc-cand--${role.kind}`]} id={`model-${c.id}`}>
+        <div class="fc-cand__head">
+          <span class:list={['fc-role', `fc-role--${role.kind}`]}>{role.label}</span>
+          <h3 class="fc-cand__name">{c.name}</h3>
+        </div>
+        <p class="fc-cand__desc">
+          <FcText b={b} text={c.description} />
+        </p>
+        {c.equations.length > 0 && (
+          <ol class="fc-eq" role="list" aria-label={`${c.name}的公式`}>
+            {c.equations.map((e) => (
+              <li>
+                {eqRuns(e).map((r) => (r.kind === 'sub' ? <sub>{r.text}</sub> : r.kind === 'sup' ? <sup>{r.text}</sup> : r.text))}
+              </li>
+            ))}
+          </ol>
+        )}
+        <dl class="fc-cand__err">
+          {HEAD.filter((t) => c.metrics[t]).map((t) => (
+            <div>
+              <dt>{TARGET_SHORT[t]}誤差</dt>
+              <dd>{errHeadline(b, t, c.metrics[t])}</dd>
+            </div>
+          ))}
+        </dl>
+        {c.note && (
+          <details class="mem-more fc-cand__more">
+            <summary>
+              {role.kind === 'selected' ? '選模規則與其他檢驗' : '說明與檢驗結果'}
+              <Icon name="chevron-down" />
+            </summary>
+            <FcSentences b={b} text={c.note} class="fc-cand__note" />
+          </details>
+        )}
+      </li>
+    ))
+  }
+</ol>
+<p class="mem-fine">
+  「誤差」是回測期（{b.model.test.from}–{b.model.test.to}）的平均：金額看平均絕對百分比誤差（MAPE），毛利率看平均絕對誤差（個百分點），EPS 看平均絕對誤差（括號內為百分比）。
+</p>

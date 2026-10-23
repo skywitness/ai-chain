@@ -1,0 +1,148 @@
+---
+/**
+ * 一分鐘看懂（群聯）: how Phison makes money and why NAND prices and inventory timing drive its gross margin.
+ * Every figure is read from the inputs / model files of src/data/memory/forecast/.
+ *   <PhisonBasics b={bundle} />
+ */
+import FlowSteps from '../../../content/FlowSteps.astro';
+import FcCite from '../FcCite.astro';
+import StatusTag from '../../StatusTag.astro';
+import {
+  actualGrossMargin,
+  derivedOf,
+  fcMoney,
+  fcPct,
+  forecastOf,
+  paramStarting,
+  periodLabel,
+  pricePoints,
+  qIndex,
+  type FcBundle,
+} from '../../../../lib/forecast-data';
+import { formatDate, formatNumber } from '../../../../lib/format';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m } = b;
+const last = inputs.quarters.at(-1)!;
+const ex = last.extra ?? {};
+const PROD = ['產品別營收－快閃記憶體模組產品', '產品別營收－控制晶片', '產品別營收－積體電路', '產品別營收－其他'];
+const prodTotal = PROD.reduce((s, k) => s + (ex[k] ?? 0), 0);
+const share = (k: string) => (prodTotal > 0 && ex[k] != null ? ((ex[k] ?? 0) / prodTotal) * 100 : null);
+const moduleShare = share(PROD[0]!);
+const ctrlShare = share(PROD[1]!);
+const apps = Object.entries(ex)
+  .filter(([k]) => k.startsWith('營收占比－'))
+  .map(([k, v]) => ({ name: k.replace('營收占比－', '').replace(/（%）$/, ''), v }))
+  .sort((p, q) => q.v - p.v);
+const phi = m.parameters.find((p) => /^預測.*φ/.test(p.name));
+const phiPct = phi ? `${formatNumber(phi.value * 100, { digits: 0 })}%` : '—';
+const phiSrc = [...new Set(inputs.annual.filter((a) => a.sales.some((s) => s.units != null)).map((a) => a.src))];
+const days = paramStarting(m, `預測起點 ${last.period} 的庫存天數`);
+const x = paramStarting(m, `預測起點 ${last.period} 的購入成本`);
+const lag = paramStarting(m, `${last.period} 賣出商品的平均進貨落後`);
+const gm = actualGrossMargin('phison', last);
+const lastAnnual = [...inputs.annual].reverse().find((a) => a.purchases.length);
+const topSupplier = lastAnnual?.purchases.filter((p) => p.supplier !== '其他').sort((p, q) => (q.share ?? 0) - (p.share ?? 0))[0];
+const ceo = inputs.events.find((e) => /低成本庫存效益/.test(e.title));
+const knownRev = m.scenarios.find((s) => s.id === 'base')?.forecasts.find((f) => f.known.includes('revenue'));
+const yearAgo = inputs.quarters.find((q) => qIndex(q.period) === qIndex(last.period) - 4);
+const pi = derivedOf(m, 'selling-price-index');
+const piNow = pi?.points.find((p) => p.period === last.period)?.value;
+const piYearAgo = pi?.points.find((p) => p.period === yearAgo?.period)?.value;
+const priceSrc = yearAgo
+  ? pricePoints(b.prices, 'nand-contract-qoq', yearAgo.period)
+      .points.filter((p) => qIndex(p.period) > qIndex(yearAgo.period) && qIndex(p.period) <= qIndex(last.period))
+      .map((p) => p.src)
+  : [];
+const nextGm = knownRev ? forecastOf(m, 'base', knownRev.period)?.grossMargin : undefined;
+const lastMonths = inputs.monthly.slice(-3).map((x) => Number(x.period.slice(5)));
+const knownMonthsText = lastMonths.length === 3 ? `${lastMonths[0]}–${lastMonths[2]} 月月營收合計` : '月營收合計';
+---
+
+<div class="mem-basics__grid">
+  <div class="prose mem-basics__prose">
+    <h2 id="basics-h">群聯怎麼賺錢，為什麼要看 NAND 價格</h2>
+    <p>
+      群聯電子（Phison，8299）設計 NAND Flash 控制晶片，但大部分營收來自把控制晶片和向原廠、通路商買來的 NAND 晶圓組成 SSD、嵌入式儲存等模組賣出：{periodLabel(last.period, 'long')}「快閃記憶體模組產品」占產品別營收 {fcPct(moduleShare)}，控制晶片只占 {fcPct(ctrlShare)}<FcCite k={last.src} />。依 2017–2023 年的年報推算，NAND 等材料約占生產成本的 {phiPct}{phiSrc.map((k) => <FcCite k={k} />)}，所以 NAND 的進貨價幾乎決定了成本。
+    </p>
+    <p>
+      關鍵在<strong>時間差</strong>：群聯先買進 NAND 放進庫存，過幾個月才做成產品賣出。賣出時的價格跟著當時的市價走，成本卻是當初買進的價格。合約價上漲時，帳上是較便宜的舊庫存，毛利率擴大；價格下跌時庫存比市價貴，毛利率被壓縮，還可能提列存貨跌價損失。
+    </p>
+    <p>
+      {periodLabel(last.period, 'long')}底存貨為{fcMoney(last.inventory, 'TWD')}，約是 {days ? formatNumber(days.value) : '—'} 天的營業成本<FcCite k={last.src} />；同一季 TrendForce 的 NAND Flash 合約價指數是一年前的 {piNow != null && piYearAgo ? formatNumber(piNow / piYearAgo, { digits: 1 }) : '—'} 倍{priceSrc.map((k) => <FcCite k={k} />)}。模型推估這一季賣出商品的平均購入成本只有售價的 {x ? `${formatNumber(x.value * 100, { digits: 0 })}%` : '—'}（平均約在 {lag ? formatNumber(lag.value, { digits: 1 }) : '—'} 季前買進），並把毛利率升到 {fcPct(gm)} 主要解釋為這個價差。
+      {ceo && (
+        <>
+          執行長潘健成在 {formatDate(ceo.date, 'ym')}的法說會也表示，低成本庫存的效益會隨價格持續上漲而逐步淡化<FcCite k={ceo.src} />；這個「淡化」何時發生、有多快，正是本頁模型要估的事。
+        </>
+      )}
+    </p>
+  </div>
+  <aside class="mem-basics__aside fc-figs" aria-label="關鍵數字">
+    <p class="fc-figs__title">關鍵數字</p>
+    <ul class="fc-figs__list" role="list">
+      <li class="mem-fig">
+        <p class="mem-fig__label">{periodLabel(last.period)} 毛利率</p>
+        <p class="mem-fig__value"><strong>{fcPct(gm)}</strong></p>
+        <p class="mem-fig__meta">
+          財報；一年前 {yearAgo ? fcPct(actualGrossMargin('phison', yearAgo)) : '—'}<FcCite k={last.src} />
+        </p>
+      </li>
+      <li class="mem-fig">
+        <p class="mem-fig__label">{periodLabel(last.period)} 底存貨</p>
+        <p class="mem-fig__value"><strong>{formatNumber((last.inventory ?? 0) / 100)}</strong><span class="mem-fig__unit">億元</span></p>
+        <p class="mem-fig__meta">約 {days ? formatNumber(days.value) : '—'} 天的營業成本<FcCite k={last.src} /></p>
+      </li>
+      <li class="mem-fig" data-status="estimate">
+        <p class="mem-fig__label">
+          購入成本 ÷ 售價<StatusTag status="estimate" />
+        </p>
+        <p class="mem-fig__value"><strong>{x ? formatNumber(x.value, { digits: 2 }) : '—'}</strong><span class="mem-fig__unit">倍</span></p>
+        <p class="mem-fig__meta">模型推估；小於 1 代表手上是比市價便宜的庫存</p>
+      </li>
+      {
+        knownRev && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">{periodLabel(knownRev.period)} 營收</p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(knownRev.revenue / 100)}</strong>
+              <span class="mem-fig__unit">億元</span>
+            </p>
+            <p class="mem-fig__meta">
+              {knownMonthsText}<FcCite k={inputs.monthly.at(-1)!.src} />；毛利率模型推估 {fcPct(nextGm)}
+            </p>
+          </li>
+        )
+      }
+    </ul>
+    {
+      apps.length > 0 && (
+        <p class="mem-fine">
+          {periodLabel(last.period)} 營收依應用：{apps.map((a) => `${a.name} ${formatNumber(a.v)}%`).join('、')}
+          <FcCite k={last.src} />
+        </p>
+      )
+    }
+    {
+      topSupplier && lastAnnual && (
+        <p class="mem-fine">
+          {lastAnnual.year} 年最大供應商為{topSupplier.supplier}，占進貨淨額 {fcPct(topSupplier.share)}
+          <FcCite k={lastAnnual.src} />
+        </p>
+      )
+    }
+  </aside>
+</div>
+<FlowSteps
+  class="fc-flow"
+  title="從買進 NAND 到認列毛利"
+  steps={[
+    { title: '買進 NAND 晶圓', detail: '向原廠與通路商採購，價格跟著當時的合約價或現貨價' },
+    { title: '放進庫存', detail: `${periodLabel(last.period)} 底約 ${days ? formatNumber(days.value) : '—'} 天的用量` },
+    { title: '加控制晶片與封測', detail: `NAND 等材料約占生產成本 ${phiPct}` },
+    { title: '做成 SSD 與模組賣出', detail: '售價大致跟著賣出當季的市價' },
+    { title: '認列毛利', detail: '今天的售價減掉過去的進貨成本：價格漲得越快、庫存放得越久，差距越大' },
+  ]}
+/>

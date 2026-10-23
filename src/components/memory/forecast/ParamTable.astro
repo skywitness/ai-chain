@@ -1,0 +1,86 @@
+---
+/**
+ * Model parameters as a table: name, value with unit, and the model's note (with citations). Names that start with
+ * a window prefix (「回測（2017Q1–2024Q4 估計）：」「預測（…重估）：」) are grouped under that prefix.
+ *   <ParamTable b={bundle} />
+ */
+import FcText from './FcText.astro';
+import Icon from '../../ui/Icon.astro';
+import { formatNumber } from '../../../lib/format';
+import type { FcBundle } from '../../../lib/forecast-data';
+
+interface Props {
+  b: FcBundle;
+  /** open the disclosure by default */
+  open?: boolean | undefined;
+}
+const { b, open = false } = Astro.props;
+type Param = FcBundle['model']['parameters'][number];
+// amounts in 百萬元／百萬美元 are shown in 億 like the rest of the page (2,461 百萬元 → 24.61 億元)
+const inYi = (p: Param): Param => {
+  const u = /^百萬(美)?元$/.exec(p.unit ?? '');
+  return u ? { ...p, value: p.value / 100, unit: u[1] ? '億美元' : '億元' } : p;
+};
+const rows = b.model.parameters.map((p) => {
+  const m = /^((?:回測|預測)（[^）]+）)：(.+)$/.exec(p.name);
+  return { group: m ? m[1]! : '其他參數與預測起點', name: m ? m[2]! : p.name, p: inYi(p) };
+});
+// 回測 window first, then the re-estimated forecast parameters, then the other parameters and starting points
+const OTHER = '其他參數與預測起點';
+const groups = [...new Set(rows.map((r) => r.group))].sort((x, y) => Number(x === OTHER) - Number(y === OTHER));
+const fmt = (v: number) => {
+  const a = Math.abs(v);
+  const d = Number.isInteger(v) ? 0 : a >= 100 ? 1 : a >= 1 ? 2 : 3;
+  return formatNumber(v, { digits: d, trim: true });
+};
+---
+
+<details class="mem-more fc-params" open={open}>
+  <summary>
+    全部 {rows.length} 個參數與預測起點
+    <Icon name="chevron-down" />
+  </summary>
+  <div class="mem-tablewrap mem-tablewrap--cards" tabindex="0" role="region" aria-label="模型參數表">
+    <table class="mem-table fc-ptable">
+      <caption class="ch-sr">模型參數</caption>
+      <thead>
+        <tr>
+          <th scope="col">參數</th>
+          <th scope="col" class="num">數值</th>
+          <th scope="col">說明</th>
+        </tr>
+      </thead>
+      {
+        groups.map((g) => (
+          <tbody>
+            {groups.length > 1 && (
+              <tr class="fc-ptable__group">
+                <th scope="colgroup" colspan="3">
+                  {g}
+                </th>
+              </tr>
+            )}
+            {rows
+              .filter((r) => r.group === g)
+              .map((r) => (
+                <tr>
+                  <th scope="row" data-label="參數">
+                    {r.name}
+                  </th>
+                  <td class="num" data-label="數值">
+                    <span class="mem-nowrap">
+                      {fmt(r.p.value)}
+                      {r.p.unit && `${r.p.unit.startsWith('%') ? '' : ' '}${r.p.unit}`}
+                    </span>
+                  </td>
+                  <td class="mem-table__note" data-label="說明">
+                    {r.p.note ? <FcText b={b} text={r.p.note} /> : <span class="mem-na">—</span>}
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        ))
+      }
+    </table>
+  </div>
+</details>

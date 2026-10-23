@@ -1,0 +1,1414 @@
+# 美光（Micron）財報模型的輸入資料：會計季度損益、DRAM／NAND 拆分、位元與 ASP 季變化、稼動率不足、財測與事件。格式見 src/schemas/forecast.ts（companyInputs）。
+# 由 fc-data-micron 整理；模型輸出見 micron-model.json（由 scripts/models/micron.ts 產生）。
+
+company: "micron"
+currency: "USD"
+amountUnit: "million"
+periodNote: "美光會計年度為 52 或 53 週，結束於最接近 8 月 31 日的星期四，以結束年份命名；FY2016 為 2015-09-04 至 2016-09-01，FY2026 為 2025-08-29 至 2026-09-03（53 週，第四季 14 週），FY2020 也是 53 週（第四季 14 週），FY2027 第一季為 2026-09-04 至 2026-12-03。金額單位為百萬美元；eps 為 GAAP 稀釋每股盈餘（美元），epsNonGaap 與 grossMarginNonGaap 為公司當季新聞稿的非 GAAP 數字（非 GAAP 毛利率由非 GAAP 毛利金額除以營收計算）；operatingExpenses＝毛利－營業利益（研發、管銷與其他營業收支）；pretaxIncome 為所得稅與權益法投資損益前的稅前淨利，nonOperating＝pretaxIncome－營業利益；netIncome 為歸屬美光股東。capex 為公司公布的淨資本支出（FY2016 第四季至 FY2019 扣除合作夥伴出資，FY2020 起為「Investments in capital expenditures, net」，FY2023 起並扣除政府補助款），extra.資本支出總額為現金流量表的購置不動產廠房設備支出（未扣除任何補助）。dramRevenue／nandRevenue 取自 10-Q／10-K 的 Revenue by Technology；FY2019 起為「MCP 與 SSD 依元件價值拆分」的口徑，FY2016–FY2018 為舊口徑（MCP 全數列入 NAND），兩者不可直接相比。位元與 ASP 季變化（dramBitQoq 等，%）：FY2016–FY2017 第三季為 10-Q 的確切百分比；其餘季度公司只以區間文字描述，換算規則統一如下：flat／flattish／roughly flat／relatively unchanged＝0，slightly／modestly＝1，low-single＝2，mid-single＝5，high（upper）-single＝8，low-teens 與 low double-digit＝12，mid-teens＝15，high-teens＝18，low-20s＝22，mid-20s＝25，high-20s＝28，30 以上依同規則（low-30s＝32、mid-30s＝35、high-30s＝38，low-60s＝62、mid-60s＝65、high-70s＝78、mid-80s＝85），「A-to-B」取兩者平均（例如 low-to-mid-teens＝13.5、mid-to-high-single＝6.5），approximately／roughly X、approached X 與 in the X-percentage range 取 X，over／more than／slightly over X 取 X（下限），下降取負值；原文寫在各季 note。hbmRevenue 只在公司給出數字時填寫，且多為下限或約數（見各季 note）；underutilization 為計入銷貨成本的稼動率不足費用（FY2019–FY2021 為 IMFT／Lehi 3D XPoint 廠，FY2023–FY2024 為減少投片造成的閒置成本）。guidance 為上一季法說會發布、針對本季的非 GAAP 財測（營收中值與區間、毛利率中值、EPS 中值）；FY2018 第二季與第三季取自財測上修新聞稿所列的原始財測（無毛利率），FY2018 第四季與 FY2019 第一季取自法說會簡報，FY2019 第二季至第四季取自法說會講稿，FY2020 第一季起取自新聞稿，FY2018 第一季（含）以前未取得。"
+asOf: "2026-10-23"
+quarters:
+  - period: "FY2016Q1"
+    start: "2015-09-04"
+    end: "2015-12-03"
+    status: "actual"
+    revenue: 3350
+    grossProfit: 849
+    operatingExpenses: 617
+    operatingIncome: 232
+    nonOperating: -89
+    pretaxIncome: 143
+    netIncome: 206
+    eps: 0.19
+    epsNonGaap: 0.24
+    sharesDiluted: 1085
+    inventory: 2435
+    depreciation: 737
+    dramRevenue: 1945
+    nandRevenue: 1143
+    dramBitQoq: 2
+    dramAspQoq: -13
+    nandBitQoq: 5
+    nandAspQoq: -7
+    extra: { 資本支出總額: 990, 非交易NAND營收: 126, DRAM每Gb成本季變化: -10, NAND每Gb成本季變化: -6 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts（本季折舊攤銷取自 sec-fy2016q1 年初至今累計值相減）；DRAM／NAND 營收：sec-fy2016q2（比較欄；sec-fy2016q1 僅列 Non-Volatile 合計 1,269）；FY2016–FY2017 為舊分類：NAND 欄為「Trade NAND／Trade Non-Volatile」（含 MCP 與少量 3D XPoint），售予英特爾、價格約等於成本的非交易 NAND 另列 extra.非交易NAND營收；位元與 ASP 季變化：sec-fy2016q1，原文 DRAM：Gigabits sold 2%、ASP per gigabit (13)%、cost per gigabit (10)%；Trade NAND：gigabits sold 5%、ASP (7)%、cost (6)%（10-Q 確切百分比）；extra 的每 Gb 成本季變化為 sec-fy2016q1 的確切百分比（NAND 為 Trade 部分）；本季新聞稿（2015-12）未能取得：非 GAAP EPS 0.24 美元取自 pr-fy2016q2 的比較欄（FY2017 起公司調整非 GAAP 定義，pr-fy2017q1 將此季重編為 0.29 美元）；非 GAAP 毛利率未揭露；淨資本支出未揭露；財測：FY2018 第一季（含）以前的季度財測只在法說會口頭與簡報發布，未見於可取得的一手文件，故省略。"
+    src: "sec-fy2016q1"
+  - period: "FY2016Q2"
+    start: "2015-12-04"
+    end: "2016-03-03"
+    status: "actual"
+    revenue: 2934
+    grossProfit: 579
+    operatingExpenses: 584
+    operatingIncome: -5
+    nonOperating: -91
+    pretaxIncome: -96
+    netIncome: -97
+    eps: -0.09
+    epsNonGaap: -0.05
+    grossMarginNonGaap: 20.4
+    sharesDiluted: 1036
+    inventory: 2608
+    depreciation: 774
+    dramRevenue: 1588
+    nandRevenue: 1074
+    dramBitQoq: -9
+    dramAspQoq: -10
+    nandBitQoq: 11
+    nandAspQoq: -15
+    extra: { 資本支出總額: 1219, 非交易NAND營收: 126, DRAM每Gb成本季變化: 1, NAND每Gb成本季變化: -12 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts（本季折舊攤銷取自 sec-fy2016q2 年初至今累計值相減）；DRAM／NAND 營收：sec-fy2016q2；FY2016–FY2017 為舊分類：NAND 欄為「Trade NAND／Trade Non-Volatile」（含 MCP 與少量 3D XPoint），售予英特爾、價格約等於成本的非交易 NAND 另列 extra.非交易NAND營收；位元與 ASP 季變化：sec-fy2016q2，原文 DRAM：gigabits sold (9)%、ASP (10)%、cost per gigabit 1%；Trade Non-Volatile：gigabits sold 11%、ASP (15)%、cost (12)%（10-Q 確切百分比）；extra 的每 Gb 成本季變化為 sec-fy2016q2 的確切百分比（NAND 為 Trade 部分）；非 GAAP 毛利率首見於 pr-fy2017q2，本季數字取自 pr-fy2017q2 的比較欄（FY2017 定義）；非 GAAP EPS 取自 pr-fy2016q2；淨資本支出：本季新聞稿只寫「Investments in capital expenditures」，未說明是否扣除合作夥伴出資，故不填 capex，請用 extra.資本支出總額；財測：FY2018 第一季（含）以前的季度財測只在法說會口頭與簡報發布，未見於可取得的一手文件，故省略。"
+    src: "pr-fy2016q2"
+  - period: "FY2016Q3"
+    start: "2016-03-04"
+    end: "2016-06-02"
+    status: "actual"
+    revenue: 2898
+    grossProfit: 498
+    operatingExpenses: 525
+    operatingIncome: -27
+    nonOperating: -133
+    pretaxIncome: -160
+    netIncome: -215
+    eps: -0.21
+    epsNonGaap: -0.08
+    grossMarginNonGaap: 18.1
+    sharesDiluted: 1036
+    inventory: 2920
+    depreciation: 755
+    dramRevenue: 1728
+    nandRevenue: 908
+    dramBitQoq: 22
+    dramAspQoq: -11
+    nandBitQoq: -10
+    nandAspQoq: -6
+    extra: { 資本支出總額: 1685, 非交易NAND營收: 120, DRAM每Gb成本季變化: -9, NAND每Gb成本季變化: -3 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts（本季折舊攤銷取自 sec-fy2016q3 年初至今累計值相減）；DRAM／NAND 營收：sec-fy2016q3；FY2016–FY2017 為舊分類：NAND 欄為「Trade NAND／Trade Non-Volatile」（含 MCP 與少量 3D XPoint），售予英特爾、價格約等於成本的非交易 NAND 另列 extra.非交易NAND營收；位元與 ASP 季變化：sec-fy2016q3，原文 DRAM：gigabits sold 22%、ASP (11)%、cost (9)%；Trade Non-Volatile：gigabits sold (10)%、ASP (6)%、cost (3)%（10-Q 確切百分比）；extra 的每 Gb 成本季變化為 sec-fy2016q3 的確切百分比（NAND 為 Trade 部分）；非 GAAP 毛利率首見於 pr-fy2017q2，本季數字取自 pr-fy2017q3 的比較欄（FY2017 定義）；非 GAAP EPS 取自 pr-fy2016q3；淨資本支出：本季新聞稿只寫「Investments in capital expenditures」，未說明是否扣除合作夥伴出資，故不填 capex，請用 extra.資本支出總額；財測：FY2018 第一季（含）以前的季度財測只在法說會口頭與簡報發布，未見於可取得的一手文件，故省略。"
+    src: "pr-fy2016q3"
+  - period: "FY2016Q4"
+    start: "2016-06-03"
+    end: "2016-09-01"
+    status: "actual"
+    revenue: 3217
+    grossProfit: 579
+    operatingExpenses: 611
+    operatingIncome: -32
+    nonOperating: -136
+    pretaxIncome: -168
+    netIncome: -170
+    eps: -0.16
+    epsNonGaap: -0.05
+    grossMarginNonGaap: 18.6
+    sharesDiluted: 1037
+    inventory: 2889
+    depreciation: 714
+    capex: 1690
+    dramRevenue: 1946
+    nandRevenue: 1013
+    dramBitQoq: 20
+    dramAspQoq: -6
+    nandBitQoq: 12
+    nandAspQoq: 0
+    extra: { 資本支出總額: 1923, 非交易NAND營收: 129 }
+    note: "來源：損益、稀釋 EPS 與股數（第四季 EPS 與股數取自當季新聞稿）、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts（本季折舊攤銷取自 sec-companyfacts 全年值減 sec-fy2016q3 九個月累計值）；淨資本支出取自 pr-fy2016q4；DRAM／NAND 營收：sec-fy2017q1（比較欄）；FY2016–FY2017 為舊分類：NAND 欄為「Trade NAND／Trade Non-Volatile」（含 MCP 與少量 3D XPoint），售予英特爾、價格約等於成本的非交易 NAND 另列 extra.非交易NAND營收；位元與 ASP 季變化：pr-fy2016q4，原文 DRAM sales volumes up approximately 20 percent、DRAM ASP declined approximately 6 percent；NAND sales volumes up approximately 12 percent、NAND ASP relatively unchanged（新聞稿）；非 GAAP 毛利率首見於 pr-fy2017q2，本季數字取自 pr-fy2017q4 的比較欄（FY2017 定義）；非 GAAP EPS 取自 pr-fy2016q4（pr-fy2017q1 依新定義重編為 −0.01 美元）；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：FY2018 第一季（含）以前的季度財測只在法說會口頭與簡報發布，未見於可取得的一手文件，故省略。"
+    src: "pr-fy2016q4"
+  - period: "FY2017Q1"
+    start: "2016-09-02"
+    end: "2016-12-01"
+    status: "actual"
+    revenue: 3970
+    grossProfit: 1011
+    operatingExpenses: 652
+    operatingIncome: 359
+    nonOperating: -146
+    pretaxIncome: 213
+    netIncome: 180
+    eps: 0.16
+    epsNonGaap: 0.32
+    grossMarginNonGaap: 26
+    sharesDiluted: 1091
+    inventory: 2750
+    depreciation: 771
+    capex: 1180
+    dramRevenue: 2421
+    nandRevenue: 1272
+    dramBitQoq: 18
+    dramAspQoq: 5
+    nandBitQoq: 26
+    nandAspQoq: 0
+    extra: { 資本支出總額: 1264, 非交易NAND營收: 123, DRAM每Gb成本季變化: -5, NAND每Gb成本季變化: -8 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts（本季折舊攤銷取自 sec-fy2017q1 年初至今累計值相減）；淨資本支出取自 pr-fy2017q1；DRAM／NAND 營收：sec-fy2017q1；FY2016–FY2017 為舊分類：NAND 欄為「Trade NAND／Trade Non-Volatile」（含 MCP 與少量 3D XPoint），售予英特爾、價格約等於成本的非交易 NAND 另列 extra.非交易NAND營收；位元與 ASP 季變化：sec-fy2017q1，原文 DRAM：gigabits sold 18%、ASP 5%、cost (5)%；Trade Non-Volatile：gigabits sold 26%、ASP 0%、cost (8)%（10-Q 確切百分比）；extra 的每 Gb 成本季變化為 sec-fy2017q1 的確切百分比（NAND 為 Trade 部分）；非 GAAP 毛利率首見於 pr-fy2017q2，本季數字取自 pr-fy2018q1 的比較欄（FY2017 定義）；非 GAAP EPS 取自 pr-fy2017q1；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：FY2018 第一季（含）以前的季度財測只在法說會口頭與簡報發布，未見於可取得的一手文件，故省略。"
+    src: "pr-fy2017q1"
+  - period: "FY2017Q2"
+    start: "2016-12-02"
+    end: "2017-03-02"
+    status: "actual"
+    revenue: 4648
+    grossProfit: 1704
+    operatingExpenses: 660
+    operatingIncome: 1044
+    nonOperating: -119
+    pretaxIncome: 925
+    netIncome: 894
+    eps: 0.77
+    epsNonGaap: 0.9
+    grossMarginNonGaap: 38.5
+    sharesDiluted: 1160
+    inventory: 3000
+    depreciation: 1003
+    capex: 1170
+    dramRevenue: 2960
+    nandRevenue: 1412
+    dramBitQoq: 1
+    dramAspQoq: 21
+    nandBitQoq: 18
+    nandAspQoq: -6
+    extra: { 資本支出總額: 1164, 非交易NAND營收: 158, DRAM每Gb成本季變化: -3, NAND每Gb成本季變化: -15 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts（本季折舊攤銷取自 sec-fy2017q2 年初至今累計值相減）；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2017q2；DRAM／NAND 營收：sec-fy2017q2；FY2016–FY2017 為舊分類：NAND 欄為「Trade NAND／Trade Non-Volatile」（含 MCP 與少量 3D XPoint），售予英特爾、價格約等於成本的非交易 NAND 另列 extra.非交易NAND營收；位元與 ASP 季變化：sec-fy2017q2，原文 DRAM：gigabits sold 1%、ASP 21%、cost (3)%；Trade Non-Volatile：gigabits sold 18%、ASP (6)%、cost (15)%（10-Q 確切百分比）；extra 的每 Gb 成本季變化為 sec-fy2017q2 的確切百分比（NAND 為 Trade 部分）；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：FY2018 第一季（含）以前的季度財測只在法說會口頭與簡報發布，未見於可取得的一手文件，故省略。"
+    src: "pr-fy2017q2"
+  - period: "FY2017Q3"
+    start: "2017-03-03"
+    end: "2017-06-01"
+    status: "actual"
+    revenue: 5566
+    grossProfit: 2609
+    operatingExpenses: 646
+    operatingIncome: 1963
+    nonOperating: -226
+    pretaxIncome: 1737
+    netIncome: 1647
+    eps: 1.4
+    epsNonGaap: 1.62
+    grossMarginNonGaap: 48
+    sharesDiluted: 1177
+    inventory: 3064
+    depreciation: 1021
+    capex: 1270
+    dramRevenue: 3559
+    nandRevenue: 1706
+    dramBitQoq: 5
+    dramAspQoq: 14
+    nandBitQoq: 17
+    nandAspQoq: 3
+    extra: { 資本支出總額: 1041, 非交易NAND營收: 138, DRAM每Gb成本季變化: -7, NAND每Gb成本季變化: -12 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2017q3；DRAM／NAND 營收：sec-fy2017q3；FY2016–FY2017 為舊分類：NAND 欄為「Trade NAND／Trade Non-Volatile」（含 MCP 與少量 3D XPoint），售予英特爾、價格約等於成本的非交易 NAND 另列 extra.非交易NAND營收；位元與 ASP 季變化：sec-fy2017q3，原文 DRAM：gigabits sold 5%、ASP 14%、cost (7)%；Trade NAND：gigabits sold 17%、ASP 3%、cost (12)%（10-Q 確切百分比）；extra 的每 Gb 成本季變化為 sec-fy2017q3 的確切百分比（NAND 為 Trade 部分）；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：FY2018 第一季（含）以前的季度財測只在法說會口頭與簡報發布，未見於可取得的一手文件，故省略。"
+    src: "pr-fy2017q3"
+  - period: "FY2017Q4"
+    start: "2017-06-02"
+    end: "2017-08-31"
+    status: "actual"
+    revenue: 6138
+    grossProfit: 3112
+    operatingExpenses: 610
+    operatingIncome: 2502
+    nonOperating: -181
+    pretaxIncome: 2321
+    netIncome: 2368
+    eps: 1.99
+    epsNonGaap: 2.02
+    grossMarginNonGaap: 51.3
+    sharesDiluted: 1187
+    inventory: 3123
+    depreciation: 1066
+    capex: 1510
+    dramRevenue: 4023
+    nandRevenue: 1838
+    dramBitQoq: 5
+    dramAspQoq: 8
+    nandBitQoq: 3
+    nandAspQoq: 5
+    extra: { 資本支出總額: 1265, 非交易NAND營收: 134 }
+    note: "來源：損益、稀釋 EPS 與股數（第四季 EPS 與股數取自當季新聞稿）、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2017q4；DRAM／NAND 營收：sec-fy2017q4 全年值減 sec-fy2017q3 九個月累計；FY2016–FY2017 為舊分類：NAND 欄為「Trade NAND／Trade Non-Volatile」（含 MCP 與少量 3D XPoint），售予英特爾、價格約等於成本的非交易 NAND 另列 extra.非交易NAND營收；位元與 ASP 季變化：pr-fy2017q4，原文 DRAM sales volumes 5 percent higher、ASP increased 8 percent；NAND sales volumes 3 percent higher、ASP increased 5 percent（新聞稿）；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：FY2018 第一季（含）以前的季度財測只在法說會口頭與簡報發布，未見於可取得的一手文件，故省略。"
+    src: "pr-fy2017q4"
+  - period: "FY2018Q1"
+    start: "2017-09-01"
+    end: "2017-11-30"
+    status: "actual"
+    revenue: 6803
+    grossProfit: 3747
+    operatingExpenses: 650
+    operatingIncome: 3097
+    nonOperating: -305
+    pretaxIncome: 2792
+    netIncome: 2678
+    eps: 2.19
+    epsNonGaap: 2.45
+    grossMarginNonGaap: 55.4
+    sharesDiluted: 1225
+    inventory: 3160
+    depreciation: 1090
+    capex: 1920
+    dramRevenue: 4562
+    nandRevenue: 1898
+    dramBitQoq: 8
+    dramAspQoq: 5
+    nandBitQoq: 5
+    nandAspQoq: -2
+    extra: { 資本支出總額: 1956 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2018q1；DRAM／NAND 營收：f-fy2019q1（比較欄）；FY2018 採 FY2019 申報文件的分類（NAND 含非交易 NAND、MCP 仍全數列入 NAND），與 FY2018 原始 10-Q 的 Trade NAND 略有差異；位元與 ASP 季變化：sec-fy2018q1，原文 DRAM：ASP per gigabit increased mid single digit、gigabits sold increased upper single digit；Trade NAND：ASP per gigabyte decreased low single digit、gigabytes sold increased mid single digit（10-Q）；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：FY2018 第一季（含）以前的季度財測只在法說會口頭與簡報發布，未見於可取得的一手文件，故省略。"
+    src: "pr-fy2018q1"
+  - period: "FY2018Q2"
+    start: "2017-12-01"
+    end: "2018-03-01"
+    status: "actual"
+    revenue: 7351
+    grossProfit: 4270
+    operatingExpenses: 703
+    operatingIncome: 3567
+    nonOperating: -114
+    pretaxIncome: 3453
+    netIncome: 3309
+    eps: 2.67
+    epsNonGaap: 2.82
+    grossMarginNonGaap: 58.4
+    sharesDiluted: 1238
+    inventory: 3184
+    depreciation: 1151
+    capex: 2110
+    dramRevenue: 5213
+    nandRevenue: 1813
+    dramBitQoq: 5
+    dramAspQoq: 12
+    nandBitQoq: 12
+    nandAspQoq: -15
+    guidance: { basis: "non-GAAP", revenue: 7000, revenueLow: 6800, revenueHigh: 7200, eps: 2.58, issued: "2017-12-19", src: "upd-fy2018q2" }
+    extra: { 資本支出總額: 2261 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2018q2；DRAM／NAND 營收：f-fy2019q2（比較欄）；FY2018 採 FY2019 申報文件的分類（NAND 含非交易 NAND、MCP 仍全數列入 NAND），與 FY2018 原始 10-Q 的 Trade NAND 略有差異；位元與 ASP 季變化：sec-fy2018q2，原文 DRAM：ASP increased low double digit、gigabits sold increased mid single digit；Trade NAND：ASP decreased mid-teens range、gigabytes sold increased low double digit（10-Q）；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：原始財測 EPS 2.51–2.65 美元；2018-02-05 上修為營收 72.0–73.5 億美元、EPS 2.70–2.75 美元；原始毛利率財測未見於可取得的一手資料。"
+    src: "pr-fy2018q2"
+  - period: "FY2018Q3"
+    start: "2018-03-02"
+    end: "2018-05-31"
+    status: "actual"
+    revenue: 7797
+    grossProfit: 4723
+    operatingExpenses: 770
+    operatingIncome: 3953
+    nonOperating: -237
+    pretaxIncome: 3716
+    netIncome: 3823
+    eps: 3.1
+    epsNonGaap: 3.15
+    grossMarginNonGaap: 60.9
+    sharesDiluted: 1235
+    inventory: 3369
+    depreciation: 1233
+    capex: 2100
+    dramRevenue: 5541
+    nandRevenue: 1949
+    dramBitQoq: 0
+    dramAspQoq: 6.5
+    nandBitQoq: 0
+    nandAspQoq: 6.5
+    guidance: { basis: "non-GAAP", revenue: 7400, revenueLow: 7200, revenueHigh: 7600, eps: 2.83, issued: "2018-03-22", src: "upd-fy2018q3" }
+    extra: { 資本支出總額: 2411 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2018q3；DRAM／NAND 營收：f-fy2019q3（比較欄）；FY2018 採 FY2019 申報文件的分類（NAND 含非交易 NAND、MCP 仍全數列入 NAND），與 FY2018 原始 10-Q 的 Trade NAND 略有差異；位元與 ASP 季變化：sec-fy2018q3，原文 DRAM：ASP increased mid-to-upper single digit、gigabits sold relatively flat；Trade NAND：ASP increased mid-to-upper single digit、gigabytes sold relatively flat（10-Q）；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：原始財測 EPS 2.76–2.90 美元；2018-05-21 上修為營收 77–78 億美元、EPS 3.12–3.16 美元。"
+    src: "pr-fy2018q3"
+  - period: "FY2018Q4"
+    start: "2018-06-01"
+    end: "2018-08-30"
+    status: "actual"
+    revenue: 8440
+    grossProfit: 5151
+    operatingExpenses: 774
+    operatingIncome: 4377
+    nonOperating: -31
+    pretaxIncome: 4346
+    netIncome: 4325
+    eps: 3.56
+    epsNonGaap: 3.53
+    grossMarginNonGaap: 61.4
+    sharesDiluted: 1216
+    inventory: 3595
+    depreciation: 1285
+    capex: 2060
+    dramRevenue: 5916
+    nandRevenue: 2237
+    dramBitQoq: 6.5
+    dramAspQoq: 0
+    nandBitQoq: 35
+    nandAspQoq: -15
+    guidance: { basis: "non-GAAP", revenue: 8200, revenueLow: 8000, revenueHigh: 8400, grossMargin: 60.5, eps: 3.3, issued: "2018-06-20", src: "sl-fy2018q3" }
+    extra: { 資本支出總額: 2251 }
+    note: "來源：損益、稀釋 EPS 與股數（第四季 EPS 與股數取自當季新聞稿）、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2018q4；DRAM／NAND 營收：f-fy2019q4 全年值減 f-fy2019q3 九個月累計；FY2018 採 FY2019 申報文件的分類（NAND 含非交易 NAND、MCP 仍全數列入 NAND），與 FY2018 原始 10-Q 的 Trade NAND 略有差異；位元與 ASP 季變化：sl-fy2018q4（10-K 只有年度比較、新聞稿未說明，改用法說會簡報），原文 DRAM：ASPs relatively flat Q/Q、shipment quantities up mid-to-upper single digit percent Q/Q；Trade NAND：ASPs down mid-teens percent range Q/Q、shipment quantities up mid-30s percent range Q/Q；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：取自上一季法說會簡報 sl-fy2018q3（非 GAAP），營收 80–84 億美元、毛利率 59–62%、EPS 3.30 ± 0.07 美元（以 12.30 億股計），毛利率取區間中值。"
+    src: "pr-fy2018q4"
+  - period: "FY2019Q1"
+    start: "2018-08-31"
+    end: "2018-11-29"
+    status: "actual"
+    revenue: 7913
+    grossProfit: 4615
+    operatingExpenses: 856
+    operatingIncome: 3759
+    nonOperating: 14
+    pretaxIncome: 3773
+    netIncome: 3293
+    eps: 2.81
+    epsNonGaap: 2.97
+    grossMarginNonGaap: 59
+    sharesDiluted: 1174
+    inventory: 3876
+    depreciation: 1335
+    capex: 2480
+    dramRevenue: 5893
+    nandRevenue: 1660
+    dramBitQoq: 0
+    dramAspQoq: -8
+    nandBitQoq: 13.5
+    nandAspQoq: -13.5
+    guidance: { basis: "non-GAAP", revenue: 8100, revenueLow: 7900, revenueHigh: 8300, grossMargin: 58.5, eps: 2.95, issued: "2018-09-20", src: "sl-fy2018q4" }
+    extra: { 資本支出總額: 2700 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2019q1；DRAM／NAND 營收：f-fy2020q1（比較欄，重編後）；FY2019 採 FY2020 起的新口徑重編值（MCP 與 SSD 依元件價值拆入 DRAM 與 NAND）；原始申報值為 DRAM 5,373、NAND 2,179，法說會的占比與位元、價格描述仍是舊口徑；位元與 ASP 季變化：rm-fy2019q1，原文 DRAM：ASPs declined high single-digits、shipment quantities relatively flat；NAND：ASP declined low-to-mid-teens、shipment quantities increased low-to-mid-teens；稼動率不足：講稿只揭露 3D XPoint／IMFT 對毛利率的影響約 120 個基點（rm-fy2019q1），FY2019 全年 3.84 億美元（f-fy2020q4），未逐季給金額故不填；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：取自上一季法說會簡報 sl-fy2018q4（非 GAAP），營收 79–83 億美元、毛利率 57–60%、EPS 2.95 ± 0.07 美元（以約 11.98 億股計），毛利率取區間中值。"
+    src: "pr-fy2019q1"
+  - period: "FY2019Q2"
+    start: "2018-11-30"
+    end: "2019-02-28"
+    status: "actual"
+    revenue: 5835
+    grossProfit: 2864
+    operatingExpenses: 907
+    operatingIncome: 1957
+    nonOperating: -53
+    pretaxIncome: 1904
+    netIncome: 1619
+    eps: 1.42
+    epsNonGaap: 1.71
+    grossMarginNonGaap: 50.2
+    sharesDiluted: 1141
+    inventory: 4390
+    depreciation: 1313
+    capex: 2450
+    dramRevenue: 4151
+    nandRevenue: 1387
+    dramBitQoq: -12
+    dramAspQoq: -22
+    nandBitQoq: 8
+    nandAspQoq: -25
+    guidance: { basis: "non-GAAP", revenue: 6000, revenueLow: 5700, revenueHigh: 6300, grossMargin: 51.5, eps: 1.75, issued: "2018-12-18", src: "rm-fy2019q1" }
+    extra: { 資本支出總額: 2649 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2019q2；DRAM／NAND 營收：f-fy2020q2（比較欄，重編後）；FY2019 採 FY2020 起的新口徑重編值（MCP 與 SSD 依元件價值拆入 DRAM 與 NAND）；原始申報值為 DRAM 3,760、NAND 1,776，法說會的占比與位元、價格描述仍是舊口徑；位元與 ASP 季變化：rm-fy2019q2，原文 DRAM：ASPs declined in the low 20 percent range、shipment quantities down in the low double-digits；NAND：ASP declined in the mid-20 percent range、shipment quantities increased in the upper single-digit percent range；稼動率不足：講稿只揭露 3D XPoint／IMFT 對毛利率的影響約 160 個基點（rm-fy2019q2），FY2019 全年 3.84 億美元（f-fy2020q4），未逐季給金額故不填；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：毛利率 50–53%，EPS 1.75 ± 0.10 美元。"
+    src: "pr-fy2019q2"
+  - period: "FY2019Q3"
+    start: "2019-03-01"
+    end: "2019-05-30"
+    status: "actual"
+    revenue: 4788
+    grossProfit: 1828
+    operatingExpenses: 818
+    operatingIncome: 1010
+    nonOperating: -294
+    pretaxIncome: 716
+    netIncome: 840
+    eps: 0.74
+    epsNonGaap: 1.05
+    grossMarginNonGaap: 39.3
+    sharesDiluted: 1129
+    inventory: 4905
+    depreciation: 1360
+    capex: 2210
+    dramRevenue: 3398
+    nandRevenue: 1104
+    dramBitQoq: 0
+    dramAspQoq: -20
+    nandBitQoq: -5
+    nandAspQoq: -15
+    guidance: { basis: "non-GAAP", revenue: 4800, revenueLow: 4600, revenueHigh: 5000, grossMargin: 38.5, eps: 0.85, issued: "2019-03-20", src: "rm-fy2019q2" }
+    extra: { 資本支出總額: 2403 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2019q3；DRAM／NAND 營收：f-fy2020q3（比較欄，重編後）；FY2019 採 FY2020 起的新口徑重編值（MCP 與 SSD 依元件價值拆入 DRAM 與 NAND）；原始申報值為 DRAM 3,041、NAND 1,461，法說會的占比與位元、價格描述仍是舊口徑；位元與 ASP 季變化：rm-fy2019q3，原文 DRAM：ASP decline approached 20%、bit shipments roughly flat；NAND：ASPs declined in the mid-teens percent range、shipment quantities declined in the mid-single-digit percent range；稼動率不足：講稿只揭露 3D XPoint／IMFT 對毛利率的影響約 200 個基點（rm-fy2019q3），FY2019 全年 3.84 億美元（f-fy2020q4），未逐季給金額故不填；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：毛利率 37–40%，EPS 0.85 ± 0.10 美元。"
+    src: "pr-fy2019q3"
+  - period: "FY2019Q4"
+    start: "2019-05-31"
+    end: "2019-08-29"
+    status: "actual"
+    revenue: 4870
+    grossProfit: 1395
+    operatingExpenses: 745
+    operatingIncome: 650
+    nonOperating: 5
+    pretaxIncome: 655
+    netIncome: 561
+    eps: 0.49
+    epsNonGaap: 0.56
+    grossMarginNonGaap: 30.6
+    sharesDiluted: 1128
+    inventory: 5118
+    depreciation: 1416
+    capex: 1970
+    dramRevenue: 3399
+    nandRevenue: 1204
+    dramBitQoq: 30
+    dramAspQoq: -20
+    nandBitQoq: 13.5
+    nandAspQoq: -8
+    underutilization: 100
+    guidance: { basis: "non-GAAP", revenue: 4500, revenueLow: 4300, revenueHigh: 4700, grossMargin: 29, eps: 0.45, issued: "2019-06-25", src: "rm-fy2019q3" }
+    extra: { 資本支出總額: 2028 }
+    note: "來源：損益、稀釋 EPS 與股數（第四季 EPS 與股數取自當季新聞稿）、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2019q4；DRAM／NAND 營收：f-fy2020q4 重編後全年值減 f-fy2020q3 九個月累計；FY2019 採 FY2020 起的新口徑重編值（MCP 與 SSD 依元件價值拆入 DRAM 與 NAND）；原始申報值為 DRAM 3,073、NAND 1,530，法說會的占比與位元、價格描述仍是舊口徑；位元與 ASP 季變化：rm-fy2019q4，原文 DRAM：bit shipments grew approximately 30%、ASP declined approximately 20%；NAND：bit shipments grew in the low-to-mid-teens percent range、ASP declined in the upper-single-digit percent range；稼動率不足：約 1 億美元（IMFT 稼動率不足，約 200 個基點），公司說法為 approximately（rm-fy2019q4）；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；財測：毛利率 29% ± 1.5 個百分點，EPS 0.45 ± 0.07 美元。"
+    src: "pr-fy2019q4"
+  - period: "FY2020Q1"
+    start: "2019-08-30"
+    end: "2019-11-28"
+    status: "actual"
+    revenue: 5144
+    grossProfit: 1366
+    operatingExpenses: 848
+    operatingIncome: 518
+    nonOperating: 43
+    pretaxIncome: 561
+    netIncome: 491
+    eps: 0.43
+    epsNonGaap: 0.48
+    grossMarginNonGaap: 27.3
+    sharesDiluted: 1129
+    inventory: 4943
+    depreciation: 1296
+    capex: 1930
+    dramRevenue: 3469
+    nandRevenue: 1422
+    dramBitQoq: 10
+    dramAspQoq: -8
+    nandBitQoq: 15
+    nandAspQoq: 2
+    underutilization: 125
+    guidance: { basis: "non-GAAP", revenue: 5000, revenueLow: 4800, revenueHigh: 5200, grossMargin: 26.5, eps: 0.46, issued: "2019-09-26", src: "pr-fy2019q4" }
+    extra: { 資本支出總額: 1943 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2020q1；DRAM／NAND 營收：f-fy2020q1；位元與 ASP 季變化：rm-fy2020q1，原文 DRAM：bit shipments grew approximately 10%、ASP declined in the upper-single-digit percent range；NAND：bit shipments grew in the mid-teen percent range、ASPs increased in the low single digits；稼動率不足：MTU（Lehi 廠）稼動率不足約 1.25 億美元（f-fy2020q2）；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬。"
+    src: "pr-fy2020q1"
+  - period: "FY2020Q2"
+    start: "2019-11-29"
+    end: "2020-02-27"
+    status: "actual"
+    revenue: 4797
+    grossProfit: 1355
+    operatingExpenses: 915
+    operatingIncome: 440
+    nonOperating: -13
+    pretaxIncome: 427
+    netIncome: 405
+    eps: 0.36
+    epsNonGaap: 0.45
+    grossMarginNonGaap: 29.1
+    sharesDiluted: 1133
+    inventory: 5208
+    depreciation: 1365
+    capex: 1940
+    dramRevenue: 3083
+    nandRevenue: 1514
+    dramBitQoq: -10
+    dramAspQoq: 0
+    nandBitQoq: -2
+    nandAspQoq: 8
+    underutilization: 142
+    guidance: { basis: "non-GAAP", revenue: 4650, revenueLow: 4500, revenueHigh: 4800, grossMargin: 27, eps: 0.35, issued: "2019-12-18", src: "pr-fy2020q1" }
+    extra: { 資本支出總額: 2056 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2020q2；DRAM／NAND 營收：f-fy2020q2；位元與 ASP 季變化：rm-fy2020q2，原文 DRAM：bit shipments down by approximately 10%、ASPs flat；NAND：bit shipments declined in the low single-digit percentage range、ASPs increased in the upper single-digit percentage range；稼動率不足：MTU 稼動率不足約 1.42 億美元（f-fy2020q3）；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬。"
+    src: "pr-fy2020q2"
+  - period: "FY2020Q3"
+    start: "2020-02-28"
+    end: "2020-05-28"
+    status: "actual"
+    revenue: 5438
+    grossProfit: 1763
+    operatingExpenses: 875
+    operatingIncome: 888
+    nonOperating: -18
+    pretaxIncome: 870
+    netIncome: 803
+    eps: 0.71
+    epsNonGaap: 0.82
+    grossMarginNonGaap: 33.2
+    sharesDiluted: 1129
+    inventory: 5405
+    depreciation: 1422
+    capex: 1920
+    dramRevenue: 3587
+    nandRevenue: 1665
+    dramBitQoq: 10
+    dramAspQoq: 5
+    nandBitQoq: 2
+    nandAspQoq: 8
+    underutilization: 155
+    guidance: { basis: "non-GAAP", revenue: 4900, revenueLow: 4600, revenueHigh: 5200, grossMargin: 31, eps: 0.55, issued: "2020-03-25", src: "pr-fy2020q2" }
+    extra: { 資本支出總額: 1944 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2020q3；DRAM／NAND 營收：f-fy2020q3；位元與 ASP 季變化：rm-fy2020q3，原文 DRAM：bit shipments up by approximately 10%、ASPs up in the mid-single-digit percentage range；NAND：bit shipments increased in the lower-single-digit percentage range、ASPs increased in the upper-single-digit percentage range；稼動率不足：MTU 稼動率不足約 1.55 億美元（f-fy2020q3）；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬。"
+    src: "pr-fy2020q3"
+  - period: "FY2020Q4"
+    start: "2020-05-29"
+    end: "2020-09-03"
+    status: "actual"
+    revenue: 6056
+    grossProfit: 2068
+    operatingExpenses: 911
+    operatingIncome: 1157
+    nonOperating: -32
+    pretaxIncome: 1125
+    netIncome: 988
+    eps: 0.87
+    epsNonGaap: 1.08
+    grossMarginNonGaap: 34.9
+    sharesDiluted: 1131
+    inventory: 5607
+    depreciation: 1567
+    capex: 2160
+    dramRevenue: 4371
+    nandRevenue: 1530
+    dramBitQoq: 25
+    dramAspQoq: -2
+    nandBitQoq: 0
+    nandAspQoq: -8
+    underutilization: 135
+    guidance: { basis: "non-GAAP", revenue: 6000, revenueLow: 5750, revenueHigh: 6250, grossMargin: 35.5, eps: 1.05, issued: "2020-06-29", src: "pr-fy2020q3" }
+    extra: { 資本支出總額: 2280, 週數: 14 }
+    note: "來源：損益、稀釋 EPS 與股數（第四季 EPS 與股數取自當季新聞稿）、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2020q4；DRAM／NAND 營收：f-fy2020q4 全年值減 f-fy2020q3 九個月累計；位元與 ASP 季變化：rm-fy2020q4，原文 DRAM：bit shipments up in the mid-20% range、ASPs down in the lower-single-digit percent range；NAND：bit shipments approximately flat、ASPs declined in the upper single-digit percent range；稼動率不足：MTU 稼動率不足 1.35 億美元（FY2020 全年 5.57 億美元）（f-fy2021q1）；capex 為公司公布的淨資本支出（扣除合作夥伴出資等），新聞稿以十億美元兩位小數表示，換算為百萬；本季為 14 週（53 週會計年度）；存貨 5,607 為原始 10-K 數字，FY2021 第二季起公司把設備備品自存貨改列其他流動資產並追溯調整，本季期末存貨重編為 5,373（備品 2.34 億美元）（f-fy2021q2），與 FY2021 第二季以後的存貨比較時應先扣除。"
+    src: "pr-fy2020q4"
+  - period: "FY2021Q1"
+    start: "2020-09-04"
+    end: "2020-12-03"
+    status: "actual"
+    revenue: 5773
+    grossProfit: 1736
+    operatingExpenses: 870
+    operatingIncome: 866
+    nonOperating: -25
+    pretaxIncome: 841
+    netIncome: 803
+    eps: 0.71
+    epsNonGaap: 0.78
+    grossMarginNonGaap: 30.9
+    sharesDiluted: 1135
+    inventory: 5521
+    depreciation: 1487
+    capex: 2783
+    dramRevenue: 4056
+    nandRevenue: 1574
+    dramBitQoq: -2
+    dramAspQoq: -5
+    nandBitQoq: 18
+    nandAspQoq: -12
+    underutilization: 113
+    guidance: { basis: "non-GAAP", revenue: 5200, revenueLow: 5000, revenueHigh: 5400, grossMargin: 27.5, eps: 0.47, issued: "2020-09-29", src: "pr-fy2020q4" }
+    extra: { 資本支出總額: 2738 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2021q1；DRAM／NAND 營收：f-fy2021q1；位元與 ASP 季變化：rm-fy2021q1，原文 DRAM：bit shipments down in the low-single-digit percentage range、ASPs down in the mid-single-digit percentage range；NAND：bit shipments increased in the high-teens percentage range、ASPs declined in the low-teens percentage range（約一半來自產品組合變化）；稼動率不足：MTU 稼動率不足 1.13 億美元（f-fy2021q2）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2021q1"
+  - period: "FY2021Q2"
+    start: "2020-12-04"
+    end: "2021-03-04"
+    status: "actual"
+    revenue: 6236
+    grossProfit: 1649
+    operatingExpenses: 986
+    operatingIncome: 663
+    nonOperating: -28
+    pretaxIncome: 635
+    netIncome: 603
+    eps: 0.53
+    epsNonGaap: 0.98
+    grossMarginNonGaap: 32.9
+    sharesDiluted: 1144
+    inventory: 4743
+    depreciation: 1549
+    capex: 2883
+    dramRevenue: 4444
+    nandRevenue: 1650
+    dramBitQoq: 8
+    dramAspQoq: 1
+    nandBitQoq: 8
+    nandAspQoq: -2
+    underutilization: 111
+    guidance: { basis: "non-GAAP", revenue: 5800, revenueLow: 5600, revenueHigh: 6000, grossMargin: 31, eps: 0.75, issued: "2021-01-07", src: "pr-fy2021q1" }
+    extra: { 資本支出總額: 3018 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2021q2；DRAM／NAND 營收：f-fy2021q2；位元與 ASP 季變化：rm-fy2021q2，原文 DRAM：bit shipments grew in the high single-digit percentage range、ASPs were up slightly；NAND：bit shipments increased in the high single-digit percentage range、ASPs declined in the low single-digit percentage range；稼動率不足：Lehi 廠稼動率不足 1.11 億美元（f-fy2021q3）；存貨：本季起設備備品改列其他流動資產（期末 2.70 億美元不再計入存貨），存貨成本計算也由平均成本法改為先進先出法，因此本季存貨與 FY2021 第一季（含）以前不完全可比（f-fy2021q2）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2021q2"
+  - period: "FY2021Q3"
+    start: "2021-03-05"
+    end: "2021-06-03"
+    status: "actual"
+    revenue: 7422
+    grossProfit: 3126
+    operatingExpenses: 1327
+    operatingIncome: 1799
+    nonOperating: 7
+    pretaxIncome: 1806
+    netIncome: 1735
+    eps: 1.52
+    epsNonGaap: 1.88
+    grossMarginNonGaap: 42.9
+    sharesDiluted: 1145
+    inventory: 4537
+    depreciation: 1557
+    capex: 2042
+    dramRevenue: 5448
+    nandRevenue: 1812
+    dramBitQoq: 2
+    dramAspQoq: 20
+    nandBitQoq: 2
+    nandAspQoq: 8
+    underutilization: 54
+    guidance: { basis: "non-GAAP", revenue: 7100, revenueLow: 6900, revenueHigh: 7300, grossMargin: 41.5, eps: 1.62, issued: "2021-03-31", src: "pr-fy2021q2" }
+    extra: { 資本支出總額: 2259 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2021q3；DRAM／NAND 營收：f-fy2021q3；位元與 ASP 季變化：rm-fy2021q3，原文 DRAM：bit shipments increased in the low single-digit range、ASPs were up approximately 20%；NAND：bit shipments increased by low single digits、ASPs increased in the high single-digit percentage range；稼動率不足：Lehi 廠稼動率不足 0.54 億美元（f-fy2021q3）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2021q3"
+  - period: "FY2021Q4"
+    start: "2021-06-04"
+    end: "2021-09-02"
+    status: "actual"
+    revenue: 8274
+    grossProfit: 3912
+    operatingExpenses: 957
+    operatingIncome: 2955
+    nonOperating: -19
+    pretaxIncome: 2936
+    netIncome: 2720
+    eps: 2.39
+    epsNonGaap: 2.42
+    grossMarginNonGaap: 47.9
+    sharesDiluted: 1138
+    inventory: 4487
+    depreciation: 1621
+    capex: 2007
+    dramRevenue: 6091
+    nandRevenue: 1971
+    dramBitQoq: 2
+    dramAspQoq: 8
+    nandBitQoq: 2
+    nandAspQoq: 5
+    underutilization: 57
+    guidance: { basis: "non-GAAP", revenue: 8200, revenueLow: 8000, revenueHigh: 8400, grossMargin: 47, eps: 2.3, issued: "2021-06-30", src: "pr-fy2021q3" }
+    extra: { 資本支出總額: 2015 }
+    note: "來源：損益、稀釋 EPS 與股數（第四季 EPS 與股數取自當季新聞稿）、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2021q4；DRAM／NAND 營收：f-fy2021q4 全年值減 f-fy2021q3 九個月累計；位元與 ASP 季變化：rm-fy2021q4，原文 DRAM：bit shipments increased in the lower single-digit percentage、ASPs increased in the high single-digit percent range；NAND：bit shipments increased by low single-digit percentages、ASPs increased in the mid single-digit percent range；稼動率不足：由 FY2021 全年 3.35 億美元減前三季（113＋111＋54）推得；FY2022 起公司只說影響低於 1%（停止提列 MTU 資產折舊），未再量化（f-fy2022q1）（f-fy2021q4）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2021q4"
+  - period: "FY2022Q1"
+    start: "2021-09-03"
+    end: "2021-12-02"
+    status: "actual"
+    revenue: 7687
+    grossProfit: 3565
+    operatingExpenses: 934
+    operatingIncome: 2631
+    nonOperating: -110
+    pretaxIncome: 2521
+    netIncome: 2306
+    eps: 2.04
+    epsNonGaap: 2.16
+    grossMarginNonGaap: 47
+    sharesDiluted: 1130
+    inventory: 4827
+    depreciation: 1671
+    capex: 3267
+    dramRevenue: 5587
+    nandRevenue: 1878
+    dramBitQoq: -5
+    dramAspQoq: -2
+    nandBitQoq: 0
+    nandAspQoq: -5
+    guidance: { basis: "non-GAAP", revenue: 7650, revenueLow: 7450, revenueHigh: 7850, grossMargin: 47, eps: 2.1, issued: "2021-09-28", src: "pr-fy2021q4" }
+    extra: { 資本支出總額: 3265 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2022q1；DRAM／NAND 營收：f-fy2022q1；位元與 ASP 季變化：rm-fy2022q1，原文 DRAM：bit shipments declined in the mid-single-digit percentage range、ASPs declined in the lower-single-digit percentage range；NAND：bit shipments approximately flat、ASPs declined in the mid-single-digit percentage range；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2022q1"
+  - period: "FY2022Q2"
+    start: "2021-12-03"
+    end: "2022-03-03"
+    status: "actual"
+    revenue: 7786
+    grossProfit: 3676
+    operatingExpenses: 1130
+    operatingIncome: 2546
+    nonOperating: -37
+    pretaxIncome: 2509
+    netIncome: 2263
+    eps: 2
+    epsNonGaap: 2.14
+    grossMarginNonGaap: 47.8
+    sharesDiluted: 1130
+    inventory: 5383
+    depreciation: 1742
+    capex: 2600
+    dramRevenue: 5719
+    nandRevenue: 1957
+    dramBitQoq: 8
+    dramAspQoq: -5
+    nandBitQoq: 0
+    nandAspQoq: 5
+    guidance: { basis: "non-GAAP", revenue: 7500, revenueLow: 7300, revenueHigh: 7700, grossMargin: 46, eps: 1.95, issued: "2021-12-20", src: "pr-fy2022q1" }
+    extra: { 資本支出總額: 2611 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2022q2；DRAM／NAND 營收：f-fy2022q2；位元與 ASP 季變化：rm-fy2022q2，原文 DRAM：bit shipments increased in the high-single-digit percentage range、ASPs declined in the mid-single-digit percentage range；NAND：bit shipments flat、ASPs increased in the mid-single-digit percentage range（SSD 組合改善，同規格價格仍下跌）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2022q2"
+  - period: "FY2022Q3"
+    start: "2022-03-04"
+    end: "2022-06-02"
+    status: "actual"
+    revenue: 8642
+    grossProfit: 4035
+    operatingExpenses: 1031
+    operatingIncome: 3004
+    nonOperating: -16
+    pretaxIncome: 2988
+    netIncome: 2626
+    eps: 2.34
+    epsNonGaap: 2.59
+    grossMarginNonGaap: 47.4
+    sharesDiluted: 1121
+    inventory: 5629
+    depreciation: 1821
+    capex: 2528
+    dramRevenue: 6271
+    nandRevenue: 2288
+    dramBitQoq: 10
+    dramAspQoq: -1
+    nandBitQoq: 18
+    nandAspQoq: -1
+    guidance: { basis: "non-GAAP", revenue: 8700, revenueLow: 8500, revenueHigh: 8900, grossMargin: 48, eps: 2.46, issued: "2022-03-29", src: "pr-fy2022q2" }
+    extra: { 資本支出總額: 2578 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2022q3；DRAM／NAND 營收：f-fy2022q3；位元與 ASP 季變化：rm-fy2022q3，原文 DRAM：bit shipments increased by slightly over 10%、ASPs declined slightly；NAND：bit shipments increased in the high-teens percent、ASPs declined slightly；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2022q3"
+  - period: "FY2022Q4"
+    start: "2022-06-03"
+    end: "2022-09-01"
+    status: "actual"
+    revenue: 6643
+    grossProfit: 2622
+    operatingExpenses: 1101
+    operatingIncome: 1521
+    nonOperating: 32
+    pretaxIncome: 1553
+    netIncome: 1492
+    eps: 1.35
+    epsNonGaap: 1.45
+    grossMarginNonGaap: 40.3
+    sharesDiluted: 1106
+    inventory: 6663
+    depreciation: 1882
+    capex: 3581
+    dramRevenue: 4809
+    nandRevenue: 1688
+    dramBitQoq: -10
+    dramAspQoq: -12
+    nandBitQoq: -22
+    nandAspQoq: -6.5
+    guidance: { basis: "non-GAAP", revenue: 7200, revenueLow: 6800, revenueHigh: 7600, grossMargin: 42.5, eps: 1.63, issued: "2022-06-30", src: "pr-fy2022q3" }
+    extra: { 資本支出總額: 3613 }
+    note: "來源：損益、稀釋 EPS 與股數（第四季 EPS 與股數取自當季新聞稿）、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2022q4；DRAM／NAND 營收：f-fy2022q4 全年值減 f-fy2022q3 九個月累計；位元與 ASP 季變化：rm-fy2022q4，原文 DRAM：bit shipments decreased by roughly 10%、ASPs declined in the low-teens percentage range；NAND：bit shipments declined in the low-20s percentage range、ASPs declined in the mid-to-high single-digit percentage range；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2022q4"
+  - period: "FY2023Q1"
+    start: "2022-09-02"
+    end: "2022-12-01"
+    status: "actual"
+    revenue: 4085
+    grossProfit: 893
+    operatingExpenses: 1102
+    operatingIncome: -209
+    nonOperating: 33
+    pretaxIncome: -176
+    netIncome: -195
+    eps: -0.18
+    epsNonGaap: -0.04
+    grossMarginNonGaap: 22.9
+    sharesDiluted: 1090
+    inventory: 8359
+    depreciation: 1921
+    capex: 2471
+    dramRevenue: 2829
+    nandRevenue: 1103
+    dramBitQoq: -25
+    dramAspQoq: -22
+    nandBitQoq: -15
+    nandAspQoq: -22
+    guidance: { basis: "non-GAAP", revenue: 4250, revenueLow: 4000, revenueHigh: 4500, grossMargin: 26, eps: 0.04, issued: "2022-09-29", src: "pr-fy2022q4" }
+    extra: { 資本支出總額: 2449 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2023q1；DRAM／NAND 營收：f-fy2023q1；位元與 ASP 季變化：rm-fy2023q1，原文 DRAM：bit shipments decreasing in the mid-20 percentage range、prices declining in the low-20 percentage range；NAND：bit shipments declining in the mid-teens percentage range、prices declining in the low-20 percentage range；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2023q1"
+  - period: "FY2023Q2"
+    start: "2022-12-02"
+    end: "2023-03-02"
+    status: "actual"
+    revenue: 3693
+    grossProfit: -1206
+    operatingExpenses: 1097
+    operatingIncome: -2303
+    nonOperating: 32
+    pretaxIncome: -2271
+    netIncome: -2312
+    eps: -2.12
+    epsNonGaap: -1.91
+    grossMarginNonGaap: -31.4
+    sharesDiluted: 1091
+    inventory: 8129
+    inventoryWritedown: 1430
+    depreciation: 1942
+    capex: 2155
+    dramRevenue: 2722
+    nandRevenue: 885
+    dramBitQoq: 15
+    dramAspQoq: -20
+    nandBitQoq: 6.5
+    nandAspQoq: -25
+    underutilization: 27
+    guidance: { basis: "non-GAAP", revenue: 3800, revenueLow: 3600, revenueHigh: 4000, grossMargin: 8.5, eps: -0.62, issued: "2022-12-21", src: "pr-fy2023q1" }
+    extra: { 資本支出總額: 2205 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2023q2；DRAM／NAND 營收：f-fy2023q2；位元與 ASP 季變化：rm-fy2023q2，原文 DRAM：bit shipments increasing in the mid-teens percentage range、prices declining by approximately 20%（含出貨時點移轉）；NAND：bit shipments increasing in the mid-to-high single-digit percentage range、prices declining in the mid-20s percentage range；稼動率不足：減少投片造成的閒置期間成本 0.27 億美元（f-fy2023q2）；存貨跌價：淨變現價值跌價提列 14.3 億美元（sec-companyfacts、f-fy2023q2）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2023q2"
+  - period: "FY2023Q3"
+    start: "2023-03-03"
+    end: "2023-06-01"
+    status: "actual"
+    revenue: 3752
+    grossProfit: -668
+    operatingExpenses: 1093
+    operatingIncome: -1761
+    nonOperating: 8
+    pretaxIncome: -1753
+    netIncome: -1896
+    eps: -1.73
+    epsNonGaap: -1.43
+    grossMarginNonGaap: -16.1
+    sharesDiluted: 1094
+    inventory: 8238
+    inventoryWritedown: 401
+    depreciation: 1956
+    capex: 1379
+    dramRevenue: 2672
+    nandRevenue: 1013
+    dramBitQoq: 10
+    dramAspQoq: -10
+    nandBitQoq: 38
+    nandAspQoq: -15
+    underutilization: 132
+    guidance: { basis: "non-GAAP", revenue: 3700, revenueLow: 3500, revenueHigh: 3900, grossMargin: -21, eps: -1.58, issued: "2023-03-28", src: "pr-fy2023q2" }
+    extra: { 資本支出總額: 1561, 已跌價存貨售出降低成本: 281 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2023q3；DRAM／NAND 營收：f-fy2023q3；位元與 ASP 季變化：rm-fy2023q3，原文 DRAM：bit shipments increasing in the 10-percentage range、prices declining by approximately 10%；NAND：bit shipments increasing in the upper 30-percentage range、prices declining in the mid-teens percentage range；稼動率不足：減少投片造成的閒置期間成本 1.32 億美元（f-fy2023q3）；存貨跌價：淨變現價值跌價提列 4.01 億美元（sec-companyfacts、f-fy2023q3）；extra.已跌價存貨售出降低成本：先前跌價的存貨售出、使本季銷貨成本降低的金額（f-fy2023q3）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）；財測：財測假設本季約 5 億美元存貨跌價，實際 4.01 億美元。"
+    src: "pr-fy2023q3"
+  - period: "FY2023Q4"
+    start: "2023-06-02"
+    end: "2023-08-31"
+    status: "actual"
+    revenue: 4010
+    grossProfit: -435
+    operatingExpenses: 1037
+    operatingIncome: -1472
+    nonOperating: 14
+    pretaxIncome: -1458
+    netIncome: -1430
+    eps: -1.31
+    epsNonGaap: -1.07
+    grossMarginNonGaap: -9.1
+    sharesDiluted: 1095
+    inventory: 8387
+    depreciation: 1937
+    capex: 1007
+    dramRevenue: 2755
+    nandRevenue: 1205
+    dramBitQoq: 15
+    dramAspQoq: -8
+    nandBitQoq: 40
+    nandAspQoq: -15
+    underutilization: 222
+    guidance: { basis: "non-GAAP", revenue: 3900, revenueLow: 3700, revenueHigh: 4100, grossMargin: -10.5, eps: -1.19, issued: "2023-06-28", src: "pr-fy2023q3" }
+    extra: { 資本支出總額: 1461, 已跌價存貨售出降低成本: 563 }
+    note: "來源：損益、稀釋 EPS 與股數（第四季 EPS 與股數取自當季新聞稿）、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2023q4；DRAM／NAND 營收：f-fy2023q4 全年值減 f-fy2023q3 九個月累計；位元與 ASP 季變化：rm-fy2023q4，原文 DRAM：bit shipments increasing in the mid-teens percentage range、prices declining in the high-single-digit percentage range；NAND：bit shipments increasing over 40%（含策略性採購等出貨時點）、prices declining in the mid-teens percentage range；稼動率不足：減少投片造成的閒置期間成本 2.22 億美元（FY2023 全年 3.82 億美元）（f-fy2024q1）；extra.已跌價存貨售出降低成本：先前跌價的存貨售出、使本季銷貨成本降低的金額（f-fy2023q4 全年 8.44 億美元減第三季 2.81 億美元）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2023q4"
+  - period: "FY2024Q1"
+    start: "2023-09-01"
+    end: "2023-11-30"
+    status: "actual"
+    revenue: 4726
+    grossProfit: -35
+    operatingExpenses: 1093
+    operatingIncome: -1128
+    nonOperating: -27
+    pretaxIncome: -1155
+    netIncome: -1234
+    eps: -1.12
+    epsNonGaap: -0.95
+    grossMarginNonGaap: 0.8
+    sharesDiluted: 1100
+    inventory: 8276
+    depreciation: 1915
+    capex: 1734
+    dramRevenue: 3427
+    nandRevenue: 1230
+    dramBitQoq: 22
+    dramAspQoq: 2
+    nandBitQoq: -15
+    nandAspQoq: 20
+    underutilization: 165
+    guidance: { basis: "non-GAAP", revenue: 4400, revenueLow: 4200, revenueHigh: 4600, grossMargin: -4, eps: -1.07, issued: "2023-09-27", src: "pr-fy2023q4" }
+    extra: { 資本支出總額: 1796 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2024q1；DRAM／NAND 營收：f-fy2024q1；位元與 ASP 季變化：rm-fy2024q1，原文 DRAM：bit shipments increasing in the low-20s percentage range、prices increasing in the low-single-digit percentage range；NAND：bit shipments declined in the mid-teens percentage range、prices increased by approximately 20%；稼動率不足：減少投片造成的閒置期間成本 1.65 億美元；FY2024Q2 起公司稱金額已不大（modest），未再量化（f-fy2024q1）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2024q1"
+  - period: "FY2024Q2"
+    start: "2023-12-01"
+    end: "2024-02-29"
+    status: "actual"
+    revenue: 5824
+    grossProfit: 1079
+    operatingExpenses: 888
+    operatingIncome: 191
+    nonOperating: -21
+    pretaxIncome: 170
+    netIncome: 793
+    eps: 0.71
+    epsNonGaap: 0.42
+    grossMarginNonGaap: 20
+    sharesDiluted: 1114
+    inventory: 8443
+    depreciation: 1924
+    capex: 1248
+    dramRevenue: 4158
+    nandRevenue: 1567
+    dramBitQoq: 2
+    dramAspQoq: 18
+    nandBitQoq: -2
+    nandAspQoq: 30
+    guidance: { basis: "non-GAAP", revenue: 5300, revenueLow: 5100, revenueHigh: 5500, grossMargin: 13, eps: -0.28, issued: "2023-12-20", src: "pr-fy2024q1" }
+    extra: { 資本支出總額: 1384 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2024q2；DRAM／NAND 營收：f-fy2024q2；位元與 ASP 季變化：rm-fy2024q2，原文 DRAM：bit shipments increasing by a low single-digit percentage、prices increasing by high teens；NAND：bit shipments decreasing by a low single-digit percentage、prices increasing by over 30%；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2024q2"
+  - period: "FY2024Q3"
+    start: "2024-03-01"
+    end: "2024-05-30"
+    status: "actual"
+    revenue: 6811
+    grossProfit: 1832
+    operatingExpenses: 1113
+    operatingIncome: 719
+    nonOperating: -4
+    pretaxIncome: 715
+    netIncome: 332
+    eps: 0.3
+    epsNonGaap: 0.62
+    grossMarginNonGaap: 28.1
+    sharesDiluted: 1123
+    inventory: 8512
+    depreciation: 1955
+    capex: 2057
+    dramRevenue: 4692
+    nandRevenue: 2065
+    hbmRevenue: 100
+    dramBitQoq: -5
+    dramAspQoq: 20
+    nandBitQoq: 8
+    nandAspQoq: 20
+    guidance: { basis: "non-GAAP", revenue: 6600, revenueLow: 6400, revenueHigh: 6800, grossMargin: 26.5, eps: 0.45, issued: "2024-03-20", src: "pr-fy2024q2" }
+    extra: { 資本支出總額: 2086 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2024q3；DRAM／NAND 營收：f-fy2024q3；位元與 ASP 季變化：rm-fy2024q3，原文 DRAM：bit shipments declining in the mid-single-digit percentage range、prices increasing by approximately 20%；NAND：bit shipments increasing in the high-single-digit percentage range、prices increasing by approximately 20%；HBM 營收：HBM3E 營收「over $100 million」（下限值，首季量產出貨）（rm-fy2024q3）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2024q3"
+  - period: "FY2024Q4"
+    start: "2024-05-31"
+    end: "2024-08-29"
+    status: "actual"
+    revenue: 7750
+    grossProfit: 2737
+    operatingExpenses: 1215
+    operatingIncome: 1522
+    nonOperating: -12
+    pretaxIncome: 1510
+    netIncome: 887
+    eps: 0.79
+    epsNonGaap: 1.18
+    grossMarginNonGaap: 36.5
+    sharesDiluted: 1125
+    inventory: 8875
+    depreciation: 1986
+    capex: 3082
+    dramRevenue: 5326
+    nandRevenue: 2365
+    dramBitQoq: 0
+    dramAspQoq: 15
+    nandBitQoq: 8
+    nandAspQoq: 8
+    guidance: { basis: "non-GAAP", revenue: 7600, revenueLow: 7400, revenueHigh: 7800, grossMargin: 34.5, eps: 1.08, issued: "2024-06-26", src: "pr-fy2024q3" }
+    extra: { 資本支出總額: 3120 }
+    note: "來源：損益、稀釋 EPS 與股數（第四季 EPS 與股數取自當季新聞稿）、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2024q4；DRAM／NAND 營收：f-fy2024q4 全年值減 f-fy2024q3 九個月累計；位元與 ASP 季變化：rm-fy2024q4，原文 DRAM：flattish bit shipments、prices increasing in the mid-teens percentage range；NAND：bit shipments increasing in the high-single-digit percentage range、prices increasing in the high-single-digit percentage range；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2024q4"
+  - period: "FY2025Q1"
+    start: "2024-08-30"
+    end: "2024-11-28"
+    status: "actual"
+    revenue: 8709
+    grossProfit: 3348
+    operatingExpenses: 1174
+    operatingIncome: 2174
+    nonOperating: -22
+    pretaxIncome: 2152
+    netIncome: 1870
+    eps: 1.67
+    epsNonGaap: 1.79
+    grossMarginNonGaap: 39.5
+    sharesDiluted: 1122
+    inventory: 8705
+    depreciation: 2030
+    capex: 3132
+    dramRevenue: 6400
+    nandRevenue: 2241
+    dramBitQoq: 12
+    dramAspQoq: 8
+    nandBitQoq: -2
+    nandAspQoq: -2
+    guidance: { basis: "non-GAAP", revenue: 8700, revenueLow: 8500, revenueHigh: 8900, grossMargin: 39.5, eps: 1.74, issued: "2024-09-25", src: "pr-fy2024q4" }
+    extra: { 資本支出總額: 3206 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2025q1；DRAM／NAND 營收：f-fy2025q1；位元與 ASP 季變化：rm-fy2025q1，原文 DRAM：bit shipments up in the low-double-digit percent range、prices increasing in the high-single-digit percentage range；NAND：bit shipments and prices both decreasing in the low-single-digit percentage range；HBM 營收：講稿只說季增超過一倍，未給金額（rm-fy2025q1）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2025q1"
+  - period: "FY2025Q2"
+    start: "2024-11-29"
+    end: "2025-02-27"
+    status: "actual"
+    revenue: 8053
+    grossProfit: 2963
+    operatingExpenses: 1190
+    operatingIncome: 1773
+    nonOperating: -15
+    pretaxIncome: 1758
+    netIncome: 1583
+    eps: 1.41
+    epsNonGaap: 1.56
+    grossMarginNonGaap: 37.9
+    sharesDiluted: 1123
+    inventory: 9007
+    depreciation: 2079
+    capex: 3085
+    dramRevenue: 6123
+    nandRevenue: 1855
+    hbmRevenue: 1000
+    dramBitQoq: -8
+    dramAspQoq: 5
+    nandBitQoq: 1
+    nandAspQoq: -18
+    guidance: { basis: "non-GAAP", revenue: 7900, revenueLow: 7700, revenueHigh: 8100, grossMargin: 38.5, eps: 1.43, issued: "2024-12-18", src: "pr-fy2025q1" }
+    extra: { 資本支出總額: 4055 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2025q2；DRAM／NAND 營收：f-fy2025q2；位元與 ASP 季變化：rm-fy2025q2，原文 DRAM：bit shipments decreasing in the high-single-digit percentage range、prices increasing in the mid-single-digit percentage range（組合改善）；NAND：bit shipments modestly higher、prices decreasing in the high-teens percentage range；HBM 營收：HBM 營收季增逾 50%，「over $1 billion」（下限值）（rm-fy2025q2）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2025q2"
+  - period: "FY2025Q3"
+    start: "2025-02-28"
+    end: "2025-05-29"
+    status: "actual"
+    revenue: 9301
+    grossProfit: 3508
+    operatingExpenses: 1339
+    operatingIncome: 2169
+    nonOperating: -56
+    pretaxIncome: 2113
+    netIncome: 1885
+    eps: 1.68
+    epsNonGaap: 1.91
+    grossMarginNonGaap: 39
+    sharesDiluted: 1125
+    inventory: 8727
+    depreciation: 2094
+    capex: 2660
+    dramRevenue: 7071
+    nandRevenue: 2155
+    dramBitQoq: 20
+    dramAspQoq: -2
+    nandBitQoq: 25
+    nandAspQoq: -8
+    guidance: { basis: "non-GAAP", revenue: 8800, revenueLow: 8600, revenueHigh: 9000, grossMargin: 36.5, eps: 1.57, issued: "2025-03-20", src: "pr-fy2025q2" }
+    extra: { 資本支出總額: 2938 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2025q3；DRAM／NAND 營收：f-fy2025q3；位元與 ASP 季變化：rm-fy2025q3，原文 DRAM：bit shipments increasing over 20%、prices decreasing in the low single-digit percentage range（消費性組合提高）；NAND：bit shipments increasing in the mid-20s percentage range、prices decreasing in the high single-digit percentage range；HBM 營收：講稿只說季增近 50%，未給金額（rm-fy2025q3）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2025q3"
+  - period: "FY2025Q4"
+    start: "2025-05-30"
+    end: "2025-08-28"
+    status: "actual"
+    revenue: 11315
+    grossProfit: 5054
+    operatingExpenses: 1400
+    operatingIncome: 3654
+    nonOperating: -23
+    pretaxIncome: 3631
+    netIncome: 3201
+    eps: 2.83
+    epsNonGaap: 3.03
+    grossMarginNonGaap: 45.7
+    sharesDiluted: 1131
+    inventory: 8355
+    depreciation: 2149
+    capex: 4927
+    dramRevenue: 8984
+    nandRevenue: 2252
+    hbmRevenue: 2000
+    dramBitQoq: 12
+    dramAspQoq: 12
+    nandBitQoq: -5
+    nandAspQoq: 8
+    guidance: { basis: "non-GAAP", revenue: 10700, revenueLow: 10400, revenueHigh: 11000, grossMargin: 42, eps: 2.5, issued: "2025-06-25", src: "pr-fy2025q3" }
+    extra: { 資本支出總額: 5658 }
+    note: "來源：損益、稀釋 EPS 與股數（第四季 EPS 與股數取自當季新聞稿）、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2025q4；DRAM／NAND 營收：f-fy2025q4 全年值減 f-fy2025q3 九個月累計；位元與 ASP 季變化：rm-fy2025q4，原文 DRAM：bit shipments increased in the low-teens percent、prices increased in the low-double-digit percentage range；NAND：bit shipments declined in the mid-single-digit percentage range、prices increased in the high single-digit percentage range（組合有利）；HBM 營收：HBM 營收「nearly $2 billion」（接近 20 億美元的約數，年化約 80 億美元）（rm-fy2025q4）；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2025q4"
+  - period: "FY2026Q1"
+    start: "2025-08-29"
+    end: "2025-11-27"
+    status: "actual"
+    revenue: 13643
+    grossProfit: 7646
+    operatingExpenses: 1510
+    operatingIncome: 6136
+    nonOperating: -75
+    pretaxIncome: 6061
+    netIncome: 5240
+    eps: 4.6
+    epsNonGaap: 4.78
+    grossMarginNonGaap: 56.8
+    sharesDiluted: 1138
+    inventory: 8205
+    depreciation: 2212
+    capex: 4505
+    dramRevenue: 10812
+    nandRevenue: 2743
+    dramBitQoq: 1
+    dramAspQoq: 20
+    nandBitQoq: 6.5
+    nandAspQoq: 15
+    guidance: { basis: "non-GAAP", revenue: 12500, revenueLow: 12200, revenueHigh: 12800, grossMargin: 51.5, eps: 3.75, issued: "2025-09-23", src: "pr-fy2025q4" }
+    extra: { 資本支出總額: 5389 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2026q1；DRAM／NAND 營收：f-fy2026q1；位元與 ASP 季變化：rm-fy2026q1，原文 DRAM：bit shipments were up slightly、prices increased approximately 20%；NAND：bit shipments increased in the mid-to-high-single-digit percentage range、prices increased in the mid-teens percentage range；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2026q1"
+  - period: "FY2026Q2"
+    start: "2025-11-28"
+    end: "2026-02-26"
+    status: "actual"
+    revenue: 23860
+    grossProfit: 17755
+    operatingExpenses: 1620
+    operatingIncome: 16135
+    nonOperating: 25
+    pretaxIncome: 16160
+    netIncome: 13785
+    eps: 12.07
+    epsNonGaap: 12.2
+    grossMarginNonGaap: 74.9
+    sharesDiluted: 1142
+    inventory: 8267
+    depreciation: 2286
+    capex: 5004
+    dramRevenue: 18768
+    nandRevenue: 4997
+    dramBitQoq: 5
+    dramAspQoq: 65
+    nandBitQoq: 2
+    nandAspQoq: 78
+    guidance: { basis: "non-GAAP", revenue: 18700, revenueLow: 18300, revenueHigh: 19100, grossMargin: 68, eps: 8.42, issued: "2025-12-17", src: "pr-fy2026q1" }
+    extra: { 資本支出總額: 6387 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2026q2；DRAM／NAND 營收：f-fy2026q2；位元與 ASP 季變化：rm-fy2026q2，原文 DRAM：bit shipments were up mid-single digits、prices increased in the mid-60s percentage range；NAND：bit shipments increased in the low-single-digit percentage range、prices increased in the high-70s percentage range；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）。"
+    src: "pr-fy2026q2"
+  - period: "FY2026Q3"
+    start: "2026-02-27"
+    end: "2026-05-28"
+    status: "actual"
+    revenue: 41456
+    grossProfit: 35056
+    operatingExpenses: 1738
+    operatingIncome: 33318
+    nonOperating: -106
+    pretaxIncome: 33212
+    netIncome: 28243
+    eps: 24.67
+    epsNonGaap: 25.11
+    grossMarginNonGaap: 84.9
+    sharesDiluted: 1145
+    inventory: 8567
+    depreciation: 2364
+    capex: 7084
+    dramRevenue: 31328
+    nandRevenue: 9943
+    dramBitQoq: 2
+    dramAspQoq: 62
+    nandBitQoq: 5
+    nandAspQoq: 85
+    guidance: { basis: "non-GAAP", revenue: 33500, revenueLow: 32750, revenueHigh: 34250, grossMargin: 81, eps: 19.15, issued: "2026-03-18", src: "pr-fy2026q2" }
+    extra: { 資本支出總額: 7826 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2026q3；DRAM／NAND 營收：f-fy2026q3；位元與 ASP 季變化：rm-fy2026q3，原文 DRAM：bit shipments were up low-single-digit percentage range、prices increased in the low-60s percentage range；NAND：bit shipments increased in the mid-single-digit percentage range、prices increased in the mid-80s percentage range；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）；財測：毛利率財測原文為 approximately 81%（不再給區間）。"
+    src: "pr-fy2026q3"
+  - period: "FY2026Q4"
+    start: "2026-05-29"
+    end: "2026-09-03"
+    status: "actual"
+    revenue: 54229
+    grossProfit: 47047
+    operatingExpenses: 3296
+    operatingIncome: 43751
+    nonOperating: 487
+    pretaxIncome: 44238
+    netIncome: 37701
+    eps: 32.87
+    epsNonGaap: 33.42
+    grossMarginNonGaap: 87
+    sharesDiluted: 1147
+    inventory: 10372
+    depreciation: 2641
+    capex: 10774
+    dramRevenue: 39771
+    nandRevenue: 14102
+    dramBitQoq: 5
+    dramAspQoq: 18
+    nandBitQoq: 10
+    nandAspQoq: 30
+    guidance: { basis: "non-GAAP", revenue: 50000, revenueLow: 49000, revenueHigh: 51000, grossMargin: 86, eps: 31, issued: "2026-06-24", src: "pr-fy2026q3" }
+    extra: { 資本支出總額: 11110, 週數: 14 }
+    note: "來源：損益、稀釋 EPS 與股數（第四季 EPS 與股數取自當季新聞稿）、存貨、折舊攤銷、資本支出總額取自 sec-companyfacts；非 GAAP 毛利率、非 GAAP EPS、淨資本支出取自 pr-fy2026q4；DRAM／NAND 營收：f-fy2026q4 全年值減 f-fy2026q3 九個月累計；位元與 ASP 季變化：rm-fy2026q4，原文 DRAM：bit shipments were up mid-single-digit percentage range、prices increased high-teens percentage range；NAND：bit shipments increased approximately 10%、prices increased approximately 30%；capex 為公司公布的「Investments in capital expenditures, net」（購置支出扣除出售設備收入、合作夥伴出資與政府補助款）；本季為 14 週（53 週會計年度）；財測：毛利率財測原文為 approximately 86%；下一季（FY2027 第一季，2026-09-04 至 2026-12-03）財測見 events 2026-09-30。"
+    src: "pr-fy2026q4"
+monthly: []
+annual: []
+events:
+  - { date: "2018-02-05", title: "上修 FY2018 第二季財測", detail: "非 GAAP 營收財測由 68–72 億美元上修為 72.0–73.5 億美元，EPS 由 2.51–2.65 美元上修為 2.70–2.75 美元（以 12.41 億股計）。", src: "upd-fy2018q2" }
+  - { date: "2018-05-21", title: "上修 FY2018 第三季財測", detail: "非 GAAP 營收財測由 72–76 億美元上修為 77–78 億美元，EPS 由 2.76–2.90 美元上修為 3.12–3.16 美元，理由是執行良好與產業狀況健康。", src: "upd-fy2018q3" }
+  - { date: "2018-12-18", title: "FY2019 資本支出下修至 90–95 億美元", detail: "需求轉弱，FY2019 資本支出由原計畫下修 12.5 億美元（中值）至 90–95 億美元，前段設備支出年減；並把 2019 曆年 DRAM 位元產出成長由約 20% 降至約 15%。", src: "rm-fy2019q1" }
+  - { date: "2018-12-18", title: "1Y DRAM 開始營收出貨、96 層 NAND 出貨", detail: "1X 奈米 DRAM 出貨過半（crossover），1Y 奈米產品開始營收出貨；96 層 3D NAND 開始出貨，NAND 高價值方案占 NAND 位元過半。", src: "rm-fy2019q1" }
+  - { date: "2019-03-20", title: "DRAM、NAND 各減少約 5% 投片", detail: "因客戶需求下修，閒置約 5% 的 DRAM 投片，NAND 投片也減少約 5%（主要在舊製程）；FY2019 資本支出再降至約 90 億美元。", src: "rm-fy2019q2" }
+  - { date: "2019-06-25", title: "NAND 減產擴大到約 10%", detail: "NAND 投片減少幅度由約 5% 擴大到約 10%，DRAM 維持約 5% 減產，以降低下半年供給成長。", src: "rm-fy2019q3" }
+  - { date: "2019-09-26", title: "FY2019 DRAM 每位元成本降幅領先；FY2020 成本降幅放緩", detail: "FY2019 DRAM 每位元成本降幅領先產業並優於內部計畫；預估 FY2020 DRAM 成本降幅放緩到高個位數（high single digits），NAND 因轉換到替換閘極（RG）架構，FY2020 成本幾乎不降。1Z DRAM 在 FY2019 第四季開始量產。", src: "rm-fy2019q4" }
+  - { date: "2019-10-17", title: "IMFT 稼動率不足費用", detail: "10-K 揭露 IMFT（3D XPoint）稼動率不足使毛利每季平均減少約 1 億美元（2019 年）與 6,500 萬美元（2018 年），並預估自 FY2020 第一季起增至每季約 1.5 億美元。", src: "f-fy2019q4" }
+  - { date: "2020-06-29", title: "128 層第一代替換閘極 NAND 量產", detail: "128 層第一代 RG NAND 在 FY2020 第三季進入量產並開始出貨給客戶，RG 預計在 2020 年底前占 NAND 產出的相當比重；1-alpha DRAM 預計 FY2021 導入。", src: "rm-fy2020q3" }
+  - { date: "2020-09-29", title: "FY2021 成本降幅目標", detail: "預估 FY2021 DRAM 成本降幅為中個位數（mid-single-digit），同規格降幅略高；NAND 成本降幅為 10% 出頭到 15% 左右（low to mid-teens）。FY2021 資本支出約 90 億美元，只靠製程轉換、不增加投片來維持位元市占。", src: "rm-fy2020q4" }
+  - { date: "2021-01-07", title: "176 層 NAND 量產", detail: "2020 年 11 月初開始量產第二代替換閘極 176 層 NAND；1-alpha DRAM 預計 2021 上半年量產。公司提醒 DDR5 等更複雜介面使每片晶圓位元成長放緩。", src: "rm-fy2021q1" }
+  - { date: "2021-03-31", title: "1-alpha DRAM 量產；調整 FY2021 成本降幅", detail: "FY2021 第二季開始量產 1-alpha DRAM；因產品組合變化，FY2021 DRAM 成本降幅將略高於先前的中個位數預估，NAND 則略低於先前的 low to mid-teens 預估。", src: "rm-fy2021q2" }
+  - { date: "2021-09-28", title: "FY2022 資本支出 110–120 億美元", detail: "1-alpha DRAM 與 176 層 NAND 持續爬坡，可在 FY2022 帶來不錯的前段成本下降；2022 曆年 DRAM 與 NAND 位元出貨成長預期與產業相當；FY2022 資本支出預估 110–120 億美元。", src: "rm-fy2021q4" }
+  - { date: "2022-09-29", title: "232 層 NAND 量產、FY2023 資本支出砍至約 80 億美元", detail: "率先量產 232 層 NAND；1-beta DRAM 預計 2022 年底開始量產。FY2023 資本支出降至約 80 億美元（年減逾 30%，晶圓廠設備近腰斬），並在部分 DRAM 與 NAND 產線降低稼動率；Boise 新 DRAM 廠到 2030 年前投資約 150 億美元。", src: "rm-fy2022q4" }
+  - { date: "2022-12-21", title: "DRAM、NAND 投片減少約 20%", detail: "DRAM 與 NAND 投片減少約 20%，減產效果自 FY2023 第三季完整反映；預估減產使 FY2023 銷貨成本增加約 4.6 億美元，多數在下半年。FY2023 資本支出再降到 70–75 億美元。", src: "rm-fy2023q1" }
+  - { date: "2022-12-21", title: "1-beta 導入、放慢新製程爬坡；1-gamma 延到 2025", detail: "1-beta DRAM 在 FY2023 第一季導入，位元密度比 1-alpha 高 35% 以上；因需求轉弱放慢 1-beta 與 232 層的爬坡，1-gamma 導入延到 2025 年。扣除稼動率不足影響，FY2023 DRAM 每位元成本仍可健康下降，NAND 則受新加坡能源成本上漲拖累。", src: "rm-fy2023q1" }
+  - { date: "2023-03-28", title: "投片減少擴大到約 25%", detail: "DRAM 與 NAND 投片減少約 25%，FY2023 資本支出約 70 億美元（年減逾 40%，晶圓廠設備減逾 50%）；第三季財測假設再提列約 5 億美元存貨跌價，且未計入跌價金額變動的影響。", src: "rm-fy2023q2" }
+  - { date: "2023-03-29", title: "存貨跌價 14.3 億美元", detail: "10-Q 揭露 FY2023 第二季因 DRAM、NAND 售價下跌，提列存貨淨變現價值跌價 14.3 億美元，並預估第三季再提列約 5 億美元（實際 4.01 億美元）。跌價後的存貨售出時，後續季度銷貨成本會較低。", src: "f-fy2023q2" }
+  - { date: "2023-06-28", title: "投片減少接近 30%", detail: "DRAM 與 NAND 投片減少幅度接近 30%，並預期減產延續到 2024 年。", src: "rm-fy2023q3" }
+  - { date: "2023-09-27", title: "閒置設備轉往先進製程，晶圓產能結構性下降", detail: "把減產閒置的設備移去支援先進製程爬坡，因先進製程步驟較多，DRAM 與 NAND 的總晶圓產能因此結構性下降；舊製程稼動率不足延續到 2024 年。", src: "rm-fy2023q4" }
+  - { date: "2023-12-20", title: "HBM3E 2024 年初量產；HBM 晶圓消耗是 D5 的兩倍以上", detail: "HBM3E 預計 2024 年初量產，FY2024 HBM 營收數億美元；同樣位元數下 HBM 消耗的晶圓超過 DDR5 的兩倍。FY2024 前段成本降幅預估 DRAM 為中到高個位數、NAND 約 low teens。", src: "rm-fy2024q1" }
+  - { date: "2024-03-20", title: "HBM3E 晶圓消耗約為 D5 的 3 倍，2024 年產能售罄", detail: "產業層面 HBM3E 生產同樣位元數需要約 3 倍於 DDR5 的晶圓（同製程），HBM4 的比例更高；美光 2024 年 HBM 已售罄，2025 年供給大多已分配。", src: "rm-fy2024q2" }
+  - { date: "2024-06-26", title: "HBM 首季營收逾 1 億美元，2024、2025 年售罄", detail: "FY2024 第三季 HBM3E 營收超過 1 億美元，毛利率高於 DRAM 平均；2024、2025 年 HBM 售罄且多數價格已議定。FY2024 DRAM 前段成本（不含 HBM）降幅預估為高個位數、NAND 約 low teens；FY2025 資本支出約為營收的 35% 上下。", src: "rm-fy2024q3" }
+  - { date: "2024-09-25", title: "FY2025 成本降幅目標", detail: "FY2025 DRAM 前段成本（不含 HBM）預估降幅為中到高個位數，NAND 為 low to mid-teens；FY2024 DRAM 前段成本降幅達年初預估上緣，NAND 符合預期。HBM 占產業 DRAM 位元比重預估由 2023 年 1.5% 升到 2025 年約 6%。", src: "rm-fy2024q4" }
+  - { date: "2024-12-18", title: "CHIPS 補助與新加坡 HBM 封裝廠；NAND 投片減少 mid-teens", detail: "與美國商務部完成最高 61 億美元的 CHIPS 補助（愛達荷與紐約 DRAM 廠）；在新加坡新建 HBM 先進封裝廠，2027 年起擴充封裝產能；NAND 投片較先前減少約 15%（mid-teens）；FY2025 資本支出約 140 億美元 ± 5 億美元。", src: "rm-fy2025q1" }
+  - { date: "2025-03-20", title: "HBM 季營收逾 10 億美元；1-gamma 首批出貨", detail: "HBM 營收季增逾 50%、單季超過 10 億美元；推出第一個使用 EUV 的 1-gamma DRAM 製程並首度出貨 1-gamma DDR5，位元密度比 1-beta 高 30% 以上；HBM 對一般 DRAM 的晶圓交換比（trade ratio）預期在 HBM4 再提高，HBM4E 時將超過 4 比 1。", src: "rm-fy2025q2" }
+  - { date: "2025-06-25", title: "美國 2,000 億美元投資計畫、ID1 2027 下半年產出", detail: "宣布在美國約 2,000 億美元的投資計畫（較先前再增加 300 億美元），包括愛達荷第二座 DRAM 廠（ID2）與維吉尼亞 Manassas 廠擴建；ID1 首批晶圓預計 2027 下半年產出。", src: "rm-fy2025q3" }
+  - { date: "2025-09-23", title: "HBM 季營收近 20 億美元；FY2025 成本實績", detail: "FY2025 第四季 HBM 營收接近 20 億美元（年化約 80 億美元），HBM 市占可望在 2025 年第三季（曆年季度）達到與 DRAM 整體市占相當的目標；FY2025 DRAM 含 HBM 的全口徑成本只下降低個位數，NAND 全口徑成本下降約 low teens；FY2025 資本支出 138 億美元，FY2026 將更高。", src: "rm-fy2025q4" }
+  - { date: "2025-12-17", title: "2026 年 HBM 全部議定、FY2026 資本支出上修到約 200 億美元", detail: "2026 年 HBM（含 HBM4）的價格與數量已全部議定；預估 HBM 市場由 2025 年約 350 億美元成長到 2028 年約 1,000 億美元。1-gamma 將是 2026 年 DRAM 位元成長主力、下半年占位元產出過半；ID1 提前到 2027 年年中產出、紐約首座廠 2026 年初動工；FY2026 資本支出由 180 億美元上修到約 200 億美元。", src: "rm-fy2026q1" }
+  - { date: "2026-03-18", title: "首份五年期策略客戶協議、FY2026 資本支出逾 250 億美元", detail: "簽下第一份五年期策略客戶協議（SCA）；G9 NAND 預計 2026 年年中占 NAND 位元過半；新加坡新 NAND 廠動工，2028 下半年產出；FY2026 資本支出預估超過 250 億美元，FY2027 營建類資本支出年增逾 100 億美元。", src: "rm-fy2026q2" }
+  - { date: "2026-06-24", title: "預期 DRAM 每位元成本將上升；台灣銅鑼廠 2027 年中出貨", detail: "公司預期需求偏向高效能、高價值產品（每位元成本較高），加上大量新廠產能投產，混合 DRAM 每位元成本將由目前水準上升；HBM4 12-high 爬坡速度是 HBM3E 12-high 的兩倍，HBM4 已出貨逾 10 億美元；新取得的台灣銅鑼廠預計 2027 年中開始有意義出貨；FY2026 資本支出約 270 億美元。", src: "rm-fy2026q3" }
+  - { date: "2026-09-30", title: "2027 年 HBM 大多已簽約、策略客戶協議擴大", detail: "2027 年 HBM 位元供給絕大部分已完成協議且價格年增明顯，HBM 與一般 DRAM 的毛利率差距縮小；已簽 26 份策略客戶協議，估占 2030 年前營收逾 35%，其中四分之三有定價框架（多數有價格上下限）。1-gamma DRAM 與 G9 NAND 已是最大量產製程，下一代製程預計 2027 下半年量產。", src: "rm-fy2026q4" }
+  - { date: "2026-09-30", title: "新廠時程：日本、台灣、新加坡、美國", detail: "日本 DRAM 擴建廠動土，2028 年底開始產出；台灣銅鑼廠 2027 年中有意義出貨；新加坡 HBM 封裝廠 2027 年初產出、新 NAND 廠 2028 下半年產出；愛達荷 ID1 2027 年中、ID2 2028 年底產出晶圓，紐約首座廠 2030 年產出。公司提醒新廠需數季才逐步放量。", src: "rm-fy2026q4" }
+  - { date: "2026-09-30", title: "FY2027 第一季財測", detail: "營收 615 億美元 ± 15 億美元（區間 600–630 億美元）；毛利率 GAAP 約 85.95%、非 GAAP 約 86.25%；營業費用 GAAP 約 23.1 億美元、非 GAAP 約 20.6 億美元；稀釋 EPS GAAP 37.84 ± 1.00 美元、非 GAAP 38.15 ± 1.00 美元（以約 11.5 億股計）。", src: "pr-fy2026q4" }
+  - { date: "2026-09-30", title: "FY2027 展望與資本支出", detail: "預期 FY2027 再創新高、每季營收逐季成長；FY2026 第四季認列的獎金多數計入存貨，主要壓低 FY2027 第一季毛利率，之後各季毛利率預期更高、漲價幅度趨緩；FY2027 營業費用約增加 25 億美元；FY2027 第一季資本支出約 115 億美元、上半年約 250 億美元，下半年更高。", src: "rm-fy2026q4" }
+sources:
+  sec-companyfacts: { title: "Micron Technology XBRL company facts (10-Q / 10-K financial data)", publisher: "U.S. Securities and Exchange Commission (EDGAR)", url: "https://data.sec.gov/api/xbrl/companyfacts/CIK0000723125.json", type: "filing", lang: "en", accessed: "2026-10-23", note: "美光向 SEC 申報的 10-Q／10-K 結構化資料：營收、毛利、營業利益、稅前與稅後淨利、稀釋 EPS 與股數、存貨、折舊攤銷與購置不動產廠房設備支出；第四季以全年值減前三季求得，現金流量項目以年初至今累計值相減" }
+  pr-fy2016q2: { title: "Micron Technology, Inc., Reports Results for the Second Quarter of Fiscal 2016", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2016/Micron-Technology-Inc--Reports-Results-for-the-Second-Quarter-of-Fiscal-2016-03-30-2016/default.aspx", type: "press-release", lang: "en", published: "2016-03-30", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2016q3: { title: "Micron Technology, Inc., Reports Results for the Third Quarter of Fiscal 2016", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2016/Micron-Technology-Inc--Reports-Results-for-the-Third-Quarter-of-Fiscal-2016-06-30-2016/default.aspx", type: "press-release", lang: "en", published: "2016-06-30", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2016q4: { title: "Micron Technology, Inc., Reports Results for the Fourth Quarter and 2016 Fiscal Year", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2016/Micron-Technology-Inc--Reports-Results-for-the-Fourth-Quarter-and-2016-Fiscal-Year-10-04-2016/default.aspx", type: "press-release", lang: "en", published: "2016-10-04", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2017q1: { title: "Micron Technology, Inc., Reports Results for the First Quarter of Fiscal 2017", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2016/Micron-Technology-Inc--Reports-Results-for-the-First-Quarter-of-Fiscal-2017-12-21-2016/default.aspx", type: "press-release", lang: "en", published: "2016-12-21", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2017q2: { title: "Micron Technology, Inc., Reports Results for the Second Quarter of Fiscal 2017", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2017/Micron-Technology-Inc--Reports-Results-for-the-Second-Quarter-of-Fiscal-2017-03-23-2017/default.aspx", type: "press-release", lang: "en", published: "2017-03-23", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2017q3: { title: "Micron Technology, Inc., Reports Results for the Third Quarter of Fiscal 2017", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2017/Micron-Technology-Inc--Reports-Results-for-the-Third-Quarter-of-Fiscal-2017-06-29-2017/default.aspx", type: "press-release", lang: "en", published: "2017-06-29", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2017q4: { title: "Micron Technology, Inc., Reports Results for The Fourth Quarter and Full Year of 2017", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2017/Micron-Technology-Inc--Reports-Results-for-The-Fourth-Quarter-and-Full-Year-of-2017-09-26-2017/default.aspx", type: "press-release", lang: "en", published: "2017-09-26", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2018q1: { title: "Micron Technology, Inc., Reports Results for the First Quarter of Fiscal 2018", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2017/Micron-Technology-Inc--Reports-Results-for-the-First-Quarter-of-Fiscal-2018-12-19-2017/default.aspx", type: "press-release", lang: "en", published: "2017-12-19", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2018q2: { title: "Micron Technology, Inc., Reports Results for the Second Quarter of Fiscal 2018", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2018/Micron-Technology-Inc--Reports-Results-for-the-Second-Quarter-of-Fiscal-2018-03-22-2018/default.aspx", type: "press-release", lang: "en", published: "2018-03-22", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2018q3: { title: "Micron Technology, Inc., Reports Results for the Third Quarter of Fiscal 2018", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2018/Micron-Technology-Inc--Reports-Results-for-the-Third-Quarter-of-Fiscal-2018-06-20-2018/default.aspx", type: "press-release", lang: "en", published: "2018-06-20", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2018q4: { title: "Micron Technology, Inc., Reports Results for the Fourth Quarter and Full Year of Fiscal 2018", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2018/Micron-Technology-Inc--Reports-Results-for-the-Fourth-Quarter-and-Full-Year-of-Fiscal-2018-09-20-2018/default.aspx", type: "press-release", lang: "en", published: "2018-09-20", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2019q1: { title: "Micron Technology, Inc., Reports Results for the First Quarter of Fiscal 2019", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2018/Micron-Technology-Inc--Reports-Results-for-the-First-Quarter-of-Fiscal-2019-12-18-2018/default.aspx", type: "press-release", lang: "en", published: "2018-12-18", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2019q2: { title: "Micron Technology, Inc., Reports Results for the Second Quarter of Fiscal 2019", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2019/Micron-Technology-Inc--Reports-Results-for-the-Second-Quarter-of-Fiscal-2019-03-20-2019/default.aspx", type: "press-release", lang: "en", published: "2019-03-20", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2019q3: { title: "Micron Technology, Inc. Reports Results for the Third Quarter of Fiscal 2019", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2019/Micron-Technology-Inc--Reports-Results-for-the-Third-Quarter-of-Fiscal-2019-06-25-2019/default.aspx", type: "press-release", lang: "en", published: "2019-06-25", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2019q4: { title: "Micron Technology, Inc. Reports Results for the Fourth Quarter and Full Year of Fiscal 2019", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2019/Micron-Technology-Inc--Reports-Results-for-the-Fourth-Quarter-and-Full-Year-of-Fiscal-2019-09-26-2019/default.aspx", type: "press-release", lang: "en", published: "2019-09-26", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2020q1: { title: "Micron Technology, Inc. Reports Results for the First Quarter of Fiscal 2020", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2019/Micron-Technology-Inc--Reports-Results-for-the-First-Quarter-of-Fiscal-2020-12-18-2019/default.aspx", type: "press-release", lang: "en", published: "2019-12-18", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2020q2: { title: "MICRON TECHNOLOGY, INC. REPORTS RESULTS FOR THE SECOND QUARTER OF FISCAL 2020", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2020/MICRON-TECHNOLOGY-INC--REPORTS-RESULTS-FOR-THE-SECOND-QUARTER-OF-FISCAL-2020-03-25-2020/default.aspx", type: "press-release", lang: "en", published: "2020-03-25", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2020q3: { title: "Micron Technology, Inc. Reports Results for the Third Quarter of Fiscal 2020", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2020/Micron-Technology-Inc--Reports-Results-for-the-Third-Quarter-of-Fiscal-2020-06-29-2020/default.aspx", type: "press-release", lang: "en", published: "2020-06-29", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2020q4: { title: "Micron Technology, Inc. Reports Results for the Fourth Quarter and Full Year of Fiscal 2020", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2020/Micron-Technology-Inc--Reports-Results-for-the-Fourth-Quarter-and-Full-Year-of-Fiscal-2020-09-29-2020/default.aspx", type: "press-release", lang: "en", published: "2020-09-29", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2021q1: { title: "Micron Technology, Inc. Reports Results for the First Quarter of Fiscal 2021", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2021/Micron-Technology-Inc--Reports-Results-for-the-First-Quarter-of-Fiscal-2021-01-07-2021/default.aspx", type: "press-release", lang: "en", published: "2021-01-07", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2021q2: { title: "Micron Technology, Inc. Reports Results for the Second Quarter of Fiscal 2021", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2021/Micron-Technology-Inc--Reports-Results-for-the-Second-Quarter-of-Fiscal-2021-03-31-2021/default.aspx", type: "press-release", lang: "en", published: "2021-03-31", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2021q3: { title: "Micron Technology, Inc. Reports Results for the Third Quarter of Fiscal 2021", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2021/Micron-Technology-Inc--Reports-Results-for-the-Third-Quarter-of-Fiscal-2021-06-30-2021/default.aspx", type: "press-release", lang: "en", published: "2021-06-30", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2021q4: { title: "Micron Technology, Inc. Reports Results for the Fourth Quarter and Full Year of Fiscal 2021", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2021/Micron-Technology-Inc--Reports-Results-for-the-Fourth-Quarter-and-Full-Year-of-Fiscal-2021-09-28-2021/default.aspx", type: "press-release", lang: "en", published: "2021-09-28", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2022q1: { title: "Micron Technology, Inc. Reports Results for the First Quarter of Fiscal 2022", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2021/Micron-Technology-Inc--Reports-Results-for-the-First-Quarter-of-Fiscal-2022-12-20-2021/default.aspx", type: "press-release", lang: "en", published: "2021-12-20", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2022q2: { title: "Micron Technology, Inc. Reports Results for the Second Quarter of Fiscal 2022", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2022/Micron-Technology-Inc--Reports-Results-for-the-Second-Quarter-of-Fiscal-2022-03-29-2022/default.aspx", type: "press-release", lang: "en", published: "2022-03-29", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2022q3: { title: "Micron Technology, Inc. Reports Results for the Third Quarter of Fiscal 2022", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2022/Micron-Technology-Inc--Reports-Results-for-the-Third-Quarter-of-Fiscal-2022-06-30-2022/default.aspx", type: "press-release", lang: "en", published: "2022-06-30", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2022q4: { title: "Micron Technology, Inc. Reports Results for the Fourth Quarter and Full Year of Fiscal 2022", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2022/Micron-Technology-Inc--Reports-Results-for-the-Fourth-Quarter-and-Full-Year-of-Fiscal-2022-09-29-2022/default.aspx", type: "press-release", lang: "en", published: "2022-09-29", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2023q1: { title: "Micron Technology, Inc. Reports Results for the First Quarter of Fiscal 2023", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2022/Micron-Technology-Inc--Reports-Results-for-the-First-Quarter-of-Fiscal-2023-12-21-2022/default.aspx", type: "press-release", lang: "en", published: "2022-12-21", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2023q2: { title: "Micron Technology, Inc. Reports Results for the Second Quarter of Fiscal 2023", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2023/Micron-Technology-Inc--Reports-Results-for-the-Second-Quarter-of-Fiscal-2023-03-28-2023/default.aspx", type: "press-release", lang: "en", published: "2023-03-28", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2023q3: { title: "Micron Technology, Inc. Reports Results for the Third Quarter of Fiscal 2023", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2023/Micron-Technology-Inc--Reports-Results-for-the-Third-Quarter-of-Fiscal-2023-06-28-2023/default.aspx", type: "press-release", lang: "en", published: "2023-06-28", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2023q4: { title: "Micron Technology, Inc. Reports Results for the Fourth Quarter and Full Year of Fiscal 2023", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2023/Micron-Technology-Inc--Reports-Results-for-the-Fourth-Quarter-and-Full-Year-of-Fiscal-2023-09-27-2023/default.aspx", type: "press-release", lang: "en", published: "2023-09-27", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2024q1: { title: "Micron Technology, Inc. Reports Results for the First Quarter of Fiscal 2024", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2023/Micron-Technology-Inc--Reports-Results-for-the-First-Quarter-of-Fiscal-2024-12-20-2023/default.aspx", type: "press-release", lang: "en", published: "2023-12-20", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2024q2: { title: "Micron Technology, Inc. Reports Results for the Second Quarter of Fiscal 2024", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2024/Micron-Technology-Inc--Reports-Results-for-the-Second-Quarter-of-Fiscal-2024-03-20-2024/default.aspx", type: "press-release", lang: "en", published: "2024-03-20", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2024q3: { title: "Micron Technology, Inc. Reports Results for the Third Quarter of Fiscal 2024", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2024/Micron-Technology-Inc--Reports-Results-for-the-Third-Quarter-of-Fiscal-2024-06-26-2024/default.aspx", type: "press-release", lang: "en", published: "2024-06-26", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2024q4: { title: "Micron Technology, Inc. Reports Results for the Fourth Quarter and Full Year of Fiscal 2024", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2024/Micron-Technology-Inc--Reports-Results-for-the-Fourth-Quarter-and-Full-Year-of-Fiscal-2024-09-25-2024/default.aspx", type: "press-release", lang: "en", published: "2024-09-25", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2025q1: { title: "Micron Technology, Inc. Reports Results for the First Quarter of Fiscal 2025", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2024/Micron-Technology-Inc--Reports-Results-for-the-First-Quarter-of-Fiscal-2025-12-18-2024/default.aspx", type: "press-release", lang: "en", published: "2024-12-18", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2025q2: { title: "Micron Technology, Inc. Reports Results for the Second Quarter of Fiscal 2025", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2025/Micron-Technology-Inc--Reports-Results-for-the-Second-Quarter-of-Fiscal-2025-03-20-2025/default.aspx", type: "press-release", lang: "en", published: "2025-03-20", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2025q3: { title: "Micron Technology, Inc. Reports Results for the Third Quarter of Fiscal 2025", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2025/Micron-Technology-Inc--Reports-Results-for-the-Third-Quarter-of-Fiscal-2025-06-25-2025/default.aspx", type: "press-release", lang: "en", published: "2025-06-25", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2025q4: { title: "Micron Technology, Inc. Reports Results for the Fourth Quarter and Full Year of Fiscal 2025", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2025/Micron-Technology-Inc--Reports-Results-for-the-Fourth-Quarter-and-Full-Year-of-Fiscal-2025-09-23-2025/default.aspx", type: "press-release", lang: "en", published: "2025-09-23", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2026q1: { title: "Micron Technology, Inc. Reports Results for the First Quarter of Fiscal 2026", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2025/Micron-Technology-Inc--Reports-Results-for-the-First-Quarter-of-Fiscal-2026-12-17-2025/default.aspx", type: "press-release", lang: "en", published: "2025-12-17", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2026q2: { title: "Micron Technology, Inc. Reports Results for the Second Quarter of Fiscal 2026", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2026/Micron-Technology-Inc--Reports-Results-for-the-Second-Quarter-of-Fiscal-2026-03-18-2026/default.aspx", type: "press-release", lang: "en", published: "2026-03-18", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2026q3: { title: "Micron Technology, Inc. Reports Record Results for the Third Quarter of Fiscal 2026", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2026/Micron-Technology-Inc--Reports-Record-Results-for-the-Third-Quarter-of-Fiscal-2026/default.aspx", type: "press-release", lang: "en", published: "2026-06-24", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  pr-fy2026q4: { title: "Micron Technology, Inc. Reports Record Fiscal Fourth-Quarter and Full-Year 2026 Results", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2026/Micron-Technology-Inc--Reports-Record-Fiscal-Fourth-Quarter-and-Full-Year-2026-Results/default.aspx", type: "press-release", lang: "en", published: "2026-09-30", accessed: "2026-10-23", note: "季度新聞稿（亦以 8-K 附件 99.1 申報）：GAAP 與非 GAAP 損益、淨資本支出、下季財測" }
+  upd-fy2018q2: { title: "Micron Updates Guidance for Fiscal Second Quarter", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2018/Micron-Updates-Guidance-for-Fiscal-Second-Quarter-02-05-2018/default.aspx", type: "press-release", lang: "en", published: "2018-02-05", accessed: "2026-10-23", note: "列出 FY2018 第二季原始財測（2017-12-19 發布）與上修後財測" }
+  upd-fy2018q3: { title: "Micron Hosts Analyst and Investor Event and Updates Guidance for Fiscal Third Quarter", publisher: "Micron Technology", url: "https://investors.micron.com/news/press-release/2018/Micron-Hosts-Analyst-and-Investor-Event-and-Updates-Guidance-for-Fiscal-Third-Quarter-05-21-2018/default.aspx", type: "press-release", lang: "en", published: "2018-05-21", accessed: "2026-10-23", note: "列出 FY2018 第三季原始財測（2018-03-22 發布）與上修後財測" }
+  sl-fy2018q3: { title: "Micron Technology Financial Results, Third Quarter Fiscal 2018 (earnings call slides)", publisher: "Micron Technology", url: "https://micron.gcs-web.com/static-files/8063d52d-39fc-436b-80d7-0d5a55b3a854", type: "ir-presentation", lang: "en", published: "2018-06-20", accessed: "2026-10-23", note: "FY2018 第三季法說會簡報（Micron 舊投資人網站 PDF）：第 17 頁「FQ4 2018 Guidance」非 GAAP 營收 80–84 億美元、毛利率 59–62%、營業費用 7.5 億 ± 0.25 億美元、稀釋 EPS 3.30 ± 0.07 美元（以 12.30 億股計）" }
+  sl-fy2018q4: { title: "Micron Technology Financial Results, Fourth Quarter Fiscal 2018 (earnings call slides)", publisher: "Micron Technology", url: "https://micron.gcs-web.com/static-files/4a0c6a44-538b-4b25-8b91-6232e9606cfc", type: "ir-presentation", lang: "en", published: "2018-09-20", accessed: "2026-10-23", note: "FY2018 第四季法說會簡報（Micron 舊投資人網站 PDF）：第 14 頁「Performance by Product Line」的 DRAM 與 Trade NAND 季比較（ASP 與出貨量），第 18 頁「FQ1 2019 Guidance」非 GAAP 營收 79–83 億美元、毛利率 57–60%、稀釋 EPS 2.95 ± 0.07 美元（以約 11.98 億股計）" }
+  rm-fy2019q4: { title: "Micron Fiscal Q4 2019 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2019/q4/Micron-Fiscal-Q4-2019-Earnings-Call-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2019-09-26", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2019q4: { title: "Micron Technology Form 10-K for the period ended 2019-08-29", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2019/q4/2019-10-Kv2.pdf", type: "filing", lang: "en", published: "2019-10-17", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2019q3: { title: "Micron Fiscal Q3 2019 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2019/q3/Micron-Fiscal-Q3-2019-Earnings-Call-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2019-06-25", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2019q3: { title: "Micron Technology Form 10-Q for the period ended 2019-05-30", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2019/q3/2019-Q3-Final-As-Filed-With-All-Certs.pdf", type: "filing", lang: "en", published: "2019-06-26", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2019q2: { title: "Micron Fiscal Q2 2019 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2019/q2/FQ2-19-Earnings-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2019-03-20", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2019q2: { title: "Micron Technology Form 10-Q for the period ended 2019-02-28", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2019/q2/2019-Q2-Final-As-Filed-with-All-Certs.pdf", type: "filing", lang: "en", published: "2019-03-21", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2019q1: { title: "Micron Fiscal Q1 2019 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2019/q1/Micron-Fiscal-Q1-2019-Earnings-Call-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2018-12-18", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2019q1: { title: "Micron Technology Form 10-Q for the period ended 2018-11-29", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2019/q1/2019-10Q1-As-Filed-With-All-Exhibits.pdf", type: "filing", lang: "en", published: "2018-12-19", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2020q4: { title: "Micron Fiscal Q4 2020 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2020/q4/Q4-2020-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2020-09-29", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2020q4: { title: "Micron Technology Form 10-K for the period ended 2020-09-03", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2020/q4/2020-10-K-As-Filed-with-Certs.pdf", type: "filing", lang: "en", published: "2020-10-19", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2020q3: { title: "Micron Fiscal Q3 2020 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2020/q3/Micron-Q3-2020-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2020-06-29", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2020q3: { title: "Micron Technology Form 10-Q for the period ended 2020-05-28", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2020/q3/0000723125-20-000067.pdf", type: "filing", lang: "en", published: "2020-06-29", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2020q2: { title: "Micron Fiscal Q2 2020 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2020/q2/Micron-Fiscal-Q2-2020-Earnings-Call-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2020-03-25", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2020q2: { title: "Micron Technology Form 10-Q for the period ended 2020-02-27", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2020/q2/2020-10Q2-As-Filed-With-Certs.pdf", type: "filing", lang: "en", published: "2020-03-26", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2020q1: { title: "Micron Fiscal Q1 2020 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2020/q1/Micron-Fiscal-Q1-2020-Earnings-Call-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2019-12-18", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2020q1: { title: "Micron Technology Form 10-Q for the period ended 2019-11-28", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2020/q1/2020-10-Q-As-Filed.pdf", type: "filing", lang: "en", published: "2019-12-20", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2021q4: { title: "Micron Fiscal Q4 2021 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2021/q4/Q4-2021-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2021-09-28", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2021q4: { title: "Micron Technology Form 10-K for the period ended 2021-09-02", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2021/q4/2021-10-K-As-Filed-with-Certs-and-Exhibits.pdf", type: "filing", lang: "en", published: "2021-10-08", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2021q3: { title: "Micron Fiscal Q3 2021 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2021/q3/Micron-Q3_2021_Prepared_Remarks_Document.pdf", type: "earnings-call", lang: "en", published: "2021-06-30", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2021q3: { title: "Micron Technology Form 10-Q for the period ended 2021-06-03", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2021/q3/0000723125-21-000052.pdf", type: "filing", lang: "en", published: "2021-07-01", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2021q2: { title: "Micron Fiscal Q2 2021 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2021/q2/Q2-2021-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2021-03-31", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2021q2: { title: "Micron Technology Form 10-Q for the period ended 2021-03-04", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2021/q2/0000723125-21-000032.pdf", type: "filing", lang: "en", published: "2021-04-01", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2021q1: { title: "Micron Fiscal Q1 2021 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2021/q1/Q1-2021-Prepared-Remarks-Doc.pdf", type: "earnings-call", lang: "en", published: "2021-01-07", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2021q1: { title: "Micron Technology Form 10-Q for the period ended 2020-12-03", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2021/q1/0000723125-21-000012.pdf", type: "filing", lang: "en", published: "2021-01-08", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2022q4: { title: "Micron Fiscal Q4 2022 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2022/q4/Q4-2022-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2022-09-29", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2022q4: { title: "Micron Technology Form 10-K for the period ended 2022-09-01", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2022/q4/0000723125-22-000048.pdf", type: "filing", lang: "en", published: "2022-10-07", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2022q3: { title: "Micron Fiscal Q3 2022 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2022/q3/FQ3-22-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2022-06-30", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2022q3: { title: "Micron Technology Form 10-Q for the period ended 2022-06-02", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2022/q3/0000723125-22-000036.pdf", type: "filing", lang: "en", published: "2022-07-01", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2022q2: { title: "Micron Fiscal Q2 2022 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2022/q2/Q2-2022-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2022-03-29", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2022q2: { title: "Micron Technology Form 10-Q for the period ended 2022-03-03", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2022/q2/0000723125-22-000016.pdf", type: "filing", lang: "en", published: "2022-03-30", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2022q1: { title: "Micron Fiscal Q1 2022 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2022/q1/Q1-2022-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2021-12-20", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2022q1: { title: "Micron Technology Form 10-Q for the period ended 2021-12-02", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2022/q1/0000723125-22-000004.pdf", type: "filing", lang: "en", published: "2022-01-06", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2023q4: { title: "Micron Fiscal Q4 2023 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2023/q4/Q4-FY23-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2023-09-27", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2023q4: { title: "Micron Technology Form 10-K for the period ended 2023-08-31", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2023/q4/0000723125-23-000054.pdf", type: "filing", lang: "en", published: "2023-10-06", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2023q3: { title: "Micron Fiscal Q3 2023 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2023/q3/Q3-FY23-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2023-06-28", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2023q3: { title: "Micron Technology Form 10-Q for the period ended 2023-06-01", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2023/q3/0000723125-23-000041.pdf", type: "filing", lang: "en", published: "2023-06-29", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2023q2: { title: "Micron Fiscal Q2 2023 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2023/q2/Q2-FY23-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2023-03-28", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2023q2: { title: "Micron Technology Form 10-Q for the period ended 2023-03-02", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2023/q2/0000723125-23-000022.pdf", type: "filing", lang: "en", published: "2023-03-29", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2023q1: { title: "Micron Fiscal Q1 2023 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2023/q1/Q1-FY23-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2022-12-21", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2023q1: { title: "Micron Technology Form 10-Q for the period ended 2022-12-01", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2023/q1/0000723125-22-000072.pdf", type: "filing", lang: "en", published: "2022-12-22", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2024q4: { title: "Micron Fiscal Q4 2024 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2024/q4/FY24-Q4-Prepared-Remarks-3.pdf", type: "earnings-call", lang: "en", published: "2024-09-25", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2024q4: { title: "Micron Technology Form 10-K for the period ended 2024-08-29", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2024/q4/0000723125-24-000027.pdf", type: "filing", lang: "en", published: "2024-10-04", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2024q3: { title: "Micron Fiscal Q3 2024 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2024/q3/FY24-Q3-Prepared-Remarks-FINAL.pdf", type: "earnings-call", lang: "en", published: "2024-06-26", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2024q3: { title: "Micron Technology Form 10-Q for the period ended 2024-05-30", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2024/q3/0000723125-24-000019.pdf", type: "filing", lang: "en", published: "2024-06-27", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2024q2: { title: "Micron Fiscal Q2 2024 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2024/q2/FY24-Q2-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2024-03-20", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2024q2: { title: "Micron Technology Form 10-Q for the period ended 2024-02-29", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2024/q2/0000723125-24-000007.pdf", type: "filing", lang: "en", published: "2024-03-21", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2024q1: { title: "Micron Fiscal Q1 2024 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2024/q1/Q1-FY24-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2023-12-20", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2024q1: { title: "Micron Technology Form 10-Q for the period ended 2023-11-30", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2024/q1/0000723125-23-000077.pdf", type: "filing", lang: "en", published: "2023-12-21", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2025q4: { title: "Micron Fiscal Q4 2025 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2025/q4/Q4-2025-Prepared-Remarks-1.pdf", type: "earnings-call", lang: "en", published: "2025-09-23", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2025q4: { title: "Micron Technology Form 10-K for the period ended 2025-08-28", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2025/q4/0000723125-25-000028.pdf", type: "filing", lang: "en", published: "2025-10-03", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2025q3: { title: "Micron Fiscal Q3 2025 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2025/q3/Micron_FY25_Q3_Prepared_Remarks.pdf", type: "earnings-call", lang: "en", published: "2025-06-25", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2025q3: { title: "Micron Technology Form 10-Q for the period ended 2025-05-29", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2025/q3/0000723125-25-000021.pdf", type: "filing", lang: "en", published: "2025-06-26", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2025q2: { title: "Micron Fiscal Q2 2025 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2025/q2/Micron_FY25_Q2_Prepared_Remarks_2-1.pdf", type: "earnings-call", lang: "en", published: "2025-03-20", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2025q2: { title: "Micron Technology Form 10-Q for the period ended 2025-02-27", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2025/q2/0000723125-25-000009.pdf", type: "filing", lang: "en", published: "2025-03-21", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2025q1: { title: "Micron Fiscal Q1 2025 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2025/q1/FY25-Q1-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2024-12-18", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2025q1: { title: "Micron Technology Form 10-Q for the period ended 2024-11-28", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2025/q1/0000723125-24-000047.pdf", type: "filing", lang: "en", published: "2024-12-19", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2026q4: { title: "Micron Fiscal Q4 2026 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2026/q4/Q4-FY26-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2026-09-30", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2026q4: { title: "Micron Technology Form 10-K for the period ended 2026-09-03", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://d18rn0p25nwr6d.cloudfront.net/CIK-0000723125/5dafce68-38e8-4cad-a8f3-ab56d04d73fd.pdf", type: "filing", lang: "en", published: "2026-10-09", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2026q3: { title: "Micron Fiscal Q3 2026 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2026/q3/Q3-FY26-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2026-06-24", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2026q3: { title: "Micron Technology Form 10-Q for the period ended 2026-05-28", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2026/q3/0000723125-26-000015.pdf", type: "filing", lang: "en", published: "2026-06-25", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2026q2: { title: "Micron Fiscal Q2 2026 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2026/q2/Q2-2026-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2026-03-18", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2026q2: { title: "Micron Technology Form 10-Q for the period ended 2026-02-26", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2026/q2/0000723125-26-000006.pdf", type: "filing", lang: "en", published: "2026-03-19", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  rm-fy2026q1: { title: "Micron Fiscal Q1 2026 Earnings Call Prepared Remarks", publisher: "Micron Technology", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2026/q1/Micron_Q1-2026-Prepared-Remarks.pdf", type: "earnings-call", lang: "en", published: "2025-12-17", accessed: "2026-10-23", note: "法說會講稿：DRAM／NAND 營收、位元出貨與價格季變化（公司以區間文字描述）、成本、產能與資本支出說明" }
+  f-fy2026q1: { title: "Micron Technology Form 10-Q for the period ended 2025-11-27", publisher: "Micron Technology (SEC filing, hosted on investors.micron.com)", url: "https://s25.q4cdn.com/621799436/files/doc_financials/2026/q1/0000723125-25-000046.pdf", type: "filing", lang: "en", published: "2025-12-18", accessed: "2026-10-23", note: "「Revenue by Technology」表（DRAM、NAND、其他）與管理階層討論（稼動率不足、存貨跌價）" }
+  sec-fy2016q1: { title: "Micron Technology Form 10-Q for the period ended 2015-12-03", publisher: "Micron Technology (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/723125/000072312516000146/a2016q1.htm", type: "filing", lang: "en", published: "2016-01-08", accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/2024/https://www.sec.gov/Archives/edgar/data/723125/000072312516000146/a2016q1.htm", note: "經 Internet Archive 存檔副本讀取；「Net Sales by Product」表與 DRAM／NAND 每 Gb 售價、出貨位元、每 Gb 成本變化表" }
+  sec-fy2016q2: { title: "Micron Technology Form 10-Q for the period ended 2016-03-03", publisher: "Micron Technology (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/723125/000072312516000176/a2016q2.htm", type: "filing", lang: "en", published: "2016-04-08", accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/2024/https://www.sec.gov/Archives/edgar/data/723125/000072312516000176/a2016q2.htm", note: "經 Internet Archive 存檔副本讀取；「Net Sales by Product」表與 DRAM／NAND 每 Gb 售價、出貨位元、每 Gb 成本變化表" }
+  sec-fy2016q3: { title: "Micron Technology Form 10-Q for the period ended 2016-06-02", publisher: "Micron Technology (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/723125/000072312516000201/a2016q3.htm", type: "filing", lang: "en", published: "2016-07-06", accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/2024/https://www.sec.gov/Archives/edgar/data/723125/000072312516000201/a2016q3.htm", note: "經 Internet Archive 存檔副本讀取；「Net Sales by Product」表與 DRAM／NAND 每 Gb 售價、出貨位元、每 Gb 成本變化表" }
+  sec-fy2017q1: { title: "Micron Technology Form 10-Q for the period ended 2016-12-01", publisher: "Micron Technology (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/723125/000072312517000005/a2017q1.htm", type: "filing", lang: "en", published: "2017-01-09", accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/2024/https://www.sec.gov/Archives/edgar/data/723125/000072312517000005/a2017q1.htm", note: "經 Internet Archive 存檔副本讀取；「Net Sales by Product」表與 DRAM／NAND 每 Gb 售價、出貨位元、每 Gb 成本變化表" }
+  sec-fy2017q2: { title: "Micron Technology Form 10-Q for the period ended 2017-03-02", publisher: "Micron Technology (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/723125/000072312517000037/a2017q2.htm", type: "filing", lang: "en", published: "2017-03-28", accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/2024/https://www.sec.gov/Archives/edgar/data/723125/000072312517000037/a2017q2.htm", note: "經 Internet Archive 存檔副本讀取；「Net Sales by Product」表與 DRAM／NAND 每 Gb 售價、出貨位元、每 Gb 成本變化表" }
+  sec-fy2017q3: { title: "Micron Technology Form 10-Q for the period ended 2017-06-01", publisher: "Micron Technology (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/723125/000072312517000085/a2017q3.htm", type: "filing", lang: "en", published: "2017-06-30", accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/2024/https://www.sec.gov/Archives/edgar/data/723125/000072312517000085/a2017q3.htm", note: "經 Internet Archive 存檔副本讀取；「Net Sales by Product」表與 DRAM／NAND 每 Gb 售價、出貨位元、每 Gb 成本變化表" }
+  sec-fy2017q4: { title: "Micron Technology Form 10-K for the period ended 2017-08-31", publisher: "Micron Technology (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/723125/000072312517000131/a2017q4.htm", type: "filing", lang: "en", published: "2017-10-26", accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/2024/https://www.sec.gov/Archives/edgar/data/723125/000072312517000131/a2017q4.htm", note: "經 Internet Archive 存檔副本讀取；「Net Sales by Product」表與 DRAM／NAND 每 Gb 售價、出貨位元、每 Gb 成本變化表" }
+  sec-fy2018q1: { title: "Micron Technology Form 10-Q for the period ended 2017-11-30", publisher: "Micron Technology (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/723125/000072312517000166/a2018q1.htm", type: "filing", lang: "en", published: "2017-12-20", accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/2024/https://www.sec.gov/Archives/edgar/data/723125/000072312517000166/a2018q1.htm", note: "經 Internet Archive 存檔副本讀取；「Net Sales by Product」表與 DRAM／NAND 每 Gb 售價、出貨位元、每 Gb 成本變化表" }
+  sec-fy2018q2: { title: "Micron Technology Form 10-Q for the period ended 2018-03-01", publisher: "Micron Technology (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/723125/000072312518000036/a2018q2.htm", type: "filing", lang: "en", published: "2018-03-23", accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/2024/https://www.sec.gov/Archives/edgar/data/723125/000072312518000036/a2018q2.htm", note: "經 Internet Archive 存檔副本讀取；「Net Sales by Product」表與 DRAM／NAND 每 Gb 售價、出貨位元、每 Gb 成本變化表" }
+  sec-fy2018q3: { title: "Micron Technology Form 10-Q for the period ended 2018-05-31", publisher: "Micron Technology (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/723125/000072312518000065/a2018q3.htm", type: "filing", lang: "en", published: "2018-06-22", accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/2024/https://www.sec.gov/Archives/edgar/data/723125/000072312518000065/a2018q3.htm", note: "經 Internet Archive 存檔副本讀取；「Net Sales by Product」表與 DRAM／NAND 每 Gb 售價、出貨位元、每 Gb 成本變化表" }
+lastVerified: "2026-10-23"
+editorial:
+  status: "fact-checked"
+  author: "fc-data-micron"
+  checkedBy: "fc-check-micron"
+  checkedOn: "2026-10-23"
+  notes: "FY2016Q1–FY2026Q4 共 44 季；損益與資產負債數字取自 SEC XBRL，並與 src/content/financials/micron.json（FY2023–FY2026 營收、毛利率、營益率）逐季核對一致。fc-check-micron 查核（2026-10-23）：44 季損益、EPS、股數、存貨、折舊攤銷、資本支出總額與存貨跌價逐筆比對 SEC XBRL（Q4 以全年減前三季），最近 20 季再比對 stockanalysis.com，FY2023–FY2026 再比對 src/content/financials/micron.json；非 GAAP EPS、非 GAAP 毛利率、淨資本支出、財測與第四季 EPS／股數比對各季新聞稿原文；DRAM／NAND 營收比對 10-Q／10-K 的 Revenue by Technology（FY2016–FY2018 用 Micron 投資人網站提供的申報 PDF），位元與 ASP 的文字換算逐季比對講稿、10-Q 與新聞稿；稼動率不足、存貨跌價、HBM 與事件逐條比對原文。修正：補上 FY2018 第四季位元與 ASP（法說會簡報）、FY2018 第四季與 FY2019 第一季財測；FY2020 第四季與 FY2021 第二季補註存貨重分類；修正 4 則事件的敘述。"

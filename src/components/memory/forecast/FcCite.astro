@@ -1,0 +1,17 @@
+---
+/**
+ * Citation marker of the financial-model pages: <MemCite> plus a build warning when the key was not registered
+ * by the page (pageSourceKeys in src/lib/forecast-data.ts), so a citation can never point outside the source list.
+ *   <FcCite k="fr-2026" />
+ */
+import MemCite from '../MemCite.astro';
+import { pageState } from '../../content/page-state';
+
+interface Props {
+  k: string;
+}
+const { k } = Astro.props;
+if (!pageState(Astro).sourceNumbers.has(k)) console.warn(`[forecast] ${Astro.url.pathname}: citation "${k}" is not in the page's source list`);
+---
+
+<MemCite k={k} />

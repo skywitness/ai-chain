@@ -1,0 +1,153 @@
+---
+/**
+ * 產能與折舊（美光）: capex vs depreciation (with the FY2027 capex plan and the model's depreciation path), the
+ * share of depreciation in cost of goods sold, bit shipments, underutilization charges and write-downs, and the
+ * new-fab timeline from the inputs' events.
+ *   <MicronCapacity b={bundle} />
+ */
+import MultiLine from '../../../charts/MultiLine.astro';
+import QuarterBars from '../QuarterBars.astro';
+import ChartCites from '../ChartCites.astro';
+import FcCite from '../FcCite.astro';
+import FcText from '../FcText.astro';
+import {
+  chartKey,
+  derivedOf,
+  forecastQuarters,
+  periodLabel,
+  qIndex,
+  quartersFrom,
+  scenarioOf,
+  type Derived,
+  type FcBundle,
+} from '../../../../lib/forecast-data';
+import { formatNumber } from '../../../../lib/format';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m, inputs, meta } = b;
+const from = meta.historyFrom;
+const qs = quartersFrom(inputs, from);
+const keys = [...new Set(qs.map((q) => q.src))];
+const base = scenarioOf(m, 'base');
+const fq = forecastQuarters(base);
+const capexA = base?.assumptions.find((a) => a.name.startsWith('資本支出'));
+const plan = capexA ? /各季\s*([\d.]+)\s*億美元、([\d.]+)\s*億美元、([\d.]+)\s*億美元、([\d.]+)\s*億美元/.exec(capexA.value) : null;
+const depF = fq.map((f) => ({ period: f.period, v: Number(/折舊\s*([\d.]+)\s*億美元/.exec(f.note ?? '')?.[1] ?? Number.NaN) }));
+if (!plan || depF.some((d) => !Number.isFinite(d.v))) console.warn('[forecast] micron: FY2027 capex plan or depreciation not found in the scenario text');
+const pts = (d: Derived | undefined) =>
+  (d?.points ?? []).filter((p) => qIndex(p.period) >= qIndex(from)).map((p) => ({ x: chartKey(p.period), y: p.value, forecast: p.status === 'forecast' }));
+const capexSeries = [
+  ...qs.map((q) => ({ x: chartKey(q.period), y: q.capex != null ? q.capex / 100 : null })),
+  ...(plan ? fq.map((f, i) => ({ x: chartKey(f.period), y: Number(plan[i + 1]), forecast: true })) : []),
+];
+const depSeries = [
+  ...qs.map((q) => ({ x: chartKey(q.period), y: q.depreciation != null ? q.depreciation / 100 : null })),
+  ...depF.filter((d) => Number.isFinite(d.v)).map((d) => ({ x: chartKey(d.period), y: d.v, forecast: true })),
+];
+const depShare = derivedOf(m, 'depreciation-share');
+const bits = derivedOf(m, 'bit-volume-index');
+const charges = qs.map((q) => ({
+  period: q.period,
+  value: (q.underutilization ?? 0) / 100 || null,
+  note: q.inventoryWritedown ? `另提列存貨跌價 ${formatNumber(q.inventoryWritedown / 100, { digits: 1 })} 億美元` : undefined,
+}));
+const wd = qs.filter((q) => q.inventoryWritedown);
+const fabEvents = inputs.events.filter((e) => /新廠|資本支出|ID1|銅鑼/.test(e.title)).slice(-4).reverse();
+const last = inputs.quarters.at(-1)!;
+const fyQs = inputs.quarters.filter((q) => q.period.startsWith(last.period.slice(0, 6)));
+const fyCapex = fyQs.reduce((s, q) => s + (q.capex ?? 0), 0);
+const fyKeys = [...new Set(fyQs.map((q) => q.src))];
+---
+
+<div class="sec-head">
+  <h2 id="capacity-h">產能與折舊：今天的資本支出，是明天的成本</h2>
+  <p class="sec-head__lede">
+    {last.period.slice(0, 6)} 淨資本支出約 {formatNumber(fyCapex / 100)} 億美元{fyKeys.map((k) => <FcCite k={k} />)}，美光預估 FY2027 上半年約 250 億美元、下半年更高<FcCite k={capexA?.src ?? last.src} />。設備裝機後才開始提列折舊，所以資本支出要過幾季才反映在每位元成本；新廠爬坡期間位元少、折舊多，也會推高成本。
+  </p>
+</div>
+
+<div class="mem-grid mem-grid--charts">
+  <MultiLine
+    title="資本支出與折舊"
+    subtitle={`每季，億美元；FY2027 的資本支出為美光說法與本模型假設、折舊為模型推算（虛線）`}
+    unit="億美元"
+    series={[
+      { name: '淨資本支出', color: 'var(--chart-1)', points: capexSeries },
+      { name: '折舊攤銷', color: 'var(--chart-2)', points: depSeries },
+    ]}
+    digits={1}
+    height={240}
+    notes={[capexA ? `FY2027 假設：${capexA.value.replace(/（[^）]*）/g, '')}。` : null]}
+    xTitle="會計季度"
+    as="h3"
+    class="mem-chart fc-years"
+  />
+  <MultiLine
+    title="折舊占非 GAAP 銷貨成本"
+    subtitle="折舊越高，產量或價格變動時毛利率越敏感"
+    unit="%"
+    format="percent"
+    badge="模型推估"
+    series={[{ name: '折舊 ÷ 銷貨成本', color: 'var(--chart-7)', points: pts(depShare) }]}
+    includeZero
+    height={240}
+    notes={[depShare?.note]}
+    xTitle="會計季度"
+    as="h3"
+    class="mem-chart fc-years"
+  />
+</div>
+<ChartCites keys={[...keys, capexA?.src]} />
+
+<div class="mem-grid mem-grid--charts">
+  <MultiLine
+    title="位元出貨量指數"
+    subtitle="DRAM 與 NAND 位元季變化以營收比重加權；FY2027 為基準情境每季 +5%（虛線）"
+    unit="指數（FY2016Q4＝100）"
+    badge="模型推估"
+    series={[{ name: '位元出貨量', color: 'var(--chart-3)', points: pts(bits) }]}
+    digits={0}
+    height={220}
+    notes={[bits?.note]}
+    xTitle="會計季度"
+    as="h3"
+    class="mem-chart fc-years"
+  />
+  <QuarterBars
+    title="稼動率不足費用"
+    subtitle="減產或閒置產線的固定成本，直接計入銷貨成本"
+    unit="億美元"
+    points={charges}
+    digits={2}
+    color="var(--chart-8)"
+    valueLabels={false}
+    as="h3"
+    notes={[
+      wd.length ? `另外 ${wd.map((q) => `${periodLabel(q.period)} 提列存貨跌價 ${formatNumber((q.inventoryWritedown ?? 0) / 100, { digits: 1 })} 億美元`).join('、')}；跌價後的存貨售出時，之後幾季的成本會較低。` : null,
+      'FY2019–FY2021 為 3D XPoint 廠（IMFT／Lehi）、FY2023–FY2024 為減少投片造成的閒置成本。',
+    ]}
+  />
+</div>
+<ChartCites keys={keys} />
+
+{
+  fabEvents.length > 0 && (
+    <>
+      <h3 class="fc-h3">新產能何時開出</h3>
+      <ul class="fc-inv-events fc-fab-events" role="list">
+        {fabEvents.map((e) => (
+          <li>
+            <time datetime={e.date}>{e.date.slice(0, 7).replace('-', '/')}</time>
+            <span>
+              <strong>{e.title}</strong>
+              <FcText b={b} text={e.detail} src={e.src} />
+            </span>
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}

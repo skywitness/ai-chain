@@ -1,0 +1,129 @@
+---
+/**
+ * 預測摘要: one card per period of meta.summaryPeriods with the base scenario (big) and the bear–bull range for
+ * revenue, gross margin, operating income and EPS. Fields the model takes as already reported (群聯 2026Q3 revenue
+ * from monthly revenue) are tagged 「已公布」; Micron's own guidance for the next quarter sits under the model value.
+ *   <SummaryCards b={bundle} />
+ */
+import FcText from './FcText.astro';
+import FcCite from './FcCite.astro';
+import {
+  calendarHint,
+  fcEps,
+  fcMoney,
+  fcPct,
+  fcPctExact,
+  forecastOf,
+  isYear,
+  nextGuidance,
+  periodLabel,
+  type FcBundle,
+  type Forecast,
+} from '../../../lib/forecast-data';
+import { formatMoneyRange, formatNumber } from '../../../lib/format';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m, meta } = b;
+const cur = meta.currency;
+const guide = nextGuidance(b);
+const monthlySrc = b.inputs.monthly.at(-1)?.src;
+const lastMonths = b.inputs.monthly.slice(-3).map((x) => Number(x.period.slice(5)));
+const knownText = lastMonths.length === 3 ? `${lastMonths[0]}–${lastMonths[2]} 月月營收合計` : '月營收合計';
+
+type Field = 'revenue' | 'grossMargin' | 'operatingIncome' | 'eps';
+const FIELDS: Array<{ f: Field; label: string }> = [
+  { f: 'revenue', label: '營收' },
+  { f: 'grossMargin', label: meta.gmLabel },
+  { f: 'operatingIncome', label: meta.oiLabel },
+  { f: 'eps', label: meta.epsLabel },
+];
+const fmt = (f: Field, v: number | undefined) =>
+  v == null ? '—' : f === 'grossMargin' ? fcPct(v) : f === 'eps' ? fcEps(v, meta.epsUnit) : fcMoney(v, cur);
+function range(f: Field, lo: number, hi: number): string {
+  if (f === 'grossMargin') return `${formatNumber(lo, { digits: 1 })}–${formatNumber(hi, { digits: 1 })}%`;
+  if (f === 'eps') return `${formatNumber(lo, { digits: 2 })}–${formatNumber(hi, { digits: 2 })} ${meta.epsUnit}`;
+  return formatMoneyRange(lo, hi, cur, { unit: '億' });
+}
+
+const cards = meta.summaryPeriods
+  .map((p) => {
+    const base = forecastOf(m, 'base', p);
+    if (!base) return null;
+    const bear = forecastOf(m, 'bear', p);
+    const bull = forecastOf(m, 'bull', p);
+    const rows = FIELDS.map(({ f, label }) => {
+      const v = base[f];
+      const known = base.known.includes(f);
+      const lo = bear?.[f];
+      const hi = bull?.[f];
+      const ordered = lo != null && hi != null && v != null && lo <= v && v <= hi;
+      const r = !known && lo != null && hi != null && Math.abs(hi - lo) > 1e-9 ? { label: ordered ? '保守–樂觀' : '情境區間', text: range(f, Math.min(lo, hi), Math.max(lo, hi)) } : null;
+      let g: string | null = null;
+      if (guide && guide.period === p) {
+        if (f === 'revenue')
+          g = `${fcMoney(guide.revenue, cur)}${guide.revenueLow != null && guide.revenueHigh != null ? `（${formatMoneyRange(guide.revenueLow, guide.revenueHigh, cur, { unit: '億' })}）` : ''}`;
+        if (f === 'grossMargin' && guide.grossMargin != null) g = `約 ${fcPctExact(guide.grossMargin)}`;
+        if (f === 'eps' && guide.eps != null) g = `${fcEps(guide.eps, meta.epsUnit)}${guide.epsRange != null ? `（± ${formatNumber(guide.epsRange, { digits: 2 })}）` : ''}`;
+      }
+      return { f, label, value: fmt(f, v), known, range: r, guide: g };
+    });
+    // the first sentence of the model's note (the rest is in the forecast table)
+    const note = base.note ? base.note.slice(0, base.note.indexOf('。') + 1 || undefined) : undefined;
+    return { p, base, rows, year: isYear(p), note };
+  })
+  .filter((c): c is { p: string; base: Forecast; rows: Array<{ f: Field; label: string; value: string; known: boolean; range: { label: string; text: string } | null; guide: string | null }>; year: boolean; note: string | undefined } => !!c);
+---
+
+<ul class="fc-sum" role="list">
+  {
+    cards.map((c) => (
+      <li class:list={['fc-sum__card', c.year && 'fc-sum__card--year']}>
+        <div class="fc-sum__head">
+          <h3 class="fc-sum__period">
+            {periodLabel(c.p, 'long')}
+            <small>{calendarHint(c.p)}</small>
+          </h3>
+          <span class="mem-st mem-st--forecast">模型推估</span>
+        </div>
+        <dl class="fc-sum__list">
+          {c.rows.map((r) => (
+            <div class="fc-sum__row">
+              <dt>
+                {r.label}
+                {r.known && <span class="fc-tag fc-tag--known">已公布</span>}
+              </dt>
+              <dd>
+                <span class="fc-sum__val">{r.value}</span>
+                {r.known && r.f === 'revenue' && monthlySrc && (
+                  <span class="fc-sum__range">
+                    {knownText}
+                    <FcCite k={monthlySrc} />
+                  </span>
+                )}
+                {r.range && (
+                  <span class="fc-sum__range">
+                    <span class="fc-sum__rk">{r.range.label}</span> {r.range.text}
+                  </span>
+                )}
+                {r.guide && (
+                  <span class="fc-sum__guide">
+                    <span class="fc-tag fc-tag--guidance">美光財測</span> {r.guide}
+                    {guide?.src && <FcCite k={guide.src} />}
+                  </span>
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        {c.note && (
+          <p class="fc-sum__note">
+            <FcText b={b} text={c.note} />
+          </p>
+        )}
+      </li>
+    ))
+  }
+</ul>

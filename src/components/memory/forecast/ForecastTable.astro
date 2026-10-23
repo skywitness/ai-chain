@@ -1,0 +1,123 @@
+---
+/**
+ * Scenario forecasts as one table: a row per period (quarters, then full years), the base scenario in bold with the
+ * bear and bull values underneath, fields already reported tagged 「已公布」, and Micron's guidance as its own row
+ * under the quarter it covers. Amounts in 億 (新台幣億元／億美元), margins in %, EPS in 元／美元.
+ *   <ForecastTable b={bundle} />
+ */
+import FcText from './FcText.astro';
+import FcCite from './FcCite.astro';
+import { calendarHint, fcPctExact, forecastOf, isYear, nextGuidance, periodLabel, scenarioOf, type FcBundle } from '../../../lib/forecast-data';
+import { formatNumber } from '../../../lib/format';
+import { numTarget, TARGET_SHORT, targetLabel, unitOf, type Target } from './fc-labels';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m } = b;
+const base = scenarioOf(m, 'base');
+const periods = (base?.forecasts ?? []).map((f) => f.period);
+const cols: Target[] = ['revenue', 'grossMargin', 'operatingIncome', 'netIncome', 'eps'];
+const guide = nextGuidance(b);
+const shown = cols.filter((t) => base?.forecasts.some((f) => f[t] != null));
+/** card label on phones, where the header row (and its units) is hidden: 「營收（新台幣億元）」 */
+const cardLabel = (t: Target) => `${TARGET_SHORT[t]}（${unitOf(b, t).replace(/^新台幣/, '')}）`;
+---
+
+<div class="mem-tablewrap mem-tablewrap--cards fc-ftable" tabindex="0" role="region" aria-label="情境預測表">
+  <table class="mem-table">
+    <caption class="ch-sr">三種情境的預測：基準情境為粗體，下方為保守與樂觀情境</caption>
+    <thead>
+      <tr>
+        <th scope="col">期間</th>
+        {
+          shown.map((t) => (
+            <th scope="col" class="num">
+              {targetLabel(b, t)}
+              <small>{unitOf(b, t)}</small>
+            </th>
+          ))
+        }
+        <th scope="col">說明</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        periods.map((p) => {
+          const f = forecastOf(m, 'base', p)!;
+          const lo = forecastOf(m, 'bear', p);
+          const hi = forecastOf(m, 'bull', p);
+          return (
+            <>
+              <tr class:list={[isYear(p) && 'fc-ftable__year']}>
+                <th scope="row" data-label="期間">
+                  {periodLabel(p, 'long')}
+                  <small>{calendarHint(p)}</small>
+                </th>
+                {shown.map((t) => {
+                  const known = f.known.includes(t);
+                  return (
+                    <td class="num" data-label={cardLabel(t)}>
+                      <strong>{numTarget(t, f[t])}</strong>
+                      {known ? (
+                        <small>
+                          <span class="fc-tag fc-tag--known">已公布</span>
+                        </small>
+                      ) : (
+                        (lo?.[t] != null || hi?.[t] != null) && (
+                          <small class="fc-ftable__alt">
+                            <span>保守 {numTarget(t, lo?.[t])}</span>
+                            <span>樂觀 {numTarget(t, hi?.[t])}</span>
+                          </small>
+                        )
+                      )}
+                    </td>
+                  );
+                })}
+                <td class="mem-table__note" data-label="說明">
+                  {f.note ? <FcText b={b} text={f.note} /> : <span class="mem-na">—</span>}
+                </td>
+              </tr>
+              {guide && guide.period === p && (
+                <tr class="fc-ftable__guide">
+                  <th scope="row" data-label="期間">
+                    <span class="fc-tag fc-tag--guidance">美光財測</span>
+                    <small>{periodLabel(p, 'long')}</small>
+                  </th>
+                  {shown.map((t) => (
+                    <td class="num" data-label={cardLabel(t)}>
+                      {t === 'revenue' ? (
+                        <>
+                          {numTarget(t, guide.revenue)}
+                          {guide.revenueLow != null && guide.revenueHigh != null && (
+                            <small>
+                              區間 {numTarget(t, guide.revenueLow)}–{numTarget(t, guide.revenueHigh)}
+                            </small>
+                          )}
+                        </>
+                      ) : t === 'grossMargin' && guide.grossMargin != null ? (
+                        fcPctExact(guide.grossMargin).replace('%', '')
+                      ) : t === 'eps' && guide.eps != null ? (
+                        <>
+                          {formatNumber(guide.eps, { digits: 2 })}
+                          {guide.epsRange != null && <small>± {formatNumber(guide.epsRange, { digits: 2 })}</small>}
+                        </>
+                      ) : (
+                        <span class="mem-na">—</span>
+                      )}
+                    </td>
+                  ))}
+                  <td class="mem-table__note" data-label="說明">
+                    美光在 {periodLabel(m.test.to, 'long')}法說會公布的下一季財測（非 GAAP 毛利率與 EPS），不是本站的模型
+                    {guide.src && <FcCite k={guide.src} />}
+                  </td>
+                </tr>
+              )}
+            </>
+          );
+        })
+      }
+    </tbody>
+  </table>
+</div>

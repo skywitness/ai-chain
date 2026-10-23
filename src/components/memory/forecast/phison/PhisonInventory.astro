@@ -1,0 +1,140 @@
+---
+/**
+ * 存貨（群聯）: inventory and inventory days, its composition, the purchases the model infers from the statements,
+ * and inventory write-downs (losses) and reversals, with the model's write-down rule for the bear scenario.
+ *   <PhisonInventory b={bundle} />
+ */
+import MultiLine from '../../../charts/MultiLine.astro';
+import QuarterBars from '../QuarterBars.astro';
+import ChartCites from '../ChartCites.astro';
+import FcCite from '../FcCite.astro';
+import FcText from '../FcText.astro';
+import { derivedOf, nextQuarter, paramStarting, periodLabel, qIndex, quartersFrom, type FcBundle } from '../../../../lib/forecast-data';
+import { formatDate, formatNumber } from '../../../../lib/format';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m, inputs, meta } = b;
+const from = meta.historyFrom;
+const qs = quartersFrom(inputs, from);
+const last = inputs.quarters.at(-1)!;
+const keys = [...new Set(qs.map((q) => q.src))];
+const days = derivedOf(m, 'inventory-days');
+const purchases = derivedOf(m, 'estimated-purchases');
+const wdModel = derivedOf(m, 'inventory-writedown-model');
+const kappa = m.parameters.find((p) => /^預測.*κ/.test(p.name));
+const avgDays = paramStarting(m, '2023–2025 年平均庫存天數');
+const COMP = ['存貨－原料', '存貨－在製品', '存貨－半成品', '存貨－製成品'];
+const comp = COMP.map((k, i) => ({ name: k.replace('存貨－', ''), v: last.extra?.[k] ?? 0, color: `var(--chart-${[1, 2, 4, 3][i]})` }));
+const compTotal = comp.reduce((s, c) => s + c.v, 0);
+const wdEvents = inputs.events.filter((e) => /跌價|回升|存貨評價|在製品評價/.test(e.title + e.detail)).slice(-3);
+const peak = qs.reduce((a, q) => ((q.inventoryWritedown ?? -Infinity) > (a.inventoryWritedown ?? -Infinity) ? q : a));
+const wdLast = wdModel?.points.filter((p) => p.value > 0) ?? [];
+const ceoStock = inputs.events.find((e) => /庫存已超過/.test(e.title));
+const stockClaim = ceoStock ? /超過\s*([\d,]+\s*億元)/.exec(ceoStock.title)?.[1] : undefined;
+const yoyQ = inputs.quarters.find((q) => qIndex(q.period) === qIndex(last.period) - 4);
+---
+
+<div class="sec-head">
+  <h2 id="inventory-h">存貨：買了多少、放多久、跌價時賠多少</h2>
+  <p class="sec-head__lede">
+    存貨決定低價庫存能撐多久。{periodLabel(last.period, 'long')}底存貨 {formatNumber((last.inventory ?? 0) / 100)} 億元，一年前是 {formatNumber((yoyQ?.inventory ?? 0) / 100)} 億元<FcCite k={last.src} />{yoyQ && yoyQ.src !== last.src && <FcCite k={yoyQ.src} />}{ceoStock && stockClaim && (<>；執行長在 {formatDate(ceoStock.date, 'ym')}的法說會表示當時庫存已超過 {stockClaim}<FcCite k={ceoStock.src} /></>)}。庫存天數越長，新買的高價貨在平均成本中占比越低，毛利率回落得越慢。
+  </p>
+</div>
+
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars
+    title="期末存貨淨額"
+    as="h3"
+    unit="新台幣億元"
+    points={qs.map((q) => ({ period: q.period, value: q.inventory != null ? q.inventory / 100 : null }))}
+    color="var(--chart-1)"
+    valueLabels={false}
+    notes={['資產負債表的存貨淨額（已扣除備抵跌價）。']}
+  />
+  <MultiLine
+    title="庫存天數"
+    subtitle={`存貨 ÷ 當季營業成本 × 91；${periodLabel(nextQuarter(last.period))} 起為基準情境的假設（虛線）`}
+    unit="天"
+    series={[{ name: '庫存天數', color: 'var(--chart-2)', points: (days?.points ?? []).filter((p) => qIndex(p.period) >= qIndex(from)).map((p) => ({ x: p.period, y: p.value, forecast: p.status === 'forecast' })) }]}
+    digits={0}
+    height={210}
+    notes={[days?.note, avgDays ? `2023–2025 年平均約 ${formatNumber(avgDays.value)} 天，是模型在 2027 年讓庫存天數回歸的目標。` : null]}
+    xTitle="季度"
+    as="h3"
+    class="mem-chart fc-years"
+  />
+</div>
+<ChartCites keys={keys} />
+
+<div class="mem-grid mem-grid--charts fc-inv-grid">
+  <QuarterBars
+    title="存貨跌價損失與回升利益"
+    as="h3"
+    unit="新台幣億元"
+    points={qs.map((q) => ({ period: q.period, value: q.inventoryWritedown != null ? q.inventoryWritedown / 100 : null, color: (q.inventoryWritedown ?? 0) >= 0 ? 'var(--c-neg)' : 'var(--c-pos)' }))}
+    digits={2}
+    valueLabels={false}
+    legend={[
+      { label: '跌價損失（正值，壓低毛利）', kind: 'bar', color: 'var(--c-neg)' },
+      { label: '回升利益（負值，推高毛利）', kind: 'bar', color: 'var(--c-pos)' },
+    ]}
+    notes={[`財報附註的存貨跌價及呆滯損失，計入營業成本。最大一季是 ${periodLabel(peak.period)} 的 ${formatNumber((peak.inventoryWritedown ?? 0) / 100, { digits: 2 })} 億元。`]}
+  />
+  <QuarterBars
+    title="推估的每季進貨"
+    as="h3"
+    subtitle={`營業成本 + 存貨增加；${periodLabel(nextQuarter(last.period))} 起為基準情境（斜線）`}
+    unit="新台幣億元"
+    points={(purchases?.points ?? []).filter((p) => qIndex(p.period) >= qIndex(from)).map((p) => ({ period: p.period, value: p.value / 100, status: p.status === 'forecast' ? 'forecast' : 'actual' }))}
+    color="var(--chart-7)"
+    valueLabels={false}
+    badge="模型推估"
+    notes={[purchases?.note]}
+  />
+</div>
+<ChartCites keys={keys} />
+
+<div class="fc-inv-detail">
+  <figure class="fc-comp" aria-labelledby="comp-h">
+    <figcaption>
+      <p class="fc-h4" id="comp-h">{periodLabel(last.period)} 底存貨組成</p>
+      <p class="mem-fine">原料多是 NAND 晶圓與控制晶片；在製品、半成品是封測中的晶片與模組<FcCite k={last.src} /></p>
+    </figcaption>
+    <div class="fc-comp__bar" role="img" aria-label={comp.map((c) => `${c.name} ${formatNumber((c.v / compTotal) * 100, { digits: 0 })}%`).join('、')}>
+      {comp.map((c) => <span style={`--w:${formatNumber((c.v / compTotal) * 100, { digits: 2 })}%;--k:${c.color}`} />)}
+    </div>
+    <ul class="fc-comp__keys" role="list">
+      {
+        comp.map((c) => (
+          <li>
+            <i style={`--k:${c.color}`} aria-hidden="true" />
+            {c.name}
+            <b>{formatNumber(c.v / 100)} 億元</b>
+            <small>{formatNumber((c.v / compTotal) * 100, { digits: 0 })}%</small>
+          </li>
+        ))
+      }
+    </ul>
+  </figure>
+  <div class="fc-inv-notes">
+    <p class="fc-h4">跌價規則與最近的說法</p>
+    <p class="fc-p">
+      模型的跌價規則：帳上單位成本高於當季合約價時，依比例 κ（{kappa ? formatNumber(kappa.value, { digits: 3 }) : '—'}）提列跌價損失，否則為 0。基準與樂觀情境的合約價一直高於帳上成本，所以預測期沒有跌價損失{wdLast.length ? `；保守情境在 ${wdLast.map((p) => periodLabel(p.period)).join('、')} 開始提列約 ${wdLast.map((p) => formatNumber(p.value / 100, { digits: 1 })).join('、')} 億元` : ''}。實際上群聯在漲價期仍提列在製品評價損失，見「限制與風險」。
+    </p>
+    <ul class="fc-inv-events" role="list">
+      {
+        wdEvents.map((e) => (
+          <li>
+            <time datetime={e.date}>{e.date.slice(0, 7).replace('-', '/')}</time>
+            <span>
+              <FcText b={b} text={e.detail} src={e.src} />
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</div>

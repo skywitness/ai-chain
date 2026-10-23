@@ -1,0 +1,113 @@
+---
+/**
+ * 數量與營業額（美光）: DRAM vs NAND revenue (with the HBM revenue Micron disclosed), and the quarter-by-quarter
+ * bit-shipment and price changes behind it — reported for the backtest window, model assumptions for FY2027.
+ *   <MicronVolume b={bundle} />
+ */
+import MultiLine from '../../../charts/MultiLine.astro';
+import ChartCites from '../ChartCites.astro';
+import FcCite from '../FcCite.astro';
+import StatusTag from '../../StatusTag.astro';
+import { chartKey, forecastQuarters, periodLabel, quartersFrom, scenarioOf, type FcBundle } from '../../../../lib/forecast-data';
+import { formatNumber } from '../../../../lib/format';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m, inputs, meta } = b;
+const qs = quartersFrom(inputs, meta.historyFrom);
+const keys = [...new Set(qs.map((q) => q.src))];
+const hbm = qs.filter((q) => q.hbmRevenue != null);
+const NEARLY = /nearly/;
+const hbmText = hbm.map((q) => `${periodLabel(q.period)} ${NEARLY.test(q.note ?? '') ? '接近' : '逾'} ${formatNumber((q.hbmRevenue ?? 0) / 100)} 億美元`);
+const hbmNote = hbm.length ? `HBM 營收美光只偶爾給出約數：${hbmText.join('、')}，都包含在 DRAM 營收內。` : null;
+const test = quartersFrom(inputs, m.test.from);
+const fq = forecastQuarters(scenarioOf(m, 'base'));
+const parse = (note: string | undefined, prod: 'DRAM' | 'NAND') => {
+  const r = new RegExp(`${prod} 售價 ([+−-]?[\\d.]+)%、位元 ([+−-]?[\\d.]+)%`).exec(note ?? '');
+  return r ? { asp: Number(r[1]!.replace('−', '-')), bit: Number(r[2]!.replace('−', '-')) } : null;
+};
+const signed = (v: number | null | undefined) => (v == null ? '—' : `${formatNumber(v, { digits: Number.isInteger(v) ? 0 : 1, signed: true })}%`);
+const rows = [
+  ...test.map((q) => ({
+    period: q.period,
+    status: 'actual' as const,
+    dBit: q.dramBitQoq,
+    dAsp: q.dramAspQoq,
+    nBit: q.nandBitQoq,
+    nAsp: q.nandAspQoq,
+    rev: q.revenue,
+    dShare: q.dramRevenue != null ? (q.dramRevenue / q.revenue) * 100 : null,
+    src: q.src,
+  })),
+  ...fq.map((f) => {
+    const d = parse(f.note, 'DRAM');
+    const n = parse(f.note, 'NAND');
+    return { period: f.period, status: 'forecast' as const, dBit: d?.bit, dAsp: d?.asp, nBit: n?.bit, nAsp: n?.asp, rev: f.revenue, dShare: null, src: null };
+  }),
+];
+---
+
+<div class="sec-head">
+  <h2 id="volume-h">數量與營業額：位元出貨、售價與 HBM</h2>
+  <p class="sec-head__lede">
+    美光每季會說明 DRAM、NAND 的位元出貨與平均售價較上一季變化多少（以「低個位數」「約 20%」等區間描述）。模型把營收拆成這兩個部分：FY2026 的營收暴增幾乎都來自售價，位元出貨每季只成長幾個百分點。
+  </p>
+</div>
+
+<MultiLine
+  title="DRAM 與 NAND 營收"
+  subtitle={`${periodLabel(meta.historyFrom)} 起，每季；FY2019 起 MCP 與 SSD 依元件價值拆分`}
+  unit="億美元"
+  series={[
+    { name: 'DRAM（含 HBM）', color: 'var(--chart-1)', points: qs.map((q) => ({ x: chartKey(q.period), y: q.dramRevenue != null ? q.dramRevenue / 100 : null })) },
+    { name: 'NAND', color: 'var(--chart-2)', points: qs.map((q) => ({ x: chartKey(q.period), y: q.nandRevenue != null ? q.nandRevenue / 100 : null })) },
+  ]}
+  digits={0}
+  height={260}
+  notes={[hbmNote]}
+  xTitle="會計季度"
+  as="h3"
+  class="mem-chart fc-chart-wide fc-years"
+/>
+<ChartCites keys={keys} />
+
+<h3 class="fc-h3">位元與售價的季變化</h3>
+<div class="mem-tablewrap mem-tablewrap--cards fc-bits" tabindex="0" role="region" aria-label="位元出貨與售價季變化">
+  <table class="mem-table">
+    <caption class="ch-sr">美光 DRAM 與 NAND 的位元出貨與平均售價季變化：回測期為公司說法換算值，FY2027 為基準情境假設</caption>
+    <thead>
+      <tr>
+        <th scope="col">會計季度</th>
+        <th scope="col" class="num">DRAM 位元</th>
+        <th scope="col" class="num">DRAM 售價</th>
+        <th scope="col" class="num">NAND 位元</th>
+        <th scope="col" class="num">NAND 售價</th>
+        <th scope="col" class="num">營收<small>億美元</small></th>
+        <th scope="col" class="num">DRAM 占營收</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((r) => (
+          <tr class:list={[r.status === 'forecast' && 'fc-row--forecast']}>
+            <th scope="row" data-label="會計季度">
+              {periodLabel(r.period)}
+              {r.status === 'forecast' ? <StatusTag status="forecast" /> : r.src && <FcCite k={r.src} />}
+            </th>
+            <td class="num" data-label="DRAM 位元">{signed(r.dBit)}</td>
+            <td class="num" data-label="DRAM 售價">{signed(r.dAsp)}</td>
+            <td class="num" data-label="NAND 位元">{signed(r.nBit)}</td>
+            <td class="num" data-label="NAND 售價">{signed(r.nAsp)}</td>
+            <td class="num" data-label="營收（億美元）">{formatNumber(r.rev / 100)}</td>
+            <td class="num" data-label="DRAM 占營收">{r.dShare != null ? `${formatNumber(r.dShare, { digits: 0 })}%` : <span class="mem-na">—</span>}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+<p class="mem-fine">
+  回測期的位元與售價變化是美光法說會文字的換算值（例如「mid-teens」取 15%）；FY2027 為基準情境的模型值：售價由合約價換算，位元每季成長 5%，FY2027 第一季只有 13 週（FY2026 第四季為 14 週），另乘 13／14。
+</p>

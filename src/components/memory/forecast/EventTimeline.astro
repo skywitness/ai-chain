@@ -1,0 +1,77 @@
+---
+/**
+ * 大事記: the company events of the inputs file (法說會說法、減產、存貨跌價、財測…) as a vertical timeline grouped
+ * by year, newest first. Events before `openFrom` (default: two years before the latest) sit behind a disclosure.
+ *   <EventTimeline b={bundle} />
+ */
+import FcCite from './FcCite.astro';
+import Icon from '../../ui/Icon.astro';
+import { formatDate } from '../../../lib/format';
+import type { FcBundle } from '../../../lib/forecast-data';
+
+interface Props {
+  b: FcBundle;
+  openFrom?: number | undefined;
+}
+const { b } = Astro.props;
+const events = [...b.inputs.events].sort((x, y) => (x.date < y.date ? 1 : x.date > y.date ? -1 : 0));
+const latest = Number(events[0]?.date.slice(0, 4) ?? 0);
+const openFrom = Astro.props.openFrom ?? latest - 2;
+const years = [...new Set(events.map((e) => Number(e.date.slice(0, 4))))];
+const recent = years.filter((y) => y >= openFrom);
+const older = years.filter((y) => y < openFrom);
+const byYear = (y: number) => events.filter((e) => Number(e.date.slice(0, 4)) === y);
+---
+
+<div class="fc-tl">
+  {
+    recent.map((y) => (
+      <section class="fc-tl__year" aria-label={`${y} 年`}>
+        <h3 class="fc-tl__y">{y}</h3>
+        <ol class="fc-tl__list" role="list">
+          {byYear(y).map((e) => (
+            <li class="fc-tl__item">
+              <time datetime={e.date}>{formatDate(e.date, 'md')}</time>
+              <div>
+                <p class="fc-tl__title">{e.title}</p>
+                <p class="fc-tl__detail">
+                  {e.detail}
+                  <FcCite k={e.src} />
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+    ))
+  }
+  {
+    older.length > 0 && (
+      <details class="mem-more fc-tl__older">
+        <summary>
+          {older.at(-1)}–{older[0]} 年的 {older.reduce((n, y) => n + byYear(y).length, 0)} 則事件
+          <Icon name="chevron-down" />
+        </summary>
+        {older.map((y) => (
+          <section class="fc-tl__year" aria-label={`${y} 年`}>
+            <h3 class="fc-tl__y">{y}</h3>
+            <ol class="fc-tl__list" role="list">
+              {byYear(y).map((e) => (
+                <li class="fc-tl__item">
+                  <time datetime={e.date}>{formatDate(e.date, 'md')}</time>
+                  <div>
+                    <p class="fc-tl__title">{e.title}</p>
+                    <p class="fc-tl__detail">
+                      {e.detail}
+                      <FcCite k={e.src} />
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))}
+      </details>
+    )
+  }
+</div>

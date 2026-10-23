@@ -1,0 +1,829 @@
+# 記憶體價格序列：群聯與美光財報模型（/memory/phison/、/memory/micron/）共用的市場價格輸入。
+# 格式見 src/schemas/forecast.ts（marketPrices）；驗證：npx tsx scripts/check-forecast.ts。
+# 季度 qoq 序列的 value 為 TrendForce 估計區間中值（estimate）或事前預測中值（forecast），區間寫在 low／high。
+asOf: "2026-10-23"
+series:
+  - id: nand-contract-qoq
+    name: "NAND Flash 整體合約價季變化"
+    product: nand
+    kind: qoq-change
+    unit: "%"
+    frequency: quarter
+    definition: "TrendForce（集邦科技，含旗下 DRAMeXchange）公布的 NAND Flash 整體合約價較前一季的變化，涵蓋 eMMC／UFS、企業級與用戶端 SSD、3D NAND 晶圓等品項；2020 年起取自其季度價格表「Total NAND Flash」列。value 採 TrendForce 在該季季末或季後公布的估計區間中值（status: estimate），只有事前預測者標 forecast；low／high 為該區間，當時的事前預測寫在 note。"
+    note: "序列 2015Q4–2026Q4 連續無缺口，可直接串成價格指數。口徑與可信度：2020Q1 起為 TrendForce 價格表的整體值（可信度高）；2018Q2–2019Q3 為其新聞稿中的整體合約價敘述（可信度中）；2015Q4–2018Q1 與 2019Q4 TrendForce 未公布整體值，改用代表性品項（通路顆粒、eMMC、用戶端 SSD）或由營收與位元出貨推算，標為「代理值」或「推算值」，可信度低，建模時宜降低權重或從 2018Q2 之後開始。季後的實現值另可參考 TrendForce NAND 營收排名中的產業平均售價（nand-industry-asp-qoq），兩者因產品組合與容量升級而不同：例如 2022Q1 合約價季減 5–10%，平均售價只季減 2.3%；2022Q3 合約價季減 13–18%，平均售價季減 18.3%。2024–2026 年各點與記憶體專題 nand.yaml 一致。2027 年：截至 2026-10-23 TrendForce 未公布各季合約價數字預測，只指出 2027 下半年新產能開出、消費性需求疲弱，NAND 供給轉寬鬆、價格面臨下行壓力（tf-20260730-13158），供給成長將高於需求（tf-20260721-13148）。"
+    points:
+      - { period: "2015Q4", value: -9.5, low: -10, high: -9, status: estimate, src: tf-20160301-9265, note: "代理值：TrendForce 當時未公布整體值，取通路 NAND 顆粒合約價季減 9–10%；同季 eMMC 與 SSD 合約價季減 10–11%" }
+      - { period: "2016Q1", value: -10, status: estimate, src: tf-20160520-9395, note: "代理值：通路 NAND 顆粒合約價季減約 10%（事後值）；eMMC 與用戶端 SSD 合約價季減 13–18%" }
+      - { period: "2016Q2", value: -7.5, low: -11, high: -4, status: estimate, src: tf-20160527-9398, note: "代理值，可信度低：TrendForce 未公布整體值，取 PC OEM 用戶端 SSD（TLC 機種）合約價季減 4–11% 的中值（MLC 機種季減 6–10%）；同季 eMMC 與 SSD 跌幅收斂，通路晶圓價格自 4 月起逐月上漲（tf-20160913-9519）" }
+      - { period: "2016Q3", value: 0, status: estimate, src: tf-20160829-9502, note: "代理值，可信度低：PC OEM 用戶端 SSD 合約價 MLC 機種季增 0–0.5%、TLC 機種季減 0–1%，取 0；同期主流 128Gb TLC 晶圓合約價自 6 月底到 8 月下旬上漲 10%（tf-20160906-9514），TrendForce 事後指出 NAND 於第三季開始漲價（tf-20161201-9602），整體實際漲幅可能高於此值" }
+      - { period: "2016Q4", value: 9, low: 5, high: 13, status: estimate, src: tf-20161212-9611, note: "代理值：eMMC／UFS 合約價季增 9–13%、企業級與用戶端 SSD 季增 5–10%（季中估計），取兩者合併區間 5–13% 的中值" }
+      - { period: "2017Q1", value: 15, low: 10, high: 20, status: estimate, src: tf-20170223-9659, note: "代理值：eMMC 合約價季增 15–20%、SSD 季增 10–15%（季中估計），取合併區間中值；TrendForce 事後指出 eMMC／UFS、用戶端與企業級 SSD 合約價均漲逾 10%（tf-20171211-9927），通路顆粒合約價漲 20–25%（tf-20170601-9767）" }
+      - { period: "2017Q2", value: 6.5, low: 3, high: 10, status: estimate, src: tf-20170821-9834, note: "各類 NAND 產品合約價季增 3–10%（事後值）；2 月預估 SSD 與 eMMC 季增 5–10%（tf-20170223-9659）" }
+      - { period: "2017Q3", value: 3, low: 0, high: 6, status: estimate, src: tf-20171120-9917, note: "各產品線合約價季增不超過 0–6%（事後值），價格已接近 OEM 可接受上限" }
+      - { period: "2017Q4", value: 0, status: estimate, src: tf-20180228-9963, note: "代理值，可信度低：只有 eMMC／UFS 合約價季增 0–5%，PC、平板、伺服器等其他應用的合約價持平或小跌（事後值）；TrendForce 2017 年 12 月描述第四季「整體合約價以持平或小漲開出」（tf-tw-20171211-3632），取 0" }
+      - { period: "2018Q1", value: -4.5, low: -6, high: -3, status: estimate, src: tf-20180312-9968, note: "代理值，可信度低：PC OEM 用戶端 SSD 合約價 SATA 機種季減 3–5%、PCIe 機種季減 4–6%；TrendForce 預估第一季轉為供過於求，SSD、顆粒與晶圓合約價翻轉走跌（tf-20171211-9927）" }
+      - { period: "2018Q2", value: -17.5, low: -20, high: -15, status: estimate, src: tf-20180816-10040, note: "NAND Flash 合約價平均季減 15–20%（事後值）" }
+      - { period: "2018Q3", value: -12.5, low: -15, high: -10, status: estimate, src: tf-20181119-10072, note: "合約價平均季減 10–15%（事後值）；7 月預估平均售價季減約 10%（tf-20180731-10031）" }
+      - { period: "2018Q4", value: -12.5, low: -15, high: -10, status: forecast, src: tf-20181009-10059, note: "TrendForce 未公布事後整體值，取 2018 年 10 月預估季減 10–15%；事後的各大廠第四季 NAND 平均售價季減約 10–21%（三星逾 20%、SK海力士 21%、東芝 15%、威騰 18%，tf-20190221-10105），實際跌幅可能大於此值" }
+      - { period: "2019Q1", value: -20, status: estimate, src: tf-20190320-10114, note: "第一季各類 NAND 產品合約價季減約 20%，為 2018 年初轉為供過於求以來最大（季末估計）；2018 年 12 月預估季減約 10%（tf-20181217-10083）；eMMC／UFS、用戶端 SSD、企業級 SSD 分別季減 15–20%、17–31%、26–32%（tf-20190530-10141）" }
+      - { period: "2019Q2", value: -20, status: estimate, src: tf-20190620-10152, note: "TrendForce 6 月指出 NAND 平均合約價已連續兩季季減近 20%；3 月預估季減 10–15%（tf-20190320-10114）。品牌商營收持平、位元出貨增約 15%（tf-20190815-10175），隱含平均售價季減約 13%" }
+      - { period: "2019Q3", value: -10, low: -15, high: -5, status: estimate, src: tf-20190805-10170, note: "占 NAND 市場近八成的 SSD 與 eMMC／UFS 合約價季減 5–15%（季中估計），企業級產品跌逾 15%，晶圓價格則因東芝記憶體（現鎧俠）四日市廠 6 月停電逆勢上漲（7 月底漲逾 15%，全季約 20%，tf-20200102-10212）；6 月預估季減約 10%（tf-20190620-10152）" }
+      - { period: "2019Q4", value: -1, status: estimate, src: tf-20200221-10225, note: "推算值，可信度低：TrendForce 未公布整體合約價變化，只說明合約價成功反彈、eMMC／UFS 與 SSD 合約價強勁回升（tf-20200102-10212）；此處以第四季 NAND 營收季增 8.5%、位元出貨季增近 10% 推算平均售價約季減 1%（容量升級使每 GB 售價下降，抵銷合約價漲幅），合約價本身的漲幅應高於此值" }
+      - { period: "2020Q1", value: 2.5, low: 0, high: 5, status: estimate, src: tf-20200730-10416, note: "2020 年 7 月價格表 1Q20「up 0–5%」（事後值）；1 月預估季增逾 10%（tf-20200102-10212），3 月估季增 5%（tf-20200326-10254）" }
+      - { period: "2020Q2", value: 7.5, low: 5, high: 10, status: estimate, src: tf-20201007-10505, note: "2Q20 up 5–10%（事後值）；3 月預估 up 5–10%（tf-20200326-10254）" }
+      - { period: "2020Q3", value: -7.5, low: -10, high: -5, status: estimate, src: tf-20201007-10505, note: "3Q20E down 5–10%；6 月預估 down 0–5%（tf-20200629-10363），7 月下修為 down 5–10%（tf-20200730-10416）" }
+      - { period: "2020Q4", value: -7.5, low: -10, high: -5, status: estimate, src: tf-20201214-10599, note: "4Q20E down 5–10%；7 月預估 down 10–15%（tf-20200730-10416），10 月預估 down 約 10%（tf-20201007-10505）" }
+      - { period: "2021Q1", value: -7.5, low: -10, high: -5, status: estimate, src: tf-20210317-10720, note: "1Q21E down 5–10%；2020 年 12 月預估 down 10–15%（tf-20201214-10599）" }
+      - { period: "2021Q2", value: 7.5, low: 5, high: 10, status: estimate, src: tf-20210714-10861, note: "2Q21 up 5–10%（事後值）；3 月預估 up 3–8%（tf-20210317-10720）" }
+      - { period: "2021Q3", value: 7.5, low: 5, high: 10, status: estimate, src: tf-20210923-10950, note: "3Q21E up 5–10%；6 月預估由 3–8% 上修為 5–10%（tf-20210608-10822）" }
+      - { period: "2021Q4", value: -2.5, low: -5, high: 0, status: estimate, src: tf-20211215-11056, note: "4Q21E down 0–5%；9 月預估 down 0–5%（tf-20210923-10950）" }
+      - { period: "2022Q1", value: -7.5, low: -10, high: -5, status: estimate, src: tf-20220330-11181, note: "1Q22E down 5–10%；2021 年 12 月預估 down 10–15%（tf-20211215-11056），2022 年 1 月修正為 down 8–13%（tf-20220124-11101）" }
+      - { period: "2022Q2", value: 5.5, low: 3, high: 8, status: estimate, src: tf-20220621-11268, note: "2Q22E up 3–8%；3 月因鎧俠／威騰原料汙染事件預估 up 5–10%（tf-20220330-11181）" }
+      - { period: "2022Q3", value: -15.5, low: -18, high: -13, status: estimate, src: tf-20220926-11395, note: "3Q22E down 13–18%；6 月預估 down 0–5%（tf-20220621-11268），7 月下修 down 8–13%（tf-20220719-11310），8 月再下修 down 13–18%（tf-20220824-11346）" }
+      - { period: "2022Q4", value: -22.5, low: -25, high: -20, status: estimate, src: tf-20230317-11618, note: "合約價季減 20–25%（事後值，亦見 2023 年 1 月價格表 tf-20230105-11526）；2022 年 9 月預估 down 15–20%（tf-20220926-11395）" }
+      - { period: "2023Q1", value: -12.5, low: -15, high: -10, status: estimate, src: tf-20230911-11839, note: "2023 年 9 月價格表 1Q23 down 10–15%（事後值）；1 月預估 down 10–15%（tf-20230105-11526）" }
+      - { period: "2023Q2", value: -12.5, low: -15, high: -10, status: estimate, src: tf-20230911-11839, note: "2Q23 down 10–15%（事後值）；3 月預估 down 5–10%（tf-20230330-11630），5 月下修 down 8–13%（tf-20230509-11667）" }
+      - { period: "2023Q3", value: -7.5, low: -10, high: -5, status: estimate, src: tf-20231017-11883, note: "3Q23 down 5–10%（2023 年 10 月價格表）；7 月預估 down 3–8%（tf-20230706-11752）" }
+      - { period: "2023Q4", value: 15.5, low: 13, high: 18, status: estimate, src: tf-20240109-11991, note: "4Q23 up 13–18%（2024 年 1 月價格表）；9 月預估 up 0–5%（tf-20230911-11839），10 月上修 up 8–13%（tf-20231017-11883）" }
+      - { period: "2024Q1", value: 25.5, low: 23, high: 28, status: estimate, src: tf-20240507-12128, note: "1Q24 up 23–28%（2024 年 3 月與 5 月價格表，另見 tf-20240328-12096）；1 月預估 up 15–20%（tf-20240109-11991）" }
+      - { period: "2024Q2", value: 17.5, low: 15, high: 20, status: estimate, src: tf-20240628-12210, note: "2Q24E up 15–20%；3 月預估 up 13–18%（tf-20240328-12096），5 月上修 15–20%（tf-20240507-12128）" }
+      - { period: "2024Q3", value: 7.5, low: 5, high: 10, status: estimate, src: tf-20241015-12327, note: "3Q24 up 5–10%（事後值）；6 月預估 up 5–10%（tf-20240628-12210）" }
+      - { period: "2024Q4", value: -5.5, low: -8, high: -3, status: estimate, src: tf-20241231-12427, note: "4Q24E down 3–8%；10 月預估 down 3–8%（tf-20241015-12327）" }
+      - { period: "2025Q1", value: -17.5, low: -20, high: -15, status: estimate, src: tf-20250417-12551, note: "1Q25 down 15–20%（2025 年 4 月價格表，另見 3 月 tf-20250326-12530）；2024 年 12 月預估 down 10–15%（tf-20241231-12427）" }
+      - { period: "2025Q2", value: 5.5, low: 3, high: 8, status: estimate, src: tf-20250709-12638, note: "2Q25 up 3–8%（事後值）；3 月預估 up 0–5%（tf-20250326-12530），4 月上修 up 3–8%（tf-20250417-12551）" }
+      - { period: "2025Q3", value: 5.5, low: 3, high: 8, status: estimate, src: tf-20250925-12736, note: "3Q25E up 3–8%（季末估計）；7 月預估 up 5–10%（tf-20250709-12638）" }
+      - { period: "2025Q4", value: 35.5, low: 33, high: 38, status: estimate, src: tf-20260202-12911, note: "4Q25 up 33–38%（2026 年 1 月與 2 月價格表）；2025 年 9 月預估 up 5–10%（tf-20250925-12736），12 月上修 20–25%（tf-20251203-12813）" }
+      - { period: "2026Q1", value: 87.5, low: 85, high: 90, status: estimate, src: tf-20260331-12995, note: "1Q26E up 85–90%（2026 年 3 月價格表，季末估計）；預估一路上修：1 月 up 33–38%（tf-20260105-12860）、2 月 up 55–60%（tf-20260202-12911）" }
+      - { period: "2026Q2", value: 57.5, low: 55, high: 60, status: estimate, src: tf-20260703-13134, note: "2Q26 up 55–60%（2026 年 7 月價格表）；3 月預估 up 70–75%（tf-20260331-12995），實際漲幅低於預估" }
+      - { period: "2026Q3", value: 20.5, low: 18, high: 23, status: estimate, src: tf-20260930-13258, note: "3Q26E up 18–23%（9 月 30 日季末估計）；7 月預估 up 10–15%（tf-20260703-13134）" }
+      - { period: "2026Q4", value: 17.5, low: 15, high: 20, status: forecast, src: tf-20260930-13258, note: "4Q26F up 15–20%（2026 年 9 月預測）" }
+  - id: dram-contract-qoq
+    name: "一般型 DRAM 合約價季變化"
+    product: dram
+    kind: qoq-change
+    unit: "%"
+    frequency: quarter
+    definition: "TrendForce 公布的 DRAM 整體合約價（平均售價）較前一季的變化。2024Q3 起 TrendForce 把一般型（conventional）DRAM 與含 HBM 的混合價分開，本序列 2024Q3 起採一般型、不含 HBM；2024Q2 以前 TrendForce 未區分 HBM（當時 HBM 位元滲透率約 4% 以下），為整體 DRAM。value 採季末或季後估計區間中值，事前預測寫在 note。"
+    note: "序列 2016Q2–2026Q4 連續無缺口；2016Q1 TrendForce 未公布整體值，因此從 2016Q2 開始。口徑：2016Q4–2017Q2 TrendForce 以 PC DRAM（標準型）合約價為主要指標，未公布各應用加權值，這三季採 PC DRAM 漲幅，會高估整體漲幅（同期行動 DRAM 漲幅較小）；2016Q3 只有事前預測。2018 年起取自 TrendForce「DRAM ASP」或「Total DRAM」價格表列（可信度高）。含 HBM 的混合價見 dram-incl-hbm-contract-qoq。2024–2026 年各點與記憶體專題 dram.yaml 一致。2027 年：TrendForce 指出 DRAM 2027 年仍吃緊、記憶體合約價大致維持高檔（tf-20260825-13198、tf-20260730-13158），但未公布各季數字預測。"
+    points:
+      - { period: "2016Q2", value: -5, status: estimate, src: tf-20160811-9485, note: "各應用 DRAM 平均售價季減逾 5%（事後值）；2016Q1 TrendForce 未公布整體值（PC DRAM 2015Q4 季減 16%，tf-20160218-9247；伺服器 DRAM 2016 上半年每季跌逾 10%，tf-20160901-9505），因此序列從 2016Q2 開始" }
+      - { period: "2016Q3", value: 6, low: 4, high: 8, status: forecast, src: tf-20160705-9444, note: "TrendForce 未公布事後整體值，取 7 月預估季增 4–8%；PC DRAM 4GB 模組合約價由 6 月 12.5 美元升至 9 月 14.5 美元，伺服器 DRAM 自第三季初漲約 10%（tf-20161003-9539）" }
+      - { period: "2016Q4", value: 30, status: estimate, src: tf-20170214-9652, note: "口徑為 PC DRAM（標準型）：PC DRAM 模組合約價季增逾 30%（事後值），伺服器 DRAM 漲幅落後；2016 年 9 月預估 DRAM 合約價季增逾 10%（tf-20160906-9514）" }
+      - { period: "2017Q1", value: 40, status: estimate, src: tf-20170807-9820, note: "口徑為 PC DRAM：PC DRAM 模組平均合約價季增近 40% 至 24 美元（事後值；5 月時稱至少 30%，tf-20170518-9752）；同季行動 DRAM 漲幅最小，整體漲幅應低於此值" }
+      - { period: "2017Q2", value: 12.5, status: estimate, src: tf-20170807-9820, note: "口徑為 PC DRAM：模組平均合約價由第一季 24 美元升至第二季 27 美元（+12.5%，原文為季增逾 10%，未給區間）；PC 與伺服器 DRAM 平均售價季增逾 10%、行動 DRAM 不到 5%（tf-20170817-9832）" }
+      - { period: "2017Q3", value: 5, status: estimate, src: tf-20171113-9912, note: "各類 DRAM 產品合約價平均季增約 5%（事後值）；6 月預估整體平均售價至少 +5%（tf-20170626-9781）" }
+      - { period: "2017Q4", value: 10, status: estimate, src: tf-20171113-9912, note: "季中估計：整體平均季漲幅約 10%；事後 TrendForce 指出行動 DRAM 依容量季增 5–20%、其他應用季增 5–10%（tf-20180213-9959）" }
+      - { period: "2018Q1", value: 4.5, low: 3, high: 6, status: estimate, src: tf-20180514-9992, note: "除繪圖 DRAM（季增 15%）外，各應用 DRAM 合約價季增 3–6%（事後值）" }
+      - { period: "2018Q2", value: 3, status: estimate, src: tf-20180813-10036, note: "多數 DRAM 產品合約價平均季增約 3%（事後值；繪圖 DRAM 近 15%）" }
+      - { period: "2018Q3", value: 1, low: 0, high: 2, status: estimate, src: tf-20181115-10071, note: "PC、伺服器、行動 DRAM 合約價季增 0–2%（事後值）；2018 年 9 月價格表的 DRAM ASP 為「>3%」（tf-20180926-10055）" }
+      - { period: "2018Q4", value: -10, status: estimate, src: tf-20190102-10087, note: "DRAM 合約價第四季急轉直下、季減約 10%（事後值），結束連續九季上漲；8 月預估 -1~-3%（tf-20180816-10039），9 月修正為約 -5%（tf-20180926-10055），12 月估近 -8%（tf-20181204-10078）" }
+      - { period: "2019Q1", value: -22.5, low: -25, high: -20, status: estimate, src: tf-20191111-10197, note: "2019 年 11 月表列 1Q19 DRAM 平均售價季減 20–25%；PC DRAM 合約價季減近 30%（tf-20190305-10109）；1 月預估近 -20%（tf-20190115-10093）" }
+      - { period: "2019Q2", value: -22.5, low: -25, high: -20, status: estimate, src: tf-20191111-10197, note: "2Q19 季減 20–25%（事後值）；3 月預估 -15~-20%（tf-20190325-10115）" }
+      - { period: "2019Q3", value: -17.5, low: -20, high: -15, status: estimate, src: tf-20191111-10197, note: "3Q19 季減 15–20%（事後值）；3 月預估約 -10%，6 月下修為 -10~-15%（tf-20190606-10146）" }
+      - { period: "2019Q4", value: -5, status: estimate, src: tf-20191111-10197, note: "4Q19E 季減約 5%（季中估計）；6 月預估約 -10%（tf-20190606-10146）" }
+      - { period: "2020Q1", value: 2.5, low: 0, high: 5, status: estimate, src: tf-20200513-10308, note: "整體 DRAM 平均售價季增約 0–5%（事後值）；2019 年 11 月預估小幅下跌，2020 年 1 月改為小幅上漲（tf-20200108-10214）" }
+      - { period: "2020Q2", value: 10, status: estimate, src: tf-20201007-10505, note: "2020 年 10 月表列 2Q20「up 10% or higher」，取下緣 10" }
+      - { period: "2020Q3", value: -10, status: estimate, src: tf-20201007-10505, note: "3Q20E 季減約 10%" }
+      - { period: "2020Q4", value: -7.5, low: -10, high: -5, status: estimate, src: tf-20210304-10690, note: "DRAM 平均售價季減 5–10%（事後值）；10 月預估約 -10%（tf-20201007-10505），12 月估 -8~-13%（tf-20201210-10590）" }
+      - { period: "2021Q1", value: 2.5, low: 0, high: 5, status: estimate, src: tf-20210511-10777, note: "DRAM 平均售價季增 0–5%（事後值）；3 月時稱各類 DRAM 合約價季增 3–8%（tf-20210316-10717）" }
+      - { period: "2021Q2", value: 20.5, low: 18, high: 23, status: estimate, src: tf-20210713-10858, note: "2Q21 up 18–23%（事後值）；3 月預估 up 13–18%，4 月上修 18–23%（tf-20210420-10768）" }
+      - { period: "2021Q3", value: 5.5, low: 3, high: 8, status: estimate, src: tf-20210922-10947, note: "3Q21E up 3–8%；7 月預估 up 3–8%（tf-20210713-10858）" }
+      - { period: "2021Q4", value: -5.5, low: -8, high: -3, status: estimate, src: tf-20211213-11050, note: "4Q21E down 3–8%；9 月預估 down 3–8%（tf-20210922-10947）" }
+      - { period: "2022Q1", value: -10.5, low: -13, high: -8, status: estimate, src: tf-20220328-11175, note: "1Q22E down 8–13%；2021 年 12 月預估 down 8–13%（tf-20211213-11050）" }
+      - { period: "2022Q2", value: -2.5, low: -5, high: 0, status: estimate, src: tf-20220620-11264, note: "2Q22E down 0–5%；3 月預估 down 0–5%（tf-20220328-11175）" }
+      - { period: "2022Q3", value: -12.5, low: -15, high: -10, status: estimate, src: tf-20221116-11459, note: "合約價季減 10–15%（事後值，亦見 9 月價格表 tf-20220922-11391）；6 月預估 down 3–8%（tf-20220620-11264），7 月下修約 -10%（tf-20220704-11286）" }
+      - { period: "2022Q4", value: -22.5, low: -25, high: -20, status: estimate, src: tf-20230109-11533, note: "4Q22E down 20–25%（DDR5 混合計算）；9 月預估 down 13–18%（tf-20220922-11391）" }
+      - { period: "2023Q1", value: -20, status: estimate, src: tf-20230328-11626, note: "1Q23E 季減約 20%；1 月預估 down 13–18%（tf-20230109-11533）" }
+      - { period: "2023Q2", value: -15.5, low: -18, high: -13, status: estimate, src: tf-20230705-11743, note: "2Q23E down 13–18%；3 月預估 down 10–15%（tf-20230328-11626），5 月下修 13–18%（tf-20230509-11667）" }
+      - { period: "2023Q3", value: -2.5, low: -5, high: 0, status: estimate, src: tf-20231013-11880, note: "3Q23 down 0–5%（事後值）；7 月預估 down 0–5%（tf-20230705-11743）" }
+      - { period: "2023Q4", value: 15.5, low: 13, high: 18, status: estimate, src: tf-20240108-11988, note: "4Q23 up 13–18%（事後值）；10 月預估 up 3–8%（tf-20231013-11880），12 月上修 13–18%（tf-20231204-11942）" }
+      - { period: "2024Q1", value: 20, status: estimate, src: tf-20240507-12128, note: "1Q24 up 約 20%（2024 年 3 月與 5 月價格表）；1 月預估 up 13–18%（tf-20240108-11988）" }
+      - { period: "2024Q2", value: 15.5, low: 13, high: 18, status: estimate, src: tf-20240815-12254, note: "2Q24 合約價最終調幅 13–18%（事後值）；當時為含 HBM 的整體 DRAM（HBM 位元滲透率約 4%）；3 月預估 up 3–8%（tf-20240326-12093），5 月上修 13–18%（tf-20240507-12128）" }
+      - { period: "2024Q3", value: 10.5, low: 8, high: 13, status: estimate, src: tf-20241126-12380, note: "一般型 DRAM 合約價季增 8–13%（事後值）；6 月預估 5–10%（tf-20240627-12207），8 月上修 8–13%（tf-20240815-12254）" }
+      - { period: "2024Q4", value: -5.5, low: -8, high: -3, status: estimate, src: tf-20241230-12424, note: "4Q24E down 3–8%；10 月預估 up 0–5%（tf-20241009-12325）" }
+      - { period: "2025Q1", value: -10.5, low: -13, high: -8, status: estimate, src: tf-20250417-12551, note: "1Q25 down 8–13%（2025 年 4 月價格表）；2024 年 12 月預估 down 8–13%（tf-20241230-12424）" }
+      - { period: "2025Q2", value: 7.5, low: 5, high: 10, status: estimate, src: tf-20250707-12633, note: "2Q25 up 5–10%（事後值）；3 月預估 down 0–5%（tf-20250325-12528），4 月上修 up 3–8%（tf-20250417-12551）" }
+      - { period: "2025Q3", value: 12.5, low: 10, high: 15, status: estimate, src: tf-20250924-12733, note: "3Q25E up 10–15%（季末估計）；7 月預估 up 10–15%（tf-20250707-12633）" }
+      - { period: "2025Q4", value: 47.5, low: 45, high: 50, status: estimate, src: tf-20260226-12937, note: "一般型 DRAM 合約價季增 45–50%（事後值）；9 月預估 up 8–13%（tf-20250924-12733），11 月上修 45–50%（tf-20251126-12802）" }
+      - { period: "2026Q1", value: 95.5, low: 93, high: 98, status: estimate, src: tf-20260331-12995, note: "1Q26E up 93–98%（2026 年 3 月價格表，季末估計）；1 月預估 55–60%（tf-20260105-12860），2 月上修 90–95%（tf-20260202-12911）" }
+      - { period: "2026Q2", value: 60.5, low: 58, high: 63, status: estimate, src: tf-20260703-13134, note: "2Q26 up 58–63%（事後值）；3 月預估 58–63%（tf-20260331-12995）" }
+      - { period: "2026Q3", value: 15.5, low: 13, high: 18, status: estimate, src: tf-20260930-13258, note: "3Q26E up 13–18%（季末估計）；7 月預估 13–18%（tf-20260703-13134），部分伺服器客戶簽有長約，限制漲幅（tf-20260709-13140）" }
+      - { period: "2026Q4", value: 12.5, low: 10, high: 15, status: forecast, src: tf-20260930-13258, note: "4Q26F up 10–15%（2026 年 9 月預測）" }
+  - id: dram-incl-hbm-contract-qoq
+    name: "DRAM 合約價季變化（一般型與 HBM 混合）"
+    product: dram
+    kind: qoq-change
+    unit: "%"
+    frequency: quarter
+    definition: "TrendForce 價格表中「HBM Blended」：一般型 DRAM 與 HBM 合併計算的整體合約價季變化，2024 年下半年起公布。HBM 多為年度議價、單價遠高於一般型 DRAM，本序列反映 HBM 占比提高後 DRAM 廠的整體價格。"
+    note: "TrendForce 2026 年 6 月指出 HBM 合約價 2027 年可能大幅上漲（tf-20260602-13074），2026 年 8 月估 2027 年 HBM 合約價可能再漲 70–140%（tf-20260825-13198），9 月 29 日再上修，預估 2027 年 HBM 混合平均售價（blended ASP）年增 121%（tf-20260929-13255，為截至 2026-10-23 的最新數字）；年度變化不屬於本季序列，寫在此供參考。"
+    points:
+      - { period: "2024Q3", value: 12.5, low: 10, high: 15, status: estimate, src: tf-20241009-12325, note: "3Q24 up 10–15%（HBM 位元滲透率約 6%）；6 月預估 up 8–13%（tf-20240627-12207）" }
+      - { period: "2024Q4", value: 4, low: 0, high: 8, status: estimate, src: tf-20241230-12424, note: "4Q24E up 0–8%（HBM 滲透率約 7%）；10 月預估 up 8–13%（tf-20241009-12325）" }
+      - { period: "2025Q1", value: -2.5, low: -5, high: 0, status: estimate, src: tf-20250417-12551, note: "1Q25 down 0–5%（2025 年 4 月價格表）；2024 年 12 月預估 down 0–5%（tf-20241230-12424）" }
+      - { period: "2025Q2", value: 7.5, low: 5, high: 10, status: estimate, src: tf-20250707-12633, note: "2Q25 up 5–10%（HBM 滲透率約 9%）；3 月預估 up 3–8%（tf-20250325-12528）" }
+      - { period: "2025Q3", value: 17.5, low: 15, high: 20, status: estimate, src: tf-20250924-12733, note: "3Q25E up 15–20%（季末估計）" }
+      - { period: "2025Q4", value: 52.5, low: 50, high: 55, status: estimate, src: tf-20260226-12937, note: "一般型與 HBM 混合合約價季增 50–55%（事後值）；9 月預估 up 13–18%（tf-20250924-12733）" }
+      - { period: "2026Q1", value: 82.5, low: 80, high: 85, status: estimate, src: tf-20260202-12911, note: "1Q26E 修正後 up 80–85%（2026 年 2 月價格表）；3 月價格表只列一般型 DRAM" }
+      - { period: "2026Q2", value: 55.5, low: 53, high: 58, status: estimate, src: tf-20260703-13134, note: "2Q26 up 53–58%（事後值）" }
+      - { period: "2026Q3", value: 10.5, low: 8, high: 13, status: estimate, src: tf-20260930-13258, note: "3Q26E up 8–13%（季末估計）" }
+      - { period: "2026Q4", value: 17.5, low: 15, high: 20, status: forecast, src: tf-20260930-13258, note: "4Q26F up 15–20%；含 HBM 的漲幅高於一般型，反映 HBM 合約調價" }
+  - id: ssd-enterprise-contract-qoq
+    name: "企業級 SSD 合約價季變化"
+    product: ssd
+    kind: qoq-change
+    unit: "%"
+    frequency: quarter
+    definition: "TrendForce 季度價格表的「Enterprise SSD」列：資料中心與伺服器用 SSD 的合約價季變化，區間取中值。"
+    note: "2020Q4–2026Q1 連續；更早的季度 TrendForce 只零星公布，未納入。2026Q2 起 TrendForce 公開新聞稿不再列出企業級 SSD 的季變化百分比，只指出 2025 下半年累計上漲約 35%、2026 年預估累計上漲約 235%（tf-20260825-13198），且 2026Q4 北美需求上修、價格持續上揚（tf-20260921-13246）。"
+    points:
+      - { period: "2020Q4", value: -12.5, low: -15, high: -10, status: estimate, src: tf-20201214-10599, note: "4Q20E down 10–15%" }
+      - { period: "2021Q1", value: -12.5, low: -15, high: -10, status: estimate, src: tf-20210317-10720, note: "1Q21E down 10–15%" }
+      - { period: "2021Q2", value: 2.5, low: 0, high: 5, status: estimate, src: tf-20210714-10861, note: "2Q21 up 0–5%（事後值）" }
+      - { period: "2021Q3", value: 15.5, low: 13, high: 18, status: estimate, src: tf-20210923-10950, note: "3Q21E up 13–18%；7 月預估約 +15%（tf-20210729-10875）" }
+      - { period: "2021Q4", value: 2.5, low: 0, high: 5, status: estimate, src: tf-20211215-11056, note: "4Q21E up 0–5%" }
+      - { period: "2022Q1", value: -5.5, low: -8, high: -3, status: estimate, src: tf-20220330-11181, note: "1Q22E down 3–8%" }
+      - { period: "2022Q2", value: 7.5, low: 5, high: 10, status: estimate, src: tf-20220621-11268, note: "2Q22E up 5–10%" }
+      - { period: "2022Q3", value: -12.5, low: -15, high: -10, status: estimate, src: tf-20220926-11395, note: "3Q22E down 10–15%" }
+      - { period: "2022Q4", value: -25, status: estimate, src: tf-20230306-11591, note: "企業級 SSD 價格季減約 25%（事後值）；2023 年 1 月價格表為 down 23–28%（tf-20230105-11526）" }
+      - { period: "2023Q1", value: -15.5, low: -18, high: -13, status: estimate, src: tf-20230330-11630, note: "1Q23E down 13–18%" }
+      - { period: "2023Q2", value: -15.5, low: -18, high: -13, status: estimate, src: tf-20230706-11752, note: "2Q23E down 13–18%" }
+      - { period: "2023Q3", value: -10.5, low: -13, high: -8, status: estimate, src: tf-20231017-11883, note: "3Q23 down 8–13%（事後值）" }
+      - { period: "2023Q4", value: 12.5, low: 10, high: 15, status: estimate, src: tf-20240109-11991, note: "4Q23 up 10–15%（事後值）" }
+      - { period: "2024Q1", value: 25.5, low: 23, high: 28, status: estimate, src: tf-20240328-12096, note: "1Q24E up 23–28%" }
+      - { period: "2024Q2", value: 22.5, low: 20, high: 25, status: estimate, src: tf-20240628-12210, note: "2Q24E up 20–25%；9 月企業級 SSD 營收報告稱第二季均價季增逾 25%（tf-20240913-12303）" }
+      - { period: "2024Q3", value: 17.5, low: 15, high: 20, status: estimate, src: tf-20241015-12327, note: "3Q24 up 15–20%（事後值）" }
+      - { period: "2024Q4", value: 2.5, low: 0, high: 5, status: estimate, src: tf-20241231-12427, note: "4Q24E up 0–5%" }
+      - { period: "2025Q1", value: -20.5, low: -23, high: -18, status: estimate, src: tf-20250326-12530, note: "1Q25E down 18–23%；企業級 SSD 營收報告稱平均售價季減近 20%（tf-20250619-12624）" }
+      - { period: "2025Q2", value: 0, status: estimate, src: tf-20250709-12638, note: "2Q25 大致持平（mostly flat，事後值）" }
+      - { period: "2025Q3", value: 7.5, low: 5, high: 10, status: forecast, src: tf-20250709-12638, note: "3Q25E up 5–10%（2025-07-09 公布，季初預測；之後 TrendForce 公開資料未再更新本季企業級 SSD 的百分比）" }
+      - { period: "2025Q4", value: 27.5, low: 25, high: 30, status: estimate, src: tf-20260202-12911, note: "4Q25 up 25–30%（事後值）；2025 年 9 月預估 up 5–10%（tf-20250915-12714），12 月預估逾 25%（tf-20251205-12819）" }
+      - { period: "2026Q1", value: 80, status: estimate, src: tf-20260611-13092, note: "企業級 SSD 合約價季增約 80%（事後值）；2 月預估 up 53–58%（tf-20260202-12911）" }
+  - id: ssd-client-contract-qoq
+    name: "用戶端 SSD（PC OEM）合約價季變化"
+    product: ssd
+    kind: qoq-change
+    unit: "%"
+    frequency: quarter
+    definition: "TrendForce 季度價格表的「Client SSD」列：PC OEM 採購的用戶端 SSD 合約價季變化，區間取中值；2025Q3 起改由 TrendForce 價格頁的 PC OEM 用戶端 SSD 季度合約均價（512GB 與 1TB TLC PCIe 主流機種）推算（2025Q3 價格表只有季初估計，2025Q4 起未再公布百分比）。"
+    note: "群聯的 SSD 模組與控制晶片主要賣給 PC OEM 與通路，這條序列比整體 NAND 合約價更接近其售價環境。2025Q3–2026Q3 為由合約均價推算的值，口徑與更早的價格表略有不同（單一容量級距 vs. 各容量加權）。"
+    points:
+      - { period: "2020Q4", value: -10, status: estimate, src: tf-20201214-10599, note: "4Q20E down 約 10%" }
+      - { period: "2021Q1", value: -7.5, low: -10, high: -5, status: estimate, src: tf-20210317-10720, note: "1Q21E down 5–10%" }
+      - { period: "2021Q2", value: 7.5, low: 5, high: 10, status: estimate, src: tf-20210714-10861, note: "2Q21 up 5–10%（事後值）" }
+      - { period: "2021Q3", value: 5.5, low: 3, high: 8, status: estimate, src: tf-20210923-10950, note: "3Q21E up 3–8%" }
+      - { period: "2021Q4", value: -5.5, low: -8, high: -3, status: estimate, src: tf-20211215-11056, note: "4Q21E down 3–8%" }
+      - { period: "2022Q1", value: -5.5, low: -8, high: -3, status: estimate, src: tf-20220330-11181, note: "1Q22E down 3–8%" }
+      - { period: "2022Q2", value: 5.5, low: 3, high: 8, status: estimate, src: tf-20220621-11268, note: "2Q22E up 3–8%" }
+      - { period: "2022Q3", value: -12.5, low: -15, high: -10, status: estimate, src: tf-20220926-11395, note: "3Q22E down 10–15%" }
+      - { period: "2022Q4", value: -20.5, low: -23, high: -18, status: estimate, src: tf-20230105-11526, note: "4Q22E down 18–23%" }
+      - { period: "2023Q1", value: -15.5, low: -18, high: -13, status: estimate, src: tf-20230330-11630, note: "1Q23E down 13–18%" }
+      - { period: "2023Q2", value: -17.5, low: -20, high: -15, status: estimate, src: tf-20230706-11752, note: "2Q23E down 15–20%" }
+      - { period: "2023Q3", value: -10.5, low: -13, high: -8, status: estimate, src: tf-20231017-11883, note: "3Q23 down 8–13%（事後值）" }
+      - { period: "2023Q4", value: 15.5, low: 13, high: 18, status: estimate, src: tf-20240109-11991, note: "4Q23 up 13–18%（事後值）" }
+      - { period: "2024Q1", value: 25.5, low: 23, high: 28, status: estimate, src: tf-20240328-12096, note: "1Q24E up 23–28%" }
+      - { period: "2024Q2", value: 22.5, low: 20, high: 25, status: estimate, src: tf-20240628-12210, note: "2Q24E up 20–25%" }
+      - { period: "2024Q3", value: 5.5, low: 3, high: 8, status: estimate, src: tf-20241015-12327, note: "3Q24 up 3–8%（事後值）" }
+      - { period: "2024Q4", value: -7.5, low: -10, high: -5, status: estimate, src: tf-20241231-12427, note: "4Q24E down 5–10%" }
+      - { period: "2025Q1", value: -20.5, low: -23, high: -18, status: estimate, src: tf-20250326-12530, note: "1Q25E down 18–23%" }
+      - { period: "2025Q2", value: 7.5, low: 5, high: 10, status: estimate, src: tf-20250709-12638, note: "2Q25 up 5–10%（事後值）" }
+      - { period: "2025Q3", value: 10.2, low: 10.1, high: 10.3, status: estimate, src: tf-pp-flash-20250916, note: "推算值：512GB 由 37.90 升至 41.80 美元（+10.3%）、1TB 由 64.60 升至 71.10 美元（+10.1%），取兩者平均（3Q25 合約均價於 2025-07-24 更新）；TrendForce 2025-07-09 價格表的季初估計為 up 3–8%（tf-20250709-12638），實際合約均價漲幅較高" }
+      - { period: "2025Q4", value: 7, low: 3, high: 11, status: estimate, src: tf-pp-flash-20260114, note: "推算值：TrendForce 未公布季變化百分比，由其 PC OEM 用戶端 SSD 合約均價推算（512GB：41.80→46.40 美元，+11.0%；1TB：71.10→73.20 美元，+3.0%），取兩者平均；low／high 為兩容量的季變化" }
+      - { period: "2026Q1", value: 109.8, low: 109.3, high: 110.2, status: estimate, src: tf-pp-flash-20260307, note: "推算值：512GB 由 46.40 升至 97.10 美元（+109.3%）、1TB 由 73.20 升至 153.90 美元（+110.2%）；TrendForce 1 月原預估「至少季增 40%」（tf-20260105-12860），實際漲幅遠高於預估" }
+      - { period: "2026Q2", value: 75.4, low: 75.3, high: 75.5, status: estimate, src: tf-pp-flash-20260610, note: "推算值：512GB 由 97.10 升至 170.20 美元（+75.3%）、1TB 由 153.90 升至 270.10 美元（+75.5%）" }
+      - { period: "2026Q3", value: 18.5, low: 18.2, high: 18.8, status: estimate, src: tf-pp-flash-live, note: "推算值：512GB 由 170.20 升至 201.13 美元（+18.2%）、1TB 由 270.10 升至 321.00 美元（+18.8%）；PC OEM 庫存偏高，第四季供應商轉趨彈性定價（tf-20260930-13258）" }
+  - id: nand-wafer-contract-qoq
+    name: "3D NAND 晶圓（TLC 與 QLC）合約價季變化"
+    product: nand
+    kind: qoq-change
+    unit: "%"
+    frequency: quarter
+    definition: "TrendForce 季度價格表的「3D NAND Wafers (TLC & QLC)」列：原廠賣給模組廠的 NAND 晶圓合約價季變化，區間取中值。模組廠（含群聯）向原廠購買晶圓自行封測，晶圓價格是其進貨成本最直接的指標。"
+    note: "2020Q4–2025Q3 連續。2025Q4 起 TrendForce 公開價格表只列 Total NAND Flash，未再公布晶圓合約價季變化：2025 年 11 月主流晶圓合約價單月上漲 20% 到逾 60%（tf-20251201-12807），晶圓價格水準請改看現貨序列 nand-wafer-512g-tlc-spot。更早的零星資料：2019Q3 晶圓價格約上漲 20%（tf-20200102-10212），2016 年 6 月底至 8 月下旬 128Gb TLC 晶圓合約價上漲 10%（tf-20160906-9514）。"
+    points:
+      - { period: "2020Q4", value: -10, status: estimate, src: tf-20201214-10599, note: "4Q20E down 約 10%" }
+      - { period: "2021Q1", value: 1.5, low: 0, high: 3, status: estimate, src: tf-20210317-10720, note: "1Q21E up 0–3%" }
+      - { period: "2021Q2", value: 7.5, low: 5, high: 10, status: estimate, src: tf-20210714-10861, note: "2Q21 up 5–10%（事後值）" }
+      - { period: "2021Q3", value: 5.5, low: 3, high: 8, status: estimate, src: tf-20210923-10950, note: "3Q21E up 3–8%；7 月預估 up 8–13%（tf-20210714-10861）" }
+      - { period: "2021Q4", value: -12.5, low: -15, high: -10, status: estimate, src: tf-20211215-11056, note: "4Q21E down 10–15%" }
+      - { period: "2022Q1", value: 12.5, low: 10, high: 15, status: estimate, src: tf-20220330-11181, note: "1Q22E up 10–15%（鎧俠／威騰原料汙染事件）" }
+      - { period: "2022Q2", value: -10.5, low: -13, high: -8, status: estimate, src: tf-20220621-11268, note: "2Q22E down 8–13%" }
+      - { period: "2022Q3", value: -32.5, low: -35, high: -30, status: estimate, src: tf-20220926-11395, note: "3Q22E down 30–35%；原預估 down 15–20%（tf-20220901-11366）" }
+      - { period: "2022Q4", value: -22.5, low: -25, high: -20, status: estimate, src: tf-20230105-11526, note: "4Q22E down 20–25%" }
+      - { period: "2023Q1", value: -5.5, low: -8, high: -3, status: estimate, src: tf-20230330-11630, note: "1Q23E down 3–8%" }
+      - { period: "2023Q2", value: -10.5, low: -13, high: -8, status: estimate, src: tf-20230706-11752, note: "2Q23E down 8–13%" }
+      - { period: "2023Q3", value: 5.5, low: 3, high: 8, status: estimate, src: tf-20231017-11883, note: "3Q23 up 3–8%（事後值），8 月起供應商率先調漲晶圓價" }
+      - { period: "2023Q4", value: 37.5, low: 35, high: 40, status: estimate, src: tf-20240109-11991, note: "4Q23 up 35–40%（事後值）" }
+      - { period: "2024Q1", value: 25.5, low: 23, high: 28, status: estimate, src: tf-20240328-12096, note: "1Q24E up 23–28%" }
+      - { period: "2024Q2", value: 7.5, low: 5, high: 10, status: estimate, src: tf-20240628-12210, note: "2Q24E up 5–10%" }
+      - { period: "2024Q3", value: -5.5, low: -8, high: -3, status: estimate, src: tf-20241015-12327, note: "3Q24 down 3–8%（事後值）" }
+      - { period: "2024Q4", value: -22.5, low: -25, high: -20, status: estimate, src: tf-20241231-12427, note: "4Q24E down 20–25%" }
+      - { period: "2025Q1", value: -10.5, low: -13, high: -8, status: estimate, src: tf-20250326-12530, note: "1Q25E down 8–13%" }
+      - { period: "2025Q2", value: 17.5, low: 15, high: 20, status: estimate, src: tf-20250709-12638, note: "2Q25 up 15–20%（事後值）" }
+      - { period: "2025Q3", value: 10.5, low: 8, high: 13, status: forecast, src: tf-20250709-12638, note: "3Q25E up 8–13%（2025-07-09 公布，季初預測；之後 TrendForce 公開價格表不再列晶圓合約價）" }
+  - id: nand-wafer-512g-tlc-spot
+    name: "512Gb TLC NAND 晶圓現貨價"
+    product: nand
+    kind: level
+    unit: "美元／512Gb"
+    frequency: month
+    definition: "TrendForce 價格頁「Wafer Spot Price」的 512Gb TLC 週報價（session average，以每 512Gb 容量當量計），每月取一筆（日期寫在 note），low／high 為該週低點與高點。這是現貨價，波動大、通常領先合約價，不等於原廠合約價。"
+    note: "來源為 TrendForce 價格頁在 Wayback Machine 的存檔與 2026-10-23 讀取的現行頁面；存檔不是每月都有，2025 年 7、8、10 月與 2026 年 3、5 月缺資料。2025 年 5 月約 2.7 美元，到 2026 年 4 月約 21.7 美元，約為 2025 年 5 月的 8 倍，之後小幅回落。TrendForce 會員才能看到的 NAND 晶圓合約價未公開，無法取得。"
+    points:
+      - { period: "2025-05", value: 2.725, low: 2.55, high: 2.9, status: estimate, src: tf-pp-flash-20250605, note: "2025-05-26 週報價" }
+      - { period: "2025-06", value: 2.68, low: 2.55, high: 2.95, status: estimate, src: tf-pp-flash-20250711, note: "2025-06-30 週報價" }
+      - { period: "2025-09", value: 2.84, low: 2.75, high: 3.1, status: estimate, src: tf-pp-flash-20250916, note: "2025-09-08 週報價" }
+      - { period: "2025-11", value: 5.514, low: 5, high: 6, status: estimate, src: tf-pp-flash-20251111, note: "2025-11-03 週報價（單週 +14.2%）" }
+      - { period: "2025-12", value: 9.607, low: 8.5, high: 10.8, status: estimate, src: tf-pp-flash-20251213, note: "2025-12-01 週報價" }
+      - { period: "2026-01", value: 15.052, low: 14, high: 15.8, status: estimate, src: tf-pp-flash-20260124, note: "2026-01-12 週報價（1 月 5 日為 13.724，見 tf-pp-flash-20260114）" }
+      - { period: "2026-02", value: 17.948, low: 15.5, high: 20, status: estimate, src: tf-pp-flash-20260307, note: "2026-02-23 週報價（2 月 2 日為 17.724，見 tf-pp-flash-20260222）" }
+      - { period: "2026-04", value: 21.679, low: 17, high: 23.5, status: estimate, src: tf-pp-flash-20260419, note: "2026-04-06 週報價" }
+      - { period: "2026-06", value: 20.683, low: 16.5, high: 22.5, status: estimate, src: tf-pp-flash-20260610, note: "2026-06-01 週報價" }
+      - { period: "2026-07", value: 19.293, low: 15.5, high: 20, status: estimate, src: tf-pp-flash-20260713, note: "2026-07-06 週報價" }
+      - { period: "2026-08", value: 21.208, low: 17.5, high: 23, status: estimate, src: tf-pp-flash-20260826, note: "2026-08-17 週報價" }
+      - { period: "2026-09", value: 19.883, low: 17.5, high: 22, status: estimate, src: tf-pp-flash-20260928, note: "2026-09-21 週報價" }
+      - { period: "2026-10", value: 18.833, low: 16.8, high: 21, status: estimate, src: tf-pp-flash-live, note: "2026-10-12 週報價" }
+  - id: ssd-client-512gb-contract
+    name: "PC OEM 用戶端 SSD 合約均價（512GB）"
+    product: ssd
+    kind: level
+    unit: "美元／台"
+    frequency: quarter
+    definition: "TrendForce 價格頁「PC-Client OEM SSD Contract Price」的 512GB mSATA／M.2 TLC PCIe Value Grade 季度合約均價，low／high 為報價低點與高點。"
+    note: "2025Q1–2026Q3 取自 TrendForce 價格頁的 Wayback Machine 存檔與現行頁面；更早的季度報價未公開或無存檔。"
+    points:
+      - { period: "2025Q1", value: 34.6, low: 33.5, high: 36, status: estimate, src: tf-pp-flash-20250605, note: "1Q25 報價（2025-01-22 更新）" }
+      - { period: "2025Q2", value: 37.9, low: 36, high: 41, status: estimate, src: tf-pp-flash-20250711, note: "2Q25 報價（2025-04-25 更新）" }
+      - { period: "2025Q3", value: 41.8, low: 40.5, high: 44, status: estimate, src: tf-pp-flash-20250916, note: "3Q25 報價（2025-07-24 更新）" }
+      - { period: "2025Q4", value: 46.4, low: 44, high: 48, status: estimate, src: tf-pp-flash-20260114, note: "4Q25 報價（2025-10-23 更新）" }
+      - { period: "2026Q1", value: 97.1, low: 94, high: 100, status: estimate, src: tf-pp-flash-20260307, note: "1Q26 報價（2026-01-20 更新）" }
+      - { period: "2026Q2", value: 170.2, low: 165, high: 177, status: estimate, src: tf-pp-flash-20260610, note: "2Q26 報價（2026-04-27 更新）" }
+      - { period: "2026Q3", value: 201.13, low: 165, high: 210, status: estimate, src: tf-pp-flash-live, note: "3Q26 報價（2026-08-05 更新）" }
+  - id: ssd-client-1tb-contract
+    name: "PC OEM 用戶端 SSD 合約均價（1TB）"
+    product: ssd
+    kind: level
+    unit: "美元／台"
+    frequency: quarter
+    definition: "TrendForce 價格頁「PC-Client OEM SSD Contract Price」的 1TB mSATA／M.2 TLC PCIe Value Grade 季度合約均價，low／high 為報價低點與高點。"
+    note: "同 ssd-client-512gb-contract。"
+    points:
+      - { period: "2025Q1", value: 60.9, low: 58.5, high: 63.5, status: estimate, src: tf-pp-flash-20250605, note: "1Q25 報價（2025-01-22 更新）" }
+      - { period: "2025Q2", value: 64.6, low: 63, high: 66, status: estimate, src: tf-pp-flash-20250711, note: "2Q25 報價（2025-04-25 更新）" }
+      - { period: "2025Q3", value: 71.1, low: 69, high: 73, status: estimate, src: tf-pp-flash-20250916, note: "3Q25 報價（2025-07-24 更新）" }
+      - { period: "2025Q4", value: 73.2, low: 70, high: 76, status: estimate, src: tf-pp-flash-20260114, note: "4Q25 報價（2025-10-23 更新）" }
+      - { period: "2026Q1", value: 153.9, low: 149, high: 159, status: estimate, src: tf-pp-flash-20260307, note: "1Q26 報價（2026-01-20 更新）" }
+      - { period: "2026Q2", value: 270.1, low: 265, high: 278, status: estimate, src: tf-pp-flash-20260610, note: "2Q26 報價（2026-04-27 更新）" }
+      - { period: "2026Q3", value: 321, low: 265, high: 385, status: estimate, src: tf-pp-flash-live, note: "3Q26 報價（2026-08-05 更新）" }
+  - id: dram-ddr4-8gb-chip-contract
+    name: "DDR4 8Gb 顆粒合約價"
+    product: dram
+    kind: level
+    unit: "美元／顆"
+    frequency: month
+    definition: "TrendForce 價格頁「DRAM Contract Price」的 DDR4 8Gb（1Gx8）下半月合約均價，low／high 為報價低點與高點。"
+    note: "取自 TrendForce 價格頁的 Wayback Machine 存檔與現行頁面（公開頁面約延遲一個半月顯示）；存檔不連續，2025 年 7–9 月、2025 年 12 月至 2026 年 2 月、2026 年 5、7 月缺資料。DDR4 因原廠停產轉進 DDR5／HBM 而急漲，2025 年 6 月下半月 2.6 美元，到 2026 年 8 月下半月 25 美元，約為 2025 年 6 月的 9.6 倍。"
+    points:
+      - { period: "2025-06", value: 2.6, low: 2.4, high: 3, status: estimate, src: tf-pp-dram-20250804, note: "6 月下半月合約均價（較上半月 +23.8%）；2025 下半年原廠減產、停產 DDR4，供給急縮（tf-20250811-12667）" }
+      - { period: "2025-10", value: 7, low: 6.4, high: 7.7, status: estimate, src: tf-pp-dram-20251220, note: "10 月下半月合約均價（較上半月 +11.1%）" }
+      - { period: "2025-11", value: 8.1, low: 7.4, high: 8.9, status: estimate, src: tf-pp-dram-20260116, note: "11 月下半月合約均價（較上半月 +15.7%）" }
+      - { period: "2026-03", value: 13, low: 11.5, high: 17, status: estimate, src: tf-pp-dram-20260521, note: "3 月下半月合約均價（與上半月持平）；4 月下半月 16 美元較上半月 +23.1%，隱含 4 月上半月約 13 美元，前後一致" }
+      - { period: "2026-04", value: 16, low: 14.5, high: 23, status: estimate, src: tf-pp-dram-20260607, note: "4 月下半月合約均價（較上半月 +23.1%）" }
+      - { period: "2026-06", value: 21, low: 19, high: 28.5, status: estimate, src: tf-pp-dram-20260731, note: "6 月下半月合約均價（較上半月 +5.0%）" }
+      - { period: "2026-08", value: 25, low: 22.5, high: 34.5, status: estimate, src: tf-pp-dram-live, note: "8 月下半月合約均價（較上半月 +4.2%）；同期 DDR4 8Gb 現貨均價約 47 美元（2026-10-22），現貨價高於合約價" }
+  - id: dram-ddr5-8gb-module-contract
+    name: "DDR5 8GB SO-DIMM 模組合約價"
+    product: dram
+    kind: level
+    unit: "美元／條"
+    frequency: month
+    definition: "TrendForce 價格頁「DRAM Contract Price」的 DDR5 8GB SO-DIMM（筆電用模組）下半月合約均價，low／high 為報價低點與高點。"
+    note: "來源與缺資料月份同 dram-ddr4-8gb-chip-contract。"
+    points:
+      - { period: "2025-06", value: 24.5, low: 23.5, high: 25.5, status: estimate, src: tf-pp-dram-20250804, note: "6 月下半月合約均價（持平）" }
+      - { period: "2025-10", value: 33.5, low: 29, high: 37, status: estimate, src: tf-pp-dram-20251220, note: "10 月下半月合約均價（較上半月 +25.2%）" }
+      - { period: "2025-11", value: 36.5, low: 34, high: 39.5, status: estimate, src: tf-pp-dram-20260116, note: "11 月下半月合約均價（較上半月 +9.0%）" }
+      - { period: "2026-03", value: 75, low: 72.5, high: 78.5, status: estimate, src: tf-pp-dram-20260521, note: "3 月下半月合約均價（與上半月持平）" }
+      - { period: "2026-04", value: 109, low: 96, high: 120, status: estimate, src: tf-pp-dram-20260607, note: "4 月下半月合約均價（較上半月 +45.3%）" }
+      - { period: "2026-06", value: 115, low: 102, high: 123, status: estimate, src: tf-pp-dram-20260731, note: "6 月下半月合約均價（較上半月 +2.7%）" }
+      - { period: "2026-08", value: 133, low: 118, high: 141, status: estimate, src: tf-pp-dram-live, note: "8 月下半月合約均價（較上半月 +2.3%）" }
+  - id: dram-pc-module-4gb-contract
+    name: "PC DRAM 4GB 模組合約價（2016–2018）"
+    product: dram
+    kind: level
+    unit: "美元／條"
+    frequency: month
+    definition: "TrendForce 新聞稿公布的第一線 PC OEM 主流 4GB PC DRAM 模組（DDR3／DDR4）平均合約價；2016–2018 年 TrendForce 每月以此作為 DRAM 價格的代表指標。"
+    note: "只收錄新聞稿明確寫出金額的月份，不連續。2017 年第一季均價約 24 美元、第二季約 27 美元（tf-20170807-9820）為季均價，未列入月資料。2018 年底後主流規格改為 8GB，見 dram-ddr4-8gb-module-contract。"
+    points:
+      - { period: "2016-06", value: 12.5, status: estimate, src: tf-20160705-9444, note: "DDR3 4GB；6 月多數議定於 12.5 美元，2014 年 10 月高點為 32.75 美元" }
+      - { period: "2016-08", value: 13.5, status: estimate, src: tf-20160901-9505, note: "DDR3 與 DDR4 4GB 模組月均價（月高點 14 美元）" }
+      - { period: "2016-09", value: 14.5, status: estimate, src: tf-20161003-9539, note: "PC DRAM 平均合約價月增 7.4%" }
+      - { period: "2016-10", value: 17.5, status: estimate, src: tf-20161102-9577, note: "月增逾 20%" }
+      - { period: "2016-11", value: 18, status: estimate, src: tf-20161207-9608, note: "月增 2.86%" }
+      - { period: "2017-10", value: 30.5, status: estimate, src: tf-20171113-9912, note: "第四季合約（10 月議定），第一線 DRAM 廠 PC DRAM 模組報價約 30.5 美元" }
+      - { period: "2018-01", value: 33, status: estimate, src: tf-20180213-9959, note: "前三大 DRAM 廠 1 月 PC DRAM 報價平均 33 美元，月增 5%" }
+      - { period: "2018-04", value: 34, status: estimate, src: tf-20180514-9992, note: "第一線 DRAM 廠主流 PC DRAM 模組 4 月報價，較第一季均價 +3%" }
+      - { period: "2018-07", value: 34.5, status: estimate, src: tf-20180813-10036, note: "第三季合約（7 月議定）平均 34.5 美元，較第二季 +1.5%" }
+      - { period: "2018-10", value: 31, status: estimate, src: tf-20181105-10065, note: "4GB 模組第四季合約價較第三季 34.5 美元下跌 10.14%" }
+      - { period: "2018-11", value: 30, status: estimate, src: tf-20181204-10078, note: "月減 3.2%" }
+      - { period: "2018-12", value: 30, status: estimate, src: tf-20190115-10093, note: "12 月月均價約 30 美元（月低點已跌破）" }
+  - id: dram-ddr4-8gb-module-contract
+    name: "PC DRAM 8GB 模組合約價"
+    product: dram
+    kind: level
+    unit: "美元／條"
+    frequency: month
+    definition: "2018-12 至 2019-08：TrendForce 新聞稿公布的第一線 PC OEM 主流 8GB PC DRAM 模組平均合約價；2025-06 起：TrendForce 價格頁 DDR4 8GB SO-DIMM 下半月合約均價。"
+    note: "兩段資料之間（2019-09 至 2025-05）TrendForce 公開資料未逐月列出金額，故有長缺口，不宜直接計算跨段漲跌。2019 年的低點約 25.5 美元，2026 年 8 月約 142 美元。"
+    points:
+      - { period: "2018-12", value: 60, status: estimate, src: tf-20190115-10093, note: "主流 8GB PC DRAM 模組 12 月月均價約 60 美元" }
+      - { period: "2019-01", value: 50, status: estimate, src: tf-20190225-10106, note: "第一線 PC OEM 1 月議價" }
+      - { period: "2019-04", value: 34, status: estimate, src: tf-20190528-10140, note: "4 月議價，較第一季均價 -20%" }
+      - { period: "2019-06", value: 28.5, status: estimate, src: tf-20190808-10172, note: "6 月議價；第二季平均 31.5 美元" }
+      - { period: "2019-07", value: 25.5, status: estimate, src: tf-20190808-10172, note: "7 月議價，月減約 10%" }
+      - { period: "2019-08", value: 25.5, status: estimate, src: tf-20190926-10189, note: "8 月持平" }
+      - { period: "2025-06", value: 19.5, low: 18, high: 20, status: estimate, src: tf-pp-dram-20250804, note: "TrendForce 價格頁 DDR4 8GB SO-DIMM 6 月下半月合約均價（持平）" }
+      - { period: "2025-10", value: 31.5, low: 25.5, high: 36, status: estimate, src: tf-pp-dram-20251220, note: "DDR4 8GB SO-DIMM 10 月下半月合約均價" }
+      - { period: "2025-11", value: 39, low: 25.5, high: 42, status: estimate, src: tf-pp-dram-20260116, note: "DDR4 8GB SO-DIMM 11 月下半月合約均價（較上半月 +23.8%）" }
+      - { period: "2026-03", value: 85, low: 70.5, high: 92, status: estimate, src: tf-pp-dram-20260521, note: "DDR4 8GB SO-DIMM 3 月下半月（與上半月持平）" }
+      - { period: "2026-04", value: 119, low: 96, high: 128, status: estimate, src: tf-pp-dram-20260607, note: "DDR4 8GB SO-DIMM 4 月下半月（較上半月 +40%）" }
+      - { period: "2026-06", value: 119, low: 96, high: 128, status: estimate, src: tf-pp-dram-20260731, note: "DDR4 8GB SO-DIMM 6 月下半月（持平）" }
+      - { period: "2026-08", value: 142, low: 125, high: 148, status: estimate, src: tf-pp-dram-live, note: "DDR4 8GB SO-DIMM 8 月下半月（較上半月 +2.2%）" }
+  - id: nand-contract-qoq-start-forecast
+    name: "NAND Flash 整體合約價季變化：季初預測"
+    product: nand
+    kind: qoq-change
+    unit: "%"
+    frequency: quarter
+    definition: "TrendForce 在該季開始前後（前一季最後一個月至該季第一個月）公布的最新 NAND Flash 整體合約價季變化預測，value 為預測區間中值，low／high 為區間；公布日期寫在 note。與 nand-contract-qoq（季末或季後的估計）對照，可看出市場預測的誤差與方向偏誤。"
+    note: "2018Q3–2026Q4，缺 2019Q4（當時只有文字描述）。誤差最大的季度出現在轉折點：2022Q3 季初預測 -8~-13%，事後約 -13~-18%；2025Q4 季初預測 +5–10%，事後 +33–38%；2026Q1 季初預測 +55–60%，季末估計 +85–90%；2026Q2 季初預測 +70–75%，事後 +55–60%。"
+    points:
+      - { period: "2018Q3", value: -10, status: forecast, src: tf-20180731-10031, note: "2018-07-31：平均售價季減約 10%" }
+      - { period: "2018Q4", value: -12.5, low: -15, high: -10, status: forecast, src: tf-20181009-10059, note: "2018-10-09：季減 10–15%（7 月時預估約 -10%）" }
+      - { period: "2019Q1", value: -10, status: forecast, src: tf-20181217-10083, note: "2018-12-17：季減約 10%" }
+      - { period: "2019Q2", value: -12.5, low: -15, high: -10, status: forecast, src: tf-20190320-10114, note: "2019-03-20：季減 10–15%" }
+      - { period: "2019Q3", value: -10, status: forecast, src: tf-20190620-10152, note: "2019-06-20：季減約 10%" }
+      - { period: "2020Q1", value: 10, low: 10, status: forecast, src: tf-20200102-10212, note: "2020-01-02：季增逾 10%（只有下限）；2019Q4 TrendForce 未公布季初數字預測" }
+      - { period: "2020Q2", value: 7.5, low: 5, high: 10, status: forecast, src: tf-20200326-10254, note: "2020-03-26：季增 5–10%" }
+      - { period: "2020Q3", value: -2.5, low: -5, high: 0, status: forecast, src: tf-20200629-10363, note: "2020-06-29：季減 0–5%" }
+      - { period: "2020Q4", value: -10, status: forecast, src: tf-20201007-10505, note: "2020-10-07：季減約 10%（7 月時預估 -10~-15%）" }
+      - { period: "2021Q1", value: -12.5, low: -15, high: -10, status: forecast, src: tf-20201214-10599, note: "2020-12-14：季減 10–15%" }
+      - { period: "2021Q2", value: 5.5, low: 3, high: 8, status: forecast, src: tf-20210317-10720, note: "2021-03-17：季增 3–8%" }
+      - { period: "2021Q3", value: 7.5, low: 5, high: 10, status: forecast, src: tf-20210714-10861, note: "2021-07-14：季增 5–10%（6 月已由 3–8% 上修）" }
+      - { period: "2021Q4", value: -2.5, low: -5, high: 0, status: forecast, src: tf-20210923-10950, note: "2021-09-23：季減 0–5%" }
+      - { period: "2022Q1", value: -10.5, low: -13, high: -8, status: forecast, src: tf-20220124-11101, note: "2022-01-24：季減 8–13%（2021 年 12 月為 -10~-15%）" }
+      - { period: "2022Q2", value: 7.5, low: 5, high: 10, status: forecast, src: tf-20220330-11181, note: "2022-03-30：季增 5–10%" }
+      - { period: "2022Q3", value: -10.5, low: -13, high: -8, status: forecast, src: tf-20220719-11310, note: "2022-07-19：季減 8–13%（6 月為 -0~-5%）" }
+      - { period: "2022Q4", value: -17.5, low: -20, high: -15, status: forecast, src: tf-20220926-11395, note: "2022-09-26：季減 15–20%" }
+      - { period: "2023Q1", value: -12.5, low: -15, high: -10, status: forecast, src: tf-20230105-11526, note: "2023-01-05：季減 10–15%" }
+      - { period: "2023Q2", value: -7.5, low: -10, high: -5, status: forecast, src: tf-20230330-11630, note: "2023-03-30：季減 5–10%" }
+      - { period: "2023Q3", value: -5.5, low: -8, high: -3, status: forecast, src: tf-20230706-11752, note: "2023-07-06：季減 3–8%" }
+      - { period: "2023Q4", value: 10.5, low: 8, high: 13, status: forecast, src: tf-20231017-11883, note: "2023-10-17：季增 8–13%（9 月為 0–5%）" }
+      - { period: "2024Q1", value: 17.5, low: 15, high: 20, status: forecast, src: tf-20240109-11991, note: "2024-01-09：季增 15–20%" }
+      - { period: "2024Q2", value: 15.5, low: 13, high: 18, status: forecast, src: tf-20240328-12096, note: "2024-03-28：季增 13–18%" }
+      - { period: "2024Q3", value: 7.5, low: 5, high: 10, status: forecast, src: tf-20240628-12210, note: "2024-06-28：季增 5–10%" }
+      - { period: "2024Q4", value: -5.5, low: -8, high: -3, status: forecast, src: tf-20241015-12327, note: "2024-10-15：季減 3–8%" }
+      - { period: "2025Q1", value: -12.5, low: -15, high: -10, status: forecast, src: tf-20241231-12427, note: "2024-12-31：季減 10–15%" }
+      - { period: "2025Q2", value: 5.5, low: 3, high: 8, status: forecast, src: tf-20250417-12551, note: "2025-04-17：季增 3–8%（3 月為 0–5%）" }
+      - { period: "2025Q3", value: 7.5, low: 5, high: 10, status: forecast, src: tf-20250709-12638, note: "2025-07-09：季增 5–10%" }
+      - { period: "2025Q4", value: 7.5, low: 5, high: 10, status: forecast, src: tf-20250925-12736, note: "2025-09-25：季增 5–10%" }
+      - { period: "2026Q1", value: 57.5, low: 55, high: 60, status: forecast, src: tf-20260122-12893, note: "2026-01-22：季增 55–60%（1 月 5 日為 33–38%）" }
+      - { period: "2026Q2", value: 72.5, low: 70, high: 75, status: forecast, src: tf-20260331-12995, note: "2026-03-31：季增 70–75%" }
+      - { period: "2026Q3", value: 12.5, low: 10, high: 15, status: forecast, src: tf-20260703-13134, note: "2026-07-03：季增 10–15%" }
+      - { period: "2026Q4", value: 17.5, low: 15, high: 20, status: forecast, src: tf-20260930-13258, note: "2026-09-30：季增 15–20%" }
+  - id: dram-contract-qoq-start-forecast
+    name: "一般型 DRAM 合約價季變化：季初預測"
+    product: dram
+    kind: qoq-change
+    unit: "%"
+    frequency: quarter
+    definition: "TrendForce 在該季開始前後（前一季最後一個月至該季第一個月）公布的最新 DRAM 合約價季變化預測（2024Q3 起為一般型 DRAM），value 為預測區間中值；公布日期寫在 note。對照 dram-contract-qoq 可衡量預測誤差。"
+    note: "2018Q4–2026Q4，缺 2019Q4–2020Q3 與 2021Q1（TrendForce 只給「小幅上漲／下跌」等文字預測）。轉折期誤差大：2025Q4 季初預測 +8–13%，事後 +45–50%；2026Q1 季初預測 +55–60%，季末估計 +93–98%。"
+    points:
+      - { period: "2018Q4", value: -5, status: forecast, src: tf-20181009-10059, note: "2018-10-09：季減 5% 或更多（9 月表列約 -5%）" }
+      - { period: "2019Q1", value: -20, status: forecast, src: tf-20190115-10093, note: "2019-01-15：季減近 20%" }
+      - { period: "2019Q2", value: -17.5, low: -20, high: -15, status: forecast, src: tf-20190325-10115, note: "2019-03-25：DRAM 平均售價季減 15–20%" }
+      - { period: "2019Q3", value: -12.5, low: -15, high: -10, status: forecast, src: tf-20190606-10146, note: "2019-06-06：季減 10–15%" }
+      - { period: "2020Q4", value: -10, status: forecast, src: tf-20201007-10505, note: "2020-10-07：季減約 10%" }
+      - { period: "2021Q2", value: 20.5, low: 18, high: 23, status: forecast, src: tf-20210420-10768, note: "2021-04-20：季增 18–23%（3 月為 13–18%）" }
+      - { period: "2021Q3", value: 5.5, low: 3, high: 8, status: forecast, src: tf-20210713-10858, note: "2021-07-13：季增 3–8%" }
+      - { period: "2021Q4", value: -5.5, low: -8, high: -3, status: forecast, src: tf-20210922-10947, note: "2021-09-22：季減 3–8%" }
+      - { period: "2022Q1", value: -10.5, low: -13, high: -8, status: forecast, src: tf-20211213-11050, note: "2021-12-13：季減 8–13%" }
+      - { period: "2022Q2", value: -2.5, low: -5, high: 0, status: forecast, src: tf-20220328-11175, note: "2022-03-28：季減 0–5%" }
+      - { period: "2022Q3", value: -10, status: forecast, src: tf-20220704-11286, note: "2022-07-04：季減約 10%（6 月為 -3~-8%）" }
+      - { period: "2022Q4", value: -15.5, low: -18, high: -13, status: forecast, src: tf-20220922-11391, note: "2022-09-22：季減 13–18%" }
+      - { period: "2023Q1", value: -15.5, low: -18, high: -13, status: forecast, src: tf-20230109-11533, note: "2023-01-09：季減 13–18%" }
+      - { period: "2023Q2", value: -12.5, low: -15, high: -10, status: forecast, src: tf-20230328-11626, note: "2023-03-28：季減 10–15%" }
+      - { period: "2023Q3", value: -2.5, low: -5, high: 0, status: forecast, src: tf-20230705-11743, note: "2023-07-05：季減 0–5%" }
+      - { period: "2023Q4", value: 5.5, low: 3, high: 8, status: forecast, src: tf-20231013-11880, note: "2023-10-13：季增 3–8%" }
+      - { period: "2024Q1", value: 15.5, low: 13, high: 18, status: forecast, src: tf-20240108-11988, note: "2024-01-08：季增 13–18%" }
+      - { period: "2024Q2", value: 5.5, low: 3, high: 8, status: forecast, src: tf-20240326-12093, note: "2024-03-26：季增 3–8%" }
+      - { period: "2024Q3", value: 7.5, low: 5, high: 10, status: forecast, src: tf-20240627-12207, note: "2024-06-27：一般型 DRAM 季增 5–10%" }
+      - { period: "2024Q4", value: 2.5, low: 0, high: 5, status: forecast, src: tf-20241009-12325, note: "2024-10-09：一般型 DRAM 季增 0–5%" }
+      - { period: "2025Q1", value: -10.5, low: -13, high: -8, status: forecast, src: tf-20241230-12424, note: "2024-12-30：一般型 DRAM 季減 8–13%" }
+      - { period: "2025Q2", value: 5.5, low: 3, high: 8, status: forecast, src: tf-20250417-12551, note: "2025-04-17：一般型 DRAM 季增 3–8%（3 月為 -0~-5%）" }
+      - { period: "2025Q3", value: 12.5, low: 10, high: 15, status: forecast, src: tf-20250707-12633, note: "2025-07-07：一般型 DRAM 季增 10–15%" }
+      - { period: "2025Q4", value: 10.5, low: 8, high: 13, status: forecast, src: tf-20250924-12733, note: "2025-09-24：一般型 DRAM 季增 8–13%" }
+      - { period: "2026Q1", value: 57.5, low: 55, high: 60, status: forecast, src: tf-20260105-12860, note: "2026-01-05：一般型 DRAM 季增 55–60%" }
+      - { period: "2026Q2", value: 60.5, low: 58, high: 63, status: forecast, src: tf-20260331-12995, note: "2026-03-31：一般型 DRAM 季增 58–63%" }
+      - { period: "2026Q3", value: 15.5, low: 13, high: 18, status: forecast, src: tf-20260703-13134, note: "2026-07-03：一般型 DRAM 季增 13–18%" }
+      - { period: "2026Q4", value: 12.5, low: 10, high: 15, status: forecast, src: tf-20260930-13258, note: "2026-09-30：一般型 DRAM 季增 10–15%" }
+  - id: nand-industry-asp-qoq
+    name: "NAND Flash 產業平均售價季變化（營收排名）"
+    product: nand
+    kind: qoq-change
+    unit: "%"
+    frequency: quarter
+    definition: "TrendForce 每季 NAND Flash 營收排名新聞稿中的產業整體平均售價（ASP，每 GB 售價）季變化，屬季後實現值；受產品組合與容量升級影響，與合約價變化不同。"
+    note: "2019Q2–2020Q1 與 2023Q3 的原文未直接寫出平均售價，由同一新聞稿的營收與位元出貨變化推算（標「推算值」）。2024Q1 原文未公布產業平均售價，留空（序列在 2023Q4 與 2024Q2 之間有一季缺口）。2025Q2 起排名新聞稿只說明平均售價方向（例如 2Q25「slight declines in ASP」），不再公布百分比，因此序列止於 2025Q1。"
+    points:
+      - { period: "2019Q2", value: -13, status: estimate, src: tf-20190815-10175, note: "推算值：品牌商營收季增 0.0%、位元出貨（消耗量）季增約 15%，隱含平均售價季減約 13%" }
+      - { period: "2019Q3", value: -4, status: estimate, src: tf-20191125-10200, note: "推算值：營收季增 10.2%、位元出貨季增近 15%，隱含平均售價季減約 4%" }
+      - { period: "2019Q4", value: -1, status: estimate, src: tf-20200221-10225, note: "推算值：營收季增 8.5%、位元出貨季增近 10%，隱含平均售價季減約 1%" }
+      - { period: "2020Q1", value: 8, status: estimate, src: tf-20200525-10332, note: "推算值：位元出貨與上季相當、營收季增 8.3%；TrendForce 只說明整體平均售價上升" }
+      - { period: "2020Q2", value: 3, status: estimate, src: tf-20200827-10460, note: "整體平均售價季增約 3%" }
+      - { period: "2020Q3", value: -9, status: estimate, src: tf-20201126-10568, note: "平均售價季減 9%" }
+      - { period: "2020Q4", value: -9, status: estimate, src: tf-20210303-10687, note: "整體平均售價季減近 9%" }
+      - { period: "2021Q1", value: -5, status: estimate, src: tf-20210526-10803, note: "整體平均售價季減 5%" }
+      - { period: "2021Q2", value: 7, status: estimate, src: tf-20210826-10911, note: "整體平均售價季增近 7%" }
+      - { period: "2021Q3", value: 4, status: estimate, src: tf-20211124-11023, note: "整體平均售價季增近 4%" }
+      - { period: "2021Q4", value: -5, status: estimate, src: tf-20220222-11131, note: "平均售價季減近 5%" }
+      - { period: "2022Q1", value: -2.3, status: estimate, src: tf-20220525-11230, note: "平均售價季減 2.3%" }
+      - { period: "2022Q2", value: 2.3, status: estimate, src: tf-20220831-11362, note: "平均售價季增 2.3%" }
+      - { period: "2022Q3", value: -18.3, status: estimate, src: tf-20221123-11467, note: "整體平均售價季減 18.3%" }
+      - { period: "2022Q4", value: -22.8, status: estimate, src: tf-20230317-11618, note: "平均售價季減 22.8%" }
+      - { period: "2023Q1", value: -15, status: estimate, src: tf-20230601-11698, note: "平均售價季減 15%" }
+      - { period: "2023Q2", value: -12.5, low: -15, high: -10, status: estimate, src: tf-20230912-11842, note: "平均售價季減 10–15%" }
+      - { period: "2023Q3", value: 0, status: estimate, src: tf-20231205-11946, note: "推算值：位元出貨季增 3%、營收季增約 2.9%，平均售價大致持平；季末合約價止跌回升" }
+      - { period: "2023Q4", value: 10, status: estimate, src: tf-20240306-12063, note: "產業價格季增近 10%" }
+      - { period: "2024Q2", value: 15, status: estimate, src: tf-20240909-12297, note: "平均售價季增 15%" }
+      - { period: "2024Q3", value: 7, status: estimate, src: tf-20241127-12383, note: "平均售價季增 7%" }
+      - { period: "2024Q4", value: -4, status: estimate, src: tf-20250303-12494, note: "平均售價季減 4%" }
+      - { period: "2025Q1", value: -15, status: estimate, src: tf-20250529-12600, note: "平均售價季減 15%（前五大品牌）" }
+  - id: nand-industry-bit-qoq
+    name: "NAND Flash 產業位元出貨季變化（營收排名）"
+    product: nand
+    kind: qoq-change
+    unit: "%"
+    frequency: quarter
+    definition: "TrendForce 每季 NAND Flash 營收排名新聞稿中的產業總位元出貨量季變化，屬季後實現值。"
+    note: "2023Q4 由營收與價格變化推算；2024Q1 原文未公布，留空；2025Q2 起不再公布，序列止於 2025Q1。更早年份（2019Q1 以前）只公布個別廠商的位元出貨變化。"
+    points:
+      - { period: "2019Q2", value: 15, status: estimate, src: tf-20190815-10175, note: "總位元消耗量季增 15%" }
+      - { period: "2019Q3", value: 15, status: estimate, src: tf-20191125-10200, note: "總位元出貨季增近 15%" }
+      - { period: "2019Q4", value: 10, status: estimate, src: tf-20200221-10225, note: "位元出貨季增近 10%" }
+      - { period: "2020Q1", value: 0, status: estimate, src: tf-20200525-10332, note: "位元出貨與上季大致相當" }
+      - { period: "2020Q2", value: 3, status: estimate, src: tf-20200827-10460, note: "總位元出貨季增約 3%" }
+      - { period: "2020Q3", value: 9, status: estimate, src: tf-20201126-10568, note: "總位元出貨季增 9%" }
+      - { period: "2020Q4", value: 9, status: estimate, src: tf-20210303-10687, note: "總位元出貨季增近 9%" }
+      - { period: "2021Q1", value: 11, status: estimate, src: tf-20210526-10803, note: "位元出貨季增 11%" }
+      - { period: "2021Q2", value: 9, status: estimate, src: tf-20210826-10911, note: "總位元出貨季增近 9%" }
+      - { period: "2021Q3", value: 11, status: estimate, src: tf-20211124-11023, note: "總位元出貨季增近 11%" }
+      - { period: "2021Q4", value: 3.3, status: estimate, src: tf-20220222-11131, note: "位元出貨季增 3.3%" }
+      - { period: "2022Q1", value: -0.5, status: estimate, src: tf-20220525-11230, note: "位元出貨季減 0.5%" }
+      - { period: "2022Q2", value: -1.3, status: estimate, src: tf-20220831-11362, note: "供應商位元出貨季減 1.3%" }
+      - { period: "2022Q3", value: -6.7, status: estimate, src: tf-20221123-11467, note: "位元出貨季減 6.7%" }
+      - { period: "2022Q4", value: 5.3, status: estimate, src: tf-20230317-11618, note: "位元出貨季增 5.3%" }
+      - { period: "2023Q1", value: 2.1, status: estimate, src: tf-20230601-11698, note: "位元出貨季增 2.1%" }
+      - { period: "2023Q2", value: 19.9, status: estimate, src: tf-20230912-11842, note: "位元出貨季增 19.9%（低基期）" }
+      - { period: "2023Q3", value: 3, status: estimate, src: tf-20231205-11946, note: "位元出貨季增 3%" }
+      - { period: "2023Q4", value: 13, status: estimate, src: tf-20240306-12063, note: "推算值：營收季增 24.5%、價格季增近 10%，隱含位元出貨季增約 13%" }
+      - { period: "2024Q2", value: -1, status: estimate, src: tf-20240909-12297, note: "位元出貨季減 1%" }
+      - { period: "2024Q3", value: -2, status: estimate, src: tf-20241127-12383, note: "位元出貨季減 2%" }
+      - { period: "2024Q4", value: -2, status: estimate, src: tf-20250303-12494, note: "整體位元出貨季減 2%" }
+      - { period: "2025Q1", value: -7, status: estimate, src: tf-20250529-12600, note: "出貨量季減 7%（前五大品牌）" }
+  - id: nand-industry-revenue-qoq
+    name: "NAND Flash 產業營收季變化（營收排名）"
+    product: nand
+    kind: qoq-change
+    unit: "%"
+    frequency: quarter
+    definition: "TrendForce 每季 NAND Flash 營收排名新聞稿中的品牌供應商合計營收季變化（美元計）。這不是價格，而是價格與位元出貨共同作用的結果，可用來驗證價格序列的方向。"
+    note: "2015Q3–2026Q2 連續。統計範圍隨時間改變：2019 年以前為品牌供應商（含英特爾），2025Q1 起為前五大品牌合計；匯率、會計季度（美光、威騰）與併購也會影響數字。"
+    points:
+      - { period: "2015Q3", value: 2.4, status: estimate, src: tf-20151119-9094 }
+      - { period: "2015Q4", value: -2.3, status: estimate, src: tf-20160301-9265 }
+      - { period: "2016Q1", value: -2.9, status: estimate, src: tf-20160520-9395, note: "品牌商平均營收季減 2.9%（總額 80.6 億美元）" }
+      - { period: "2016Q2", value: 3.4, status: estimate, src: tf-20160913-9519 }
+      - { period: "2016Q3", value: 19.6, status: estimate, src: tf-20161201-9602 }
+      - { period: "2016Q4", value: 17.8, status: estimate, src: tf-20170307-9670 }
+      - { period: "2017Q1", value: -0.4, status: estimate, src: tf-20170601-9767 }
+      - { period: "2017Q2", value: 8, status: estimate, src: tf-20170821-9834 }
+      - { period: "2017Q3", value: 14.3, status: estimate, src: tf-20171120-9917 }
+      - { period: "2017Q4", value: 6.8, status: estimate, src: tf-20180228-9963 }
+      - { period: "2018Q1", value: -3, status: estimate, src: tf-20180528-10002 }
+      - { period: "2018Q2", value: 3.5, status: estimate, src: tf-20180816-10040 }
+      - { period: "2018Q3", value: 4.4, status: estimate, src: tf-20181119-10072 }
+      - { period: "2018Q4", value: -16.8, status: estimate, src: tf-20190221-10105 }
+      - { period: "2019Q1", value: -23.8, status: estimate, src: tf-20190530-10141 }
+      - { period: "2019Q2", value: 0, status: estimate, src: tf-20190815-10175, note: "排名表合計季增 0.0%（約 107.9 億美元）" }
+      - { period: "2019Q3", value: 10.2, status: estimate, src: tf-20191125-10200 }
+      - { period: "2019Q4", value: 8.5, status: estimate, src: tf-20200221-10225 }
+      - { period: "2020Q1", value: 8.3, status: estimate, src: tf-20200525-10332 }
+      - { period: "2020Q2", value: 6.5, status: estimate, src: tf-20200827-10460 }
+      - { period: "2020Q3", value: 0.3, status: estimate, src: tf-20201126-10568 }
+      - { period: "2020Q4", value: -2.9, status: estimate, src: tf-20210303-10687 }
+      - { period: "2021Q1", value: 5.1, status: estimate, src: tf-20210526-10803 }
+      - { period: "2021Q2", value: 10.8, status: estimate, src: tf-20210826-10911 }
+      - { period: "2021Q3", value: 15, status: estimate, src: tf-20211124-11023 }
+      - { period: "2021Q4", value: -2.1, status: estimate, src: tf-20220222-11131 }
+      - { period: "2022Q1", value: -3, status: estimate, src: tf-20220525-11230 }
+      - { period: "2022Q2", value: 1.1, status: estimate, src: tf-20220831-11362 }
+      - { period: "2022Q3", value: -24.3, status: estimate, src: tf-20221123-11467, note: "原新聞稿標題誤植為 3Q23，內文為 3Q22" }
+      - { period: "2022Q4", value: -25, status: estimate, src: tf-20230317-11618 }
+      - { period: "2023Q1", value: -16.1, status: estimate, src: tf-20230601-11698 }
+      - { period: "2023Q2", value: 7.4, status: estimate, src: tf-20230912-11842 }
+      - { period: "2023Q3", value: 2.9, status: estimate, src: tf-20231205-11946 }
+      - { period: "2023Q4", value: 24.5, status: estimate, src: tf-20240306-12063 }
+      - { period: "2024Q1", value: 28.1, status: estimate, src: tf-20240529-12153 }
+      - { period: "2024Q2", value: 14.2, status: estimate, src: tf-20240909-12297 }
+      - { period: "2024Q3", value: 4.8, status: estimate, src: tf-20241127-12383 }
+      - { period: "2024Q4", value: -6.2, status: estimate, src: tf-20250303-12494 }
+      - { period: "2025Q1", value: -24, status: estimate, src: tf-20250529-12600, note: "前五大品牌合計，季減近 24%" }
+      - { period: "2025Q2", value: 22, status: estimate, src: tf-20250828-12688, note: "前五大品牌合計" }
+      - { period: "2025Q3", value: 16.5, status: estimate, src: tf-20251203-12813, note: "前五大品牌合計" }
+      - { period: "2025Q4", value: 23.8, status: estimate, src: tf-20260303-12943, note: "前五大品牌合計" }
+      - { period: "2026Q1", value: 83.7, status: estimate, src: tf-20260525-13058, note: "前五大品牌合計" }
+      - { period: "2026Q2", value: 77, status: estimate, src: tf-20260818-13186, note: "前五大上市品牌合計" }
+  - id: dram-industry-revenue-qoq
+    name: "DRAM 產業營收季變化（營收排名）"
+    product: dram
+    kind: qoq-change
+    unit: "%"
+    frequency: quarter
+    definition: "TrendForce 每季 DRAM 營收排名新聞稿中的全球 DRAM 產業營收季變化（美元計，含 HBM）。這不是價格，而是價格、位元出貨與 HBM 占比共同作用的結果。"
+    note: "2015Q4–2026Q2 連續。2025Q1 起納入中國 DRAM 廠商；美光以會計季度計入（例如美光 FY2026Q4 約當 2026 年 6–8 月）。"
+    points:
+      - { period: "2015Q4", value: -9.1, status: estimate, src: tf-20160215-9237 }
+      - { period: "2016Q1", value: -16.6, status: estimate, src: tf-20160517-9388 }
+      - { period: "2016Q2", value: 6.3, status: estimate, src: tf-20160811-9485 }
+      - { period: "2016Q3", value: 15.8, status: estimate, src: tf-20161117-9592 }
+      - { period: "2016Q4", value: 18.2, status: estimate, src: tf-20170214-9652 }
+      - { period: "2017Q1", value: 13.4, status: estimate, src: tf-20170518-9752 }
+      - { period: "2017Q2", value: 16.9, status: estimate, src: tf-20170817-9832 }
+      - { period: "2017Q3", value: 16.2, status: estimate, src: tf-20171113-9912 }
+      - { period: "2017Q4", value: 14.2, status: estimate, src: tf-20180213-9959 }
+      - { period: "2018Q1", value: 5.4, status: estimate, src: tf-20180514-9992 }
+      - { period: "2018Q2", value: 11.3, status: estimate, src: tf-20180813-10036 }
+      - { period: "2018Q3", value: 9, status: estimate, src: tf-20181115-10071 }
+      - { period: "2018Q4", value: -18.3, status: estimate, src: tf-20190225-10106 }
+      - { period: "2019Q1", value: -28.6, status: estimate, src: tf-20190528-10140 }
+      - { period: "2019Q2", value: -9.1, status: estimate, src: tf-20190808-10172 }
+      - { period: "2019Q3", value: 4, status: estimate, src: tf-20191118-10198 }
+      - { period: "2019Q4", value: -1.5, status: estimate, src: tf-20200218-10224 }
+      - { period: "2020Q1", value: -4.6, status: estimate, src: tf-20200513-10308 }
+      - { period: "2020Q2", value: 15.4, status: estimate, src: tf-20200819-10443 }
+      - { period: "2020Q3", value: 2, status: estimate, src: tf-20201119-10559 }
+      - { period: "2020Q4", value: 1.1, status: estimate, src: tf-20210304-10690 }
+      - { period: "2021Q1", value: 8.7, status: estimate, src: tf-20210511-10777 }
+      - { period: "2021Q2", value: 26, status: estimate, src: tf-20210823-10905 }
+      - { period: "2021Q3", value: 10.2, status: estimate, src: tf-20211116-11007 }
+      - { period: "2021Q4", value: -5.8, status: estimate, src: tf-20220217-11128 }
+      - { period: "2022Q1", value: -4, status: estimate, src: tf-20220518-11220 }
+      - { period: "2022Q2", value: 6.5, status: estimate, src: tf-20220815-11337 }
+      - { period: "2022Q3", value: -28.9, status: estimate, src: tf-20221116-11459, note: "2023 年 3 月新聞稿改列 -28.8%（tf-20230302-11588）" }
+      - { period: "2022Q4", value: -32.5, status: estimate, src: tf-20230302-11588 }
+      - { period: "2023Q1", value: -21.2, status: estimate, src: tf-20230525-11688 }
+      - { period: "2023Q2", value: 20.4, status: estimate, src: tf-20230824-11805 }
+      - { period: "2023Q3", value: 18, status: estimate, src: tf-20231204-11942 }
+      - { period: "2023Q4", value: 29.6, status: estimate, src: tf-20240305-12060 }
+      - { period: "2024Q1", value: 5.1, status: estimate, src: tf-20240613-12188 }
+      - { period: "2024Q2", value: 24.8, status: estimate, src: tf-20240815-12254 }
+      - { period: "2024Q3", value: 13.6, status: estimate, src: tf-20241126-12380 }
+      - { period: "2024Q4", value: 9.9, status: estimate, src: tf-20250227-12492 }
+      - { period: "2025Q1", value: -5.5, status: estimate, src: tf-20250603-12603, note: "自 2025Q1 起排名納入中國 DRAM 廠商" }
+      - { period: "2025Q2", value: 17.1, status: estimate, src: tf-20250902-12694 }
+      - { period: "2025Q3", value: 30.9, status: estimate, src: tf-20251126-12802 }
+      - { period: "2025Q4", value: 29.4, status: estimate, src: tf-20260226-12937 }
+      - { period: "2026Q1", value: 81, status: estimate, src: tf-20260601-13070 }
+      - { period: "2026Q2", value: 59.5, status: estimate, src: tf-20260907-13219, note: "2Q26 排名表把長鑫存儲（CXMT）從「其他」獨立列出（2026Q1 營收 73.39 億美元），2026Q1 產業合計仍為 970 億美元，與 6 月排名表相同（tf-20260601-13070），季增率口徑一致" }
+sources:
+  tf-20151119-9094: { title: "NAND Flash Revenue Growth Slowed in Third Quarter as Prices Showed Steep Decline, According to TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20151119-9094.html", type: analyst, lang: en, published: "2015-11-19", accessed: "2026-10-23" }
+  tf-20160215-9237: { title: "TrendForce Says Contract Price Decline Resulted in 9.1% Drop in Global DRAM Revenue for 4Q15", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20160215-9237.html", type: analyst, lang: en, published: "2016-02-15", accessed: "2026-10-23" }
+  tf-20160218-9247: { title: "TrendForce Reports Steady Smartphone Shipments Resulted in Just 1% Drop in Global Mobile DRAM Revenue for 4Q15", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20160218-9247.html", type: analyst, lang: en, published: "2016-02-18", accessed: "2026-10-23" }
+  tf-20160301-9265: { title: "TrendForce Reports NAND Flash Revenue Fell 2.3% in 4Q15 as Oversupply Led to Falling Prices", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20160301-9265.html", type: analyst, lang: en, published: "2016-03-01", accessed: "2026-10-23" }
+  tf-20160517-9388: { title: "TrendForce Reports Falling Prices Caused Global DRAM Revenue to Drop 16.6% in First Quarter", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20160517-9388.html", type: analyst, lang: en, published: "2016-05-17", accessed: "2026-10-23" }
+  tf-20160520-9395: { title: "Global Branded NAND Flash Revenue Fell For Second Consecutive Quarter to US$8.06 Billion", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20160520-9395.html", type: analyst, lang: en, published: "2016-05-20", accessed: "2026-10-23" }
+  tf-20160527-9398: { title: "SSD Adoption in Notebooks May Hit 40% by Year’s End Due to Maturation of TLC Products and Rising HDD Prices, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20160527-9398.html", type: analyst, lang: en, published: "2016-05-27", accessed: "2026-10-23" }
+  tf-20160705-9444: { title: "TrendForce Reports DRAM Contract Prices Stabilized in June and Are Expected to Rise in Third Quarter", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20160705-9444.html", type: analyst, lang: en, published: "2016-07-05", accessed: "2026-10-23" }
+  tf-20160811-9485: { title: "Bit Supply Growth Led to Small Sequential Increase of 6.3% in Global DRAM Revenue for Second Quarter, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20160811-9485.html", type: analyst, lang: en, published: "2016-08-11", accessed: "2026-10-23" }
+  tf-20160829-9502: { title: "TrendForce Anticipates SSD Adoption Rate in Global Notebook Market to Reach 50% in 2018", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20160829-9502.html", type: analyst, lang: en, published: "2016-08-29", accessed: "2026-10-23" }
+  tf-20160901-9505: { title: "Strong Stock-Up Demand Pushed Prices of 4GB DRAM Modules to a High of US$14 in August, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20160901-9505.html", type: analyst, lang: en, published: "2016-09-01", accessed: "2026-10-23" }
+  tf-20160906-9514: { title: "DRAM Contract Prices to Rise Over 10% Sequentially in Fourth Quarter as Memory Demand Stays Hot, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20160906-9514.html", type: analyst, lang: en, published: "2016-09-06", accessed: "2026-10-23" }
+  tf-20160913-9519: { title: "TrendForce Reports Gradual Stabilization of NAND Flash Market With Global Revenue Rising 3.4% Sequentially in Second Quarter", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20160913-9519.html", type: analyst, lang: en, published: "2016-09-13", accessed: "2026-10-23" }
+  tf-20161003-9539: { title: "Average Contract Price for DRAM Rose 7% Monthly in September and Will Hit Two-Year High in Fourth Quarter, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20161003-9539.html", type: analyst, lang: en, published: "2016-10-03", accessed: "2026-10-23" }
+  tf-20161102-9577: { title: "Average PC DRAM Contract Price Jumped Over 20% Sequentially in October with 4GB Modules Coming to US$17.5, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20161102-9577.html", type: analyst, lang: en, published: "2016-11-02", accessed: "2026-10-23" }
+  tf-20161117-9592: { title: "Global DRAM Revenue Rose 15.8% Sequentially in Third Quarter on Back of Rising Prices, TrendForce Reports", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20161117-9592.html", type: analyst, lang: en, published: "2016-11-17", accessed: "2026-10-23" }
+  tf-20161201-9602: { title: "Global NAND Flash Revenue Rose 19.6% Sequentially in Third Quarter as Demand Outpaced Supply, According to TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20161201-9602.html", type: analyst, lang: en, published: "2016-12-01", accessed: "2026-10-23" }
+  tf-20161207-9608: { title: "Average Contract Price of PC DRAM 4GB Modules Rose to US$18 in November, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20161207-9608.html", type: analyst, lang: en, published: "2016-12-07", accessed: "2026-10-23" }
+  tf-20161212-9611: { title: "Shortage of NAND Flash to Cause Prices of SSDs and EMMCs to Rise by Over 10% Sequentially in First Quarter of 2017, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20161212-9611.html", type: analyst, lang: en, published: "2016-12-12", accessed: "2026-10-23" }
+  tf-20170214-9652: { title: "TrendForce Reports Global DRAM Revenue Jumped 18.2% Sequentially in Fourth Quarter of 2016 Owing to Soaring Contract Prices for PC DRAM", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20170214-9652.html", type: analyst, lang: en, published: "2017-02-14", accessed: "2026-10-23" }
+  tf-20170223-9659: { title: "TrendForce Forecasts Moderate Price Hikes for SSDs and eMMCs in Second Quarter of 2017; New iPhones to Drive NAND Flash Demand in This Year’s Second Half", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20170223-9659.html", type: analyst, lang: en, published: "2017-02-23", accessed: "2026-10-23" }
+  tf-20170307-9670: { title: "TrendForce Says NAND Flash Revenue Grew 17.8% Sequentially in Fourth Quarter of 2016 as Supply Shortage Reached Its Most Severe Phase", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20170307-9670.html", type: analyst, lang: en, published: "2017-03-07", accessed: "2026-10-23" }
+  tf-20170518-9752: { title: "1Q17 Global DRAM Revenue Rose by 13.4% From Prior Quarter Due to a 30% Hike in PC DRAM Contract Price, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20170518-9752.html", type: analyst, lang: en, published: "2017-05-18", accessed: "2026-10-23" }
+  tf-20170601-9767: { title: "1Q17 NAND Flash Revenue Dipped Only 0.4% vs. Prior Quarter as Undersupply Continues to Sway the Market, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20170601-9767.html", type: analyst, lang: en, published: "2017-06-01", accessed: "2026-10-23" }
+  tf-20170626-9781: { title: "Overall ASP of DRAM Products to Go Up by 5% Sequentially in Third Quarter as Supply Remains Tight, TrendForce Reports", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20170626-9781.html", type: analyst, lang: en, published: "2017-06-26", accessed: "2026-10-23" }
+  tf-20170807-9820: { title: "TrendForce Reports 4.6% Sequential Monthly Gain for Average Contract Price of PC DRAM Modules This July and Expects It to Keep Rising This Third Quarter", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20170807-9820.html", type: analyst, lang: en, published: "2017-08-07", accessed: "2026-10-23" }
+  tf-20170817-9832: { title: "TrendForce Says PC DRAM Contract Price Rose by Over 10% Sequentially and Global DRAM Revenue Increase by 16.9% Sequentially in Second Quarter", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20170817-9832.html", type: analyst, lang: en, published: "2017-08-17", accessed: "2026-10-23" }
+  tf-20170821-9834: { title: "TrendForce Says Global NAND Flash Revenue from Branded Manufacturers Grew by 8% Sequentially in 2Q17; NAND Flash Prices to Keep Rising in 3Q17", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20170821-9834.html", type: analyst, lang: en, published: "2017-08-21", accessed: "2026-10-23" }
+  tf-20171113-9912: { title: "TrendForce Reports 3Q17 DRAM Revenue Hit a New High With a 16.2% Sequential Increase; DRAM Prices to Rise by 10% on Average in 4Q17", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20171113-9912.html", type: analyst, lang: en, published: "2017-11-13", accessed: "2026-10-23" }
+  tf-20171120-9917: { title: "TrendForce Reports Global NAND Flash Revenue from Branded Manufacturers Increased by 14.3% Sequentially in 3Q17 due to Growing Demand for Smartphone and Server", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20171120-9917.html", type: analyst, lang: en, published: "2017-11-20", accessed: "2026-10-23" }
+  tf-20171211-9927: { title: "TrendForce Forecasts Oversupply and Price Drop in 1Q18 NAND Flash Market, Production Capacity Expansion and Low Season are Main Causes", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20171211-9927.html", type: analyst, lang: en, published: "2017-12-11", accessed: "2026-10-23" }
+  tf-20180213-9959: { title: "DRAM Revenue Grew by 76% YoY in 2017, and is Expected to Increase Further by More than 30% in 2018, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20180213-9959.html", type: analyst, lang: en, published: "2018-02-13", accessed: "2026-10-23" }
+  tf-20180228-9963: { title: "NAND Flash Revenue Rose by Just 6.8% QoQ in 4Q17, Traditional Off-Season Effects Will Continue to Influence Sales in 1Q18,  Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20180228-9963.html", type: analyst, lang: en, published: "2018-02-28", accessed: "2026-10-23" }
+  tf-20180312-9968: { title: "SSD Price Drop Will Drive the Adoption Rate of SSD in Notebooks to 50%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20180312-9968.html", type: analyst, lang: en, published: "2018-03-12", accessed: "2026-10-23" }
+  tf-20180514-9992: { title: "DRAM Revenue in 1Q18 Rose by 5.4% QoQ to Another Record High as the Upswing of ASPs Continued, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20180514-9992.html", type: analyst, lang: en, published: "2018-05-14", accessed: "2026-10-23" }
+  tf-20180528-10002: { title: "Global NAND Flash Revenue Dropped by 3% QoQ in 1Q18 Due to Seasonal Influence, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20180528-10002.html", type: analyst, lang: en, published: "2018-05-28", accessed: "2026-10-23" }
+  tf-20180731-10031: { title: "Contract Prices in NAND Flash Market Will Keep Falling in 2H18 Due to Oversupply and Weak Seasonal Demand, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20180731-10031.html", type: analyst, lang: en, published: "2018-07-31", accessed: "2026-10-23" }
+  tf-20180813-10036: { title: "DRAM Market Again Saw Record High Revenue in 2Q18 but Prices Are Approaching Their Peaks, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20180813-10036.html", type: analyst, lang: en, published: "2018-08-13", accessed: "2026-10-23" }
+  tf-20180816-10039: { title: "DRAM Products to See a Weak Price Trend in 4Q18 after Price Growth of Nine Consecutive Quarters", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20180816-10039.html", type: analyst, lang: en, published: "2018-08-16", accessed: "2026-10-23" }
+  tf-20180816-10040: { title: "Global NAND Flash Revenue Rose by 3.5% QoQ in 2Q18; TrendForce Expects Close to 10% Decline in NAND Flash Prices in 3Q18 due to Continued Oversupply", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20180816-10040.html", type: analyst, lang: en, published: "2018-08-16", accessed: "2026-10-23" }
+  tf-20180926-10055: { title: "DRAM Products May Experience Steeper Price Decline of 5% QoQ in 4Q18 Due to Oversupply and Weak Demand, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20180926-10055.html", type: analyst, lang: en, published: "2018-09-26", accessed: "2026-10-23" }
+  tf-20181009-10059: { title: "DRAM and NAND Flash Products to See Price Decline in 4Q18 and 2019 due to Gap Between Supply and Demand, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20181009-10059.html", type: analyst, lang: en, published: "2018-10-09", accessed: "2026-10-23" }
+  tf-20181105-10065: { title: "Contract Prices Have Started to Drop in PC DRAM Market This October and 4GB Modules Are Just Above the US$30 Threshold, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20181105-10065.html", type: analyst, lang: en, published: "2018-11-05", accessed: "2026-10-23" }
+  tf-20181115-10071: { title: "Global DRAM Revenue to Reach a New Record in 3Q18, but Manufacturers’ Profitability May Approach Its Peak, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20181115-10071.html", type: analyst, lang: en, published: "2018-11-15", accessed: "2026-10-23" }
+  tf-20181119-10072: { title: "Total NAND Flash Revenue Rose by Just 4.4% QoQ in 3Q18 Due to Below-Expected Demand Growth, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20181119-10072.html", type: analyst, lang: en, published: "2018-11-19", accessed: "2026-10-23" }
+  tf-20181204-10078: { title: "Prices for Some Contracts Have Been Adjusted Downward Twice in 4Q18, Contract Prices of DRAM Products Would See Steeper Decline in 1Q19, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20181204-10078.html", type: analyst, lang: en, published: "2018-12-04", accessed: "2026-10-23" }
+  tf-20181217-10083: { title: "Contract Prices of NAND Flash Products to Drop Further in 1H19; Price Decline Would Reach 10% in 1Q19, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20181217-10083.html", type: analyst, lang: en, published: "2018-12-17", accessed: "2026-10-23" }
+  tf-20190102-10087: { title: "DRAM Market to See Lower Capital Expenditure and Moderated Bit Output in 2019 Due to Weak Demand, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190102-10087.html", type: analyst, lang: en, published: "2019-01-02", accessed: "2026-10-23" }
+  tf-20190115-10093: { title: "A Sharper Price Decline of Nearly 20% Is Expected for 1Q19 in DRAM Market, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190115-10093.html", type: analyst, lang: en, published: "2019-01-15", accessed: "2026-10-23" }
+  tf-20190221-10105: { title: "NAND Flash Giants Suffer Revenue Loss of 16.8% in 4Q18, Dragged Down by Falling Prices, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190221-10105.html", type: analyst, lang: en, published: "2019-02-21", accessed: "2026-10-23" }
+  tf-20190225-10106: { title: "DRAM Revenue Took a Turn for the Worse in 4Q18; Suppliers Declining in Profitability, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190225-10106.html", type: analyst, lang: en, published: "2019-02-25", accessed: "2026-10-23" }
+  tf-20190305-10109: { title: "First Quarter DRAM Contract Prices See a Rare, Large Down-Correction, Resulting in the Sharpest Decline Since 2011, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190305-10109.html", type: analyst, lang: en, published: "2019-03-05", accessed: "2026-10-23" }
+  tf-20190320-10114: { title: "Drops in 2Q NAND Flash Contract Prices Shrink Slightly Thanks to Demand Recovery and Production Capacity Adjustments, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190320-10114.html", type: analyst, lang: en, published: "2019-03-20", accessed: "2026-10-23" }
+  tf-20190325-10115: { title: "With Inventories Yet to Fully Clear, DRAM ASP Poised to Continue Descent into the Second Half-Year, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190325-10115.html", type: analyst, lang: en, published: "2019-03-25", accessed: "2026-10-23" }
+  tf-20190528-10140: { title: "DRAM Quotes Continue to Fall in 2Q, Further Compressing Suppliers' Profits, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190528-10140.html", type: analyst, lang: en, published: "2019-05-28", accessed: "2026-10-23" }
+  tf-20190530-10141: { title: "Revenues for NAND Flash Brands 1Q Fall by 23.8% QoQ While Prices Fall Non-stop in 2Q, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190530-10141.html", type: analyst, lang: en, published: "2019-05-30", accessed: "2026-10-23" }
+  tf-20190606-10146: { title: "The US-China Trade War Rages On: DRAM Price Decline 3Q to Widen to 15%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190606-10146.html", type: analyst, lang: en, published: "2019-06-06", accessed: "2026-10-23" }
+  tf-20190620-10152: { title: "Uncertainties in the Market Rise while a Bounce in NAND Flash Prices Remains Unlikely in 3Q, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190620-10152.html", type: analyst, lang: en, published: "2019-06-20", accessed: "2026-10-23" }
+  tf-20190805-10170: { title: "NAND Flash Contract Price Decline Shrinks in 3Q, with Wafer Prices to Grow Against the Trend, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190805-10170.html", type: analyst, lang: en, published: "2019-08-05", accessed: "2026-10-23" }
+  tf-20190808-10172: { title: "2Q19 DRAM Revenue Falls by 9.1% QoQ, with 3Q19 Quotes Still Set to Fall, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190808-10172.html", type: analyst, lang: en, published: "2019-08-08", accessed: "2026-10-23" }
+  tf-20190815-10175: { title: "Fall in Prices Offset Bit Shipment Growth, with 2Q19 Revenues of NAND Flash Brands Trending Flat from 1Q19, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190815-10175.html", type: analyst, lang: en, published: "2019-08-15", accessed: "2026-10-23" }
+  tf-20190926-10189: { title: "PC DRAM Contract Prices Stabilized in August and Will Likely Remain Steady in September, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20190926-10189.html", type: analyst, lang: en, published: "2019-09-26", accessed: "2026-10-23" }
+  tf-20191111-10197: { title: "Decline in Q4 DRAM Contract Prices Lessens as Buying Momentum Recovers, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20191111-10197.html", type: analyst, lang: en, published: "2019-11-11", accessed: "2026-10-23" }
+  tf-20191118-10198: { title: "Demand for Preemptive 3Q19 DRAM Shipment Rises, Pushing Global DRAM Revenue Up by 4%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20191118-10198.html", type: analyst, lang: en, published: "2019-11-18", accessed: "2026-10-23" }
+  tf-20191125-10200: { title: "3Q19 NAND Flash Revenue Grows 10% amidst Resurging Pre-Peak Season Demand for Shipment, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20191125-10200.html", type: analyst, lang: en, published: "2019-11-25", accessed: "2026-10-23" }
+  tf-20200102-10212: { title: "Owing to Seasonal Headwinds and Constricted Supply, 1Q20 NAND Flash Price Is Projected to Continue Rising, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20200102-10212.html", type: analyst, lang: en, published: "2020-01-02", accessed: "2026-10-23" }
+  tf-20200108-10214: { title: "DRAM Contract Prices to Rise in 1Q20 as Power Outage at Samsung Fab Spurs Demand, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20200108-10214.html", type: analyst, lang: en, published: "2020-01-08", accessed: "2026-10-23" }
+  tf-20200218-10224: { title: "Global DRAM Revenue Holds Steady in 4Q19 as Shipment Growth Offsets Price Declines, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20200218-10224.html", type: analyst, lang: en, published: "2020-02-18", accessed: "2026-10-23" }
+  tf-20200221-10225: { title: "Driven by Strong Demand from Data Center Clients, 4Q19 NAND Flash Revenue Grows 8.5%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20200221-10225.html", type: analyst, lang: en, published: "2020-02-21", accessed: "2026-10-23" }
+  tf-20200326-10254: { title: "Owing to Growing Impact of COVID-19 Pandemic, NAND Flash ASP May Tumble in 2H20 Ahead of Expectations, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20200326-10254.html", type: analyst, lang: en, published: "2020-03-26", accessed: "2026-10-23" }
+  tf-20200513-10308: { title: "As DRAM Market Enters Period of Price Hikes, Revenue Drops by 4.6% QoQ in 1Q20 Due to COVID-19’s Impact on Shipment, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20200513-10308.html", type: analyst, lang: en, published: "2020-05-13", accessed: "2026-10-23" }
+  tf-20200525-10332: { title: "NAND Flash Revenue Undergoes 8.3% QoQ Growth in 1Q20 in Light of Surging Demand from Data Centers, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20200525-10332.html", type: analyst, lang: en, published: "2020-05-25", accessed: "2026-10-23" }
+  tf-20200629-10363: { title: "Changes in NAND Flash Prices to Be Limited in 3Q20 as New Game Console Releases Projected to Compensate for Weakening Cloud Demand, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20200629-10363.html", type: analyst, lang: en, published: "2020-06-29", accessed: "2026-10-23" }
+  tf-20200730-10416: { title: "NAND Flash Market Weakens Rapidly in 3Q20 with Widening Decline in Wafer Prices, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20200730-10416.html", type: analyst, lang: en, published: "2020-07-30", accessed: "2026-10-23" }
+  tf-20200819-10443: { title: "DRAM Revenue Rises by 15.4% in 2Q20, with Possible Decline in Prices Expected for 3Q20, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20200819-10443.html", type: analyst, lang: en, published: "2020-08-19", accessed: "2026-10-23" }
+  tf-20200827-10460: { title: "NAND Flash Revenue Rises 6.5% QoQ in 2Q20 Due to Pandemic-Induced Demand Growth for Cloud Services, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20200827-10460.html", type: analyst, lang: en, published: "2020-08-27", accessed: "2026-10-23" }
+  tf-20201007-10505: { title: "Overall Memory ASP Projected to Decline by Nearly 10% Given Persistent Oversupply in 4Q20, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20201007-10505.html", type: analyst, lang: en, published: "2020-10-07", accessed: "2026-10-23" }
+  tf-20201119-10559: { title: "Rising Shipments and Falling Prices Limit DRAM Revenue Growth for 3Q20 to Merely 2% QoQ, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20201119-10559.html", type: analyst, lang: en, published: "2020-11-19", accessed: "2026-10-23" }
+  tf-20201126-10568: { title: "NAND Flash Revenue for 3Q20 up by Only 0.3% QoQ Owing to Weak Server Sales, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20201126-10568.html", type: analyst, lang: en, published: "2020-11-26", accessed: "2026-10-23" }
+  tf-20201210-10590: { title: "DRAM ASP to Recover from Decline in 1Q21, with Potential for Slight Growth, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20201210-10590.html", type: analyst, lang: en, published: "2020-12-10", accessed: "2026-10-23" }
+  tf-20201214-10599: { title: "Oversupply to Continue Affecting NAND Flash Prices, with 10-15% QoQ Decline Expected in 1Q21, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20201214-10599.html", type: analyst, lang: en, published: "2020-12-14", accessed: "2026-10-23" }
+  tf-20210303-10687: { title: "Owing to High Demand from Smartphone Manufacturers, NAND Flash Revenue Undergoes Mere 2.9% QoQ Decline in 4Q20, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210303-10687.html", type: analyst, lang: en, published: "2021-03-03", accessed: "2026-10-23" }
+  tf-20210304-10690: { title: "DRAM Revenue for 4Q20 Undergoes Modest 1.1% Increase QoQ in Light of Continued Rising Shipment and Falling Prices, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210304-10690.html", type: analyst, lang: en, published: "2021-03-04", accessed: "2026-10-23" }
+  tf-20210316-10717: { title: "PC DRAM Contract Prices Projected to Undergo Remarkable 13-18% Increase QoQ in 2Q21 Owing to High Demand from End Products and Data Centers, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210316-10717.html", type: analyst, lang: en, published: "2021-03-16", accessed: "2026-10-23" }
+  tf-20210317-10720: { title: "NAND Flash Contract Prices Projected to Increase by 3-8% QoQ in 2Q21 Due to Easing of Oversupply, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210317-10720.html", type: analyst, lang: en, published: "2021-03-17", accessed: "2026-10-23" }
+  tf-20210420-10768: { title: "DRAM Prices Projected to Rise by 18-23% QoQ in 2Q21 Owing to Peak Season Demand, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210420-10768.html", type: analyst, lang: en, published: "2021-04-20", accessed: "2026-10-23" }
+  tf-20210511-10777: { title: "DRAM Revenue for 1Q21 Undergoes 8.7% Increase QoQ Thanks to Increased Shipment as Well as Higher Prices, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210511-10777.html", type: analyst, lang: en, published: "2021-05-11", accessed: "2026-10-23" }
+  tf-20210526-10803: { title: "Global NAND Flash Revenue for 1Q21 Rises by 5.1% QoQ Thanks to Better-Than-Expected Demand for Notebooks and Smartphones, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210526-10803.html", type: analyst, lang: en, published: "2021-05-26", accessed: "2026-10-23" }
+  tf-20210608-10822: { title: "Memory Prices Likely to Continue Rising in 3Q21 as Suppliers Keep a Low Level of Inventory, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210608-10822.html", type: analyst, lang: en, published: "2021-06-08", accessed: "2026-10-23" }
+  tf-20210713-10858: { title: "DRAM Prices for 3Q21 Projected to Undergo Minor QoQ Increase of 3-8% Owing to Rising Demand from Peak Season, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210713-10858.html", type: analyst, lang: en, published: "2021-07-13", accessed: "2026-10-23" }
+  tf-20210714-10861: { title: "NAND Flash Contract Prices Likely to Increase by 5-10% QoQ in 3Q21 as Quotes Continue to Rise, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210714-10861.html", type: analyst, lang: en, published: "2021-07-14", accessed: "2026-10-23" }
+  tf-20210729-10875: { title: "Enterprise SSD Contract Prices Likely to Increase by 15% QoQ for 3Q21 Due to High SSD Demand and Short Supply of Upstream IC Components, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210729-10875.html", type: analyst, lang: en, published: "2021-07-29", accessed: "2026-10-23" }
+  tf-20210823-10905: { title: "DRAM Revenue Undergoes 26% Increase QoQ for 2Q21 Owing to Rising Quotes and Higher-Than-Expected Shipment, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210823-10905.html", type: analyst, lang: en, published: "2021-08-23", accessed: "2026-10-23" }
+  tf-20210826-10911: { title: "NAND Flash Revenue for 2Q21 Rises by 10.8% QoQ Due to Strong Notebook Demand and Procurements for Data Centers, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210826-10911.html", type: analyst, lang: en, published: "2021-08-26", accessed: "2026-10-23" }
+  tf-20210922-10947: { title: "DRAM Prices Projected to Decline by 3-8% QoQ in 4Q21 Due to Rising Level of Client Inventory, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210922-10947.html", type: analyst, lang: en, published: "2021-09-22", accessed: "2026-10-23" }
+  tf-20210923-10950: { title: "NAND Flash Market Will See Falling Quotes and 0-5% QoQ Declines in Contract Prices for 4Q21, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20210923-10950.html", type: analyst, lang: en, published: "2021-09-23", accessed: "2026-10-23" }
+  tf-20211116-11007: { title: "DRAM Industry’s Revenue Rises by 10% QoQ for 3Q21 Thanks to Slight Shipment Growth and Ongoing Quote Hikes, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20211116-11007.html", type: analyst, lang: en, published: "2021-11-16", accessed: "2026-10-23" }
+  tf-20211124-11023: { title: "NAND Flash Revenue Rises by 15% QoQ for 3Q21 Thanks to Demand from Smartphone and Data Center Markets, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20211124-11023.html", type: analyst, lang: en, published: "2021-11-24", accessed: "2026-10-23" }
+  tf-20211213-11050: { title: "DRAM ASP Expected to Decline by 8-13% QoQ in 1Q22 Owing to Seasonal Demand Downturn, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20211213-11050.html", type: analyst, lang: en, published: "2021-12-13", accessed: "2026-10-23" }
+  tf-20211215-11056: { title: "NAND Flash ASP Expected to Undergo 10-15% QoQ Decline in 1Q22 as Market Shifts Towards Oversupply, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20211215-11056.html", type: analyst, lang: en, published: "2021-12-15", accessed: "2026-10-23" }
+  tf-20220124-11101: { title: "Price Drop of NAND Flash Products for 1Q22 Expected to Taper to 8-13% QoQ Decline, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220124-11101.html", type: analyst, lang: en, published: "2022-01-24", accessed: "2026-10-23" }
+  tf-20220217-11128: { title: "Overall DRAM Output Decreased Nearly 6% QoQ in 4Q21 Due to Decline in Shipments and Pricing, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220217-11128.html", type: analyst, lang: en, published: "2022-02-17", accessed: "2026-10-23" }
+  tf-20220222-11131: { title: "Total NAND Flash Revenue Drops 2.1% QoQ in 4Q21 Due to Slowing Demand and Falling Prices, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220222-11131.html", type: analyst, lang: en, published: "2022-02-22", accessed: "2026-10-23" }
+  tf-20220328-11175: { title: "Pincered by Russian-Ukrainian War and Inflation, DRAM Price Drop Forecast to Continue in 2Q22 by 0-5%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220328-11175.html", type: analyst, lang: en, published: "2022-03-28", accessed: "2026-10-23" }
+  tf-20220330-11181: { title: "NAND Flash Pricing to Gain 5~10% in 2Q22 on the Heels of Material Contamination at Kioxia and WDC, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220330-11181.html", type: analyst, lang: en, published: "2022-03-30", accessed: "2026-10-23" }
+  tf-20220518-11220: { title: "As Inflation Intensifies and Consumer Demand Weakens, Global DRAM Revenue Falls 4.0% QoQ in 1Q22, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220518-11220.html", type: analyst, lang: en, published: "2022-05-18", accessed: "2026-10-23" }
+  tf-20220525-11230: { title: "Amid Weakening Consumer Demand and Falling Prices, Total NAND Flash Revenue Declined 3.0% in 1Q22, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220525-11230.html", type: analyst, lang: en, published: "2022-05-25", accessed: "2026-10-23" }
+  tf-20220620-11264: { title: "Demand Remains Weak as Inventories Continue Moving Higher, DRAM Pricing Forecast to Drop by 3~8% in 3Q22, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220620-11264.html", type: analyst, lang: en, published: "2022-06-20", accessed: "2026-10-23" }
+  tf-20220621-11268: { title: "NAND Flash Market Oversupplied in 3Q22, Price Quotes to Drop by 0~5%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220621-11268.html", type: analyst, lang: en, published: "2022-06-21", accessed: "2026-10-23" }
+  tf-20220704-11286: { title: "Suppliers More Willing to Acquiesce on Price, 3Q22 DRAM Pricing Decline Expands to Nearly 10%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220704-11286.html", type: analyst, lang: en, published: "2022-07-04", accessed: "2026-10-23" }
+  tf-20220719-11310: { title: "Supply Chain Overstocked, NAND Flash 3Q22 Price Drop to Broaden to 8~13%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220719-11310.html", type: analyst, lang: en, published: "2022-07-19", accessed: "2026-10-23" }
+  tf-20220815-11337: { title: "Sustained by Upsurge in Bit Shipments, Global 2Q22 DRAM Revenue Grows by 6.5% QoQ, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220815-11337.html", type: analyst, lang: en, published: "2022-08-15", accessed: "2026-10-23" }
+  tf-20220824-11346: { title: "Q3 NAND Flash Product Price Drop Deteriorates to 13~18% on Sustained Weak Demand, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220824-11346.html", type: analyst, lang: en, published: "2022-08-24", accessed: "2026-10-23" }
+  tf-20220831-11362: { title: "Rising Contract Pricing Offsets Falling Demand, Total 2Q22 NAND Flash Revenue Increases 1.1% QoQ, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220831-11362.html", type: analyst, lang: en, published: "2022-08-31", accessed: "2026-10-23" }
+  tf-20220901-11366: { title: "Sellers Under Heavy Inventory Pressure, 3Q22 NAND Flash Wafer Contract Price Dip Expands to 30~35%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220901-11366.html", type: analyst, lang: en, published: "2022-09-01", accessed: "2026-10-23" }
+  tf-20220922-11391: { title: "Consumer Demand Remains Stagnant, Supply Chain Inventories Remain High, DRAM Q4 Price Drop to Expanded to 13~18%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220922-11391.html", type: analyst, lang: en, published: "2022-09-22", accessed: "2026-10-23" }
+  tf-20220926-11395: { title: "Supplier Pricing Clash Crashes Prices to Reduce Inventory, NAND Flash Pricing Forecast to Drop by 15~20% in 4Q22, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20220926-11395.html", type: analyst, lang: en, published: "2022-09-26", accessed: "2026-10-23" }
+  tf-20221116-11459: { title: "Due to Falling Shipments and Prices, Global DRAM Revenue for 3Q22 Showed QoQ Drop of Almost 30%—Unprecedented Since 2008 Financial Crisis, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20221116-11459.html", type: analyst, lang: en, published: "2022-11-16", accessed: "2026-10-23" }
+  tf-20221123-11467: { title: "Global NAND Flash Revenue Fell by 24.3% QoQ for 3Q23 as Suppliers Made Large Price Concessions That in Turn Impacted Their Results, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20221123-11467.html", type: analyst, lang: en, published: "2022-11-23", accessed: "2026-10-23" }
+  tf-20230105-11526: { title: "QoQ Decline in NAND Flash ASP Will Narrow to Around 10~15% as Suppliers’ Production Cuts Take Effect, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230105-11526.html", type: analyst, lang: en, published: "2023-01-05", accessed: "2026-10-23" }
+  tf-20230109-11533: { title: "QoQ Decline in DRAM ASP Will Moderate to Around 13~18% for 1Q23, but Slump Will Continue, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230109-11533.html", type: analyst, lang: en, published: "2023-01-09", accessed: "2026-10-23" }
+  tf-20230302-11588: { title: "Global DRAM Revenue Fell by More Than 30% for 4Q22 as Suppliers Made Large Price Concessions to Drive Shipments, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230302-11588.html", type: analyst, lang: en, published: "2023-03-02", accessed: "2026-10-23" }
+  tf-20230306-11591: { title: "Revenue from Enterprise SSDs Totaled Just US$3.79 Billion for 4Q22 Due to Slumping Demand and Widening Decline in SSD Contract Prices, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230306-11591.html", type: analyst, lang: en, published: "2023-03-06", accessed: "2026-10-23" }
+  tf-20230317-11618: { title: "Global NAND Flash Revenue Reports a QoQ Decline of 25% in 4Q22 as ASP Drops Further, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230317-11618.html", type: analyst, lang: en, published: "2023-03-17", accessed: "2026-10-23" }
+  tf-20230328-11626: { title: "Decline in DRAM ASP Narrows to 10~15% in 2Q23 with No End in Sight, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230328-11626.html", type: analyst, lang: en, published: "2023-03-28", accessed: "2026-10-23" }
+  tf-20230330-11630: { title: "ASP of NAND Flash Products Will Continue to Fall 5~10% in 2Q23, Whether Prices Continue to Decline in 2H23 Will Depend on Demand, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230330-11630.html", type: analyst, lang: en, published: "2023-03-30", accessed: "2026-10-23" }
+  tf-20230509-11667: { title: "DRAM and NAND Flash Prices Expected to Fall Further in 2Q23 Due to Weak Server Shipments and High Inventory Levels, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230509-11667.html", type: analyst, lang: en, published: "2023-05-09", accessed: "2026-10-23" }
+  tf-20230525-11688: { title: "DRAM Industry Q1 Revenues Decline 21.2% QoQ, Marking Third Consecutive Quarter of Downturn, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230525-11688.html", type: analyst, lang: en, published: "2023-05-25", accessed: "2026-10-23" }
+  tf-20230601-11698: { title: "Total NAND Flash Revenue Falls 16.1% in 1Q23 as Demand Continues to Decline, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230601-11698.html", type: analyst, lang: en, published: "2023-06-01", accessed: "2026-10-23" }
+  tf-20230705-11743: { title: "DRAM ASP Decline Narrows to 0~5% for 3Q23 Owing to Production Cuts and Seasonal Demand, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230705-11743.html", type: analyst, lang: en, published: "2023-07-05", accessed: "2026-10-23" }
+  tf-20230706-11752: { title: "ASP of NAND Flash to Continue Falling 3~8% in 3Q23, Only Wafer Prices to Increase, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230706-11752.html", type: analyst, lang: en, published: "2023-07-06", accessed: "2026-10-23" }
+  tf-20230824-11805: { title: "Q2 DRAM Industry Revenue Rebounds with a 20.4% Quarterly Increase, Q3 Operating Profit Margin Expected to Turn from Loss to Gains, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230824-11805.html", type: analyst, lang: en, published: "2023-08-24", accessed: "2026-10-23" }
+  tf-20230911-11839: { title: "NAND Flash Prices Expected to Stabilize and Rebound in Q4, Projected to Remain Steady or Increase 0-5%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230911-11839.html", type: analyst, lang: en, published: "2023-09-11", accessed: "2026-10-23" }
+  tf-20230912-11842: { title: "Q2 NAND Flash Revenue Up 7.4%, Anticipated to Exceed 3% Growth in Q3, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20230912-11842.html", type: analyst, lang: en, published: "2023-09-12", accessed: "2026-10-23" }
+  tf-20231013-11880: { title: "Q4 DRAM Contract Prices Set to Rise, with Estimated Quarterly Increase of 3-8%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20231013-11880.html", type: analyst, lang: en, published: "2023-10-13", accessed: "2026-10-23" }
+  tf-20231017-11883: { title: "Suppliers Scale Back Production, Q4 NAND Flash Contract Prices Projected to Climb 8~13%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20231017-11883.html", type: analyst, lang: en, published: "2023-10-17", accessed: "2026-10-23" }
+  tf-20231204-11942: { title: "Contract Prices Bottom Out in Q3, Reigniting Buyer Momentum and Boosting DRAM Revenue by Nearly 20%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20231204-11942.html", type: analyst, lang: en, published: "2023-12-04", accessed: "2026-10-23" }
+  tf-20231205-11946: { title: "NAND Flash Industry Revenue Grows 2.9% in 3Q23, Expected to Surge Over 20% in Q4, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20231205-11946.html", type: analyst, lang: en, published: "2023-12-05", accessed: "2026-10-23" }
+  tf-20240108-11988: { title: "DRAM Contract Prices Projected to Increase 13–18% in 1Q24 as Price Surge Continues, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240108-11988.html", type: analyst, lang: en, published: "2024-01-08", accessed: "2026-10-23" }
+  tf-20240109-11991: { title: "NAND Flash Contract Prices Forecast to Rise 15–20% in 1Q24 Thanks to Supplier-Led Pricing, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240109-11991.html", type: analyst, lang: en, published: "2024-01-09", accessed: "2026-10-23" }
+  tf-20240305-12060: { title: "DRAM Industry Sees Nearly 30% Revenue Growth in 4Q23 Due to Rising Prices and Volume, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240305-12060.html", type: analyst, lang: en, published: "2024-03-05", accessed: "2026-10-23" }
+  tf-20240306-12063: { title: "NAND Flash Industry Revenue Grows 24.5% in Q4 2023, Expected to Increase Another 20% in Q1, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240306-12063.html", type: analyst, lang: en, published: "2024-03-06", accessed: "2026-10-23" }
+  tf-20240326-12093: { title: "Suppliers Aim to Raise Contract Prices, But With Uncertain Demand, 2Q24 DRAM Price Increase Expected to Narrow to 3–8%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240326-12093.html", type: analyst, lang: en, published: "2024-03-26", accessed: "2026-10-23" }
+  tf-20240328-12096: { title: "Q2 NAND Flash Contract Prices Expected to Rise by 13–18%, Enterprise SSDs to See Highest Increase, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240328-12096.html", type: analyst, lang: en, published: "2024-03-28", accessed: "2026-10-23" }
+  tf-20240507-12128: { title: "DRAM Contract Prices for Q2 Adjusted to a 13–18% Increase; NAND Flash around 15–20%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240507-12128.html", type: analyst, lang: en, published: "2024-05-07", accessed: "2026-10-23" }
+  tf-20240529-12153: { title: "NAND Flash Industry Revenue Grew 28.1% in 1Q24, Growth Expected to Continue into Q2, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240529-12153.html", type: analyst, lang: en, published: "2024-05-29", accessed: "2026-10-23" }
+  tf-20240613-12188: { title: "Contract Price Increases Offset Seasonal Slump, Boosting DRAM Q1 Revenue by 5.1%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240613-12188.html", type: analyst, lang: en, published: "2024-06-13", accessed: "2026-10-23" }
+  tf-20240627-12207: { title: "Demand for Servers to Support Second Half of the Year; DRAM Prices Expected to Increase by 8–13% in Q3, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240627-12207.html", type: analyst, lang: en, published: "2024-06-27", accessed: "2026-10-23" }
+  tf-20240628-12210: { title: "Q3 Contract Prices of NAND Flash Products Constrained by Increased Production and Lower End-User Demand; Estimated to Rise by 5–10%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240628-12210.html", type: analyst, lang: en, published: "2024-06-28", accessed: "2026-10-23" }
+  tf-20240815-12254: { title: "DRAM Industry Revenue Surges 24.8% in 2Q24, Upward Revision of Contract Price Increase for Q3, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240815-12254.html", type: analyst, lang: en, published: "2024-08-15", accessed: "2026-10-23" }
+  tf-20240909-12297: { title: "NAND Flash Shipments Growth Slows in 2Q24, Revenue Up 14% Driven by AI SSD Demand, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240909-12297.html", type: analyst, lang: en, published: "2024-09-09", accessed: "2026-10-23" }
+  tf-20240913-12303: { title: "AI Demand Drives Enterprise SSD Contract Prices Up by 25% in Q2 and Boosts Supplier Revenues by Over 50%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240913-12303.html", type: analyst, lang: en, published: "2024-09-13", accessed: "2026-10-23" }
+  tf-20241009-12325: { title: "Buyers Focus on Inventory Reduction; Slowing Demand Growth Constrains Q4 Memory Price Increases, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20241009-12325.html", type: analyst, lang: en, published: "2024-10-09", accessed: "2026-10-23" }
+  tf-20241015-12327: { title: "Increased Production and Weakened Demand to Drive NAND Flash Prices Down 3–8% in 4Q24, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20241015-12327.html", type: analyst, lang: en, published: "2024-10-15", accessed: "2026-10-23" }
+  tf-20241126-12380: { title: "Server DRAM and HBM Boost 3Q24 DRAM Industry Revenue by 13.6% QoQ, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20241126-12380.html", type: analyst, lang: en, published: "2024-11-26", accessed: "2026-10-23" }
+  tf-20241127-12383: { title: "Enterprise SSD Demand Soars While Consumer Orders Lag, Driving 3Q24 NAND Flash Revenue Up 4.8%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20241127-12383.html", type: analyst, lang: en, published: "2024-11-27", accessed: "2026-10-23" }
+  tf-20241230-12424: { title: "Passive Buyer Strategies Drive DRAM Contract Prices Down Across the Board in 1Q25, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20241230-12424.html", type: analyst, lang: en, published: "2024-12-30", accessed: "2026-10-23" }
+  tf-20241231-12427: { title: "Rising Inventories and Weak Seasonal Demand May Push 1Q25 NAND Flash Prices Down by Over 10%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20241231-12427.html", type: analyst, lang: en, published: "2024-12-31", accessed: "2026-10-23" }
+  tf-20250227-12492: { title: "Server DRAM and HBM Continue to Drive Growth, 4Q24 DRAM Industry Revenue Increases by 9.9% QoQ, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250227-12492.html", type: analyst, lang: en, published: "2025-02-27", accessed: "2026-10-23" }
+  tf-20250303-12494: { title: "Weak Consumer Electronics Demand Drives 4Q24 NAND Flash Revenue Down 6.2% QoQ, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250303-12494.html", type: analyst, lang: en, published: "2025-03-03", accessed: "2026-10-23" }
+  tf-20250325-12528: { title: "Downstream Inventory Reduction Eases DRAM Price Decline in 2Q25, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250325-12528.html", type: analyst, lang: en, published: "2025-03-25", accessed: "2026-10-23" }
+  tf-20250326-12530: { title: "NAND Flash Prices Begin to Recover in 2Q25 as Production Cuts and Inventory Rebuilding Take Effect, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250326-12530.html", type: analyst, lang: en, published: "2025-03-26", accessed: "2026-10-23" }
+  tf-20250417-12551: { title: "U.S. Tariffs Spurs Surge in Stockpiling, 2Q25 Memory Contract Prices Set to Rise Further, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250417-12551.html", type: analyst, lang: en, published: "2025-04-17", accessed: "2026-10-23" }
+  tf-20250529-12600: { title: "Off-Season Slowdown and Inventory Pressure Drive Over 20% QoQ Revenue Drop for Top Five NAND Flash Brands in 1Q25, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250529-12600.html", type: analyst, lang: en, published: "2025-05-29", accessed: "2026-10-23" }
+  tf-20250603-12603: { title: "DRAM Revenue Drops 5.5% in the First Quarter of 2025; SK hynix Overtakes Samsung for Top Spot, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250603-12603.html", type: analyst, lang: en, published: "2025-06-03", accessed: "2026-10-23" }
+  tf-20250619-12624: { title: "Inventory Headwinds Weigh on Top 5 Enterprise SSD Vendors in 1Q25; Recovery Expected as AI Demand Grows, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250619-12624.html", type: analyst, lang: en, published: "2025-06-19", accessed: "2026-10-23" }
+  tf-20250707-12633: { title: "Transition between DRAM Generations Drives Diverging 3Q25 Price Trends; Consumer DDR4 Prices Expected to Surge Over 40%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250707-12633.html", type: analyst, lang: en, published: "2025-07-07", accessed: "2026-10-23" }
+  tf-20250709-12638: { title: "3Q25 NAND Flash Contract Prices Projected to Rise 5–10%; Weak Smartphone Demand Limits eMMC and UFS Growth, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250709-12638.html", type: analyst, lang: en, published: "2025-07-09", accessed: "2026-10-23" }
+  tf-20250811-12667: { title: "DDR4 and LPDDR4 Supply Tightens Sharply in 2H25 as Structural Shortage Drives Strong Price Surge, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250811-12667.html", type: analyst, lang: en, published: "2025-08-11", accessed: "2026-10-23" }
+  tf-20250828-12688: { title: "NAND Flash Revenue Surged Over 20% in 2Q25, SK Group Market Share Jumped to 21%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250828-12688.html", type: analyst, lang: en, published: "2025-08-28", accessed: "2026-10-23" }
+  tf-20250902-12694: { title: "2Q25 DRAM Revenue Jumps 17.1%, SK hynix Expands Market Share as Taiwanese Vendors Deliver Strong Growth, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250902-12694.html", type: analyst, lang: en, published: "2025-09-02", accessed: "2026-10-23" }
+  tf-20250915-12714: { title: "Soaring Inference AI Demand Triggers Severe Nearline HDD Shortages; QLC SSD Shipments Poised for Breakout in 2026, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250915-12714.html", type: analyst, lang: en, published: "2025-09-15", accessed: "2026-10-23" }
+  tf-20250924-12733: { title: "DRAM Prices to Continue Rising in 4Q25, Server Demand Surges Ahead While Legacy Process Products See Steeper Increases, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250924-12733.html", type: analyst, lang: en, published: "2025-09-24", accessed: "2026-10-23" }
+  tf-20250925-12736: { title: "NAND Flash Prices to Rise 5–10% in 4Q25, Driven by Spillover Demand for QLC Products, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20250925-12736.html", type: analyst, lang: en, published: "2025-09-25", accessed: "2026-10-23" }
+  tf-20251126-12802: { title: "Global DRAM Revenue Jumps 30.9% in 3Q25, Micron’s Market Share Climbs by 3.7 Percentage Points, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20251126-12802.html", type: analyst, lang: en, published: "2025-11-26", accessed: "2026-10-23" }
+  tf-20251201-12807: { title: "NAND Flash Wafer Supply Tightens Further, Some Products See Over 60% Contract Price Hikes in November, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20251201-12807.html", type: analyst, lang: en, published: "2025-12-01", accessed: "2026-10-23" }
+  tf-20251203-12813: { title: "AI Infrastructure Continues to Strengthen NAND Flash Demand; Kioxia Posts Highest QoQ Growth of 33.1% in 3Q25, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20251203-12813.html", type: analyst, lang: en, published: "2025-12-03", accessed: "2026-10-23" }
+  tf-20251205-12819: { title: "Enterprise SSD Prices and Shipments Surge in 3Q25, Industry Revenue Climbs 28%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20251205-12819.html", type: analyst, lang: en, published: "2025-12-05", accessed: "2026-10-23" }
+  tf-20260105-12860: { title: "Memory Makers Prioritize Server Applications, Driving Across-the-Board Price Increases in 1Q26, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260105-12860.html", type: analyst, lang: en, published: "2026-01-05", accessed: "2026-10-23" }
+  tf-20260122-12893: { title: "AI Architecture Evolution Set to Drive Memory Market Revenue to a New Peak in 2027, with Annual Growth Exceeding 50%, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260122-12893.html", type: analyst, lang: en, published: "2026-01-22", accessed: "2026-10-23" }
+  tf-20260202-12911: { title: "Memory Price Outlook for 1Q26 Sharply Upgraded; QoQ Increases of All Product Categories to Hit Record Highs, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260202-12911.html", type: analyst, lang: en, published: "2026-02-02", accessed: "2026-10-23" }
+  tf-20260226-12937: { title: "Price Rally Drives 4Q25 DRAM Revenue Up 29.4%; Samsung Regains No. 1 Market Share, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260226-12937.html", type: analyst, lang: en, published: "2026-02-26", accessed: "2026-10-23" }
+  tf-20260303-12943: { title: "AI Server Storage Demand Surges; Top Five NAND Flash Suppliers Post 23.8% QoQ Revenue Growth in 4Q25, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260303-12943.html", type: analyst, lang: en, published: "2026-03-03", accessed: "2026-10-23" }
+  tf-20260331-12995: { title: "AI Server Demand to Drive Memory Contract Price Increases in 2Q26 as CSPs Secure Supply via Long-Term Agreements", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260331-12995.html", type: analyst, lang: en, published: "2026-03-31", accessed: "2026-10-23" }
+  tf-20260525-13058: { title: "Combined Revenue of Top Five Global NAND Flash Suppliers Rose by 83.7% QoQ for 1Q26 as Supply Shortages Drove Price Hikes", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260525-13058.html", type: analyst, lang: en, published: "2026-05-25", accessed: "2026-10-23" }
+  tf-20260601-13070: { title: "Rapid Contract Price Surge Drives 1Q26 DRAM Industry Up 81% QoQ, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260601-13070.html", type: analyst, lang: en, published: "2026-06-01", accessed: "2026-10-23" }
+  tf-20260602-13074: { title: "Tight DRAM Supply Gives Suppliers Greater Pricing Power in HBM, with HBM Contract Prices Expected to Surge Multiples Higher in 2027, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260602-13074.html", type: analyst, lang: en, published: "2026-06-02", accessed: "2026-10-23" }
+  tf-20260611-13092: { title: "AI Agent Boom Triggers Enterprise SSD Supply Crunch; Top Five Enterprise SSD Brands Post Record US$18.46 Billion Revenue in 1Q26, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260611-13092.html", type: analyst, lang: en, published: "2026-06-11", accessed: "2026-10-23" }
+  tf-20260703-13134: { title: "AI Server Demand Continues to Support Memory Prices in 3Q26, but Gains Moderate as Consumer Demand Weakens and High Base Effects Take Hold, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260703-13134.html", type: analyst, lang: en, published: "2026-07-03", accessed: "2026-10-23" }
+  tf-20260709-13140: { title: "Long-Term Agreements Cap Price Increases; Server DRAM Contract Prices Expected to Rise 13-18% QoQ in 3Q26, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260709-13140.html", type: analyst, lang: en, published: "2026-07-09", accessed: "2026-10-23" }
+  tf-20260721-13148: { title: "NAND Flash Supply Growth to Outpace Demand in 2027, Easing Supply Constraints in 2H27, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260721-13148.html", type: analyst, lang: en, published: "2026-07-21", accessed: "2026-10-23" }
+  tf-20260730-13158: { title: "Diverging Memory Market Outlook in 2027 as DRAM Supply Remains Tight While NAND Flash Supply Conditions Ease, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260730-13158.html", type: analyst, lang: en, published: "2026-07-30", accessed: "2026-10-23" }
+  tf-20260818-13186: { title: "Combined Revenue of Top Five NAND Flash Brands Rises 77% QoQ in 2Q26; Micron Moves Up to Third Place, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260818-13186.html", type: analyst, lang: en, published: "2026-08-18", accessed: "2026-10-23" }
+  tf-20260825-13198: { title: "Memory Prices Soar; DRAM and NAND Flash to Account for 68% of Major CSP CapEx in 2027, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260825-13198.html", type: analyst, lang: en, published: "2026-08-25", accessed: "2026-10-23" }
+  tf-20260907-13219: { title: "DRAM Industry Revenue Rises 59.5% QoQ in 2Q26 as Supply Expansion Continues to Lag Demand Growth, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260907-13219.html", type: analyst, lang: en, published: "2026-09-07", accessed: "2026-10-23" }
+  tf-20260921-13246: { title: "Stronger North American Demand to Keep Enterprise SSD Prices on an Upward Trend in 4Q26, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260921-13246.html", type: analyst, lang: en, published: "2026-09-21", accessed: "2026-10-23" }
+  tf-20260929-13255: { title: "HBM Supply Constraints Persist, 2027 Price Outlook Revised Upward with Blended ASP Forecast to Rise 121% YoY, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260929-13255.html", type: analyst, lang: en, published: "2026-09-29", accessed: "2026-10-23", note: "中文版：https://www.trendforce.com.tw/presscenter/news/20260929-13253.html（數字相同）" }
+  tf-20260930-13258: { title: "AI Server Demand Sustains Memory Contract Price Increases in 4Q26, While Consumer-Side Pressure Persists, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20260930-13258.html", type: analyst, lang: en, published: "2026-09-30", accessed: "2026-10-23" }
+  tf-pp-dram-20250804: { title: "DRAM Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/dram/dram_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20250804214414/https://www.trendforce.com/price/dram/dram_contract", note: "TrendForce「DRAM Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；公開頁面顯示約一個半月前的下半月合約均價（存檔 2025-08-04）" }
+  tf-pp-dram-20251220: { title: "DRAM Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/dram/dram_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20251220222039/https://www.trendforce.com/price/dram/dram_contract", note: "TrendForce「DRAM Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；公開頁面顯示約一個半月前的下半月合約均價（存檔 2025-12-20）" }
+  tf-pp-dram-20260116: { title: "DRAM Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/dram/dram_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260116051254/https://www.trendforce.com/price/dram/dram_contract", note: "TrendForce「DRAM Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；公開頁面顯示約一個半月前的下半月合約均價（存檔 2026-01-16）" }
+  tf-pp-dram-20260521: { title: "DRAM Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/dram/dram_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260521043014/https://www.trendforce.com/price/dram/dram_contract", note: "TrendForce「DRAM Price Trends」價格頁的 Wayback Machine 存檔（存檔 2026-05-21），顯示 2026 年 3 月下半月合約均價（2026-03-31 更新）" }
+  tf-pp-dram-20260607: { title: "DRAM Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/dram/dram_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260607164502/https://www.trendforce.com/price/dram/dram_contract", note: "TrendForce「DRAM Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；公開頁面顯示約一個半月前的下半月合約均價（存檔 2026-06-07）" }
+  tf-pp-dram-20260731: { title: "DRAM Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/dram/dram_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260731180851/https://www.trendforce.com/price/dram/dram_contract", note: "TrendForce「DRAM Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；公開頁面顯示約一個半月前的下半月合約均價（存檔 2026-07-31）" }
+  tf-pp-dram-live: { title: "DRAM Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/dram/dram_contract", type: dataset, lang: en, accessed: "2026-10-23", note: "2026-10-23 讀取的現行頁面：2026 年 8 月下半月 DRAM 合約均價（2026-08-31 更新）與 DDR4 8Gb 現貨價（2026-10-22 更新）" }
+  tf-pp-flash-20250605: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20250605041740/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2025-06-05）" }
+  tf-pp-flash-20250711: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20250711081341/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2025-07-11）" }
+  tf-pp-flash-20250916: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20250916064206/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2025-09-16）" }
+  tf-pp-flash-20251111: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20251111010815/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2025-11-11）" }
+  tf-pp-flash-20251213: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20251213155934/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2025-12-13）" }
+  tf-pp-flash-20260114: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260114191106/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2026-01-14）" }
+  tf-pp-flash-20260124: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260124064535/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2026-01-24）" }
+  tf-pp-flash-20260222: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260222111639/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2026-02-22）" }
+  tf-pp-flash-20260307: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260307051454/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2026-03-07）" }
+  tf-pp-flash-20260419: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260419210829/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2026-04-19）" }
+  tf-pp-flash-20260610: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260610203002/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2026-06-10）" }
+  tf-pp-flash-20260713: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260713231427/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2026-07-13）" }
+  tf-pp-flash-20260826: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260826153638/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2026-08-26）" }
+  tf-pp-flash-20260928: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", archiveUrl: "https://web.archive.org/web/20260928064652/https://www.trendforce.com/price/flash/flash_contract", note: "TrendForce「NAND Flash Price Trends」價格頁的 Wayback Machine 存檔（存檔日見 archiveUrl）；含 512Gb TLC 晶圓現貨價與 PC OEM 用戶端 SSD 季度合約均價（存檔 2026-09-28）" }
+  tf-pp-flash-live: { title: "NAND Flash Price Trends | TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/price/flash/flash_contract", type: dataset, lang: en, accessed: "2026-10-23", note: "2026-10-23 讀取的現行頁面：512Gb TLC 晶圓現貨價（2026-10-12 更新）與 3Q26 PC OEM 用戶端 SSD 合約均價（2026-08-05 更新）" }
+  tf-tw-20171211-3632: { title: "TrendForce：擴產與淡季影響，2018年第一季NAND Flash產業供過於求致價格走跌", publisher: "TrendForce 集邦科技", url: "https://www.trendforce.com.tw/presscenter/news/20171211-3632.html", type: analyst, lang: zh-TW, published: "2017-12-11", accessed: "2026-10-23" }
+lastVerified: "2026-10-23"
+editorial:
+  status: fact-checked
+  author: fc-data-prices
+  checkedBy: "fc-check-prices"
+  checkedOn: "2026-10-23"
+  notes: "主要來源為 TrendForce（集邦科技）英文新聞稿與其附表（附表為圖片，已逐一判讀 2018–2026 年各季價格表），以及 TrendForce 價格頁的公開報價（Wayback Machine 存檔）。2015–2019 年 TrendForce 未固定公布整體合約價，部分季度採代表性品項或推算，均在 note 標明「代理值」「推算值」與可信度。所有 TrendForce 數字一律標 estimate（第三方估計），事前預測標 forecast。新聞稿網址的日期與編號即 source key（tf-YYYYMMDD-編號）。查核（2026-10-23）：重新抓取全部新聞稿，核對標題與發布日；以程式比對每個數值與 note 引述的數字是否出現在來源原文，原文未寫出者改看附表圖片（2018–2026 年 NAND／DRAM 各季價格表與營收排名表逐張判讀）；價格頁數值以 Wayback 存檔逐筆解析表格比對；2024–2026 年各季值另與記憶體專題 nand.yaml、dram.yaml 交叉比對，2026 年 9 月新聞稿另以集邦中文版核對。修正：2017Q2 DRAM 刪除原文沒有的 10–15% 區間；2026Q1 用戶端 SSD 改為兩容量漲幅的平均 109.8%；2025Q3 用戶端 SSD 改用 7 月 24 日更新的合約均價推算（+10.2%），企業級 SSD 與晶圓的 2025Q3 值為 7 月 9 日的季初數字，改標 forecast；2026Q2 DRAM 營收的說明改為長鑫存儲自「其他」獨立列出、2026Q1 合計未重編；補上 9 月 29 日上修的 2027 年 HBM 平均售價年增 121%；補上 2026 年 3 月 DRAM 合約價三筆；倍數說法改為「約為…的 N 倍」。2026 年 4 月 DRAM 三筆的存檔（tf-pp-dram-20260607）查核時無法重新下載，以 3 月下半月值與 4 月下半月公布的半月漲幅（+23.1%、+45.3%、+40%）回推，數字吻合。"

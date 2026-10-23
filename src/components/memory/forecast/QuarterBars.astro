@@ -1,0 +1,115 @@
+---
+/**
+ * Column chart of a quarterly, monthly or annual series on the financial-model pages (ChartFrame + BarsPlot).
+ * Periods 「2026Q3」「FY2026Q4」「2026-07」「2023」 are split into a short label and a year group. Estimates and
+ * forecasts are hatched and tagged in the tooltip and the data table; values are already in display units.
+ *   <QuarterBars title="存貨" unit="新台幣億元" points={[{ period: '2026Q2', value: 917.9 }]} />
+ */
+import '../../charts/charts.css';
+import ChartFrame from '../../charts/ChartFrame.astro';
+import BarsPlot, { type BarSlot } from '../../charts/BarsPlot.astro';
+import { isNum, tip } from '../../charts/chart-utils';
+import type { LegendItem, TableSpec } from '../../charts/types';
+import { formatNumber } from '../../../lib/format';
+
+export interface QBPoint {
+  period: string;
+  value: number | null;
+  status?: 'actual' | 'estimate' | 'forecast' | 'guidance' | undefined;
+  /** extra tooltip / table note */
+  note?: string | undefined;
+  /** highlight colour (e.g. the quarter a section talks about) */
+  color?: string | undefined;
+}
+
+interface Props {
+  title: string;
+  points: QBPoint[];
+  unit: string;
+  subtitle?: string | undefined;
+  digits?: number | undefined;
+  color?: string | undefined;
+  height?: number | undefined;
+  notes?: Array<string | null | undefined> | undefined;
+  badge?: string | undefined;
+  /** label of the value in the tooltip (default: the unit) */
+  valueName?: string | undefined;
+  /** print the value above each bar (default: when ≤ 12 bars) */
+  valueLabels?: boolean | undefined;
+  legend?: LegendItem[] | undefined;
+  as?: 'h3' | 'h4' | 'p' | undefined;
+  class?: string | undefined;
+}
+
+const { title, points, unit, subtitle, color, height = 210, notes = [], badge, valueName, legend, as = 'h4', class: className } = Astro.props;
+const digits = Astro.props.digits ?? (points.every((p) => !isNum(p.value) || Number.isInteger(p.value)) ? 0 : 1);
+const fmt = (v: number) => formatNumber(v, { digits });
+const STATUS: Record<string, string> = { estimate: '估計', forecast: '預測', guidance: '財測' };
+
+const RE_Q = /^(FY)?(\d{4})Q([1-4])$/;
+const RE_M = /^(\d{4})-(\d{2})$/;
+function split(p: string): { label: string; group?: string; display: string; q?: number; m?: number } {
+  let m: RegExpExecArray | null;
+  if ((m = RE_Q.exec(p))) return { label: `Q${m[3]}`, group: m[1] ? `FY${m[2]!.slice(2)}` : m[2]!, display: m[1] ? `FY${m[2]} Q${m[3]}` : `${m[2]} Q${m[3]}`, q: Number(m[3]) };
+  if ((m = RE_M.exec(p))) return { label: String(Number(m[2])), group: m[1]!, display: `${m[1]}/${Number(m[2])}`, m: Number(m[2]) };
+  return { label: p, display: p };
+}
+const n = points.length;
+const showValues = Astro.props.valueLabels ?? n <= 12;
+const slots: BarSlot[] = points.map((p) => {
+  const s = split(p.period);
+  const est = p.status === 'estimate' || p.status === 'forecast' || p.status === 'guidance';
+  return {
+    value: p.value,
+    estimate: est,
+    color: p.color,
+    // long quarterly series: years only (each bar's quarter is in its tooltip and the data table)
+    label: s.q != null && n > 16 ? undefined : s.label,
+    group: s.group,
+    minor: s.q != null ? n > 10 && (s.q === 2 || s.q === 4) : s.m != null ? ![1, 4, 7, 10].includes(s.m) : false,
+    minor2: s.q != null ? n > 6 && s.q !== 1 : s.m != null ? s.m !== 1 : n > 8,
+    valueLabel: showValues && isNum(p.value) ? fmt(p.value) : undefined,
+    valueLabelMinor: n > 8,
+    tip: tip(s.display, [
+      [valueName ?? unit, isNum(p.value) ? `${fmt(p.value)}${p.status && STATUS[p.status] ? `（${STATUS[p.status]}）` : ''}` : '—'],
+      p.note ? ['附註', p.note] : null,
+    ]),
+  };
+});
+// a short last year (2026 with two quarters among 30 bars) has no room for its year label on phones (forecast.css)
+const lastGroup = slots.at(-1)?.group;
+const shortTail = n > 16 && lastGroup != null && slots.filter((s) => s.group === lastGroup).length < 3;
+const anyEst = points.some((p) => p.status && p.status !== 'actual');
+const legendItems: LegendItem[] = legend ?? (anyEst ? [{ label: '實際', kind: 'bar', color }, { label: '估計或預測（斜線）', kind: 'estimate', color }] : []);
+const vals = points.map((p) => p.value).filter(isNum);
+const aria = n
+  ? `${title}長條圖（單位：${unit}），${split(points[0]!.period).display} 至 ${split(points.at(-1)!.period).display}，最高 ${fmt(Math.max(...vals))}、最低 ${fmt(Math.min(...vals))}。`
+  : '';
+const table: TableSpec = {
+  columns: [
+    { key: 'p', label: '期間' },
+    { key: 'v', label: `${valueName ?? '數值'}（${unit}）`, numeric: true },
+    ...(anyEst || points.some((p) => p.note) ? [{ key: 's', label: '備註' }] : []),
+  ],
+  rows: [...points].reverse().map((p) => ({
+    p: split(p.period).display,
+    v: isNum(p.value) ? fmt(p.value) : '',
+    s: [p.status && STATUS[p.status] ? STATUS[p.status] : '', p.note ?? ''].filter(Boolean).join('；'),
+  })),
+};
+---
+
+<ChartFrame
+  title={title}
+  as={as}
+  subtitle={subtitle}
+  badge={badge}
+  unit={unit}
+  legend={legendItems}
+  notes={notes}
+  table={table}
+  empty={n === 0}
+  class:list={['mem-chart', 'fc-qbars', shortTail && 'fc-qbars--tail', className]}
+>
+  <BarsPlot slots={slots} ariaLabel={aria} height={height} color={color} />
+</ChartFrame>

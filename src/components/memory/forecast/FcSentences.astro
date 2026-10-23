@@ -1,0 +1,45 @@
+---
+/**
+ * A long model note as a list, one sentence per item (citations kept), so selection rules and checks scan easily.
+ *   <FcSentences b={bundle} text={candidate.note} />
+ */
+import FcText from './FcText.astro';
+import type { FcBundle } from '../../../lib/forecast-data';
+
+interface Props {
+  b: FcBundle;
+  text: string | null | undefined;
+  class?: string | undefined;
+}
+const { b, text: raw, class: className } = Astro.props;
+// metric keys of the model output (revenueDynamic…) read as words
+const T: Record<string, string> = { revenue: '營收', grossMargin: '毛利率', eps: 'EPS', operatingIncome: '營業利益', netIncome: '淨利' };
+const V: Record<string, string> = { Dynamic: '連續預測', ExAnte: '事前預測', Train: '訓練期' };
+const text = raw?.replace(/\b(revenue|grossMargin|eps|operatingIncome|netIncome)(Dynamic|ExAnte|Train)\b/g, (_m, t: string, v: string) => `${T[t]}（${V[v]}）`);
+// split after 。 unless it closes a parenthesis that is still open
+const sentences: string[] = [];
+let buf = '';
+let depth = 0;
+for (const ch of text ?? '') {
+  buf += ch;
+  if (ch === '（' || ch === '(') depth++;
+  else if ((ch === '）' || ch === ')') && depth > 0) depth--;
+  else if (ch === '。' && depth === 0) {
+    sentences.push(buf.trim());
+    buf = '';
+  }
+}
+if (buf.trim()) sentences.push(buf.trim());
+---
+
+{
+  sentences.length > 0 && (
+    <ul class:list={['fc-sent', className]} role="list">
+      {sentences.map((s) => (
+        <li>
+          <FcText b={b} text={s} />
+        </li>
+      ))}
+    </ul>
+  )
+}

@@ -27,6 +27,8 @@ import Timeline from '../../components/company/Timeline.astro';
 import RelatedPages from '../../components/company/RelatedPages.astro';
 import FinNotes from '../../components/company/FinNotes.astro';
 import MetricBars from '../../components/company/MetricBars.astro';
+import ForecastLinks from '../../components/memory/forecast/ForecastLinks.astro';
+import { FC_COMPANIES, hasForecast, type FcCompany } from '../../lib/forecast-data';
 import {
   OWNERSHIP_LABELS,
   REGION_LABELS,
@@ -49,6 +51,8 @@ export const getStaticPaths = (() =>
   [...new Set(getRoster().map((r) => r.id))].map((slug) => ({ params: { slug } }))) satisfies GetStaticPaths;
 
 const slug = String(Astro.params.slug ?? '');
+// 群聯 and 美光 have a financial model in the memory topic (/memory/phison/, /memory/micron/)
+const forecastCompany = (FC_COMPANIES as readonly string[]).includes(slug) && hasForecast(slug as FcCompany) ? (slug as FcCompany) : undefined;
 const roster = getRosterCompany(slug);
 const entry = await findEntry('companies', slug);
 const finEntry = await findEntry('financials', slug);
@@ -339,6 +343,7 @@ const revenueLede = !fin
           {finProfile === 'compact' && <FinNotes financials={fin} part="headline" />}
           <CompanyFinancials financials={fin} profile={finProfile} company={nameForCharts} />
           <FinNotes financials={fin} part="notes" />
+          {forecastCompany && <ForecastLinks variant="callout" company={forecastCompany} class="co-forecast" />}
         </>
       ) : (
         <div class="co-empty">

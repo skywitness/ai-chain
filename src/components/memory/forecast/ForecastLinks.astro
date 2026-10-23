@@ -1,0 +1,124 @@
+---
+/**
+ * Links to the financial-model sub-pages of the memory topic, with the model's headline from its data:
+ *   <ForecastLinks />                              → two cards (section 「財報模型：群聯與美光」 on /memory/)
+ *   <ForecastLinks variant="callout" company="micron" /> → one card on /companies/micron/
+ * A company whose forecast files are missing is left out (renders nothing when none is available).
+ */
+import './forecast-links.css';
+import Icon from '../../ui/Icon.astro';
+import {
+  FC_COMPANIES,
+  FC_META,
+  fcPct,
+  forecastHref,
+  forecastOf,
+  forecastQuarters,
+  getForecastData,
+  periodLabel,
+  scenarioOf,
+  selectedCandidate,
+  type FcCompany,
+} from '../../../lib/forecast-data';
+import { errHeadline } from './fc-labels';
+import { uid } from '../../content/page-state';
+
+interface Props {
+  variant?: 'cards' | 'callout' | undefined;
+  company?: FcCompany | undefined;
+  class?: string | undefined;
+}
+const { variant = 'cards', company, class: className } = Astro.props;
+const list = (company ? [company] : FC_COMPANIES).flatMap((c) => {
+  const b = getForecastData(c);
+  if (!b) return [];
+  const m = b.model;
+  const sel = selectedCandidate(m);
+  const fq = forecastQuarters(scenarioOf(m, 'base'));
+  const firstQ = fq[0];
+  const year = scenarioOf(m, 'base')?.forecasts.filter((f) => !/Q/.test(f.period)).at(-1);
+  const err =
+    b.company === 'micron'
+      ? `營收平均誤差 ${errHeadline(b, 'revenue', sel.metrics.revenue)}、毛利率 ${errHeadline(b, 'grossMargin', sel.metrics.grossMargin)}`
+      : `毛利率平均誤差 ${errHeadline(b, 'grossMargin', sel.metrics.grossMargin)}`;
+  const blurb =
+    c === 'phison'
+      ? '用 NAND 合約價推估群聯的進貨成本，對照庫存何時賣出，說明低價庫存如何推高毛利率、何時淡化。'
+      : '把 DRAM、NAND 合約價換算成美光售價，再拆解每位元成本、折舊與 HBM，並和美光自己的財測比較。';
+  return [
+    {
+      c,
+      meta: FC_META[c],
+      href: forecastHref(c),
+      sel: sel.name,
+      err,
+      test: `${periodLabel(m.test.from)}–${periodLabel(m.test.to)}`,
+      gm: [
+        firstQ ? { p: periodLabel(firstQ.period), v: fcPct(forecastOf(m, 'base', firstQ.period)?.grossMargin) } : null,
+        year ? { p: periodLabel(year.period), v: fcPct(year.grossMargin) } : null,
+      ].filter((x): x is { p: string; v: string } => !!x),
+      blurb,
+    },
+  ];
+});
+const hid = uid(Astro, 'fc-links');
+---
+
+{
+  list.length > 0 && (
+    <div class:list={['fc-links', `fc-links--${variant}`, className]} data-pagefind-ignore>
+      {variant === 'callout' && (
+        <p class="fc-links__kicker" id={hid}>
+          <span class="mem-head__badge">財報模型</span>
+          記憶體與儲存專題
+        </p>
+      )}
+      <ul class="fc-links__list" role="list" aria-labelledby={variant === 'callout' ? hid : undefined}>
+        {list.map((x) => (
+          <li class="fc-link">
+            <p class="fc-link__title">
+              <a href={x.href}>{x.meta.h1}</a>
+            </p>
+            <p class="fc-link__desc">{x.blurb}</p>
+            <dl class="fc-link__facts">
+              <div>
+                <dt>選定模型</dt>
+                <dd>
+                  {x.sel}
+                  <small>
+                    回測 {x.test}：{x.err}
+                  </small>
+                </dd>
+              </div>
+              <div>
+                <dt>
+                  {x.meta.gmLabel}
+                  <span class="mem-st mem-st--forecast">基準情境</span>
+                </dt>
+                <dd class="fc-link__gm">
+                  {x.gm.map((g, i) => (
+                    <>
+                      {i > 0 && <Icon name="arrow-right" size="0.9em" />}
+                      <span>
+                        <small>{g.p}</small>
+                        <b>{g.v}</b>
+                      </span>
+                    </>
+                  ))}
+                </dd>
+              </div>
+            </dl>
+            <a class="fc-link__cta" href={x.href}>
+              看{x.meta.name}的模型、回測與情境
+              <Icon name="arrow-right" />
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="mem-fine fc-links__foot">
+        <Icon name="info" size="1em" />
+        依公開資料與假設價格路徑推算的教學模型，不是投資建議；不提供目標價或買賣建議。
+      </p>
+    </div>
+  )
+}

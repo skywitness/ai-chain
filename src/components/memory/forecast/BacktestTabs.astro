@@ -1,0 +1,161 @@
+---
+/**
+ * 回測: one tab per target (營收、毛利率、營業利益、淨利、EPS) with a chart of actual vs the selected model vs the
+ * benchmark (the naive model, or Micron's own guidance; for Micron also the model fed with TrendForce's
+ * start-of-quarter forecasts) and the quarter-by-quarter table with errors. The tabs are radio buttons styled with
+ * :has(), so the page works without JavaScript (all panels show when :has is unsupported).
+ *   <BacktestTabs b={bundle} />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import { backtestOf, chartKey, periodLabel, qIndex, quarterOf, selectedCandidate, yiDigits, type BacktestRow, type FcBundle } from '../../../lib/forecast-data';
+import { chartValue, errText, numTarget, targetLabel, TARGETS, unitOf, type Target } from './fc-labels';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m } = b;
+const sel = selectedCandidate(m);
+const exAnte = m.candidates.find((c) => c.id.endsWith('-ex-ante'));
+const naive = m.candidates.find((c) => c.id === 'naive' || c.id === 'naive-last-quarter');
+const COLORS = { actual: 'var(--fc-actual-ink)', model: 'var(--chart-2)', bench: 'var(--chart-7)', exante: 'var(--chart-5)' };
+
+interface Line {
+  key: 'model' | 'bench' | 'exante';
+  name: string;
+  rows: Map<string, number>;
+}
+const tabs = TARGETS.map((t) => {
+  const rows = backtestOf(m, sel.id, t);
+  if (!rows.length) return null;
+  const lines: Line[] = [{ key: 'model', name: `選定模型（${sel.name}）`, rows: new Map(rows.map((r) => [r.period, r.predicted])) }];
+  const withBench = rows.filter((r): r is BacktestRow & { benchmark: number } => r.benchmark != null);
+  if (withBench.length) {
+    lines.push({ key: 'bench', name: withBench[0]!.benchmarkLabel ?? '對照', rows: new Map(withBench.map((r) => [r.period, r.benchmark])) });
+  } else if (naive) {
+    const nr = backtestOf(m, naive.id, t);
+    if (nr.length) lines.push({ key: 'bench', name: naive.name, rows: new Map(nr.map((r) => [r.period, r.predicted])) });
+  }
+  if (exAnte) {
+    const er = backtestOf(m, exAnte.id, t);
+    if (er.length) lines.push({ key: 'exante', name: '同一模型改用季初預測價', rows: new Map(er.map((r) => [r.period, r.predicted])) });
+  }
+  return { t, rows, lines, label: targetLabel(b, t) };
+}).filter((x): x is NonNullable<typeof x> => !!x);
+
+const fromMonthly = (p: string) => !quarterOf(b.inputs, p);
+/** rows after the test window (群聯 2026Q3 revenue, checked against monthly revenue) are an out-of-sample extra */
+const afterTest = (p: string) => qIndex(p) > qIndex(m.test.to);
+/** one number of decimals per money table (the smallest amount decides), so 「93.0」 lines up with 「98.5」 */
+const yiOf = (x: (typeof tabs)[number]) => {
+  const all = [...x.rows.map((r) => r.actual), ...x.lines.flatMap((l) => [...l.rows.values()])].filter((v) => Number.isFinite(v));
+  return all.length ? Math.max(...all.map((v) => yiDigits(v))) : undefined;
+};
+const short: Record<Line['key'], string> = { model: '選定模型', bench: '對照', exante: '季初預測價' };
+---
+
+<div class="fc-tabs" data-tabs="bt">
+  <div class="mem-filter fc-tabs__bar">
+    <fieldset>
+      <legend>看哪一項</legend>
+      {
+        tabs.map((x, i) => (
+          <label>
+            <input type="radio" name="fc-bt" id={`fc-bt-${x.t}`} value={x.t} checked={i === 0} />
+            <span>{x.label}</span>
+          </label>
+        ))
+      }
+    </fieldset>
+  </div>
+  {
+    tabs.map((x) => {
+      const t: Target = x.t;
+      const pct = t === 'grossMargin';
+      const yi = t === 'grossMargin' || t === 'eps' ? undefined : yiOf(x);
+      const extra = x.rows.filter((r) => afterTest(r.period));
+      return (
+        <section class="fc-tabs__panel" data-panel={`fc-bt-${t}`} aria-label={`${x.label}的回測`}>
+          <MultiLine
+            title={`${x.label}：實際與回測預測`}
+            subtitle={`${periodLabel(m.test.from)}–${periodLabel(m.test.to)}；每一季只用上一季以前的財報，加上當季實際的合約價${b.company === 'micron' ? '與位元出貨' : '與月營收'}${extra.length ? `；${extra.map((r) => periodLabel(r.period)).join('、')} 以月營收合計對照（不計入回測誤差）` : ''}`}
+            unit={unitOf(b, t)}
+            format={pct ? 'percent' : 'number'}
+            digits={t === 'eps' ? 2 : pct ? 1 : undefined}
+            valueSuffix={pct ? '' : ` ${unitOf(b, t)}`}
+            includeZero={!pct}
+            height={240}
+            series={[
+              { name: '實際', color: COLORS.actual, points: x.rows.map((r) => ({ x: chartKey(r.period), y: chartValue(t, r.actual) })) },
+              ...x.lines.map((l) => ({
+                name: l.name.replace(/（沿用上一季毛利率與利潤率，乘上當季營收）/, '（沿用上一季利潤率）'),
+                color: COLORS[l.key],
+                points: x.rows.map((r) => ({ x: chartKey(r.period), y: l.rows.has(r.period) ? chartValue(t, l.rows.get(r.period)!) : null })),
+              })),
+            ]}
+            endLabels={false}
+            xTitle="季度"
+            as="h3"
+            class="mem-chart"
+          />
+          <div class="mem-tablewrap fc-bt-table" tabindex="0" role="region" aria-label={`${x.label}回測表`}>
+            <table class="mem-table">
+              <caption class="ch-sr">{x.label}回測：實際、預測與誤差（單位：{unitOf(b, t)}）</caption>
+              <thead>
+                <tr>
+                  <th scope="col">季度</th>
+                  <th scope="col" class="num">
+                    實際<small>{unitOf(b, t)}</small>
+                  </th>
+                  {x.lines.map((l) => (
+                    <th scope="col" class="num">
+                      {short[l.key]}
+                      <small>預測／誤差</small>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {x.rows.map((r) => (
+                  <tr>
+                    <th scope="row" data-label="季度">
+                      {periodLabel(r.period)}
+                      {fromMonthly(r.period) && <small>實際為月營收合計</small>}
+                    </th>
+                    <td class="num" data-label="實際">
+                      {numTarget(t, r.actual, yi)}
+                    </td>
+                    {x.lines.map((l) => {
+                      const v = l.rows.get(r.period);
+                      return (
+                        <td class="num" data-label={short[l.key]}>
+                          {v == null ? (
+                            <span class="mem-na">—</span>
+                          ) : (
+                            <>
+                              {numTarget(t, v, yi)}
+                              <small>{errText(b, t, r.actual, v)}</small>
+                            </>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p class="mem-fine">
+            {x.lines.map((l, i) => (
+              <>
+                {i > 0 && '；'}
+                {short[l.key]}＝{l.key === 'model' ? sel.name : l.name}
+              </>
+            ))}
+            。誤差為預測減實際{pct ? '（個百分點）' : t === 'eps' ? `（${b.meta.epsUnit}）` : '，除以實際值'}。
+          </p>
+        </section>
+      );
+    })
+  }
+</div>

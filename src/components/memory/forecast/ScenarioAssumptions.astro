@@ -1,0 +1,60 @@
+---
+/**
+ * Scenario assumptions side by side: one row per assumption, one column per scenario (保守、基準、樂觀); an
+ * assumption that is the same in all three spans the row. Each value keeps its citation.
+ *   <ScenarioAssumptions b={bundle} />
+ */
+import FcText from './FcText.astro';
+import { SCENARIO_ORDER, scenarioOf, type FcBundle } from '../../../lib/forecast-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const scen = SCENARIO_ORDER.map((id) => scenarioOf(b.model, id)).filter((s): s is NonNullable<typeof s> => !!s);
+const names = [...new Set(scen.flatMap((s) => s.assumptions.map((a) => a.name)))];
+const rows = names.map((name) => {
+  const cells = scen.map((s) => s.assumptions.find((a) => a.name === name));
+  const same = cells.every((c) => c && c.value === cells[0]!.value && c.src === cells[0]!.src);
+  return { name, cells, same };
+});
+---
+
+<div class="mem-tablewrap mem-tablewrap--cards fc-assume" tabindex="0" role="region" aria-label="三種情境的假設">
+  <table class="mem-table">
+    <caption class="ch-sr">三種情境的假設</caption>
+    <thead>
+      <tr>
+        <th scope="col">假設</th>
+        {
+          scen.map((s) => (
+            <th scope="col" class={`fc-sc fc-sc--${s.id}`}>
+              <span class="fc-sc__dot" aria-hidden="true" />
+              {s.name}
+            </th>
+          ))
+        }
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((r) => (
+          <tr class:list={[r.same && 'fc-assume--same']}>
+            <th scope="row" data-label="假設">
+              {r.name}
+            </th>
+            {r.same ? (
+              <td colspan={scen.length} data-label="三種情境">
+                {scen.length > 1 && <span class="fc-tag">三種情境相同</span>} <FcText b={b} text={r.cells[0]!.value} src={r.cells[0]!.src} />
+              </td>
+            ) : (
+              r.cells.map((c, i) => (
+                <td data-label={scen[i]!.name}>{c ? <FcText b={b} text={c.value} src={c.src} /> : <span class="mem-na">—</span>}</td>
+              ))
+            )}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>

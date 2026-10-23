@@ -1,0 +1,78 @@
+---
+/**
+ * Quarterly path of one target: the last reported quarters (solid) and the three scenarios (dashed), each scenario
+ * line starting from the last reported quarter so the fan opens where the data ends.
+ *   <ScenarioLines b={bundle} target="revenue" />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import {
+  SCENARIO_COLOR,
+  SCENARIO_ORDER,
+  actualEps,
+  actualGrossMargin,
+  chartKey,
+  forecastQuarters,
+  periodLabel,
+  qIndex,
+  quartersFrom,
+  scenarioOf,
+  type FcBundle,
+} from '../../../lib/forecast-data';
+import { chartValue, targetLabel, unitOf, type Target } from './fc-labels';
+
+interface Props {
+  b: FcBundle;
+  target: Target;
+  /** reported quarters shown before the forecast (default 10) */
+  history?: number | undefined;
+  title?: string | undefined;
+  subtitle?: string | undefined;
+  notes?: Array<string | null | undefined> | undefined;
+  height?: number | undefined;
+  /** heading level of the chart title (default h4; h3 when the chart sits directly under a section's h2) */
+  as?: 'h3' | 'h4' | undefined;
+}
+const { b, target: t, history = 10, title, subtitle, notes, height = 240, as = 'h4' } = Astro.props;
+const { model: m, inputs, company } = b;
+const base = scenarioOf(m, 'base');
+const fq = forecastQuarters(base);
+const first = fq[0]?.period;
+const actualOf = (q: (typeof inputs.quarters)[number]): number | undefined =>
+  t === 'grossMargin' ? actualGrossMargin(company, q) : t === 'eps' ? actualEps(company, q) : q[t];
+const hist = first ? quartersFrom(inputs, inputs.quarters[0]!.period).filter((q) => qIndex(q.period) < qIndex(first)).slice(-history) : [];
+const actualPts = hist.map((q) => ({ x: chartKey(q.period), y: actualOf(q) != null ? chartValue(t, actualOf(q)!) : null }));
+// fields already reported for forecast quarters (群聯 2026Q3 revenue) extend the actual line
+const knownQs = fq.filter((f) => f.known.includes(t));
+for (const f of knownQs) actualPts.push({ x: chartKey(f.period), y: f[t] != null ? chartValue(t, f[t]!) : null });
+const anchor = actualPts.at(-1);
+const anchorPeriod = knownQs.at(-1)?.period ?? hist.at(-1)?.period;
+const series = [
+  { name: '實際', color: 'var(--fc-actual-ink)', points: actualPts },
+  ...SCENARIO_ORDER.map((id) => {
+    const s = scenarioOf(m, id);
+    const pts = forecastQuarters(s)
+      .filter((f) => !f.known.includes(t) && (!anchorPeriod || qIndex(f.period) > qIndex(anchorPeriod)))
+      .map((f) => ({ x: chartKey(f.period), y: f[t] != null ? chartValue(t, f[t]!) : null, forecast: true }));
+    return { name: s?.name ?? id, color: SCENARIO_COLOR[id], points: anchor ? [{ ...anchor }, ...pts] : pts };
+  }),
+];
+const pct = t === 'grossMargin';
+const unit = unitOf(b, t);
+---
+
+<MultiLine
+  title={title ?? `${targetLabel(b, t)}：實際與三種情境`}
+  subtitle={subtitle ?? (hist[0] ? `${periodLabel(hist[0].period)} 起為實際值，${first ? periodLabel(knownQs.length ? fq[knownQs.length]?.period ?? first : first) : ''} 起為模型推估` : undefined)}
+  unit={unit}
+  format={pct ? 'percent' : 'number'}
+  digits={t === 'eps' ? 2 : pct ? 1 : undefined}
+  valueSuffix={pct ? '' : ` ${unit}`}
+  includeZero={!pct}
+  height={height}
+  series={series}
+  notes={notes}
+  badge="模型推估"
+  xTitle="季度"
+  as={as}
+  class:list={['mem-chart', actualPts.length + fq.length > 16 && 'fc-years']}
+/>

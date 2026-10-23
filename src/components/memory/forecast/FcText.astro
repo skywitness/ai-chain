@@ -1,0 +1,22 @@
+---
+/**
+ * Model text with its citations: raw source keys inside the text (「（rm-fy2026q4）」) become [n] markers, and the
+ * `src` key(s) are appended at the end unless the text already cites them.
+ *   <FcText b={bundle} text={assumption.value} src={assumption.src} />
+ */
+import FcCite from './FcCite.astro';
+import { citeParts, type FcBundle } from '../../../lib/forecast-data';
+
+interface Props {
+  b: FcBundle;
+  text?: string | null | undefined;
+  src?: string | readonly (string | null | undefined)[] | null | undefined;
+}
+const { b, text, src } = Astro.props;
+const parts = citeParts(b, text);
+const inText = new Set(parts.flatMap((p) => (typeof p === 'string' ? [] : [p.cite])));
+const list = src == null ? [] : typeof src === 'string' ? [src] : [...src];
+const tail = list.filter((k, i, a): k is string => !!k && !inText.has(k) && a.indexOf(k) === i && b.sourceByKey.has(k));
+---
+
+{parts.map((p) => (typeof p === 'string' ? p : <FcCite k={p.cite} />))}{tail.map((k) => <FcCite k={k} />)}

@@ -1,0 +1,385 @@
+---
+/**
+ * /memory/phison/ 「群聯財報模型」 and /memory/micron/ 「美光財報模型」 — sub-pages of the memory topic that model a
+ * company's financials from memory prices. Same order on both pages (由淺入深):
+ * hero → 一分鐘看懂 → 預測摘要 → 價格與成本 → 存貨（群聯）／產能（美光） → 數量與營業額 → 模型怎麼做 → 回測 →
+ * 情境預測 → 限制與風險 → 大事記 → 資料來源.
+ * Data: src/data/memory/forecast/ via src/lib/forecast-data.ts (zod-validated with src/schemas/forecast.ts; check and
+ * re-run the models with npx tsx scripts/check-forecast.ts). Company-specific sections live in
+ * src/components/memory/forecast/{phison,micron}/, the shared ones in src/components/memory/forecast/.
+ */
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Icon from '../../components/ui/Icon.astro';
+import SourcesList from '../../components/content/SourcesList.astro';
+import NextSteps from '../../components/content/NextSteps.astro';
+import { registerSources } from '../../components/content/page-state';
+import SummaryCards from '../../components/memory/forecast/SummaryCards.astro';
+import TrainTestBar from '../../components/memory/forecast/TrainTestBar.astro';
+import CandidateCards from '../../components/memory/forecast/CandidateCards.astro';
+import ParamTable from '../../components/memory/forecast/ParamTable.astro';
+import BacktestTabs from '../../components/memory/forecast/BacktestTabs.astro';
+import MetricsTable from '../../components/memory/forecast/MetricsTable.astro';
+import ScenarioAssumptions from '../../components/memory/forecast/ScenarioAssumptions.astro';
+import ForecastTable from '../../components/memory/forecast/ForecastTable.astro';
+import ScenarioLines from '../../components/memory/forecast/ScenarioLines.astro';
+import SensitivityTable from '../../components/memory/forecast/SensitivityTable.astro';
+import LimitList from '../../components/memory/forecast/LimitList.astro';
+import EventTimeline from '../../components/memory/forecast/EventTimeline.astro';
+import FcSentences from '../../components/memory/forecast/FcSentences.astro';
+import FcCite from '../../components/memory/forecast/FcCite.astro';
+import PhisonBasics from '../../components/memory/forecast/phison/PhisonBasics.astro';
+import PhisonPriceCost from '../../components/memory/forecast/phison/PhisonPriceCost.astro';
+import PhisonInventory from '../../components/memory/forecast/phison/PhisonInventory.astro';
+import PhisonVolume from '../../components/memory/forecast/phison/PhisonVolume.astro';
+import MicronBasics from '../../components/memory/forecast/micron/MicronBasics.astro';
+import MicronPriceCost from '../../components/memory/forecast/micron/MicronPriceCost.astro';
+import MicronCapacity from '../../components/memory/forecast/micron/MicronCapacity.astro';
+import MicronVolume from '../../components/memory/forecast/micron/MicronVolume.astro';
+import '../../components/memory/memory.css';
+import '../../components/memory/forecast/forecast.css';
+import {
+  FC_COMPANIES,
+  forecastHref,
+  forecastOf,
+  getForecastData,
+  hasForecast,
+  nextGuidance,
+  pageSources,
+  periodLabel,
+  priceKeys,
+  selectedCandidate,
+  type FcCompany,
+} from '../../lib/forecast-data';
+import { errHeadline } from '../../components/memory/forecast/fc-labels';
+import { companyHref, sectionHref } from '../../lib/paths';
+import { formatDate, formatNumber, joinZh } from '../../lib/format';
+import { articleJsonLd, datasetJsonLd, ogImageFor } from '../../lib/seo';
+
+export const getStaticPaths = (() =>
+  FC_COMPANIES.filter((c) => hasForecast(c)).map((company) => ({ params: { company } }))) satisfies GetStaticPaths;
+
+const company = Astro.params.company as FcCompany;
+const b = getForecastData(company);
+if (!b) throw new Error(`[memory/${company}] forecast data missing`);
+const { meta, model: m } = b;
+const asOf = m.asOf;
+const sources = pageSources(b);
+registerSources(Astro, sources);
+
+const sel = selectedCandidate(m);
+const naive = m.candidates.find((c) => c.id === 'naive-last-quarter' || c.id === 'naive');
+const guidanceCand = m.candidates.find((c) => c.id === 'guidance');
+const exAnte = m.candidates.find((c) => c.id.endsWith('-ex-ante'));
+const g = nextGuidance(b);
+const isMu = company === 'micron';
+// the next results date, when the inputs record it (群聯: 「2026 年第三季財報法說會訂於 11 月 6 日」)
+const nextCall = [...b.inputs.events].reverse().find((e) => /法說會訂於/.test(e.title) && e.date >= m.asOf.slice(0, 4));
+const anyKnown = meta.summaryPeriods.some((p) => (forecastOf(m, 'base', p)?.known.length ?? 0) > 0);
+/** the forecast quarter whose revenue is already reported (群聯: from monthly revenue) */
+const knownF = m.scenarios.find((s) => s.id === 'base')?.forecasts.find((f) => f.known.includes('revenue'));
+const summaryLabels = joinZh(meta.summaryPeriods.map((p) => periodLabel(p, 'long')), '與');
+/** latest TrendForce release among the plotted price points: 「2026 年 9 月」 */
+const priceDates = priceKeys(b)
+  .map((k) => b.sourceByKey.get(k)?.published)
+  .filter((d): d is string => !!d)
+  .sort();
+const priceAsOf = priceDates.length ? formatDate(priceDates.at(-1)!, 'ym') : undefined;
+const testSpan =`${periodLabel(m.test.from)}–${periodLabel(m.test.to)}`;
+const nTest = sel.metrics.grossMargin?.n ?? 0;
+
+// 群聯: the one-step test knows the quarter's price; say plainly how the same model does without it (start-of-quarter
+// price forecasts) and when it runs several quarters ahead like the forecasts do — both worse than the naive model.
+const exGm = sel.metrics.grossMarginExAnte;
+const dynGm = sel.metrics.grossMarginDynamic;
+const phisonCaveat =
+  !isMu && exGm?.mae != null && dynGm?.mae != null
+    ? `但這是當季價格已知的考法：改用季初的價格預測時，毛利率誤差升到 ${errHeadline(b, 'grossMargin', exGm)}；從 ${periodLabel(m.train.to)} 連續往後推 ${dynGm.n} 季時是 ${errHeadline(b, 'grossMargin', dynGm)}${
+        naive?.metrics.grossMarginExAnte?.mae != null && naive.metrics.grossMarginDynamic?.mae != null
+          ? `，都不比天真模型（${formatNumber(naive.metrics.grossMarginExAnte.mae, { digits: 1 })}、${formatNumber(naive.metrics.grossMarginDynamic.mae, { digits: 1 })} 個百分點）好`
+          : ''
+      }。越遠的季度，數字越該當成方向而不是點估計。`
+    : '';
+
+// hero: the selected model and its backtest error in one sentence
+const heroModel = isMu
+  ? `${testSpan} 共 ${nTest} 季回測（代入當季實際的合約價與位元出貨），營收平均誤差 ${errHeadline(b, 'revenue', sel.metrics.revenue)}、非 GAAP 毛利率平均誤差 ${errHeadline(b, 'grossMargin', sel.metrics.grossMargin)}${exAnte ? `；改用季初的 TrendForce 預測價時為 ${errHeadline(b, 'revenue', exAnte.metrics.revenue)}、${errHeadline(b, 'grossMargin', exAnte.metrics.grossMargin)}` : ''}${guidanceCand ? `，美光自己的財測為 ${errHeadline(b, 'revenue', guidanceCand.metrics.revenue)}、${errHeadline(b, 'grossMargin', guidanceCand.metrics.grossMargin)}` : ''}。`
+  : `${testSpan} 共 ${nTest} 季逐季回測（已知當季合約價與月營收），毛利率平均誤差 ${errHeadline(b, 'grossMargin', sel.metrics.grossMargin)}、EPS 平均誤差 ${sel.metrics.eps?.mae != null ? `${sel.metrics.eps.mae.toFixed(1)} 元` : '—'}${naive ? `；沿用上一季的天真模型為 ${errHeadline(b, 'grossMargin', naive.metrics.grossMargin)}、${naive.metrics.eps?.mae != null ? `${naive.metrics.eps.mae.toFixed(1)} 元` : '—'}` : ''}。${phisonCaveat}`;
+
+const stockSec = isMu ? { id: 'capacity', label: '產能與折舊' } : { id: 'inventory', label: '存貨' };
+const toc = [
+  { href: '#basics', label: '一分鐘看懂' },
+  { href: '#summary', label: '預測摘要' },
+  { href: '#price-cost', label: '價格與成本' },
+  { href: `#${stockSec.id}`, label: stockSec.label },
+  { href: '#volume', label: '數量與營收' },
+  { href: '#method', label: '模型怎麼做' },
+  { href: '#backtest', label: '回測' },
+  { href: '#scenarios', label: '情境預測' },
+  { href: '#risks', label: '限制與風險' },
+  { href: '#timeline', label: '大事記' },
+  { href: '#sources', label: '資料來源' },
+];
+const other: FcCompany = isMu ? 'phison' : 'micron';
+
+const jsonLd = [
+  articleJsonLd({
+    title: meta.h1,
+    description: meta.description,
+    path: Astro.url,
+    site: Astro.site,
+    dateModified: asOf,
+    section: '專題',
+    keywords: [meta.name, '財報模型', '記憶體價格', isMu ? 'DRAM' : 'NAND Flash', isMu ? 'HBM' : '存貨', '回測', '情境分析'],
+  }),
+  datasetJsonLd({
+    name: `${meta.title}：回測與情境預測`,
+    description: `${meta.name}的${isMu ? '會計' : '日曆'}季度財報、記憶體合約價與模型推估：${m.candidates.length} 個候選模型的回測（${testSpan}），以及保守、基準、樂觀三種情境的預測。`,
+    path: Astro.url,
+    site: Astro.site,
+    dateModified: asOf,
+    sources: sources.slice(0, 20).map((s) => ({ title: s.title, url: s.url, publisher: s.publisher })),
+    keywords: [meta.name, '財報', '記憶體價格', '模型'],
+  }),
+];
+---
+
+<BaseLayout
+  title={meta.title}
+  description={meta.description}
+  image={ogImageFor('chain')}
+  imageAlt={`AI 產業鏈全景：${meta.title}`}
+  type="article"
+  breadcrumbs={[{ label: '記憶體與儲存專題', href: sectionHref('memory') }, { label: meta.title }]}
+  section="memory"
+  jsonLd={jsonLd}
+  sources={sources}
+  modifiedTime={asOf}
+>
+  <span hidden data-pagefind-filter="類型:專題"></span>
+  <span hidden data-pagefind-filter="環節:記憶體與儲存"></span>
+  <span hidden data-pagefind-sort={`updated:${asOf}`}></span>
+
+  <div class="mem-hero fc-hero">
+    <div class="container">
+      <header class="page-head mem-head fc-head">
+        <p class="page-head__kicker mem-head__kicker">
+          <span class="mem-head__badge">財報模型</span>
+          {meta.kicker}
+        </p>
+        <h1 data-pagefind-weight="10">{meta.h1}</h1>
+        <p class="page-head__lede mem-head__lede">{meta.promise}</p>
+        <div class="mem-head__meta">
+          <DataAsOf date={asOf} note={`財報截至 ${periodLabel(m.test.to)}${priceAsOf ? `；合約價截至 TrendForce ${priceAsOf}的估計與預測` : ''}`} />
+        </div>
+        <p class="fc-head__model">
+          <span class="fc-role fc-role--selected">選定模型</span>
+          <span>
+            <strong>{sel.name}</strong>：{heroModel}
+          </span>
+        </p>
+        <div class="fc-notice" role="note" aria-label="重要提醒">
+          <Icon name="warn" size="1.25em" />
+          <p>
+            <strong>模型推估，不是投資建議；本頁不提供目標價或買賣建議。</strong>
+            <span>
+              數字是依公開財報、TrendForce 合約價與假設的價格路徑推算的教學模型，誤差區間大；{meta.name}實際的財報以公司公告為準{g ? '，美光自己的財測另以「美光財測」標示' : ''}。
+            </span>
+          </p>
+        </div>
+        <ul class="mem-head__facts" role="list" aria-label="本頁內容">
+          <li><strong>{m.candidates.length}</strong> 個模型比較</li>
+          <li><strong>{nTest}</strong> 季回測</li>
+          <li><strong>3</strong> 種情境</li>
+          <li><strong>{sources.length}</strong> 筆來源</li>
+        </ul>
+      </header>
+    </div>
+  </div>
+
+  <nav class="mem-bar" aria-label="本頁段落" data-pagefind-ignore>
+    <div class="container mem-bar__in">
+      {toc.map((t) => <a href={t.href}>{t.label}</a>)}
+    </div>
+  </nav>
+
+  <section class="container section mem-basics fc-basics" id="basics" aria-labelledby="basics-h">
+    <p class="mem-sec-kicker">一分鐘看懂</p>
+    {isMu ? <MicronBasics b={b} /> : <PhisonBasics b={b} />}
+  </section>
+
+  <section class="container section" id="summary" aria-labelledby="summary-h">
+    <div class="sec-head">
+      <h2 id="summary-h">預測摘要</h2>
+      <p class="sec-head__lede">
+        {isMu
+          ? `${summaryLabels}的模型推估。大字是基準情境，下方是保守到樂觀情境的區間${g ? `；${periodLabel(g.period, 'long')}另列美光自己的財測對照` : ''}。毛利率與 EPS 採非 GAAP，營業利益採 GAAP。`
+          : `${summaryLabels}的模型推估。大字是基準情境，下方是保守到樂觀情境的區間${knownF ? `；${periodLabel(knownF.period, 'long')}營收已由月營收得知，毛利率以下仍是推估` : ''}${nextCall ? `；${nextCall.title.replace(/^\d{4} 年/, '')}` : ''}`}
+        {!isMu && nextCall && <FcCite k={nextCall.src} />}
+        {!isMu && '。'}
+      </p>
+    </div>
+    <SummaryCards b={b} />
+    <div class="fc-legend" aria-label="標示說明">
+      <span><span class="mem-st mem-st--forecast">模型推估</span>本站模型的推算，不是公司數字</span>
+      {anyKnown && <span><span class="fc-tag fc-tag--known">已公布</span>公司已公告、直接採用</span>}
+      {g && <span><span class="fc-tag fc-tag--guidance">美光財測</span>公司在法說會公布的下一季預估</span>}
+    </div>
+  </section>
+
+  <section class="container section" id="price-cost" aria-labelledby="price-cost-h">
+    {isMu ? <MicronPriceCost b={b} /> : <PhisonPriceCost b={b} />}
+  </section>
+
+  <section class="container section" id={stockSec.id} aria-labelledby={`${stockSec.id}-h`}>
+    {isMu ? <MicronCapacity b={b} /> : <PhisonInventory b={b} />}
+  </section>
+
+  <section class="container section" id="volume" aria-labelledby="volume-h">
+    {isMu ? <MicronVolume b={b} /> : <PhisonVolume b={b} />}
+  </section>
+
+  <section class="container section" id="method" aria-labelledby="method-h">
+    <div class="sec-head">
+      <h2 id="method-h">模型怎麼做</h2>
+      <p class="sec-head__lede">
+        同一份資料試了 {m.candidates.length} 種做法，從「什麼都不做」的天真模型到逐季模擬{isMu ? '位元、售價與每位元成本' : '庫存進出'}的模型，再用同一段回測期比較誤差，選出一個主模型來跑情境。公式中的 t 代表這一季、t−1 代表上一季。
+      </p>
+    </div>
+    <TrainTestBar b={b} />
+    <CandidateCards b={b} />
+    <h3 class="fc-h3">參數</h3>
+    <p class="fc-p">
+      參數分兩組：回測用的只看訓練期資料，預測用的再加入回測期重新估計。{isMu ? `業外收支、稅率與股數依美光${g ? ` ${periodLabel(g.period, 'long')}` : ''}財測設定。` : '營業費用、業外收支、稅率與股數用最近幾季的財報設定。'}
+    </p>
+    <ParamTable b={b} />
+  </section>
+
+  <section class="container section" id="backtest" aria-labelledby="backtest-h">
+    <div class="sec-head">
+      <h2 id="backtest-h">回測：模型在 {testSpan} 準不準</h2>
+      <p class="sec-head__lede">
+        {isMu
+          ? `把模型放回過去 ${nTest} 季，逐季預測後與美光實際公布的數字比較。選定模型代入當季實際的合約價，屬於「價格已知」的考法；美光財測則是季初、還不知道價格時給的，所以另列同一模型改用季初預測價的結果，做公平的事前比較。`
+          : `把模型放回過去 ${nTest} 季，逐季預測後與群聯實際公布的數字比較。每一季都已知當季合約價與月營收，所以這是「價格已知」時拆解毛利率的能力；群聯沒有公布數字財測，因此只和天真模型比較。`}
+      </p>
+    </div>
+    <BacktestTabs b={b} />
+    <h3 class="fc-h3">各模型的誤差與選模規則</h3>
+    <MetricsTable b={b} />
+    <aside class="fc-rule" aria-label="選模規則">
+      <p class="fc-rule__h"><Icon name="check" /> 選模規則與檢驗：{sel.name}</p>
+      <FcSentences b={b} text={sel.note} />
+    </aside>
+  </section>
+
+  <section class="container section" id="scenarios" aria-labelledby="scenarios-h">
+    <div class="sec-head">
+      <h2 id="scenarios-h">情境預測：保守、基準、樂觀</h2>
+      <p class="sec-head__lede">
+        用選定模型跑三條價格路徑。近期各季的合約價取自 TrendForce{priceAsOf ? ` ${priceAsOf}` : '最新'}的估計與預測區間（保守取下緣、基準取中值、樂觀取上緣），更遠的季度沒有公開的數字預測，是本模型的假設，詳見下方「情境假設」；{isMu ? '位元出貨、資本支出與營業費用依美光說法設定。' : '庫存天數、費用與業外收支依近幾季財報設定。'}
+      </p>
+    </div>
+    <div class="mem-grid mem-grid--charts">
+      <ScenarioLines b={b} target="revenue" as="h3" />
+      <ScenarioLines b={b} target="eps" as="h3" />
+    </div>
+    <h3 class="fc-h3">各期預測</h3>
+    <ForecastTable b={b} />
+    <h3 class="fc-h3">情境假設</h3>
+    <ScenarioAssumptions b={b} />
+    <h3 class="fc-h3">敏感度：只改一項假設</h3>
+    <SensitivityTable b={b} />
+  </section>
+
+  <section class="container section" id="risks" aria-labelledby="risks-h">
+    <div class="sec-head">
+      <h2 id="risks-h">限制與風險</h2>
+      <p class="sec-head__lede">模型能說明價格如何傳到財報，但有幾個它看不到或刻意簡化的地方。讀數字時請一併考慮。</p>
+    </div>
+    <LimitList b={b} />
+  </section>
+
+  <section class="container section" id="timeline" aria-labelledby="timeline-h">
+    <div class="sec-head">
+      <h2 id="timeline-h">{meta.name}大事記</h2>
+      <p class="sec-head__lede">
+        {isMu
+          ? '法說會與財報中和價格、成本、產能有關的說法：製程轉換、減產、存貨跌價、HBM、資本支出與財測，新的在前。'
+          : '法說會、年報與重大訊息中和庫存、進貨與價格有關的事件：存貨跌價與回升、預付貨款、執行長對 NAND 供需的看法，新的在前。'}
+      </p>
+    </div>
+    <EventTimeline b={b} />
+  </section>
+
+  <section class="container section mem-end">
+    <NextSteps
+      title="繼續探索"
+      items={[
+        { href: sectionHref('memory'), title: '記憶體與儲存專題', kicker: '回到專題：供需、市占與擴產' },
+        { href: forecastHref(other), title: isMu ? '群聯財報模型' : '美光財報模型', kicker: isMu ? '另一個模型：NAND 模組廠的庫存' : '另一個模型：記憶體原廠的成本' },
+        { href: companyHref(company), title: `${meta.name}公司檔案`, kicker: '產品、財報與大事記' },
+        { trend: 'memory-supercycle', kicker: '這一輪漲價的來龍去脈' },
+      ]}
+    />
+    <div class="mem-sources">
+      <SourcesList sources={sources} note={`本頁 ${sources.length} 筆來源：${meta.name}的財報、法說會與公告在前，TrendForce 價格在後；方括號編號對應下列順序，括號內為讀取日期。`} />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .sec-head {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-end: var(--space-5);
+  }
+  .sec-head h2 {
+    font-size: var(--fs-2xl);
+    scroll-margin-block-start: calc(var(--header-h) + var(--mem-bar-h, 0px) + var(--space-4));
+  }
+  .sec-head__lede {
+    margin: 0;
+    max-width: 46em;
+    color: var(--c-fg-muted);
+  }
+  section[id] {
+    scroll-margin-block-start: calc(var(--header-h) + var(--mem-bar-h) + var(--space-2));
+  }
+</style>
+
+<script>
+  // Mark the section being read in the sticky bar and keep its link in view inside the bar (same as /memory/).
+  const bar = document.querySelector<HTMLElement>('.mem-bar__in');
+  if (bar && 'IntersectionObserver' in window) {
+    const links = [...bar.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')];
+    const targets = links
+      .map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1))))
+      .filter((el): el is HTMLElement => !!el);
+    const visible = new Set<HTMLElement>();
+    const update = () => {
+      const current = targets.filter((t) => visible.has(t)).at(-1) ?? null;
+      for (const a of links) {
+        const on = !!current && a.hash === `#${current.id}`;
+        if (on) a.setAttribute('aria-current', 'true');
+        else a.removeAttribute('aria-current');
+        if (on) {
+          const left = a.offsetLeft - (bar.clientWidth - a.offsetWidth) / 2;
+          bar.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+        }
+      }
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.boundingClientRect.top < window.innerHeight / 3) visible.add(e.target as HTMLElement);
+          else visible.delete(e.target as HTMLElement);
+        }
+        update();
+      },
+      { rootMargin: '0px 0px -66% 0px', threshold: [0, 1] },
+    );
+    for (const t of targets) io.observe(t);
+  }
+</script>

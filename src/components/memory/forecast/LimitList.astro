@@ -1,0 +1,43 @@
+---
+/**
+ * 限制與風險: the model's limitations as numbered cards (text from the model output, citations kept).
+ *   <LimitList b={bundle} />
+ */
+import FcText from './FcText.astro';
+import type { FcBundle } from '../../../lib/forecast-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+/** a short lead for each card: the first clause, up to the first full stop or semicolon */
+const lead = (s: string) => {
+  const m = /^([^（(]{6,42}?)[，：；。]/.exec(s);
+  return m ? m[1]! : null;
+};
+---
+
+<ol class="fc-limits" role="list">
+  {
+    b.model.limitations.map((t, i) => {
+      const h = lead(t);
+      return (
+        <li class="fc-limit">
+          <span class="fc-limit__n" aria-hidden="true">
+            {i + 1}
+          </span>
+          <p>
+            {h ? (
+              <>
+                <strong>{h}</strong>
+                <FcText b={b} text={t.slice(h.length)} />
+              </>
+            ) : (
+              <FcText b={b} text={t} />
+            )}
+          </p>
+        </li>
+      );
+    })
+  }
+</ol>

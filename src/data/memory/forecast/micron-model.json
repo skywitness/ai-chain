@@ -1,0 +1,5006 @@
+{
+  "company": "micron",
+  "generatedBy": "scripts/models/micron.ts",
+  "generatedOn": "2026-10-23",
+  "asOf": "2026-10-23",
+  "currency": "USD",
+  "amountUnit": "million",
+  "periodLabel": "美光會計季度（約 9 月至隔年 8 月；FY2027Q1 為 2026-09-04 至 2026-12-03）",
+  "train": {
+    "from": "FY2016Q4",
+    "to": "FY2024Q4"
+  },
+  "test": {
+    "from": "FY2025Q1",
+    "to": "FY2026Q4"
+  },
+  "summary": "選定模型是「單位經濟＋HBM 組合」：營收拆成 DRAM／NAND 的位元 × 售價（售價由 TrendForce 合約價換算），成本拆成隨位元變動、逐季下降的每位元現金成本加上折舊，HBM 以約 3 倍晶圓計。FY2025Q1–FY2026Q4 回測（代入當季實際合約價與位元出貨）營收平均誤差（MAPE）5.1%、非 GAAP 毛利率平均誤差 1.1 個百分點；美光財測同期為 8.7% 與 3 個百分點，模型改用 TrendForce 季初預測價時為 7% 與 2.7 個百分點。FY2027Q1 模型營收 603 億美元、毛利率 88.7%，美光財測為 615 億美元、86.25%；美光說明第一季毛利率受 FY2026 第四季加發獎金計入存貨影響，模型把差距視為成本墊高並據以調整三個情境，第二季起基準情境假設每位元成本持平。基準情境 FY2027 營收約 2,914 億美元、非 GAAP 毛利率 87.4%、非 GAAP EPS 182.9 美元（保守至樂觀 2,482 億美元–3,272 億美元、EPS 150.2–209.9 美元）。這是依假設推算的模型結果，不是投資建議。",
+  "candidates": [
+    {
+      "id": "naive",
+      "name": "天真模型（上一季不變）",
+      "description": "假設本季營收與毛利率都和上一季一樣。這是最簡單的對照組：任何模型如果贏不了它，就沒有存在的價值。",
+      "equations": [
+        "營收_t = 營收_t−1",
+        "毛利率_t = 毛利率_t−1"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 5973.875,
+          "bias": -5809.875,
+          "n": 8,
+          "mape": 22.03
+        },
+        "grossMargin": {
+          "mae": 6.713,
+          "bias": -6.312,
+          "n": 8
+        },
+        "operatingIncome": {
+          "mae": 5614.276,
+          "bias": -5519.099,
+          "n": 8,
+          "mape": 37.48
+        },
+        "netIncome": {
+          "mae": 4797.552,
+          "bias": -4711.848,
+          "n": 8,
+          "mape": 37.7
+        },
+        "eps": {
+          "mae": 4.217,
+          "bias": -4.139,
+          "n": 8,
+          "mape": 36.35
+        }
+      },
+      "selected": false,
+      "note": "營業利益、淨利與 EPS 由營收與毛利率換算，營業費用、業外收支、稅率與股數用當季實際值（與其他模型相同的處理）。"
+    },
+    {
+      "id": "guidance",
+      "name": "美光財測（對照基準）",
+      "description": "美光在上一季法說會公布的本季財測中值（營收、非 GAAP 毛利率、非 GAAP EPS）。這不是本站的模型，而是公司在季度開始時的判斷，用來衡量模型的誤差是大是小。",
+      "equations": [
+        "預測值 = 上一季法說會公布的本季財測區間中值"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 2470.75,
+          "bias": -2470.75,
+          "n": 8,
+          "mape": 8.73
+        },
+        "grossMargin": {
+          "mae": 2.988,
+          "bias": -2.838,
+          "n": 8
+        },
+        "eps": {
+          "mae": 1.78,
+          "bias": -1.78,
+          "n": 8,
+          "mape": 16.24
+        }
+      },
+      "selected": false,
+      "note": "測試期 8 季中有 8 季營收財測中值低於實際，價格上漲期間財測普遍偏保守。財測發布時公司還不知道當季實際的合約價與出貨，所以財測是事前預測；其他回測模型則代入當季實際的合約價或位元出貨，屬於「已知價格條件下」的誤差，兩者不完全可比。EPS 也不完全可比：其他模型換算 EPS 時，營業費用、業外收支、稅率與股數都用當季實際值，財測則要自己預估這些項目。要比較事前能力，請看「單位經濟＋HBM（改用 TrendForce 季初預測價）」。"
+    },
+    {
+      "id": "price-regression",
+      "name": "合約價迴歸",
+      "description": "直接用歷史資料迴歸：營收的季成長率與毛利率，對 DRAM 與 NAND 合約價的季變化做線性迴歸，不拆位元與成本。簡單，但毛利率是線性外推，價格大漲時會算出超過 100% 的毛利率。",
+      "equations": [
+        "ln(營收_t ÷ 營收_t−1) × 100 = 3.83 + 0.499 × DRAM 合約價季增率 + 0.472 × NAND 合約價季增率",
+        "毛利率_t = 4.41 + 0.885 × 毛利率_t−1 + 0.462 × DRAM 合約價季增率 + 0.132 × NAND 合約價季增率"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 2393.592,
+          "bias": 1747.442,
+          "n": 8,
+          "mape": 11.15
+        },
+        "grossMargin": {
+          "mae": 9.996,
+          "bias": 7.625,
+          "n": 8
+        },
+        "operatingIncome": {
+          "mae": 5138.236,
+          "bias": 4688.228,
+          "n": 8,
+          "mape": 33.54
+        },
+        "netIncome": {
+          "mae": 4387.669,
+          "bias": 3989.901,
+          "n": 8,
+          "mape": 33.72
+        },
+        "eps": {
+          "mae": 3.848,
+          "bias": 3.489,
+          "n": 8,
+          "mape": 32.58
+        }
+      },
+      "selected": false,
+      "note": "以 FY2016Q4–FY2024Q4 共 33 季估計（一般型 DRAM 合約價）。測試期 FY2026 第二、三季預測毛利率超過 100%，顯示線性迴歸無法處理價格倍增時「成本占比被稀釋」的非線性。"
+    },
+    {
+      "id": "unit-cost",
+      "name": "單位經濟模型（位元 × 售價 − 位元 × 每位元成本）",
+      "description": "把營收拆成 DRAM 與 NAND 的「位元出貨 × 平均售價」，售價由 TrendForce 合約價換算；成本拆成隨位元變動、每季以固定速度下降的現金成本（製程微縮），加上一部分固定的折舊、稼動率不足與存貨跌價。毛利率由營收與成本相除得到，因此價格倍增時毛利率會趨近上限而不會超過 100%。",
+      "equations": [
+        "DRAM 營收_t = DRAM 營收_t−1 ×（1 + DRAM 位元季增率_t）×（1 + DRAM 售價季增率_t）；NAND 同理；其他營收維持上季（依週數調整）",
+        "售價季增率_t = a + b × 合約價季增率_t（TrendForce 日曆季度換算成美光會計季度）",
+        "位元量指數_t = 位元量指數_t−1 ×（1 + w_DRAM × DRAM 位元季增率 + w_NAND × NAND 位元季增率），w 為上季營收比重",
+        "現金成本_t = 現金成本_t−1 ×（位元量指數_t ÷ 位元量指數_t−1）× e^g",
+        "折舊_t = 折舊_t−1 + θ ×（前四季平均淨資本支出 − 折舊_t−1）（以 13 週為基準）",
+        "銷貨成本_t = 現金成本_t + φ × 折舊_t + 稼動率不足_t + 存貨跌價_t − 已跌價存貨售出的成本降低_t",
+        "非 GAAP 毛利率_t = 1 − 銷貨成本_t ÷ 營收_t"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 851.586,
+          "bias": -470.333,
+          "n": 8,
+          "mape": 4.83
+        },
+        "grossMargin": {
+          "mae": 1.443,
+          "bias": -0.791,
+          "n": 8
+        },
+        "operatingIncome": {
+          "mae": 701.479,
+          "bias": -420.712,
+          "n": 8,
+          "mape": 11.25
+        },
+        "netIncome": {
+          "mae": 604.697,
+          "bias": -360.921,
+          "n": 8,
+          "mape": 11.36
+        },
+        "eps": {
+          "mae": 0.535,
+          "bias": -0.318,
+          "n": 8,
+          "mape": 10.67
+        }
+      },
+      "selected": false,
+      "note": "以 FY2016Q4–FY2024Q4 估計：DRAM 售價季增率 = −0.78 + 0.819 × 一般型 DRAM 合約價季增率；NAND 售價季增率 = −0.21 + 0.952 × NAND 合約價季增率；θ = 0.0521；φ = 0.3；每位元現金成本趨勢 −6.4%／年（FY2022Q1–FY2024Q4）。位元出貨用當季實際（公司公布）值。"
+    },
+    {
+      "id": "unit-cost-hbm",
+      "name": "單位經濟＋HBM 組合",
+      "description": "在單位經濟模型上加入 HBM（高頻寬記憶體）：售價改用 TrendForce「含 HBM」的 DRAM 合約價；成本端把 DRAM 位元換算成「晶圓當量」，因為同樣位元數的 HBM 約需 DDR5 的 3 倍晶圓（美光 2024 年 3 月說法），HBM 比重上升會推高每位元成本。HBM 同時影響售價與成本，這個模型把兩邊都納入。",
+      "equations": [
+        "DRAM 營收_t = DRAM 營收_t−1 ×（1 + DRAM 位元季增率_t）×（1 + DRAM 售價季增率_t）；NAND 同理；其他營收維持上季（依週數調整）",
+        "售價季增率_t = a + b × 合約價季增率_t（TrendForce 日曆季度換算成美光會計季度）",
+        "DRAM 晶圓當量_t = DRAM 位元_t ×（1 +（交換比 − 1）× HBM 位元比重_t），交換比 = 3",
+        "位元量指數改用 DRAM 晶圓當量計算；其餘與單位經濟模型相同",
+        "現金成本_t = 現金成本_t−1 ×（位元量指數_t ÷ 位元量指數_t−1）× e^g",
+        "折舊_t = 折舊_t−1 + θ ×（前四季平均淨資本支出 − 折舊_t−1）（以 13 週為基準）",
+        "銷貨成本_t = 現金成本_t + φ × 折舊_t + 稼動率不足_t + 存貨跌價_t − 已跌價存貨售出的成本降低_t",
+        "非 GAAP 毛利率_t = 1 − 銷貨成本_t ÷ 營收_t"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 1187.777,
+          "bias": -663.949,
+          "n": 8,
+          "mape": 5.08
+        },
+        "grossMargin": {
+          "mae": 1.125,
+          "bias": -0.151,
+          "n": 8
+        },
+        "operatingIncome": {
+          "mae": 1028.242,
+          "bias": -641.414,
+          "n": 8,
+          "mape": 9.41
+        },
+        "netIncome": {
+          "mae": 880.979,
+          "bias": -544.469,
+          "n": 8,
+          "mape": 9.51
+        },
+        "eps": {
+          "mae": 0.776,
+          "bias": -0.476,
+          "n": 8,
+          "mape": 9.05
+        },
+        "revenueDynamic": {
+          "mae": 1207.881,
+          "bias": -455.978,
+          "n": 8,
+          "mape": 4.61
+        },
+        "grossMarginDynamic": {
+          "mae": 1.151,
+          "bias": -0.887,
+          "n": 8
+        }
+      },
+      "selected": true,
+      "note": "以 FY2016Q4–FY2024Q4 估計：DRAM 售價季增率 = −0.81 + 0.818 × 含 HBM 的 DRAM 合約價季增率；NAND 售價季增率 = −0.21 + 0.952 × NAND 合約價季增率；θ = 0.0521；φ = 0.3；每位元現金成本趨勢 −7%／年。HBM 位元比重假設由 FY2024Q2 的 0 升到 FY2025Q4 的 6%（美光引述的 2025 年產業比重），之後持平。revenueDynamic／grossMarginDynamic 為從 FY2024Q4 實際值出發、連續推 8 季且不用實際值重設的結果：營收 MAPE 4.61%、毛利率 MAE 1.15 個百分點。選擇規則：在代入當季實際合約價、可用來預測的三個模型（合約價迴歸、單位經濟、單位經濟＋HBM）中，取「營收 MAPE（%）＋ 毛利率 MAE（個百分點）」最小者：本模型 6.21、單位經濟 6.27、合約價迴歸 21.15。前兩者接近，但本模型的營業利益與 EPS 誤差較小（MAPE 9.4%、9.1%，單位經濟為 11.3%、10.7%），而且能表達 2027 年 HBM 調價與晶圓交換比的變化。消融檢驗：同樣用含 HBM 的合約價、但不做晶圓當量調整時，營收 MAPE 5.08%、毛利率 MAE 1.00 個百分點（分數 6.08），略優於本模型，表示晶圓當量調整在回測期沒有提高準確度；差距在 8 季樣本中不顯著，FY2027 基準情境的預測也幾乎相同（EPS 差距不到 0.01 美元），保留它是為了表達交換比變化（保守情境）。日曆季度換算成會計季度的權重依月份重疊設為 1:2；只用訓練期資料檢驗，較早日曆季度的權重在 0、1/6、1/3、1/2、2/3、5/6、1 之中，以 1/3 的價格傳導迴歸殘差最小。"
+    },
+    {
+      "id": "unit-cost-hbm-ex-ante",
+      "name": "單位經濟＋HBM（改用 TrendForce 季初預測價）",
+      "description": "與選定模型完全相同，但合約價改用 TrendForce 在季度開始前後公布的預測（事前可以取得的資訊），用來和美光財測公平比較事前預測能力。位元出貨仍用當季實際值。",
+      "equations": [
+        "同「單位經濟＋HBM 組合」，合約價季增率改用 TrendForce 季初預測（含 HBM 的 DRAM 合約價沒有季初預測，改用一般型 DRAM 的季初預測）"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 1550.389,
+          "bias": -1465.738,
+          "n": 8,
+          "mape": 7.02
+        },
+        "grossMargin": {
+          "mae": 2.699,
+          "bias": -2.536,
+          "n": 8
+        },
+        "operatingIncome": {
+          "mae": 1460.114,
+          "bias": -1437.475,
+          "n": 8,
+          "mape": 14.29
+        },
+        "netIncome": {
+          "mae": 1251.059,
+          "bias": -1230.863,
+          "n": 8,
+          "mape": 14.38
+        },
+        "eps": {
+          "mae": 1.103,
+          "bias": -1.084,
+          "n": 8,
+          "mape": 13.81
+        }
+      },
+      "selected": false,
+      "note": "不參與模型選擇：參數與選定模型相同，只是輸入改成事前預測。每個會計季度重疊的兩個日曆季度改用季初預測，更早的季度用實現值；TrendForce 季初預測的發布日有時比美光財測晚 1–3 週。誤差集中在價格急轉的季度，例如 TrendForce 在 2025 年第四季初預測 DRAM 合約價季增 8–13%，事後約 45–50%。"
+    },
+    {
+      "id": "unit-cost-reported",
+      "name": "單位經濟（代入美光公布的售價，診斷用）",
+      "description": "與選定模型相同的成本結構，但售價直接代入美光事後公布的 DRAM／NAND 平均售價季變化。它把「合約價換算售價」的誤差拿掉，剩下的誤差主要來自成本端，用來診斷模型哪一部分比較不準。",
+      "equations": [
+        "同「單位經濟＋HBM 組合」，售價季增率 = 美光公布的區間文字換算值"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 270.602,
+          "bias": -193.673,
+          "n": 8,
+          "mape": 1.03
+        },
+        "grossMargin": {
+          "mae": 0.797,
+          "bias": -0.244,
+          "n": 8
+        },
+        "operatingIncome": {
+          "mae": 212.209,
+          "bias": -172.032,
+          "n": 8,
+          "mape": 2.92
+        },
+        "netIncome": {
+          "mae": 182.657,
+          "bias": -147.247,
+          "n": 8,
+          "mape": 2.96
+        },
+        "eps": {
+          "mae": 0.161,
+          "bias": -0.129,
+          "n": 8,
+          "mape": 2.74
+        }
+      },
+      "selected": false,
+      "note": "不參與模型選擇：美光的售價季變化要到財報公布後才知道，無法用來預測。營收仍有約 1% 的誤差，來自公司以「低個位數」「約 20%」等區間描述、換算成中值時的進位。"
+    }
+  ],
+  "parameters": [
+    {
+      "name": "DRAM 價格傳導斜率（含 HBM 合約價 → 美光 DRAM 售價）",
+      "value": 0.849,
+      "note": "全期 FY2016Q4–FY2026Q4 估計，截距 −0.73；訓練期（至 FY2024Q4）為 0.818。合約價季增 10%，美光 DRAM 售價約增 7.8%。"
+    },
+    {
+      "name": "NAND 價格傳導斜率（NAND 合約價 → 美光 NAND 售價）",
+      "value": 1.088,
+      "note": "全期估計，截距 −0.1；訓練期為 0.952。全期斜率大於 1，反映 FY2026 資料中心 SSD 比重提高，美光 NAND 售價漲得比整體合約價多。"
+    },
+    {
+      "name": "折舊調整速度 θ",
+      "value": 0.0441,
+      "unit": "每季",
+      "note": "折舊每季向「前四季平均淨資本支出」靠近的比例；訓練期為 0.0521。約相當於 5.7 年的調整期。"
+    },
+    {
+      "name": "折舊中視為固定成本的比重 φ",
+      "value": 0.4,
+      "note": "在 0–1 之間以 0.1 為間隔搜尋，取一季前預測銷貨成本平均誤差最小者（全期 3.01%；訓練期估計為 0.3）。其餘折舊隨位元（產能）一起成長，併入現金成本。這個比重在資料中辨識度不高：φ = 0 到 1 的誤差介於 3.01% 與 3.42% 之間。"
+    },
+    {
+      "name": "每位元現金成本趨勢（全期最近 12 季）",
+      "value": -6.66,
+      "unit": "%／年",
+      "note": "FY2024Q1–FY2026Q4 的對數線性趨勢（DRAM 以 HBM 晶圓當量計）；訓練期（FY2022Q1–FY2024Q4）為 −6.98%／年。FY2027Q1 三個情境都用這個趨勢再乘財測隱含的墊高；第二季起保守每年 +6%、基準持平、樂觀沿用這個趨勢，因為美光表示新產品與綠地新廠會使混合 DRAM 每位元成本由目前水準上升（rm-fy2026q3），歷史趨勢未必延續。"
+    },
+    {
+      "name": "資料推算的 FY2025 混合每位元銷貨成本變化",
+      "value": -6.08,
+      "unit": "%",
+      "note": "隱含每位元銷貨成本指數 FY2025Q4 相對 FY2024Q4（含折舊、未調整 HBM）。對照美光說法：FY2025 DRAM（不含 HBM）前段成本目標下降中到高個位數、NAND 下降 low to mid-teens（rm-fy2024q4）；實績 DRAM 含 HBM 只下降低個位數、NAND 約 low teens（rm-fy2025q4），依區間換算中值（−2%、−12%）與 FY2025 營收比重粗估混合約 −4.3%；兩者口徑不同（全年平均對第四季對第四季、是否含折舊），只能看方向。"
+    },
+    {
+      "name": "HBM 晶圓交換比",
+      "value": 3,
+      "unit": "倍",
+      "note": "同樣位元數的 HBM3E 約需 DDR5 的 3 倍晶圓（rm-fy2024q2）；HBM4E 將超過 4 比 1（rm-fy2025q2），保守情境在 FY2027 下半年改用 4。"
+    },
+    {
+      "name": "HBM 占美光 DRAM 位元比重（FY2025Q4 起）",
+      "value": 6,
+      "unit": "%",
+      "note": "本模型假設：沿用美光引述的 2025 年產業 HBM 位元比重約 6%（rm-fy2024q4），FY2024Q2 的 0 線性升到 FY2025Q4，之後持平（美光未揭露自身比重）。美光預期產業 HBM 位元成長到 2028 年都快於一般型 DRAM（rm-fy2026q4），比重持平可能使模型低估每位元成本。"
+    },
+    {
+      "name": "FY2027Q1 財測：營收中值",
+      "value": 61500,
+      "unit": "百萬美元",
+      "note": "615 億美元 ± 15 億美元（pr-fy2026q4）。"
+    },
+    {
+      "name": "FY2027Q1 財測：非 GAAP 毛利率",
+      "value": 86.25,
+      "unit": "%",
+      "note": "GAAP 約 85.95%（pr-fy2026q4）；美光表示第一季因 FY2026 第四季加發的獎金計入存貨，是 FY2027 毛利率的低點（rm-fy2026q4）。"
+    },
+    {
+      "name": "FY2027Q1 財測：非 GAAP EPS",
+      "value": 38.15,
+      "unit": "美元",
+      "note": "± 1.00 美元，以約 11.5 億股計（pr-fy2026q4）。"
+    },
+    {
+      "name": "FY2027Q1 模型（基準、成本未調整）營收",
+      "value": 60349,
+      "unit": "百萬美元",
+      "note": "只用 TrendForce 價格預測、位元假設與歷史成本趨勢推算，與財測中值相差 −1.9%。"
+    },
+    {
+      "name": "FY2027Q1 模型（基準、成本未調整）非 GAAP 毛利率",
+      "value": 88.73,
+      "unit": "%",
+      "note": "比財測高 2.48 個百分點：模型的成本趨勢不知道 FY2026Q4 加發的獎金已計入存貨、FY2027 獎金也較高（rm-fy2026q4）。"
+    },
+    {
+      "name": "FY2027Q1 模型（基準、成本未調整）非 GAAP EPS",
+      "value": 38.52,
+      "unit": "美元",
+      "note": "與財測中值相差 +0.37 美元。"
+    },
+    {
+      "name": "財測隱含的每位元現金成本墊高",
+      "value": 28.9,
+      "unit": "%",
+      "note": "財測隱含的銷貨成本 = 615 億 ×（1 − 86.25%）≈ 84.6 億美元，模型未調整值為 68 億美元；差額 16.6 億美元 換算成現金成本墊高 28.9%，三個情境都自 FY2027Q1 起套用並延續（美光表示第二季起 FY2026 獎金的影響減少，但被 FY2027 較高的獎金抵銷）。"
+    },
+    {
+      "name": "FY2027Q1 模型（基準、成本調整後）營收",
+      "value": 60349,
+      "unit": "百萬美元",
+      "note": "財測中值 615 億美元；差距來自價格與位元假設。"
+    },
+    {
+      "name": "FY2027Q1 模型（基準、成本調整後）非 GAAP 毛利率",
+      "value": 85.99,
+      "unit": "%",
+      "note": "財測約 86.25%。"
+    },
+    {
+      "name": "FY2027Q1 模型（基準、成本調整後）非 GAAP EPS",
+      "value": 37.3,
+      "unit": "美元",
+      "note": "財測 38.15 美元；與財測中值相差 −0.85 美元，主要來自營收差距。"
+    },
+    {
+      "name": "業外收支（每季，由 FY2027Q1 財測反推）",
+      "value": 936,
+      "unit": "百萬美元",
+      "note": "EPS 38.15 × 11.5 億股 ÷（1 − 15.5%）−（615 億 × 86.25% − 20.6 億）。美光季末現金與投資約 735 億美元（rm-fy2026q4），利息收入應是主要來源；但這是倒推的差額，也吸收了財測各項數字的進位（EPS ± 1 美元相當於業外收支 ± 約 14 億美元）。FY2027 各季假設不變。"
+    },
+    {
+      "name": "FY2027 非 GAAP 營業費用（全年）",
+      "value": 9300,
+      "unit": "百萬美元",
+      "note": "FY2026 非 GAAP 營業費用約 68 億美元（各季約 13、14、15、26 億美元，rm-fy2026q1–q4）加上美光預估的增加約 25 億美元（rm-fy2026q4）；第一季用財測 20.6 億美元，其餘三季平均分配（各約 24.1 億美元）。"
+    }
+  ],
+  "derived": [
+    {
+      "id": "cost-per-bit",
+      "name": "隱含每位元銷貨成本指數（DRAM＋NAND 混合）",
+      "unit": "指數（FY2016Q4 = 100）",
+      "points": [
+        {
+          "period": "FY2016Q1",
+          "value": 120.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q2",
+          "value": 114.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q3",
+          "value": 106.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q4",
+          "value": 100,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q1",
+          "value": 92.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q2",
+          "value": 84.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q3",
+          "value": 78.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q4",
+          "value": 77.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q1",
+          "value": 73.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q2",
+          "value": 69.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q3",
+          "value": 69.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q4",
+          "value": 65,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q1",
+          "value": 62.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q2",
+          "value": 60.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": 61.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": 54.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": 54.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 53.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 52.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 49.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 48.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 47.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 47.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 47.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 47.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 44.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 44.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 44.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 45.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 43.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 45.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 42.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 37,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 37.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 40.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 39.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 39.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 39.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 37,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 37.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 34.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 33.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 34.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 36.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 45,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 45.3,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 45.7,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": 46.1,
+          "status": "forecast"
+        }
+      ],
+      "note": "非 GAAP 銷貨成本扣除稼動率不足費用與存貨跌價（加回已跌價存貨售出的成本降低），除以位元量指數（DRAM 與 NAND 位元季增率以上季營收比重加權）。美光未分產品揭露成本，這是混合指數；FY2027 為基準情境的模型值。FY2019Q1 起 DRAM／NAND 營收分類改變，權重略有跳動。FY2027Q1 的跳升來自依美光財測反推的成本墊高（獎金計入存貨等）。"
+    },
+    {
+      "id": "cash-cost-per-bit",
+      "name": "每位元現金成本指數（扣除固定折舊，DRAM 以 HBM 晶圓當量計）",
+      "unit": "指數（FY2016Q4 = 100）",
+      "points": [
+        {
+          "period": "FY2016Q1",
+          "value": 119,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q2",
+          "value": 111.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q3",
+          "value": 104.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q4",
+          "value": 100,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q1",
+          "value": 93.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q2",
+          "value": 81.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q3",
+          "value": 75.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q4",
+          "value": 74.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q1",
+          "value": 71,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q2",
+          "value": 66.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q3",
+          "value": 65.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q4",
+          "value": 61.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q1",
+          "value": 58.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q2",
+          "value": 55.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": 55.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": 51,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": 52.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 49.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 49.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 46.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 46.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 45.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 45.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 45.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 44.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 41.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 41.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 40.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 38.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 37.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 41.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 40.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 34.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 35.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 37.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 36.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 35.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 35,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 33,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 33,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 30.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 29.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 30.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 32.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 40.7,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 40.7,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 40.7,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": 40.7,
+          "status": "forecast"
+        }
+      ],
+      "note": "選定模型內部的成本序列：銷貨成本扣除 φ（0.4）× 折舊與一次性項目後，除以晶圓當量位元量指數。回測時假設它每季以固定速度 g 變動（全期估計 −6.7%／年）；FY2027Q1 的跳升來自依美光財測反推的成本墊高 28.9%，第二季起依基準情境假設持平。"
+    },
+    {
+      "id": "dram-asp-index",
+      "name": "美光 DRAM 平均售價指數",
+      "unit": "指數（FY2016Q4 = 100）",
+      "points": [
+        {
+          "period": "FY2016Q1",
+          "value": 132.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q2",
+          "value": 119.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q3",
+          "value": 106.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q4",
+          "value": 100,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q1",
+          "value": 105,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q2",
+          "value": 127.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q3",
+          "value": 144.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q4",
+          "value": 156.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q1",
+          "value": 164.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q2",
+          "value": 184,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q3",
+          "value": 195.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q4",
+          "value": 195.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q1",
+          "value": 180.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q2",
+          "value": 140.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": 112.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": 90,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": 82.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 82.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 86.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 85.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 80.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 81.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 98.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 105.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 103.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 98.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 97.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 85.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 67,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 53.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 48.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 44.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 45.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 53.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 64.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 73.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 79.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 83.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 81.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 91.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 110.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 181.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 294.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 347.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 389.9,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 441.5,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 466.8,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": 473.9,
+          "status": "forecast"
+        }
+      ],
+      "note": "由美光每季公布的 DRAM 售價季變化（區間文字換算中值）連乘；FY2027 為基準情境的模型值（由合約價換算）。"
+    },
+    {
+      "id": "nand-asp-index",
+      "name": "美光 NAND 平均售價指數",
+      "unit": "指數（FY2016Q4 = 100）",
+      "points": [
+        {
+          "period": "FY2016Q1",
+          "value": 125.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q2",
+          "value": 106.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q3",
+          "value": 100,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q4",
+          "value": 100,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q1",
+          "value": 100,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q2",
+          "value": 94,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q3",
+          "value": 96.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q4",
+          "value": 101.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q1",
+          "value": 99.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q2",
+          "value": 84.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q3",
+          "value": 90.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q4",
+          "value": 76.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q1",
+          "value": 66.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q2",
+          "value": 49.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": 42.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": 38.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": 39.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 42.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 46.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 42.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 37.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 36.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 39.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 41.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 39.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 41.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 41.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 38.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 30,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 22.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 19.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 16.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 19.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 25.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 30.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 32.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 32.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 26.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 24.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 26.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 30.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 53.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 99.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 129.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 154.8,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 169.3,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 172.1,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": 165.7,
+          "status": "forecast"
+        }
+      ],
+      "note": "同 DRAM；FY2016–FY2017 為 Trade NAND 口徑。"
+    },
+    {
+      "id": "dram-contract-index",
+      "name": "TrendForce DRAM 合約價指數（含 HBM，換算成美光會計季度）",
+      "unit": "指數（FY2016Q4 = 100）",
+      "points": [
+        {
+          "period": "FY2016Q3",
+          "value": 97.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q4",
+          "value": 100,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q1",
+          "value": 122.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q2",
+          "value": 167.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q3",
+          "value": 201,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q4",
+          "value": 215.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q1",
+          "value": 233.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q2",
+          "value": 248.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q3",
+          "value": 256.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q4",
+          "value": 261.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q1",
+          "value": 244.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q2",
+          "value": 200.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": 155.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": 125.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": 113,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 112.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 121.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 116.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 107,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 105.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 121.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 133.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 130.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 119.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 112.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 102.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 83.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 65.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 54.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 50.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 55.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 65.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 76.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 86.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 92.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 92.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 96,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 109.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 155.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 272.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 440.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 534.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 616.4,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 717.8,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 772.5,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": 793,
+          "status": "forecast"
+        }
+      ],
+      "note": "2024 年第二季（日曆）以前為整體 DRAM、之後為含 HBM 的混合合約價；會計季度水準 =（1 個月重疊的日曆季度 + 2 × 2 個月重疊的日曆季度）÷ 3。FY2027 為基準情境假設（2026 年第四季為 TrendForce 預測）。"
+    },
+    {
+      "id": "nand-contract-index",
+      "name": "TrendForce NAND 合約價指數（換算成美光會計季度）",
+      "unit": "指數（FY2016Q4 = 100）",
+      "points": [
+        {
+          "period": "FY2016Q1",
+          "value": 124.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q2",
+          "value": 112.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q3",
+          "value": 102.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q4",
+          "value": 100,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q1",
+          "value": 106,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q2",
+          "value": 119.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q3",
+          "value": 130.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q4",
+          "value": 136.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q1",
+          "value": 137.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q2",
+          "value": 133.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q3",
+          "value": 116,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q4",
+          "value": 99.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q1",
+          "value": 86.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q2",
+          "value": 71.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": 57.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": 49.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": 47.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 48.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 50.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 49.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 45.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 42.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 43.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 46.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 46.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 44.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 44.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 40.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 32.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 27.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 23.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 21.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 23.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 28.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 34,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 37.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 37.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 32.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 31.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 32.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 41.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 71.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 117.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 152,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 179.9,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 195.7,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 198.8,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": 192.2,
+          "status": "forecast"
+        }
+      ],
+      "note": "換算方式同 DRAM；2018 年第一季以前部分季度為 TrendForce 代表性品項的代理值。"
+    },
+    {
+      "id": "depreciation-share",
+      "name": "折舊攤銷占銷貨成本比重",
+      "unit": "%",
+      "points": [
+        {
+          "period": "FY2016Q1",
+          "value": 29.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q2",
+          "value": 33.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q3",
+          "value": 31.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q4",
+          "value": 27.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q1",
+          "value": 26.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q2",
+          "value": 35.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q3",
+          "value": 35.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q4",
+          "value": 35.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q1",
+          "value": 35.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q2",
+          "value": 37.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q3",
+          "value": 40.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q4",
+          "value": 39.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q1",
+          "value": 41.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q2",
+          "value": 45.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": 46.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": 41.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": 34.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 40.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 39.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 39.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 37.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 37,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 36.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 37.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 41,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 42.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 40.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 47.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 61,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 40,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 44.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 44.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 40.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 41.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 39.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 40.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 38.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 41.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 36.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 35,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 37.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 38.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 37.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 37.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 31.2,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 32.4,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 34.1,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": 36.2,
+          "status": "forecast"
+        }
+      ],
+      "note": "全公司折舊攤銷 ÷ 非 GAAP 銷貨成本。有一部分折舊列在研發等營業費用，所以這是上限；FY2023 第二季含存貨跌價，比重被壓低。FY2027 折舊由資本支出計畫推算（第一季約 115 億美元、上半年約 250 億美元）。"
+    },
+    {
+      "id": "bit-volume-index",
+      "name": "位元出貨量指數（DRAM＋NAND，以營收比重加權）",
+      "unit": "指數（FY2016Q4 = 100）",
+      "points": [
+        {
+          "period": "FY2016Q1",
+          "value": 79.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q2",
+          "value": 78.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q3",
+          "value": 85.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2016Q4",
+          "value": 100,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q1",
+          "value": 120.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q2",
+          "value": 129,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q3",
+          "value": 140.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q4",
+          "value": 146.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q1",
+          "value": 156.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q2",
+          "value": 168,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q3",
+          "value": 168,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q4",
+          "value": 191.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q1",
+          "value": 198.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q2",
+          "value": 183.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": 181.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": 228.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": 253.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 234.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 251.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 294.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 304,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 328.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 334.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 341.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 328.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 348.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 390.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 338.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 262.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 296,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 346,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 421.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 466.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 471.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 464.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 475.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 512.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 483.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 585.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 632.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 646.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 674.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 692.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 735.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 716.8,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 752.7,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 790.3,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": 829.8,
+          "status": "forecast"
+        }
+      ],
+      "note": "由美光公布的 DRAM、NAND 位元出貨季變化（區間文字換算中值）以上季營收比重加權連乘。14 週的季度（FY2020Q4、FY2026Q4）出貨較多，下一季會因週數減少而回落。"
+    }
+  ],
+  "backtest": [
+    {
+      "period": "FY2025Q1",
+      "metric": "revenue",
+      "actual": 8709,
+      "predicted": 8581,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 8700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "revenue",
+      "actual": 8053,
+      "predicted": 7860,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 7900,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "revenue",
+      "actual": 9301,
+      "predicted": 9854,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 8800,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "revenue",
+      "actual": 11315,
+      "predicted": 11009,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 10700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 13643,
+      "predicted": 15186,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 12500,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 23860,
+      "predicted": 23075,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 18700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 41456,
+      "predicted": 37112,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 33500,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 54229,
+      "predicted": 52579,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 50000,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "grossMargin",
+      "actual": 39.5,
+      "predicted": 39,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 39.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "grossMargin",
+      "actual": 37.9,
+      "predicted": 36.51,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 38.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "grossMargin",
+      "actual": 39,
+      "predicted": 39.95,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 36.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "grossMargin",
+      "actual": 45.7,
+      "predicted": 44.84,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 42,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 56.8,
+      "predicted": 59.31,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 51.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 74.9,
+      "predicted": 73.78,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 68,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 84.9,
+      "predicted": 83.67,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 81,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 87,
+      "predicted": 87.44,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 86,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "operatingIncome",
+      "actual": 2174,
+      "predicted": 2082,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "operatingIncome",
+      "actual": 1773,
+      "predicted": 1593,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "operatingIncome",
+      "actual": 2169,
+      "predicted": 2471,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "operatingIncome",
+      "actual": 3654,
+      "predicted": 3423,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 6136,
+      "predicted": 7381,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 16135,
+      "predicted": 15292,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 33318,
+      "predicted": 29186,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 43751,
+      "predicted": 42551,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "netIncome",
+      "actual": 1870,
+      "predicted": 1790,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "netIncome",
+      "actual": 1583,
+      "predicted": 1421,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "netIncome",
+      "actual": 1885,
+      "predicted": 2154,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "netIncome",
+      "actual": 3201,
+      "predicted": 2997,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "netIncome",
+      "actual": 5240,
+      "predicted": 6317,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "netIncome",
+      "actual": 13785,
+      "predicted": 13066,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "netIncome",
+      "actual": 28243,
+      "predicted": 24729,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "netIncome",
+      "actual": 37701,
+      "predicted": 36678,
+      "candidate": "unit-cost-hbm"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "eps",
+      "actual": 1.79,
+      "predicted": 1.72,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 1.74,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "eps",
+      "actual": 1.56,
+      "predicted": 1.41,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 1.43,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "eps",
+      "actual": 1.91,
+      "predicted": 2.16,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 1.57,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "eps",
+      "actual": 3.03,
+      "predicted": 2.85,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 2.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 4.78,
+      "predicted": 5.73,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 3.75,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 12.2,
+      "predicted": 11.57,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 8.42,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 25.11,
+      "predicted": 22.03,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 19.15,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 33.42,
+      "predicted": 32.53,
+      "candidate": "unit-cost-hbm",
+      "benchmark": 31,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "revenue",
+      "actual": 8709,
+      "predicted": 8458,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 8700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "revenue",
+      "actual": 8053,
+      "predicted": 7649,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 7900,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "revenue",
+      "actual": 9301,
+      "predicted": 9640,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 8800,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "revenue",
+      "actual": 11315,
+      "predicted": 10771,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 10700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 13643,
+      "predicted": 12469,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 12500,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 23860,
+      "predicted": 19231,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 18700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 41456,
+      "predicted": 37125,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 33500,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 54229,
+      "predicted": 53497,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 50000,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "grossMargin",
+      "actual": 39.5,
+      "predicted": 38.11,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 39.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "grossMargin",
+      "actual": 37.9,
+      "predicted": 34.76,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 38.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "grossMargin",
+      "actual": 39,
+      "predicted": 38.61,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 36.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "grossMargin",
+      "actual": 45.7,
+      "predicted": 43.62,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 42,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 56.8,
+      "predicted": 50.44,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 51.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 74.9,
+      "predicted": 68.54,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 68,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 84.9,
+      "predicted": 83.67,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 81,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 87,
+      "predicted": 87.66,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 86,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "operatingIncome",
+      "actual": 2174,
+      "predicted": 1960,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "operatingIncome",
+      "actual": 1773,
+      "predicted": 1384,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "operatingIncome",
+      "actual": 2169,
+      "predicted": 2260,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "operatingIncome",
+      "actual": 3654,
+      "predicted": 3187,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 6136,
+      "predicted": 4686,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 16135,
+      "predicted": 11467,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 33318,
+      "predicted": 29200,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 43751,
+      "predicted": 43467,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "netIncome",
+      "actual": 1870,
+      "predicted": 1684,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "netIncome",
+      "actual": 1583,
+      "predicted": 1233,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "netIncome",
+      "actual": 1885,
+      "predicted": 1966,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "netIncome",
+      "actual": 3201,
+      "predicted": 2790,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "netIncome",
+      "actual": 5240,
+      "predicted": 3986,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "netIncome",
+      "actual": 13785,
+      "predicted": 9803,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "netIncome",
+      "actual": 28243,
+      "predicted": 24741,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "netIncome",
+      "actual": 37701,
+      "predicted": 37459,
+      "candidate": "unit-cost-hbm-ex-ante"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "eps",
+      "actual": 1.79,
+      "predicted": 1.62,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 1.74,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "eps",
+      "actual": 1.56,
+      "predicted": 1.24,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 1.43,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "eps",
+      "actual": 1.91,
+      "predicted": 1.99,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 1.57,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "eps",
+      "actual": 3.03,
+      "predicted": 2.66,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 2.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 4.78,
+      "predicted": 3.67,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 3.75,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 12.2,
+      "predicted": 8.7,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 8.42,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 25.11,
+      "predicted": 22.04,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 19.15,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 33.42,
+      "predicted": 33.21,
+      "candidate": "unit-cost-hbm-ex-ante",
+      "benchmark": 31,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "revenue",
+      "actual": 8709,
+      "predicted": 8235,
+      "candidate": "unit-cost",
+      "benchmark": 8700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "revenue",
+      "actual": 8053,
+      "predicted": 7458,
+      "candidate": "unit-cost",
+      "benchmark": 7900,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "revenue",
+      "actual": 9301,
+      "predicted": 9672,
+      "candidate": "unit-cost",
+      "benchmark": 8800,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "revenue",
+      "actual": 11315,
+      "predicted": 10791,
+      "candidate": "unit-cost",
+      "benchmark": 10700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 13643,
+      "predicted": 14797,
+      "candidate": "unit-cost",
+      "benchmark": 12500,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 23860,
+      "predicted": 23855,
+      "candidate": "unit-cost",
+      "benchmark": 18700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 41456,
+      "predicted": 38121,
+      "candidate": "unit-cost",
+      "benchmark": 33500,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 54229,
+      "predicted": 53874,
+      "candidate": "unit-cost",
+      "benchmark": 50000,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "grossMargin",
+      "actual": 39.5,
+      "predicted": 37.12,
+      "candidate": "unit-cost",
+      "benchmark": 39.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "grossMargin",
+      "actual": 37.9,
+      "predicted": 33.79,
+      "candidate": "unit-cost",
+      "benchmark": 38.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "grossMargin",
+      "actual": 39,
+      "predicted": 39.5,
+      "candidate": "unit-cost",
+      "benchmark": 36.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "grossMargin",
+      "actual": 45.7,
+      "predicted": 44.37,
+      "candidate": "unit-cost",
+      "benchmark": 42,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 56.8,
+      "predicted": 58.18,
+      "candidate": "unit-cost",
+      "benchmark": 51.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 74.9,
+      "predicted": 74.6,
+      "candidate": "unit-cost",
+      "benchmark": 68,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 84.9,
+      "predicted": 84.08,
+      "candidate": "unit-cost",
+      "benchmark": 81,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 87,
+      "predicted": 87.73,
+      "candidate": "unit-cost",
+      "benchmark": 86,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "operatingIncome",
+      "actual": 2174,
+      "predicted": 1796,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "operatingIncome",
+      "actual": 1773,
+      "predicted": 1248,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "operatingIncome",
+      "actual": 2169,
+      "predicted": 2357,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "operatingIncome",
+      "actual": 3654,
+      "predicted": 3277,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 6136,
+      "predicted": 6987,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 16135,
+      "predicted": 16060,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 33318,
+      "predicted": 30185,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 43751,
+      "predicted": 43834,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "netIncome",
+      "actual": 1870,
+      "predicted": 1542,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "netIncome",
+      "actual": 1583,
+      "predicted": 1110,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "netIncome",
+      "actual": 1885,
+      "predicted": 2053,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "netIncome",
+      "actual": 3201,
+      "predicted": 2868,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "netIncome",
+      "actual": 5240,
+      "predicted": 5976,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "netIncome",
+      "actual": 13785,
+      "predicted": 13721,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "netIncome",
+      "actual": 28243,
+      "predicted": 25578,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "netIncome",
+      "actual": 37701,
+      "predicted": 37772,
+      "candidate": "unit-cost"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "eps",
+      "actual": 1.79,
+      "predicted": 1.49,
+      "candidate": "unit-cost",
+      "benchmark": 1.74,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "eps",
+      "actual": 1.56,
+      "predicted": 1.13,
+      "candidate": "unit-cost",
+      "benchmark": 1.43,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "eps",
+      "actual": 1.91,
+      "predicted": 2.06,
+      "candidate": "unit-cost",
+      "benchmark": 1.57,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "eps",
+      "actual": 3.03,
+      "predicted": 2.73,
+      "candidate": "unit-cost",
+      "benchmark": 2.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 4.78,
+      "predicted": 5.43,
+      "candidate": "unit-cost",
+      "benchmark": 3.75,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 12.2,
+      "predicted": 12.14,
+      "candidate": "unit-cost",
+      "benchmark": 8.42,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 25.11,
+      "predicted": 22.77,
+      "candidate": "unit-cost",
+      "benchmark": 19.15,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 33.42,
+      "predicted": 33.48,
+      "candidate": "unit-cost",
+      "benchmark": 31,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "revenue",
+      "actual": 8709,
+      "predicted": 8773,
+      "candidate": "unit-cost-reported",
+      "benchmark": 8700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "revenue",
+      "actual": 8053,
+      "predicted": 8106,
+      "candidate": "unit-cost-reported",
+      "benchmark": 7900,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "revenue",
+      "actual": 9301,
+      "predicted": 9409,
+      "candidate": "unit-cost-reported",
+      "benchmark": 8800,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "revenue",
+      "actual": 11315,
+      "predicted": 11156,
+      "candidate": "unit-cost-reported",
+      "benchmark": 10700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 13643,
+      "predicted": 13726,
+      "candidate": "unit-cost-reported",
+      "benchmark": 12500,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 23860,
+      "predicted": 23800,
+      "candidate": "unit-cost-reported",
+      "benchmark": 18700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 41456,
+      "predicted": 40814,
+      "candidate": "unit-cost-reported",
+      "benchmark": 33500,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 54229,
+      "predicted": 53233,
+      "candidate": "unit-cost-reported",
+      "benchmark": 50000,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "grossMargin",
+      "actual": 39.5,
+      "predicted": 40.33,
+      "candidate": "unit-cost-reported",
+      "benchmark": 39.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "grossMargin",
+      "actual": 37.9,
+      "predicted": 38.44,
+      "candidate": "unit-cost-reported",
+      "benchmark": 38.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "grossMargin",
+      "actual": 39,
+      "predicted": 37.11,
+      "candidate": "unit-cost-reported",
+      "benchmark": 36.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "grossMargin",
+      "actual": 45.7,
+      "predicted": 45.57,
+      "candidate": "unit-cost-reported",
+      "benchmark": 42,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 56.8,
+      "predicted": 54.98,
+      "candidate": "unit-cost-reported",
+      "benchmark": 51.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 74.9,
+      "predicted": 74.58,
+      "candidate": "unit-cost-reported",
+      "benchmark": 68,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 84.9,
+      "predicted": 85.15,
+      "candidate": "unit-cost-reported",
+      "benchmark": 81,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 87,
+      "predicted": 87.59,
+      "candidate": "unit-cost-reported",
+      "benchmark": 86,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "operatingIncome",
+      "actual": 2174,
+      "predicted": 2271,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "operatingIncome",
+      "actual": 1773,
+      "predicted": 1836,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "operatingIncome",
+      "actual": 2169,
+      "predicted": 2032,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "operatingIncome",
+      "actual": 3654,
+      "predicted": 3568,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 6136,
+      "predicted": 5933,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 16135,
+      "predicted": 16014,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 33318,
+      "predicted": 32876,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 43751,
+      "predicted": 43203,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "netIncome",
+      "actual": 1870,
+      "predicted": 1955,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "netIncome",
+      "actual": 1583,
+      "predicted": 1640,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "netIncome",
+      "actual": 1885,
+      "predicted": 1763,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "netIncome",
+      "actual": 3201,
+      "predicted": 3125,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "netIncome",
+      "actual": 5240,
+      "predicted": 5064,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "netIncome",
+      "actual": 13785,
+      "predicted": 13682,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "netIncome",
+      "actual": 28243,
+      "predicted": 27867,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "netIncome",
+      "actual": 37701,
+      "predicted": 37234,
+      "candidate": "unit-cost-reported"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "eps",
+      "actual": 1.79,
+      "predicted": 1.87,
+      "candidate": "unit-cost-reported",
+      "benchmark": 1.74,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "eps",
+      "actual": 1.56,
+      "predicted": 1.61,
+      "candidate": "unit-cost-reported",
+      "benchmark": 1.43,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "eps",
+      "actual": 1.91,
+      "predicted": 1.8,
+      "candidate": "unit-cost-reported",
+      "benchmark": 1.57,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "eps",
+      "actual": 3.03,
+      "predicted": 2.96,
+      "candidate": "unit-cost-reported",
+      "benchmark": 2.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 4.78,
+      "predicted": 4.63,
+      "candidate": "unit-cost-reported",
+      "benchmark": 3.75,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 12.2,
+      "predicted": 12.11,
+      "candidate": "unit-cost-reported",
+      "benchmark": 8.42,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 25.11,
+      "predicted": 24.78,
+      "candidate": "unit-cost-reported",
+      "benchmark": 19.15,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 33.42,
+      "predicted": 33.01,
+      "candidate": "unit-cost-reported",
+      "benchmark": 31,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "revenue",
+      "actual": 8709,
+      "predicted": 7980,
+      "candidate": "price-regression",
+      "benchmark": 8700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "revenue",
+      "actual": 8053,
+      "predicted": 8134,
+      "candidate": "price-regression",
+      "benchmark": 7900,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "revenue",
+      "actual": 9301,
+      "predicted": 8286,
+      "candidate": "price-regression",
+      "benchmark": 8800,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "revenue",
+      "actual": 11315,
+      "predicted": 10473,
+      "candidate": "price-regression",
+      "benchmark": 10700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 13643,
+      "predicted": 15953,
+      "candidate": "price-regression",
+      "benchmark": 12500,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 23860,
+      "predicted": 30385,
+      "candidate": "price-regression",
+      "benchmark": 18700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 41456,
+      "predicted": 46941,
+      "candidate": "price-regression",
+      "benchmark": 33500,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 54229,
+      "predicted": 56393,
+      "candidate": "price-regression",
+      "benchmark": 50000,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "grossMargin",
+      "actual": 39.5,
+      "predicted": 36.31,
+      "candidate": "price-regression",
+      "benchmark": 39.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "grossMargin",
+      "actual": 37.9,
+      "predicted": 33.57,
+      "candidate": "price-regression",
+      "benchmark": 38.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "grossMargin",
+      "actual": 39,
+      "predicted": 38.03,
+      "candidate": "price-regression",
+      "benchmark": 36.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "grossMargin",
+      "actual": 45.7,
+      "predicted": 44.71,
+      "candidate": "price-regression",
+      "benchmark": 42,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 56.8,
+      "predicted": 65.25,
+      "candidate": "price-regression",
+      "benchmark": 51.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 74.9,
+      "predicted": 102.89,
+      "candidate": "price-regression",
+      "benchmark": 68,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 84.9,
+      "predicted": 110.38,
+      "candidate": "price-regression",
+      "benchmark": 81,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 87,
+      "predicted": 95.56,
+      "candidate": "price-regression",
+      "benchmark": 86,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "operatingIncome",
+      "actual": 2174,
+      "predicted": 1639,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "operatingIncome",
+      "actual": 1773,
+      "predicted": 1451,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "operatingIncome",
+      "actual": 2169,
+      "predicted": 1706,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "operatingIncome",
+      "actual": 3654,
+      "predicted": 3174,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 6136,
+      "predicted": 8779,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 16135,
+      "predicted": 29496,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 33318,
+      "predicted": 49918,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 43751,
+      "predicted": 50453,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "netIncome",
+      "actual": 1870,
+      "predicted": 1405,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "netIncome",
+      "actual": 1583,
+      "predicted": 1293,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "netIncome",
+      "actual": 1885,
+      "predicted": 1472,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "netIncome",
+      "actual": 3201,
+      "predicted": 2778,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "netIncome",
+      "actual": 5240,
+      "predicted": 7525,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "netIncome",
+      "actual": 13785,
+      "predicted": 25182,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "netIncome",
+      "actual": 28243,
+      "predicted": 42359,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "netIncome",
+      "actual": 37701,
+      "predicted": 43413,
+      "candidate": "price-regression"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "eps",
+      "actual": 1.79,
+      "predicted": 1.37,
+      "candidate": "price-regression",
+      "benchmark": 1.74,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "eps",
+      "actual": 1.56,
+      "predicted": 1.3,
+      "candidate": "price-regression",
+      "benchmark": 1.43,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "eps",
+      "actual": 1.91,
+      "predicted": 1.53,
+      "candidate": "price-regression",
+      "benchmark": 1.57,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "eps",
+      "actual": 3.03,
+      "predicted": 2.65,
+      "candidate": "price-regression",
+      "benchmark": 2.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 4.78,
+      "predicted": 6.8,
+      "candidate": "price-regression",
+      "benchmark": 3.75,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 12.2,
+      "predicted": 22.2,
+      "candidate": "price-regression",
+      "benchmark": 8.42,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 25.11,
+      "predicted": 37.45,
+      "candidate": "price-regression",
+      "benchmark": 19.15,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 33.42,
+      "predicted": 38.4,
+      "candidate": "price-regression",
+      "benchmark": 31,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "revenue",
+      "actual": 8709,
+      "predicted": 7750,
+      "candidate": "naive",
+      "benchmark": 8700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "revenue",
+      "actual": 8053,
+      "predicted": 8709,
+      "candidate": "naive",
+      "benchmark": 7900,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "revenue",
+      "actual": 9301,
+      "predicted": 8053,
+      "candidate": "naive",
+      "benchmark": 8800,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "revenue",
+      "actual": 11315,
+      "predicted": 9301,
+      "candidate": "naive",
+      "benchmark": 10700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 13643,
+      "predicted": 11315,
+      "candidate": "naive",
+      "benchmark": 12500,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 23860,
+      "predicted": 13643,
+      "candidate": "naive",
+      "benchmark": 18700,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 41456,
+      "predicted": 23860,
+      "candidate": "naive",
+      "benchmark": 33500,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 54229,
+      "predicted": 41456,
+      "candidate": "naive",
+      "benchmark": 50000,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "grossMargin",
+      "actual": 39.5,
+      "predicted": 36.5,
+      "candidate": "naive",
+      "benchmark": 39.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "grossMargin",
+      "actual": 37.9,
+      "predicted": 39.5,
+      "candidate": "naive",
+      "benchmark": 38.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "grossMargin",
+      "actual": 39,
+      "predicted": 37.9,
+      "candidate": "naive",
+      "benchmark": 36.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "grossMargin",
+      "actual": 45.7,
+      "predicted": 39,
+      "candidate": "naive",
+      "benchmark": 42,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 56.8,
+      "predicted": 45.7,
+      "candidate": "naive",
+      "benchmark": 51.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 74.9,
+      "predicted": 56.8,
+      "candidate": "naive",
+      "benchmark": 68,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 84.9,
+      "predicted": 74.9,
+      "candidate": "naive",
+      "benchmark": 81,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 87,
+      "predicted": 84.9,
+      "candidate": "naive",
+      "benchmark": 86,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "operatingIncome",
+      "actual": 2174,
+      "predicted": 1573,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "operatingIncome",
+      "actual": 1773,
+      "predicted": 2154,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "operatingIncome",
+      "actual": 2169,
+      "predicted": 1610,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "operatingIncome",
+      "actual": 3654,
+      "predicted": 2131,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 6136,
+      "predicted": 3575,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 16135,
+      "predicted": 6063,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 33318,
+      "predicted": 16052,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 43751,
+      "predicted": 31799,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "netIncome",
+      "actual": 1870,
+      "predicted": 1348,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "netIncome",
+      "actual": 1583,
+      "predicted": 1926,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "netIncome",
+      "actual": 1885,
+      "predicted": 1386,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "netIncome",
+      "actual": 3201,
+      "predicted": 1859,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "netIncome",
+      "actual": 5240,
+      "predicted": 3026,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "netIncome",
+      "actual": 13785,
+      "predicted": 5193,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "netIncome",
+      "actual": 28243,
+      "predicted": 13561,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "netIncome",
+      "actual": 37701,
+      "predicted": 27515,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "eps",
+      "actual": 1.79,
+      "predicted": 1.32,
+      "candidate": "naive",
+      "benchmark": 1.74,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "eps",
+      "actual": 1.56,
+      "predicted": 1.87,
+      "candidate": "naive",
+      "benchmark": 1.43,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "eps",
+      "actual": 1.91,
+      "predicted": 1.45,
+      "candidate": "naive",
+      "benchmark": 1.57,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "eps",
+      "actual": 3.03,
+      "predicted": 1.83,
+      "candidate": "naive",
+      "benchmark": 2.5,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 4.78,
+      "predicted": 2.82,
+      "candidate": "naive",
+      "benchmark": 3.75,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 12.2,
+      "predicted": 4.64,
+      "candidate": "naive",
+      "benchmark": 8.42,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 25.11,
+      "predicted": 12.24,
+      "candidate": "naive",
+      "benchmark": 19.15,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 33.42,
+      "predicted": 24.52,
+      "candidate": "naive",
+      "benchmark": 31,
+      "benchmarkLabel": "美光財測中值"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "revenue",
+      "actual": 8709,
+      "predicted": 8700,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "revenue",
+      "actual": 8053,
+      "predicted": 7900,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "revenue",
+      "actual": 9301,
+      "predicted": 8800,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "revenue",
+      "actual": 11315,
+      "predicted": 10700,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 13643,
+      "predicted": 12500,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 23860,
+      "predicted": 18700,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 41456,
+      "predicted": 33500,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 54229,
+      "predicted": 50000,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "grossMargin",
+      "actual": 39.5,
+      "predicted": 39.5,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "grossMargin",
+      "actual": 37.9,
+      "predicted": 38.5,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "grossMargin",
+      "actual": 39,
+      "predicted": 36.5,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "grossMargin",
+      "actual": 45.7,
+      "predicted": 42,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 56.8,
+      "predicted": 51.5,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 74.9,
+      "predicted": 68,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 84.9,
+      "predicted": 81,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 87,
+      "predicted": 86,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2025Q1",
+      "metric": "eps",
+      "actual": 1.79,
+      "predicted": 1.74,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2025Q2",
+      "metric": "eps",
+      "actual": 1.56,
+      "predicted": 1.43,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2025Q3",
+      "metric": "eps",
+      "actual": 1.91,
+      "predicted": 1.57,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2025Q4",
+      "metric": "eps",
+      "actual": 3.03,
+      "predicted": 2.5,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 4.78,
+      "predicted": 3.75,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 12.2,
+      "predicted": 8.42,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 25.11,
+      "predicted": 19.15,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 33.42,
+      "predicted": 31,
+      "candidate": "guidance"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "bear",
+      "name": "保守",
+      "assumptions": [
+        {
+          "name": "一般型 DRAM 合約價季變化",
+          "value": "2026 年第 4 季 +10%、2027 年第 1 季 +0%、2027 年第 2 季 −5%、2027 年第 3 季 −10%（2026 年第四季為 TrendForce 9 月預測區間 10–15% 的下緣；2027 年各季為本模型假設，TrendForce 未公布各季數字）",
+          "src": "tf-20260930-13258"
+        },
+        {
+          "name": "含 HBM 的 DRAM 合約價季變化（模型實際使用）",
+          "value": "2026 年第 4 季 +15%、2027 年第 1 季 +0%、2027 年第 2 季 −5%、2027 年第 3 季 −10%（2026 年第四季為 TrendForce 預測區間 15–20%；2027 年第一季在一般型之上加 0 個百分點，代表 HBM 年度合約重新議價，幅度為本模型假設）",
+          "src": "tf-20260930-13258"
+        },
+        {
+          "name": "HBM 2027 年價格（TrendForce）",
+          "value": "TrendForce 2026 年 9 月預估 2027 年 HBM 平均售價年增 121%",
+          "src": "tf-20260929-13255"
+        },
+        {
+          "name": "HBM 2027 年合約（美光）",
+          "value": "美光表示 2027 年 HBM 位元供給絕大部分已完成協議，價格較前一年明顯上漲，HBM 與一般型 DRAM 的毛利率差距縮小",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "TrendForce 2027 年展望",
+          "value": "2027 年 DRAM 供給仍吃緊、價格續揚；NAND 供給成長高於需求，2027 下半年轉為寬鬆、價格面臨下行壓力；記憶體合約價大致維持高檔",
+          "src": "tf-20260730-13158"
+        },
+        {
+          "name": "NAND 合約價季變化",
+          "value": "2026 年第 4 季 +15%、2027 年第 1 季 −5%、2027 年第 2 季 −10%、2027 年第 3 季 −15%（2026 年第四季為 TrendForce 預測區間 15–20% 的下緣；2027 年依 TrendForce「2027 下半年 NAND 供給轉寬鬆、價格面臨下行壓力」假設漲幅收斂轉跌）",
+          "src": "tf-20260721-13148"
+        },
+        {
+          "name": "位元出貨",
+          "value": "DRAM 與 NAND 每季成長 5%（約當年增 22%；美光預估 2027 年產業 DRAM 位元成長 low-20s%、NAND mid-20s%，三個情境相同）；FY2027Q1 只有 13 週（FY2026Q4 為 14 週），另乘 13/14",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "財測隱含的成本墊高",
+          "value": "FY2027Q1 起每位元現金成本一次墊高 28.9% 並延續：由美光財測隱含的銷貨成本（615 億 ×（1 − 86.25%）≈ 84.6 億美元）反推，反映 FY2026Q4 加發獎金計入存貨、FY2027 獎金較高等模型趨勢看不到的成本",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "每位元現金成本（FY2027 第二季起）",
+          "value": "每年上升 6%：依美光「混合 DRAM 每位元成本將由目前水準上升」的說法，幅度為本模型假設",
+          "src": "rm-fy2026q3"
+        },
+        {
+          "name": "HBM 晶圓交換比與比重",
+          "value": "交換比 3、3、4、4（FY2027Q1–Q4；下半年改用 4，代表 HBM4／HBM4E 比重提高，美光表示 HBM4E 的交換比將超過 4 比 1）；HBM 占 DRAM 位元比重維持 6%（本模型假設）",
+          "src": "rm-fy2025q2"
+        },
+        {
+          "name": "資本支出與折舊",
+          "value": "淨資本支出 FY2027 各季 115 億美元、135 億美元、140 億美元、140 億美元（第一季約 115 億、上半年約 250 億為美光說法，下半年每季 140 億為本模型假設），以 θ 推算折舊",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "營業費用、業外、稅率與股數",
+          "value": "非 GAAP 營業費用各季 20.6 億美元、24.1 億美元、24.1 億美元、24.1 億美元；GAAP 營業費用再加 2.5 億美元、GAAP 毛利率比非 GAAP 低 0.3 個百分點（依 FY2027Q1 財測）；業外收支每季約 9.4 億美元；稅率 15.5%；稀釋股數 11.5 億股",
+          "src": "pr-fy2026q4"
+        },
+        {
+          "name": "與美光 FY2027 展望對照",
+          "value": "美光預期 FY2027 每季營收逐季成長、第一季是全年毛利率低點；本情境第一季營收 595 億美元（低於財測區間下緣 600 億美元），營收自 FY2027Q3 起較前一季減少、FY2027Q3 起毛利率低於第一季，比公司展望悲觀，代表合約價提前反轉的情況",
+          "src": "rm-fy2026q4"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "FY2027Q1",
+          "revenue": 59519,
+          "grossMargin": 85.79,
+          "operatingIncome": 48574,
+          "netIncome": 41836,
+          "eps": 36.69,
+          "known": [],
+          "note": "DRAM 售價 +10.8%、位元 −2.5%；NAND 售價 +18%、位元 −2.5%；折舊 26.4 億美元。"
+        },
+        {
+          "period": "FY2027Q2",
+          "revenue": 64068,
+          "grossMargin": 85.89,
+          "operatingIncome": 52170,
+          "netIncome": 44875,
+          "eps": 39.35,
+          "known": [],
+          "note": "DRAM 售價 +3.1%、位元 +5%；NAND 售價 +1.1%、位元 +5%；折舊 28.9 億美元。"
+        },
+        {
+          "period": "FY2027Q3",
+          "revenue": 63871,
+          "grossMargin": 84.31,
+          "operatingIncome": 50995,
+          "netIncome": 43882,
+          "eps": 38.48,
+          "known": [],
+          "note": "DRAM 售價 −3.6%、位元 +5%；NAND 售價 −9.1%、位元 +5%；折舊 32.3 億美元。"
+        },
+        {
+          "period": "FY2027Q4",
+          "revenue": 60715,
+          "grossMargin": 82.29,
+          "operatingIncome": 47119,
+          "netIncome": 40607,
+          "eps": 35.63,
+          "known": [],
+          "note": "DRAM 售價 −7.8%、位元 +5%；NAND 售價 −14.5%、位元 +5%；折舊 36.2 億美元。"
+        },
+        {
+          "period": "FY2027",
+          "revenue": 248172,
+          "grossMargin": 84.58,
+          "operatingIncome": 198858,
+          "netIncome": 171200,
+          "eps": 150.15,
+          "known": [],
+          "note": "四季加總；毛利率為全年毛利 ÷ 全年營收，EPS 為四季加總。營業利益與淨利為 GAAP，毛利率與 EPS 為非 GAAP。"
+        }
+      ]
+    },
+    {
+      "id": "base",
+      "name": "基準",
+      "assumptions": [
+        {
+          "name": "一般型 DRAM 合約價季變化",
+          "value": "2026 年第 4 季 +12.5%、2027 年第 1 季 +6%、2027 年第 2 季 +4%、2027 年第 3 季 +2%（2026 年第四季為 TrendForce 9 月預測區間 10–15% 的中值；2027 年各季為本模型假設，TrendForce 未公布各季數字）",
+          "src": "tf-20260930-13258"
+        },
+        {
+          "name": "含 HBM 的 DRAM 合約價季變化（模型實際使用）",
+          "value": "2026 年第 4 季 +17.5%、2027 年第 1 季 +16%、2027 年第 2 季 +4%、2027 年第 3 季 +2%（2026 年第四季為 TrendForce 預測區間 15–20%；2027 年第一季在一般型之上加 10 個百分點，代表 HBM 年度合約重新議價，幅度為本模型假設）",
+          "src": "tf-20260930-13258"
+        },
+        {
+          "name": "HBM 2027 年價格（TrendForce）",
+          "value": "TrendForce 2026 年 9 月預估 2027 年 HBM 平均售價年增 121%",
+          "src": "tf-20260929-13255"
+        },
+        {
+          "name": "HBM 2027 年合約（美光）",
+          "value": "美光表示 2027 年 HBM 位元供給絕大部分已完成協議，價格較前一年明顯上漲，HBM 與一般型 DRAM 的毛利率差距縮小",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "TrendForce 2027 年展望",
+          "value": "2027 年 DRAM 供給仍吃緊、價格續揚；NAND 供給成長高於需求，2027 下半年轉為寬鬆、價格面臨下行壓力；記憶體合約價大致維持高檔",
+          "src": "tf-20260730-13158"
+        },
+        {
+          "name": "NAND 合約價季變化",
+          "value": "2026 年第 4 季 +17.5%、2027 年第 1 季 +5%、2027 年第 2 季 +0%、2027 年第 3 季 −5%（2026 年第四季為 TrendForce 預測區間 15–20% 的中值；2027 年依 TrendForce「2027 下半年 NAND 供給轉寬鬆、價格面臨下行壓力」假設漲幅收斂轉跌）",
+          "src": "tf-20260721-13148"
+        },
+        {
+          "name": "位元出貨",
+          "value": "DRAM 與 NAND 每季成長 5%（約當年增 22%；美光預估 2027 年產業 DRAM 位元成長 low-20s%、NAND mid-20s%，三個情境相同）；FY2027Q1 只有 13 週（FY2026Q4 為 14 週），另乘 13/14",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "財測隱含的成本墊高",
+          "value": "FY2027Q1 起每位元現金成本一次墊高 28.9% 並延續：由美光財測隱含的銷貨成本（615 億 ×（1 − 86.25%）≈ 84.6 億美元）反推，反映 FY2026Q4 加發獎金計入存貨、FY2027 獎金較高等模型趨勢看不到的成本",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "每位元現金成本（FY2027 第二季起）",
+          "value": "持平（0%／年）。資料估計的歷史趨勢是 −6.7%／年，但美光表示 LP6、DDR6 與新一代 HBM 等產品每位元成本較高，加上綠地新廠爬坡，混合 DRAM 每位元成本將由目前水準上升；持平是兩者之間的假設",
+          "src": "rm-fy2026q3"
+        },
+        {
+          "name": "HBM 晶圓交換比與比重",
+          "value": "交換比 3、3、3、3（FY2027Q1–Q4，HBM3E 約 3 倍）；HBM 占 DRAM 位元比重維持 6%（本模型假設）",
+          "src": "rm-fy2024q2"
+        },
+        {
+          "name": "資本支出與折舊",
+          "value": "淨資本支出 FY2027 各季 115 億美元、135 億美元、140 億美元、140 億美元（第一季約 115 億、上半年約 250 億為美光說法，下半年每季 140 億為本模型假設），以 θ 推算折舊",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "營業費用、業外、稅率與股數",
+          "value": "非 GAAP 營業費用各季 20.6 億美元、24.1 億美元、24.1 億美元、24.1 億美元；GAAP 營業費用再加 2.5 億美元、GAAP 毛利率比非 GAAP 低 0.3 個百分點（依 FY2027Q1 財測）；業外收支每季約 9.4 億美元；稅率 15.5%；稀釋股數 11.5 億股",
+          "src": "pr-fy2026q4"
+        },
+        {
+          "name": "與美光 FY2027 展望對照",
+          "value": "美光預期 FY2027 每季營收逐季成長、第一季是全年毛利率低點；本情境第一季營收 603 億美元（在財測區間 600–630 億美元內），營收逐季成長、第二季起毛利率都高於第一季，與公司展望方向一致",
+          "src": "rm-fy2026q4"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "FY2027Q1",
+          "revenue": 60349,
+          "grossMargin": 85.99,
+          "operatingIncome": 49402,
+          "netIncome": 42536,
+          "eps": 37.3,
+          "known": [],
+          "note": "DRAM 售價 +12.3%、位元 −2.5%；NAND 售價 +19.9%、位元 −2.5%；折舊 26.4 億美元。美光財測：營收 615 億美元（600–630 億）、非 GAAP 毛利率約 86.25%、非 GAAP EPS 38.15 美元。成本未調整時模型為營收 603 億美元、毛利率 88.73%、EPS 38.52 美元；依財測隱含成本調整後與財測相差：營收 −1.9%、毛利率 −0.26 個百分點、EPS −0.85 美元。"
+        },
+        {
+          "period": "FY2027Q2",
+          "revenue": 71023,
+          "grossMargin": 87.43,
+          "operatingIncome": 59218,
+          "netIncome": 50831,
+          "eps": 44.54,
+          "known": [],
+          "note": "DRAM 售價 +13.2%、位元 +5%；NAND 售價 +9.4%、位元 +5%；折舊 28.9 億美元。"
+        },
+        {
+          "period": "FY2027Q3",
+          "revenue": 78000,
+          "grossMargin": 87.88,
+          "operatingIncome": 65652,
+          "netIncome": 56267,
+          "eps": 49.28,
+          "known": [],
+          "note": "DRAM 售價 +5.7%、位元 +5%；NAND 售價 +1.7%、位元 +5%；折舊 32.3 億美元。"
+        },
+        {
+          "period": "FY2027Q4",
+          "revenue": 82008,
+          "grossMargin": 87.78,
+          "operatingIncome": 69080,
+          "netIncome": 59164,
+          "eps": 51.81,
+          "known": [],
+          "note": "DRAM 售價 +1.5%、位元 +5%；NAND 售價 −3.7%、位元 +5%；折舊 36.2 億美元。"
+        },
+        {
+          "period": "FY2027",
+          "revenue": 291379,
+          "grossMargin": 87.35,
+          "operatingIncome": 243352,
+          "netIncome": 208798,
+          "eps": 182.94,
+          "known": [],
+          "note": "四季加總；毛利率為全年毛利 ÷ 全年營收，EPS 為四季加總。營業利益與淨利為 GAAP，毛利率與 EPS 為非 GAAP。"
+        }
+      ]
+    },
+    {
+      "id": "bull",
+      "name": "樂觀",
+      "assumptions": [
+        {
+          "name": "一般型 DRAM 合約價季變化",
+          "value": "2026 年第 4 季 +15%、2027 年第 1 季 +12%、2027 年第 2 季 +8%、2027 年第 3 季 +5%（2026 年第四季為 TrendForce 9 月預測區間 10–15% 的上緣；2027 年各季為本模型假設，TrendForce 未公布各季數字）",
+          "src": "tf-20260930-13258"
+        },
+        {
+          "name": "含 HBM 的 DRAM 合約價季變化（模型實際使用）",
+          "value": "2026 年第 4 季 +20%、2027 年第 1 季 +32%、2027 年第 2 季 +8%、2027 年第 3 季 +5%（2026 年第四季為 TrendForce 預測區間 15–20%；2027 年第一季在一般型之上加 20 個百分點，代表 HBM 年度合約重新議價，幅度為本模型假設）",
+          "src": "tf-20260930-13258"
+        },
+        {
+          "name": "HBM 2027 年價格（TrendForce）",
+          "value": "TrendForce 2026 年 9 月預估 2027 年 HBM 平均售價年增 121%",
+          "src": "tf-20260929-13255"
+        },
+        {
+          "name": "HBM 2027 年合約（美光）",
+          "value": "美光表示 2027 年 HBM 位元供給絕大部分已完成協議，價格較前一年明顯上漲，HBM 與一般型 DRAM 的毛利率差距縮小",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "TrendForce 2027 年展望",
+          "value": "2027 年 DRAM 供給仍吃緊、價格續揚；NAND 供給成長高於需求，2027 下半年轉為寬鬆、價格面臨下行壓力；記憶體合約價大致維持高檔",
+          "src": "tf-20260730-13158"
+        },
+        {
+          "name": "NAND 合約價季變化",
+          "value": "2026 年第 4 季 +20%、2027 年第 1 季 +10%、2027 年第 2 季 +5%、2027 年第 3 季 +5%（2026 年第四季為 TrendForce 預測區間 15–20% 的上緣；2027 年依美光「NAND 供給 2027–2028 年仍受限」的看法假設續漲）",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "位元出貨",
+          "value": "DRAM 與 NAND 每季成長 5%（約當年增 22%；美光預估 2027 年產業 DRAM 位元成長 low-20s%、NAND mid-20s%，三個情境相同）；FY2027Q1 只有 13 週（FY2026Q4 為 14 週），另乘 13/14",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "財測隱含的成本墊高",
+          "value": "FY2027Q1 起每位元現金成本一次墊高 28.9% 並延續：由美光財測隱含的銷貨成本（615 億 ×（1 − 86.25%）≈ 84.6 億美元）反推，反映 FY2026Q4 加發獎金計入存貨、FY2027 獎金較高等模型趨勢看不到的成本",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "每位元現金成本（FY2027 第二季起）",
+          "value": "沿用資料估計的歷史趨勢 −6.7%／年，代表製程轉換的成本下降延續；這與美光「新產品與綠地新廠會使混合 DRAM 每位元成本由目前水準上升」的說法相反，屬於樂觀假設",
+          "src": "rm-fy2026q3"
+        },
+        {
+          "name": "HBM 晶圓交換比與比重",
+          "value": "交換比 3、3、3、3（FY2027Q1–Q4，HBM3E 約 3 倍）；HBM 占 DRAM 位元比重維持 6%（本模型假設）",
+          "src": "rm-fy2024q2"
+        },
+        {
+          "name": "資本支出與折舊",
+          "value": "淨資本支出 FY2027 各季 115 億美元、135 億美元、140 億美元、140 億美元（第一季約 115 億、上半年約 250 億為美光說法，下半年每季 140 億為本模型假設），以 θ 推算折舊",
+          "src": "rm-fy2026q4"
+        },
+        {
+          "name": "營業費用、業外、稅率與股數",
+          "value": "非 GAAP 營業費用各季 20.6 億美元、24.1 億美元、24.1 億美元、24.1 億美元；GAAP 營業費用再加 2.5 億美元、GAAP 毛利率比非 GAAP 低 0.3 個百分點（依 FY2027Q1 財測）；業外收支每季約 9.4 億美元；稅率 15.5%；稀釋股數 11.5 億股",
+          "src": "pr-fy2026q4"
+        },
+        {
+          "name": "與美光 FY2027 展望對照",
+          "value": "美光預期 FY2027 每季營收逐季成長、第一季是全年毛利率低點；本情境第一季營收 612 億美元（在財測區間 600–630 億美元內），營收逐季成長、第二季起毛利率都高於第一季，與公司展望方向一致",
+          "src": "rm-fy2026q4"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "FY2027Q1",
+          "revenue": 61180,
+          "grossMargin": 86.18,
+          "operatingIncome": 50230,
+          "netIncome": 43236,
+          "eps": 37.91,
+          "known": [],
+          "note": "DRAM 售價 +13.7%、位元 −2.5%；NAND 售價 +21.8%、位元 −2.5%；折舊 26.4 億美元。"
+        },
+        {
+          "period": "FY2027Q2",
+          "revenue": 77529,
+          "grossMargin": 88.66,
+          "operatingIncome": 65838,
+          "netIncome": 56424,
+          "eps": 49.42,
+          "known": [],
+          "note": "DRAM 售價 +23.4%、位元 +5%；NAND 售價 +14%、位元 +5%；折舊 28.9 億美元。"
+        },
+        {
+          "period": "FY2027Q3",
+          "revenue": 89862,
+          "grossMargin": 89.79,
+          "operatingIncome": 77755,
+          "netIncome": 66494,
+          "eps": 58.2,
+          "known": [],
+          "note": "DRAM 售價 +11.7%、位元 +5%；NAND 售價 +7%、位元 +5%；折舊 32.3 億美元。"
+        },
+        {
+          "period": "FY2027Q4",
+          "revenue": 98639,
+          "grossMargin": 90.28,
+          "operatingIncome": 86094,
+          "netIncome": 73541,
+          "eps": 64.35,
+          "known": [],
+          "note": "DRAM 售價 +4.3%、位元 +5%；NAND 售價 +5.3%、位元 +5%；折舊 36.2 億美元。"
+        },
+        {
+          "period": "FY2027",
+          "revenue": 327211,
+          "grossMargin": 88.99,
+          "operatingIncome": 279917,
+          "netIncome": 239695,
+          "eps": 209.89,
+          "known": [],
+          "note": "四季加總；毛利率為全年毛利 ÷ 全年營收，EPS 為四季加總。營業利益與淨利為 GAAP，毛利率與 EPS 為非 GAAP。"
+        }
+      ]
+    }
+  ],
+  "sensitivities": [
+    {
+      "driver": "含 HBM 的 DRAM 合約價（2027 年第 1–3 季）",
+      "change": "每季多漲 5 個百分點",
+      "effect": "FY2027 營收 +120 億美元（+4.1%）、非 GAAP 毛利率 +0.5 個百分點、非 GAAP EPS +8.81 美元"
+    },
+    {
+      "driver": "含 HBM 的 DRAM 合約價（2027 年第 1–3 季）",
+      "change": "每季少漲 5 個百分點",
+      "effect": "FY2027 營收 −114 億美元（−3.9%）、非 GAAP 毛利率 −0.51 個百分點、非 GAAP EPS −8.38 美元"
+    },
+    {
+      "driver": "NAND 合約價（2027 年第 1–3 季）",
+      "change": "每季多漲 5 個百分點",
+      "effect": "FY2027 營收 +56 億美元（+1.9%）、非 GAAP 毛利率 +0.24 個百分點、非 GAAP EPS +4.08 美元"
+    },
+    {
+      "driver": "NAND 合約價（2027 年第 1–3 季）",
+      "change": "每季少漲 5 個百分點",
+      "effect": "FY2027 營收 −52 億美元（−1.8%）、非 GAAP 毛利率 −0.23 個百分點、非 GAAP EPS −3.82 美元"
+    },
+    {
+      "driver": "價格傳導係數（合約價變動反映到美光售價的比例）",
+      "change": "DRAM 與 NAND 各減 0.1",
+      "effect": "FY2027 營收 −80 億美元（−2.7%）、非 GAAP 毛利率 −0.36 個百分點、非 GAAP EPS −5.86 美元"
+    },
+    {
+      "driver": "DRAM 與 NAND 位元出貨",
+      "change": "每季少 1 個百分點",
+      "effect": "FY2027 營收 −72 億美元（−2.5%）、非 GAAP 毛利率 −0.05 個百分點、非 GAAP EPS −4.71 美元"
+    },
+    {
+      "driver": "每位元現金成本（FY2027 第二季起）",
+      "change": "每季多上升 2%",
+      "effect": "FY2027 非 GAAP 毛利率 −0.35 個百分點、非 GAAP EPS −0.74 美元（營收不變）"
+    },
+    {
+      "driver": "營業費用（非 GAAP）",
+      "change": "全年多 10 億美元",
+      "effect": "FY2027 非 GAAP EPS −0.73 美元（營收不變）"
+    },
+    {
+      "driver": "有效稅率",
+      "change": "多 2 個百分點",
+      "effect": "FY2027 非 GAAP EPS −4.33 美元（營收不變）"
+    }
+  ],
+  "limitations": [
+    "美光只以「低個位數」「約 20%」等區間文字描述位元與售價的季變化，本模型換算成中值使用，單季可能有 2–3 個百分點的誤差；成本也沒有分 DRAM／NAND 揭露，每位元成本只能推算混合指數。",
+    "回測代入當季實際的合約價與位元出貨，衡量的是「價格已知時」模型拆解營收與成本的能力；真正預測時價格本身難以預知（TrendForce 2025 年第四季初預測 DRAM 季增 8–13%，事後約 45–50%），事前誤差見「改用季初預測價」的對照模型。",
+    "TrendForce 合約價是產業平均，美光的產品組合（HBM、資料中心 SSD）與長約（策略客戶協議多有價格上下限）使售價變動與合約價不同；價格傳導係數以 2016–2026 年資料估計，未來長約比重提高後可能改變。",
+    "HBM 位元比重與晶圓交換比是依美光公開說法設定的假設（2025 年產業 HBM 位元約 6%、交換比約 3 倍），美光未揭露自身數字；HBM4／HBM4E 的交換比更高，可能使每位元成本上升得比模型快。回測中晶圓當量調整沒有提高準確度（見選定模型說明的消融檢驗），這部分主要依美光說法，而不是資料驗證的結果。",
+    "2027 年各季合約價是本模型假設：TrendForce 只公布 2026 年第四季的數字，2027 年只有方向性看法（DRAM 吃緊、NAND 下半年轉寬鬆、HBM 平均售價年增 121%）。保守與樂觀情境的差距（FY2027 營收 2,482 億美元–3,272 億美元）主要來自這些假設。",
+    "折舊由資本支出以統計關係推算；FY2027 資本支出以廠房營建為主，廠房要完工啟用後才開始提列折舊，模型可能高估 FY2027 折舊。獎金、存貨跌價、14 週季度等一次性因素不在成本趨勢內；FY2027 的獎金等成本是由 FY2027Q1 財測反推後套用並假設延續，實際變化不同時毛利率會跟著偏離。",
+    "營業費用、業外收支、稅率與股數依 FY2027Q1 財測與美光說法設定，並假設全年不變；美光現金部位持續增加，且表示 2026 年 12 月起提高股東回饋（rm-fy2026q4），利息收入與稀釋股數都可能改變，EPS 會跟著變動。"
+  ],
+  "sourceKeys": [
+    "sec-companyfacts",
+    "pr-fy2026q4",
+    "rm-fy2026q4",
+    "rm-fy2026q3",
+    "rm-fy2026q2",
+    "rm-fy2026q1",
+    "rm-fy2025q4",
+    "rm-fy2025q2",
+    "rm-fy2024q4",
+    "rm-fy2024q2",
+    "pr-fy2024q4",
+    "pr-fy2025q1",
+    "pr-fy2025q2",
+    "pr-fy2025q3",
+    "pr-fy2025q4",
+    "pr-fy2026q1",
+    "pr-fy2026q2",
+    "pr-fy2026q3",
+    "tf-20260930-13258",
+    "tf-20260929-13255",
+    "tf-20260730-13158",
+    "tf-20260721-13148",
+    "tf-20260825-13198"
+  ]
+}

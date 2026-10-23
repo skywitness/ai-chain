@@ -1,0 +1,127 @@
+---
+/**
+ * Test-period errors of every candidate (rows) per target (columns), the selected model highlighted; then the
+ * robustness checks the model reports (事前、連續預測、訓練期) for the candidates that have them.
+ *   <MetricsTable b={bundle} />
+ */
+import Icon from '../../ui/Icon.astro';
+import { formatNumber } from '../../../lib/format';
+import type { FcBundle } from '../../../lib/forecast-data';
+import { candidateRole, errHeadline, metricKeyLabel, TARGET_SHORT, TARGETS, targetLabel, type Target } from './fc-labels';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m } = b;
+const cands = m.candidates.map((c) => ({ c, role: candidateRole(c) }));
+const cols = TARGETS.filter((t) => cands.some(({ c }) => c.metrics[t]));
+const nOf = (t: Target) => Math.max(0, ...cands.map(({ c }) => c.metrics[t]?.n ?? 0));
+const best = new Map<Target, number>();
+for (const t of cols) {
+  const vals = cands
+    .filter(({ role }) => role.kind !== 'diagnostic')
+    .map(({ c }) => (t === 'grossMargin' || t === 'eps' ? c.metrics[t]?.mae : c.metrics[t]?.mape))
+    .filter((v): v is number => v != null);
+  if (vals.length) best.set(t, Math.min(...vals));
+}
+const isBest = (t: Target, c: (typeof cands)[number]['c']) => {
+  const v = t === 'grossMargin' || t === 'eps' ? c.metrics[t]?.mae : c.metrics[t]?.mape;
+  return v != null && v === best.get(t);
+};
+
+// robustness variants: metric keys with a suffix
+const variantKeys = [...new Set(cands.flatMap(({ c }) => Object.keys(c.metrics)))].filter((k) => /(ExAnte|Dynamic|Train)$/.test(k));
+const variantCols = variantKeys.map((k) => ({ k, ...metricKeyLabel(b, k) })).filter((v) => v.target);
+const variantRows = cands.filter(({ c }) => variantCols.some((v) => c.metrics[v.k]));
+const fmtV = (t: Target, x: { mape?: number | undefined; mae?: number | undefined; n: number } | undefined) => {
+  if (!x) return '—';
+  if (t === 'grossMargin') return x.mae != null ? formatNumber(x.mae, { digits: 1 }) : '—';
+  if (t === 'eps') return x.mae != null ? formatNumber(x.mae, { digits: 2 }) : '—';
+  return x.mape != null ? `${formatNumber(x.mape, { digits: 1 })}%` : '—';
+};
+const unitShort = (t: Target) => (t === 'grossMargin' ? '個百分點' : t === 'eps' ? b.meta.epsUnit : 'MAPE');
+---
+
+<div class="mem-tablewrap mem-tablewrap--cards" tabindex="0" role="region" aria-label="各模型的回測誤差">
+  <table class="mem-table fc-mtable">
+    <caption class="ch-sr">各模型在回測期的平均誤差</caption>
+    <thead>
+      <tr>
+        <th scope="col">模型</th>
+        {
+          cols.map((t) => (
+            <th scope="col" class="num">
+              {targetLabel(b, t)}
+              <small>
+                {t === 'grossMargin' ? 'MAE（個百分點）' : t === 'eps' ? `MAE（${b.meta.epsUnit}）與 MAPE` : 'MAPE'} · {nOf(t)} 季
+              </small>
+            </th>
+          ))
+        }
+      </tr>
+    </thead>
+    <tbody>
+      {
+        cands.map(({ c, role }) => (
+          <tr class:list={[role.kind === 'selected' && 'is-selected', `fc-mrow--${role.kind}`]}>
+            <th scope="row" data-label="模型">
+              {c.name}
+              <small>{role.label}</small>
+            </th>
+            {cols.map((t) => (
+              <td class:list={['num', isBest(t, c) && 'is-best']} data-label={TARGET_SHORT[t]}>
+                {c.metrics[t] ? errHeadline(b, t, c.metrics[t]) : <span class="mem-na">—</span>}
+              </td>
+            ))}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+<p class="mem-fine">
+  粗體是每一欄誤差最小者（不含診斷用模型）。MAPE＝平均絕對百分比誤差，MAE＝平均絕對誤差；樣本只有 {nOf('grossMargin')} 季，而且同一段期間也用來選模，數字的差距不一定顯著。
+</p>
+
+{
+  variantCols.length > 0 && (
+    <details class="mem-more fc-robust">
+      <summary>
+        穩健性檢驗：換一種考法時誤差會變多少
+        <Icon name="chevron-down" />
+      </summary>
+      <div class="mem-tablewrap" tabindex="0" role="region" aria-label="穩健性檢驗">
+        <table class="mem-table fc-rtable">
+          <caption class="ch-sr">穩健性檢驗</caption>
+          <thead>
+            <tr>
+              <th scope="col">模型</th>
+              {variantCols.map((v) => (
+                <th scope="col" class="num">
+                  {targetLabel(b, v.target!)}（{unitShort(v.target!)}）
+                  <small>{v.variant}</small>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {variantRows.map(({ c, role }) => (
+              <tr class:list={[role.kind === 'selected' && 'is-selected']}>
+                <th scope="row" data-label="模型">
+                  {c.name}
+                  <small>{role.label}</small>
+                </th>
+                {variantCols.map((v) => (
+                  <td class="num" data-label={`${targetLabel(b, v.target!)}・${v.variant}`}>
+                    {fmtV(v.target!, c.metrics[v.k])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  )
+}

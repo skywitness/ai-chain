@@ -3,7 +3,8 @@
  * /memory/ 「記憶體與儲存專題：供需、市占、產能與擴產」 — 由淺入深:
  * hero → 一分鐘看懂 (pages entry "memory" + 記憶體家族 + click-to-load hbm hierarchy scene) → 供需燈號 (one card
  * per market, computed) → 全球記憶體產能地圖 (memory-fab-map scene + filterable, sortable fab table) → one section
- * per market (HBM, DRAM, NAND 與 SSD, HDD 與新興記憶體) → 擴產總表 → 風險與觀察指標 → 下一步 → 資料來源.
+ * per market (HBM, DRAM, NAND 與 SSD, HDD 與新興記憶體) → 擴產總表 → 財報模型 (cards to the sub-pages /memory/phison/ and
+ * /memory/micron/, src/pages/memory/[company].astro) → 風險與觀察指標 → 下一步 → 資料來源.
  * Data: src/data/memory/*.yaml via src/lib/memory-data.ts (validated with src/schemas/memory.ts; check with
  * npx tsx scripts/check-memory.ts). Sources of the intro and of every data file are merged into one numbered list.
  */
@@ -22,6 +23,8 @@ import ExpansionTable from '../../components/memory/ExpansionTable.astro';
 import FabTable from '../../components/memory/FabTable.astro';
 import MemoryFamily from '../../components/memory/MemoryFamily.astro';
 import MemoryRisks from '../../components/memory/MemoryRisks.astro';
+import ForecastLinks from '../../components/memory/forecast/ForecastLinks.astro';
+import { FC_COMPANIES, hasForecast } from '../../lib/forecast-data';
 import '../../components/memory/memory.css';
 import {
   BALANCE_META,
@@ -72,12 +75,16 @@ const byCountry = countries
   .map((c) => ({ c, n: fabs.filter((f) => f.country === c).length }))
   .sort((a, b) => b.n - a.n);
 
+// financial-model sub-pages (/memory/phison/, /memory/micron/): linked when their data files exist
+const hasModels = FC_COMPANIES.some((c) => hasForecast(c));
+
 const toc = [
   { href: '#basics', label: '一分鐘看懂' },
   { href: '#dashboard', label: '供需燈號' },
   { href: '#fabs', label: '產能地圖' },
   ...data.markets.map((m) => ({ href: `#${m.category}`, label: CATEGORY_META[m.category].short })),
   { href: '#expansions', label: '擴產總表' },
+  ...(hasModels ? [{ href: '#models', label: '財報模型' }] : []),
   { href: '#risks', label: '風險與觀察' },
   { href: '#sources', label: '資料來源' },
 ];
@@ -259,6 +266,20 @@ const jsonLd = [
     </div>
     <ExpansionTable rows={expansions} />
   </section>
+
+  {
+    hasModels && (
+      <section class="container section" id="models" aria-labelledby="models-h">
+        <div class="sec-head">
+          <h2 id="models-h">財報模型：群聯與美光</h2>
+          <p class="sec-head__lede">
+            記憶體價格怎麼傳到公司的財報？兩個子頁用本頁的合約價資料各做一個模型：群聯是買 NAND 做模組的公司，重點在庫存的時間差；美光是自己生產 DRAM 與 NAND 的原廠，重點在每位元成本、折舊與 HBM。每個模型都先回測、再跑保守、基準、樂觀三種情境。
+          </p>
+        </div>
+        <ForecastLinks />
+      </section>
+    )
+  }
 
   <section class="container section" id="risks" aria-labelledby="risks-h">
     <div class="sec-head">

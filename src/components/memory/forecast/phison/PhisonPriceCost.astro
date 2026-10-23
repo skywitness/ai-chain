@@ -1,0 +1,149 @@
+---
+/**
+ * 價格與成本（群聯）: NAND contract-price index vs the model's estimated purchase-cost index, the purchase → sale lag
+ * (which quarters the goods sold in a quarter were bought in), the cost ÷ price ratio, and actual vs scenario
+ * gross margins.
+ *   <PhisonPriceCost b={bundle} />
+ */
+import MultiLine from '../../../charts/MultiLine.astro';
+import ChartCites from '../ChartCites.astro';
+import FcCite from '../FcCite.astro';
+import LagFlow from './LagFlow.astro';
+import ScenarioLines from '../ScenarioLines.astro';
+import {
+  actualGrossMargin,
+  derivedOf,
+  fcPct,
+  paramStarting,
+  nextQuarter,
+  periodLabel,
+  priceKeys,
+  qIndex,
+  quartersFrom,
+  type Derived,
+  type FcBundle,
+} from '../../../../lib/forecast-data';
+import { formatNumber } from '../../../../lib/format';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m, inputs, meta } = b;
+const from = meta.historyFrom;
+const pts = (d: Derived | undefined) =>
+  (d?.points ?? []).filter((p) => qIndex(p.period) >= qIndex(from)).map((p) => ({ x: p.period, y: p.value, forecast: p.status === 'forecast' }));
+const price = derivedOf(m, 'selling-price-index');
+const cost = derivedOf(m, 'purchase-cost-index');
+const fifo = derivedOf(m, 'purchase-cost-index-fifo');
+const ratio = derivedOf(m, 'cost-price-ratio');
+const last = inputs.quarters.at(-1)!;
+const x = paramStarting(m, `預測起點 ${last.period} 的購入成本`);
+const fsKeys = [...new Set(quartersFrom(inputs, from).map((q) => q.src))];
+const xMin = ratio?.points.filter((p) => p.status !== 'forecast').reduce((a, p) => (p.value < a.value ? p : a));
+const xEnd = ratio?.points.at(-1);
+const pEnd = price?.points.at(-1);
+const cEnd = cost?.points.at(-1);
+const vintages = m.derived.filter((d) => d.id.startsWith('purchase-vintage-')).sort((p, q) => p.id.localeCompare(q.id));
+const hist = ratio?.points.filter((p) => p.status !== 'forecast' && qIndex(p.period) >= qIndex(from)) ?? [];
+const xMax = hist.length ? hist.reduce((a, p) => (p.value > a.value ? p : a)) : undefined;
+const wd = inputs.events.find((e) => /全年存貨跌價損失/.test(e.title));
+const gmAt = (p: string) => {
+  const q = inputs.quarters.find((r) => r.period === p);
+  return q ? actualGrossMargin('phison', q) : undefined;
+};
+---
+
+<div class="sec-head">
+  <h2 id="price-cost-h">價格與成本：賣價跟著市價，成本落後幾季</h2>
+  <p class="sec-head__lede">
+    模型用 TrendForce 的 NAND Flash 整體合約價當作群聯的「售價指數」，再從財報的營業成本與存貨推回每一季買進多少貨、以當季合約價計價，算出賣出商品的平均「購入成本指數」。兩條線的差距，就是低價庫存帶來的毛利。
+  </p>
+</div>
+
+<MultiLine
+  title="NAND 合約價指數與推估的購入成本"
+  subtitle={`${periodLabel(from)} 起；${periodLabel(nextQuarter(last.period))} 起為基準情境（虛線）`}
+  unit={price?.unit ?? '指數'}
+  badge="模型推估"
+  series={[
+    { name: '售價指數（合約價）', color: 'var(--chart-1)', points: pts(price) },
+    { name: '購入成本（移動加權平均）', color: 'var(--chart-2)', points: pts(cost) },
+    { name: '購入成本（先進先出，對照）', color: 'var(--chart-7)', points: pts(fifo) },
+  ]}
+  digits={1}
+  height={300}
+  notes={[price?.note, cost?.note]}
+  xTitle="季度"
+  as="h3"
+  class="mem-chart fc-chart-wide fc-years"
+/>
+<ChartCites label="合約價各季出處" keys={priceKeys(b)} />
+<ChartCites label="營業成本與存貨" keys={fsKeys} />
+
+<div class="fc-lag" aria-labelledby="lag-h">
+  <h3 class="fc-h3" id="lag-h">購入期 → 銷售期：這一季賣的貨是什麼時候買的</h3>
+  <p class="fc-p">
+    群聯的存貨用加權平均法計價：每一季的進貨和手上的舊庫存混在一起，賣出時用平均成本。下面是模型推估的「進貨季度分布」：一季賣出的商品，有多少比例是在哪一季、以多少合約價買進的。越往下越新、價格越高；只要還有一大塊是在漲價前買的，平均成本就會明顯低於售價。
+  </p>
+  <div class="fc-lag__grid">{vintages.map((d) => <LagFlow b={b} vintage={d} />)}</div>
+  <p class="mem-fine">
+    進貨量由財報推算：進貨 ≈ 營業成本 + 存貨增加，以當季合約價換成「NAND 當量」，所以每一季的比例是模型推估，不是群聯公布的數字。
+  </p>
+</div>
+
+<div class="mem-grid mem-grid--charts fc-pc-grid">
+  <div>
+    <MultiLine
+      title="購入成本 ÷ 售價（x）"
+      subtitle="小於 1：庫存比市價便宜，毛利率被推高；大於 1：庫存比市價貴，毛利率受壓"
+      unit="倍"
+      badge="模型推估"
+      series={[
+        { name: '購入成本 ÷ 售價', color: 'var(--chart-2)', points: pts(ratio) },
+        // reference: above 1 the inventory costs more than the market price
+        { name: '成本＝售價（x＝1）', color: 'var(--c-fg-subtle)', points: pts(ratio).map((p) => ({ x: p.x, y: 1 })) },
+      ]}
+      digits={2}
+      includeZero={false}
+      area={false}
+      endLabels={false}
+      height={240}
+      notes={[
+        xMin && xEnd
+          ? `模型推估的最低點是 ${periodLabel(xMin.period)} 的 ${formatNumber(xMin.value, { digits: 2 })}；基準情境下新進貨逐季拉高平均成本，${periodLabel(xEnd.period)} 回到 ${formatNumber(xEnd.value, { digits: 2 })}（售價指數 ${formatNumber(pEnd?.value ?? 0, { digits: 0 })}、購入成本指數 ${formatNumber(cEnd?.value ?? 0, { digits: 0 })}）。`
+          : null,
+      ]}
+      xTitle="季度"
+      as="h3"
+      class="mem-chart fc-years"
+    />
+  </div>
+  <div>
+    <ScenarioLines
+      as="h3"
+      b={b}
+      target="grossMargin"
+      history={qIndex(last.period) - qIndex(from) + 1}
+      title="毛利率：實際與三種情境"
+      height={240}
+      notes={['實際值為財報的營業毛利 ÷ 營業收入；預測期由購入成本 ÷ 售價推算，NAND 以外的成本（控制晶片、封測、人工）占比固定在最新一季。']}
+    />
+  </div>
+</div>
+<ChartCites label="毛利率出處" keys={fsKeys} />
+{
+  x && xMax && xMin && (
+    <p class="fc-p fc-readout">
+      <strong>讀圖重點：</strong>
+      {periodLabel(from)} 以來 x 最高是 {periodLabel(xMax.period)} 的 {formatNumber(xMax.value, { digits: 2 })}：跌價期手上是較貴的庫存
+      {wd && (
+        <>
+          {`，群聯 ${wd.title}`}
+          <FcCite k={wd.src} />
+        </>
+      )}
+      。合約價回升後 x 降到 1 以下，最低是 {periodLabel(xMin.period)} 的 {formatNumber(xMin.value, { digits: 2 })}，同一季毛利率 {fcPct(gmAt(xMin.period))}。三種情境下 x 都會隨新進貨上升、毛利率由高點回落，差別在速度。
+    </p>
+  )
+}

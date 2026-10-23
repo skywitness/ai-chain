@@ -1,0 +1,106 @@
+---
+/**
+ * 一分鐘看懂（美光）: Micron makes DRAM and NAND in its own fabs, so its margin is price minus cost per bit — capex
+ * that turns into depreciation, node transitions that cut cost per bit, and HBM that needs more wafers per bit.
+ *   <MicronBasics b={bundle} />
+ */
+import FlowSteps from '../../../content/FlowSteps.astro';
+import FcCite from '../FcCite.astro';
+import StatusTag from '../../StatusTag.astro';
+import {
+  actualGrossMargin,
+  derivedOf,
+  fcMoney,
+  fcPct,
+  nextGuidance,
+  paramStarting,
+  periodLabel,
+  type FcBundle,
+} from '../../../../lib/forecast-data';
+import { formatDateRange, formatNumber } from '../../../../lib/format';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m } = b;
+const last = inputs.quarters.at(-1)!;
+const fy = last.period.slice(0, 6);
+const fyQs = inputs.quarters.filter((q) => q.period.startsWith(fy));
+const capexFy = fyQs.reduce((s, q) => s + (q.capex ?? 0), 0);
+const dramShare = last.dramRevenue != null ? (last.dramRevenue / last.revenue) * 100 : null;
+const nandShare = last.nandRevenue != null ? (last.nandRevenue / last.revenue) * 100 : null;
+const gm = actualGrossMargin('micron', last);
+const cpb = derivedOf(m, 'cost-per-bit');
+const cpbBase = cpb?.points.find((p) => p.value === 100)?.period;
+const cpbNow = cpb?.points.find((p) => p.period === last.period)?.value;
+const depShare = derivedOf(m, 'depreciation-share')?.points.find((p) => p.period === last.period)?.value;
+const pass = paramStarting(m, 'DRAM 價格傳導斜率');
+// slope and intercept together: the parameter note states the effect of a 10% contract-price rise
+const passPct = /售價約增\s*([\d.]+)%/.exec(pass?.note ?? '')?.[1];
+const trade = paramStarting(m, 'HBM 晶圓交換比');
+const trend = paramStarting(m, '每位元現金成本趨勢');
+const g = nextGuidance(b);
+const hbmEvent = inputs.events.find((e) => /3 倍/.test(e.title));
+---
+
+<div class="mem-basics__grid">
+  <div class="prose mem-basics__prose">
+    <h2 id="basics-h">美光怎麼賺錢：售價減去每位元成本</h2>
+    <p>
+      美光（Micron Technology）是記憶體原廠，自己設計晶片，也在美國、新加坡、日本與台灣等地的晶圓廠生產 DRAM 與 NAND Flash。{periodLabel(last.period, 'long')}（{formatDateRange(last.start, last.end)}）營收 {fcMoney(last.revenue, 'USD')}，DRAM（含 HBM）占 {fcPct(dramShare, 0)}、NAND 占 {fcPct(nandShare, 0)}<FcCite k={last.src} />。
+    </p>
+    <p>
+      和群聯不同，美光的成本主要不是買來的料，而是<strong>晶圓廠</strong>：蓋廠、買設備的資本支出在之後幾年以折舊進入銷貨成本，再加上材料、電力與人工等現金成本。{periodLabel(last.period, 'long')}折舊攤銷約占非 GAAP 銷貨成本的 {fcPct(depShare, 0)}。製程每前進一代，一片晶圓能做出更多位元，所以<strong>每位元成本</strong>長期下降：模型由財報推算的混合每位元成本指數，從 {cpbBase ? periodLabel(cpbBase) : '基期'} 的 100 降到 {periodLabel(last.period)} 的 {cpbNow != null ? formatNumber(cpbNow, { digits: 1 }) : '—'}{trend ? `；扣除固定折舊後的每位元現金成本，最近 12 季約每年下降 ${formatNumber(Math.abs(trend.value), { digits: 1 })}%` : ''}。
+    </p>
+    <p>
+      售價則大致跟著合約價：模型估計 TrendForce 的 DRAM 合約價（含 HBM）季增 10% 時，美光的 DRAM 平均售價約季增 {passPct ?? '—'}%。售價大漲、每位元成本大致持平，毛利率就擴大到 {fcPct(gm)}（非 GAAP）<FcCite k={last.src} />。
+      HBM（高頻寬記憶體）是另一個變數：同樣的位元數，HBM3E 約要 DDR5 的 {trade ? formatNumber(trade.value) : '3'} 倍晶圓{hbmEvent && <FcCite k={hbmEvent.src} />}，HBM 比重越高，每位元成本越高，但售價也高得多。
+    </p>
+  </div>
+  <aside class="mem-basics__aside fc-figs" aria-label="關鍵數字">
+    <p class="fc-figs__title">關鍵數字</p>
+    <ul class="fc-figs__list" role="list">
+      <li class="mem-fig">
+        <p class="mem-fig__label">{periodLabel(last.period)} 毛利率（非 GAAP）</p>
+        <p class="mem-fig__value"><strong>{fcPct(gm)}</strong></p>
+        <p class="mem-fig__meta">財報<FcCite k={last.src} /></p>
+      </li>
+      <li class="mem-fig">
+        <p class="mem-fig__label">{fy} 淨資本支出</p>
+        <p class="mem-fig__value"><strong>{formatNumber(capexFy / 100)}</strong><span class="mem-fig__unit">億美元</span></p>
+        <p class="mem-fig__meta">四季加總{[...new Set(fyQs.map((q) => q.src))].map((k) => <FcCite k={k} />)}</p>
+      </li>
+      <li class="mem-fig" data-status="estimate">
+        <p class="mem-fig__label">每位元成本指數<StatusTag status="estimate" /></p>
+        <p class="mem-fig__value"><strong>{cpbNow != null ? formatNumber(cpbNow, { digits: 1 }) : '—'}</strong></p>
+        <p class="mem-fig__meta">{cpbBase ? periodLabel(cpbBase) : '基期'}＝100，由財報推算</p>
+      </li>
+      {
+        g && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">{periodLabel(g.period)} 營收財測</p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(g.revenue / 100)}</strong>
+              <span class="mem-fig__unit">億美元</span>
+            </p>
+            <p class="mem-fig__meta">
+              美光財測中值{g.src && <FcCite k={g.src} />}
+            </p>
+          </li>
+        )
+      }
+    </ul>
+  </aside>
+</div>
+<FlowSteps
+  class="fc-flow"
+  title="從蓋廠到認列毛利"
+  steps={[
+    { title: '資本支出蓋廠', detail: `${fy} 淨資本支出約 ${formatNumber(capexFy / 100)} 億美元` },
+    { title: '折舊攤入成本', detail: '設備與廠房分好幾年提列折舊，產量少時每位元分攤更多' },
+    { title: '製程微縮', detail: '每片晶圓的位元數增加，每位元成本下降' },
+    { title: 'HBM 吃晶圓', detail: `同樣位元約要 ${trade ? formatNumber(trade.value) : '3'} 倍晶圓，推高每位元成本` },
+    { title: '依合約價賣出', detail: '毛利＝位元 ×（售價 − 每位元成本）' },
+  ]}
+/>

@@ -63,6 +63,9 @@ export const ROUTES = {
   trends: '/trends/',
   taiwan: '/taiwan/',
   memory: '/memory/',
+  /** sub-pages of the memory topic: financial models (src/pages/memory/[company].astro) */
+  memoryPhison: '/memory/phison/',
+  memoryMicron: '/memory/micron/',
   glossary: '/glossary/',
   sources: '/sources/',
   about: '/about/',

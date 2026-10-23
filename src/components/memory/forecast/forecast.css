@@ -1,0 +1,1186 @@
+/*
+ * Styles of the financial-model sub-pages of the memory topic (/memory/phison/, /memory/micron/). Loaded after
+ * src/components/memory/memory.css (hero, sticky bar, tables, figures, disclosures) and only adds the fc-* pieces.
+ * Status language is shared with the memory topic: 估計 = hatched, 預測／模型推估 = dashed outline; this page adds
+ * 已公布 (solid, positive tint) and 美光財測 (solid amber) so the three kinds of numbers never look alike.
+ */
+@import './forecast-links.css';
+
+@layer components {
+  :root {
+    --fc-actual: var(--chart-1);
+    /* reported values in the backtest and scenario charts: ink, so every coloured line is a model */
+    --fc-actual-ink: color-mix(in srgb, var(--c-fg) 88%, var(--c-bg));
+    --fc-model: var(--chart-2);
+    --fc-bear: var(--chart-7);
+    --fc-base: var(--chart-2);
+    --fc-bull: var(--chart-3);
+    --fc-guide: var(--chart-4);
+  }
+
+  /* ───────────── shared bits ───────────── */
+  .fc-h3 {
+    margin: var(--space-7) 0 var(--space-3);
+    font-size: var(--fs-xl);
+    line-height: 1.35;
+    scroll-margin-block-start: calc(var(--header-h) + var(--mem-bar-h, 0px) + var(--space-3));
+  }
+  .fc-h4 {
+    margin: 0 0 var(--space-1);
+    font-size: var(--fs-m);
+    font-weight: var(--fw-bold);
+    line-height: 1.4;
+  }
+  .fc-p {
+    margin: 0 0 var(--space-4);
+    max-width: 48em;
+    font-size: var(--fs-s);
+    line-height: 1.8;
+    color: var(--c-fg-muted);
+  }
+  .fc-readout {
+    margin-block-start: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-inline-start: 3px solid var(--fc-model);
+    border-radius: 0 var(--radius-m) var(--radius-m) 0;
+    background: color-mix(in srgb, var(--fc-model) 7%, var(--c-bg-elev));
+    color: var(--c-fg);
+    max-width: none;
+  }
+  .fc-cites {
+    margin: var(--space-2) 0 0;
+    padding-inline: var(--space-1);
+  }
+  .fc-cites + .fc-cites {
+    margin-block-start: 0;
+  }
+  .fc-cites__after {
+    margin-inline-start: 0.5em;
+  }
+  .fc-cites + .mem-grid,
+  .fc-cites + .fc-lag,
+  .fc-cites + .fc-inv-detail,
+  .fc-cites + .fc-h3,
+  .fc-cites + .mem-chart {
+    margin-block-start: var(--space-6);
+  }
+  .fc-chart-wide .ch-plot {
+    max-inline-size: none;
+  }
+  /* long quarterly histories: label the years only (the quarter of each point is in its tooltip and table) */
+  .fc-years .ch-xl {
+    display: none;
+  }
+  .fc-years .ch-x[data-collapse] {
+    height: 1.4em;
+  }
+  .fc-years .ch-x[data-collapse] :is(.ch-xg, .ch-xt) {
+    top: 0;
+  }
+  /* phones: nine-year histories leave ~33 px per year, so the year labels (「FY26」) get a little smaller to stay apart */
+  @container ch (width < 30rem) {
+    :is(.fc-years, .fc-qbars) .ch-xg {
+      padding-inline: 2px 0;
+      font-size: 0.6875rem;
+      letter-spacing: -0.02em;
+    }
+    /* QuarterBars whose last year has one or two bars: drop that year's label (the tick stays; tooltip and table say it) */
+    .fc-qbars--tail .ch-xg:not(:has(~ .ch-xg)) {
+      visibility: hidden;
+    }
+  }
+  @container ch (width < 18rem) {
+    :is(.fc-years, .fc-qbars) .ch-xg {
+      font-size: 0.625rem;
+    }
+    /* 320 px phones: the last year label is pushed against the previous one by the right-edge clamp */
+    :is(.fc-years, .fc-qbars) .ch-xg:not(:has(~ .ch-xg)) {
+      visibility: hidden;
+    }
+  }
+  .fc-sent {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding-inline-start: 1.1em;
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .fc-sent li::marker {
+    color: var(--fc-model);
+  }
+  .fc-tag {
+    display: inline-block;
+    margin-inline: 0.35em 0.15em;
+    padding: 0 0.45em;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-s);
+    font-size: 0.72rem;
+    font-weight: var(--fw-semibold);
+    line-height: 1.55;
+    letter-spacing: 0.02em;
+    vertical-align: 0.12em;
+    white-space: nowrap;
+    color: var(--c-fg-muted);
+    background: var(--c-bg-elev);
+  }
+  .fc-tag--known {
+    border-color: color-mix(in srgb, var(--c-pos) 60%, transparent);
+    background: color-mix(in srgb, var(--c-pos) 12%, var(--c-bg-elev));
+    color: var(--c-fg);
+  }
+  .fc-tag--guidance {
+    border-color: color-mix(in srgb, var(--fc-guide) 80%, transparent);
+    background: color-mix(in srgb, var(--fc-guide) 18%, var(--c-bg-elev));
+    color: var(--c-fg);
+  }
+  .fc-role {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.05em 0.6em;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-pill);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;
+    color: var(--c-fg-muted);
+    background: var(--c-bg-elev);
+  }
+  .fc-role--selected {
+    border-color: var(--fc-model);
+    background: color-mix(in srgb, var(--fc-model) 16%, var(--c-bg-elev));
+    color: var(--c-fg);
+  }
+  .fc-role--guidance {
+    border-color: color-mix(in srgb, var(--fc-guide) 80%, transparent);
+    background: color-mix(in srgb, var(--fc-guide) 14%, var(--c-bg-elev));
+    color: var(--c-fg);
+  }
+  .fc-role--baseline,
+  .fc-role--diagnostic {
+    border-style: dashed;
+  }
+  .fc-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin-block-start: var(--space-3);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .fc-legend > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2em;
+  }
+  .fc-legend .mem-st,
+  .fc-legend .fc-tag {
+    margin-inline-start: 0;
+  }
+
+  /* section titles break at the full-width punctuation, not inside a word */
+  .fc-basics h2,
+  main .sec-head h2,
+  .fc-h3 {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  /* ───────────── hero ───────────── */
+  .fc-head h1 {
+    max-width: 24em;
+  }
+  .fc-head__model {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-2);
+    margin: var(--space-4) 0 0;
+    max-width: 52em;
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .fc-head__model strong {
+    color: var(--c-fg);
+  }
+  .fc-head__model > span:last-child {
+    flex: 1 1 24rem;
+    min-width: 0;
+  }
+  .fc-notice {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    margin-block-start: var(--space-4);
+    max-width: 52em;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid color-mix(in srgb, var(--c-warn) 45%, var(--c-border));
+    border-inline-start: 4px solid var(--c-warn);
+    border-radius: var(--radius-m);
+    background: color-mix(in srgb, var(--c-warn) 8%, var(--c-bg-elev));
+  }
+  .fc-notice > svg,
+  .fc-notice > .icon {
+    flex: none;
+    margin-block-start: 0.15em;
+    color: var(--c-warn);
+  }
+  .fc-notice p {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    font-size: var(--fs-s);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+  }
+  .fc-notice strong {
+    font-size: var(--fs-m);
+    color: var(--c-fg);
+  }
+
+  /* ───────────── 一分鐘看懂 ───────────── */
+  .fc-figs {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+  }
+  .fc-figs__title {
+    margin: 0;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    letter-spacing: var(--tracking-wide);
+    color: var(--c-fg-subtle);
+  }
+  .fc-figs__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fc-figs .mem-fine {
+    margin: 0;
+  }
+  .fc-figs .mem-fig[data-status='estimate'] {
+    border-style: dashed;
+  }
+  .fc-flow {
+    margin-block-start: var(--space-6);
+    max-inline-size: 64rem;
+  }
+
+  /* ───────────── 預測摘要 ───────────── */
+  .fc-sum {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fc-sum__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    padding: var(--space-4) var(--space-5) var(--space-5);
+    border: 1.5px dashed var(--c-border-strong);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    min-width: 0;
+  }
+  .fc-sum__card--year {
+    background:
+      radial-gradient(24rem 10rem at 100% 0%, color-mix(in srgb, var(--fc-model) 9%, transparent), transparent 70%),
+      var(--c-bg-elev);
+  }
+  .fc-sum__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding-block-end: var(--space-2);
+    border-block-end: 1px solid var(--c-border);
+  }
+  .fc-sum__period {
+    display: grid;
+    margin: 0;
+    font-size: var(--fs-l);
+    line-height: 1.35;
+  }
+  .fc-sum__period small {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  .fc-sum__head .mem-st {
+    margin: 0.2em 0 0;
+  }
+  .fc-sum__list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+  }
+  .fc-sum__row {
+    display: grid;
+    gap: 2px;
+  }
+  .fc-sum__row dt {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .fc-sum__row dt .fc-tag {
+    margin-inline-start: 0.4em;
+  }
+  .fc-sum__row dd {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+  }
+  .fc-sum__val {
+    font-size: var(--fs-xl);
+    font-weight: var(--fw-bold);
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-sum__range,
+  .fc-sum__guide {
+    font-size: var(--fs-xs);
+    line-height: 1.55;
+    color: var(--c-fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-sum__rk {
+    color: var(--c-fg-subtle);
+  }
+  .fc-sum__guide {
+    margin-block-start: 2px;
+    color: var(--c-fg);
+  }
+  .fc-sum__guide .fc-tag {
+    margin-inline-start: 0;
+  }
+  .fc-sum__note {
+    margin: auto 0 0;
+    padding-block-start: var(--space-2);
+    border-block-start: 1px solid var(--c-border);
+    font-size: var(--fs-xs);
+    line-height: 1.65;
+    color: var(--c-fg-subtle);
+  }
+
+  /* ───────────── 購入期 → 銷售期 ───────────── */
+  .fc-lag {
+    margin-block-start: var(--space-6);
+  }
+  .fc-lag .fc-h3 {
+    margin-block-start: 0;
+  }
+  .fc-lag__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    gap: var(--space-4);
+  }
+  .fc-vint {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    min-width: 0;
+  }
+  .fc-vint__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4em;
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .fc-vint__head strong {
+    font-size: var(--fs-l);
+    color: var(--c-fg);
+  }
+  .fc-vint__k {
+    padding: 0 0.5em;
+    border: 1px solid var(--fc-model);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--fc-model) 16%, var(--c-bg-elev));
+    color: var(--c-fg);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+  }
+  .fc-vint__table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-xs);
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-vint__table th,
+  .fc-vint__table td {
+    padding: 3px 0;
+    text-align: start;
+    vertical-align: middle;
+  }
+  .fc-vint__thead th {
+    padding-block-end: var(--space-1);
+    border-block-end: 1px solid var(--c-border);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  .fc-vint__table tbody th {
+    inline-size: 6.5em;
+    padding-inline-end: var(--space-2);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-muted);
+    white-space: nowrap;
+  }
+  .fc-vint__table tr.is-now th {
+    color: var(--c-fg);
+    font-weight: var(--fw-semibold);
+  }
+  .fc-vint__barcell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .fc-vint__bar {
+    display: block;
+    flex: 0 0 auto;
+    inline-size: calc(var(--w) * 0.62);
+    min-inline-size: 2px;
+    block-size: 14px;
+    border-radius: 0 3px 3px 0;
+    background: color-mix(in srgb, var(--fc-actual) 70%, var(--c-bg-elev));
+  }
+  .fc-vint__table tr.is-now .fc-vint__bar {
+    background: var(--fc-model);
+  }
+  .fc-vint__share {
+    font-weight: var(--fw-semibold);
+  }
+  .fc-vint__px {
+    inline-size: 6.5em;
+    text-align: end !important;
+    color: var(--c-fg-muted);
+    white-space: nowrap;
+  }
+  .fc-vint__pxdot {
+    display: inline-block;
+    inline-size: 0.7em;
+    block-size: 0.7em;
+    margin-inline-end: 0.35em;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--fc-model) calc(var(--p) * 100%), var(--c-bg-sunken));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fc-model) 50%, transparent);
+    vertical-align: -0.05em;
+  }
+  .fc-vint__out {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-sunken);
+  }
+  .fc-vint__out p {
+    display: grid;
+    margin: 0;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .fc-vint__out b {
+    font-size: var(--fs-l);
+    color: var(--c-fg);
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-vint__out .fc-vint__op {
+    font-size: var(--fs-l);
+    color: var(--c-fg-subtle);
+  }
+  .fc-vint__x b {
+    /* the model colour, pulled towards the text colour for contrast in both themes */
+    color: color-mix(in srgb, var(--fc-model) 65%, var(--c-fg));
+  }
+  .fc-vint__foot {
+    margin: 0;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+
+  /* ───────────── 存貨 ───────────── */
+  .fc-inv-detail {
+    display: grid;
+    gap: var(--space-5);
+    margin-block-start: var(--space-6);
+  }
+  @media (min-width: 960px) {
+    .fc-inv-detail {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+      align-items: start;
+    }
+  }
+  .fc-comp {
+    margin: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .fc-comp figcaption .mem-fine {
+    margin: 0 0 var(--space-3);
+  }
+  .fc-comp__bar {
+    display: flex;
+    block-size: 22px;
+    overflow: hidden;
+    border-radius: var(--radius-s);
+  }
+  .fc-comp__bar span {
+    inline-size: var(--w);
+    background: var(--k);
+  }
+  .fc-comp__bar span + span {
+    border-inline-start: 2px solid var(--c-bg-elev);
+  }
+  .fc-comp__keys {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-1) var(--space-4);
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .fc-comp__keys li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4em;
+  }
+  .fc-comp__keys i {
+    flex: none;
+    inline-size: 0.7em;
+    block-size: 0.7em;
+    border-radius: 2px;
+    background: var(--k);
+  }
+  .fc-comp__keys b {
+    margin-inline-start: auto;
+    color: var(--c-fg);
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-inv-notes .fc-p {
+    margin-block-end: var(--space-3);
+  }
+  .fc-inv-events {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fc-inv-events li {
+    display: grid;
+    grid-template-columns: 4.2rem minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-elev);
+    font-size: var(--fs-xs);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+  }
+  .fc-inv-events time {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg);
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-fab-events strong {
+    display: block;
+    color: var(--c-fg);
+    font-size: var(--fs-s);
+  }
+
+  /* ───────────── 數量與營業額 ───────────── */
+  .fc-vol-grid {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 1100px) {
+    .fc-vol-grid {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+      align-items: start;
+    }
+  }
+  .fc-annual .mem-table td small,
+  .fc-annual .mem-table th small {
+    white-space: normal;
+  }
+
+  /* ───────────── 模型怎麼做 ───────────── */
+  .fc-win {
+    margin: 0 0 var(--space-5);
+  }
+  .fc-win__bar {
+    display: flex;
+    gap: 3px;
+    margin: 0 0 var(--space-2);
+    padding: 0;
+    list-style: none;
+  }
+  .fc-win__seg {
+    flex: var(--n) 1 0;
+    min-inline-size: 7.5rem;
+    display: grid;
+    gap: 1px;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-m);
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+    color: var(--c-fg-muted);
+  }
+  .fc-win__seg--train {
+    background: color-mix(in srgb, var(--fc-actual) 14%, var(--c-bg-elev));
+    border: 1px solid color-mix(in srgb, var(--fc-actual) 40%, transparent);
+  }
+  .fc-win__seg--test {
+    background: color-mix(in srgb, var(--fc-model) 16%, var(--c-bg-elev));
+    border: 1px solid color-mix(in srgb, var(--fc-model) 45%, transparent);
+  }
+  .fc-win__seg--fc {
+    background: var(--c-bg-elev);
+    border: 1.5px dashed var(--c-border-strong);
+  }
+  .fc-win__label {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+  }
+  .fc-win__range {
+    font-variant-numeric: tabular-nums;
+    color: var(--c-fg);
+  }
+  @media (max-width: 599px) {
+    .fc-win__bar {
+      flex-direction: column;
+    }
+  }
+  .fc-cands {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr));
+    gap: var(--space-4);
+    margin: 0 0 var(--space-2);
+    padding: 0;
+    list-style: none;
+  }
+  .fc-cand {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    min-width: 0;
+    scroll-margin-block-start: calc(var(--header-h) + var(--mem-bar-h, 0px) + var(--space-3));
+  }
+  .fc-cand--selected {
+    border: 2px solid var(--fc-model);
+    box-shadow: var(--shadow-1);
+  }
+  .fc-cand--diagnostic,
+  .fc-cand--baseline {
+    background: color-mix(in srgb, var(--c-bg-sunken) 50%, var(--c-bg-elev));
+  }
+  .fc-cand__head {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-1);
+  }
+  .fc-cand__name {
+    margin: 0;
+    font-size: var(--fs-l);
+    line-height: 1.4;
+  }
+  .fc-cand__desc {
+    margin: 0;
+    font-size: var(--fs-s);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .fc-eq {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: var(--space-3) var(--space-3) var(--space-3) calc(var(--space-3) + 1.6em);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-sunken);
+    font-size: var(--fs-s);
+    line-height: 1.65;
+    counter-reset: eq;
+    list-style: none;
+    overflow-wrap: anywhere;
+  }
+  .fc-eq li {
+    position: relative;
+    counter-increment: eq;
+  }
+  .fc-eq li::before {
+    content: '(' counter(eq) ')';
+    position: absolute;
+    inset-inline-end: calc(100% + 0.4em);
+    inset-block-start: 0.15em;
+    white-space: nowrap;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-eq sub,
+  .fc-eq sup {
+    font-size: 0.72em;
+    line-height: 0;
+    font-style: italic;
+  }
+  .fc-cand__err {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin: auto 0 0;
+    padding-block-start: var(--space-2);
+    border-block-start: 1px solid var(--c-border);
+  }
+  .fc-cand__err dt {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .fc-cand__err dd {
+    margin: 0;
+    font-weight: var(--fw-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-cand__more {
+    margin: 0;
+  }
+  .fc-cand__note {
+    margin-block: var(--space-1) 0;
+    font-size: var(--fs-xs);
+  }
+  .fc-params {
+    margin-block-start: 0;
+  }
+  .fc-ptable {
+    min-inline-size: 40rem;
+  }
+  .fc-ptable tbody th {
+    min-inline-size: 12rem;
+    font-weight: var(--fw-semibold);
+  }
+  .fc-ptable__group th {
+    padding-block: var(--space-2) var(--space-1);
+    background: var(--c-bg-sunken);
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+
+  /* ───────────── 回測 ───────────── */
+  .fc-tabs__bar {
+    margin-block-end: var(--space-4);
+  }
+  .fc-tabs__panel {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .fc-tabs:has(input[value='revenue']:checked) .fc-tabs__panel:not([data-panel$='-revenue']),
+  .fc-tabs:has(input[value='grossMargin']:checked) .fc-tabs__panel:not([data-panel$='-grossMargin']),
+  .fc-tabs:has(input[value='operatingIncome']:checked) .fc-tabs__panel:not([data-panel$='-operatingIncome']),
+  .fc-tabs:has(input[value='netIncome']:checked) .fc-tabs__panel:not([data-panel$='-netIncome']),
+  .fc-tabs:has(input[value='eps']:checked) .fc-tabs__panel:not([data-panel$='-eps']) {
+    display: none;
+  }
+  .fc-tabs__panel .mem-fine {
+    margin: 0;
+  }
+  .fc-bt-table {
+    max-inline-size: 56rem;
+  }
+  .fc-bt-table .mem-table {
+    min-inline-size: 34rem;
+  }
+  .fc-mtable {
+    min-inline-size: 44rem;
+  }
+  .fc-mtable tbody tr.is-selected > * {
+    background: color-mix(in srgb, var(--fc-model) 10%, var(--c-bg-elev));
+  }
+  .fc-mtable tbody tr.is-selected th {
+    box-shadow: inset 4px 0 0 var(--fc-model);
+  }
+  .fc-rtable {
+    min-inline-size: 46rem;
+  }
+  .fc-rtable thead th {
+    white-space: normal;
+    min-inline-size: 7rem;
+  }
+  .fc-rtable tbody tr.is-selected > * {
+    background: color-mix(in srgb, var(--fc-model) 10%, var(--c-bg-elev));
+  }
+  .fc-mtable td.is-best {
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+  }
+  .fc-mtable .fc-mrow--diagnostic,
+  .fc-mtable .fc-mrow--guidance {
+    color: var(--c-fg-muted);
+  }
+  .fc-robust .mem-tablewrap {
+    margin-block-start: var(--space-1);
+  }
+  .fc-rule {
+    margin-block-start: var(--space-5);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid color-mix(in srgb, var(--fc-model) 40%, var(--c-border));
+    border-radius: var(--radius-l);
+    background: color-mix(in srgb, var(--fc-model) 6%, var(--c-bg-elev));
+  }
+  .fc-rule--warn {
+    border-color: color-mix(in srgb, var(--fc-guide) 55%, var(--c-border));
+    background: color-mix(in srgb, var(--fc-guide) 8%, var(--c-bg-elev));
+  }
+  .fc-rule p {
+    margin: 0;
+    font-size: var(--fs-s);
+    line-height: 1.85;
+    color: var(--c-fg-muted);
+  }
+  .fc-rule p.fc-rule__h {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-block-end: var(--space-2);
+    font-size: var(--fs-m);
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+  }
+
+  /* ───────────── 情境 ───────────── */
+  .fc-sc {
+    white-space: nowrap;
+  }
+  .fc-sc__dot {
+    display: inline-block;
+    inline-size: 0.7em;
+    block-size: 0.7em;
+    margin-inline-end: 0.35em;
+    border-radius: 50%;
+    background: var(--k, var(--c-fg-muted));
+    vertical-align: -0.03em;
+  }
+  .fc-sc--bear {
+    --k: var(--fc-bear);
+  }
+  .fc-sc--base {
+    --k: var(--fc-base);
+  }
+  .fc-sc--bull {
+    --k: var(--fc-bull);
+  }
+  .fc-assume .mem-table {
+    min-inline-size: 52rem;
+    font-size: var(--fs-xs);
+  }
+  .fc-assume tbody th {
+    inline-size: 11rem;
+    font-size: var(--fs-s);
+  }
+  .fc-assume td {
+    color: var(--c-fg-muted);
+  }
+  .fc-assume--same td {
+    background: color-mix(in srgb, var(--c-bg-sunken) 45%, transparent);
+  }
+  .fc-assume--same .fc-tag {
+    margin-inline-start: 0;
+  }
+  .fc-ftable .mem-table {
+    min-inline-size: 60rem;
+  }
+  .fc-ftable tbody th {
+    min-inline-size: 9rem;
+    white-space: nowrap;
+  }
+  .fc-ftable td.num strong {
+    display: block;
+    font-size: var(--fs-m);
+  }
+  .fc-ftable__alt {
+    display: grid !important;
+    gap: 0;
+    white-space: nowrap;
+  }
+  .fc-ftable__year > * {
+    background: color-mix(in srgb, var(--fc-model) 6%, var(--c-bg-elev));
+  }
+  .fc-ftable__year th {
+    box-shadow: inset 0 2px 0 var(--c-border-strong);
+  }
+  .fc-ftable__year td {
+    box-shadow: inset 0 2px 0 var(--c-border-strong);
+  }
+  .fc-ftable__guide > * {
+    background: color-mix(in srgb, var(--fc-guide) 9%, var(--c-bg-elev));
+  }
+  .fc-ftable__guide th .fc-tag {
+    margin-inline-start: 0;
+  }
+  .fc-ftable .mem-table__note {
+    min-inline-size: 15rem;
+    font-size: var(--fs-xs);
+  }
+  .fc-sens .mem-table {
+    min-inline-size: 40rem;
+  }
+  .fc-sens tbody th {
+    inline-size: 14rem;
+  }
+  .fc-bits .mem-table {
+    min-inline-size: 40rem;
+  }
+  .fc-row--forecast > * {
+    background: color-mix(in srgb, var(--c-bg-sunken) 55%, var(--c-bg-elev));
+  }
+  .fc-row--forecast th .mem-st {
+    margin-inline-start: 0.5em;
+  }
+
+  /* ───────────── 成本推手（美光） ───────────── */
+  .fc-drivers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fc-driver {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .fc-driver p {
+    margin: 0;
+    font-size: var(--fs-xs);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .fc-driver p.fc-driver__k {
+    font-size: var(--fs-s);
+    font-weight: var(--fw-bold);
+    color: var(--seg-memory-storage);
+    letter-spacing: var(--tracking-wide);
+  }
+  .fc-driver p.fc-driver__v {
+    font-size: var(--fs-xl);
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ───────────── 限制 ───────────── */
+  .fc-limits {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr));
+    gap: var(--space-3) var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fc-limit {
+    position: relative;
+    margin: 0;
+    padding: var(--space-4) var(--space-5) var(--space-4) calc(var(--space-4) + 2.4rem);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .fc-limit p {
+    margin: 0;
+    font-size: var(--fs-s);
+    line-height: 1.8;
+    color: var(--c-fg-muted);
+  }
+  .fc-limit strong {
+    color: var(--c-fg);
+  }
+  .fc-limit__n {
+    position: absolute;
+    inset-inline-start: var(--space-4);
+    inset-block-start: var(--space-4);
+    display: grid;
+    place-items: center;
+    inline-size: 1.7rem;
+    block-size: 1.7rem;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--c-warn) 55%, transparent);
+    background: color-mix(in srgb, var(--c-warn) 12%, var(--c-bg-elev));
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ───────────── 大事記 ───────────── */
+  .fc-tl {
+    display: grid;
+    gap: var(--space-4);
+    max-width: 56rem;
+  }
+  .fc-tl__year {
+    display: grid;
+    grid-template-columns: 4rem minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+  .fc-tl__y {
+    margin: 0;
+    font-size: var(--fs-l);
+    font-variant-numeric: tabular-nums;
+    color: var(--c-fg-subtle);
+  }
+  .fc-tl__list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0 0 0 var(--space-4);
+    border-inline-start: 2px solid var(--c-border);
+    list-style: none;
+  }
+  .fc-tl__item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: var(--space-2);
+    margin: 0;
+  }
+  .fc-tl__item::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(-1 * var(--space-4) - 6px);
+    inset-block-start: 0.45em;
+    inline-size: 10px;
+    block-size: 10px;
+    border-radius: 50%;
+    background: var(--c-bg);
+    border: 2px solid var(--seg-memory-storage);
+  }
+  .fc-tl__item time {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    line-height: 1.9;
+    color: var(--c-fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-tl__title {
+    margin: 0;
+    font-weight: var(--fw-semibold);
+    line-height: 1.55;
+  }
+  .fc-tl__detail {
+    margin: 2px 0 0;
+    font-size: var(--fs-xs);
+    line-height: 1.75;
+    color: var(--c-fg-muted);
+  }
+  .fc-tl__older > .fc-tl__year {
+    margin-block-start: var(--space-3);
+  }
+  @media (max-width: 599px) {
+    .fc-tl__year {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-2);
+    }
+  }
+}
+
+@layer components {
+  /* phones: the tables turn into cards (memory.css .mem-tablewrap--cards), so drop the desktop minimum widths */
+  @media (max-width: 47.99rem) {
+    .fc-ptable,
+    .fc-mtable,
+    .fc-bt-table .mem-table,
+    .fc-assume .mem-table,
+    .fc-ftable .mem-table,
+    .fc-ftable .mem-table__note,
+    .fc-sens .mem-table,
+    .fc-bits .mem-table {
+      min-inline-size: 0;
+    }
+    .fc-ftable tbody th {
+      white-space: normal;
+    }
+    /* card cells hold several pieces (value + small range, text + citations): label on the left, content as one
+       block on the right, instead of memory.css's two-column grid that would split the pieces */
+    :is(.fc-ftable, .fc-assume, .fc-sens, .fc-annual, .fc-bits, .fc-params) .mem-table tbody tr > td,
+    .mem-tablewrap--cards .fc-mtable tbody tr > td {
+      /* flow-root: the floated label counts towards the cell height when it wraps */
+      display: flow-root;
+      padding-inline-start: calc(6.5em + var(--space-2));
+    }
+    :is(.fc-ftable, .fc-assume, .fc-sens, .fc-annual, .fc-bits, .fc-params) .mem-table tbody tr > td::before,
+    .mem-tablewrap--cards .fc-mtable tbody tr > td::before {
+      float: inline-start;
+      inline-size: 6.5em;
+      margin-inline-start: calc(-6.5em - var(--space-2));
+      line-height: 1.6;
+    }
+    /* the forecast table labels carry their unit (「營收（新台幣億元）」): a wider label column */
+    .fc-ftable .mem-table tbody tr > td {
+      padding-inline-start: calc(8rem + var(--space-2));
+    }
+    .fc-ftable .mem-table tbody tr > td::before {
+      inline-size: 8rem;
+      margin-inline-start: calc(-8rem - var(--space-2));
+    }
+    /* the backtest table stays a table on phones: five short numeric columns fit 320–390 px */
+    .fc-bt-table .mem-table :is(th, td) {
+      padding: var(--space-2) var(--space-2);
+    }
+    .fc-bt-table .mem-table thead th {
+      white-space: normal;
+    }
+    .fc-bt-table .mem-table thead th small {
+      white-space: nowrap;
+    }
+    .fc-ftable td.num strong {
+      display: inline;
+      margin-inline-end: 0.5em;
+    }
+    .fc-ftable__alt {
+      display: inline-flex !important;
+      gap: 0.75em;
+    }
+    .fc-ftable__year > *,
+    .fc-ftable__year th,
+    .fc-ftable__year td {
+      box-shadow: none;
+    }
+    .mem-tablewrap--cards .mem-table tr.fc-ftable__year,
+    .mem-tablewrap--cards .mem-table tr.fc-ftable__guide {
+      border-width: 2px;
+    }
+  }
+}

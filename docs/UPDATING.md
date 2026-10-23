@@ -143,6 +143,40 @@ node scripts/plan/make-update-args.mjs --type refresh --collection companies --a
 
 注意：各檔案的來源會合併成頁末的一份清單（同一網址只列一次），所以同一個 key 在不同檔案中應指向同一網址；公司只能用名冊中的 id（名冊外用 `other`）。
 
+### 2.9 記憶體專題的財報模型（`/memory/phison/`、`/memory/micron/`）
+
+兩個子頁用記憶體價格推估公司財報：群聯（用 NAND 合約價推估進貨成本與庫存時間差）與美光（價格、每位元成本、折舊與 HBM）。數字全部來自 `src/data/memory/forecast/`，頁面只負責呈現：
+
+| 檔案 | 內容 | 誰來改 |
+|---|---|---|
+| `market-prices.yaml` | TrendForce 的 NAND／DRAM 合約價季變化（含季初預測與區間）、現貨價、產業營收，兩家模型共用 | 手動（附來源） |
+| `phison-inputs.yaml` | 群聯季財報、月營收、年報產銷量值與進貨、事件 | 手動（附來源） |
+| `micron-inputs.yaml` | 美光會計季度財報、DRAM／NAND 拆分、位元與售價季變化、財測、事件 | 手動（附來源） |
+| `phison-model.json`、`micron-model.json` | 候選模型、參數、回測、三種情境、敏感度與限制 | **只能由模型程式產生，不要手改** |
+
+格式在 `src/schemas/forecast.ts`（strictObject）；模型程式在 `scripts/models/phison.ts`、`scripts/models/micron.ts`（共用函式 `scripts/models/lib.ts` 不要改，公司專用的放在 `phison-lib.ts`、`micron-lib.ts`）。頁面路由是 `src/pages/memory/[company].astro`，讀取與驗證在 `src/lib/forecast-data.ts`，元件在 `src/components/memory/forecast/`（公司專屬段落在 `phison/`、`micron/` 子目錄）。
+
+什麼時候更新：群聯每月 10 日前後公布月營收、每季財報（約 3、5、8、11 月）；美光每季法說會（約 3、6、9、12 月）會給上一季財報與下一季財測；TrendForce 每季季末公布合約價的估計與下一季預測。
+
+更新步驟：
+
+1. 把五個檔案複製到暫存區 `research/staging/memory/forecast/`，在暫存區修改輸入檔：新增季度（`quarters` 要連續、不跳季）、月營收、價格點（季末估計標 `status: estimate`、事前預測標 `forecast`，區間寫在 `low`／`high`）、事件與 `sources`；每個數字都要有 `src` 與存取日期（`docs/CONTENT-GUIDE.md` §1–2）。更新 `asOf` 與 `lastVerified`。
+2. 在暫存區重跑模型，再驗證：
+   ```bash
+   npx tsx scripts/models/phison.ts --dir research/staging/memory/forecast
+   npx tsx scripts/models/micron.ts --dir research/staging/memory/forecast
+   npx tsx scripts/check-forecast.ts --dir research/staging/memory/forecast
+   npx tsx scripts/check-zh.ts research/staging/memory/forecast/*
+   ```
+   預測期移動時（例如群聯 2026Q3 財報公布），模型程式裡的回測期、預測期與情境假設也要跟著改（`TRAIN`、`TEST` 與各情境的價格路徑），並重新檢查選模結果與 `summary`、`limitations` 的文字。
+3. 通過後用 `mv` 覆蓋 `src/data/memory/forecast/` 的檔案，對正式檔再跑一次：
+   ```bash
+   npx tsx scripts/check-forecast.ts        # schema、來源 key、季度連續，並重跑模型確認 JSON 可重現
+   npx astro check
+   ```
+4. 檢查頁面文字：大部分文字由資料計算，但有幾處跟期間有關，預測期移動時要一併更新：`src/lib/forecast-data.ts` 的 `FC_META`（`summaryPeriods` 預測摘要的期間、`historyFrom`、`description`）、`src/components/memory/forecast/micron/MicronPriceCost.astro`（財測隱含的成本墊高說明）、`micron/MicronCapacity.astro`（資本支出展望）、`micron/MicronVolume.astro`（週數說明）。可用 `grep -rn "FY202\|202[5-8]" src/components/memory/forecast src/pages/memory` 找出來。
+5. 開啟 `/memory/phison/`、`/memory/micron/` 檢查預測摘要、圖表與表格；建置時若有 `[forecast] … citation … is not in the page's source list` 的警告，表示元件引用了 `pageSourceKeys()` 沒有收集的來源，要在 `src/lib/forecast-data.ts` 補上。`/memory/` 的「財報模型」卡片與 `/companies/phison/`、`/companies/micron/` 的連結卡片會自動改用新的模型數字。
+
 ---
 
 ## 3. 給新 session 的指令範本（直接貼上）
@@ -156,6 +190,8 @@ node scripts/plan/make-update-args.mjs --type refresh --collection companies --a
 > 請依 `docs/UPDATING.md` §2.6 對 foundation-models 環節的公司做一次只查核不改寫的全面查核。
 
 > 請依 `docs/UPDATING.md` §2.8 把記憶體與儲存專題的資料（`src/data/memory/*.yaml`）更新到 2027-01-31，跑 `scripts/check-memory.ts` 後檢查 `/memory/` 頁面並回報。
+
+> 請依 `docs/UPDATING.md` §2.9 把群聯與美光財報模型的輸入（`src/data/memory/forecast/`）更新到最新一季財報與 TrendForce 合約價，經暫存區重跑 `scripts/models/phison.ts`、`scripts/models/micron.ts` 與 `scripts/check-forecast.ts`，再檢查 `/memory/phison/`、`/memory/micron/` 並回報回測誤差的變化。
 
 ---
 

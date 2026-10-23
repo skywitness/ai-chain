@@ -1,0 +1,179 @@
+---
+/**
+ * 價格與成本（美光）: TrendForce contract prices vs Micron's own DRAM / NAND prices (pass-through), the implied cost
+ * per bit and cash cost per bit, actual vs scenario gross margin, and the cost story — node transitions,
+ * depreciation, underutilization and HBM wafers — with the parameters the model estimated.
+ *   <MicronPriceCost b={bundle} />
+ */
+import MultiLine from '../../../charts/MultiLine.astro';
+import ChartCites from '../ChartCites.astro';
+import FcCite from '../FcCite.astro';
+import FcText from '../FcText.astro';
+import ScenarioLines from '../ScenarioLines.astro';
+import { chartKey, derivedOf, paramStarting, periodLabel, priceKeys, qIndex, quartersFrom, type Derived, type FcBundle } from '../../../../lib/forecast-data';
+import { formatNumber } from '../../../../lib/format';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m, inputs, meta } = b;
+const from = meta.historyFrom;
+const last = inputs.quarters.at(-1)!;
+const pts = (d: Derived | undefined) =>
+  (d?.points ?? []).filter((p) => qIndex(p.period) >= qIndex(from)).map((p) => ({ x: chartKey(p.period), y: p.value, forecast: p.status === 'forecast' }));
+const dC = derivedOf(m, 'dram-contract-index');
+const dA = derivedOf(m, 'dram-asp-index');
+const nC = derivedOf(m, 'nand-contract-index');
+const nA = derivedOf(m, 'nand-asp-index');
+const cpb = derivedOf(m, 'cost-per-bit');
+const cash = derivedOf(m, 'cash-cost-per-bit');
+const fsKeys = [...new Set(quartersFrom(inputs, from).map((q) => q.src))];
+const p = (prefix: string) => paramStarting(m, prefix);
+const passD = p('DRAM 價格傳導斜率');
+const passN = p('NAND 價格傳導斜率');
+const theta = p('折舊調整速度');
+const phi = p('折舊中視為固定成本的比重');
+const trend = p('每位元現金成本趨勢');
+const fy25 = p('資料推算的 FY2025 混合每位元銷貨成本變化');
+const trade = p('HBM 晶圓交換比');
+const hbmShare = p('HBM 占美光 DRAM 位元比重');
+const bump = p('財測隱含的每位元現金成本墊高');
+const rawGm = m.parameters.find((x) => /模型（基準、成本未調整）非 GAAP 毛利率/.test(x.name));
+const gGm = m.parameters.find((x) => /財測：非 GAAP 毛利率/.test(x.name));
+const gmGap = rawGm && gGm ? rawGm.value - gGm.value : null;
+const has = (k: string) => b.sourceByKey.has(k);
+const ev = (re: RegExp) => inputs.events.filter((e) => re.test(e.title));
+const nodeEvents = ev(/1-alpha|1-beta|1-gamma|232 層|176 層|G9|成本將上升|預期 DRAM 每位元成本/);
+const cutEvents = ev(/投片減少|減少約 20% 投片|DRAM、NAND 投片|閒置設備/);
+const under = quartersFrom(inputs, 'FY2023Q1').filter((q) => q.underutilization != null);
+const underSum = under.reduce((s, q) => s + (q.underutilization ?? 0), 0);
+---
+
+<div class="sec-head">
+  <h2 id="price-cost-h">價格與成本：合約價怎麼變成美光的售價，每位元成本怎麼降</h2>
+  <p class="sec-head__lede">
+    模型把營收拆成「位元 × 售價」、成本拆成「位元 × 每位元成本 + 折舊」。售價由 TrendForce 的日曆季度合約價換算成美光的會計季度，再乘上傳導係數；每位元成本由財報倒推。所有指數以 FY2016 第四季為 100。
+  </p>
+</div>
+
+<div class="mem-grid mem-grid--charts">
+  <MultiLine
+    title="DRAM：TrendForce 合約價與美光售價"
+    subtitle={`${periodLabel(from)} 起；FY2027 為基準情境（虛線）`}
+    unit="指數（FY2016Q4＝100）"
+    series={[
+      { name: '合約價（含 HBM）', color: 'var(--chart-1)', points: pts(dC) },
+      { name: '美光售價', color: 'var(--chart-2)', points: pts(dA) },
+    ]}
+    digits={0}
+    height={240}
+    notes={[dC?.note, passD ? `傳導斜率 ${formatNumber(passD.value, { digits: 2 })}：${passD.note ?? ''}` : null]}
+    xTitle="會計季度"
+    as="h3"
+    class="mem-chart fc-years"
+  />
+  <MultiLine
+    title="NAND：TrendForce 合約價與美光售價"
+    subtitle={`${periodLabel(from)} 起；FY2027 為基準情境（虛線）`}
+    unit="指數（FY2016Q4＝100）"
+    series={[
+      { name: '合約價', color: 'var(--chart-1)', points: pts(nC) },
+      { name: '美光售價', color: 'var(--chart-2)', points: pts(nA) },
+    ]}
+    digits={0}
+    height={240}
+    notes={[passN ? `傳導斜率 ${formatNumber(passN.value, { digits: 2 })}（全期估計）。` : null, passN?.note?.split('。').slice(1).join('。') || null]}
+    xTitle="會計季度"
+    as="h3"
+    class="mem-chart fc-years"
+  />
+</div>
+<ChartCites label="合約價各季出處" keys={priceKeys(b)} />
+<ChartCites label="美光售價季變化" keys={fsKeys} after="美光只以「低個位數」「約 20%」等區間描述售價變化，模型換算成中值後連乘成指數。" />
+
+<div class="mem-grid mem-grid--charts">
+  <MultiLine
+    title="每位元成本指數"
+    subtitle="由非 GAAP 銷貨成本與位元出貨倒推；銷貨成本含折舊，現金成本扣除固定折舊、HBM 以晶圓當量計；FY2027 為基準情境（虛線）"
+    unit="指數（FY2016Q4＝100）"
+    badge="模型推估"
+    series={[
+      { name: '每位元銷貨成本', color: 'var(--chart-2)', points: pts(cpb) },
+      { name: '每位元現金成本', color: 'var(--chart-7)', points: pts(cash) },
+    ]}
+    digits={1}
+    height={240}
+    notes={[cpb?.note]}
+    xTitle="會計季度"
+    as="h3"
+    class="mem-chart fc-years"
+  />
+  <ScenarioLines
+    as="h3"
+    b={b}
+    target="grossMargin"
+    history={qIndex(last.period) - qIndex(from) + 1}
+    title="非 GAAP 毛利率：實際與三種情境"
+    height={240}
+    notes={['實際值為美光新聞稿的非 GAAP 毛利率；FY2023 上半年含存貨跌價。']}
+  />
+</div>
+<ChartCites keys={fsKeys} />
+
+{
+  bump && (
+    <aside class="fc-rule fc-rule--warn" aria-label="FY2027 第一季的成本墊高">
+      <p class="fc-rule__h">為什麼 FY2027 第一季的每位元成本會跳升</p>
+      <p>
+        只用歷史成本趨勢，模型算出的 FY2027 第一季毛利率{gmGap != null ? `比美光財測高 ${formatNumber(gmGap, { digits: 1 })} 個百分點` : '高於美光財測'}。美光說明第一季毛利率受 FY2026 第四季加發、計入存貨的獎金影響，是全年低點{has('rm-fy2026q4') && <FcCite k="rm-fy2026q4" />}。模型因此依財測隱含的銷貨成本反推，把每位元現金成本一次墊高 {formatNumber(bump.value, { digits: 1 })}%：<FcText b={b} text={bump.note} />
+      </p>
+    </aside>
+  )
+}
+
+<h3 class="fc-h3">成本的四個推手</h3>
+<ul class="fc-drivers" role="list">
+  <li class="fc-driver">
+    <p class="fc-driver__k">製程微縮</p>
+    <p class="fc-driver__v">{trend ? `${formatNumber(trend.value, { digits: 1 })}%／年` : '—'}</p>
+    <p>
+      扣除固定折舊後的每位元現金成本趨勢（最近 12 季）。{fy25 && `由財報推算，FY2025 的混合每位元銷貨成本變化為 ${formatNumber(fy25.value, { digits: 1 })}%；`}美光表示 FY2025 含 HBM 的 DRAM 每位元成本只降低個位數、NAND 約降 10% 出頭{has('rm-fy2025q4') && <FcCite k="rm-fy2025q4" />}。
+      近期的製程：{nodeEvents.slice(-3).map((e, i) => (
+        <>
+          {i > 0 && '；'}
+          {e.title}
+          <FcCite k={e.src} />
+        </>
+      ))}。
+    </p>
+  </li>
+  <li class="fc-driver">
+    <p class="fc-driver__k">折舊</p>
+    <p class="fc-driver__v">θ {theta ? formatNumber(theta.value, { digits: 3 }) : '—'}／季</p>
+    <p>
+      折舊每季向「前四季平均淨資本支出」靠近 {theta ? `${formatNumber(theta.value * 100, { digits: 1 })}%` : '—'}，約 5–6 年調整完；其中 {phi ? `${formatNumber(phi.value * 100, { digits: 0 })}%` : '—'} 視為不隨產量變動的固定成本。資本支出大增的 FY2027，折舊會一路墊高成本。
+    </p>
+  </li>
+  <li class="fc-driver">
+    <p class="fc-driver__k">稼動率</p>
+    <p class="fc-driver__v">{under.length ? `${formatNumber(underSum / 100, { digits: 1 })} 億美元` : '—'}</p>
+    <p>
+      FY2023–FY2024 減產時計入銷貨成本的稼動率不足費用合計{under.map((q) => <FcCite k={q.src} />)}。減產讓固定成本分攤到更少位元：
+      {cutEvents.slice(0, 2).map((e, i) => (
+        <>
+          {i > 0 && '；'}
+          {e.title}
+          <FcCite k={e.src} />
+        </>
+      ))}。
+    </p>
+  </li>
+  <li class="fc-driver">
+    <p class="fc-driver__k">HBM 晶圓</p>
+    <p class="fc-driver__v">{trade ? `${formatNumber(trade.value)} 倍` : '—'}</p>
+    <p>
+      HBM 對一般 DRAM 的晶圓交換比；模型假設 HBM 占美光 DRAM 位元 {hbmShare ? `${formatNumber(hbmShare.value)}%` : '—'}，把 DRAM 位元換成晶圓當量。<FcText b={b} text={trade?.note?.split('；').slice(1).join('；')} />
+    </p>
+  </li>
+</ul>

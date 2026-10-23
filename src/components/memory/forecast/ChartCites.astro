@@ -1,0 +1,27 @@
+---
+/**
+ * Fine-print source line under a chart or table: 「資料來源：[3][4][12]」 (numbers follow the page's source list).
+ *   <ChartCites keys={['fr-2026', 'tf-20260930-13258']} />
+ *   <ChartCites label="各季合約價出處" keys={priceKeys} />
+ */
+import FcCite from './FcCite.astro';
+
+interface Props {
+  keys: ReadonlyArray<string | null | undefined>;
+  label?: string | undefined;
+  /** text after the citations, e.g. a method note */
+  after?: string | undefined;
+  class?: string | undefined;
+}
+const { keys, label = '資料來源', after, class: className } = Astro.props;
+const list = [...new Set(keys.filter((k): k is string => !!k))];
+---
+
+{
+  list.length > 0 && (
+    <p class:list={['mem-fine', 'fc-cites', className]}>
+      {label}：{list.map((k) => <FcCite k={k} />)}
+      {after && <span class="fc-cites__after">{after}</span>}
+    </p>
+  )
+}

@@ -1,0 +1,175 @@
+---
+/**
+ * 數量與營業額（群聯）: monthly revenue (the quarter already known), product revenue mix, and the annual-report
+ * production and sales tables — module units, sales value, average price and unit cost — next to purchases and
+ * the main suppliers.
+ *   <PhisonVolume b={bundle} />
+ */
+import MultiLine from '../../../charts/MultiLine.astro';
+import QuarterBars from '../QuarterBars.astro';
+import ChartCites from '../ChartCites.astro';
+import FcCite from '../FcCite.astro';
+import { derivedOf, forecastOf, paramStarting, periodLabel, qIndex, type FcBundle } from '../../../../lib/forecast-data';
+import { formatNumber } from '../../../../lib/format';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m, inputs } = b;
+const months = inputs.monthly.slice(-15);
+const knownQ = m.scenarios.find((s) => s.id === 'base')?.forecasts.find((f) => f.known.includes('revenue'));
+const knownMonths = new Set(knownQ ? months.slice(-3).map((x) => x.period) : []);
+const q3 = knownQ ? forecastOf(m, 'base', knownQ.period) : undefined;
+const prevQ = inputs.quarters.at(-1)!;
+const yearAgo = knownQ ? inputs.quarters.find((q) => qIndex(q.period) === qIndex(knownQ.period) - 4) : undefined;
+
+// product mix (quarterly, from the notes to the statements)
+const PROD = [
+  { k: '產品別營收－快閃記憶體模組產品', name: '快閃記憶體模組', color: 'var(--chart-1)' },
+  { k: '產品別營收－控制晶片', name: '控制晶片', color: 'var(--chart-2)' },
+  { k: '產品別營收－積體電路', name: '積體電路（NAND 晶片）', color: 'var(--chart-3)' },
+  { k: '產品別營收－其他', name: '其他', color: 'var(--chart-7)' },
+];
+const mixQs = inputs.quarters.filter((q) => PROD.every((p) => q.extra?.[p.k] != null));
+const mixSeries = PROD.map((p) => ({
+  name: p.name,
+  color: p.color,
+  points: mixQs.map((q) => {
+    const tot = PROD.reduce((s, x) => s + (q.extra?.[x.k] ?? 0), 0);
+    return { x: q.period, y: tot ? ((q.extra?.[p.k] ?? 0) / tot) * 100 : null };
+  }),
+}));
+const mixKeys = [...new Set(mixQs.map((q) => q.src))];
+
+// annual tables
+const asp = derivedOf(m, 'module-asp-per-unit');
+const unitCost = derivedOf(m, 'module-cost-per-unit');
+const estP = derivedOf(m, 'annual-purchases-estimated');
+const corr = paramStarting(m, '模組單位生產成本與購入成本指數的年變化相關係數');
+const at = (d: typeof asp, y: string) => d?.points.find((p) => p.period === y)?.value;
+const PAREN = /（([^）]*)）/;
+const PAREN_ALL = /（[^）]*）/g;
+const years = inputs.annual.map((a) => {
+  const mod = a.sales.find((s) => s.product.startsWith('快閃記憶體模組'));
+  const t = a.purchases.filter((p) => p.supplier !== '其他').sort((p, q) => (q.share ?? 0) - (p.share ?? 0))[0];
+  // 「A 廠商（東芝集團內公司，年報未具名）」 → name 「A 廠商」 + aside 「東芝集團內公司，年報未具名」
+  const top = t ? { name: t.supplier.replace(PAREN_ALL, ''), aside: PAREN.exec(t.supplier)?.[1], share: t.share } : undefined;
+  return { a, mod, top };
+});
+const annualKeys = [...new Set(inputs.annual.map((a) => a.src))];
+// how much the estimated purchases (營業成本 + 存貨增加) exceed the reported net purchases, over the years with both
+const gap: number[] = [];
+for (const { a } of years) {
+  const est = at(estP, a.year);
+  if (a.totalPurchases && est != null) gap.push((est * 100) / a.totalPurchases - 100);
+}
+const gapText = gap.length ? `${formatNumber(Math.min(...gap), { digits: 0 })}–${formatNumber(Math.max(...gap), { digits: 0 })}%` : null;
+---
+
+<div class="sec-head">
+  <h2 id="volume-h">數量與營業額：營收怎麼跟著價格放大</h2>
+  <p class="sec-head__lede">
+    模型的營收規則很單純：上一季營收 × 合約價變化 ×（1 + 實質出貨量成長）。價格決定大部分的波動，所以 2026 年營收跟著合約價暴增；出貨量則要從年報的產銷量值表與月營收去看。
+  </p>
+</div>
+
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars
+    title="每月營收"
+    as="h3"
+    subtitle={knownQ ? `${periodLabel(knownQ.period, 'long')}的三個月已公布，季營收直接採用` : undefined}
+    unit="新台幣億元"
+    points={months.map((x) => ({ period: x.period, value: x.revenue / 100, color: knownMonths.has(x.period) ? 'var(--chart-2)' : 'var(--chart-1)' }))}
+    valueLabels={false}
+    legend={knownQ ? [{ label: '過去月份', kind: 'bar', color: 'var(--chart-1)' }, { label: `${periodLabel(knownQ.period)} 各月`, kind: 'bar', color: 'var(--chart-2)' }] : []}
+    notes={[
+      q3 && yearAgo
+        ? `${periodLabel(knownQ!.period)} 合計 ${formatNumber(q3.revenue / 100)} 億元，比上一季 ${formatNumber(prevQ.revenue / 100)} 億元增加 ${formatNumber((q3.revenue / prevQ.revenue - 1) * 100, { digits: 1 })}%，是一年前的 ${formatNumber(q3.revenue / yearAgo.revenue, { digits: 1 })} 倍。`
+        : null,
+    ]}
+  />
+  <MultiLine
+    title="產品別營收占比"
+    subtitle={`${periodLabel(mixQs[0]?.period ?? '')} 起；財報附註的主要產品別營收`}
+    unit="%"
+    format="percent"
+    series={mixSeries}
+    includeZero
+    height={210}
+    endLabels
+    xTitle="季度"
+    as="h3"
+    class="mem-chart fc-years"
+  />
+</div>
+<ChartCites keys={[inputs.monthly.at(-1)?.src, ...mixKeys]} />
+
+<h3 class="fc-h3">年報：產銷量值與進貨</h3>
+<p class="fc-p">
+  年報的「銷售量值表」可以拆出價格與數量：模組的銷售值 ÷ 銷售量就是每片平均售價，「生產量值表」的產值 ÷ 產量就是每片的投入成本。2024 年起年報不再列產銷量值表，只剩產品別銷售值。每片容量逐年變大，所以這不是每 GB 價格，但方向和合約價一致{corr ? `：單位生產成本的年變化與模型的購入成本指數相關係數 ${formatNumber(corr.value, { digits: 2 })}` : ''}。
+</p>
+<div class="fc-vol-grid">
+  <MultiLine
+    title="快閃記憶體模組：每片平均售價與生產成本"
+    unit="元／片"
+    series={[
+      { name: '平均售價', color: 'var(--chart-1)', points: (asp?.points ?? []).map((p) => ({ x: p.period, y: p.value })) },
+      { name: '單位生產成本', color: 'var(--chart-2)', points: (unitCost?.points ?? []).map((p) => ({ x: p.period, y: p.value })) },
+    ]}
+    digits={0}
+    height={220}
+    notes={[asp?.note]}
+    xTitle="年度"
+    as="h4"
+    class="mem-chart"
+  />
+  <div class="mem-tablewrap mem-tablewrap--cards fc-annual" tabindex="0" role="region" aria-label="年報產銷量值與進貨">
+    <table class="mem-table">
+      <caption class="ch-sr">群聯年報：快閃記憶體模組產銷量值、進貨淨額與最大供應商</caption>
+      <thead>
+        <tr>
+          <th scope="col">年度</th>
+          <th scope="col" class="num">模組銷售量<small>千片</small></th>
+          <th scope="col" class="num">模組銷售值<small>億元</small></th>
+          <th scope="col" class="num">每片售價<small>元</small></th>
+          <th scope="col" class="num">進貨淨額<small>億元</small></th>
+          <th scope="col" class="num">推估進貨<small>億元</small></th>
+          <th scope="col">最大供應商（占進貨）</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          [...years].reverse().map(({ a, mod, top }) => (
+            <tr>
+              <th scope="row" data-label="年度">
+                {a.year}
+                <FcCite k={a.src} />
+              </th>
+              <td class="num" data-label="模組銷售量（千片）">{mod?.units != null ? formatNumber(mod.units) : <span class="mem-na">—</span>}</td>
+              <td class="num" data-label="模組銷售值（億元）">{mod ? formatNumber(mod.value / 100) : <span class="mem-na">—</span>}</td>
+              <td class="num" data-label="每片售價（元）">{at(asp, a.year) != null ? formatNumber(at(asp, a.year)!) : <span class="mem-na">—</span>}</td>
+              <td class="num" data-label="進貨淨額（億元）">{a.totalPurchases != null ? formatNumber(a.totalPurchases / 100) : <span class="mem-na">—</span>}</td>
+              <td class="num" data-label="推估進貨（億元）">{at(estP, a.year) != null ? formatNumber((at(estP, a.year) ?? 0) / 100) : <span class="mem-na">—</span>}</td>
+              <td data-label="最大供應商">
+                {top ? (
+                  <>
+                    {top.name}
+                    {top.share != null && ` ${formatNumber(top.share, { digits: 1 })}%`}
+                    {top.aside && <small>{top.aside}</small>}
+                  </>
+                ) : (
+                  <span class="mem-na">—</span>
+                )}
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+<p class="mem-fine">
+  進貨淨額只含材料；推估進貨（營業成本 + 存貨增加）另含封測、人工與製造費用，{gapText ? `所以比進貨淨額高約 ${gapText}。` : '所以比進貨淨額高。'}供應商名稱照年報，未具名者以年報代號表示。
+</p>
+<ChartCites keys={annualKeys} />

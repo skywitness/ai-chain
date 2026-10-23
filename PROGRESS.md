@@ -27,6 +27,19 @@
   - 參數產生器：`scripts/plan/make-update-args.mjs`。
   - `content-wf.js` 新增了 `financials-update` 與 `refresh` 兩種類型，以及 `asOf`（資料基準日）參數。
 
+## ✅ 群聯與美光財報模型子頁（2026-10-23 上線）
+
+使用者要求：在記憶體專題加兩個子頁 `/memory/phison/`、`/memory/micron/`。群聯用不同時期的 NAND 合約價估算購入成本，對應各期銷售數量與營業額；以過去資料回測 2025–2026，找出好的模型，再預測 2026Q3、2026Q4 與 2027。美光另外考慮生產成本，使用會計季度（回測 FY2025–FY2026，預測 FY2027）。
+
+- **資料**（`src/data/memory/forecast/`）：`market-prices.yaml`（19 條 NAND／DRAM／SSD 價格序列、421 點，2015Q4–2026Q4，主要為 TrendForce）、`phison-inputs.yaml`（2016Q1–2026Q2 共 42 季、129 個月營收、2016–2025 年報產銷量值與供應商進貨）、`micron-inputs.yaml`（FY2016Q1–FY2026Q4 共 44 季，含位元與 ASP 季變化、財測、稼動率不足費用）。三份各經獨立查核（約 2,420、1,495、421 個數值）。
+- **模型**：`scripts/models/{phison,micron}.ts`（共用 `scripts/models/lib.ts`），輸出 `*-model.json`，`scripts/check-forecast.ts` 會重跑確認可重現。
+  - 群聯選定「移動加權平均存貨」：回測 2025Q1–2026Q2 毛利率誤差 5.5 個百分點、EPS 5.8 元（天真模型 6.4、10.1）；但事前價格或多季預測時不比天真模型好，頁面已註明。
+  - 美光選定「單位經濟＋HBM 組合」：回測 FY2025–FY2026 營收 MAPE 5.1%、非 GAAP 毛利率誤差 1.1 個百分點（美光財測 8.7%、3 個百分點）。
+- **頁面**：`src/pages/memory/[company].astro`、`src/components/memory/forecast/**`、`src/lib/forecast-data.ts`；`/memory/` 新增「財報模型」段落，群聯與美光公司頁有連結。
+- **Workflow**：`research/plan/workflows/forecast-wf.js`（run `wf_ff48d56e-e48`，12 個 agent、0 錯誤）。
+- **驗證**：`astro check` 0 錯誤；`validate-data`、`check-zh`、`check-content-rules`、`check-memory`、`check-forecast` 0 錯誤；`BASE_PATH=/ai-chain/` 建置 860 頁；連結 32,934 條 0 失效；預算通過；路由測試 1,729 項通過；axe 20 項通過。
+- **更新方式**：`docs/UPDATING.md` §2.9。
+
 ## ✅ 記憶體與儲存專題 `/memory/`（2026-10-23 上線）
 
 使用者要求：新專題頁（加入頂部導覽），討論 HBM／DRAM／NAND 與 SSD／HDD 與儲存的供給量、需求量、市占、產能現況與擴產狀況，並新增 3D 場景「全球記憶體產能地圖」（`memory-fab-map`）。完成後驗證、建置並直接推送上線。執行中使用者改為**不限制 workflow 與 agent 數**。
