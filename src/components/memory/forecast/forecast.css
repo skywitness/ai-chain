@@ -265,7 +265,7 @@
   .fc-figs .mem-fine {
     margin: 0;
   }
-  .fc-figs .mem-fig[data-status='estimate'] {
+  .fc-figs .mem-fig:is([data-status='estimate'], [data-status='forecast']) {
     border-style: dashed;
   }
   .fc-flow {
@@ -1134,13 +1134,13 @@
     }
     /* card cells hold several pieces (value + small range, text + citations): label on the left, content as one
        block on the right, instead of memory.css's two-column grid that would split the pieces */
-    :is(.fc-ftable, .fc-assume, .fc-sens, .fc-annual, .fc-bits, .fc-params) .mem-table tbody tr > td,
+    :is(.fc-ftable, .fc-assume, .fc-sens, .fc-annual, .fc-bits, .fc-params, .fc-revtable) .mem-table tbody tr > td,
     .mem-tablewrap--cards .fc-mtable tbody tr > td {
       /* flow-root: the floated label counts towards the cell height when it wraps */
       display: flow-root;
       padding-inline-start: calc(6.5em + var(--space-2));
     }
-    :is(.fc-ftable, .fc-assume, .fc-sens, .fc-annual, .fc-bits, .fc-params) .mem-table tbody tr > td::before,
+    :is(.fc-ftable, .fc-assume, .fc-sens, .fc-annual, .fc-bits, .fc-params, .fc-revtable) .mem-table tbody tr > td::before,
     .mem-tablewrap--cards .fc-mtable tbody tr > td::before {
       float: inline-start;
       inline-size: 6.5em;
@@ -1148,10 +1148,10 @@
       line-height: 1.6;
     }
     /* the forecast table labels carry their unit (「營收（新台幣億元）」): a wider label column */
-    .fc-ftable .mem-table tbody tr > td {
+    :is(.fc-ftable, .fc-revtable) .mem-table tbody tr > td {
       padding-inline-start: calc(8rem + var(--space-2));
     }
-    .fc-ftable .mem-table tbody tr > td::before {
+    :is(.fc-ftable, .fc-revtable) .mem-table tbody tr > td::before {
       inline-size: 8rem;
       margin-inline-start: calc(-8rem - var(--space-2));
     }
@@ -1181,6 +1181,293 @@
     .mem-tablewrap--cards .mem-table tr.fc-ftable__year,
     .mem-tablewrap--cards .mem-table tr.fc-ftable__guide {
       border-width: 2px;
+    }
+  }
+}
+
+/* ───────────── 預測 vs 實際 (LiveCheck), the reported-quarter summary card and the 樣本外 window ───────────── */
+@layer components {
+  /* four summary cards (reported quarter + three forecasts): 1, 2 or 4 across, never 3 + 1 */
+  .fc-sum--4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (min-width: 40rem) {
+    .fc-sum--4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 75rem) {
+    .fc-sum--4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .fc-sum--4 .fc-sum__card {
+      padding-inline: var(--space-4);
+    }
+    .fc-sum--4 .fc-sum__val {
+      font-size: var(--fs-l);
+    }
+  }
+  .fc-sum__card--actual {
+    border: 1.5px solid color-mix(in srgb, var(--c-pos) 55%, var(--c-border));
+    background:
+      linear-gradient(color-mix(in srgb, var(--c-pos) 7%, transparent), transparent 9rem),
+      var(--c-bg-elev);
+  }
+  .fc-sum__card--actual .fc-sum__head .fc-tag {
+    margin: 0.25em 0 0;
+  }
+  .fc-sum__past {
+    color: var(--c-fg-subtle);
+  }
+  .fc-sum__note a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .fc-role--live {
+    border-color: color-mix(in srgb, var(--c-pos) 60%, transparent);
+    background: color-mix(in srgb, var(--c-pos) 12%, var(--c-bg-elev));
+    color: var(--c-fg);
+  }
+  .fc-head__live {
+    margin-block-start: var(--space-2);
+  }
+  .fc-head__live a {
+    white-space: nowrap;
+  }
+
+  .fc-win__seg--live {
+    background: color-mix(in srgb, var(--c-pos) 10%, var(--c-bg-elev));
+    border: 1px solid color-mix(in srgb, var(--c-pos) 45%, transparent);
+  }
+
+  /* metric cards: forecast → actual, the error, and a strip with the bear–bull band, the base tick and the actual */
+  .fc-live__cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 36rem) {
+    .fc-live__cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 64rem) {
+    .fc-live__cards {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .fc-live__card {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+    min-width: 0;
+  }
+  .fc-live__card[data-pos='below'],
+  .fc-live__card[data-pos='above'] {
+    border-color: color-mix(in srgb, var(--c-warn) 45%, var(--c-border));
+  }
+  .fc-live__metric {
+    margin: 0;
+    font-size: var(--fs-s);
+    font-weight: var(--fw-bold);
+    color: var(--c-fg);
+  }
+  .fc-live__nums {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-1) var(--space-3);
+  }
+  .fc-live__nums p {
+    display: grid;
+    margin: 0;
+  }
+  .fc-live__nums span {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+  }
+  .fc-live__nums b {
+    font-size: var(--fs-l);
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .fc-live__nums p:first-child b {
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .fc-live__nums small {
+    margin-inline-start: 0.2em;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-muted);
+  }
+  p.fc-live__to {
+    display: block;
+    padding-block-end: 0.15em;
+    color: var(--c-fg-subtle);
+  }
+  .fc-live__err {
+    margin: 0;
+    font-size: var(--fs-s);
+    color: var(--c-fg-muted);
+  }
+  .fc-live__err strong {
+    color: var(--c-fg);
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-live__strip {
+    position: relative;
+    block-size: 1.5rem;
+    margin-block: var(--space-1);
+  }
+  .fc-live__strip::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 50%;
+    block-size: 1px;
+    background: var(--c-border-strong);
+  }
+  .fc-live__band {
+    position: absolute;
+    inset-block: 0.3rem;
+    inset-inline-start: var(--a);
+    inline-size: max(3px, calc(var(--z) - var(--a)));
+    border-radius: var(--radius-s);
+    background: color-mix(in srgb, var(--fc-model) 30%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fc-model) 60%, transparent);
+  }
+  .fc-live__tick {
+    position: absolute;
+    inset-block: 0.1rem;
+    inset-inline-start: var(--p);
+    inline-size: 3px;
+    margin-inline-start: -1.5px;
+    border-radius: 2px;
+    background: var(--fc-model);
+  }
+  .fc-live__dot {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: var(--p);
+    inline-size: 0.8rem;
+    block-size: 0.8rem;
+    margin: -0.4rem 0 0 -0.4rem;
+    border-radius: 50%;
+    background: var(--fc-actual-ink);
+    box-shadow: 0 0 0 2px var(--c-bg-elev);
+  }
+  .fc-live__pos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2em 0.5em;
+    margin: 0;
+    font-size: var(--fs-xs);
+    line-height: 1.55;
+    color: var(--c-fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-live__chip {
+    padding: 0 0.5em;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-pill);
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;
+    color: var(--c-fg);
+  }
+  .fc-live__chip--inside {
+    border-color: color-mix(in srgb, var(--c-pos) 60%, transparent);
+    background: color-mix(in srgb, var(--c-pos) 12%, var(--c-bg-elev));
+  }
+  .fc-live__chip--below,
+  .fc-live__chip--above {
+    border-color: color-mix(in srgb, var(--c-warn) 60%, transparent);
+    background: color-mix(in srgb, var(--c-warn) 12%, var(--c-bg-elev));
+  }
+  .fc-live__key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    margin: var(--space-3) 0 var(--space-1);
+  }
+  .fc-live__key span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+  .fc-live__key i {
+    display: inline-block;
+  }
+  .fc-live__kband {
+    inline-size: 1.4em;
+    block-size: 0.7em;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--fc-model) 30%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fc-model) 60%, transparent);
+  }
+  .fc-live__ktick {
+    inline-size: 3px;
+    block-size: 1em;
+    border-radius: 2px;
+    background: var(--fc-model);
+  }
+  .fc-live__kdot {
+    inline-size: 0.75em;
+    block-size: 0.75em;
+    border-radius: 50%;
+    background: var(--fc-actual-ink);
+  }
+  .fc-live > .mem-fine {
+    max-width: 60em;
+  }
+  .fc-live__why .fc-h3 {
+    margin-block-start: var(--space-6);
+  }
+  .fc-live__why .fc-p strong {
+    color: var(--c-fg);
+  }
+  .fc-live__review {
+    max-width: 60em;
+  }
+  .fc-revtable .mem-table {
+    min-inline-size: 36rem;
+  }
+  .fc-revtable thead th small {
+    font-weight: var(--fw-regular);
+  }
+  .fc-revtable td.num {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .fc-revtable__old {
+    color: var(--c-fg-muted);
+  }
+  .fc-revtable td.num small {
+    display: block;
+    color: var(--c-fg-subtle);
+  }
+  @media (max-width: 47.99rem) {
+    .fc-revtable .mem-table {
+      min-inline-size: 0;
+    }
+    .fc-revtable td.num {
+      white-space: normal;
+    }
+    .fc-revtable td.num small {
+      display: inline;
+      margin-inline-start: 0.5em;
     }
   }
 }

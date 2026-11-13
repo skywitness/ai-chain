@@ -1,13 +1,18 @@
 ---
 /**
- * 預測摘要: one card per period of meta.summaryPeriods with the base scenario (big) and the bear–bull range for
- * revenue, gross margin, operating income and EPS. Fields the model takes as already reported (群聯 2026Q3 revenue
- * from monthly revenue) are tagged 「已公布」; Micron's own guidance for the next quarter sits under the model value.
+ * 預測摘要: one card per forecast period of summaryPeriodsOf() with the base scenario (big) and the bear–bull range
+ * for revenue, gross margin, operating income and EPS. When the model checks one of the site's earlier forecasts
+ * against a reported quarter (群聯 2026Q3), that quarter comes first as a solid 「已公布」 card with the reported
+ * figures and, under each, the earlier base forecast and its error. Fields the model takes as already reported are
+ * tagged 「已公布」; a forecast quarter whose first months are reported says so; a full year that already contains
+ * reported quarters says how many; Micron's own guidance for the next quarter sits under the model value.
  *   <SummaryCards b={bundle} />
  */
 import FcText from './FcText.astro';
 import FcCite from './FcCite.astro';
 import {
+  actualEps,
+  actualGrossMargin,
   calendarHint,
   fcEps,
   fcMoney,
@@ -15,23 +20,28 @@ import {
   fcPctExact,
   forecastOf,
   isYear,
+  liveRows,
+  monthsOfQuarter,
   nextGuidance,
+  overUnderOf,
   periodLabel,
+  quarterOf,
+  reportedQuartersIn,
+  resultsEventOf,
+  summaryPeriodsOf,
   type FcBundle,
   type Forecast,
 } from '../../../lib/forecast-data';
-import { formatMoneyRange, formatNumber } from '../../../lib/format';
+import { formatDate, formatMoney, formatMoneyRange, formatNumber } from '../../../lib/format';
 
 interface Props {
   b: FcBundle;
 }
 const { b } = Astro.props;
-const { model: m, meta } = b;
+const { model: m, meta, inputs } = b;
 const cur = meta.currency;
 const guide = nextGuidance(b);
-const monthlySrc = b.inputs.monthly.at(-1)?.src;
-const lastMonths = b.inputs.monthly.slice(-3).map((x) => Number(x.period.slice(5)));
-const knownText = lastMonths.length === 3 ? `${lastMonths[0]}–${lastMonths[2]} 月月營收合計` : '月營收合計';
+const { actual, forecast } = summaryPeriodsOf(b);
 
 type Field = 'revenue' | 'grossMargin' | 'operatingIncome' | 'eps';
 const FIELDS: Array<{ f: Field; label: string }> = [
@@ -48,7 +58,37 @@ function range(f: Field, lo: number, hi: number): string {
   return formatMoneyRange(lo, hi, cur, { unit: '億' });
 }
 
-const cards = meta.summaryPeriods
+// ── the reported quarter (群聯 2026Q3): reported figures, the earlier base forecast and its error ──
+const aq = actual ? quarterOf(inputs, actual) : undefined;
+const live = liveRows(b);
+const ev = actual ? resultsEventOf(b, actual) : undefined;
+const actualCard = aq
+  ? {
+      p: aq.period,
+      src: aq.src,
+      rows: FIELDS.map(({ f, label }) => {
+        const v = f === 'grossMargin' ? actualGrossMargin(b.company, aq) : f === 'eps' ? actualEps(b.company, aq) : aq[f];
+        const c = live.find((r) => r.metric === f);
+        let past: string | null = null;
+        if (c) {
+          // 「高估 5.4 個百分點」「低估 1.2%」 (error = forecast − actual)
+          const e = c.errorPp ?? c.errorPct;
+          const err =
+            e == null
+              ? null
+              : Math.abs(e) < 0.05
+                ? overUnderOf(e)
+                : `${overUnderOf(e)} ${formatNumber(Math.abs(e), { digits: 1 })}${c.errorPp != null ? ' 個百分點' : '%'}`;
+          past = c.position == null && c.errorPct === 0 ? '預測時已由月營收得知' : `預測 ${fmt(f, c.forecast)}${err ? `，${err}` : ''}`;
+        }
+        return { f, label, value: fmt(f, v ?? undefined), past };
+      }),
+      madeOn: live[0]?.madeOn,
+    }
+  : undefined;
+
+// ── forecast periods ──
+const cards = forecast
   .map((p) => {
     const base = forecastOf(m, 'base', p);
     if (!base) return null;
@@ -60,7 +100,12 @@ const cards = meta.summaryPeriods
       const lo = bear?.[f];
       const hi = bull?.[f];
       const ordered = lo != null && hi != null && v != null && lo <= v && v <= hi;
-      const r = !known && lo != null && hi != null && Math.abs(hi - lo) > 1e-9 ? { label: ordered ? '保守–樂觀' : '情境區間', text: range(f, Math.min(lo, hi), Math.max(lo, hi)) } : null;
+      // the span of all three scenarios, so a base value outside bear–bull (群聯 2026Q4 毛利率: 59.2 / 59.0 / 59.2)
+      // still shows its range instead of nothing
+      const all = [lo, v, hi].filter((x): x is number => x != null);
+      const min = Math.min(...all);
+      const max = Math.max(...all);
+      const r = !known && lo != null && hi != null && max - min > 1e-9 ? { label: ordered ? '保守–樂觀' : '三種情境', text: range(f, min, max) } : null;
       let g: string | null = null;
       if (guide && guide.period === p) {
         if (f === 'revenue')
@@ -68,23 +113,76 @@ const cards = meta.summaryPeriods
         if (f === 'grossMargin' && guide.grossMargin != null) g = `約 ${fcPctExact(guide.grossMargin)}`;
         if (f === 'eps' && guide.eps != null) g = `${fcEps(guide.eps, meta.epsUnit)}${guide.epsRange != null ? `（± ${formatNumber(guide.epsRange, { digits: 2 })}）` : ''}`;
       }
-      return { f, label, value: fmt(f, v), known, range: r, guide: g };
+      // months of a forecast quarter already reported (群聯: October of 2026Q4)
+      let partial: string | null = null;
+      if (f === 'revenue' && !known && !isYear(p)) {
+        const mo = monthsOfQuarter(inputs, p);
+        if (mo.length > 0 && mo.length < 3)
+          partial = `${mo.map((x) => Number(x.period.slice(5))).join('、')} 月 ${formatMoney(
+            mo.reduce((s, x) => s + x.revenue, 0),
+            cur,
+            { unit: '億', digits: 1 },
+          )}`;
+      }
+      // the three months of a quarter whose revenue is taken as known
+      const knownMonths = known && f === 'revenue' ? monthsOfQuarter(inputs, p) : [];
+      return { f, label, value: fmt(f, v), known, range: r, guide: g, partial, knownMonths };
     });
     // the first sentence of the model's note (the rest is in the forecast table)
     const note = base.note ? base.note.slice(0, base.note.indexOf('。') + 1 || undefined) : undefined;
-    return { p, base, rows, year: isYear(p), note };
+    const year = isYear(p);
+    const nRep = year && !p.startsWith('FY') ? reportedQuartersIn(inputs, p) : 0;
+    return { p, base, rows, year, note, nRep };
   })
-  .filter((c): c is { p: string; base: Forecast; rows: Array<{ f: Field; label: string; value: string; known: boolean; range: { label: string; text: string } | null; guide: string | null }>; year: boolean; note: string | undefined } => !!c);
+  .filter((c): c is NonNullable<typeof c> & { base: Forecast } => !!c);
+const n = cards.length + (actualCard ? 1 : 0);
 ---
 
-<ul class="fc-sum" role="list">
+<ul class:list={['fc-sum', n === 4 && 'fc-sum--4']} role="list">
+  {
+    actualCard && (
+      <li class="fc-sum__card fc-sum__card--actual">
+        <div class="fc-sum__head">
+          <h3 class="fc-sum__period">
+            {periodLabel(actualCard.p, 'long')}
+            <small>{calendarHint(actualCard.p)}</small>
+          </h3>
+          <span class="fc-tag fc-tag--known">已公布</span>
+        </div>
+        <dl class="fc-sum__list">
+          {actualCard.rows.map((r) => (
+            <div class="fc-sum__row">
+              <dt>{r.label}</dt>
+              <dd>
+                <span class="fc-sum__val">{r.value}</span>
+                {r.past && <span class="fc-sum__range fc-sum__past">{r.past}</span>}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <p class="fc-sum__note">
+          {ev ? `${formatDate(ev.date)}公布的財報` : '財報'}
+          <FcCite k={actualCard.src} />
+          {ev && ev.src !== actualCard.src && <FcCite k={ev.src} />}
+          {actualCard.madeOn && (
+            <>
+              ；「預測」是本站 {actualCard.madeOn} 發布的基準情境，高估、低估是預測和實際相比，見<a href="#live-check">預測 vs 實際</a>。
+            </>
+          )}
+        </p>
+      </li>
+    )
+  }
   {
     cards.map((c) => (
       <li class:list={['fc-sum__card', c.year && 'fc-sum__card--year']}>
         <div class="fc-sum__head">
           <h3 class="fc-sum__period">
             {periodLabel(c.p, 'long')}
-            <small>{calendarHint(c.p)}</small>
+            <small>
+              {calendarHint(c.p)}
+              {c.nRep > 0 && `，前 ${c.nRep} 季為財報實際數`}
+            </small>
           </h3>
           <span class="mem-st mem-st--forecast">模型推估</span>
         </div>
@@ -97,10 +195,18 @@ const cards = meta.summaryPeriods
               </dt>
               <dd>
                 <span class="fc-sum__val">{r.value}</span>
-                {r.known && r.f === 'revenue' && monthlySrc && (
+                {r.knownMonths.length > 0 && (
                   <span class="fc-sum__range">
-                    {knownText}
-                    <FcCite k={monthlySrc} />
+                    {r.knownMonths.length === 3
+                      ? `${Number(r.knownMonths[0]!.period.slice(5))}–${Number(r.knownMonths[2]!.period.slice(5))} 月月營收合計`
+                      : '月營收合計'}
+                    <FcCite k={r.knownMonths.at(-1)!.src} />
+                  </span>
+                )}
+                {r.partial && (
+                  <span class="fc-sum__range">
+                    <span class="fc-tag fc-tag--known">已公布</span> {r.partial}
+                    <FcCite k={monthsOfQuarter(inputs, c.p).at(-1)!.src} />
                   </span>
                 )}
                 {r.range && (

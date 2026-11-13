@@ -1,9 +1,11 @@
 ---
 /**
- * Training, test and forecast windows of a model as one proportional strip (one cell per quarter span).
+ * Training, test and forecast windows of a model as one proportional strip (one cell per quarter span). Quarters
+ * reported after the test window but before the forecasts (群聯 2026Q3) get their own 「樣本外」 cell: they are not
+ * used to pick the model, only to re-estimate it, to start the forecasts from, and for the forecast-vs-actual check.
  *   <TrainTestBar b={bundle} />
  */
-import { forecastQuarters, periodLabel, qIndex, scenarioOf, type FcBundle } from '../../../lib/forecast-data';
+import { forecastQuarters, lastReportedOf, nextQuarter, periodLabel, qIndex, scenarioOf, type FcBundle } from '../../../lib/forecast-data';
 
 interface Props {
   b: FcBundle;
@@ -11,12 +13,18 @@ interface Props {
 const { b } = Astro.props;
 const { model: m } = b;
 const fq = forecastQuarters(scenarioOf(m, 'base'));
+const last = lastReportedOf(m);
 const span = (from: string, to: string) => Math.max(1, qIndex(to) - qIndex(from) + 1);
+const outOfSample = qIndex(last) > qIndex(m.test.to);
 const parts = [
   { k: 'train', label: '訓練期', hint: '估計參數', from: m.train.from, to: m.train.to },
   { k: 'test', label: '回測期', hint: '逐季預測、與實際比較', from: m.test.from, to: m.test.to },
+  ...(outOfSample
+    ? [{ k: 'live', label: '樣本外', hint: m.liveChecks?.length ? '預測與實際對照' : '不用於選模', from: nextQuarter(m.test.to), to: last }]
+    : []),
   ...(fq.length ? [{ k: 'fc', label: '預測期', hint: '三種情境', from: fq[0]!.period, to: fq.at(-1)!.period }] : []),
 ].map((p) => ({ ...p, n: span(p.from, p.to) }));
+const keepFixed = m.parameters.some((p) => /不重估/.test(p.name));
 ---
 
 <figure class="fc-win" aria-label="模型的訓練期、回測期與預測期">
@@ -25,9 +33,7 @@ const parts = [
       parts.map((p) => (
         <li class:list={['fc-win__seg', `fc-win__seg--${p.k}`]} style={`--n:${p.n}`}>
           <span class="fc-win__label">{p.label}</span>
-          <span class="fc-win__range">
-            {periodLabel(p.from)}–{periodLabel(p.to)}
-          </span>
+          <span class="fc-win__range">{p.from === p.to ? periodLabel(p.from) : `${periodLabel(p.from)}–${periodLabel(p.to)}`}</span>
           <span class="fc-win__hint">
             {p.n} 季 · {p.hint}
           </span>
@@ -36,6 +42,8 @@ const parts = [
     }
   </ol>
   <figcaption class="mem-fine">
-    參數只用訓練期的資料估計。回測期的每一季，只用上一季以前的財報，加上當季實際的合約價{b.company === 'micron' ? '與美光公布的位元出貨' : '與月營收'}來預測，再和實際財報比較，衡量的是「價格已知時」模型拆解財報的能力。預測期的參數改用到最新一季為止的資料重新估計。
+    參數只用訓練期的資料估計。回測期的每一季，只用上一季以前的財報，加上當季實際的合約價{b.company === 'micron' ? '與美光公布的位元出貨' : '與月營收'}來預測，再和實際財報比較，衡量的是「價格已知時」模型拆解財報的能力。
+    {outOfSample && `${periodLabel(nextQuarter(m.test.to)) === periodLabel(last) ? periodLabel(last) : `${periodLabel(nextQuarter(m.test.to))}–${periodLabel(last)}`} 在回測期之後才公布，不拿來選模，只用來重估參數、當作預測起點${m.liveChecks?.length ? '，並和本站之前的預測對照' : ''}。`}
+    預測期的參數改用到 {periodLabel(last)} 為止的資料重新估計{keepFixed ? '（標示「不重估」的參數除外）' : ''}。
   </figcaption>
 </figure>

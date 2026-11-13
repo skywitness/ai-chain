@@ -9,7 +9,18 @@ import MultiLine from '../../../charts/MultiLine.astro';
 import QuarterBars from '../QuarterBars.astro';
 import ChartCites from '../ChartCites.astro';
 import FcCite from '../FcCite.astro';
-import { derivedOf, forecastOf, paramStarting, periodLabel, qIndex, type FcBundle } from '../../../../lib/forecast-data';
+import {
+  derivedOf,
+  fcYi,
+  forecastOf,
+  forecastQuarters,
+  monthsOfQuarter,
+  paramStarting,
+  periodLabel,
+  qIndex,
+  scenarioOf,
+  type FcBundle,
+} from '../../../../lib/forecast-data';
 import { formatNumber } from '../../../../lib/format';
 
 interface Props {
@@ -19,10 +30,20 @@ const { b } = Astro.props;
 const { model: m, inputs } = b;
 const months = inputs.monthly.slice(-15);
 const knownQ = m.scenarios.find((s) => s.id === 'base')?.forecasts.find((f) => f.known.includes('revenue'));
-const knownMonths = new Set(knownQ ? months.slice(-3).map((x) => x.period) : []);
+// the first forecast quarter when only some of its months are reported (2026Q4: October)
+const fq0 = knownQ ? undefined : forecastQuarters(scenarioOf(m, 'base'))[0];
+const partialMonths = fq0 ? monthsOfQuarter(inputs, fq0.period) : [];
+const partial = fq0 && partialMonths.length > 0 && partialMonths.length < 3 ? fq0 : undefined;
+const knownMonths = new Set(knownQ ? months.slice(-3).map((x) => x.period) : partial ? partialMonths.map((x) => x.period) : []);
 const q3 = knownQ ? forecastOf(m, 'base', knownQ.period) : undefined;
 const prevQ = inputs.quarters.at(-1)!;
 const yearAgo = knownQ ? inputs.quarters.find((q) => qIndex(q.period) === qIndex(knownQ.period) - 4) : undefined;
+// without a known forecast quarter: the latest reported quarter against the one before and a year before
+const lastQ = inputs.quarters.at(-1)!;
+const lastPrev = inputs.quarters.find((q) => qIndex(q.period) === qIndex(lastQ.period) - 1);
+const lastYearAgo = inputs.quarters.find((q) => qIndex(q.period) === qIndex(lastQ.period) - 4);
+const lo = partial ? forecastOf(m, 'bear', partial.period) : undefined;
+const hi = partial ? forecastOf(m, 'bull', partial.period) : undefined;
 
 // product mix (quarterly, from the notes to the statements)
 const PROD = [
@@ -78,14 +99,32 @@ const gapText = gap.length ? `${formatNumber(Math.min(...gap), { digits: 0 })}�
   <QuarterBars
     title="每月營收"
     as="h3"
-    subtitle={knownQ ? `${periodLabel(knownQ.period, 'long')}的三個月已公布，季營收直接採用` : undefined}
+    subtitle={
+      knownQ
+        ? `${periodLabel(knownQ.period, 'long')}的三個月已公布，季營收直接採用`
+        : partial
+          ? `${periodLabel(partial.period, 'long')}已公布 ${partialMonths.map((x) => Number(x.period.slice(5))).join('、')} 月；季營收由已公布的月份換算，是模型推估`
+          : undefined
+    }
     unit="新台幣億元"
     points={months.map((x) => ({ period: x.period, value: x.revenue / 100, color: knownMonths.has(x.period) ? 'var(--chart-2)' : 'var(--chart-1)' }))}
     valueLabels={false}
-    legend={knownQ ? [{ label: '過去月份', kind: 'bar', color: 'var(--chart-1)' }, { label: `${periodLabel(knownQ.period)} 各月`, kind: 'bar', color: 'var(--chart-2)' }] : []}
+    legend={
+      knownQ || partial
+        ? [
+            { label: '過去月份', kind: 'bar', color: 'var(--chart-1)' },
+            { label: knownQ ? `${periodLabel(knownQ.period)} 各月` : `${periodLabel(partial!.period)} 已公布月份`, kind: 'bar', color: 'var(--chart-2)' },
+          ]
+        : []
+    }
     notes={[
       q3 && yearAgo
         ? `${periodLabel(knownQ!.period)} 合計 ${formatNumber(q3.revenue / 100)} 億元，比上一季 ${formatNumber(prevQ.revenue / 100)} 億元增加 ${formatNumber((q3.revenue / prevQ.revenue - 1) * 100, { digits: 1 })}%，是一年前的 ${formatNumber(q3.revenue / yearAgo.revenue, { digits: 1 })} 倍。`
+        : !knownQ && lastPrev && lastYearAgo
+          ? `${periodLabel(lastQ.period)} 合計 ${formatNumber(lastQ.revenue / 100)} 億元，比上一季 ${formatNumber(lastPrev.revenue / 100)} 億元增加 ${formatNumber((lastQ.revenue / lastPrev.revenue - 1) * 100, { digits: 1 })}%，是一年前的 ${formatNumber(lastQ.revenue / lastYearAgo.revenue, { digits: 1 })} 倍。`
+          : null,
+      partial
+        ? `${partialMonths.map((x) => `${Number(x.period.slice(5))} 月 ${formatNumber(x.revenue / 100, { digits: 1 })} 億元`).join('、')}；基準情境推估 ${periodLabel(partial.period, 'long')}營收 ${fcYi(partial.revenue)} 億元${lo && hi ? `（保守 ${fcYi(lo.revenue)}、樂觀 ${fcYi(hi.revenue)} 億元）` : ''}。`
         : null,
     ]}
   />

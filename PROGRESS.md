@@ -27,6 +27,16 @@
   - 參數產生器：`scripts/plan/make-update-args.mjs`。
   - `content-wf.js` 新增了 `financials-update` 與 `refresh` 兩種類型，以及 `asOf`（資料基準日）參數。
 
+## ✅ 記憶體專題與群聯模型更新（2026-11-13 上線）
+
+2026-11-13 盤點全站待更新資料，結果在 `research/plan/audit-2026-11-13.md`（季財報 310 家、台股月營收 119 家、大模型 47 個系列受 AA v5 改版影響、約 40 家公司動態、約 12 篇趨勢、記憶體 7 個檔案）。使用者決定**先只做記憶體專題＋群聯模型**；**其他部分尚未更新**，建議在 11/20 左右（NVIDIA 11/17 財報、Anthropic 約 11/19 掛牌之後）用該盤點檔做大更新，12 月中再補美光 FY2027Q1、TrendForce 第三季排名等。
+
+- Workflow：`research/plan/workflows/memory-update-wf.js`（run `wf_b8f2e2dd-242`，10 個 agent、0 錯誤）。
+- 資料：`phison-inputs.yaml` 加入 2026Q3 實際財報、10 月營收 315.3 億元、法說事件，以及新欄位 `pastForecasts`（2026-10-23 發布的預測，取自 commit 97e96c3）；`market-prices.yaml`、`dram.yaml`、`nand.yaml`、`hbm.yaml`、`storage.yaml`、`fabs.yaml` 依第三季財報與 TrendForce 11 月資料更新，全部經獨立查核。
+- 模型：群聯模型預測改從 2026Q4 開始，新增 `liveChecks`／`liveCheckSummary`（2026Q3 預測 vs 實際：毛利率高估 5.4 個百分點，EPS 誤差 +0.7%，兩個誤差互相抵銷）；事後測試的 7 種修改都沒有採用；預測用的營業費用參數改為沿用回測期估計（逐季重估在原測試期誤差較大）。美光模型重跑，結果不變。
+- 頁面：`/memory/phison/` 新增「預測 vs 實際：2026 年第三季」段落（`LiveCheck.astro`），2026Q3 改為已公布。
+- 驗證：`astro check`、`validate-data`、`check-zh`、`check-content-rules`、`check-memory`、`check-forecast` 0 錯誤；`BASE_PATH=/ai-chain/` 建置 860 頁；連結 32,991 條 0 失效；預算通過；相關路由 21 項與 axe 12 項通過。
+
 ## ✅ 群聯與美光財報模型子頁（2026-10-23 上線）
 
 使用者要求：在記憶體專題加兩個子頁 `/memory/phison/`、`/memory/micron/`。群聯用不同時期的 NAND 合約價估算購入成本，對應各期銷售數量與營業額；以過去資料回測 2025–2026，找出好的模型，再預測 2026Q3、2026Q4 與 2027。美光另外考慮生產成本，使用會計季度（回測 FY2025–FY2026，預測 FY2027）。

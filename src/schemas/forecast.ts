@@ -1,9 +1,9 @@
 // 記憶體專題的財報模型子頁（/memory/phison/、/memory/micron/）的資料格式。
 // 檔案（src/data/memory/forecast/）：
 //   market-prices.yaml   NAND／DRAM 合約價與現貨價序列（兩家模型共用的輸入）       → marketPrices
-//   phison-inputs.yaml   群聯的季財報、月營收、年報產銷量值與進貨、事件              → companyInputs
+//   phison-inputs.yaml   群聯的季財報、月營收、年報產銷量值與進貨、事件、過去的預測  → companyInputs
 //   micron-inputs.yaml   美光的季財報（會計季度）、DRAM／NAND 拆分、位元與 ASP、財測 → companyInputs
-//   phison-model.json    scripts/models/phison.ts 產生的模型結果（不要手改）         → modelOutput
+//   phison-model.json    scripts/models/phison.ts 產生的模型結果（不要手改；含預測與實際對照 liveChecks） → modelOutput
 //   micron-model.json    scripts/models/micron.ts 產生的模型結果（不要手改）         → modelOutput
 // 驗證：npx tsx scripts/check-forecast.ts（schema、來源 key、期間連續性、模型輸出是否可由輸入重算）。
 import { z } from 'astro/zod';
@@ -135,6 +135,23 @@ export const companyInputs = z.strictObject({
   events: z
     .array(z.strictObject({ date: IsoDate, title: z.string().min(2), detail: z.string().min(4), src: SrcKey }))
     .default([]), // 法說會說法、新聞稿、減產、合約價談判等，供模型解讀與頁面時間軸使用
+  // 本站過去發布的模型預測（照當時的 *-model.json 抄錄，不隨模型重跑而改），供頁面做「預測與實際」對照
+  pastForecasts: z
+    .array(
+      z.strictObject({
+        madeOn: IsoDate, // 發布日
+        period: z.union([QuarterId, YearId]), // 2026Q3、2026、FY2027Q1、FY2027
+        scenario: z.enum(['bear', 'base', 'bull']),
+        revenue: z.number().optional(),
+        grossMargin: z.number().optional(), // %
+        operatingIncome: z.number().optional(),
+        netIncome: z.number().optional(),
+        eps: z.number().optional(),
+        note: z.string().optional(),
+        src: SrcKey,
+      }),
+    )
+    .default([]),
   sources: z.record(z.string(), Source),
   lastVerified: IsoDate,
   editorial: Editorial,
@@ -163,8 +180,26 @@ export const modelOutput = z.strictObject({
   amountUnit: z.literal('million'),
   periodLabel: z.string(), // 「日曆季度」「美光會計季度（約 9 月至隔年 8 月）」
   train: z.strictObject({ from: z.string(), to: z.string() }),
-  test: z.strictObject({ from: z.string(), to: z.string() }),
+  test: z.strictObject({ from: z.string(), to: z.string() }), // 選模用的回測期間；固定不動，可能早於最新財報
+  lastReported: QuarterId.optional(), // 最新一季財報（預測起點，群聯 2026Q3）；沒有時視同 test.to
   summary: z.string().min(40).max(800), // zh：選了哪個模型、回測誤差、主要結論
+  // 預測與實際對照：本站過去發布的預測（companyInputs.pastForecasts）對之後公布的財報，由模型腳本計算
+  liveChecks: z
+    .array(
+      z.strictObject({
+        period: z.string().min(4), // 2026Q3、2026
+        metric: z.string(), // revenue / grossMargin / operatingIncome / netIncome / eps
+        forecast: z.number(),
+        actual: z.number(),
+        errorPct: z.number().optional(), // （預測 − 實際）÷ |實際| × 100，金額與 EPS
+        errorPp: z.number().optional(), // 預測 − 實際（個百分點），毛利率
+        scenario: z.enum(['bear', 'base', 'bull']),
+        madeOn: IsoDate, // 預測發布日
+        note: z.string().optional(), // zh：實際值落在保守–樂觀區間的哪裡
+      }),
+    )
+    .optional(),
+  liveCheckSummary: z.string().min(40).max(1500).optional(), // zh：預測對了什麼、錯在哪裡、模型因此改了什麼
   candidates: z
     .array(
       z.strictObject({

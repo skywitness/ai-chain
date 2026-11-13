@@ -23,7 +23,7 @@ import {
   type ModelOutput,
 } from '../schemas/forecast';
 import type { SourceT } from '../schemas/common';
-import { formatMoney, formatNumber, moneyUnitLabel, scaleMillions } from './format';
+import { formatMoney, formatNumber, joinZh, moneyUnitLabel, scaleMillions } from './format';
 import { ROUTES, withBase } from './paths';
 
 // ───────────── companies ─────────────
@@ -42,12 +42,15 @@ export interface FcMeta {
   h1: string;
   /** one-line promise under the H1 */
   promise: string;
-  description: string;
   kicker: string;
   currency: 'TWD' | 'USD';
   epsUnit: '元' | '美元';
-  /** periods of the 預測摘要 cards */
-  summaryPeriods: readonly string[];
+  /**
+   * forecast quarters on the 預測摘要 cards (the first n of the base scenario), followed by every full-year forecast;
+   * the latest reported quarter gets its own card first when the model checks a past forecast against it
+   * (summaryPeriodsOf)
+   */
+  summaryQuarters: number;
   /** first quarter shown in the long-history charts */
   historyFrom: string;
   /** price series (market-prices.yaml ids) the page plots and cites */
@@ -66,12 +69,10 @@ export const FC_META: Record<FcCompany, FcMeta> = {
     title: '群聯財報模型',
     h1: '群聯財報模型：用 NAND 價格推估成本、毛利與獲利',
     promise: '把 NAND Flash 合約價、群聯的進貨與庫存天數串起來，看「低價買進、高價賣出」如何推高毛利率，以及這個效果何時淡化。',
-    description:
-      '用 TrendForce NAND 合約價推估群聯的進貨成本，對照庫存何時賣出，回測 2025 年至 2026 年上半年的毛利率與 EPS，並以保守、基準、樂觀三種情境推估 2026 年第三、四季與 2027 年。模型推估，不是投資建議。',
     kicker: '記憶體與儲存 · 財報模型 · NAND 控制晶片與模組',
     currency: 'TWD',
     epsUnit: '元',
-    summaryPeriods: ['2026Q3', '2026Q4', '2027'],
+    summaryQuarters: 1,
     historyFrom: '2019Q1',
     priceSeries: ['nand-contract-qoq'],
     gmLabel: '毛利率',
@@ -85,12 +86,10 @@ export const FC_META: Record<FcCompany, FcMeta> = {
     title: '美光財報模型',
     h1: '美光財報模型：價格、生產成本與獲利',
     promise: '把 DRAM、NAND 合約價換算成美光的售價，再拆解每位元成本、折舊與 HBM，看價格與成本如何決定美光的毛利率與獲利。',
-    description:
-      '以 TrendForce 合約價、位元出貨與每位元成本拆解美光的營收與毛利率，回測 FY2025–FY2026 共 8 季並對照美光自己的財測，再以三種情境推估 FY2027 各季與全年。模型推估，不是投資建議。',
     kicker: '記憶體與儲存 · 財報模型 · DRAM、HBM 與 NAND 原廠',
     currency: 'USD',
     epsUnit: '美元',
-    summaryPeriods: ['FY2027Q1', 'FY2027Q2', 'FY2027'],
+    summaryQuarters: 2,
     historyFrom: 'FY2019Q1',
     priceSeries: ['dram-contract-qoq', 'dram-incl-hbm-contract-qoq', 'nand-contract-qoq'],
     gmLabel: '毛利率（非 GAAP）',
@@ -409,6 +408,127 @@ export function nextGuidance(b: FcBundle): NextGuidance | undefined {
   };
 }
 
+// ───────────── reported quarter, summary periods, forecast vs actual ─────────────
+
+/** Latest reported quarter, where the forecasts start (群聯 2026Q3; falls back to the end of the backtest window). */
+export const lastReportedOf = (m: ModelOutput): string => m.lastReported ?? m.test.to;
+
+/** Monthly revenue rows that fall in a calendar quarter (群聯 2026Q4 → 2026-10…). */
+export function monthsOfQuarter(inp: CompanyInputs, q: string): CompanyInputs['monthly'] {
+  const m = RE_Q.exec(q);
+  if (!m || m[1]) return [];
+  const n = Number(m[3]);
+  return inp.monthly.filter((x) => x.period.startsWith(`${m[2]}-`) && Math.ceil(Number(x.period.slice(5)) / 3) === n);
+}
+
+export interface SummaryPeriods {
+  /** reported quarter shown first, with the site's earlier forecast for it (only when the model checks one) */
+  actual: string | undefined;
+  /** forecast periods: the first meta.summaryQuarters forecast quarters, then every full-year forecast */
+  forecast: string[];
+}
+export function summaryPeriodsOf(b: FcBundle): SummaryPeriods {
+  const base = scenarioOf(b.model, 'base');
+  const qs = forecastQuarters(base)
+    .slice(0, b.meta.summaryQuarters)
+    .map((f) => f.period);
+  const ys = (base?.forecasts ?? []).filter((f) => isYear(f.period)).map((f) => f.period);
+  const live = b.model.liveChecks?.[0]?.period;
+  return { actual: live && isQuarter(live) && quarterOf(b.inputs, live) ? live : undefined, forecast: [...qs, ...ys] };
+}
+
+/** Reported quarters inside a full year (2026 → 3 when 2026Q1–Q3 are reported). */
+export const reportedQuartersIn = (inp: CompanyInputs, year: string): number =>
+  inp.quarters.filter((q) => q.period.startsWith(year) && isQuarter(q.period)).length;
+
+export type LiveCheck = NonNullable<ModelOutput['liveChecks']>[number];
+export type PastForecast = CompanyInputs['pastForecasts'][number];
+type LiveMetric = 'revenue' | 'grossMargin' | 'operatingIncome' | 'netIncome' | 'eps';
+const LIVE_METRICS: readonly string[] = ['revenue', 'grossMargin', 'operatingIncome', 'netIncome', 'eps'];
+
+export interface LiveRow extends LiveCheck {
+  metric: LiveMetric;
+  /** bear and bull values of the same release (inputs.pastForecasts) */
+  low: number | undefined;
+  high: number | undefined;
+  /** where the actual sits against that bear–bull range; undefined when the field was already known (no range) */
+  position: 'below' | 'inside' | 'above' | undefined;
+  /** source of the past forecast (the site's page as published) */
+  src: string | undefined;
+}
+
+/**
+ * The model's forecast-vs-actual checks (model.liveChecks) with the bear–bull range of the same release from
+ * inputs.pastForecasts, in metric order. Empty when the model has none (美光).
+ */
+export function liveRows(b: FcBundle): LiveRow[] {
+  const pf = b.inputs.pastForecasts;
+  return (b.model.liveChecks ?? [])
+    .filter((c): c is LiveCheck & { metric: LiveMetric } => LIVE_METRICS.includes(c.metric))
+    .map((c) => {
+      const at = (id: ScenarioId) => pf.find((p) => p.madeOn === c.madeOn && p.period === c.period && p.scenario === id);
+      const lo = at('bear')?.[c.metric];
+      const hi = at('bull')?.[c.metric];
+      const ranged = lo != null && hi != null && Math.abs(hi - lo) > 1e-9;
+      const min = ranged ? Math.min(lo, hi) : undefined;
+      const max = ranged ? Math.max(lo, hi) : undefined;
+      const position = min == null || max == null ? undefined : c.actual < min ? 'below' : c.actual > max ? 'above' : 'inside';
+      return { ...c, low: min, high: max, position, src: at(c.scenario)?.src } as LiveRow;
+    })
+    .sort((x, y) => LIVE_METRICS.indexOf(x.metric) - LIVE_METRICS.indexOf(y.metric));
+}
+
+/**
+ * Whether the gross-margin and expense errors of the checked quarter offset each other (群聯 2026Q3): the margin was
+ * overestimated by more than 1 point, the operating-income error is well under the gross-profit error that the margin
+ * miss implies on the known revenue, and EPS came out within 3%. The page then says plainly that the close EPS does
+ * not mean the margin was right (hero line and 「為什麼毛利率高估，EPS 卻很接近」).
+ */
+export function liveOffset(b: FcBundle, rows: LiveRow[] = liveRows(b)): boolean {
+  const by = (t: LiveMetric) => rows.find((r) => r.metric === t);
+  const gm = by('grossMargin');
+  const oi = by('operatingIncome');
+  const eps = by('eps');
+  const period = rows[0]?.period;
+  const revenue = by('revenue')?.actual ?? (period ? quarterOf(b.inputs, period)?.revenue : undefined);
+  if (!gm || !oi || !eps || gm.errorPp == null || eps.errorPct == null || revenue == null) return false;
+  const gpErr = (revenue * gm.errorPp) / 100;
+  const oiErr = oi.forecast - oi.actual;
+  return gm.errorPp > 1 && oiErr < gpErr * 0.6 && Math.abs(eps.errorPct) < 3;
+}
+
+/** 「高估」「低估」「幾乎沒有誤差」 for a signed error (forecast − actual). */
+export const overUnderOf = (e: number): string => (Math.abs(e) < 0.05 ? '幾乎沒有誤差' : e > 0 ? '高估' : '低估');
+
+/** The results event of a reported quarter: 「2026 年第三季營收 860.76 億元、毛利率 59.7%」 (date and source). */
+export function resultsEventOf(b: FcBundle, q: string) {
+  const head = periodLabel(q, 'long');
+  return b.inputs.events.find((e) => e.title.startsWith(head) && !/法說會訂於/.test(e.title));
+}
+
+/** 「2025 年至 2026 年上半年」「FY2025–FY2026」「2025 年第三季至 2026 年第二季」 */
+export function spanLabel(from: string, to: string): string {
+  const a = RE_Q.exec(from);
+  const z = RE_Q.exec(to);
+  if (!a || !z) return `${periodLabel(from)}–${periodLabel(to)}`;
+  if (a[1] || z[1]) return a[3] === '1' && z[3] === '4' ? `FY${a[2]}–FY${z[2]}` : `${periodLabel(from)}–${periodLabel(to)}`;
+  const start = a[3] === '1' ? `${a[2]} 年` : periodLabel(from, 'long');
+  const end = z[3] === '4' ? `${z[2]} 年` : z[3] === '2' ? `${z[2]} 年上半年` : periodLabel(to, 'long');
+  return `${start}至 ${end}`;
+}
+
+/** Meta description of a model page, following the data (backtest window, checked quarter, forecast periods). */
+export function fcDescription(b: FcBundle): string {
+  const m = b.model;
+  const { actual, forecast } = summaryPeriodsOf(b);
+  const years = forecast.filter(isYear);
+  if (b.company === 'micron') {
+    const n = qIndex(m.test.to) - qIndex(m.test.from) + 1;
+    return `以 TrendForce 合約價、位元出貨與每位元成本拆解美光的營收與毛利率，回測 ${spanLabel(m.test.from, m.test.to)} 共 ${n} 季並對照美光自己的財測，再以三種情境推估 ${joinZh(years.map((y) => periodLabel(y)), '與')} 各季與全年。模型推估，不是投資建議。`;
+  }
+  return `用 TrendForce NAND 合約價推估群聯的進貨成本，對照庫存何時賣出，回測 ${spanLabel(m.test.from, m.test.to)}的毛利率與 EPS${actual ? `、檢驗本站對 ${periodLabel(actual, 'long')}的預測` : ''}，並以保守、基準、樂觀三種情境推估 ${joinZh(forecast.map((p) => periodLabel(p, 'long')), '與')}。模型推估，不是投資建議。`;
+}
+
 // ───────────── citations in model text ─────────────
 
 export type CitePart = string | { cite: string };
@@ -499,6 +619,9 @@ export function pageSourceKeys(b: FcBundle): string[] {
     for (const k of citesIn(b, s)) used.add(k);
   };
   addText(m.summary);
+  addText(m.liveCheckSummary);
+  for (const c of m.liveChecks ?? []) addText(c.note);
+  for (const p of inputs.pastForecasts) used.add(p.src);
   for (const c of m.candidates) {
     addText(c.description);
     addText(c.note);

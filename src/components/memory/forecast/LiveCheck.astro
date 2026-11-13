@@ -1,0 +1,249 @@
+---
+/**
+ * 預測 vs 實際 (群聯 2026Q3): the site's earlier forecast for a quarter (model.liveChecks, made on the date of an
+ * earlier release) against the reported figures — one card per forecast metric with the base forecast, the actual,
+ * the error and where the actual fell against the bear–bull range of that release (inputs.pastForecasts); a plain
+ * explanation of how the gross-margin and expense errors offset; the model's own review (model.liveCheckSummary);
+ * and how the base forecasts of the later periods changed from that release to this one. Renders nothing when the
+ * model has no checks (美光).
+ *   <LiveCheck b={bundle} />
+ */
+import FcCite from './FcCite.astro';
+import FcSentences from './FcSentences.astro';
+import {
+  fcEps,
+  fcPct,
+  fcPp,
+  fcYi,
+  forecastOf,
+  liveOffset,
+  liveRows,
+  overUnderOf,
+  periodLabel,
+  pricePoints,
+  quarterOf,
+  qIndex,
+  resultsEventOf,
+  type FcBundle,
+  type LiveRow,
+} from '../../../lib/forecast-data';
+import { formatDate, formatNumber } from '../../../lib/format';
+import { TARGET_SHORT, targetLabel, unitOf, type Target } from './fc-labels';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m, inputs, meta } = b;
+const rows = liveRows(b);
+const first = rows[0];
+const period = first?.period;
+const q = period ? quarterOf(inputs, period) : undefined;
+const prev = q ? inputs.quarters.find((x) => qIndex(x.period) === qIndex(q.period) - 1) : undefined;
+const ev = period ? resultsEventOf(b, period) : undefined;
+const fsKeys = [...new Set([q?.src, ev?.src].filter((k): k is string => !!k))];
+const madeOn = first?.madeOn;
+const pastSrc = rows.find((r) => r.src)?.src;
+
+const by = (t: Target) => rows.find((r) => r.metric === t);
+const gm = by('grossMargin');
+const oi = by('operatingIncome');
+const eps = by('eps');
+const ranged = rows.filter((r) => r.position != null);
+const knownRows = rows.filter((r) => r.position == null);
+
+/** value in the card: 「65.1%」「337.2」 (億, unit beside it)「138.92 元」 */
+const val = (t: Target, v: number) => (t === 'grossMargin' ? fcPct(v) : t === 'eps' ? fcEps(v, meta.epsUnit) : fcYi(v, 1));
+const unitAfter = (t: Target) => (t === 'grossMargin' || t === 'eps' ? '' : unitOf(b, t).replace(/^新台幣/, ''));
+/** signed error: 「+5.4 個百分點」「+2.5%」 */
+const errOf = (r: LiveRow) =>
+  r.errorPp != null ? fcPp(r.errorPp) : r.errorPct != null ? `${formatNumber(r.errorPct, { digits: 1, signed: true })}%` : '—';
+/** size of the error after 「高估／低估」: 「5.4 個百分點」「2.5%」 */
+const errAbs = (r: LiveRow) =>
+  r.errorPp != null
+    ? `${formatNumber(Math.abs(r.errorPp), { digits: 1 })} 個百分點`
+    : r.errorPct != null
+      ? `${formatNumber(Math.abs(r.errorPct), { digits: 1 })}%`
+      : '—';
+const overUnder = (r: LiveRow) => overUnderOf(r.errorPp ?? r.errorPct ?? 0);
+const POS = { below: '低於區間', inside: '落在區間內', above: '高於區間' } as const;
+const rangeText = (r: LiveRow) => {
+  if (r.low == null || r.high == null) return '';
+  const t = r.metric;
+  if (t === 'grossMargin') return `${formatNumber(r.low, { digits: 1 })}–${formatNumber(r.high, { digits: 1 })}%`;
+  if (t === 'eps') return `${formatNumber(r.low, { digits: 2 })}–${formatNumber(r.high, { digits: 2 })} ${meta.epsUnit}`;
+  return `${fcYi(r.low, 1)}–${fcYi(r.high, 1)} ${unitAfter(t)}`;
+};
+/** positions (0–100) on a strip spanning the range and the actual, with some room on both sides */
+function strip(r: LiveRow) {
+  const lo = Math.min(r.low!, r.actual, r.forecast);
+  const hi = Math.max(r.high!, r.actual, r.forecast);
+  const pad = (hi - lo || Math.abs(hi) || 1) * 0.14;
+  const d0 = lo - pad;
+  const d1 = hi + pad;
+  const at = (v: number) => formatNumber(((v - d0) / (d1 - d0)) * 100, { digits: 2 });
+  return { a: at(r.low!), z: at(r.high!), f: at(r.forecast), x: at(r.actual) };
+}
+
+// ── plain explanation of the offsetting errors, from the reported quarters (營業費用 = 毛利 − 營業利益) ──
+const opex = (x: typeof q) => (x?.grossProfit != null && x.operatingIncome != null ? x.grossProfit - x.operatingIncome : undefined);
+const opexNow = opex(q);
+const opexPrev = opex(prev);
+const gpNow = q?.grossProfit;
+const gpPrev = prev?.grossProfit;
+const pctChg = (a: number | undefined, z: number | undefined) => (a != null && z != null && z !== 0 ? (a / z - 1) * 100 : undefined);
+const opexChg = pctChg(opexNow, opexPrev);
+const gpChg = pctChg(gpNow, gpPrev);
+// the margin and expense errors offset (a smaller operating-income error than the margin miss implies): liveOffset
+const offset = liveOffset(b, rows);
+const priceQoq = period ? pricePoints(b.prices, 'nand-contract-qoq').points.find((p) => p.period === period) : undefined;
+
+// ── how the later base forecasts moved from the earlier release to this one ──
+const revised = madeOn
+  ? inputs.pastForecasts
+      .filter((p) => p.madeOn === madeOn && p.scenario === 'base' && p.period !== period)
+      .map((p) => ({ p, now: forecastOf(m, 'base', p.period) }))
+      .filter((x) => !!x.now)
+  : [];
+const REV_COLS: Target[] = ['revenue', 'grossMargin', 'eps'];
+const chg = (t: Target, old: number | undefined, now: number | undefined) => {
+  if (old == null || now == null) return '';
+  if (t === 'grossMargin') return fcPp(now - old);
+  return `${formatNumber((now / old - 1) * 100, { digits: 1, signed: true })}%`;
+};
+const num = (t: Target, v: number | undefined) =>
+  v == null ? '—' : t === 'grossMargin' ? formatNumber(v, { digits: 1 }) : t === 'eps' ? formatNumber(v, { digits: 2 }) : fcYi(v);
+const q4Rule = m.scenarios.find((s) => s.id === 'base')?.assumptions.find((a) => /^營收 \d{4}Q[1-4]$/.test(a.name));
+---
+
+{
+  first && period && (
+    <div class="fc-live">
+      <ul class="fc-live__cards" role="list">
+        {ranged.map((r) => {
+          const s = strip(r);
+          return (
+            <li class="fc-live__card" data-pos={r.position}>
+              <p class="fc-live__metric">{targetLabel(b, r.metric)}</p>
+              <div class="fc-live__nums">
+                <p>
+                  <span>預測</span>
+                  <b>
+                    {val(r.metric, r.forecast)}
+                    {unitAfter(r.metric) && <small>{unitAfter(r.metric)}</small>}
+                  </b>
+                </p>
+                <p class="fc-live__to" aria-hidden="true">
+                  →
+                </p>
+                <p>
+                  <span>實際</span>
+                  <b>
+                    {val(r.metric, r.actual)}
+                    {unitAfter(r.metric) && <small>{unitAfter(r.metric)}</small>}
+                  </b>
+                </p>
+              </div>
+              <p class="fc-live__err">
+                {overUnder(r)} <strong>{errAbs(r)}</strong>
+              </p>
+              <div
+                class="fc-live__strip"
+                role="img"
+                aria-label={`保守到樂觀情境 ${rangeText(r)}，基準預測 ${val(r.metric, r.forecast)}${unitAfter(r.metric) ? ` ${unitAfter(r.metric)}` : ''}，實際 ${val(r.metric, r.actual)}${unitAfter(r.metric) ? ` ${unitAfter(r.metric)}` : ''}，${POS[r.position!]}`}
+              >
+                <span class="fc-live__band" style={`--a:${s.a}%;--z:${s.z}%`} />
+                <span class="fc-live__tick" style={`--p:${s.f}%`} />
+                <span class="fc-live__dot" style={`--p:${s.x}%`} />
+              </div>
+              <p class="fc-live__pos">
+                <span class:list={['fc-live__chip', `fc-live__chip--${r.position}`]}>{POS[r.position!]}</span>
+                <span>保守–樂觀 {rangeText(r)}</span>
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+      <p class="fc-live__key mem-fine" aria-hidden="true">
+        <span><i class="fc-live__kband" />保守–樂觀情境區間</span>
+        <span><i class="fc-live__ktick" />基準情境的預測</span>
+        <span><i class="fc-live__kdot" />實際</span>
+      </p>
+      <p class="mem-fine">
+        預測是本站 {madeOn} 發布的模型推估{pastSrc && <FcCite k={pastSrc} />}，實際是群聯{ev ? ` ${formatDate(ev.date)}` : ''}公布的財報{fsKeys.map((k) => <FcCite k={k} />)}；誤差為預測減實際，金額與 EPS 再除以實際值。
+        {knownRows.map((r) =>
+          r.metric === 'revenue' ? `營收 ${fcYi(r.actual, 1)} 億元在發布時已由月營收得知，三種情境相同，不算預測。` : `${targetLabel(b, r.metric)}在發布時已知，不算預測。`,
+        )}
+      </p>
+
+      {
+        offset && gm && oi && eps && (
+          <div class="fc-live__why">
+            <h3 class="fc-h3">為什麼毛利率高估，EPS 卻很接近</h3>
+            <p class="fc-p">
+              毛利率預測 {fcPct(gm.forecast)}，實際 {fcPct(gm.actual)}<FcCite k={q!.src} />，高估 {errAbs(gm)}，毛利金額因此估得太多。但模型的營業費用規則會讓費用跟著毛利增加，實際上{opexChg != null && gpChg != null ? `群聯這一季的毛利比上一季增加 ${formatNumber(gpChg, { digits: 1 })}%，營業費用只增加 ${formatNumber(opexChg, { digits: 1 })}%` : '群聯這一季的營業費用沒有跟著毛利放大'}<FcCite k={q!.src} />，所以費用也一起高估了。毛利多估、費用也多估，兩個誤差對獲利的影響方向相反，相減後營業利益預測 {fcYi(oi.forecast, 1)} 億元、實際 {fcYi(oi.actual, 1)} 億元，只{overUnder(oi)} {errAbs(oi)}；再經過業外收支與所得稅，EPS 預測 {fcEps(eps.forecast, meta.epsUnit)}、實際 {fcEps(eps.actual, meta.epsUnit)}，誤差 {errOf(eps)}。
+            </p>
+            <p class="fc-p">
+              <strong>EPS 接近是兩個誤差互相抵銷的結果，不代表毛利率估對了。</strong>
+              模型假設群聯的售價和 TrendForce 的整體合約價同步{priceQoq ? `（這一季季增 ${formatNumber(priceQoq.value, { digits: 1 })}%）` : ''}{priceQoq && <FcCite k={priceQoq.src} />}，成本則是過去買進的庫存；毛利率高估，代表群聯實際的售價漲幅低於合約價指數、成本漲得比模型快，或兩者都有。模型自己的檢討把落差拆成幾個部分，並說明這次怎麼處理：
+            </p>
+          </div>
+        )
+      }
+
+      {
+        m.liveCheckSummary && (
+          <aside class="fc-rule fc-live__review" aria-label="模型的檢討">
+            <p class="fc-rule__h">模型的檢討：誤差拆解與這次的處理</p>
+            <FcSentences b={b} text={m.liveCheckSummary} />
+          </aside>
+        )
+      }
+
+      {
+        revised.length > 0 && (
+          <>
+            <h3 class="fc-h3">之後各期的預測改了多少</h3>
+            <p class="fc-p">
+              本版以 {periodLabel(period, 'long')}的財報為新的起點重新推算{q4Rule ? `，${periodLabel(q4Rule.name.slice(3), 'long')}營收改由已公布的月營收換算` : ''}。下表是 {madeOn} 版與本版的基準情境，兩版都是模型推估{pastSrc && <FcCite k={pastSrc} />}。
+            </p>
+            <div class="mem-tablewrap mem-tablewrap--cards fc-revtable" tabindex="0" role="region" aria-label="預測修正表">
+              <table class="mem-table">
+                <caption class="ch-sr">基準情境的預測：{madeOn} 版與本版</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">期間</th>
+                    {REV_COLS.map((t) => (
+                      <th scope="col" class="num">
+                        {targetLabel(b, t)}
+                        <small>{unitOf(b, t)}：{madeOn?.slice(5).replace('-', '/')} 版 → 本版</small>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {revised.map(({ p, now }) => (
+                    <tr>
+                      <th scope="row" data-label="期間">
+                        {periodLabel(p.period, 'long')}
+                      </th>
+                      {REV_COLS.map((t) => (
+                        <td class="num" data-label={`${TARGET_SHORT[t]}（${unitOf(b, t).replace(/^新台幣/, '')}）`}>
+                          <span class="fc-revtable__old">{num(t, p[t])}</span>
+                          <span aria-hidden="true"> → </span>
+                          <span class="ch-sr">改為</span>
+                          <strong>{num(t, now![t])}</strong>
+                          <small>{chg(t, p[t], now![t])}</small>
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )
+      }
+    </div>
+  )
+}

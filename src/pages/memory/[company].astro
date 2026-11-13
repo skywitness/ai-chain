@@ -2,8 +2,10 @@
 /**
  * /memory/phison/ 「群聯財報模型」 and /memory/micron/ 「美光財報模型」 — sub-pages of the memory topic that model a
  * company's financials from memory prices. Same order on both pages (由淺入深):
- * hero → 一分鐘看懂 → 預測摘要 → 價格與成本 → 存貨（群聯）／產能（美光） → 數量與營業額 → 模型怎麼做 → 回測 →
- * 情境預測 → 限制與風險 → 大事記 → 資料來源.
+ * hero → 一分鐘看懂 → 預測摘要 → 預測 vs 實際（only when the model checks an earlier forecast: 群聯 2026Q3） →
+ * 價格與成本 → 存貨（群聯）／產能（美光） → 數量與營業額 → 模型怎麼做 → 回測 → 情境預測 → 限制與風險 → 大事記 → 資料來源.
+ * Periods follow the data: the latest reported quarter (model.lastReported), the summary periods (summaryPeriodsOf)
+ * and the meta description (fcDescription) are computed in src/lib/forecast-data.ts.
  * Data: src/data/memory/forecast/ via src/lib/forecast-data.ts (zod-validated with src/schemas/forecast.ts; check and
  * re-run the models with npx tsx scripts/check-forecast.ts). Company-specific sections live in
  * src/components/memory/forecast/{phison,micron}/, the shared ones in src/components/memory/forecast/.
@@ -29,6 +31,7 @@ import LimitList from '../../components/memory/forecast/LimitList.astro';
 import EventTimeline from '../../components/memory/forecast/EventTimeline.astro';
 import FcSentences from '../../components/memory/forecast/FcSentences.astro';
 import FcCite from '../../components/memory/forecast/FcCite.astro';
+import LiveCheck from '../../components/memory/forecast/LiveCheck.astro';
 import PhisonBasics from '../../components/memory/forecast/phison/PhisonBasics.astro';
 import PhisonPriceCost from '../../components/memory/forecast/phison/PhisonPriceCost.astro';
 import PhisonInventory from '../../components/memory/forecast/phison/PhisonInventory.astro';
@@ -41,15 +44,29 @@ import '../../components/memory/memory.css';
 import '../../components/memory/forecast/forecast.css';
 import {
   FC_COMPANIES,
+  fcDescription,
+  fcPct,
+  fcEps,
   forecastHref,
   forecastOf,
+  forecastQuarters,
   getForecastData,
   hasForecast,
+  isYear,
+  lastReportedOf,
+  liveOffset,
+  liveRows,
+  overUnderOf,
+  monthsOfQuarter,
   nextGuidance,
   pageSources,
   periodLabel,
   priceKeys,
+  qIndex,
+  reportedQuartersIn,
+  scenarioOf,
   selectedCandidate,
+  summaryPeriodsOf,
   type FcCompany,
 } from '../../lib/forecast-data';
 import { errHeadline } from '../../components/memory/forecast/fc-labels';
@@ -65,6 +82,27 @@ const b = getForecastData(company);
 if (!b) throw new Error(`[memory/${company}] forecast data missing`);
 const { meta, model: m } = b;
 const asOf = m.asOf;
+const description = fcDescription(b);
+const lastReported = lastReportedOf(m);
+const live = liveRows(b);
+const liveGm = live.find((r) => r.metric === 'grossMargin');
+const liveEps = live.find((r) => r.metric === 'eps');
+const livePeriod = live[0]?.period;
+const liveOff = liveOffset(b, live);
+const sp = summaryPeriodsOf(b);
+// 預測摘要 lede: a calendar year that already contains reported quarters (群聯 2026) is actual plus forecast, not a
+// forecast — name it separately
+const mixedYears = company === 'micron' ? [] : sp.forecast.filter((p) => isYear(p) && reportedQuartersIn(b.inputs, p) > 0);
+const pureForecastLabels = joinZh(
+  sp.forecast.filter((p) => !mixedYears.includes(p)).map((p) => periodLabel(p, 'long')),
+  '與',
+);
+const mixedText = mixedYears
+  .map((p) => {
+    const n = reportedQuartersIn(b.inputs, p);
+    return `${periodLabel(p, 'long')}是前 ${n} 季的財報實際數加上${n === 3 ? '第四季' : `其餘 ${4 - n} 季`}的推估`;
+  })
+  .join('；');
 const sources = pageSources(b);
 registerSources(Astro, sources);
 
@@ -74,12 +112,24 @@ const guidanceCand = m.candidates.find((c) => c.id === 'guidance');
 const exAnte = m.candidates.find((c) => c.id.endsWith('-ex-ante'));
 const g = nextGuidance(b);
 const isMu = company === 'micron';
-// the next results date, when the inputs record it (群聯: 「2026 年第三季財報法說會訂於 11 月 6 日」)
-const nextCall = [...b.inputs.events].reverse().find((e) => /法說會訂於/.test(e.title) && e.date >= m.asOf.slice(0, 4));
-const anyKnown = meta.summaryPeriods.some((p) => (forecastOf(m, 'base', p)?.known.length ?? 0) > 0);
+// the next results date, when the inputs record it (群聯: 「2026 年第四季財報法說會訂於 …」); a call for a quarter
+// that is already reported is left out
+const ZH_Q: Record<string, number> = { 一: 1, 二: 2, 三: 3, 四: 4 };
+const nextCall = [...b.inputs.events].reverse().find((e) => {
+  const q = /^(\d{4}) 年第([一二三四])季財報法說會訂於/.exec(e.title);
+  return !!q && qIndex(`${q[1]}Q${ZH_Q[q[2]!]}`) > qIndex(lastReported);
+});
+const anyKnown = !!sp.actual || sp.forecast.some((p) => (forecastOf(m, 'base', p)?.known.length ?? 0) > 0);
 /** the forecast quarter whose revenue is already reported (群聯: from monthly revenue) */
 const knownF = m.scenarios.find((s) => s.id === 'base')?.forecasts.find((f) => f.known.includes('revenue'));
-const summaryLabels = joinZh(meta.summaryPeriods.map((p) => periodLabel(p, 'long')), '與');
+/** the first forecast quarter when some of its months are reported (群聯 2026Q4: October) */
+const firstFq = forecastQuarters(scenarioOf(m, 'base'))[0];
+const partialMonths = firstFq && !firstFq.known.includes('revenue') ? monthsOfQuarter(b.inputs, firstFq.period) : [];
+const partialText =
+  firstFq && partialMonths.length > 0 && partialMonths.length < 3
+    ? `${periodLabel(firstFq.period, 'long')}的 ${partialMonths.map((x) => Number(x.period.slice(5))).join('、')} 月營收已公布，其餘月份與毛利率以下仍是推估`
+    : '';
+const summaryLabels = joinZh(sp.forecast.map((p) => periodLabel(p, 'long')), '與');
 /** latest TrendForce release among the plotted price points: 「2026 年 9 月」 */
 const priceDates = priceKeys(b)
   .map((k) => b.sourceByKey.get(k)?.published)
@@ -88,6 +138,8 @@ const priceDates = priceKeys(b)
 const priceAsOf = priceDates.length ? formatDate(priceDates.at(-1)!, 'ym') : undefined;
 const testSpan =`${periodLabel(m.test.from)}–${periodLabel(m.test.to)}`;
 const nTest = sel.metrics.grossMargin?.n ?? 0;
+/** forecast parameters kept at their training-window values (群聯: the expense rule, 「（不重估，…）」) */
+const fixedParams = m.parameters.some((p) => /^預測.*不重估/.test(p.name) && /營業費用/.test(p.name));
 
 // 群聯: the one-step test knows the quarter's price; say plainly how the same model does without it (start-of-quarter
 // price forecasts) and when it runs several quarters ahead like the forecasts do — both worse than the naive model.
@@ -111,6 +163,7 @@ const stockSec = isMu ? { id: 'capacity', label: '產能與折舊' } : { id: 'in
 const toc = [
   { href: '#basics', label: '一分鐘看懂' },
   { href: '#summary', label: '預測摘要' },
+  ...(live.length ? [{ href: '#live-check', label: '預測 vs 實際' }] : []),
   { href: '#price-cost', label: '價格與成本' },
   { href: `#${stockSec.id}`, label: stockSec.label },
   { href: '#volume', label: '數量與營收' },
@@ -126,7 +179,7 @@ const other: FcCompany = isMu ? 'phison' : 'micron';
 const jsonLd = [
   articleJsonLd({
     title: meta.h1,
-    description: meta.description,
+    description,
     path: Astro.url,
     site: Astro.site,
     dateModified: asOf,
@@ -147,7 +200,7 @@ const jsonLd = [
 
 <BaseLayout
   title={meta.title}
-  description={meta.description}
+  description={description}
   image={ogImageFor('chain')}
   imageAlt={`AI 產業鏈全景：${meta.title}`}
   type="article"
@@ -171,7 +224,7 @@ const jsonLd = [
         <h1 data-pagefind-weight="10">{meta.h1}</h1>
         <p class="page-head__lede mem-head__lede">{meta.promise}</p>
         <div class="mem-head__meta">
-          <DataAsOf date={asOf} note={`財報截至 ${periodLabel(m.test.to)}${priceAsOf ? `；合約價截至 TrendForce ${priceAsOf}的估計與預測` : ''}`} />
+          <DataAsOf date={asOf} note={`財報截至 ${periodLabel(lastReported)}${priceAsOf ? `；合約價截至 TrendForce ${priceAsOf}的估計與預測` : ''}`} />
         </div>
         <p class="fc-head__model">
           <span class="fc-role fc-role--selected">選定模型</span>
@@ -179,6 +232,17 @@ const jsonLd = [
             <strong>{sel.name}</strong>：{heroModel}
           </span>
         </p>
+        {
+          livePeriod && liveGm && liveEps && (
+            <p class="fc-head__model fc-head__live">
+              <span class="fc-role fc-role--live">預測 vs 實際</span>
+              <span>
+                本站 {liveGm.madeOn} 對 {periodLabel(livePeriod, 'long')}的預測：毛利率 {fcPct(liveGm.forecast)}，實際 {fcPct(liveGm.actual)}（{overUnderOf(liveGm.errorPp ?? 0)} {formatNumber(Math.abs(liveGm.errorPp ?? 0), { digits: 1 })} 個百分點）；EPS {fcEps(liveEps.forecast, meta.epsUnit)}，實際 {fcEps(liveEps.actual, meta.epsUnit)}（{overUnderOf(liveEps.errorPct ?? 0)} {formatNumber(Math.abs(liveEps.errorPct ?? 0), { digits: 1 })}%{liveOff ? '；接近是因為營業費用也高估、和毛利的誤差互相抵銷，不代表毛利率估對了' : ''}）。
+                <a href="#live-check">看對照與模型的檢討</a>
+              </span>
+            </p>
+          )
+        }
         <div class="fc-notice" role="note" aria-label="重要提醒">
           <Icon name="warn" size="1.25em" />
           <p>
@@ -215,7 +279,7 @@ const jsonLd = [
       <p class="sec-head__lede">
         {isMu
           ? `${summaryLabels}的模型推估。大字是基準情境，下方是保守到樂觀情境的區間${g ? `；${periodLabel(g.period, 'long')}另列美光自己的財測對照` : ''}。毛利率與 EPS 採非 GAAP，營業利益採 GAAP。`
-          : `${summaryLabels}的模型推估。大字是基準情境，下方是保守到樂觀情境的區間${knownF ? `；${periodLabel(knownF.period, 'long')}營收已由月營收得知，毛利率以下仍是推估` : ''}${nextCall ? `；${nextCall.title.replace(/^\d{4} 年/, '')}` : ''}`}
+          : `${sp.actual && live[0] ? `${periodLabel(sp.actual, 'long')}已公布財報，第一張卡片是實際數字，並列出本站 ${live[0].madeOn} 的預測與誤差；` : ''}${pureForecastLabels}是模型推估${mixedText ? `，${mixedText}` : ''}。大字是基準情境，下方是保守到樂觀情境的區間${knownF ? `；${periodLabel(knownF.period, 'long')}營收已由月營收得知，毛利率以下仍是推估` : ''}${partialText ? `；${partialText}` : ''}${nextCall ? `；${nextCall.title.replace(/^\d{4} 年/, '')}` : ''}`}
         {!isMu && nextCall && <FcCite k={nextCall.src} />}
         {!isMu && '。'}
       </p>
@@ -227,6 +291,20 @@ const jsonLd = [
       {g && <span><span class="fc-tag fc-tag--guidance">美光財測</span>公司在法說會公布的下一季預估</span>}
     </div>
   </section>
+
+  {
+    livePeriod && (
+      <section class="container section fc-live-sec" id="live-check" aria-labelledby="live-check-h">
+        <div class="sec-head">
+          <h2 id="live-check-h">預測 vs 實際：{periodLabel(livePeriod, 'long')}</h2>
+          <p class="sec-head__lede">
+            {`本站 ${live[0]!.madeOn} 發布的模型預測了 ${periodLabel(livePeriod, 'long')}的毛利率與獲利，${meta.name}之後公布了財報。這是${new Set(b.inputs.pastForecasts.map((p) => p.madeOn)).size === 1 ? '第一個' : ''}在財報公布前就公開、也沒有用來選模的預測，比回測更能說明模型實際使用時的誤差；不過只有一季，不能當成平均誤差。`}
+          </p>
+        </div>
+        <LiveCheck b={b} />
+      </section>
+    )
+  }
 
   <section class="container section" id="price-cost" aria-labelledby="price-cost-h">
     {isMu ? <MicronPriceCost b={b} /> : <PhisonPriceCost b={b} />}
@@ -251,7 +329,7 @@ const jsonLd = [
     <CandidateCards b={b} />
     <h3 class="fc-h3">參數</h3>
     <p class="fc-p">
-      參數分兩組：回測用的只看訓練期資料，預測用的再加入回測期重新估計。{isMu ? `業外收支、稅率與股數依美光${g ? ` ${periodLabel(g.period, 'long')}` : ''}財測設定。` : '營業費用、業外收支、稅率與股數用最近幾季的財報設定。'}
+      參數分兩組：回測用的只看訓練期資料，預測用的再加入到 {periodLabel(lastReported)} 為止的資料重新估計{fixedParams ? '，但標示「不重估」的營業費用規則沿用訓練期的估計（原因見表中說明）' : ''}。{isMu ? `業外收支、稅率與股數依美光${g ? ` ${periodLabel(g.period, 'long')}` : ''}財測設定。` : `${fixedParams ? '' : '營業費用、'}業外收支、稅率與股數用最近幾季的財報設定。`}
     </p>
     <ParamTable b={b} />
   </section>

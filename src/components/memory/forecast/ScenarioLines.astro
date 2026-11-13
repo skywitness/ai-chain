@@ -41,7 +41,7 @@ const actualOf = (q: (typeof inputs.quarters)[number]): number | undefined =>
   t === 'grossMargin' ? actualGrossMargin(company, q) : t === 'eps' ? actualEps(company, q) : q[t];
 const hist = first ? quartersFrom(inputs, inputs.quarters[0]!.period).filter((q) => qIndex(q.period) < qIndex(first)).slice(-history) : [];
 const actualPts = hist.map((q) => ({ x: chartKey(q.period), y: actualOf(q) != null ? chartValue(t, actualOf(q)!) : null }));
-// fields already reported for forecast quarters (群聯 2026Q3 revenue) extend the actual line
+// fields already reported for forecast quarters (a quarter whose revenue is known from monthly revenue) extend the actual line
 const knownQs = fq.filter((f) => f.known.includes(t));
 for (const f of knownQs) actualPts.push({ x: chartKey(f.period), y: f[t] != null ? chartValue(t, f[t]!) : null });
 const anchor = actualPts.at(-1);

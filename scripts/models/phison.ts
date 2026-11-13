@@ -11,7 +11,15 @@
 //     write-down rule.
 //  4. Revenue: price × volume; operating expenses, non-operating income, tax and share count from a shared chain.
 //  5. Candidates are fitted on 2017Q1–2024Q4 and tested one quarter ahead on 2025Q1–2026Q2; the best (lowest
-//     gross-margin MAE, ties by EPS MAE) is re-fitted on all data and run under three NAND price scenarios.
+//     gross-margin MAE, ties by EPS MAE) is re-fitted on all reported quarters and run under three NAND price scenarios
+//     from the quarter after the latest report (NEXT) to HORIZON_END. The training and test windows are fixed on purpose:
+//     quarters reported after 2026Q2 are not used to choose or re-tune the model structure, only to re-estimate its
+//     parameters and to check earlier published forecasts. Exception: the opex rule keeps its TRAIN parameters
+//     (OPEX_PARAMS; re-estimating it every quarter scored worse on the original test window, see `refit`).
+//  6. Live checks: the forecasts this site published earlier (inputs.pastForecasts) against the quarters reported since,
+//     with a decomposition of the latest one-quarter-ahead miss (the published forecast is re-created from the data of
+//     that time first). Post-hoc changes suggested by the miss are scored on the original windows (reviewVariants) and
+//     adopted only when the test errors do not get worse and the change is well grounded; see the selected candidate note.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -26,6 +34,48 @@ const TARGETS: Target[] = ['revenue', 'grossMargin', 'operatingIncome', 'netInco
 
 const TRAIN = { from: '2017Q1', to: '2024Q4' };
 const TEST = { from: '2025Q1', to: '2026Q2' };
+/** Last forecast quarter of the scenarios. */
+const HORIZON_END = '2027Q4';
+type OpexForm = 'levels' | 'relative';
+/**
+ * How the shared opex rule Δopex = d × opex_{t−1} + β × ΔGP is estimated: 'levels' (least squares on amounts, the
+ * 2026-10-23 version) or 'relative' (on Δopex ÷ opex_{t−1}, every quarter weighted equally). The review scores both.
+ */
+const OPEX_FORM: OpexForm = 'levels';
+/**
+ * Quarters the scenarios' opex rule is estimated on: 'train' (TRAIN, the parameters the backtest scores) or 'all'
+ * (re-estimated through the latest report, the method up to the 2026-10-23 version). Decided on the original test
+ * window: re-estimating the rule every quarter (expanding window) gave larger operating-income and EPS errors than the
+ * fixed TRAIN parameters (`refit` below, reported in the texts), and in levels one quarter (2026Q3) moved d from +2.29%
+ * to −5.56% while φ, g and κ barely moved. φ, g and κ are still re-estimated on all reported quarters.
+ */
+const OPEX_PARAMS: 'train' | 'all' = 'train';
+/**
+ * NAND contract-price qoq (%) assumed for horizon quarters without a TrendForce range in market-prices.yaml (this model's
+ * assumption, not TrendForce numbers). Quarters that have a range use its low / mid / high instead.
+ */
+const ASSUMED_QOQ: Record<'bear' | 'base' | 'bull', Record<string, number>> = {
+  bear: { '2027Q1': 0, '2027Q2': -10, '2027Q3': -15, '2027Q4': -20 },
+  base: { '2027Q1': 5, '2027Q2': 0, '2027Q3': -5, '2027Q4': -10 },
+  bull: { '2027Q1': 10, '2027Q2': 5, '2027Q3': 0, '2027Q4': -5 },
+};
+/**
+ * Dated context shown with the scenario assumptions (update with each data refresh). Source keys written inside the
+ * text become citations on the page, so they must exist in phison-inputs.yaml or market-prices.yaml.
+ *   price:   per TrendForce price quarter of the horizon (e.g. the split by product published after the overall forecast)
+ *   revenue: per nowcast quarter (what the monthly revenue and the earnings call say about the quarter)
+ *   assumed: about the ASSUMED_QOQ quarters; days: about the inventory-days path
+ */
+const CONTEXT: { price: Record<string, string>; revenue: Record<string, string>; assumed: string; days: string } = {
+  price: {
+    '2026Q4': '截至 2026-11-13 未見 TrendForce 公開修正；11 月公開的分項數字分化：用戶端 SSD 第四季漲幅低於 5%（tf-20261111-13303）、企業級 SSD 季增 15–20%（tf-rp-261030mh），10 月 NAND 晶圓合約價持平（tf-rp-261030yb）',
+  },
+  revenue: {
+    '2026Q4': 'NAND 漲價加重 PC、手機客戶的成本壓力，部分客戶減少拉貨；AI 相關業務占營收比重由第三季 57% 升至 10 月 65%（bnext-20261106）',
+  },
+  assumed: '2026 年 10 月下旬的報告摘要預期用戶端 SSD 與 eMMC／UFS 在 2027Q1 淡季漲勢停滯、在高檔盤整（tf-rp-261028ce、tf-rp-261022cu）；截至 2026-11-13 未見企業級 SSD 的 2027 年公開價格預測',
+  days: '執行長表示存貨有一半以上與企業級應用有關、背後已有客戶訂單，需要提前備料（bnext-20261106），天數可能不會很快回落（見敏感度）',
+};
 /** One-off operating expense in 2024Q4: costs and employee compensation tied to the Hosin (宏芯宇) stake sale (4Q24 法說簡報). */
 const OPEX_ONE_OFF = new Map([['2024Q4', 1701]]);
 /** Equal gross-margin MAE (pp) within this band counts as a tie; ties are broken by EPS MAE. */
@@ -130,7 +180,7 @@ export function buildModel(inputs: CompanyInputs, prices: MarketPrices): Out {
     },
   });
 
-  const chainFor = (from: string, to: string) => L.fitOpex(rows, periodsIn(from, to), new Set(OPEX_ONE_OFF.keys()));
+  const chainFor = (from: string, to: string, form: OpexForm = OPEX_FORM) => (form === 'levels' ? L.fitOpex : L.fitOpexRelative)(rows, periodsIn(from, to), new Set(OPEX_ONE_OFF.keys()));
   const pnl = (t: string, revenue: number, gm: number, cp: L.ChainParams): Pred => {
     const p = L.runChain(revenue, gm, L.chainStateAt(rows, addQ(t, -1), OPEX_ONE_OFF), cp);
     return { revenue, grossMargin: gm, operatingIncome: p.oi, netIncome: p.ni, eps: p.eps };
@@ -151,7 +201,7 @@ export function buildModel(inputs: CompanyInputs, prices: MarketPrices): Out {
   const dPat = (t: string, Pt?: number) => (Pt === undefined ? dP.get(t)! : (Pt / P.get(addQ(t, -1))! - 1) * 100);
   const Pat = (t: string, Pt?: number) => Pt ?? P.get(t)!;
   const chainParams = (cp: ReturnType<typeof chainFor>) => [
-    { name: '營業費用：毛利每增加 1 元，營業費用增加', value: round(cp.opexBeta, 3), unit: '元', note: `Δ營業費用 = d × 上季營業費用 + β × Δ毛利，最小平方法（${cp.n} 季；排除含 2024Q4 的季差，因為該季有處分宏芯宇相關的一次性費用 1,701 百萬元）` },
+    { name: '營業費用：毛利每增加 1 元，營業費用增加', value: round(cp.opexBeta, 3), unit: '元', note: `Δ營業費用 = d × 上季營業費用 + β × Δ毛利，${OPEX_FORM === 'relative' ? '兩邊除以上季營業費用後以最小平方法估計，每季權重相同' : '以金額直接用最小平方法估計'}（${cp.n} 季；排除含 2024Q4 的季差，因為該季有處分宏芯宇相關的一次性費用 1,701 百萬元）` },
     { name: '營業費用：毛利不變時的季成長 d', value: round(cp.opexDrift * 100, 2), unit: '%' },
   ];
 
@@ -364,6 +414,138 @@ export function buildModel(inputs: CompanyInputs, prices: MarketPrices): Out {
   const sm = candMetrics.get(sel.id)!;
   const nm = candMetrics.get('naive-last-quarter')!;
 
+  /* ── review after a live miss: post-hoc variants of the selected engine, fitted on TRAIN and scored on TEST ── */
+  // Each variant changes one rule of the one-step engine; the baseline variant reproduces the selected candidate
+  // exactly (checked below), so the before/after numbers come from the same code path and the same windows.
+  type OpexRule = OpexForm | 'revenue' | 'share-trailing' | 'share-train';
+  interface Variant { theta: number; wdBase: boolean; daysRevert: boolean; opex: OpexRule }
+  const trainPs = periodsIn(TRAIN.from, TRAIN.to);
+  const opexClean = (p: string) => row(p).opex - (OPEX_ONE_OFF.get(p) ?? 0);
+  const opexPairs = trainPs.filter((p) => !OPEX_ONE_OFF.has(p) && !OPEX_ONE_OFF.has(addQ(p, -1)));
+  /** trailing four quarters' operating expenses (one-offs removed) ÷ gross profit, known at the end of quarter p */
+  const share4 = (p: string) => {
+    const i = rows.findIndex((r) => r.period === p);
+    const w = rows.slice(i - 3, i + 1);
+    return w.reduce((a, r) => a + opexClean(r.period), 0) / w.reduce((a, r) => a + r.gp, 0);
+  };
+  const trainShare = opexPairs.reduce((a, p) => a + row(p).opex / row(p).gp, 0) / opexPairs.length;
+  const opexRule = (kind: OpexRule): ((prev: string, gp: number, R: number) => number) => {
+    if (kind === 'levels' || kind === 'relative') {
+      const cp = chainFor(TRAIN.from, TRAIN.to, kind);
+      return (prev, gp) => opexClean(prev) * (1 + cp.opexDrift) + cp.opexBeta * (gp - row(prev).gp);
+    }
+    if (kind === 'revenue') {
+      // Δopex_t = d × opex_{t−1} + β × Δrevenue_t (least squares without intercept, same pairs as the current rule)
+      let a11 = 0, a12 = 0, a22 = 0, b1 = 0, b2 = 0;
+      for (const p of opexPairs) {
+        const q = row(addQ(p, -1));
+        const u = q.opex, v = row(p).revenue - q.revenue, y = row(p).opex - q.opex;
+        a11 += u * u; a12 += u * v; a22 += v * v; b1 += u * y; b2 += v * y;
+      }
+      const det = a11 * a22 - a12 * a12;
+      const d = (b1 * a22 - b2 * a12) / det, b = (a11 * b2 - a12 * b1) / det;
+      return (prev, _gp, R) => opexClean(prev) * (1 + d) + b * (R - row(prev).revenue);
+    }
+    // partial adjustment toward a share s of gross profit: opex_t = opex_{t−1} + α × (s × GP_t − opex_{t−1})
+    const sOf = (prev: string) => (kind === 'share-train' ? trainShare : share4(prev));
+    let sxx = 0, sxy = 0;
+    for (const p of opexPairs) {
+      const q = addQ(p, -1);
+      const x = sOf(q) * row(p).gp - opexClean(q);
+      sxx += x * x;
+      sxy += x * (row(p).opex - opexClean(q));
+    }
+    const alpha = sxy / sxx;
+    return (prev, gp) => opexClean(prev) + alpha * (sOf(prev) * gp - opexClean(prev));
+  };
+  const variantEngine = (v: Variant) => {
+    const h = H[selMethod];
+    const phi = phiFor(TRAIN.to);
+    /** selling-price change t−1 → t: the contract-price change raised to θ (θ = 1: prices move with the index) */
+    const sRatio = (t: string, Pt: number) => (Pt / P.get(addQ(t, -1))!) ** v.theta;
+    // write-downs: wd = a × revenue + κ × exposure, least squares through the origin (a = 0 unless wdBase)
+    let s11 = 0, s12 = 0, s22 = 0, b1 = 0, b2 = 0;
+    for (const p of trainPs) {
+      const st = h.get(p)!.state;
+      const e = st.U * Math.max(0, (row(p).inv + row(p).wd) / st.U - P.get(p)!);
+      const R = row(p).revenue;
+      s11 += R * R; s12 += R * e; s22 += e * e; b1 += R * row(p).wd; b2 += e * row(p).wd;
+    }
+    let a = 0, kappa = Math.max(0, b2 / s22);
+    if (v.wdBase) {
+      const det = s11 * s22 - s12 * s12;
+      a = (b1 * s22 - b2 * s12) / det;
+      kappa = (s11 * b2 - s12 * b1) / det;
+      if (kappa < 0) { kappa = 0; a = b1 / s11; }
+    }
+    // inventory days: last quarter's (current rule) or a partial reversion toward the training mean
+    const dBar = trainPs.reduce((s, p) => s + invDays(p), 0) / trainPs.length;
+    let rho = 0;
+    if (v.daysRevert) {
+      let sxx = 0, sxy = 0;
+      for (const p of trainPs) { const x = dBar - invDays(addQ(p, -1)); sxx += x * x; sxy += x * (invDays(p) - invDays(addQ(p, -1))); }
+      rho = sxy / sxx;
+    }
+    const g = Math.exp(trainPs.map((p) => Math.log(row(p).revenue / row(addQ(p, -1)).revenue / sRatio(p, P.get(p)!))).reduce((s, x) => s + x, 0) / trainPs.length) - 1;
+    const opex = opexRule(v.opex);
+    const gmOf = (t: string, R: number, Pt: number) => {
+      const prev = row(addQ(t, -1));
+      const sr = sRatio(t, Pt);
+      const st = L.stepProjected(h.get(prev.period)!.state, t, Pt, R / prev.revenue / sr, invDays(prev.period) + rho * (dBar - invDays(prev.period)));
+      const wd = L.applyMarketFloor(st, Pt, kappa).wd + a * R;
+      const cr = ((prev.cogs - prev.wd) / prev.revenue) * (1 - phi + (phi * st.c) / h.get(prev.period)!.c / sr);
+      return (1 - cr - wd / R) * 100;
+    };
+    const predict = (t: string, R: number): Pred => {
+      const gm = gmOf(t, R, P.get(t)!);
+      const p = L.runChainWithOpex(R, gm, L.chainStateAt(rows, addQ(t, -1), OPEX_ONE_OFF), opex(addQ(t, -1), (R * gm) / 100, R));
+      return { revenue: R, grossMargin: gm, operatingIncome: p.oi, netIncome: p.ni, eps: p.eps };
+    };
+    return { predict, revenue: (t: string) => row(addQ(t, -1)).revenue * sRatio(t, P.get(t)!) * (1 + g), opex, a, theta: v.theta };
+  };
+  const scoreVariant = (v: Variant) => {
+    const e = variantEngine(v);
+    const test = (m: Target) => metrics(testPeriods.map((t) => ({ actual: actualOf(t)[m], predicted: m === 'revenue' ? e.revenue(t) : e.predict(t, knownRevenue(t))[m] })));
+    return { e, gm: test('grossMargin'), eps: test('eps'), oi: test('operatingIncome'), rev: test('revenue'), train: metrics(trainPs.map((t) => ({ actual: row(t).gm, predicted: e.predict(t, row(t).revenue).grossMargin }))) };
+  };
+  const BASE_VARIANT: Variant = { theta: 1, wdBase: false, daysRevert: false, opex: OPEX_FORM };
+  const OTHER_FORM: OpexForm = OPEX_FORM === 'levels' ? 'relative' : 'levels';
+  const baseScore = scoreVariant(BASE_VARIANT);
+  for (const [k, x, y] of [['grossMargin', baseScore.gm, sm.grossMargin!], ['eps', baseScore.eps, sm.eps!], ['operatingIncome', baseScore.oi, sm.operatingIncome!], ['grossMarginTrain', baseScore.train, sm.grossMarginTrain!]] as const)
+    if (Math.abs(x.mae - y.mae) > 0.002) throw new Error(`review variants: baseline ${k} MAE ${x.mae} ≠ selected candidate ${y.mae}`);
+  // The opex rule as the forecast would use it: re-estimated every quarter on TRAIN.from–(t − 1) (expanding window) versus
+  // fixed on TRAIN, both with the selected engine's one-step gross margin and the known revenue of t (original test window).
+  const refitScore = (form: OpexForm, expanding: boolean) => {
+    const f = fitted.get(sel.id)!;
+    const ps = testPeriods.map((t) => { const R = knownRevenue(t); return { t, p: pnl(t, R, f.predict(t, R).grossMargin, chainFor(TRAIN.from, expanding ? addQ(t, -1) : TRAIN.to, form)) }; });
+    return { oi: metrics(ps.map(({ t, p }) => ({ actual: row(t).oi, predicted: p.operatingIncome }))), eps: metrics(ps.map(({ t, p }) => ({ actual: row(t).eps, predicted: p.eps }))) };
+  };
+  const refit = { fixed: refitScore(OPEX_FORM, false), expanding: refitScore(OPEX_FORM, true), expandingOther: refitScore(OTHER_FORM, true) };
+  for (const [k, x, y] of [['operatingIncome', refit.fixed.oi, sm.operatingIncome!], ['eps', refit.fixed.eps, sm.eps!]] as const)
+    if (Math.abs(x.mae - y.mae) > 0.002) throw new Error(`opex re-fit check: fixed ${k} MAE ${x.mae} ≠ selected candidate ${y.mae}`);
+  const refitWorse = refit.expanding.oi.mae > refit.fixed.oi.mae && refit.expanding.eps.mae > refit.fixed.eps.mae;
+  if ((OPEX_PARAMS === 'train') !== refitWorse) throw new Error(`OPEX_PARAMS = '${OPEX_PARAMS}' disagrees with the re-fit check (expanding OI ${refit.expanding.oi.mae}, EPS ${refit.expanding.eps.mae}; fixed ${refit.fixed.oi.mae}, ${refit.fixed.eps.mae})`);
+  // θ: grid search on the training window (one-step gross-margin errors), like λ of the lag-index candidate
+  const thetaFit = (() => {
+    let best: { th: number; sse: number } | undefined;
+    for (let k = 0; k <= 20; k++) {
+      const e = variantEngine({ ...BASE_VARIANT, theta: k / 20 });
+      const sse = trainPs.reduce((s, t) => s + (e.predict(t, row(t).revenue).grossMargin - row(t).gm) ** 2, 0);
+      if (!best || sse < best.sse - 1e-9) best = { th: k / 20, sse };
+    }
+    return best!.th;
+  })();
+  const reviews = ([
+    { id: 'writedown-base', v: { wdBase: true } },
+    { id: `opex-${OTHER_FORM}`, v: { opex: OTHER_FORM } },
+    { id: 'opex-revenue', v: { opex: 'revenue' } },
+    { id: 'opex-share-trailing', v: { opex: 'share-trailing' } },
+    { id: 'opex-share-train', v: { opex: 'share-train' } },
+    { id: 'days-revert', v: { daysRevert: true } },
+    { id: 'pass-through', v: { theta: thetaFit } },
+  ] as const).map((x) => ({ id: x.id, ...scoreVariant({ ...BASE_VARIANT, ...x.v }) }));
+  const rv = (id: string) => reviews.find((r) => r.id === id)!;
+
   /* ── projection engine (selected inventory model) ── */
   function projectPath(o: {
     method: L.Method; origin: string; path: string[]; phi: number; kappa: number; cp: L.ChainParams; Pidx?: Series;
@@ -398,80 +580,211 @@ export function buildModel(inputs: CompanyInputs, prices: MarketPrices): Out {
     return out;
   }
 
-  /* ── re-fit on all data and run the scenarios ── */
+  /* ── re-fit on all reported quarters and run the scenarios ── */
   const ALL = { from: TRAIN.from, to: LAST };
-  const final = sel.fit(ALL.from, ALL.to);
-  const phiAll = final.params.find((p) => p.name.startsWith('φ'))!.value;
-  const gAll = final.params.find((p) => p.name.startsWith('實質出貨量'))!.value / 100;
-  const kappaAll = final.params.find((p) => p.name.startsWith('跌價提列比例'))!.value;
-  const cpAll = chainFor(ALL.from, ALL.to);
+  /** The selected engine re-fitted on TRAIN.from–`to`, with the rounded parameters it reports (and publishes). */
+  const engineAt = (to: string, form: OpexForm = OPEX_FORM) => {
+    const fitted = sel.fit(TRAIN.from, to);
+    const pv = (prefix: string) => fitted.params.find((p) => p.name.startsWith(prefix))!.value;
+    return { fitted, phi: pv('φ'), g: pv('實質出貨量') / 100, kappa: pv('跌價提列比例'), cp: chainFor(TRAIN.from, to, form), form };
+  };
+  const E = engineAt(ALL.to);
+  const final = E.fitted;
+  const phiAll = E.phi, gAll = E.g, kappaAll = E.kappa;
+  /** opex rule of the scenarios (OPEX_PARAMS); cpRefit = the same rule re-estimated through LAST (the earlier method) */
+  const cpTrain = chainFor(TRAIN.from, TRAIN.to), cpRefit = E.cp;
+  const cpAll = OPEX_PARAMS === 'train' ? cpTrain : cpRefit;
+  const opexWindow = OPEX_PARAMS === 'train' ? `${TRAIN.from}–${TRAIN.to}` : `${ALL.from}–${ALL.to}`;
   const chain0 = L.chainStateAt(rows, LAST, OPEX_ONE_OFF);
   const days23to25 = rows.filter((r) => L.between(r.period, '2023Q1', '2025Q4')).map((r) => (r.inv / r.cogs) * 91);
   const normalDays = days23to25.reduce((a, v) => a + v, 0) / days23to25.length;
   const H_LAST = H[selMethod].get(LAST)!;
   const startDays = invDays(LAST);
-  const horizon = qRange(NEXT, '2027Q4');
-  const glideFrom = '2026Q4';
-  const daysPath = (t: string) => {
-    if (qIndex(t) <= qIndex(glideFrom)) return startDays;
-    const n = qIndex('2027Q4') - qIndex(glideFrom);
-    const k = qIndex(t) - qIndex(glideFrom);
-    return startDays + ((normalDays - startDays) * k) / n;
+  const PREV = addQ(LAST, -1);
+  const horizon = qRange(NEXT, HORIZON_END);
+  const YEAR2 = HORIZON_END.slice(0, 4);
+  const span = (qs: readonly string[]) => (qs.length === 1 ? qs[0]! : qs[0]!.slice(0, 4) === qs.at(-1)!.slice(0, 4) ? `${qs[0]}–${qs.at(-1)!.slice(4)}` : `${qs[0]}–${qs.at(-1)}`);
+  /** inventory days: held at the latest report through NEXT, then a straight line to the 2023–2025 average at HORIZON_END */
+  const daysPath = (t: string) =>
+    qIndex(t) <= qIndex(NEXT) ? startDays : startDays + ((normalDays - startDays) * (qIndex(t) - qIndex(NEXT))) / (qIndex(HORIZON_END) - qIndex(NEXT));
+
+  /* ── live checks: forecasts this site published earlier (inputs.pastForecasts) against the quarters reported since ── */
+  const pf = inputs.pastForecasts;
+  const actualPeriod = (p: string): Pred | undefined => {
+    if (/Q[1-4]$/.test(p)) return by.has(p) ? actualOf(p) : undefined;
+    const qs = rows.filter((r) => r.period.startsWith(`${p}Q`));
+    if (qs.length !== 4) return undefined;
+    const tot = (f: (r: L.Row) => number) => qs.reduce((a, r) => a + f(r), 0);
+    return { revenue: tot((r) => r.revenue), grossMargin: (tot((r) => r.gp) / tot((r) => r.revenue)) * 100, operatingIncome: tot((r) => r.oi), netIncome: tot((r) => r.ni), eps: tot((r) => r.eps) };
   };
-  const q3 = L.priceSeries(prices, 'nand-contract-qoq').points.find((p) => p.period === NEXT);
-  const q4 = L.priceSeries(prices, 'nand-contract-qoq').points.find((p) => p.period === addQ(NEXT, 1));
-  if (!q3 || !q4 || q3.low === undefined || q3.high === undefined || q4.low === undefined || q4.high === undefined) throw new Error('market-prices: 2026Q3/Q4 NAND ranges missing');
+  const digitsOf = (m: Target) => (m === 'grossMargin' || m === 'eps' ? 2 : 0);
+  const unitOf = (m: Target) => (m === 'grossMargin' ? '%' : m === 'eps' ? ' 元' : ' 百萬元');
+  const liveChecks: NonNullable<Out['liveChecks']> = [];
+  for (const f of pf.filter((x) => x.scenario === 'base')) {
+    const act = actualPeriod(f.period);
+    if (!act) continue;
+    const other = (s: 'bear' | 'bull') => pf.find((x) => x.madeOn === f.madeOn && x.period === f.period && x.scenario === s);
+    for (const m of TARGETS) {
+      const v = f[m];
+      if (v === undefined) continue;
+      const a = act[m];
+      const lo = other('bear')?.[m], hi = other('bull')?.[m];
+      const d = digitsOf(m);
+      let note: string | undefined;
+      if (lo !== undefined && hi !== undefined) {
+        const [mn, mx] = [Math.min(lo, hi), Math.max(lo, hi)];
+        note = lo === v && hi === v
+          ? '發布時已由月營收得知（三種情境相同），不算預測'
+          : `保守–樂觀情境 ${fmt(mn, m === 'grossMargin' ? 1 : d)}–${fmt(mx, m === 'grossMargin' ? 1 : d)}${unitOf(m)}；實際值${a < mn ? '低於這個區間' : a > mx ? '高於這個區間' : '落在區間內'}`;
+      }
+      liveChecks.push({
+        period: f.period, metric: m, forecast: v, actual: round(a, d === 2 ? 2 : 1),
+        ...(m === 'grossMargin' ? { errorPp: round(v - a, 2) } : { errorPct: round(((v - a) / Math.abs(a)) * 100, 2) }),
+        scenario: 'base', madeOn: f.madeOn, ...(note ? { note } : {}),
+      });
+    }
+  }
+  /**
+   * Decomposition of the latest one-quarter-ahead base forecast after the test window: the forecast is first re-created
+   * from the data of that time (origin = the quarter before; it must reproduce the published gross margin and EPS),
+   * then compared with the same formula on the reported inventory flows, the reported write-downs and the opex rule.
+   */
+  const lc = (() => {
+    const cands = pf
+      .filter((x) => x.scenario === 'base' && /Q[1-4]$/.test(x.period) && by.has(x.period) && qIndex(x.period) > qIndex(TEST.to))
+      .sort((a, b) => qIndex(b.period) - qIndex(a.period));
+    for (const [f, form] of cands.flatMap((x) => (['levels', 'relative'] as const).map((fm) => [x, fm] as const))) {
+      const t = f.period, o = addQ(t, -1);
+      // the opex rule of the version that published the forecast (2026-10-23: levels)
+      const e = engineAt(o, form);
+      const ch = L.chainStateAt(rows, o, OPEX_ONE_OFF);
+      const r = projectPath({ method: selMethod, origin: o, path: [t], phi: e.phi, kappa: e.kappa, cp: e.cp, revenueOf: (q) => monthlyQ.get(q), volumeGrowth: e.g, days: () => invDays(o), chain: ch })[0]!;
+      if (round(r.pnl.gm, 1) !== f.grossMargin || round(r.pnl.eps, 2) !== f.eps) continue; // not a one-quarter-ahead run of this model
+      const a = row(t), A = row(o), h = H[selMethod];
+      const crO = (A.cogs - A.wd) / A.revenue;
+      const xO = h.get(o)!.x, xT = h.get(t)!.x;
+      const ext = (p: string, k: string) => inputs.quarters.find((q) => q.period === p)?.extra?.[k];
+      return {
+        f, t, o, e, ch,
+        gmF: r.pnl.gm, xF: r.x, xO, xT, wdF: r.wd,
+        /** gross margin from the model formula on the reported inventory flows (no write-down) */
+        gmFlow: (1 - crO * (1 - e.phi + (e.phi * xT) / xO)) * 100,
+        wdPp: (a.wd / a.revenue) * 100,
+        crO: crO * 100, crT: ((a.cogs - a.wd) / a.revenue) * 100,
+        opexF: r.pnl.opex, opexAtActualGp: ch.opexPrev * (1 + e.cp.opexDrift) + e.cp.opexBeta * (a.gp - ch.gpPrev),
+        /** the rule with the TRAIN parameters (this version's scenarios), at the actual gross profit */
+        opexTrainAtActualGp: ch.opexPrev * (1 + cpTrain.opexDrift) + cpTrain.opexBeta * (a.gp - ch.gpPrev),
+        invF: r.inv, daysF: invDays(o), daysT: invDays(t),
+        oiF: r.pnl.oi, nonopF: ch.nonop,
+        rdO: ext(o, '研究發展費用'), rdT: ext(t, '研究發展費用'),
+        aiO: ext(o, '營收占比－AI 生態系模組（%）'), aiT: ext(t, '營收占比－AI 生態系模組（%）'),
+      };
+    }
+    return undefined;
+  })();
+
+  // NAND price path: TrendForce's range (low / mid / high) for the first horizon quarters that have one, then ASSUMED_QOQ
+  const nandPts = new Map(L.priceSeries(prices, 'nand-contract-qoq').points.map((p) => [p.period, p]));
+  const ranged = (t: string) => {
+    const p = nandPts.get(t);
+    return p && p.low !== undefined && p.high !== undefined ? { ...p, low: p.low, high: p.high } : undefined;
+  };
+  const tfQs: string[] = [];
+  for (const t of horizon) { if (!ranged(t)) break; tfQs.push(t); }
+  if (!tfQs.length) throw new Error(`market-prices: nand-contract-qoq range for ${NEXT} missing`);
+  const assumedQs = horizon.slice(tfQs.length);
+  type ScenId = 'bear' | 'base' | 'bull';
+  for (const id of ['bear', 'base', 'bull'] as const) for (const t of assumedQs) if (ASSUMED_QOQ[id][t] === undefined) throw new Error(`ASSUMED_QOQ.${id}.${t} missing (no TrendForce range for ${t})`);
+  const dpOf = (id: ScenId) => horizon.map((t) => { const p = ranged(t); return p ? (id === 'bear' ? p.low : id === 'bull' ? p.high : p.value) : ASSUMED_QOQ[id][t]!; });
+  const edge = (id: ScenId) => (id === 'base' ? '中值' : id === 'bear' ? '下緣' : '上緣');
+
+  // revenue of NEXT: reported (three months), a nowcast from the months already reported, or the price × volume rule
+  const monthly = new Map(inputs.monthly.map((m) => [m.period, m.revenue]));
+  const nextMonths = L.monthsOfQuarter(NEXT).filter((m) => monthly.has(m));
+  if (nextMonths.some((m, i) => m !== L.monthsOfQuarter(NEXT)[i])) throw new Error(`monthly revenue of ${NEXT} is not a run of its first months`);
+  const nKnown = nextMonths.length;
+  const knownSum = nextMonths.reduce((a, m) => a + monthly.get(m)!, 0);
+  const monthsLabel = nKnown ? `${Number(nextMonths[0]!.slice(5))}${nKnown > 1 ? `–${Number(nextMonths.at(-1)!.slice(5))}` : ''} 月` : '';
+  const ratios = nKnown > 0 && nKnown < 3 ? L.firstMonthsRatios(inputs, nKnown, LAST) : [];
+  const PCT: Record<ScenId, { q: number; label: string }> = { bear: { q: 0.25, label: '第 25 百分位' }, base: { q: 0.5, label: '中位數' }, bull: { q: 0.75, label: '第 75 百分位' } };
+  const kOf = (id: ScenId) => L.percentile(ratios.map((r) => r.ratio), PCT[id].q);
+  const sameQ = ratios.filter((r) => r.period.endsWith(NEXT.slice(4)));
+  const nowcast = (id: ScenId) => (nKnown === 3 ? monthlyQ.get(NEXT)! : nKnown ? ((knownSum * 3) / nKnown) * kOf(id) : undefined);
+  const nowcastRule = nKnown === 1 ? `${monthsLabel}營收 × 3` : `${monthsLabel}營收 × 1.5`;
+  const ratioDef = nKnown === 1 ? '季營收 ÷（第一個月營收 × 3）' : '季營收 ÷（前兩個月營收 × 1.5）';
+
   const nonopBase = chain0.nonop;
   const last4 = inputs.quarters.slice(-4);
   const equityShare = last4.reduce((a, q) => a + (q.extra?.['採用權益法之關聯企業損益份額'] ?? NaN), 0) / last4.reduce((a, q) => a + q.nonOperating!, 0);
+  const revClause = (id: ScenId) => (nKnown > 0 && nKnown < 3 ? `${NEXT} 營收取歷史換算比例的${PCT[id].label}、` : '');
   const scen = [
-    { id: 'bear' as const, name: '保守', dp: [q3.low, q4.low, 0, -10, -15, -20], vol: 0, nonop: nonopBase / 2, story: '2026 年下半年取 TrendForce 區間的下緣；2027 年第一季持平、之後逐季下跌，出貨量不成長（消費性需求疲弱、2027 下半年新產能開出）' },
-    { id: 'base' as const, name: '基準', dp: [q3.value, q4.value, 5, 0, -5, -10], vol: gAll, nonop: nonopBase, story: '2026 年下半年取 TrendForce 區間的中值；2027 年第一季小漲、第二季持平，下半年供給轉寬鬆而回落' },
-    { id: 'bull' as const, name: '樂觀', dp: [q3.high, q4.high, 10, 5, 0, -5], vol: gAll, nonop: row(LAST).nonop, story: '2026 年下半年取 TrendForce 區間的上緣；供給吃緊延續到 2027 年上半年，價格到下半年才持平小跌' },
+    { id: 'bear' as const, name: '保守', dp: dpOf('bear'), vol: 0, nonop: nonopBase / 2, story: `${revClause('bear')}合約價取 TrendForce 區間的下緣；${YEAR2} 年第一季持平、之後逐季下跌，出貨量不成長（消費性需求疲弱、${YEAR2} 下半年新產能開出）` },
+    { id: 'base' as const, name: '基準', dp: dpOf('base'), vol: gAll, nonop: nonopBase, story: `${revClause('base')}合約價取 TrendForce 區間的中值；${YEAR2} 年第一季小漲、第二季持平，下半年供給轉寬鬆而回落` },
+    { id: 'bull' as const, name: '樂觀', dp: dpOf('bull'), vol: gAll, nonop: row(LAST).nonop, story: `${revClause('bull')}合約價取 TrendForce 區間的上緣；供給吃緊延續到 ${YEAR2} 年上半年，價格到下半年才持平小跌` },
   ];
-  const runScenario = (dp: number[], vol: number, nonop: number, opts: { phi?: number; days?: (t: string) => number; level2027?: number } = {}) => {
+  const runScenario = (id: ScenId, dp: number[], vol: number, nonop: number, opts: { phi?: number; days?: (t: string) => number; level2?: number; cp?: L.ChainParams } = {}) => {
     const extra: Record<string, number> = Object.fromEntries(horizon.map((t, i) => [t, dp[i]!]));
-    if (opts.level2027) extra['2027Q1'] = ((1 + extra['2027Q1']! / 100) * opts.level2027 - 1) * 100;
+    const lv = `${YEAR2}Q1`;
+    if (opts.level2 && extra[lv] !== undefined) extra[lv] = ((1 + extra[lv]! / 100) * opts.level2 - 1) * 100;
     const Pidx = L.nandIndex(prices, extra);
+    const revNext = nowcast(id);
     return projectPath({
-      method: selMethod, origin: LAST, path: horizon, phi: opts.phi ?? phiAll, kappa: kappaAll, cp: cpAll, Pidx,
-      revenueOf: (t) => monthlyQ.get(t), volumeGrowth: vol, days: (t) => (opts.days ?? daysPath)(t), chain: { ...chain0, nonop },
+      method: selMethod, origin: LAST, path: horizon, phi: opts.phi ?? phiAll, kappa: kappaAll, cp: opts.cp ?? cpAll, Pidx,
+      revenueOf: (t) => (t === NEXT ? revNext : monthlyQ.get(t)), volumeGrowth: vol, days: (t) => (opts.days ?? daysPath)(t), chain: { ...chain0, nonop },
     }).map((r) => ({ ...r, P: Pidx.get(r.period)! }));
   };
+  /** full year: reported quarters plus the scenario's quarters (undefined unless they add up to four) */
   const annualOf = (rs: ReturnType<typeof runScenario>, year: string) => {
-    const q = rs.filter((r) => r.period.startsWith(year));
-    const rev = q.reduce((a, r) => a + r.pnl.revenue, 0);
-    const gp = q.reduce((a, r) => a + r.pnl.gp, 0);
-    return { revenue: rev, gm: (gp / rev) * 100, oi: q.reduce((a, r) => a + r.pnl.oi, 0), ni: q.reduce((a, r) => a + r.pnl.ni, 0), eps: q.reduce((a, r) => a + r.pnl.eps, 0) };
+    const rep = rows.filter((r) => r.period.startsWith(`${year}Q`));
+    const fc = rs.filter((r) => r.period.startsWith(`${year}Q`));
+    if (rep.length + fc.length !== 4) return undefined;
+    const add = (f: (r: L.Row) => number, g: (r: (typeof fc)[number]) => number) => rep.reduce((a, r) => a + f(r), 0) + fc.reduce((a, r) => a + g(r), 0);
+    const rev = add((r) => r.revenue, (r) => r.pnl.revenue);
+    return {
+      revenue: rev, gm: (add((r) => r.gp, (r) => r.pnl.gp) / rev) * 100, oi: add((r) => r.oi, (r) => r.pnl.oi), ni: add((r) => r.ni, (r) => r.pnl.ni), eps: add((r) => r.eps, (r) => r.pnl.eps),
+      reported: rep.map((r) => r.period), forecast: fc.map((r) => r.period),
+    };
   };
-  const runs = new Map(scen.map((s) => [s.id, runScenario(s.dp, s.vol, s.nonop)]));
+  const yearsOut = [...new Set(horizon.map((t) => t.slice(0, 4)))];
+  const runs = new Map(scen.map((s) => [s.id, runScenario(s.id, s.dp, s.vol, s.nonop)]));
   const base = runs.get('base')!;
-  const base2027 = annualOf(base, '2027');
+  const base2027 = annualOf(base, YEAR2)!;
+  const qEnd = inputs.quarters.at(-1)!.end;
+  const buyback = inputs.events.find((e) => /買回/.test(e.title) && e.date > qEnd);
 
   const scenarios: Out['scenarios'] = scen.map((s) => {
     const rs = runs.get(s.id)!;
-    const a27 = annualOf(rs, '2027');
-    const h1 = rows.filter((r) => r.period.startsWith('2026Q')).map((r) => r);
-    const h2 = rs.filter((r) => r.period.startsWith('2026'));
-    const rev26 = h1.reduce((a, r) => a + r.revenue, 0) + h2.reduce((a, r) => a + r.pnl.revenue, 0);
-    const gp26 = h1.reduce((a, r) => a + r.gp, 0) + h2.reduce((a, r) => a + r.pnl.gp, 0);
+    const rN = rs[0]!.pnl.revenue;
+    const volN = ((rN / row(LAST).revenue) / (1 + s.dp[0]! / 100) - 1) * 100;
+    const revText =
+      nKnown === 3
+        ? `${fmt(rN, 0)} 百萬元（${monthsLabel}月營收合計，已知）`
+        : nKnown
+          ? `${monthsLabel}營收 ${fmt(knownSum, 0)} 百萬元已公布；季營收 = ${nowcastRule} × k，k 為 ${ratios[0]!.period}–${LAST} 共 ${ratios.length} 季「${ratioDef}」的${PCT[s.id].label}（${fmt(kOf(s.id), 3)}；同為第 ${NEXT.slice(5)} 季的 ${sameQ.length} 季中位數為 ${fmt(L.percentile(sameQ.map((r) => r.ratio), 0.5), 3)}，年底月份通常較淡），得 ${fmt(rN, 0)} 百萬元、季增 ${fmt((rN / row(LAST).revenue - 1) * 100, 1)}%；以合約價${qoqText(s.dp[0]!)} 換算，實質出貨量${qoqText(round(volN, 1))}${CONTEXT.revenue[NEXT] ? `（${CONTEXT.revenue[NEXT]}）` : ''}`
+          : `上季營收 × 合約價指數變化 × (1 + 實質出貨量季成長 ${fmt(s.vol * 100, 1)}%)`;
+    const live = lc ? `；${lc.f.madeOn} 版對 ${lc.t} 的毛利率高估 ${fmt(lc.f.grossMargin! - row(lc.t).gm, 1)} 個百分點（見預測與實際對照）` : '';
     return {
       id: s.id,
       name: s.name,
       assumptions: [
         { name: '情境說明', value: s.story },
-        { name: `NAND 合約價季變化 ${NEXT}`, value: `${qoqText(s.dp[0]!)}（TrendForce 2026-09-30 季末估計區間季增 ${q3.low}–${q3.high}% 的${s.id === 'base' ? '中值' : s.id === 'bear' ? '下緣' : '上緣'}）`, src: q3.src },
-        { name: `NAND 合約價季變化 ${addQ(NEXT, 1)}`, value: `${qoqText(s.dp[1]!)}（TrendForce 2026-09-30 預測區間季增 ${q4.low}–${q4.high}% 的${s.id === 'base' ? '中值' : s.id === 'bear' ? '下緣' : '上緣'}）`, src: q4.src },
-        { name: 'NAND 合約價季變化 2027Q1–Q4', value: `依序${s.dp.slice(2).map(qoqText).join('、')}（本模型的假設，不是 TrendForce 的數字：截至 2026-10-23 TrendForce 未公布 2027 年逐季合約價預測，只指出 2027 下半年供給轉寬鬆、消費性需求疲弱使價格面臨下行壓力）`, src: 'tf-20260730-13158' },
+        ...tfQs.map((t, i) => {
+          const p = ranged(t)!;
+          return { name: `NAND 合約價季變化 ${t}`, value: `${qoqText(s.dp[i]!)}（TrendForce ${prices.sources[p.src]?.published ?? ''} ${p.status === 'forecast' ? '預測' : '估計'}區間季增 ${p.low}–${p.high}% 的${edge(s.id)}${CONTEXT.price[t] ? `；${CONTEXT.price[t]}` : ''}）`, src: p.src };
+        }),
+        ...(assumedQs.length
+          ? [{ name: `NAND 合約價季變化 ${span(assumedQs)}`, value: `依序${s.dp.slice(tfQs.length).map(qoqText).join('、')}（本模型的假設，不是 TrendForce 的數字：截至 ${prices.asOf} TrendForce 未公布 ${YEAR2} 年逐季整體合約價預測，只指出 ${YEAR2} 下半年供給轉寬鬆、消費性需求疲弱使價格面臨下行壓力${CONTEXT.assumed ? `；${CONTEXT.assumed}` : ''}）`, src: 'tf-20260730-13158' }]
+          : []),
         { name: 'TrendForce 的 2027 年展望', value: 'NAND 供給成長將高於需求，供給吃緊在 2027 下半年緩解（偏向保守情境）', src: 'tf-20260721-13148' },
-        { name: '群聯執行長的看法', value: 'NAND 供應相當吃緊，2027、2028 年也難以平衡（偏向樂觀情境的價格路徑）；同時表示低成本庫存的效益會隨價格上漲逐步淡化（三種情境的毛利率都由高點回落）', src: 'uanalyze-20260813' },
-        { name: `營收 ${NEXT}`, value: `${fmt(monthlyQ.get(NEXT) ?? NaN, 0)} 百萬元（7–9 月月營收合計，已知）`, src: 'mops-monthly' },
-        { name: '之後各季營收', value: `上季營收 × 合約價指數變化 × (1 + 實質出貨量季成長 ${fmt(s.vol * 100, 1)}%)${s.id === 'bear' ? '（出貨量不成長）' : '（2017Q1–2026Q2 平均）'}` },
-        { name: '庫存天數', value: `起點 ${LAST} 約 ${fmt(startDays, 0)} 天由財報的存貨與營業成本計算；之後維持到 ${glideFrom}、再線性降到 2023–2025 年平均約 ${fmt(normalDays, 0)} 天（2027Q4）是本模型的假設，三種情境相同`, src: 'fr-2026' },
-        { name: '營業費用', value: `Δ營業費用 = ${fmt(cpAll.opexDrift * 100, 2)}% × 上季營業費用 + ${fmt(cpAll.opexBeta, 2)} × Δ毛利（2017Q1–${LAST} 估計）` },
+        { name: '群聯執行長的看法（2026-08）', value: 'NAND 供應相當吃緊，2027、2028 年也難以平衡（偏向樂觀情境的價格路徑）；同時表示低成本庫存的效益會隨價格上漲逐步淡化（三種情境的毛利率都由高點回落）', src: 'uanalyze-20260813' },
+        { name: '群聯執行長的看法（2026-11）', value: '低價庫存終究會用完，要提高的是毛利金額而不是毛利率，接下來幾季毛利率能維持在 50% 以上就算很好；已掌握 2027 年目標 NAND 需求量的七成以上（只作背景，模型不以這些說法為目標，也不用來校準）', src: 'bnext-20261106' },
+        { name: `營收 ${NEXT}`, value: revText, src: 'mops-monthly' },
+        { name: '之後各季營收', value: `上季營收 × 合約價指數變化 × (1 + 實質出貨量季成長 ${fmt(s.vol * 100, 1)}%)${s.id === 'bear' ? '（出貨量不成長）' : `（${ALL.from}–${ALL.to} 平均）`}` },
+        { name: '庫存天數', value: `起點 ${LAST} 約 ${fmt(startDays, 0)} 天（${PREV} 為 ${fmt(invDays(PREV), 0)} 天）由財報的存貨與營業成本計算；之後維持到 ${NEXT}、再線性降到 2023–2025 年平均約 ${fmt(normalDays, 0)} 天（${HORIZON_END}）是本模型的假設，三種情境相同${CONTEXT.days ? `；${CONTEXT.days}` : ''}`, src: 'fr-2026' },
+        { name: '營業費用', value: `Δ營業費用 = ${fmt(cpAll.opexDrift * 100, 2)}% × 上季營業費用 + ${fmt(cpAll.opexBeta, 2)} × Δ毛利（${opexWindow} 估計${OPEX_PARAMS === 'train' ? `，即回測驗證過的參數，不隨新財報重估；重估到 ${LAST} 時 d 為 ${fmt(cpRefit.opexDrift * 100, 2)}%，原因見參數說明` : ''}）${live ? `；${lc!.f.madeOn} 版用重估到 ${lc!.o} 的同一規則，高估了 ${lc!.t} 的營業費用` : ''}` },
         { name: '業外收支（每季）', value: `${fmt(s.nonop, 0)} 百萬元（${s.id === 'base' ? `近四季中位數` : s.id === 'bear' ? '近四季中位數的一半' : `${LAST} 實際值`}；近四季業外收支約 ${fmt(equityShare * 100, 0)}% 來自採用權益法認列的關聯企業損益）`, src: 'fr-2026' },
         { name: '有效稅率', value: `${fmt(chain0.taxRate * 100, 1)}%（近四季所得稅 ÷ 稅前淨利）`, src: 'fr-2026' },
-        { name: '股數', value: `${fmt(chain0.shares, 1)} 百萬股（${LAST} 基本加權平均股數；同季稀釋加權股數為 ${fmt(inputs.quarters.at(-1)!.sharesDiluted ?? NaN, 1)} 百萬股，模型不計稀釋）`, src: 'fr-2026' },
+        { name: '股數', value: `${fmt(chain0.shares, 1)} 百萬股（${LAST} 基本加權平均股數；同季稀釋加權股數為 ${fmt(inputs.quarters.at(-1)!.sharesDiluted ?? NaN, 1)} 百萬股，模型不計稀釋${buyback ? `；${buyback.date} ${buyback.title}（${buyback.src}），模型也不計` : ''}）`, src: 'fr-2026' },
       ],
       forecasts: [
         ...rs.map((r) => ({
@@ -481,28 +794,52 @@ export function buildModel(inputs: CompanyInputs, prices: MarketPrices): Out {
           operatingIncome: round(r.pnl.oi, 0),
           netIncome: round(r.pnl.ni, 0),
           eps: round(r.pnl.eps, 2),
-          known: r.known ? ['revenue'] : [],
-          note: r.known ? `營收為 7–9 月月營收合計（已公布）；毛利率以下為模型推估（逐季回測的毛利率平均誤差約 ${fmt(sm.grossMargin!.mae, 1)} 個百分點）` : undefined,
+          known: r.period === NEXT && nKnown === 3 ? ['revenue'] : [],
+          note:
+            r.period !== NEXT
+              ? undefined
+              : nKnown === 3
+                ? `營收為 ${monthsLabel}月營收合計（已公布）；毛利率以下為模型推估（逐季回測的毛利率平均誤差約 ${fmt(sm.grossMargin!.mae, 1)} 個百分點${live}）`
+                : nKnown
+                  ? `${monthsLabel}營收已公布（${fmt(knownSum, 0)} 百萬元），其餘月份與毛利率以下為模型推估；逐季回測的毛利率平均誤差約 ${fmt(sm.grossMargin!.mae, 1)} 個百分點${live}`
+                  : undefined,
         })),
-        { period: '2026', revenue: round(rev26, 0), grossMargin: round((gp26 / rev26) * 100, 1), operatingIncome: round(h1.reduce((a, r) => a + r.oi, 0) + h2.reduce((a, r) => a + r.pnl.oi, 0), 0), netIncome: round(h1.reduce((a, r) => a + r.ni, 0) + h2.reduce((a, r) => a + r.pnl.ni, 0), 0), eps: round(h1.reduce((a, r) => a + r.eps, 0) + h2.reduce((a, r) => a + r.pnl.eps, 0), 2), known: [], note: '上半年為財報實際數、第三季營收為月營收合計，其餘為模型推估；全年 EPS 為四季加總' },
-        { period: '2027', revenue: round(a27.revenue, 0), grossMargin: round(a27.gm, 1), operatingIncome: round(a27.oi, 0), netIncome: round(a27.ni, 0), eps: round(a27.eps, 2), known: [], note: `四季加總（EPS 為四季 EPS 加總，股數不變）；回測中連續預測六季的毛利率平均誤差約 ${fmt(sm.grossMarginDynamic!.mae, 0)} 個百分點` },
+        ...yearsOut.map((y) => {
+          const a = annualOf(rs, y)!;
+          return {
+            period: y, revenue: round(a.revenue, 0), grossMargin: round(a.gm, 1), operatingIncome: round(a.oi, 0), netIncome: round(a.ni, 0), eps: round(a.eps, 2), known: [],
+            note: a.reported.length
+              ? `${span(a.reported)} 為財報實際數，${span(a.forecast)} 為模型推估${a.forecast.includes(NEXT) && nKnown > 0 && nKnown < 3 ? `（其中 ${monthsLabel}營收已公布）` : ''}；全年 EPS 為四季加總`
+              : `四季加總（EPS 為四季 EPS 加總，股數不變）；回測中連續預測六季的毛利率平均誤差約 ${fmt(sm.grossMarginDynamic!.mae, 0)} 個百分點`,
+          };
+        }),
       ],
     };
   });
 
-  /* ── sensitivities (base scenario, 2027 full year) ── */
+  /* ── sensitivities (base scenario, full year YEAR2) ── */
   const baseS = scen.find((s) => s.id === 'base')!;
+  const FORM_LABEL: Record<OpexForm, string> = { levels: '金額形式', relative: '相對形式' };
+  // the opex rule re-estimated through LAST: this form (the method up to 2026-10-23) and the other form
+  const cpOther = chainFor(ALL.from, ALL.to, OTHER_FORM);
+  const refitRun = runScenario('base', baseS.dp, baseS.vol, baseS.nonop, { cp: cpRefit });
+  const otherRun = runScenario('base', baseS.dp, baseS.vol, baseS.nonop, { cp: cpOther });
+  const cpAt = (to: string, form: OpexForm) => chainFor(TRAIN.from, to, form);
   const sens = (label: string, change: string, rs: ReturnType<typeof runScenario>) => {
-    const a = annualOf(rs, '2027');
-    return { driver: label, change, effect: `2027 年 EPS ${fmt(a.eps, 1)} 元（基準 ${fmt(base2027.eps, 1)} 元，${pct(((a.eps - base2027.eps) / base2027.eps) * 100, 0)}）；毛利率 ${fmt(a.gm, 1)}%（基準 ${fmt(base2027.gm, 1)}%）` };
+    const a = annualOf(rs, YEAR2)!;
+    return { driver: label, change, effect: `${YEAR2} 年 EPS ${fmt(a.eps, 1)} 元（基準 ${fmt(base2027.eps, 1)} 元，${pct(((a.eps - base2027.eps) / base2027.eps) * 100, 0)}）；毛利率 ${fmt(a.gm, 1)}%（基準 ${fmt(base2027.gm, 1)}%）` };
   };
   const sensitivities: Out['sensitivities'] = [
-    sens('2027 年 NAND 合約價水準', '整年高 10%（2027Q1 起每季都比基準高 10%）', runScenario(baseS.dp, baseS.vol, baseS.nonop, { level2027: 1.1 })),
-    sens('2027 年 NAND 合約價水準', '整年低 10%', runScenario(baseS.dp, baseS.vol, baseS.nonop, { level2027: 0.9 })),
-    sens('庫存天數', `維持 ${LAST} 的約 ${fmt((row(LAST).inv / row(LAST).cogs) * 91, 0)} 天、不回落`, runScenario(baseS.dp, baseS.vol, baseS.nonop, { days: () => startDays })),
-    sens('NAND 占成本比重 φ', `${fmt(phiAll, 2)} → ${fmt(phiAll + 0.1, 2)}`, runScenario(baseS.dp, baseS.vol, baseS.nonop, { phi: phiAll + 0.1 })),
-    sens('NAND 占成本比重 φ', `${fmt(phiAll, 2)} → ${fmt(phiAll - 0.1, 2)}`, runScenario(baseS.dp, baseS.vol, baseS.nonop, { phi: phiAll - 0.1 })),
-    sens('實質出貨量季成長', `${fmt(gAll * 100, 1)}% → 0%`, runScenario(baseS.dp, 0, baseS.nonop)),
+    sens(`${YEAR2} 年 NAND 合約價水準`, `整年高 10%（${YEAR2}Q1 起每季都比基準高 10%）`, runScenario('base', baseS.dp, baseS.vol, baseS.nonop, { level2: 1.1 })),
+    sens(`${YEAR2} 年 NAND 合約價水準`, '整年低 10%', runScenario('base', baseS.dp, baseS.vol, baseS.nonop, { level2: 0.9 })),
+    sens('庫存天數', `維持 ${LAST} 的約 ${fmt(startDays, 0)} 天、不回落`, runScenario('base', baseS.dp, baseS.vol, baseS.nonop, { days: () => startDays })),
+    sens('NAND 占成本比重 φ', `${fmt(phiAll, 2)} → ${fmt(phiAll + 0.1, 2)}`, runScenario('base', baseS.dp, baseS.vol, baseS.nonop, { phi: phiAll + 0.1 })),
+    sens('NAND 占成本比重 φ', `${fmt(phiAll, 2)} → ${fmt(phiAll - 0.1, 2)}`, runScenario('base', baseS.dp, baseS.vol, baseS.nonop, { phi: phiAll - 0.1 })),
+    sens('實質出貨量季成長', `${fmt(gAll * 100, 1)}% → 0%`, runScenario('base', baseS.dp, 0, baseS.nonop)),
+    ...(OPEX_PARAMS === 'train'
+      ? [sens('營業費用規則的估計期間', `重估到 ${LAST}（${FORM_LABEL[OPEX_FORM]}，2026-10-23 版的做法；d = ${fmt(cpRefit.opexDrift * 100, 2)}%、β = ${fmt(cpRefit.opexBeta, 2)}；本版沿用 ${opexWindow} 的 d = ${fmt(cpAll.opexDrift * 100, 2)}%、β = ${fmt(cpAll.opexBeta, 2)}）`, refitRun)]
+      : []),
+    sens('營業費用規則的估計方式', `改用${FORM_LABEL[OTHER_FORM]}重估到 ${LAST}（d = ${fmt(cpOther.opexDrift * 100, 2)}%、β = ${fmt(cpOther.opexBeta, 2)}；本版為 d = ${fmt(cpAll.opexDrift * 100, 2)}%、β = ${fmt(cpAll.opexBeta, 2)}）`, otherRun),
   ];
 
   /* ── derived series ── */
@@ -513,12 +850,12 @@ export function buildModel(inputs: CompanyInputs, prices: MarketPrices): Out {
     {
       id: 'selling-price-index', name: '售價指數（NAND 合約價指數）', unit: `指數（${L.PRICE_BASE}=100）`,
       points: [...histPeriods.map((p) => ({ period: p, value: round(P.get(p)!, 2), status: 'estimate' as const })), ...base.map((r) => ({ period: r.period, value: round(r.P, 2), status: L.priceSeries(prices, 'nand-contract-qoq').points.find((p) => p.period === r.period)?.status === 'estimate' ? ('estimate' as const) : ('forecast' as const) }))],
-      note: 'TrendForce NAND Flash 整體合約價季變化串成的指數；模型假設群聯售價與當季合約價同步。2026Q3 為 TrendForce 季末估計的中值，2026Q4 為其預測區間的中值，2027 年為基準情境的假設。',
+      note: `TrendForce NAND Flash 整體合約價季變化串成的指數；模型假設群聯售價與當季合約價同步。${LAST} 以前為 TrendForce 的季末估計或事後值（區間中值），${span(tfQs)} 為其預測區間的中值${assumedQs.length ? `，${span(assumedQs)} 為基準情境的假設` : ''}。`,
     },
     {
       id: 'purchase-cost-index', name: `購入成本指數（${selMethod === 'wa' ? '移動加權平均' : '先進先出'}）`, unit: `指數（${L.PRICE_BASE}=100）`,
       points: [...hs.slice(1).map((h) => ({ period: h.period, value: round(h.c, 2), status: 'estimate' as const })), ...base.map((r) => ({ period: r.period, value: round(r.c, 2), status: 'forecast' as const }))],
-      note: '當季賣出商品的平均購入成本：由財報的營業成本與存貨推回各季進貨，以進貨當季的合約價指數計價。歷史值由財報推算，2026Q3 起為基準情境。',
+      note: `當季賣出商品的平均購入成本：由財報的營業成本與存貨推回各季進貨，以進貨當季的合約價指數計價。歷史值由財報推算，${NEXT} 起為基準情境。`,
     },
     {
       id: `purchase-cost-index-${other}`, name: `購入成本指數（${other === 'wa' ? '移動加權平均' : '先進先出'}，對照）`, unit: `指數（${L.PRICE_BASE}=100）`,
@@ -533,7 +870,7 @@ export function buildModel(inputs: CompanyInputs, prices: MarketPrices): Out {
     {
       id: 'inventory-days', name: '庫存天數', unit: '天',
       points: [...rows.map((r) => ({ period: r.period, value: round((r.inv / r.cogs) * 91, 0), status: 'estimate' as const })), ...base.map((r) => ({ period: r.period, value: round(r.invDays, 0), status: 'forecast' as const }))],
-      note: '存貨 ÷ 當季營業成本 × 91；預測期為基準情境假設（維持到 2026Q4，之後回到 2023–2025 年平均）。',
+      note: `存貨 ÷ 當季營業成本 × 91；預測期為基準情境假設（維持到 ${NEXT}，之後線性回到 2023–2025 年平均）。`,
     },
     {
       id: 'estimated-purchases', name: '推估進貨（營業成本 + 存貨增加）', unit: '百萬元',
@@ -613,6 +950,41 @@ export function buildModel(inputs: CompanyInputs, prices: MarketPrices): Out {
   const benchmarks = candidates.filter((c) => !ENGINES.has(c.id) && c.id.startsWith('naive') === false);
   const vint = L.soldVintages(selMethod, rows, P, LAST);
   const meanAge = [...vint].reduce((a, [k, x]) => a + x * (qIndex(LAST) - qIndex(k.startsWith('≤') ? k.slice(1) : k)), 0) / [...vint].reduce((a, [, x]) => a + x, 0);
+  // review of the post-hoc variants (selected candidate note): adopted only if neither test MAE (gross margin, EPS) gets
+  // worse and the change is well grounded; the numbers come from scoreVariant on the original windows
+  const b0 = baseScore;
+  const f2 = (v: number) => fmt(v, 2);
+  const yearRows = rows.filter((r) => r.period.startsWith(LAST.slice(0, 4)));
+  const rangeOf = (xs: number[], d = 0) => `${fmt(Math.min(...xs), d)}–${fmt(Math.max(...xs), d)}`;
+  const passes = reviews.filter((r) => r.gm.mae <= b0.gm.mae + 1e-9 && r.eps.mae < b0.eps.mae).map((r) => r.id);
+  const REVIEW_NAME: Record<string, string> = {
+    'writedown-base': '跌價基本提列率', 'opex-relative': '費用規則改用相對形式', 'opex-levels': '費用規則改用金額形式', 'opex-revenue': '以營收解釋費用',
+    'opex-share-trailing': '費用向近四季比率調整', 'opex-share-train': '費用向長期平均比率調整', 'days-revert': '庫存天數回歸', 'pass-through': '售價部分反映合約價',
+  };
+  const passText = !passes.length
+    ? '沒有一項通過'
+    : passes.length === 1 && passes[0] === 'opex-share-train'
+      ? `只有「費用向長期平均比率調整」通過誤差條件，但它把費用拉向與 ${LAST.slice(0, 4)} 年結構不符的水準，也沒有採用`
+      : `通過誤差條件的有${passes.map((id) => `「${REVIEW_NAME[id]}」`).join('、')}，留待下次檢討，本版未採用`;
+  const dOf = (to: string, form: OpexForm) => fmt(cpAt(to, form).opexDrift * 100, 2);
+  /** base scenario: opex of the last horizon quarter ÷ the latest reported quarter, with this version's rule and the other form */
+  const opexEndRatio = (rs: ReturnType<typeof runScenario>) => rs.at(-1)!.pnl.opex / row(LAST).opex;
+  const reviewNote = lc
+    ? [
+        `看到 ${lc.t} 財報後的檢討：以下修改都是事後才提出的，參數一律只用 ${TRAIN.from}–${TRAIN.to} 估計、在原測試期 ${TEST.from}–${TEST.to} 評分（原模型毛利率 MAE ${f2(b0.gm.mae)} 個百分點、EPS ${f2(b0.eps.mae)} 元、營業利益 ${fmt(b0.oi.mae, 0)} 百萬元）。`,
+        `跌價加上固定的基本提列率（訓練期估計為營收的 ${f2(rv('writedown-base').e.a * 100)}%）：毛利率 ${f2(rv('writedown-base').gm.mae)}、EPS ${f2(rv('writedown-base').eps.mae)}；`,
+        `營業費用規則改用${FORM_LABEL[OTHER_FORM]}估計${OTHER_FORM === 'relative' ? '（兩邊除以上季營業費用，每季權重相同）' : '（直接用金額）'}：營業利益 ${fmt(rv(`opex-${OTHER_FORM}`).oi.mae, 0)} 百萬元、EPS ${f2(rv(`opex-${OTHER_FORM}`).eps.mae)} 元；它重估時較穩定（加入 ${LAST} 後 d 由 ${dOf(PREV, OTHER_FORM)}% 變為 ${dOf(LAST, OTHER_FORM)}%，現行${FORM_LABEL[OPEX_FORM]}由 ${dOf(PREV, OPEX_FORM)}% 變為 ${dOf(LAST, OPEX_FORM)}%），但測試期 EPS 誤差較大；`,
+        `營業費用改由營收變化解釋：營業利益 ${fmt(rv('opex-revenue').oi.mae, 0)} 百萬元、EPS ${f2(rv('opex-revenue').eps.mae)} 元；`,
+        `營業費用向近四季「營業費用 ÷ 毛利」調整：營業利益 ${fmt(rv('opex-share-trailing').oi.mae, 0)} 百萬元、EPS ${f2(rv('opex-share-trailing').eps.mae)} 元；`,
+        `改向 ${TRAIN.from.slice(0, 4)}–${TRAIN.to.slice(0, 4)} 年平均比率（${fmt(trainShare * 100, 0)}%）調整：營業利益 ${fmt(rv('opex-share-train').oi.mae, 0)} 百萬元、EPS ${f2(rv('opex-share-train').eps.mae)} 元，但 ${LAST.slice(0, 4)} 年這個比率只有 ${rangeOf(yearRows.map((r) => (r.opex / r.gp) * 100))}%，用它和實際毛利推 ${lc.t} 的營業費用是 ${fmt(rv('opex-share-train').e.opex(lc.o, row(lc.t).gp, row(lc.t).revenue), 0)} 百萬元（實際 ${fmt(row(lc.t).opex, 0)} 百萬元）；`,
+        `庫存天數逐季回歸訓練期平均：毛利率 ${f2(rv('days-revert').gm.mae)}、EPS ${f2(rv('days-revert').eps.mae)}；`,
+        `售價只反映部分合約價漲跌（訓練期估計的轉嫁程度 θ = ${fmt(thetaFit, 2)}，訓練期毛利率誤差由 ${f2(b0.train.mae)} 降到 ${f2(rv('pass-through').train.mae)}）：測試期毛利率 ${f2(rv('pass-through').gm.mae)}、EPS ${f2(rv('pass-through').eps.mae)}。`,
+        `採用條件是測試期毛利率與 EPS 的誤差都不變差，而且理由站得住；${passText}。模型結構因此維持 ${lc.f.madeOn} 版。`,
+      ].join('')
+    : undefined;
+  // the opex re-estimation check (selected candidate note): decided on the original test window only
+  const EP = engineAt(PREV);
+  const refitNote = `預測時是否重估營業費用規則（這項檢驗也是看到 ${LAST} 財報後才提出的，但只用原測試期評分）：在原測試期逐季重估（每季只用到前一季為止的資料，${FORM_LABEL[OPEX_FORM]}），營業利益 MAE ${fmt(refit.expanding.oi.mae, 0)} 百萬元、EPS ${f2(refit.expanding.eps.mae)} 元，${refitWorse ? '比' : '與'}固定用 ${TRAIN.from}–${TRAIN.to} 參數的 ${fmt(refit.fixed.oi.mae, 0)} 百萬元、${f2(refit.fixed.eps.mae)} 元${refitWorse ? '都大' : '相比沒有都變差'}（${FORM_LABEL[OTHER_FORM]}逐季重估為 ${fmt(refit.expandingOther.oi.mae, 0)} 百萬元、${f2(refit.expandingOther.eps.mae)} 元）；以金額估計時規模大好幾倍的最近幾季主導結果，加入 ${LAST} 一季就讓 d 由 ${fmt(chainFor(TRAIN.from, PREV).opexDrift * 100, 2)}% 變為 ${fmt(cpRefit.opexDrift * 100, 2)}%，同時重估的 g 只由 ${fmt(EP.g * 100, 2)}% 變為 ${fmt(gAll * 100, 2)}%、κ ${EP.kappa === kappaAll ? `維持 ${fmt(kappaAll, 3)}` : `由 ${fmt(EP.kappa, 3)} 變為 ${fmt(kappaAll, 3)}`}。${OPEX_PARAMS === 'train' ? `因此預測的營業費用規則沿用 ${TRAIN.from}–${TRAIN.to} 的參數（回測驗證的就是這組），不再重估。` : ''}`;
   const candOut: Out['candidates'] = candidates.map((c) => {
     const nr = nextRevenueCheck.get(c.id);
     const notes: string[] = [];
@@ -624,6 +996,8 @@ export function buildModel(inputs: CompanyInputs, prices: MarketPrices): Out {
       notes.push(`多步檢驗：從 ${TRAIN.to} 出發、之後六季不更新財報（只知道合約價與月營收），毛利率 MAE ${fmt(sm.grossMarginDynamic!.mae, 1)} 個百分點、EPS MAE ${fmt(sm.epsDynamic!.mae, 1)} 元；同樣條件下沿用 ${TRAIN.to} 毛利率與利潤率的天真做法為 ${fmt(nm.grossMarginDynamic!.mae, 1)} 個百分點、${fmt(nm.epsDynamic!.mae, 1)} 元，${benchmarks.map((b) => `${b.name} ${fmt(dynMae(b.id), 1)} 個百分點`).join('、')}。主模型的多步路徑為 ${multi.map((r) => `${r.period} ${fmt(r.pnl.gm, 1)}%`).join('、')}：${testPeriods[0]} 合約價下跌時預測毛利率大降但實際沒有，之後幾季都偏低。`);
       notes.push(`事前檢驗：改用 TrendForce 季初公布的合約價預測、也不知道月營收時，毛利率 MAE ${fmt(sm.grossMarginExAnte?.mae ?? NaN, 1)} 個百分點（天真模型 ${fmt(nm.grossMarginExAnte?.mae ?? NaN, 1)}）。`);
       notes.push(`訓練期樣本內檢驗：毛利率 MAE ${fmt(sm.grossMarginTrain!.mae, 1)} 個百分點（天真模型 ${fmt(nm.grossMarginTrain!.mae, 1)}）；合約價上漲的 ${upBias.n} 季平均高估 ${fmt(upBias.bias, 1)} 個百分點、下跌的 ${downBias.n} 季平均低估 ${fmt(-downBias.bias, 1)} 個百分點。`);
+      if (reviewNote) notes.push(reviewNote);
+      notes.push(refitNote);
     }
     if (c.id === 'naive-last-quarter') notes.push(`多步預測（從 ${TRAIN.to} 出發、一直沿用該季的毛利率與利潤率）時，毛利率誤差 ${fmt(nm.grossMarginDynamic!.mae, 1)} 個百分點，${nm.grossMarginDynamic!.mae < sm.grossMarginDynamic!.mae ? '低於' : '高於'}主模型的 ${fmt(sm.grossMarginDynamic!.mae, 1)}；EPS 誤差 ${fmt(nm.epsDynamic!.mae, 1)} 元，主模型 ${fmt(sm.epsDynamic!.mae, 1)} 元（${TRAIN.to} 含處分宏芯宇的一次性損益，天真做法照樣沿用）。天真模型無法回答「價格變了會怎樣」，所以不能用來跑情境。`);
     if (['lag-weighted-index', 'fifo-layers', 'moving-average-inventory'].includes(c.id)) notes.push('營收都用同一條「上季營收 × 合約價變化 × (1 + g)」規則，所以這三個模型的營收誤差相同。');
@@ -644,11 +1018,22 @@ export function buildModel(inputs: CompanyInputs, prices: MarketPrices): Out {
     ...fitted.get('lag-weighted-index')!.params,
     ...fitted.get('price-regression')!.params,
     ...final.params.map((p) => ({ ...p, name: `預測（${ALL.from}–${ALL.to} 重估）：${p.name}` })),
-    ...chainParams(cpAll).map((p) => ({ ...p, name: `預測（${ALL.from}–${ALL.to} 重估）：${p.name}` })),
+    ...(OPEX_PARAMS === 'train'
+      ? [
+          ...chainParams(cpAll).map((p, i) => ({
+            ...p,
+            name: `預測（${ALL.from}–${ALL.to} 重估）：${p.name}（不重估，沿用 ${TRAIN.from}–${TRAIN.to} 估計）`,
+            note: i === 0 ? `與回測相同的參數。重估到 ${LAST} 時為 β = ${fmt(cpRefit.opexBeta, 3)}、d = ${fmt(cpRefit.opexDrift * 100, 2)}%（重估到 ${PREV} 時 d = ${fmt(chainFor(TRAIN.from, PREV).opexDrift * 100, 2)}%），由金額最大的最近幾季主導；原測試期逐季重估的營業利益與 EPS 誤差都比固定參數大，因此不重估（見主模型說明與敏感度）` : undefined,
+          })),
+        ]
+      : chainParams(cpAll).map((p) => ({ ...p, name: `預測（${ALL.from}–${ALL.to} 重估）：${p.name}` }))),
     { name: `預測起點 ${LAST} 的購入成本 ÷ 售價（x）`, value: round(H_LAST.x, 3), note: '小於 1 表示帳上存貨比市價便宜' },
     { name: `預測起點 ${LAST} 的庫存天數`, value: round(invDays(LAST), 0), unit: '天', note: `存貨約等於 ${fmt(invDays(LAST) / 91, 1)} 季的營業成本` },
     { name: `${LAST} 賣出商品的平均進貨落後`, value: round(meanAge, 2), unit: '季', note: `依${selMethod === 'wa' ? '移動加權平均' : '先進先出'}庫存模擬的進貨季度分布加權（當季買進當季賣出算 0）；比庫存天數換算的 ${fmt(invDays(LAST) / 91, 1)} 季短，因為近幾季進貨量大、較新的存貨比重高` },
     { name: '2023–2025 年平均庫存天數（預測期回歸目標）', value: round(normalDays, 0), unit: '天' },
+    ...(ratios.length
+      ? [{ name: `${NEXT} 營收換算比例 k（${ratioDef}）`, value: round(kOf('base'), 3), note: `${ratios[0]!.period}–${LAST} 共 ${ratios.length} 季的中位數（基準情境）；第 25、75 百分位為 ${fmt(kOf('bear'), 3)}、${fmt(kOf('bull'), 3)}（保守與樂觀情境）` }]
+      : []),
     { name: '有效稅率（近四季）', value: round(chain0.taxRate * 100, 1), unit: '%' },
     { name: '業外收支（近四季中位數，每季）', value: round(nonopBase, 0), unit: '百萬元' },
     { name: '基本加權平均股數', value: round(chain0.shares, 1), unit: '百萬股' },
@@ -657,32 +1042,64 @@ export function buildModel(inputs: CompanyInputs, prices: MarketPrices): Out {
   ];
 
   /* ── texts ── */
-  const b26q3 = base[0]!, b26q4 = base[1]!;
+  const bN = base[0]!;
   const g1 = (v: number) => fmt(v, 1);
   const worseOrBetter = (a: number, b: number) => (a > b ? '高於' : '低於');
   const dynWorse = sm.grossMarginDynamic!.mae > nm.grossMarginDynamic!.mae;
   const exWorse = (sm.grossMarginExAnte?.mae ?? 0) > (nm.grossMarginExAnte?.mae ?? 0);
+  const relErr = (v: number, w: number) => pct(((v - w) / Math.abs(w)) * 100);
+  const overUnder = (v: number, w: number) => `${v >= w ? '高估' : '低估'} ${fmt(Math.abs(((v - w) / w) * 100), 1)}%`;
+  const ZH_N = ['', '一', '二', '三', '四'];
+  const yearSpan = yearRows.length === 4 ? `${LAST.slice(0, 4)} 年` : `${LAST.slice(0, 4)} 年前${ZH_N[yearRows.length]}季`;
   const summary =
-    `回測（${TRAIN.from}–${TRAIN.to} 估計參數，逐季預測 ${TEST.from}–${TEST.to}，已知當季合約價與月營收）中，${sel.name}的毛利率平均誤差 ${g1(sm.grossMargin!.mae)} 個百分點、EPS ${g1(sm.eps!.mae)} 元，${worseOrBetter(sm.grossMargin!.mae, nm.grossMargin!.mae)}沿用上一季毛利率與利潤率的 ${g1(nm.grossMargin!.mae)} 個百分點、${g1(nm.eps!.mae)} 元，因此被選為主模型；它把 2026 年上半年 60% 以上的毛利率解釋為「用平均約 ${g1(meanAge)} 季前的低價買進的庫存、以現在的高價賣出」。` +
+    `回測（${TRAIN.from}–${TRAIN.to} 估計參數，逐季預測 ${TEST.from}–${TEST.to}，已知當季合約價與月營收）中，${sel.name}的毛利率平均誤差 ${g1(sm.grossMargin!.mae)} 個百分點、EPS ${g1(sm.eps!.mae)} 元，${worseOrBetter(sm.grossMargin!.mae, nm.grossMargin!.mae)}沿用上一季毛利率與利潤率的 ${g1(nm.grossMargin!.mae)} 個百分點、${g1(nm.eps!.mae)} 元，因此被選為主模型；它把 ${yearSpan} ${rangeOf(yearRows.map((r) => r.gm))}% 的毛利率解釋為「用平均約 ${g1(meanAge)} 季前的低價買進的庫存、以現在的高價賣出」。` +
     `${dynWorse || exWorse ? '但優勢不穩定：' : ''}從 ${TRAIN.to} 一次往後預測六季時毛利率誤差 ${g1(sm.grossMarginDynamic!.mae)} 個百分點，${worseOrBetter(sm.grossMarginDynamic!.mae, nm.grossMarginDynamic!.mae)}天真做法的 ${g1(nm.grossMarginDynamic!.mae)}；改用季初的合約價預測、不知道月營收時，毛利率誤差為 ${g1(sm.grossMarginExAnte?.mae ?? NaN)} 個百分點，${worseOrBetter(sm.grossMarginExAnte?.mae ?? NaN, nm.grossMarginExAnte?.mae ?? NaN)}天真模型的 ${g1(nm.grossMarginExAnte?.mae ?? NaN)}。` +
-    `${LAST} 底存貨約 ${fmt(invDays(LAST), 0)} 天、購入成本約為市價的 ${fmt(H_LAST.x * 100, 0)}%，基準情境下 ${NEXT} 毛利率約 ${fmt(b26q3.pnl.gm, 0)}%、${addQ(NEXT, 1)} 約 ${fmt(b26q4.pnl.gm, 0)}%，2027 年隨成本追上市價降到約 ${fmt(base2027.gm, 0)}%（保守 ${fmt(annualOf(runs.get('bear')!, '2027').gm, 0)}%、樂觀 ${fmt(annualOf(runs.get('bull')!, '2027').gm, 0)}%）。` +
+    (lc
+      ? `${lc.f.madeOn} 版對 ${lc.t} 的毛利率預測 ${g1(lc.f.grossMargin!)}%，比實際 ${g1(row(lc.t).gm)}% 高 ${g1(lc.f.grossMargin! - row(lc.t).gm)} 個百分點，營業費用也${overUnder(lc.opexF, row(lc.t).opex)}，兩者抵銷後 EPS 誤差 ${relErr(lc.f.eps!, row(lc.t).eps)}；事後測試的 ${reviews.length} 種修改都沒有採用，模型結構不變${OPEX_PARAMS === 'train' ? '，只有預測用的營業費用參數改為沿用回測期估計（逐季重估在原測試期誤差較大）' : ''}。`
+      : '') +
+    `${LAST} 底存貨約 ${fmt(invDays(LAST), 0)} 天、購入成本約為市價的 ${fmt(H_LAST.x * 100, 0)}%，基準情境下 ${NEXT} 營收約 ${fmt(bN.pnl.revenue, 0)} 百萬元、毛利率約 ${fmt(bN.pnl.gm, 0)}%，${YEAR2} 年隨成本追上市價降到約 ${fmt(base2027.gm, 0)}%（保守 ${fmt(annualOf(runs.get('bear')!, YEAR2)!.gm, 0)}%、樂觀 ${fmt(annualOf(runs.get('bull')!, YEAR2)!.gm, 0)}%）；${YEAR2} 年 EPS 對營業費用規則很敏感（見限制與敏感度）。` +
     `這是依假設價格路徑推算的模型結果，誤差區間大，不是對公司財報或股價的預測。`;
+
+  /* ── live check text ── */
+  const liveCheckSummary = lc
+    ? (() => {
+        const a = row(lc.t);
+        const lagPp = lc.gmF - lc.gmFlow; // forecast − the same formula on the reported inventory flows
+        const resid = lc.gmFlow - lc.wdPp - a.gm;
+        return [
+          `${lc.f.madeOn} 發布的基準情境對 ${lc.t} 的預測（營收已由月營收得知）：毛利率 ${g1(lc.f.grossMargin!)}%，實際 ${g1(a.gm)}%，高估 ${g1(lc.f.grossMargin! - a.gm)} 個百分點；營業費用約 ${fmt(lc.opexF, 0)} 百萬元，實際 ${fmt(a.opex, 0)} 百萬元，${overUnder(lc.opexF, a.opex)}。兩項誤差對獲利的影響方向相反，營業利益只${overUnder(lc.f.operatingIncome!, a.oi)}；業外收支又比假設多 ${fmt(a.nonop - lc.nonopF, 0)} 百萬元，EPS ${f2(lc.f.eps!)} 元對實際 ${f2(a.eps)} 元，誤差 ${relErr(lc.f.eps!, a.eps)}。`,
+          `毛利率的落差拆開來看：一、存貨跌價損失約 ${f2(lc.wdPp)} 個百分點，模型在合約價高於帳面成本時把跌價算成 0；二、庫存落後的估計本身大致正確，用實際存貨與營業成本重算，${lc.t} 的購入成本 ÷ 售價為 ${fmt(lc.xT, 3)}（${lc.o} 為 ${fmt(lc.xO, 3)}），預測時是 ${fmt(lc.xF, 3)}，這部分${lagPp < 0 ? '反而讓預測偏低' : '讓預測偏高'}約 ${g1(Math.abs(lagPp))} 個百分點；三、其餘約 ${g1(resid)} 個百分點來自售價與成本的對應：模型假設售價跟著整體合約價${qoqText(dP.get(lc.t)!)}，實際的營業成本率（不含跌價）卻由 ${g1(lc.crO)}% 升到 ${g1(lc.crT)}%，代表群聯這一季的售價漲幅低於合約價指數，或其他成本漲得更快${lc.aiO !== undefined && lc.aiT !== undefined ? `；同季 AI 生態系模組占營收比重由 ${fmt(lc.aiO, 0)}% 升到 ${fmt(lc.aiT, 0)}%（ir-2q26、ir-3q26），執行長也表示要提高的是毛利金額而不是毛利率（bnext-20261106）` : ''}。`,
+          `營業費用高估的約 ${fmt(lc.opexF - a.opex, 0)} 百萬元中，約 ${fmt(lc.opexF - lc.opexAtActualGp, 0)} 百萬元來自毛利率高估（規則中毛利每多 1 元、費用多 ${f2(lc.e.cp.opexBeta)} 元），約 ${fmt(lc.opexAtActualGp - a.opex, 0)} 百萬元來自費用規則本身${lc.rdO !== undefined && lc.rdT !== undefined ? `（研發費用 ${fmt(lc.rdT, 0)} 百萬元，與上季的 ${fmt(lc.rdO, 0)} 百萬元相近）` : ''}。庫存天數：預測時假設維持 ${fmt(lc.daysF, 0)} 天，實際 ${fmt(lc.daysT, 0)} 天，但存貨 ${fmt(a.inv, 0)} 百萬元只比模型推估的 ${fmt(lc.invF, 0)} 百萬元少 ${fmt((1 - a.inv / lc.invF) * 100, 0)}%，天數下降主要是營業成本比預測高。`,
+          `依此事後測試的 ${reviews.length} 種修改都沒有採用（見主模型說明），模型結構不變；${lc.t} 的財報只用來重估參數、作為新的預測起點，以及這裡的樣本外對照。${OPEX_PARAMS === 'train' ? `營業費用規則改為沿用 ${TRAIN.from}–${TRAIN.to} 的參數、不再重估，這是依原測試期的逐季重估檢驗決定的（見主模型說明）；用這組參數代入實際毛利，${lc.t} 的營業費用約 ${fmt(lc.opexTrainAtActualGp, 0)} 百萬元，同樣${overUnder(lc.opexTrainAtActualGp, a.opex)}。` : ''}${lc.t === LAST ? `預測從 ${LAST} 實際的營業成本率出發，這一季的落差已反映在起點，但若售價漲幅持續低於合約價指數，之後各季的毛利率仍會高估。` : ''}`,
+        ].join('');
+      })()
+    : undefined;
 
   const firstTest = backtest.find((b) => b.candidate === sel.id && b.period === TEST.from && b.metric === 'grossMargin')!;
   const limitations = [
     '價格指數是 TrendForce 的 NAND Flash 整體合約價（涵蓋 eMMC／UFS、SSD 與晶圓），不是群聯實際的進貨價或售價；群聯除了原廠也向通路商採購（年報），2025 年第四季起晶圓合約價未再公開，實際進貨成本與售價的漲幅可能不同。2018 年第一季以前與 2019 年第四季的合約價是代表性品項的代理值，可信度較低，主要影響庫存模擬的起點與訓練期參數。',
     `模型假設售價與當季合約價同步，對價格的反應偏大：${TRAIN.from}–${TRAIN.to} 逐季回測（樣本內）中，合約價上漲的季度平均高估毛利率 ${g1(upBias.bias)} 個百分點、下跌的季度平均低估 ${g1(-downBias.bias)} 個百分點，整體誤差 ${g1(sm.grossMarginTrain!.mae)} 個百分點，${worseOrBetter(sm.grossMarginTrain!.mae, nm.grossMarginTrain!.mae)}沿用上一季的 ${g1(nm.grossMarginTrain!.mae)}。${TEST.from} 合約價季減約 ${g1(-dP.get(TEST.from)!)}%，模型預測毛利率降到 ${g1(firstTest.predicted)}%，實際是 ${g1(firstTest.actual)}%，與上一季（${g1(row(addQ(TEST.from, -1)).gm)}%）相近。可能是售價調整較慢，或群聯的進貨價跌得比整體合約價快；因此價格下跌的季度，模型容易高估毛利率的下滑，保守情境可能偏悲觀。`,
+    ...(lc
+      ? [
+          `${lc.t} 是測試期之後第一個樣本外季度：${lc.f.madeOn} 版的基準預測毛利率 ${g1(lc.f.grossMargin!)}%，實際 ${g1(row(lc.t).gm)}%；用實際存貨重算，購入成本 ÷ 售價與預測時只差 ${fmt(Math.abs(lc.xF - lc.xT), 3)}，誤差主要來自售價與成本的對應（售價漲幅可能低於合約價指數、產品組合轉向 AI 生態系模組）。「售價只反映部分合約價漲跌」的規則在訓練期較準（毛利率 MAE ${f2(b0.train.mae)} → ${f2(rv('pass-through').train.mae)}），在測試期卻明顯變差（${f2(b0.gm.mae)} → ${f2(rv('pass-through').gm.mae)}），所以沒有採用；${lc.t === LAST ? `預測從 ${LAST} 實際的營業成本率出發，` : ''}若售價漲幅持續低於合約價指數，基準與樂觀情境的毛利率仍可能偏高。`,
+        ]
+      : []),
     `NAND 等材料占成本比重 φ 取自 2017–2023 年年報；2024 年起年報不再列產銷量值表，產品組合轉向企業級 SSD 與 AI 應用後，φ 可能已改變（φ 加減 0.1 的影響見敏感度）。`,
     `非 NAND 成本（控制晶片、封測、人工等）占營收的比重固定在預測起點 ${LAST} 的水準（約 ${fmt((1 - phiAll) * ((row(LAST).cogs - row(LAST).wd) / row(LAST).revenue) * 100, 0)}%）；NAND 價格高漲時這部分被大幅稀釋，若之後售價回落或加價空間被競爭壓縮，毛利率會低於模型。`,
-    `庫存模擬把所有生產成本當成同一種「NAND 當量」，沒有區分晶圓、控制晶片與在製品；存貨跌價規則只看帳面成本是否高於合約價，實際提列還涉及呆滯品與在製品評價。2026 年上半年價格大漲時群聯仍提列跌價損失（${rows.filter((r) => r.period.startsWith('2026Q')).map((r) => `${r.period} 約占營收 ${fmt((r.wd / r.revenue) * 100, 1)}%`).join('、')}），模型在合約價高於帳面成本時把跌價損失算成 0，基準與樂觀情境的毛利率可能因此偏高約 1 個百分點。`,
-    '營業費用中的員工酬勞、業外的權益法投資收益與匯兌損益很難由價格推得，EPS 的誤差明顯大於毛利率；2027 年逐季價格也沒有公開的數字預測，三種情境都是模型假設。',
-    `回測只有 ${testPeriods.length} 季，同時用來選模（誤差數字因此略為偏樂觀），而且 2026 年上半年的漲價幅度遠超過訓練期；從 ${TRAIN.to} 連續預測六季時，主模型的毛利率誤差（${g1(sm.grossMarginDynamic!.mae)} 個百分點）${worseOrBetter(sm.grossMarginDynamic!.mae, nm.grossMarginDynamic!.mae)}天真做法（${g1(nm.grossMarginDynamic!.mae)}），預測的季度離起點愈遠，誤差可能愈大。輸入資料沒有群聯的數字財測，因此只和天真模型比較。本頁是說明價格如何影響財報的教學模型，不構成投資建議。`,
+    `庫存模擬把所有生產成本當成同一種「NAND 當量」，沒有區分晶圓、控制晶片與在製品；存貨跌價規則只看帳面成本是否高於合約價，實際提列還涉及呆滯品與在製品評價。${yearSpan}價格大漲時群聯仍提列跌價損失（${yearRows.map((r) => `${r.period} 約占營收 ${fmt((r.wd / r.revenue) * 100, 1)}%`).join('、')}），模型在合約價高於帳面成本時把跌價損失算成 0，基準與樂觀情境的毛利率可能因此偏高約 ${rangeOf(yearRows.map((r) => (r.wd / r.revenue) * 100), 1)} 個百分點；加上固定基本提列率的規則在測試期誤差較大，沒有採用（見主模型說明）。`,
+    `營業費用中的員工酬勞、業外的權益法投資收益與匯兌損益很難由價格推得，EPS 的誤差明顯大於毛利率${lc ? `；${lc.t} 的營業費用比 ${lc.f.madeOn} 版的費用規則（代入實際毛利）低約 ${fmt(lc.opexAtActualGp - row(lc.t).opex, 0)} 百萬元，研發費用與上季相近，費用不一定隨毛利同步增加` : ''}。${OPEX_PARAMS === 'train'
+      ? `費用規則以${FORM_LABEL[OPEX_FORM]}估計，若用全部季度重估，會由金額最大的最近幾季主導：加入 ${LAST} 後，毛利不變時的季成長 d 由 ${dOf(PREV, OPEX_FORM)}% 變為 ${dOf(LAST, OPEX_FORM)}%，基準情境 ${HORIZON_END} 的營業費用會降到 ${LAST} 的約 ${fmt(opexEndRatio(refitRun) * 100, 0)}%（${fmt(refitRun.at(-1)!.pnl.opex, 0)} 百萬元${lc?.rdT !== undefined && lc.t === LAST && refitRun.at(-1)!.pnl.opex < lc.rdT ? `，比 ${LAST} 單季研發費用 ${fmt(lc.rdT, 0)} 百萬元還低` : ''}）；原測試期逐季重估的誤差也比固定參數大，所以本版起沿用 ${opexWindow} 的參數，${HORIZON_END} 的營業費用約為 ${LAST} 的 ${fmt(opexEndRatio(base) * 100, 0)}%。費用對毛利增減的反應是對稱的，毛利每減少 1 元、費用約減少 ${fmt(cpAll.opexBeta, 2)} 元；若研發等費用像 ${LAST} 一樣不太隨毛利變動，毛利下滑時的獲利會低於模型。用全部季度重估時 ${YEAR2} 年 EPS 約 ${fmt(annualOf(refitRun, YEAR2)!.eps, 0)} 元，改用每季權重相同的${FORM_LABEL[OTHER_FORM]}重估時約 ${fmt(annualOf(otherRun, YEAR2)!.eps, 0)} 元（基準 ${fmt(base2027.eps, 0)} 元，見敏感度）。`
+      : `費用規則以${FORM_LABEL[OPEX_FORM]}估計，重估時由金額最大的最近幾季主導：加入 ${LAST} 後，毛利不變時的季成長 d 由 ${dOf(PREV, OPEX_FORM)}% 變為 ${dOf(LAST, OPEX_FORM)}%，基準情境 ${HORIZON_END} 的營業費用只有 ${LAST} 的約 ${fmt(opexEndRatio(base) * 100, 0)}%；改用${FORM_LABEL[OTHER_FORM]}估計時約為 ${fmt(opexEndRatio(otherRun) * 100, 0)}%，${YEAR2} 年 EPS 約 ${fmt(annualOf(otherRun, YEAR2)!.eps, 0)} 元（基準 ${fmt(base2027.eps, 0)} 元，見敏感度）。`}${YEAR2} 年逐季價格也沒有公開的數字預測，三種情境都是模型假設。`,
+    `回測只有 ${testPeriods.length} 季，同時用來選模（誤差數字因此略為偏樂觀），而且 2026 年上半年的漲價幅度遠超過訓練期；從 ${TRAIN.to} 連續預測六季時，主模型的毛利率誤差（${g1(sm.grossMarginDynamic!.mae)} 個百分點）${worseOrBetter(sm.grossMarginDynamic!.mae, nm.grossMarginDynamic!.mae)}天真做法（${g1(nm.grossMarginDynamic!.mae)}），預測的季度離起點愈遠，誤差可能愈大。${TEST.to} 之後公布的季度不拿來挑選或調整模型結構，只用來重估參數與做樣本外對照。輸入資料沒有群聯的數字財測，因此只和天真模型比較。本頁是說明價格如何影響財報的教學模型，不構成投資建議。`,
   ];
 
   const sourceKeys = [...new Set([
     'mops-monthly', 'fr-2016', 'fr-2017', 'fr-2018', 'fr-2019', 'fr-2020', 'fr-2021', 'fr-2022', 'fr-2023', 'fr-2024', 'fr-2025', 'fr-2026',
     'ar-2017', 'ar-2019', 'ar-2021', 'ar-2023', 'ar-2024', 'ar-2025', 'ir-4q24', 'uanalyze-20260813',
-    q3.src, q4.src, 'tf-20260730-13158', 'tf-20260721-13148',
+    ...tfQs.map((t) => ranged(t)!.src), 'tf-20260730-13158', 'tf-20260721-13148',
+    // scenario context, the live check and the published forecasts it compares
+    'tf-20261111-13303', 'tf-rp-261030mh', 'tf-rp-261030yb', 'tf-rp-261028ce', 'tf-rp-261022cu', 'bnext-20261106', 'ir-2q26', 'ir-3q26',
+    ...(buyback ? [buyback.src] : []), ...new Set(pf.map((f) => f.src)),
     // realised and start-of-quarter contract prices of the test window (conditional and ex-ante backtests)
     ...L.priceSeries(prices, 'nand-contract-qoq').points.filter((p) => L.between(p.period, TEST.from, TEST.to)).map((p) => p.src),
     ...L.priceSeries(prices, 'nand-contract-qoq-start-forecast').points.filter((p) => L.between(p.period, TEST.from, TEST.to)).map((p) => p.src),
@@ -698,7 +1115,10 @@ export function buildModel(inputs: CompanyInputs, prices: MarketPrices): Out {
     periodLabel: '日曆季度（新台幣百萬元；EPS 為元）',
     train: TRAIN,
     test: TEST,
+    lastReported: LAST,
     summary,
+    ...(liveChecks.length ? { liveChecks } : {}),
+    ...(liveCheckSummary ? { liveCheckSummary } : {}),
     candidates: candOut,
     parameters,
     derived,

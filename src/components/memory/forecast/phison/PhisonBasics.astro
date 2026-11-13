@@ -13,10 +13,15 @@ import {
   fcMoney,
   fcPct,
   forecastOf,
+  forecastQuarters,
+  liveRows,
+  monthsOfQuarter,
+  overUnderOf,
   paramStarting,
   periodLabel,
   pricePoints,
   qIndex,
+  scenarioOf,
   type FcBundle,
 } from '../../../../lib/forecast-data';
 import { formatDate, formatNumber } from '../../../../lib/format';
@@ -47,6 +52,12 @@ const gm = actualGrossMargin('phison', last);
 const lastAnnual = [...inputs.annual].reverse().find((a) => a.purchases.length);
 const topSupplier = lastAnnual?.purchases.filter((p) => p.supplier !== '其他').sort((p, q) => (q.share ?? 0) - (p.share ?? 0))[0];
 const ceo = inputs.events.find((e) => /低成本庫存效益/.test(e.title));
+// a later CEO remark on the same subject, when the inputs have one (2026-11: 「低價庫存終將用完，目標是毛利金額」)
+const ceoLater = ceo ? inputs.events.find((e) => e.date > ceo.date && /低價庫存|低成本庫存/.test(e.title) && /執行長/.test(e.title)) : undefined;
+const prevQ = inputs.quarters.find((q) => qIndex(q.period) === qIndex(last.period) - 1);
+const gmPrev = prevQ ? actualGrossMargin('phison', prevQ) : undefined;
+// the site's earlier forecast for this quarter missed the margin by a point or more: say so here too (群聯 2026Q3)
+const liveGm = liveRows(b).find((r) => r.metric === 'grossMargin' && r.period === last.period && r.errorPp != null && Math.abs(r.errorPp) >= 1);
 const knownRev = m.scenarios.find((s) => s.id === 'base')?.forecasts.find((f) => f.known.includes('revenue'));
 const yearAgo = inputs.quarters.find((q) => qIndex(q.period) === qIndex(last.period) - 4);
 const pi = derivedOf(m, 'selling-price-index');
@@ -60,6 +71,10 @@ const priceSrc = yearAgo
 const nextGm = knownRev ? forecastOf(m, 'base', knownRev.period)?.grossMargin : undefined;
 const lastMonths = inputs.monthly.slice(-3).map((x) => Number(x.period.slice(5)));
 const knownMonthsText = lastMonths.length === 3 ? `${lastMonths[0]}–${lastMonths[2]} 月月營收合計` : '月營收合計';
+// the first forecast quarter when only some of its months are reported (2026Q4: October)
+const nextQ = knownRev ? undefined : forecastQuarters(scenarioOf(m, 'base'))[0];
+const nextMonths = nextQ ? monthsOfQuarter(inputs, nextQ.period) : [];
+const partial = nextQ && nextMonths.length > 0 && nextMonths.length < 3 ? nextQ : undefined;
 ---
 
 <div class="mem-basics__grid">
@@ -72,10 +87,10 @@ const knownMonthsText = lastMonths.length === 3 ? `${lastMonths[0]}–${lastMont
       關鍵在<strong>時間差</strong>：群聯先買進 NAND 放進庫存，過幾個月才做成產品賣出。賣出時的價格跟著當時的市價走，成本卻是當初買進的價格。合約價上漲時，帳上是較便宜的舊庫存，毛利率擴大；價格下跌時庫存比市價貴，毛利率被壓縮，還可能提列存貨跌價損失。
     </p>
     <p>
-      {periodLabel(last.period, 'long')}底存貨為{fcMoney(last.inventory, 'TWD')}，約是 {days ? formatNumber(days.value) : '—'} 天的營業成本<FcCite k={last.src} />；同一季 TrendForce 的 NAND Flash 合約價指數是一年前的 {piNow != null && piYearAgo ? formatNumber(piNow / piYearAgo, { digits: 1 }) : '—'} 倍{priceSrc.map((k) => <FcCite k={k} />)}。模型推估這一季賣出商品的平均購入成本只有售價的 {x ? `${formatNumber(x.value * 100, { digits: 0 })}%` : '—'}（平均約在 {lag ? formatNumber(lag.value, { digits: 1 }) : '—'} 季前買進），並把毛利率升到 {fcPct(gm)} 主要解釋為這個價差。
+      {periodLabel(last.period, 'long')}底存貨為{fcMoney(last.inventory, 'TWD')}，約是 {days ? formatNumber(days.value) : '—'} 天的營業成本<FcCite k={last.src} />；同一季 TrendForce 的 NAND Flash 合約價指數是一年前的 {piNow != null && piYearAgo ? formatNumber(piNow / piYearAgo, { digits: 1 }) : '—'} 倍{priceSrc.map((k) => <FcCite k={k} />)}。模型推估這一季賣出商品的平均購入成本只有售價的 {x ? `${formatNumber(x.value * 100, { digits: 0 })}%` : '—'}（平均約在 {lag ? formatNumber(lag.value, { digits: 1 }) : '—'} 季前買進），並把 {fcPct(gm)} 的毛利率{gmPrev != null && gm != null && gm < gmPrev - 0.5 ? `（上一季 ${fcPct(gmPrev)}）` : ''}主要解釋為這個價差{liveGm && (<>；不過本站 {liveGm.madeOn} 的模型對這一季的毛利率{overUnderOf(liveGm.errorPp!)}了 {formatNumber(Math.abs(liveGm.errorPp!), { digits: 1 })} 個百分點，見<a href="#live-check">預測 vs 實際</a></>)}。
       {ceo && (
         <>
-          執行長潘健成在 {formatDate(ceo.date, 'ym')}的法說會也表示，低成本庫存的效益會隨價格持續上漲而逐步淡化<FcCite k={ceo.src} />；這個「淡化」何時發生、有多快，正是本頁模型要估的事。
+          執行長潘健成在 {formatDate(ceo.date, 'ym')}的法說會也表示，低成本庫存的效益會隨價格持續上漲而逐步淡化<FcCite k={ceo.src} />{ceoLater && <>，{formatDate(ceoLater.date, 'ym')}則表示{ceoLater.title.replace(/^執行長：/, '')}<FcCite k={ceoLater.src} /></>}；這個「淡化」何時發生、有多快，正是本頁模型要估的事。
         </>
       )}
     </p>
@@ -102,6 +117,22 @@ const knownMonthsText = lastMonths.length === 3 ? `${lastMonths[0]}–${lastMont
         <p class="mem-fig__value"><strong>{x ? formatNumber(x.value, { digits: 2 }) : '—'}</strong><span class="mem-fig__unit">倍</span></p>
         <p class="mem-fig__meta">模型推估；小於 1 代表手上是比市價便宜的庫存</p>
       </li>
+      {
+        partial && (
+          <li class="mem-fig" data-status="forecast">
+            <p class="mem-fig__label">
+              {periodLabel(partial.period)} 營收<StatusTag status="forecast" />
+            </p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(partial.revenue / 100)}</strong>
+              <span class="mem-fig__unit">億元</span>
+            </p>
+            <p class="mem-fig__meta">
+              基準情境；{nextMonths.map((x) => `${Number(x.period.slice(5))} 月 ${formatNumber(x.revenue / 100, { digits: 1 })} 億元`).join('、')}已公布<FcCite k={nextMonths.at(-1)!.src} />，毛利率模型推估 {fcPct(partial.grossMargin)}
+            </p>
+          </li>
+        )
+      }
       {
         knownRev && (
           <li class="mem-fig">

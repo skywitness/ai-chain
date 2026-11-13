@@ -50,6 +50,29 @@ export function quarterlyFromMonthly(inputs: CompanyInputs): Map<string, number>
   return new Map([...acc].filter(([, a]) => a.n === 3).map(([q, a]) => [q, a.sum]));
 }
 
+/** Months of a calendar quarter: '2026Q4' → ['2026-10', '2026-11', '2026-12']. */
+export const monthsOfQuarter = (q: string) => [1, 2, 3].map((i) => `${q.slice(0, 4)}-${String((Number(q.slice(5)) - 1) * 3 + i).padStart(2, '0')}`);
+
+/**
+ * Nowcast ratios for a quarter whose first `n` months are known (n = 1 or 2): for every complete quarter up to `last`,
+ * quarterly revenue ÷ (revenue of its first n months × 3 ÷ n). The ratio is 1 when the remaining months equal the
+ * average of the known ones.
+ */
+export function firstMonthsRatios(inputs: CompanyInputs, n: number, last: string): { period: string; ratio: number }[] {
+  const m = new Map(inputs.monthly.map((x) => [x.period, x.revenue]));
+  return [...quarterlyFromMonthly(inputs)]
+    .filter(([q]) => qIndex(q) <= qIndex(last))
+    .map(([q, total]) => ({ period: q, ratio: total / ((monthsOfQuarter(q).slice(0, n).reduce((a, k) => a + m.get(k)!, 0) * 3) / n) }));
+}
+
+/** Linear-interpolation percentile (q in 0–1). */
+export function percentile(xs: readonly number[], q: number): number {
+  const s = [...xs].sort((a, b) => a - b);
+  const i = (s.length - 1) * q;
+  const lo = Math.floor(i);
+  return s[lo]! + (s[Math.ceil(i)]! - s[lo]!) * (i - lo);
+}
+
 /* ───────────── prices ───────────── */
 
 export const PRICE_BASE = '2016Q1';
@@ -276,6 +299,26 @@ export function fitOpex(rows: Row[], periods: readonly string[], exclude: Readon
   return { opexDrift: (b1 * a22 - b2 * a12) / det, opexBeta: (a11 * b2 - a12 * b1) / det, n };
 }
 
+/**
+ * The same rule in relative form: Δopex_t ÷ opex_{t−1} = d + β × ΔGP_t ÷ opex_{t−1} (least squares with intercept), so
+ * every quarter weighs the same. In levels the latest quarters dominate once the company is several times larger
+ * (2026), and one extra quarter can swing d by several points.
+ */
+export function fitOpexRelative(rows: Row[], periods: readonly string[], exclude: ReadonlySet<string>): ChainParams & { n: number } {
+  const by = new Map(rows.map((r) => [r.period, r]));
+  const xs: number[] = [], ys: number[] = [];
+  for (const p of periods) {
+    const r = by.get(p);
+    const q = by.get(addQ(p, -1));
+    if (!r || !q || exclude.has(p) || exclude.has(q.period)) continue;
+    xs.push((r.gp - q.gp) / q.opex);
+    ys.push((r.opex - q.opex) / q.opex);
+  }
+  const mx = xs.reduce((a, v) => a + v, 0) / xs.length, my = ys.reduce((a, v) => a + v, 0) / ys.length;
+  const beta = xs.reduce((a, v, i) => a + (v - mx) * (ys[i]! - my), 0) / xs.reduce((a, v) => a + (v - mx) ** 2, 0);
+  return { opexDrift: my - beta * mx, opexBeta: beta, n: xs.length };
+}
+
 export interface ChainState {
   opexPrev: number; // last quarter's operating expenses (one-off items removed)
   gpPrev: number;
@@ -298,13 +341,17 @@ export function chainStateAt(rows: readonly Row[], last: string, opexOneOff: Rea
 }
 
 export interface PnL { revenue: number; gm: number; gp: number; opex: number; oi: number; nonop: number; pretax: number; ni: number; eps: number }
-export function runChain(revenue: number, gm: number, st: ChainState, cp: ChainParams): PnL {
+/** The chain below gross profit for a given operating-expense amount (non-operating, tax, minority share, EPS). */
+export function runChainWithOpex(revenue: number, gm: number, st: ChainState, opex: number): PnL {
   const gp = (revenue * gm) / 100;
-  const opex = st.opexPrev * (1 + cp.opexDrift) + cp.opexBeta * (gp - st.gpPrev);
   const oi = gp - opex;
   const pretax = oi + st.nonop;
   const ni = pretax * (1 - st.taxRate) * st.niRatio;
   return { revenue, gm, gp, opex, oi, nonop: st.nonop, pretax, ni, eps: ni / st.shares };
+}
+export function runChain(revenue: number, gm: number, st: ChainState, cp: ChainParams): PnL {
+  const gp = (revenue * gm) / 100;
+  return runChainWithOpex(revenue, gm, st, st.opexPrev * (1 + cp.opexDrift) + cp.opexBeta * (gp - st.gpPrev));
 }
 /** Carry the chain state forward one quarter on modelled numbers. */
 export const nextChainState = (st: ChainState, p: PnL): ChainState => ({ ...st, opexPrev: p.opex, gpPrev: p.gp });
