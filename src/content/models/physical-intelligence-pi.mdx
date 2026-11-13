@@ -5,14 +5,16 @@ kind: robotics
 lab: physical-intelligence
 labName: "Physical Intelligence"
 origin: US
-summary: "Physical Intelligence（PI）的通用機器人基礎模型系列，屬於視覺—語言—動作模型（VLA）：看攝影機畫面、讀語言指令，直接輸出機械手臂的連續動作。π0、π0-FAST 與 π0.5 已透過 openpi 開放權重與程式碼；2025-11 的 π*0.6 加入從實際部署經驗學習的強化學習方法 Recap；2026-04-16 發表的 π0.7 約 50 億參數，展現跨機體、可組合的泛化能力，但權重與 API 均未公開。"
+summary: "Physical Intelligence（PI）的通用機器人基礎模型系列，屬於視覺—語言—動作模型（VLA）：看攝影機畫面、讀語言指令，直接輸出機械手臂的連續動作。π0、π0-FAST 與 π0.5 已透過 openpi 開放權重與程式碼；2025-11 的 π*0.6 加入從部署經驗學習的強化學習方法 Recap；2026-04-16 發表的 π0.7 約 50 億參數，展現跨機體、可組合的泛化能力，權重未公開。2026-10-13 PI 推出需申請的 Pi API beta，代管微調與雲端推論，但未寫明背後的模型版本，也未公布價格。"
 strengths:
   - "通用性強：π0.7 不需針對任務再訓練，就能完成操作咖啡機、摺衣服、折紙箱、削蔬菜等長時程靈巧任務，表現可比肩逐一以強化學習微調的專用模型（原廠評測）。"
   - "跨機體轉移：π0.7 能把摺 T 恤的技能零樣本轉移到從未學過摺衣服的 UR5e 雙臂機器人，原廠稱表現與專家遙控操作者初次嘗試相當（成功率 80%，專家為 80.6%）。"
   - "開放程度在前沿機器人模型中較高：π0、π0-FAST、π0.5 的權重與訓練程式以 openpi 公開，基礎模型以 1 萬小時以上機器人資料預訓練，推論只需 8 GB 以上顯示卡記憶體。"
   - "π*0.6 的 Recap 方法讓模型從實際部署、失敗與人工介入中學習，最難任務的產出量提高一倍以上、失敗率約減半，曾連續 13 小時製作濃縮咖啡。"
+  - "2026-10-13 起有 Pi API beta：上傳資料、在 PI 代管的算力上微調，再透過雲端推論在自家機器人上執行，不必自建訓練基礎設施；PI 公布的合作與早期測試案例涵蓋重型機具、農業、餐飲與組裝等場景（原廠展示）。"
 weaknesses:
-  - "最新的 π*0.6 與 π0.7 只以論文發表，openpi 與論文中都未提供其權重或公開 API，外部無法獨立驗證。"
+  - "最新的 π*0.6 與 π0.7 沒有開放權重；Pi API beta 採分批審核、未公布價格，公告也沒有寫明 API 使用哪個版本，外部仍難以獨立驗證最新模型。"
+  - "API 依賴雲端推論，PI 自己也提到部分早期部署遇到網路連線問題。"
   - "泛化仍有落差：π0.7 在見過的任務成功率常超過 90%，未見過的任務或任務與機體組合則約 60–80%。"
   - "缺乏共同的第三方評測，各家機器人模型多以自選任務與自家硬體比較，難以橫向排名。"
   - "openpi 權重衍生自 Google PaliGemma，需遵守 Gemma 授權條款；官方也提醒模型針對自家機器人開發，移植到其他平台不保證成功。"
@@ -20,13 +22,14 @@ bestFor:
   - "研究機構與新創以 openpi 權重微調自家機器人的操作策略"
   - "研究 VLA 架構、動作標記化與強化學習後訓練方法"
   - "評估家務、物流、餐飲等非結構化環境的通用機器人可行性"
+  - "想用 PI 最新模型、但沒有自建訓練基礎設施的機器人團隊（Pi API beta，需申請）"
 positioning:
   capability: 76
   costIndex: 25
   openness: 0.3
   method: editorial
-  asOf: "2026-10-06"
-  note: "機器人模型沒有可比較的第三方排行榜，本站評測登錄表也沒有適用指標，也沒有按 tokens 計價，三項座標皆為編輯判斷。capability 76：π0.7 能不經任務微調完成多項長時程靈巧操作、零樣本跨機體轉移，屬機器人基礎模型第一梯隊；但成績全部來自原廠評測，未見任務成功率約 60–80%，此分數不宜與語言模型直接比較。costIndex 25：PI 沒有公開 API 或定價；開放的 π0.5 推論需 8 GB 以上顯示卡記憶體、LoRA 微調需 22.5 GB 以上，π0.7 論文以單張 H100 推論，主要成本在機器人硬體與資料收集而非模型費用。openness 0.3：旗艦 π0.7 與 π*0.6 封閉（0），前代 π0／π0-FAST／π0.5 以 openpi 公開權重與 Apache-2.0 程式碼（權重受 Gemma 條款約束，約 0.5），取 0.3 代表「部分開放」。"
+  asOf: "2026-11-13"
+  note: "機器人模型沒有可比較的第三方排行榜，也不在 AA 綜合智慧指數的評測範圍（本站 2026-11-13 起語言模型改以 AA 指數 v5 計算 capability，機器人模型維持編輯判斷），也沒有按 tokens 計價，三項座標皆為編輯判斷，維持 2026-10-06 的數值。capability 76：π0.7 能不經任務微調完成多項長時程靈巧操作、零樣本跨機體轉移，屬機器人基礎模型第一梯隊；但成績全部來自原廠評測，未見任務成功率約 60–80%，此分數不宜與語言模型直接比較。costIndex 25：2026-10-13 推出的 Pi API beta 沒有公布價格，仍無法以定價換算；開放的 π0.5 推論需 8 GB 以上顯示卡記憶體、LoRA 微調需 22.5 GB 以上，π0.7 論文以單張 H100 推論，主要成本在機器人硬體與資料收集而非模型費用。openness 0.3：旗艦 π0.7 與 π*0.6 封閉（0），API beta 也只提供代管微調與推論、不釋出權重，前代 π0／π0-FAST／π0.5 以 openpi 公開權重與 Apache-2.0 程式碼（權重受 Gemma 條款約束，約 0.5），取 0.3 代表「部分開放」。"
 versions:
   - id: pi0
     name: "π0"
@@ -98,11 +101,44 @@ versions:
     modalitiesOut: [action]
     reasoning: none
     availability: [on-device]
-    notes: "以 Gemma 3 4B 視覺語言模型（含 4 億參數視覺編碼器）為骨幹，加上 8.6 億參數的 flow matching 動作專家，合計約 50 億參數。訓練時在提示中加入任務品質、速度、失誤標記與子目標圖片等「多模態情境」，因此能吸收失敗資料、人類第一人稱影片與網路資料。策略模型推論使用單張 H100，最小版本 38 毫秒、加上記憶與子目標圖片最慢 127 毫秒；子目標圖片由以 140 億參數 BAGEL 模型初始化的世界模型生成，另以 4 張 H100 平行運算。僅以論文發表，未開放權重，availability 欄僅表示在 PI 機器人上執行。"
+    notes: "以 Gemma 3 4B 視覺語言模型（含 4 億參數視覺編碼器）為骨幹，加上 8.6 億參數的 flow matching 動作專家，合計約 50 億參數。訓練時在提示中加入任務品質、速度、失誤標記與子目標圖片等「多模態情境」，因此能吸收失敗資料、人類第一人稱影片與網路資料。策略模型推論使用單張 H100，最小版本 38 毫秒、加上記憶與子目標圖片最慢 127 毫秒；子目標圖片由以 140 億參數 BAGEL 模型初始化的世界模型生成，另以 4 張 H100 平行運算。僅以論文發表，未開放權重，availability 欄僅表示在 PI 機器人上執行。PI 在 2026-10-13 推出 API beta，稱提供其最新模型，但沒有寫明是否為 π0.7，本站因此未把 API 列入此版本。"
 flagshipVersion: pi07
 relatedLearn: [physical-ai-deep, open-vs-closed-models, post-training-deep]
 glossary: [vla, physical-ai, reinforcement-learning, open-weights, fine-tuning, world-model]
 sources:
+  - key: pi-api-blog
+    title: "Frontier Models for Every Robot: Announcing our API beta"
+    publisher: "Physical Intelligence"
+    url: "https://www.pi.website/blog/api-beta"
+    type: press-release
+    lang: en
+    published: "2026-10-13"
+    accessed: "2026-11-13"
+  - key: pi-waitlist
+    title: "API access (Pi API beta waitlist)"
+    publisher: "Physical Intelligence"
+    url: "https://www.pi.website/waitlist"
+    type: company-site
+    lang: en
+    accessed: "2026-11-13"
+    note: "分批開放，需填寫團隊、任務與資料量；頁面未列價格"
+  - key: pi-blog-index
+    title: "Physical Intelligence Blog"
+    publisher: "Physical Intelligence"
+    url: "https://www.pi.website/blog"
+    type: company-site
+    lang: en
+    accessed: "2026-11-13"
+    note: "2026-04-16 π0.7 之後只有 2026-10-13 的 API beta 公告，沒有新模型"
+  - key: gr00t2-paper
+    title: "GR00T 2: Scaling Robot Foundation Models for Generalization, Dexterity, and Adaptation (whitepaper)"
+    publisher: "NVIDIA"
+    url: "https://research.nvidia.com/labs/gear/gr00t-2/assets/gr00t2_whitepaper.pdf"
+    type: paper
+    lang: en
+    published: "2026-11-09"
+    accessed: "2026-11-13"
+    note: "表 1 以 π0.5 為比較基準之一，由 NVIDIA 自行後訓練與測試"
   - key: pi07-paper
     title: "π0.7: a Steerable Generalist Robotic Foundation Model with Emergent Capabilities"
     publisher: "Physical Intelligence（arXiv）"
@@ -149,8 +185,8 @@ sources:
     url: "https://github.com/Physical-Intelligence/openpi"
     type: docs
     lang: en
-    accessed: "2026-10-06"
-    note: "README 更新紀錄：2025-09 釋出 π0.5 與 PyTorch 支援；程式碼採 Apache-2.0"
+    accessed: "2026-11-13"
+    note: "README 更新紀錄：2025-09 釋出 π0.5 與 PyTorch 支援；程式碼採 Apache-2.0；截至 2026-11-13 最新提交為 2026-08-24 的文件修正，未新增模型"
   - key: openpi-libero
     title: "openpi LIBERO example: Results"
     publisher: "Physical Intelligence"
@@ -166,13 +202,13 @@ sources:
     lang: en
     accessed: "2026-10-06"
     note: "LeRobot 移植版，模型卡標示 Gemma 授權（π0.5 衍生自 PaliGemma）"
-lastVerified: "2026-10-06"
+lastVerified: "2026-11-13"
 editorial:
   status: fact-checked
-  author: models-15
-  checkedBy: "models-15-check"
-  checkedOn: "2026-10-06"
-  notes: "π0、π0-FAST、π0.5、π*0.6、π0.7 的 arXiv 提交日、參數量、骨幹、延遲與成功率已對照論文原文；openpi 的釋出內容、顯示卡記憶體需求、更新紀錄與 LIBERO 96.85% 對照 GitHub README；Gemma 授權對照 openpi 的 LICENSE_GEMMA 與 Hugging Face 模型卡。所有能力數字皆為原廠評測。"
+  author: mdl-nvidia-gr00t-3
+  checkedBy: "check-mdl-nvidia-gr00t-3"
+  checkedOn: "2026-11-13"
+  notes: "2026-11-13 更新：新增 Pi API beta（官方部落格與申請頁）、openpi 現況與 NVIDIA GR00T 2 白皮書中的 π0.5 對照。以下為 2026-10-06 查核紀錄：π0、π0-FAST、π0.5、π*0.6、π0.7 的 arXiv 提交日、參數量、骨幹、延遲與成功率已對照論文原文；openpi 的釋出內容、顯示卡記憶體需求、更新紀錄與 LIBERO 96.85% 對照 GitHub README；Gemma 授權對照 openpi 的 LICENSE_GEMMA 與 Hugging Face 模型卡。所有能力數字皆為原廠評測。"
 ---
 
 ## 系列概覽
@@ -187,12 +223,13 @@ editorial:
 - **從經驗學習**：π*0.6 的 Recap 方法結合示範、自主執行資料與專家即時介入，以<Term id="reinforcement-learning">強化學習</Term>持續改進；原廠稱最難任務的產出量提高一倍以上、失敗率約減半<Cite k="pi06-paper" />。
 - **可被「引導」的通才**：π0.7 在提示中加入任務品質、速度、失誤標記與子目標圖片等情境，因此能吸收失敗示範、人類第一人稱影片與網路資料；子目標圖片由一個以 140 億參數圖像模型初始化的<Term id="world-model">世界模型</Term>生成。策略模型在單張 H100 上推論，最小版本約 38 毫秒<Cite k="pi07-paper" />。
 - **部分開放**：openpi 公開 π0、π0-FAST、π0.5 的<Term id="open-weights">開放權重</Term>與訓練程式，基礎模型以 1 萬小時以上機器人資料預訓練；推論需 8 GB 以上顯示卡記憶體，LoRA <Term id="fine-tuning">微調</Term>需 22.5 GB 以上<Cite k="openpi" />。
+- **代管 API**：2026-10-13 推出的 Pi API beta 走另一條路：使用者上傳示範資料，在 PI 管理的算力上微調，再透過代管的推論閘道讓自家機器人呼叫模型。PI 表示 API 背後是「最新的模型」，微調所需資料更少，但沒有寫明版本<Cite k="pi-api-blog" />。早期測試者的案例包括 Almond 用 API 迭代四天後，讓自家雙臂機器人替自己的零件去毛邊<Cite k="pi-api-blog" />。
 
 ## 適合與不適合的用途
 
-**適合**：研究機構與機器人新創用 openpi 權重，在自家機械手臂上微調操作策略；研究 VLA 架構、動作標記化與強化學習後訓練；評估家務、物流、餐飲等非結構化環境的<Term id="physical-ai">實體 AI</Term> 可行性。
+**適合**：研究機構與機器人新創用 openpi 權重，在自家機械手臂上微調操作策略；沒有自建訓練基礎設施、但想用 PI 最新模型的團隊，可申請 Pi API beta，目前分批審核，申請時要說明任務、機器人與已收集的資料量<Cite k="pi-waitlist" />；研究 VLA 架構、動作標記化與強化學習後訓練；評估家務、物流、餐飲等非結構化環境的<Term id="physical-ai">實體 AI</Term> 可行性。
 
-**不適合**：需要立即商用部署與廠商技術支援的工廠產線（最新模型沒有對外提供）；與 PI 機器人差異很大的硬體，openpi 官方提醒移植「可能成功也可能不成功」<Cite k="openpi" />；需要安全認證的高風險場景，論文成果都是研究環境下的原廠評測。同類的機器人基礎模型還有 Google 的 <ModelChip id="gemini-robotics">Gemini Robotics</ModelChip> 與輝達的 <ModelChip id="nvidia-gr00t">Isaac GR00T</ModelChip>，選型時可一併比較取得方式與授權。
+**不適合**：需要立即大規模商用部署、價格與服務條款明確的工廠產線（API 仍是 beta、未公布價格）；網路不穩的場域，PI 提到部分早期部署遇到連線問題，而 API 依賴雲端推論<Cite k="pi-api-blog" />；與 PI 機器人差異很大的硬體，openpi 官方提醒移植「可能成功也可能不成功」<Cite k="openpi" />；需要安全認證的高風險場景，論文成果都是研究環境下的原廠評測。同類的機器人基礎模型還有 Google 的 <ModelChip id="gemini-robotics">Gemini Robotics</ModelChip> 與輝達的 <ModelChip id="nvidia-gr00t">Isaac GR00T</ModelChip>，選型時可一併比較取得方式與授權。
 
 ## 版本演進
 
@@ -203,11 +240,14 @@ editorial:
 | π0.5 | 2025-04-22 | 多來源共同訓練，在陌生住家完成長時程任務；2025-09 開放權重 |
 | π*0.6 | 2025-11-18 | Recap 強化學習，從部署經驗自我改進 |
 | π0.7 | 2026-04-16 | 約 50 億參數，多模態情境引導、跨機體與組合式泛化 |
+| Pi API beta | 2026-10-13 | 代管微調與雲端推論，分批開放，未寫明模型版本 |
 
-演進主軸是讓同一個模型「做得更廣」再「做得更好」：π0.5 透過混合多種資料，首度在從未見過的住家完成清理廚房與臥室<Cite k="pi05-paper" />；π*0.6 加入強化學習提升可靠度；π0.7 則把專用模型的能力收回單一通才模型，原廠稱它不需任務微調，就能在咖啡、摺衣、折紙箱任務上追平以強化學習逐一微調的專用模型<Cite k="pi07-paper" />。值得注意的是開放策略的轉變：截至 2026-10-06，openpi 只提供到 π0.5 為止的權重，π*0.6 與 π0.7 都只有論文<Cite k="openpi" />。
+演進主軸是讓同一個模型「做得更廣」再「做得更好」：π0.5 透過混合多種資料，首度在從未見過的住家完成清理廚房與臥室<Cite k="pi05-paper" />；π*0.6 加入強化學習提升可靠度；π0.7 則把專用模型的能力收回單一通才模型，原廠稱它不需任務微調，就能在咖啡、摺衣、折紙箱任務上追平以強化學習逐一微調的專用模型<Cite k="pi07-paper" />。值得注意的是開放策略的轉變：截至 2026-11-13，openpi 只提供到 π0.5 為止的權重，最近一次更新是 2026-08 的文件修正<Cite k="openpi" />；π*0.6 與 π0.7 沒有公開權重，PI 改以 2026-10-13 的 API beta 對外提供最新模型，π0.7 之後也沒有發表新模型<Cite k="pi-blog-index" />。就本站觀察，PI 對外提供最新模型的方式，已從「開源舊版、論文展示新版」轉向「API 代管最新版」。
 
 ## 評測解讀
 
-機器人模型沒有像語言模型那樣的公開題庫或人類偏好排行榜，本站的評測登錄表也沒有適用指標，因此本頁不列入評測分數。PI 的數字主要有兩類：一是真實機器人實驗，例如 π0.7 在見過的任務成功率常超過 90%，未見過的任務或任務與機體組合約 60–80%<Cite k="pi07-paper" />；二是模擬基準，例如 openpi 公布 π0.5 在 LIBERO 基準微調後平均成功率 96.85%<Cite k="openpi-libero" />。
+機器人模型沒有像語言模型那樣的公開題庫或人類偏好排行榜，本站的評測登錄表也沒有適用指標，因此本頁不列入評測分數。PI 的數字主要有兩類：一是真實機器人實驗，例如 π0.7 在見過的任務成功率常超過 90%，未見過的任務或任務與機體組合約 60–80%<Cite k="pi07-paper" />；二是模擬基準，例如 openpi 公布 π0.5 在 LIBERO 基準微調後平均成功率 96.85%<Cite k="openpi-libero" />。本站語言模型的能力座標在 2026-11-13 改用 AA 綜合智慧指數 v5（2026-10-27 改版，v4 與 v5 分數不能互比）；機器人模型不在該指數範圍內，本頁 capability 仍是編輯判斷，也不能和語言模型互比。
+
+競爭者也會拿 π 系列當比較基準。NVIDIA 在 2026-11 的 GR00T 2 白皮書中，自行把 π0.5 後訓練後在自家機器人上測試：在 YAM 機械臂的六項長時程組裝、裝盒與插接任務，π0.5 平均成功率 12.5%，GR00T 2 為 71.7%<Cite k="gr00t2-paper" />。這類數字由對手選題、訓練與評分，用的是已開放的 π0.5 而非 PI 最新模型，只能當作參考。
 
 解讀時要注意三點：第一，真實機器人實驗的任務、場地與評分標準都由原廠設計，論文作者也坦言，在如此龐大多樣的訓練資料下，很難嚴格判定哪些任務真的「沒見過」<Cite k="pi07-paper" />；第二，LIBERO 這類模擬基準已接近飽和，高分不代表在真實環境同樣可靠；第三，不同公司的機器人硬體、相機配置與任務各不相同，π 系列與 Gemini Robotics、GR00T 的成績不能直接比較。以上論文日期介於 2024-10 至 2026-04，讀數字時應留意版本與時間。

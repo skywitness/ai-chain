@@ -13,21 +13,21 @@ strengths:
   - "世代進步大：31B 在官方模型卡自報 MMLU-Pro 85.2%、GPQA Diamond 84.3%，Gemma 3 27B（不開思考）分別為 67.6% 與 42.4%"
   - "原生多模態與工具呼叫：全系列支援影像輸入，E2B、E4B、12B 另支援音訊；內建系統提示、函式呼叫與可切換的思考模式"
 weaknesses:
-  - "與前沿閉源模型仍有差距：31B 在 AA 智慧指數 v4.3 為 15 分，同期 Gemini 3.8 Flash 為 41 分"
+  - "與前沿模型差距明顯：31B 在 AA 綜合智慧指數 v5.0.1 為 4 分，同期 Gemini 3.8 Flash（High）為 31 分，同為 30B 級開放權重的 Qwen3.8 27B（Xhigh）為 20 分（2026-11-13 讀取）"
   - "只公開權重與技術報告，未公開訓練資料與完整訓練流程，不屬於完全開源"
-  - "上下文最長 256K Token，短於 Gemini 主力型號的約 105 萬 Token；Gemini API 只提供免費層，正式上線多需自建或透過第三方託管"
+  - "上下文最長 256K Token，短於 Gemini 主力型號的約 105 萬 Token；Gemini API 對 Gemma 4 只提供免費層，正式上線多需自建或透過第三方託管"
 bestFor:
   - "資料不能離開自家機房或裝置的企業、政府與醫療場景"
   - "手機、筆電與邊緣裝置上的離線 AI 功能"
   - "以自有資料微調的專用模型（翻譯、函式呼叫、醫療影像等）"
   - "學術研究、教學與模型可解釋性研究"
 positioning:
-  capability: 15
-  costIndex: 16
+  capability: 4
+  costIndex: 19
   openness: 0.8
   method: computed
-  asOf: "2026-10-06"
-  note: "capability 取旗艦 Gemma 4 31B（推理模式）在 Artificial Analysis 智慧指數 v4.3 的 15 分（26B A4B 為 17 分）。Google 的 Gemini API 對 Gemma 4 只提供免費層、沒有付費價格，因此 costIndex 改用 Artificial Analysis 統計的第三方託管中位價（26B A4B：輸入 0.10、輸出 0.37 美元／百萬 Token），依 3:1 混合約 0.17 美元，套用 $0.05→0、$100→100 的對數換算約 16。Apache 2.0 開放權重但未公開訓練資料，openness 為 0.8。"
+  asOf: "2026-11-13"
+  note: "capability 取旗艦 Gemma 4 31B 的 AA 綜合智慧指數 v5.0.1（推理模式；AA 只為它列出推理與不推理兩種設定，不推理版沒有分數）= 4（2026-11-13 讀取）。Google 的 Gemini API 對 Gemma 4 只提供免費層、沒有付費價格，costIndex 改用 Artificial Analysis 追蹤的 31B 付費託管商（9 家，不含 Google AI Studio 免費層）各自標價的中位數：輸入 0.15、輸出 0.40 美元／百萬 tokens，3：1 混合（(3×0.15 + 0.40)÷4 ≈ 0.21 美元／百萬 tokens）對數換算（0.05 美元 → 0、100 美元 → 100）得 19.0，取 19；若改用 AA 列出的 26B A4B 跨託管商中位價（輸入 0.09、輸出 0.32 美元，混合約 0.15 美元）則約 14。openness 為 0.8（Apache 2.0 開放權重，未公開訓練資料）。"
 relatedLearn: [open-vs-closed-models, mixture-of-experts, inference-optimization, what-is-llm]
 glossary: [open-weights, dense-model, moe, active-parameters, speculative-decoding, quantization, fine-tuning, sovereign-ai, edge-ai, benchmark]
 sources:
@@ -64,14 +64,15 @@ sources:
     url: "https://ai.google.dev/gemma/docs/releases"
     type: docs
     lang: en
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
+    note: "2026-11-13 複查時最新一筆仍為 2026-10-06 的 EmbeddingGemma 2"
   - key: dm-gemma
     title: "Gemma - Google DeepMind"
     publisher: "Google DeepMind"
     url: "https://deepmind.google/models/gemma/"
     type: company-site
     lang: en
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - &gemma3-model-card
     key: gemma3-model-card
     title: "Gemma 3 model card"
@@ -98,11 +99,36 @@ sources:
     note: "Hugging Face API 的近 30 日下載數為滾動統計，2026 年 10 月查詢時逾 1,000 萬次，為下載量最高的 Gemma 4 型號"
   - key: gemini-api-pricing
     title: "Gemini Developer API pricing"
-    publisher: "Google AI for Developers"
-    url: "https://ai.google.dev/gemini-api/docs/pricing"
+    publisher: "Google AI Studio"
+    url: "https://aistudio.google.com/docs/pricing"
     type: docs
     lang: en
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
+    note: "舊網址 ai.google.dev/gemini-api/docs/pricing 已轉址到這裡；Gemma 4 一欄的免費層為 Free of charge，付費層為 Not available"
+  - key: aa-gemma-31b-providers
+    title: "Gemma 4 31B: API Provider Performance Benchmarking & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/gemma-4-31b/providers"
+    type: leaderboard
+    lang: en
+    accessed: "2026-11-13"
+    note: "列出 10 家 API 託管商；Google（AI Studio）為 0 美元，其餘 9 家輸入 0.10–0.75、輸出 0.34–1.15 美元／百萬 tokens"
+  - key: aa-gemma-26b
+    title: "Gemma 4 26B A4B - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/gemma-4-26b-a4b"
+    type: leaderboard
+    lang: en
+    accessed: "2026-11-13"
+    note: "價格為 AA 統計的跨託管商中位數（輸入 0.09、輸出 0.32 美元／百萬 tokens）；智慧指數 v5 尚無分數"
+  - key: hf-gemma4-commits
+    title: "google/gemma-4-E4B-it commit history"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/google/gemma-4-E4B-it/commits/main"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+    note: "2026-11-03 修正 tokenizer.json 中 219 個異常 Token（glitch tokens）；同日 google/gemma-4-E2B-it 修正 233 個，google/gemma-4-12B-it 於 2026-10-30 修正 210 個；31B 與 26B A4B 的儲存庫在 2026-11-13 查詢時沒有同類修正"
   - key: alphabet-q2-2026
     title: "Alphabet earnings call Q2 2026: Sundar Pichai remarks"
     publisher: "Google"
@@ -119,7 +145,34 @@ sources:
     type: leaderboard
     lang: en
     accessed: "2026-10-06"
-    note: "Intelligence Index v4.3；託管價格見 artificialanalysis.ai/models/gemma-4-26b-a4b"
+    note: "Intelligence Index v4.3（v4 系列，使用到 2026-10-27，分數不能與 v5 互比）；託管價格見 artificialanalysis.ai/models/gemma-4-26b-a4b"
+  - &aa-v5
+    key: aa-leaderboard-v5
+    title: "LLM Leaderboard - Artificial Analysis Intelligence Index v5.0.1"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: leaderboard
+    lang: en
+    accessed: "2026-11-13"
+    note: "Intelligence Index v5.0.1；Gemma 只有 4 31B（推理模式）有 v5 分數，26B A4B、12B、E4B、E2B 列出但尚無分數。同日於 artificialanalysis.ai/models/gemma-4-31b 核對，該頁標示同尺寸開放權重模型的中位數為 8"
+  - key: aa-index-v5
+    title: "Announcing Artificial Analysis Intelligence Index v5"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5"
+    type: leaderboard
+    lang: en
+    published: "2026-10-27"
+    accessed: "2026-11-13"
+  - &arena-1111
+    key: arena-text-1111
+    title: "Text Arena: LLM Rankings & AI Model Benchmarks"
+    publisher: "Arena (formerly LMArena)"
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    published: "2026-11-11"
+    accessed: "2026-11-13"
+    note: "總榜預設檢視，頁面日期 2026-11-11（共 9,122,174 票、421 個模型）；名次為頁面印出的位置編號。頁面只載入約前 152 名，Gemma 3 系列不在其中"
   - &arena-text
     key: arena-text
     title: "Text Arena: LLM Rankings & AI Model Benchmarks"
@@ -152,9 +205,11 @@ versions:
       - { benchmark: livecodebench, score: 80, setting: "LiveCodeBench v6", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
       - { benchmark: tau2-bench, score: 76.9, setting: "三個領域平均", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
       - { benchmark: hle, score: 19.5, setting: "不使用工具", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
+      - { benchmark: aa-intelligence-index-v5, score: 4, setting: "v5.0.1，推理模式（AA 為此型號列出的最高設定；不推理版尚無分數）", reportedBy: third-party, date: "2026-11-13", source: *aa-v5 }
       - { benchmark: aa-intelligence-index, score: 15, setting: "v4.3，推理模式", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1452, setting: "Gemma 4 31B，±7，總榜第 79 名，6,130 票，2026-11-11 頁面（非 Preliminary）", reportedBy: leaderboard, date: "2026-11-11", source: *arena-1111 }
       - { benchmark: lmarena-text, score: 1453, setting: "總榜第 76 名", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
-    notes: "60 層密集模型，視覺編碼器約 5.5 億參數；未量化的 bfloat16 權重可放進單張 80GB H100。Gemini API 與 Google AI Studio 只提供免費層。發表時名列 Arena 文字榜開放模型第 3 名。"
+    notes: "60 層密集模型，視覺編碼器約 5.5 億參數；未量化的 bfloat16 權重可放進單張 80GB H100。Gemini API 與 Google AI Studio 只提供免費層，沒有付費層；Artificial Analysis 在 2026-11-13 追蹤到 10 家 API 託管商（含 Google AI Studio 免費層）。發表時名列 Arena 文字榜開放模型第 3 名。"
   - id: gemma-4-26b-a4b
     name: "Gemma 4 26B A4B"
     released: "2026-04-02"
@@ -176,8 +231,9 @@ versions:
       - { benchmark: livecodebench, score: 77.1, setting: "LiveCodeBench v6", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
       - { benchmark: tau2-bench, score: 68.2, setting: "三個領域平均", reportedBy: lab, date: "2026-04-02", source: *gemma4-hf-card }
       - { benchmark: aa-intelligence-index, score: 17, setting: "v4.3，推理模式；AA 標示為估計值", reportedBy: third-party, date: "2026-10-06", source: *aa-leaderboard }
+      - { benchmark: lmarena-text, score: 1437, setting: "Gemma 4 26B A4B，±7，總榜第 102 名，6,069 票，2026-11-11 頁面（非 Preliminary）", reportedBy: leaderboard, date: "2026-11-11", source: *arena-1111 }
       - { benchmark: lmarena-text, score: 1437, setting: "總榜第 100 名", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
-    notes: "128 個專家、每個 Token 啟用 8 個加 1 個共享專家，推論速度接近 4B 模型。Hugging Face 上近 30 日下載量最高的 Gemma 4 型號。"
+    notes: "128 個專家、每個 Token 啟用 8 個加 1 個共享專家，推論速度接近 4B 模型。Hugging Face 上近 30 日下載量最高的 Gemma 4 型號。AA 在 2026-11-13 列出此型號，但尚未給 v5 分數；AA 統計的跨託管商中位價為輸入 0.09、輸出 0.32 美元／百萬 tokens。"
   - id: gemma-4-12b
     name: "Gemma 4 12B Unified"
     released: "2026-06-03"
@@ -272,12 +328,12 @@ versions:
       - { benchmark: lmarena-text, score: 1365, setting: "gemma-3-27b-it", reportedBy: leaderboard, date: "2026-10-02", source: *arena-text }
     notes: "Gemma 3 同時推出 1B、4B、12B、27B；4B、12B、27B 為 128K 上下文，1B 為 32K。27B 以 14 兆 Token 訓練，訓練資料截至 2024 年 8 月。採 Google 自訂的 Gemma 使用條款。上一代主力，列入以對照 Gemma 4 的進步。"
 flagshipVersion: gemma-4-31b
-lastVerified: "2026-10-06"
+lastVerified: "2026-11-13"
 editorial:
   status: fact-checked
-  author: models-03
-  checkedBy: "models-03-check"
-  checkedOn: "2026-10-06"
+  author: mdl-google-gemma-2
+  checkedBy: check-mdl-google-gemma-2
+  checkedOn: "2026-11-13"
 ---
 
 ## 系列概覽
@@ -311,9 +367,9 @@ Gemma 是 Google DeepMind 的<Term id="open-weights">開放權重</Term>模型�
 
 **不適合**：
 
-- 需要前沿推理、長時程 Agent 或百萬 Token 上下文的任務：31B 在 AA 智慧指數 v4.3 為 15 分，與 Gemini 3.8 Flash 的 41 分仍有一段差距<Cite k="aa-leaderboard" />。
+- 需要前沿推理、長時程 Agent 或百萬 Token 上下文的任務：31B 在 AA 綜合智慧指數 v5.0.1 為 4 分，Gemini 3.8 Flash（High）為 31 分、最新旗艦 Gemini 4 Carbon（High）為 60 分<Cite k="aa-leaderboard-v5" />，差距很大。
 - 需要「完全開源」（含訓練資料與配方）的研究，Gemma 只公開權重與技術報告<Cite k="gemma4-tech-report" />。
-- 沒有 GPU 維運能力、又需要正式服務等級的團隊：Gemini API 對 Gemma 4 只有免費層，沒有付費方案<Cite k="gemini-api-pricing" />，正式上線通常要自建或改用第三方託管。
+- 沒有 GPU 維運能力、又需要正式服務等級的團隊：Gemini API 對 Gemma 4 只有免費層，沒有付費方案<Cite k="gemini-api-pricing" />，正式上線通常要自建或改用第三方託管。Artificial Analysis 在 2026-11-13 追蹤到 9 家付費託管商，31B 的輸入價格為每百萬 tokens 0.10–0.75 美元、輸出價格為 0.34–1.15 美元，各家差距數倍<Cite k="aa-gemma-31b-providers" />，選擇時要一併比較速度與穩定度。
 
 ## 版本演進
 
@@ -327,9 +383,16 @@ Gemma 是 Google DeepMind 的<Term id="open-weights">開放權重</Term>模型�
 | 2026-06 | Gemma 4 12B Unified、QAT 量化版、DiffusionGemma | 不用獨立編碼器的統一多模態架構；量化版便於手機與筆電部署；DiffusionGemma 結合 Gemini Diffusion 研究<Cite k="dm-gemma" /> |
 | 2026-07 | Gemma 4 技術報告 | 於 arXiv 公開 |
 | 2026-10 | EmbeddingGemma 2（740M） | 把文字、程式碼、影像、影片與音訊放進同一個嵌入空間<Cite k="gemma-releases" /> |
+| 2026-10-30 至 11-03 | 12B、E4B、E2B 分詞器修正 | Hugging Face 上的指令版各修正 200 多個異常 Token（glitch tokens），已下載者宜更新 tokenizer 檔案<Cite k="hf-gemma4-commits" /> |
+
+截至 2026-11-13，Google 的 Gemma 發布紀錄與 DeepMind 的 Gemma 頁面都沒有比 EmbeddingGemma 2 更新的生成式模型，Gemma 4 仍是現行主力<Cite k="gemma-releases" /><Cite k="dm-gemma" />。
 
 ## 評測解讀
 
 Google 在模型卡自報的數字顯示世代進步很大：31B 的 MMLU-Pro 為 85.2%、GPQA Diamond 為 84.3%，對照欄中的 Gemma 3 27B（不開思考）分別只有 67.6% 與 42.4%<Cite k="gemma4-hf-card" />。不過 Gemma 4 的數字是開啟推理模式後由實驗室自測，與不思考的舊模型並排，會放大差距。
 
-第三方方面，Gemma 4 發表時 31B 曾名列 Arena 文字榜開放模型第 3 名<Cite k="gemma4-blog" />；到 2026-10-02，31B 為 1453 分、總榜第 76 名，26B A4B 為 1437 分、第 100 名<Cite k="arena-text" />，名次隨新模型湧入而下滑。Artificial Analysis 智慧指數 v4.3 中，26B A4B（17 分，AA 標示為估計值）反而略高於 31B（15 分）<Cite k="aa-leaderboard" />，兩者差距不大，說明不同評測組合可能讓排序反轉。整體來看，Gemma 的定位是「同尺寸表現強」而非「絕對最強」，比較時應與 <ModelChip id="alibaba-qwen">Qwen</ModelChip>、<ModelChip id="openai-gpt-oss">gpt-oss</ModelChip> 等同級開放權重模型對照，並參考<LearnLink id="open-vs-closed-models">開放與封閉模型</LearnLink>的取捨。
+第三方方面，Gemma 4 發表時 31B 曾名列 Arena 文字榜開放模型第 3 名<Cite k="gemma4-blog" />。到 2026-11-11 的頁面，31B 為 1452 分（±7）、總榜第 79 名，26B A4B 為 1437 分（±7）、第 102 名<Cite k="arena-text-1111" />；分數和 10 月初幾乎一樣，名次則隨新模型湧入而慢慢下滑。
+
+Artificial Analysis（AA）在 2026-10-27 把綜合智慧指數改版為 v5（11 月起為 v5.0.1）：知識工作、程式、科學、綜合知識四類各占 25%，新增 FrontierCode 2.0 與 Terminal-Bench-Science，並以 HLE-Diamond 取代 HLE；AA 也指出大多數開放權重模型在 Terminal-Bench-Science 的得分不到 10%<Cite k="aa-index-v5" />。題組與權重都換了，**v5 分數不能與先前的 v4 分數互比**。在 v5.0.1 中，Gemma 目前只有 31B（推理模式）有分數，為 4 分，AA 標示它落在同尺寸開放權重模型的低端（中位數 8）；26B A4B、12B、E4B、E2B 雖然列在 AA 上，還沒有 v5 分數<Cite k="aa-leaderboard-v5" />。拿同一份 v5.0.1 名單對照，同為 30B 級開放權重的 Qwen3.8 27B（Xhigh）為 20 分；總參數大得多的 gpt-oss-120b（High）則與 Gemma 4 31B 同為 4 分<Cite k="aa-leaderboard-v5" />。本站舊版引用的 v4.3 分數（2026-10-06 讀取，31B 為 15 分、26B A4B 為 17 分且為 AA 估計值）保留在版本資料中作為歷史紀錄，閱讀時不要拿來和 v5 分數並列比較<Cite k="aa-leaderboard" />。
+
+這也說明 Arena 與 AA 衡量的是不同能力：Arena 反映人類對回答的偏好，Gemma 4 在這裡仍排在約 420 個模型的前四分之一；AA v5 則有 55% 的權重來自終端機操作、程式修改與知識工作等多步驟 Agent 任務<Cite k="aa-index-v5" />，同尺寸開放權重模型的中位數只有 8 分<Cite k="aa-leaderboard-v5" />。整體來看，Gemma 的強項是「授權寬鬆、尺寸齊全、容易部署」，而不是「絕對最強」；在 AA v5 上，31B 的分數在同尺寸模型中也不突出。比較時應與 <ModelChip id="alibaba-qwen">Qwen</ModelChip>、<ModelChip id="openai-gpt-oss">gpt-oss</ModelChip> 等同級開放權重模型對照，並參考<LearnLink id="open-vs-closed-models">開放與封閉模型</LearnLink>的取捨。

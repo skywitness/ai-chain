@@ -6,30 +6,33 @@ lab: alphabet
 labName: "Google DeepMind"
 labUnit: google-deepmind
 origin: US
-summary: "Google DeepMind 把 Gemini 延伸到實體世界的機器人模型系列，由三種模型組成：把視覺與語言轉成馬達動作的 VLA 模型、負責理解環境與規劃任務的具身推理（ER）模型，以及可在機器人本機執行的 On-Device 模型。2026-07-30 發表的第二代可控制人形機器人全身並支援多機協作；其中 Gemini Robotics ER 2 已在 Gemini API 公開預覽，VLA 與 On-Device 2 則只提供給合作夥伴與受信任測試者。"
+summary: "Google DeepMind 把 Gemini 延伸到實體世界的機器人模型系列，由三種模型組成：把視覺與語言轉成馬達動作的 VLA 模型、負責理解環境與規劃任務的具身推理（ER）模型，以及可在機器人本機執行的 On-Device 模型。2026-07-30 的第二代可控制人形機器人全身並支援多機協作；2026-11-10 推出的 Gemini Robotics 2.5 是 DeepMind 迄今最強的 VLA，強化靈巧操作與可靠度。ER 2 已在 Gemini API 公開預覽，VLA 與 On-Device 2 只提供給合作夥伴與受信任測試者。"
 strengths:
   - "分工架構清楚：ER 模型負責理解、規劃與呼叫工具，VLA 模型負責產生動作；開發者也可以把自家的控制器或導航 API 宣告成工具，讓 ER 模型調度。"
-  - "跨機體泛化：同一個 Gemini Robotics 2 檢查點可控制裝兩種靈巧手的 Apptronik Apollo 2 與 Franka Duo 雙臂；On-Device 2 通常只要不到 200 筆示範、幾小時就能適應新的雙臂機器人。"
+  - "靈巧度與可靠度持續提升：原廠稱 Gemini Robotics 2.5 在 200 多項任務上的成功率比先前基準（圖表對照的是 Gemini Robotics 2）高 30%–100%、完成速度快 20%–30%；在賓士（Mercedes-Benz）汽車產線的概念驗證中，Apptronik Apollo 2 人形機器人揀料成功率 96%。"
+  - "跨機體泛化：Gemini Robotics 2 起同一個檢查點可控制三種機體，2.5 也原生支援裝五指靈巧手的 Apptronik Apollo 2 與 Franka Duo 雙臂；On-Device 2 通常只要不到 200 筆示範、幾小時就能適應新的雙臂機器人。"
   - "ER 2 已公開於 Gemini API：輸入上限 131,072 tokens，能從連續影片追蹤任務進度並協調多台機器人，另有 Live API 串流端點；有免費層，付費層在 2026 年底前輸入每百萬 tokens 1 美元、輸出 5 美元。"
   - "有可離線執行的本機版本：On-Device 系列在機器人上低延遲推論，不依賴網路連線。"
-  - "安全研究投入持續：ASIMOV 語意安全基準、ASIMOV-Agentic 代理安全基準，以及有人靠近時讓機器人安全停止的工具呼叫。"
+  - "安全研究投入持續：ASIMOV 系列安全基準（2026-11 新增開源的 ASIMOV-Jailbreak 越獄測試），Gemini Robotics 2.5 也加入推論時的安全引導，避開障礙物與身旁的人。"
 weaknesses:
-  - "最強的 VLA 模型 Gemini Robotics 2 與 On-Device 2 只開放給合作夥伴與受信任測試者，一般開發者只能使用負責推理的 ER 2；全系列皆為封閉權重。"
-  - "官方自承多指靈巧操作仍具挑戰，人形機器人的動作速度也有待提升；On-Device 2 對分布外任務與高自由度機器人的泛化有限。"
+  - "最強的 VLA 模型 Gemini Robotics 2.5 與 On-Device 2 只開放給合作夥伴與受信任測試者，一般開發者只能使用負責推理的 ER 2；全系列皆為封閉權重。"
+  - "Gemini Robotics 2.5 只有部落格公告，沒有模型卡或技術報告；成功率提升只與自家 Gemini Robotics 2 比較，任務也由原廠挑選。"
+  - "官方自承多指靈巧操作仍具挑戰；On-Device 2 對分布外任務與高自由度機器人的泛化有限。"
   - "公開成績幾乎都是原廠自訂的內部基準，缺乏第三方標準化比較，難以和其他機器人模型直接對照。"
   - "API 預覽版汰換很快：ER 1.5 上線約 7 個月、ER 1.6 約 4 個半月就停止服務；模型卡也要求不得用於醫療、交通等安全關鍵場景。"
 bestFor:
   - "替既有機器人加上高層規劃與任務協調（以 ER 2 呼叫 VLA、導航或手臂控制 API）"
   - "設施巡檢的儀表判讀、成功偵測與任務進度追蹤"
   - "人形與雙臂機器人研究、跨機體技能轉移實驗"
+  - "工廠配料、揀料等重複性作業的人形機器人試點（需為合作夥伴）"
   - "需要離線、低延遲本機控制的機器人原型（On-Device，需申請測試資格）"
 positioning:
-  capability: 78
+  capability: 80
   costIndex: 49
   openness: 0
   method: editorial
-  asOf: "2026-10-06"
-  note: "capability 為編輯判斷：機器人模型沒有可比較的第三方排行榜，本站評測登錄表也沒有適用指標。78 分代表 Gemini Robotics 屬於機器人基礎模型的第一梯隊（已能控制人形機器人全身、跨機體轉移，ER 1.5 在 15 項學術具身推理基準取得原廠宣稱的最佳綜合成績），但多指靈巧操作仍具挑戰，且成績多為原廠內部評測；此分數不宜與語言模型直接比較。costIndex 以唯一公開按 tokens 計價的 Gemini Robotics ER 2 計算：輸入 1 美元、輸出 5 美元（2026-12-31 前），按輸入：輸出 3：1 得混合價 2.00 美元，以 $0.05→0、$100→100 對數換算約 49；2027-01-01 起價格加倍，混合價 4.00 美元，約為 58。VLA 與 On-Device 模型沒有公開價格，不納入計算。全系列封閉權重，openness 為 0。"
+  asOf: "2026-11-13"
+  note: "capability 為編輯判斷：機器人模型沒有可比較的第三方排行榜，也不在 AA 綜合智慧指數的評測範圍；本站 2026-11-13 起把語言模型的 capability 改以 AA 指數 v5 計算，機器人模型維持編輯判斷，不宜與語言模型直接比較。由 78 調為 80：旗艦改為 2026-11-10 推出的 Gemini Robotics 2.5，原廠稱成功率比先前基準（Gemini Robotics 2）高 30%–100%，並在賓士汽車產線的概念驗證中達到 96% 揀料成功率，可靠度朝產線應用推進；但數字全為原廠自報，沒有模型卡，多指靈巧操作仍具挑戰，因此只小幅上調。costIndex 以唯一公開按 tokens 計價的 Gemini Robotics ER 2 計算（2026-11-13 重新核對定價頁，價格未變）：輸入 1 美元、輸出 5 美元（2026-12-31 前），按輸入：輸出 3：1 得混合價 2.00 美元，以 $0.05→0、$100→100 對數換算約 49；2027-01-01 起價格加倍，混合價 4.00 美元，約為 58。VLA 與 On-Device 模型沒有公開價格，不納入計算。全系列封閉權重，openness 為 0。"
 versions:
   - id: gemini-robotics-on-device
     name: "Gemini Robotics On-Device"
@@ -99,7 +102,7 @@ versions:
         currency: USD
         tierNote: "Standard 付費層；文字、圖片、影片輸入價，音訊輸入每百萬 tokens 2.00 美元；輸出含思考 tokens。取自網際網路檔案館 2026-06-14 存檔的官方定價頁。"
         source: { title: "Gemini Developer API pricing", publisher: "Google AI for Developers", url: "https://ai.google.dev/gemini-api/docs/pricing", type: docs, lang: en, accessed: "2026-10-06", archiveUrl: "https://web.archive.org/web/20260614193416/https://ai.google.dev/gemini-api/docs/pricing", note: "2026-06-14 存檔版本" }
-    notes: "強化指向、計數、多視角成功偵測，並新增儀表判讀：結合「代理式視覺」（放大影像加上程式執行）讀取壓力錶、液位計與數位顯示，用例來自與 Boston Dynamics 的 Spot 巡檢合作。gemini-robotics-er-1.6-preview 於 2026-04-14 上線，官方棄用頁列出的停止服務日為 2026-08-31，建議改用 ER 2。"
+    notes: "強化指向、計數、多視角成功偵測，並新增儀表判讀：結合「代理式視覺」（放大影像加上程式執行）讀取壓力錶、液位計與數位顯示，用例來自與 Boston Dynamics 的 Spot 巡檢合作。gemini-robotics-er-1.6-preview 於 2026-04-14 上線，2026-08-31 停止服務，官方建議改用 ER 2。"
   - id: gemini-robotics-2
     name: "Gemini Robotics 2"
     released: "2026-07-30"
@@ -111,7 +114,7 @@ versions:
     modalitiesIn: [text, image]
     modalitiesOut: [action]
     availability: [api]
-    notes: "DeepMind 稱為其最先進的 VLA 模型，首度控制人形機器人全身（行走、蹲下、伸展並操作物品），可驅動 22 個自由度的 SharpaWave 五指靈巧手與雙指夾爪；同一個檢查點可控制三種機體。官方表示多指靈巧操作仍具挑戰，動作速度也有待提升。僅提供早期存取合作夥伴，不是公開 API；官方未說明是否沿用 1.5 的思考模式。"
+    notes: "首度控制人形機器人全身（行走、蹲下、伸展並操作物品），可驅動 22 個自由度的 SharpaWave 五指靈巧手與雙指夾爪；同一個檢查點可控制三種機體。官方表示多指靈巧操作仍具挑戰，動作速度也有待提升。僅提供早期存取合作夥伴，不是公開 API；官方未說明是否沿用 1.5 的思考模式。2026-11-10 起由 Gemini Robotics 2.5 接替為最先進的 VLA，官方未公布停止提供的日期。"
   - id: gemini-robotics-er-2
     name: "Gemini Robotics ER 2"
     released: "2026-07-30"
@@ -127,21 +130,21 @@ versions:
     reasoning: hybrid
     availability: [api, cloud-marketplace]
     pricing:
-      - asOf: "2026-10-06"
+      - asOf: "2026-11-13"
         inputPerMTok: 1
         outputPerMTok: 5
         cachedInputPerMTok: 0.1
         currency: USD
-        tierNote: "Standard 付費層，適用至 2026-12-31；輸入含文字、圖片、影片、音訊，輸出含思考 tokens；Batch 為半價。串流端點 gemini-robotics-er-2-streaming-preview 輸入與輸出價格相同。"
-        source: { title: "Gemini Developer API pricing", publisher: "Google AI for Developers", url: "https://ai.google.dev/gemini-api/docs/pricing", type: docs, lang: en, accessed: "2026-10-06" }
-      - asOf: "2026-10-06"
+        tierNote: "Standard 付費層，適用至 2026-12-31；輸入含文字、圖片、影片、音訊，輸出含思考 tokens；Batch 為半價。串流端點 gemini-robotics-er-2-streaming-preview 輸入與輸出價格相同。2026-11-13 重新核對，與 2026-10-06 相同。"
+        source: { title: "Gemini Developer API pricing", publisher: "Google AI for Developers", url: "https://ai.google.dev/gemini-api/docs/pricing", type: docs, lang: en, accessed: "2026-11-13" }
+      - asOf: "2026-11-13"
         inputPerMTok: 2
         outputPerMTok: 10
         cachedInputPerMTok: 0.2
         currency: USD
         tierNote: "Standard 付費層，2027-01-01 起適用的公告價格。"
-        source: { title: "Gemini Developer API pricing", publisher: "Google AI for Developers", url: "https://ai.google.dev/gemini-api/docs/pricing", type: docs, lang: en, accessed: "2026-10-06" }
-    notes: "以 Gemini 3.5 Flash 為基礎的具身推理模型，輸入上限 131,072 tokens、輸出上限 65,536 tokens。新增連續影片的任務進度分類與關鍵時刻定位、多機協作與多步驟工具調度，並提供透過 Live API 雙向串流的 gemini-robotics-er-2-streaming-preview 端點。可在 Gemini API、Google AI Studio 使用，Gemini Enterprise Agent Platform 為非公開預覽。"
+        source: { title: "Gemini Developer API pricing", publisher: "Google AI for Developers", url: "https://ai.google.dev/gemini-api/docs/pricing", type: docs, lang: en, accessed: "2026-11-13" }
+    notes: "以 Gemini 3.5 Flash 為基礎的具身推理模型，輸入上限 131,072 tokens、輸出上限 65,536 tokens。新增連續影片的任務進度分類與關鍵時刻定位、多機協作與多步驟工具調度，並提供透過 Live API 雙向串流的 gemini-robotics-er-2-streaming-preview 端點。可在 Gemini API、Google AI Studio 使用，Gemini Enterprise Agent Platform 為非公開預覽。截至 2026-11-13，官方棄用頁對兩個 ER 2 端點都未公布停止服務日期。"
   - id: gemini-robotics-on-device-2
     name: "Gemini Robotics On-Device 2"
     released: "2026-07-30"
@@ -155,17 +158,45 @@ versions:
     reasoning: none
     availability: [on-device]
     notes: "以 Google 的裝置端 Gemma 模型與 Gemini Robotics 1.5 技術為基礎的本機 VLA，輸入還包括機器人本體感覺（關節狀態）數值，輸出為動作數值。原生支援多種機體，通常不到 200 筆示範、幾小時即可適應新的雙臂機器人。模型卡指出它對分布外任務與高自由度機器人的泛化有限，主要在站立式雙臂操作上評估，行動平台與全身控制不在適用範圍。僅提供受信任測試者。"
-flagshipVersion: gemini-robotics-2
+  - id: gemini-robotics-2-5
+    name: "Gemini Robotics 2.5"
+    released: "2026-11-10"
+    status: preview
+    tier: flagship
+    weights: closed
+    license: proprietary
+    architecture: unknown
+    modalitiesIn: [text, image]
+    modalitiesOut: [action]
+    availability: [api]
+    notes: "DeepMind 稱為其最強的 VLA 模型，重點是擴大可學的技能範圍與學習速度。原廠以 200 多項任務評估（例如用夾子夾取食物、在禮盒上綁蝴蝶結、吸取液體），依任務類型成功率比先前基準高 30%–100%（部落格圖表的對照組為 Gemini Robotics 2）、完成速度快 20%–30%；同樣可控制裝 22 個自由度 SharpaWave 五指手的 Apptronik Apollo 2 與 Franka Duo 雙臂。在匈牙利凱奇凱梅特與德國辛德芬根的賓士汽車產線概念驗證中，由 ER 模型追蹤流程、2.5 控制手臂與雙手，Apollo 2 把零件從料箱分揀到排序容器的成功率為 96%。另加入推論時的安全引導，原廠稱繞過障礙物與在人旁邊作業的安全完成率分別提升 33% 與 43%。開發過程以 Gemini 4 Argon 生成模擬練習與數位分身加速。只向機器人合作夥伴逐步提供，沒有公開 API、模型卡或技術報告；官方未說明架構、參數量與是否具思考模式。"
+flagshipVersion: gemini-robotics-2-5
 relatedLearn: [physical-ai-deep, multimodal-models, agents-and-mcp, reasoning-models]
-glossary: [physical-ai, vla, humanoid-robot, edge-ai, agent, function-calling, reasoning-model, multimodal]
+glossary: [physical-ai, vla, humanoid-robot, edge-ai, agent, function-calling, reasoning-model, multimodal, ai-safety]
 sources:
+  - key: gr25-blog
+    title: "Gemini Robotics 2.5 accelerates real-world general dexterity"
+    publisher: "Google DeepMind"
+    url: "https://deepmind.google/blog/gemini-robotics-2-5-accelerates-real-world-physical-intelligence/"
+    type: press-release
+    lang: en
+    published: "2026-11-10"
+    accessed: "2026-11-13"
+  - key: argon-robotics
+    title: "Gemini 4 Argon for Robotics"
+    publisher: "Google Developers Blog"
+    url: "https://developers.googleblog.com/gemini-4-argon-for-robotics/"
+    type: press-release
+    lang: en
+    published: "2026-10-13"
+    accessed: "2026-11-13"
   - key: gr-page
     title: "Gemini Robotics — Google DeepMind"
     publisher: "Google DeepMind"
     url: "https://deepmind.google/models/gemini-robotics/"
     type: company-site
     lang: en
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - key: gr2-blog
     title: "Gemini Robotics 2 brings whole body intelligence to robots"
     publisher: "Google DeepMind"
@@ -252,7 +283,7 @@ sources:
     url: "https://ai.google.dev/gemini-api/docs/robotics-overview"
     type: docs
     lang: en
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - key: api-er2-model
     title: "Gemini Robotics ER 2 preview — model page"
     publisher: "Google AI for Developers"
@@ -266,47 +297,50 @@ sources:
     url: "https://ai.google.dev/gemini-api/docs/pricing"
     type: docs
     lang: en
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - key: api-deprecations
     title: "Gemini deprecations"
     publisher: "Google AI for Developers"
     url: "https://ai.google.dev/gemini-api/docs/deprecations"
     type: docs
     lang: en
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - key: api-changelog
     title: "Gemini API release notes"
     publisher: "Google AI for Developers"
     url: "https://ai.google.dev/gemini-api/docs/changelog"
     type: docs
     lang: en
-    accessed: "2026-10-06"
-lastVerified: "2026-10-06"
+    accessed: "2026-11-13"
+    note: "2026-07-30 之後至 2026-11-12 沒有機器人模型的更新紀錄"
+lastVerified: "2026-11-13"
 editorial:
   status: fact-checked
-  author: models-04
-  checkedBy: "models-04-check"
-  checkedOn: "2026-10-06"
+  author: mdl-nvidia-gr00t-3
+  checkedBy: "check-mdl-nvidia-gr00t-3"
+  checkedOn: "2026-11-13"
 ---
 
 ## 系列概覽
 
 Gemini Robotics 是 <CompanyChip id="alphabet">Alphabet</CompanyChip> 旗下 Google DeepMind 的機器人模型系列，目標是把 Gemini 的多模態理解帶進<Term id="physical-ai">實體 AI</Term>。2025-03-12 發表的第一代以 Gemini 2.0 為基礎，把「實體動作」加為新的輸出模態，成為一個 <Term id="vla">VLA（視覺語言動作模型）</Term>；同時推出強化空間理解的 Gemini Robotics-ER<Cite k="gr1-blog" />。
 
-系列目前分成三條產品線：VLA 模型把相機畫面與語言指令轉成馬達指令；ER（具身推理）模型像機器人的「大腦」，負責看懂環境、規劃多步驟任務並呼叫工具；On-Device 模型則是可在機器人本機執行的輕量 VLA<Cite k="gr2-blog" />。截至 2026-10-06，只有 ER 2 對一般開發者開放（Gemini API 公開預覽），VLA 與 On-Device 2 僅提供早期存取夥伴與受信任測試者；官方表示已與 100 多個受信任測試者合作，研究合作夥伴包括 Agile Robots、<CompanyChip id="apptronik">Apptronik</CompanyChip> 與<CompanyChip id="boston-dynamics">波士頓動力（Boston Dynamics）</CompanyChip><Cite k="gr-page" />。
+系列目前分成三條產品線：VLA 模型把相機畫面與語言指令轉成馬達指令；ER（具身推理）模型像機器人的「大腦」，負責看懂環境、規劃多步驟任務並呼叫工具；On-Device 模型則是可在機器人本機執行的輕量 VLA<Cite k="gr2-blog" />。截至 2026-11-13，官方頁面列出的三個現行模型是 Gemini Robotics 2.5、ER 2 與 On-Device 2<Cite k="gr-page" />。只有 ER 2 對一般開發者開放（Gemini API 公開預覽）<Cite k="api-overview" />，2026-11-10 推出的 2.5 則逐步提供給機器人合作夥伴<Cite k="gr25-blog" />；官方表示已與 100 多個受信任測試者合作，研究合作夥伴包括 Agile Robots、<CompanyChip id="apptronik">Apptronik</CompanyChip> 與<CompanyChip id="boston-dynamics">波士頓動力（Boston Dynamics）</CompanyChip><Cite k="gr-page" />。
 
 ## 特性分析
 
-- **大腦與小腦分工**：ER 模型負責理解與規劃，再把每一步交給 VLA 或其他控制器執行。開發者可以把 VLA、導航 API 宣告成工具，讓 ER 2 透過<Term id="function-calling">函式呼叫</Term>調度；ER 2 還能一邊執行一邊思考下一步，減少「停下來想」的空檔<Cite k="er2-blog" />。
+- **大腦與小腦分工**：ER 模型負責理解與規劃，再把每一步交給 VLA 或其他控制器執行。開發者可以把 VLA、導航 API 宣告成工具，讓 ER 2 透過<Term id="function-calling">函式呼叫</Term>調度；ER 2 還能一邊執行一邊思考下一步，減少「停下來想」的空檔<Cite k="er2-blog" />。賓士產線的試點也是這種分工：ER 模型追蹤配料流程，2.5 負責手臂與雙手動作<Cite k="gr25-blog" />。
 - **先思考再行動**：Gemini Robotics 1.5 讓 VLA 在輸出動作前，先用自然語言拆解任務，類似<Term id="reasoning-model">推理模型</Term>的做法；ER 1.5 則是第一個專為具身推理最佳化的思考模型<Cite k="gr15-blog" />。
 - **跨機體轉移**：1.5 代起的 Motion Transfer 機制，讓只在 ALOHA 2 上學過的任務也能在其他機器人上執行<Cite k="gr15-report" /><Cite k="gr15-blog" />。Gemini Robotics 2 用同一個檢查點控制三種機體，首度驅動<Term id="humanoid-robot">人形機器人</Term>全身，並操作 22 個自由度的五指靈巧手<Cite k="gr2-blog" />。
+- **靈巧度與可靠度**：Gemini Robotics 2.5 的重點從「能做」轉向「做得穩」。原廠以 200 多項任務評估，例如用夾子夾取食物、綁蝴蝶結、吸取液體，依任務類型成功率提高 30% 到 100%、速度快 20% 到 30%；部落格的對照圖以 Gemini Robotics 2 為比較對象，例如用夾子裝糕點由 5% 提高到 100%<Cite k="gr25-blog" />。
+- **用通用模型加速機器人研發**：2026-10-13 DeepMind 示範通用模型 Gemini 4 Argon（屬於 <ModelChip id="google-gemini" />）可直接寫程式控制機器人、從影片重建 MuJoCo 模擬場景，並在具身推理基準 ERQA 拿到 87%<Cite k="argon-robotics" />。Gemini Robotics 2.5 的開發就用 Argon 生成大量模擬練習與數位分身<Cite k="gr25-blog" />。
 - **本機執行**：On-Device 系列屬於<Term id="edge-ai">邊緣 AI</Term>，不依賴網路，適合連線不穩或對延遲敏感的場域<Cite k="grod-blog" />。
 
 ## 適合與不適合的用途
 
-**適合**：替既有機器人加上高層規劃，例如以 ER 2 調度 Boston Dynamics Spot 的導航與手臂 API 取物；設施巡檢的儀表判讀與成功偵測——這個用例來自與 Boston Dynamics 的合作<Cite k="er16-blog" />；人形與雙臂機器人的研究原型。
+**適合**：替既有機器人加上高層規劃，例如以 ER 2 調度 Boston Dynamics Spot 的導航與手臂 API 取物；設施巡檢的儀表判讀與成功偵測——這個用例來自與 Boston Dynamics 的合作<Cite k="er16-blog" />；人形與雙臂機器人的研究原型；工廠配料這類重複、耗體力的作業試點，Apptronik 與賓士在匈牙利與德國兩座工廠的概念驗證達到 96% 成功率<Cite k="gr25-blog" />。
 
-**不適合**：醫療、交通等安全關鍵場景——ER 2 模型卡明確要求不得用於這類一旦失誤可能造成傷亡或財損的應用<Cite k="er2-card" />；需要自行部署權重或公開取得 VLA 的產品；需要高自由度、分布外任務泛化的本機控制，On-Device 2 模型卡已列為已知限制<Cite k="od2-card" />。
+**不適合**：醫療、交通等安全關鍵場景——ER 2 模型卡明確要求不得用於這類一旦失誤可能造成傷亡或財損的應用<Cite k="er2-card" />；需要自行部署權重或公開取得 VLA 的產品；需要高自由度、分布外任務泛化的本機控制，On-Device 2 模型卡已列為已知限制<Cite k="od2-card" />。2.5 雖然加入推論時的安全引導，原廠稱繞過障礙物與在人旁邊作業的安全完成率分別提升 33% 與 43%<Cite k="gr25-blog" />，但這是相對提升，不等於可以免除另外的安全系統與認證。
 
 ## 版本演進
 
@@ -317,11 +351,14 @@ Gemini Robotics 是 <CompanyChip id="alphabet">Alphabet</CompanyChip> 旗下 Goo
 | Gemini Robotics 1.5／ER 1.5 | 2025-09-25 | 先思考再行動、跨機體轉移；ER 1.5 上架 Gemini API |
 | ER 1.6 | 2026-04-14 | 多視角成功偵測、儀表判讀 |
 | Gemini Robotics 2／ER 2／On-Device 2 | 2026-07-30 | 人形全身控制、多機協作、影片進度追蹤 |
+| Gemini Robotics 2.5 | 2026-11-10 | 靈巧度、可靠度與安全引導；產線概念驗證 |
 
-API 上的 ER 預覽版汰換很快：ER 1.5 已在 2026-04-30 停止服務，ER 1.6 的停止服務日為 2026-08-31<Cite k="api-deprecations" />。ER 2 以 Gemini 3.5 Flash 為基礎，價格在 2026 年底前為輸入每百萬 tokens 1 美元、輸出 5 美元，2027 年起加倍<Cite k="er2-card" /><Cite k="api-pricing" />。同一賽道可對照 <ModelChip id="nvidia-gr00t" /> 與 <ModelChip id="physical-intelligence-pi" />，以及同屬 DeepMind 的世界模型 <ModelChip id="google-genie" />；商業化進度見 <TrendLink id="physical-ai-commercialization">人形機器人與 Robotaxi 商業化</TrendLink>。
+API 上的 ER 預覽版汰換很快：ER 1.5 已在 2026-04-30 停止服務，ER 1.6 在 2026-08-31 停止服務，兩者都建議改用 ER 2；截至 2026-11-13，ER 2 的兩個端點都沒有公布停止服務日期<Cite k="api-deprecations" />。ER 2 以 Gemini 3.5 Flash 為基礎，價格在 2026 年底前為輸入每百萬 tokens 1 美元、輸出 5 美元，2027 年起加倍<Cite k="er2-card" /><Cite k="api-pricing" />。Gemini API 的更新紀錄在 2026-07-30 之後沒有新的機器人端點<Cite k="api-changelog" />，2.5 也沒有上架 API。同一賽道可對照 <ModelChip id="nvidia-gr00t" /> 與 <ModelChip id="physical-intelligence-pi" />，以及同屬 DeepMind 的世界模型 <ModelChip id="google-genie" />；商業化進度見 <TrendLink id="physical-ai-commercialization">人形機器人與 Robotaxi 商業化</TrendLink>。
 
 ## 評測解讀
 
-機器人模型目前沒有像 Artificial Analysis 或 Arena 那樣的公開排行榜，本站評測登錄表也沒有適用的指標，因此這裡沒有列出標準化分數。官方公開的多是原廠自訂基準：ER 2 在任務進度分類（把每一格畫面分成五個進度級距）的準確率為 57.4%，關鍵時刻定位的準確率為 91.3%、平均時間誤差 0.96 秒<Cite k="er2-blog" />；ER 1.5 宣稱在 ERQA、Point-Bench 等 15 項學術基準取得最高綜合成績<Cite k="gr15-blog" />；第一代 VLA 在綜合泛化基準上的平均表現是其他頂尖 VLA 的兩倍以上<Cite k="gr1-blog" />。
+機器人模型目前沒有像 Artificial Analysis 或 Arena 那樣的公開排行榜，本站評測登錄表也沒有適用的指標，因此這裡沒有列出標準化分數。本站語言模型的能力座標在 2026-11-13 改用 AA 綜合智慧指數 v5（2026-10-27 改版，v4 與 v5 分數不能互比）；機器人模型不在該指數範圍內，本頁 capability 仍是編輯判斷，也不能和語言模型互比。
 
-解讀時要注意三點。第一，這些成績都由原廠選題、選對手並自行執行，比較對象往往是自家舊版或特定通用模型。第二，實體機器人的成功率高度依賴機體、場景與示範資料量，不同實驗室之間幾乎無法直接比較。第三，原廠也公開了弱點：Gemini Robotics 2 在全身與夾爪操作達到中高成功率，但多指靈巧操作仍具挑戰<Cite k="gr2-blog" />。以上數字皆為 2025-03 至 2026-07 各次發表時的原廠資料，引用時請註明日期。
+官方公開的多是原廠自訂基準：Gemini Robotics 2.5 在 200 多項任務上比先前基準成功率高 30% 到 100%，賓士產線概念驗證 96%<Cite k="gr25-blog" />；ER 2 在任務進度分類（把每一格畫面分成五個進度級距）的準確率為 57.4%，關鍵時刻定位的準確率為 91.3%、平均時間誤差 0.96 秒<Cite k="er2-blog" />；ER 1.5 宣稱在 ERQA、Point-Bench 等 15 項學術基準取得最高綜合成績<Cite k="gr15-blog" />；第一代 VLA 在綜合泛化基準上的平均表現是其他頂尖 VLA 的兩倍以上<Cite k="gr1-blog" />。<Term id="ai-safety">AI 安全</Term>方面，DeepMind 新開源越獄測試 ASIMOV-Jailbreak，Gemini 4 Argon 的越獄抵抗率為 99.5%，ER 2 為 82%<Cite k="gr25-blog" />；也就是在這項測試中，通用模型 Argon 比目前公開的 ER 2 更能抵抗偽裝成一般指令的危險要求。
+
+解讀時要注意三點。第一，這些成績都由原廠選題、選對手並自行執行；2.5 的對照組是自家 Gemini Robotics 2，個別任務的大幅提升（例如由 5% 到 100%）也是原廠挑選的例子，而且沒有模型卡或技術報告可供核對。第二，實體機器人的成功率高度依賴機體、場景與示範資料量，不同實驗室之間幾乎無法直接比較；96% 是特定料件與產線的概念驗證，不代表其他工廠。第三，原廠也公開了弱點：Gemini Robotics 2 在全身與夾爪操作達到中高成功率，但多指靈巧操作仍具挑戰<Cite k="gr2-blog" />。以上數字皆為 2025-03 至 2026-11 各次發表時的原廠資料，引用時請註明日期。

@@ -5,29 +5,30 @@ kind: llm
 lab: ibm
 labName: "IBM"
 origin: US
-summary: "IBM 以 Apache 2.0 授權釋出的企業級開放權重模型家族，主力是 3B、8B、30B 的中小型模型。2025 年 10 月的 Granite 4.0 採用 Mamba-2 與 Transformer 混合架構，2026 年 4 月的 4.1 改回稠密架構，8 月的 4.2 再加入可切換的推理模式。它的定位不是前沿競賽，而是可地端部署、可稽核、成本低的企業工作負載。"
+summary: "IBM 以 Apache 2.0 授權釋出的企業級開放權重模型家族，主力是 3B、8B、30B 的中小型模型。2025 年 10 月的 Granite 4.0 採用 Mamba-2 與 Transformer 混合架構，2026 年 4 月的 4.1 改回稠密架構，8 月的 4.2 再加入可切換的推理模式，10 月的 Granite Switch 4.1 則把轉接器與語音辨識組進同一個模型。它的定位不是前沿競賽，而是可地端部署、可稽核、成本低的企業工作負載。"
 strengths:
   - "全系列採 Apache 2.0 授權，可商用與微調；Granite 4 起所有 checkpoint 附加密簽章，並取得 ISO/IEC 42001:2023 AI 管理系統認證"
   - "3B 到 30B 的小尺寸設計，另提供 FP8、NVFP4、MXFP4、GGUF 與 MLX 量化版，單張 GPU 或筆電即可執行，適合資料不出企業的地端部署"
   - "Granite 4.2 支援思考、不思考與低強度思考三種模式，8B 與 30B 另經 Agent 強化學習，原生支援 OpenAI 格式的工具呼叫"
   - "與 watsonx.ai、Red Hat 平台整合；透過 watsonx.ai 取用的 IBM 模型享有 IBM 的智慧財產權補償（indemnification）"
+  - "Granite Switch 4.1（2026-10-14）把安全偵測、決策分類等轉接器與語音辨識編碼器組進同一個模型，一個推論端點即可處理對話、分類判斷與語音轉文字"
 weaknesses:
-  - "綜合能力與前沿模型差距明顯：旗艦 Granite 4.2 30B 的 Artificial Analysis 智慧指數為 13（AA 獨立實測），IBM 自評的 SWE-bench Pro 僅 33.3%"
+  - "綜合能力與前沿模型差距明顯：Artificial Analysis 綜合智慧指數 v5.0.1 中 Granite 4.2 8B 與 3B 都只有 5 分，旗艦 30B 尚無 v5 分數（2026-11-13）；IBM 自評的 30B SWE-bench Pro 僅 33.3%"
   - "多數評測由 IBM 自行公布，第三方獨立評測仍少；LMArena 文字榜票數約 3,400 票，信賴區間較寬"
   - "一年內從 4.0、4.1 換到 4.2，架構在混合與稠密之間切換，企業導入後需要重新驗證"
-  - "watsonx.ai 上按 token 計價的 Granite 4 世代語言模型只有 4.0-H-Small；4.1 須按小時租用專屬部署，4.2 尚未列入 watsonx.ai 的模型清單"
+  - "watsonx.ai 上按 token 計價的 Granite 4 世代語言模型只有 4.0-H-Small；4.1 須按小時租用專屬部署，4.2 到 2026-11-13 仍未列入 watsonx.ai 的模型清單"
 bestFor:
   - "必須在地端或私有雲執行、資料不能離開企業環境的文件處理、RAG 與客服流程"
   - "高頻、低成本的結構化任務：分類、資訊擷取、摘要與工具呼叫"
   - "作為微調基底，打造特定領域的小型模型"
   - "筆電與邊緣裝置上的離線推論（3B 與 Nano 系列）"
 positioning:
-  capability: 13
+  capability: 5
   costIndex: 23
   openness: 0.8
-  method: computed
-  asOf: "2026-10-17"
-  note: "capability 取旗艦 Granite 4.2 30B 的 Artificial Analysis Intelligence Index v4.3.2 分數 13（AA 獨立實測，2026-10-17 查核時讀取）。costIndex 以 AA 列出的 API 價格（輸入 0.16、輸出 0.65 美元／百萬 tokens）按 3:1 混合為 0.28 美元，再依 0.05 美元 → 0、100 美元 → 100 的對數尺度換算；IBM 官方 watsonx.ai 尚未提供 4.2 的按 token 計價，若改用 4.0-H-Small 的官方價格則約為 11。openness 0.8：Apache 2.0 開放權重，但預訓練資料未完整公開。"
+  method: editorial
+  asOf: "2026-11-13"
+  note: "capability 為估計值：AA 綜合智慧指數 v5.0.1 尚未評測旗艦 Granite 4.2 30B（2026-11-13 讀取，AA 列出該模型但沒有 v5 分數），依其 v4.3.2 分數 13（AA 獨立實測，2026-10-17 讀取）以 §4.5 對照點（13 → 5）換算為 5；同代的 Granite 4.2 8B 與 3B 在 v5.0.1 實測皆為 5（原始值 5.10、4.72）。costIndex 沿用 2026-10-17 AA 列出的 30B API 價格（輸入 0.16、輸出 0.65 美元／百萬 tokens），3:1 混合為 (3×0.16 + 0.65)÷4 ≈ 0.28 美元，依 0.05 美元 → 0、100 美元 → 100 的對數尺度換算得 22.8，取 23；IBM 官方 watsonx.ai 到 2026-11-13 仍未提供 4.2 的按 token 計價，AA 也已不再列出 30B 的 API 供應商價格，若改用 4.0-H-Small 的官方價格則約為 11。openness 0.8：Apache 2.0 開放權重，但預訓練資料未完整公開。"
 versions:
   - id: granite-4-2-30b
     name: "Granite 4.2 30B"
@@ -92,7 +93,7 @@ versions:
         reportedBy: leaderboard
         date: "2026-10-02"
         source: { title: "Text Arena Leaderboard", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
-    notes: "以 Granite 4.1 30B Base 後訓練而成的稠密推理模型，原生 128K 上下文，可延伸至 512K。30B 版另做第二階段 Agent 程式 SFT。IBM 官方 watsonx.ai 尚未提供按 token 計價，AA 列出的 API 價格為輸入 0.16、輸出 0.65 美元／百萬 tokens。"
+    notes: "以 Granite 4.1 30B Base 後訓練而成的稠密推理模型，原生 128K 上下文，可延伸至 512K。30B 版另做第二階段 Agent 程式 SFT。IBM 官方 watsonx.ai 到 2026-11-13 仍未提供按 token 計價；2026-10-17 時 AA 列出的 API 價格為輸入 0.16、輸出 0.65 美元／百萬 tokens，2026-11-13 AA 已不再列出 API 供應商價格，也還沒有 AA 綜合智慧指數 v5 分數。"
   - id: granite-4-2-8b
     name: "Granite 4.2 8B"
     released: "2026-08-25"
@@ -126,7 +127,50 @@ versions:
         reportedBy: leaderboard
         date: "2026-10-02"
         source: { title: "Text Arena Leaderboard", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-10-06" }
-    notes: "與 30B 同一套訓練流程（含 Agent 強化學習），另有 3B 版本（未做 Agent 強化學習）。提供 Apple 晶片用的 MLX 量化版，可在筆電上執行。"
+      - benchmark: aa-intelligence-index-v5
+        score: 5
+        setting: "v5.0.1，AA 只列一種設定（推理模式）"
+        reportedBy: third-party
+        date: "2026-11-13"
+        source: { title: "LLM Leaderboard (Intelligence Index v5.0.1)", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/leaderboards/models", type: leaderboard, lang: en, accessed: "2026-11-13", note: "Intelligence Index v5.0.1; Granite 4.2 8B has a single listing (no effort variants); raw 5.10 on the model page data (artificialanalysis.ai/models/granite-4-2-8b)" }
+    notes: "與 30B 同一套訓練流程（含 Agent 強化學習）。提供 Apple 晶片用的 MLX 量化版，可在筆電上執行。"
+  - id: granite-4-2-3b
+    name: "Granite 4.2 3B"
+    released: "2026-08-25"
+    status: ga
+    tier: small
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 3, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 131072
+    reasoning: hybrid
+    availability: [self-host, on-device]
+    benchmarks:
+      - benchmark: aa-intelligence-index-v5
+        score: 5
+        setting: "v5.0.1，AA 只列一種設定（推理模式）"
+        reportedBy: third-party
+        date: "2026-11-13"
+        source: { title: "LLM Leaderboard (Intelligence Index v5.0.1)", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/leaderboards/models", type: leaderboard, lang: en, accessed: "2026-11-13", note: "Intelligence Index v5.0.1; Granite 4.2 3B has a single listing (no effort variants); raw 4.72 on the model page data (artificialanalysis.ai/models/granite-4-2-3b)" }
+    notes: "Granite 4.2 家族中最小的推理模型，以 Granite 4.1 3B Base 後訓練而成，同樣可切換思考、不思考與低強度思考，原生 128K 上下文、可延伸至 512K；與 8B、30B 不同，未做 Agent 強化學習。"
+  - id: granite-switch-4-1
+    name: "Granite Switch 4.1（8B／30B）"
+    released: "2026-10-14"
+    status: ga
+    tier: specialized
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: dense
+    params: { totalB: 30, disclosed: true }
+    modalitiesIn: [text, audio]
+    modalitiesOut: [text]
+    contextTokens: 131072
+    reasoning: none
+    availability: [self-host]
+    notes: "以 Granite 4.1 8B／30B 為基底，組入兩個啟動式 LoRA（aLoRA）轉接器（guardian-core 安全風險偵測、decision 通用決策分類）與 4.7 億參數的 Granite Speech 5.0 TurboCTC 語音辨識編碼器，同一個端點可在對話、分類判斷與語音轉文字之間切換；轉接器可重用基底模型的 KV 快取。2026-10-27 推出修訂版 4.1.1，更新 decision 轉接器權重，語音輸入擴充為 7 種語言。參數量以 30B 版計。"
   - id: granite-4-1-30b
     name: "Granite 4.1 30B"
     released: "2026-04-29"
@@ -219,7 +263,7 @@ versions:
     notes: "以 think／response 標籤區隔思考與回答的早期推理嘗試。watsonx.ai 於 2025-11-24 標為淘汰、2026-02-22 下架，官方建議改用 granite-4-h-small；Hugging Face 權重仍可下載。"
 flagshipVersion: granite-4-2-30b
 relatedLearn: [open-vs-closed-models, reasoning-models, mixture-of-experts, inference-optimization, model-evaluation]
-glossary: [open-weights, dense-model, moe, ssm, reasoning-model, quantization, function-calling, grpo, benchmark-contamination, test-time-compute]
+glossary: [open-weights, dense-model, moe, ssm, reasoning-model, quantization, function-calling, grpo, benchmark-contamination, test-time-compute, kv-cache, prompt-injection]
 sources:
   - key: ibm-granite-site
     title: "IBM Granite"
@@ -290,14 +334,81 @@ sources:
     url: "https://dataplatform.cloud.ibm.com/docs/content/wsj/analyze-data/fm-models.html?context=wx"
     type: docs
     lang: en
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
+    note: "granite-4-h-small still USD 0.0000636 input / 0.000265 output per 1K tokens; granite-4-1-3b/8b/30b deploy on demand only; no Granite 4.2 or Granite Switch entry"
   - key: watsonx-lifecycle
     title: "Foundation model lifecycle（watsonx.ai）"
     publisher: IBM
     url: "https://dataplatform.cloud.ibm.com/docs/content/wsj/analyze-data/fm-model-lifecycle.html?context=wx"
     type: docs
     lang: en
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
+    note: "No Granite 4.x language model listed as deprecated or withdrawn"
+  - key: hf-granite-4-2-3b-card
+    title: "Granite-4.2-3B model card"
+    publisher: "IBM（Hugging Face）"
+    url: "https://huggingface.co/ibm-granite/granite-4.2-3b"
+    type: docs
+    lang: en
+    published: "2026-08-25"
+    accessed: "2026-11-13"
+  - key: hf-granite-switch
+    title: "Granite Switch 4.1: Chat, Decisions, and Speech from One Endpoint"
+    publisher: "IBM Granite Team（Hugging Face Blog）"
+    url: "https://huggingface.co/blog/ibm-granite/granite-switch-4-1"
+    type: docs
+    lang: en
+    published: "2026-10-15"
+    accessed: "2026-11-13"
+  - key: hf-granite-switch-card
+    title: "Granite Switch 4.1 30B model card"
+    publisher: "IBM（Hugging Face）"
+    url: "https://huggingface.co/ibm-granite/granite-switch-4.1-30b"
+    type: docs
+    lang: en
+    published: "2026-10-14"
+    accessed: "2026-11-13"
+    note: "Release date October 14, 2026 (revision 4.1) and October 27, 2026 (revision 4.1.1); base ibm-granite/granite-4.1-30b, 128K context; adapters guardian-core and decision (aLoRA); embedded granite-speech-5.0-470m-turboctc encoder"
+  - key: hf-granite-switch-411
+    title: "Granite Switch 4.1.1 — Update models like you update software"
+    publisher: "IBM Granite Team（Hugging Face Blog）"
+    url: "https://huggingface.co/blog/ibm-granite/granite-switch-4-1-1"
+    type: docs
+    lang: en
+    published: "2026-10-29"
+    accessed: "2026-11-13"
+  - key: hf-granite-speech-5
+    title: "Granite Speech 5.0: Transcribe, Translate, and Attribute more Accurately and Faster"
+    publisher: "IBM Granite Team（Hugging Face Blog）"
+    url: "https://huggingface.co/blog/ibm-granite/granite-speech-5"
+    type: docs
+    lang: en
+    published: "2026-10-21"
+    accessed: "2026-11-13"
+  - key: hf-llmon
+    title: "LLMON: An LLM-Native Markup Language, now in Granite 4.1 3B and 8B"
+    publisher: "IBM Granite Team（Hugging Face Blog）"
+    url: "https://huggingface.co/blog/ibm-granite/llmon-an-llm-native-markup-language-now-in-granite"
+    type: docs
+    lang: en
+    published: "2026-11-12"
+    accessed: "2026-11-13"
+  - key: aa-v5
+    title: "Announcing Artificial Analysis Intelligence Index v5"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5"
+    type: other
+    lang: en
+    published: "2026-10-27"
+    accessed: "2026-11-13"
+  - key: aa-leaderboard-v5
+    title: "LLM Leaderboard (Intelligence Index v5.0.1)"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: leaderboard
+    lang: en
+    accessed: "2026-11-13"
+    note: "Intelligence Index v5.0.1; Granite 4.2 8B 5 (raw 5.10), Granite 4.2 3B 5 (raw 4.72), both single listings; Granite 4.2 30B listed without a v5 index and without an API price (artificialanalysis.ai/models/granite-4-2-30b)"
   - key: aa-granite-4-2
     title: "Granite 4.2 30B - Intelligence, Performance & Price Analysis"
     publisher: "Artificial Analysis"
@@ -312,8 +423,17 @@ sources:
     type: leaderboard
     lang: en
     accessed: "2026-10-06"
-lastVerified: "2026-10-06"
-editorial: { status: fact-checked, author: models-07, checkedBy: "models-07-check", checkedOn: "2026-10-06", notes: "2026-10-17 查核：Artificial Analysis 已將 Granite 4.2 30B 改為獨立實測，指數由初稿記載的估計值 15 更新為 13，排名改以同級中位數描述；4.2 的 MMLU-Pro、SWE-bench 等評測設定以官方表格為準（官方未標註 5-shot 或思考模式）。" }
+  - key: lmarena-text-1111
+    title: "Text Arena Leaderboard"
+    publisher: LMArena
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    published: "2026-11-11"
+    accessed: "2026-11-13"
+    note: "Leaderboard dated Nov 11, 2026; the served page shows about the first 152 rows, with no Granite model among them"
+lastVerified: "2026-11-13"
+editorial: { status: fact-checked, author: "mdl-cohere-command-3", checkedBy: "check-mdl-cohere-command-3", checkedOn: "2026-11-13", notes: "2026-11-13 查核（check-mdl-cohere-command-3）：Granite 4.2 3B（2026-08-25、Granite 4.1 3B Base、原生 128K 可延伸至 512K、三種思考模式、未做 Agent 強化學習）對照模型卡與 4.2 技術部落格；Granite Switch 4.1 的發布日（4.1 為 10-14、4.1.1 為 10-27）、Apache 2.0、兩個 aLoRA 轉接器、470M TurboCTC 語音編碼器與 7 種語言對照模型卡與兩篇部落格；Granite Speech 5.0 與 LLMON 對照官方部落格；watsonx.ai 模型清單、價格與生命週期頁重新核對；AA v5.0.1（8B 5.10、3B 4.72，30B 無分數也無 API 價格）以 AA 頁面資料複核；capability 與 costIndex（22.8、4.0-H-Small 約 10.8）重算無誤。修正：LLMON 的描述改為依官方說法（降低間接提示注入、實驗版本不建議用於正式環境）；11-11 LMArena 榜單補上來源。另注意 IBM 的 4.1.1 部落格寫語音辨識支援 10 種語言，但 Switch 與 TurboCTC 模型卡都列 7 種，本文依模型卡。2026-11-13 更新：加入 AA 綜合智慧指數 v5.0.1（Granite 4.2 8B 5、3B 5；30B 尚無 v5 分數），capability 改以 30B 的 v4.3.2 分數換算的估計值；新增 Granite 4.2 3B 與 Granite Switch 4.1 兩個版本，並補充 Granite Speech 5.0 與 LLMON 預覽模型；watsonx.ai 模型清單、價格與生命週期頁重新核對，Granite 4 世代沒有新的停用公告。" }
 ---
 
 ## 系列概覽
@@ -330,13 +450,14 @@ Granite 是 <CompanyChip id="ibm">IBM</CompanyChip> 自行訓練的開放權重�
 - **架構來回調整**：Granite 4.0 把 Mamba-2（一種 <Term id="ssm">SSM</Term> 狀態空間模型）與 Transformer 以 9:1 交錯，H-Small 再加上 <Term id="moe">MoE</Term>（32B 總參數、9B 活躍），主打長輸入時記憶體需求減少 70% 以上<Cite k="ibm-granite-4-0" />。到了 4.1，IBM 改回<Term id="dense-model">稠密模型</Term>，以約 15 兆 tokens 從頭預訓練，並稱 8B 版即可追平前代 H-Small<Cite k="hf-granite-4-1" />。
 - **推理與 Agent**：Granite 4.2 是 IBM 第一個稠密架構的<Term id="reasoning-model">推理模型</Term>家族，同一個模型可切換思考、不思考與低強度思考。後訓練以 <Term id="grpo">GRPO</Term> 在數學、程式、工具使用等多種環境做強化學習，8B 與 30B 另在沙箱中練習修程式、操作終端機與搜尋網頁，並原生支援 OpenAI 格式的<Term id="function-calling">函式呼叫</Term><Cite k="hf-granite-4-2" />。
 - **家族分工**：同一家族還有 Granite Guardian（輸入輸出的安全過濾）與 Granite Embedding（RAG 檢索用的嵌入模型），可與語言模型組成完整的企業流程<Cite k="ibm-granite-site" />。
+- **模組化組合**：2026-10-14 的 Granite Switch 4.1 把這種分工搬進單一模型：以 Granite 4.1 8B 或 30B 為基底，掛上安全偵測與決策分類兩個啟動式 LoRA（aLoRA）轉接器，再內建語音辨識編碼器<Cite k="hf-granite-switch-card" />。IBM 表示整組模型占用的 GPU 記憶體與基底模型本身差不多，轉接器還能重用基底模型已算好的 <Term id="kv-cache">KV 快取</Term>，所以在對話、分類判斷與語音請求之間切換的成本很低<Cite k="hf-granite-switch" />。
 - **訓練算力**：4.1 與 4.2 都在 <CompanyChip id="coreweave">CoreWeave</CompanyChip> 託管的 <CompanyChip id="nvidia">輝達</CompanyChip> GB200 NVL72 叢集上訓練<Cite k="hf-granite-4-1" /><Cite k="hf-granite-4-2" />。
 
 ## 適合與不適合的用途
 
 **適合**：資料不能離開企業的文件問答、RAG、客服與表單擷取；需要大量呼叫、對成本敏感的分類與摘要；作為領域微調的基底；筆電或邊緣裝置上的離線推論（3B 與 Nano 系列）。透過 watsonx.ai 使用時，IBM 對 Granite 生成內容的第三方智慧財產權主張提供不設上限的補償；從 Hugging Face 等第三方管道下載的版本則不在補償範圍內。這對法遵要求高的金融、政府客戶有實際意義<Cite k="ibm-granite-4-0" /><Cite k="watsonx-models" />。
 
-**不適合**：前沿等級的複雜推理、長時程的程式 Agent（30B 在 SWE-bench Pro 只有約 33%）、影像或語音混合輸入（語言模型只吃文字，視覺需改用 Granite Vision）。官方測試語言包含中文，但沒有公布繁體中文評測，台灣使用者導入前應自行驗證。
+**不適合**：前沿等級的複雜推理、長時程的程式 Agent（30B 在 SWE-bench Pro 只有約 33%）、影像輸入（語言模型只吃文字，視覺需改用 Granite Vision）。Granite Switch 雖然可以直接收語音，但模型卡說明語音編碼器與語言模型尚未聯合訓練，做法是先轉成文字再交給模型，語音辨識也只支援 7 種語言，不含中文<Cite k="hf-granite-switch-card" />。官方測試語言包含中文，但沒有公布繁體中文評測，台灣使用者導入前應自行驗證。
 
 ## 版本演進
 
@@ -347,11 +468,24 @@ Granite 是 <CompanyChip id="ibm">IBM</CompanyChip> 自行訓練的開放權重�
 | Granite 4.0 Nano | 2025-10 | 約 1.5B／350M | 邊緣與裝置端推論 |
 | Granite 4.1 | 2026-04 | 稠密 3B／8B／30B | 重新預訓練，上下文延伸至 512K |
 | Granite 4.2 | 2026-08 | 稠密 3B／8B／30B | 可切換推理模式、Agent 強化學習 |
+| Granite Switch 4.1 | 2026-10 | 4.1 稠密 8B／30B 加轉接器 | 對話、決策分類、安全偵測與語音轉文字共用一個端點 |
 
-Granite 3.3 8B 在 watsonx.ai 上於 2025-11-24 標為淘汰、2026-02-22 下架，官方建議改用 granite-4-h-small<Cite k="watsonx-lifecycle" />。目前 watsonx.ai 上按 token 計價的 Granite 4 世代語言模型只有 4.0-H-Small（每百萬 tokens 輸入約 0.064 美元、輸出約 0.265 美元），4.1 須按小時租用專屬部署，4.2 則尚未列入 watsonx.ai 的模型清單<Cite k="watsonx-models" />。Granite 4.0 Nano 於 2025-10-28 發布，提供 Mamba-2 混合與傳統 Transformer 兩種版本，主打邊緣與裝置端部署<Cite k="hf-granite-nano" />。
+Granite 3.3 8B 在 watsonx.ai 上於 2025-11-24 標為淘汰、2026-02-22 下架，官方建議改用 granite-4-h-small<Cite k="watsonx-lifecycle" />。截至 2026-11-13，watsonx.ai 上按 token 計價的 Granite 4 世代語言模型仍只有 4.0-H-Small（每百萬 tokens 輸入約 0.064 美元、輸出約 0.265 美元），4.1 須按小時租用專屬部署，4.2 與 Granite Switch 都還沒列入 watsonx.ai 的模型清單，生命週期頁也沒有 Granite 4 世代的停用公告<Cite k="watsonx-models" /><Cite k="watsonx-lifecycle" />。Granite 4.0 Nano 於 2025-10-28 發布，提供 Mamba-2 混合與傳統 Transformer 兩種版本，主打邊緣與裝置端部署<Cite k="hf-granite-nano" />。
+
+2026-10-06 之後，IBM 沒有推出新一代的 Granite 語言模型，新發表集中在組合方式與周邊模型：
+
+- **Granite Switch 4.1**（2026-10-14）：8B 與 30B 兩種尺寸，Apache 2.0 授權<Cite k="hf-granite-switch-card" />。2026-10-27 的修訂版 4.1.1 沒有重新訓練基底模型，只更新決策轉接器並換上多語言的語音辨識模型，IBM 把這種做法比喻成像更新軟體一樣更新模型<Cite k="hf-granite-switch-411" />。
+- **Granite Speech 5.0 2B**（2026-10-21）：取代 4.1 2B 的語音語言模型，參數量不變，支援英、法、德、西、葡、日語的語音辨識與翻譯，同樣採 Apache 2.0<Cite k="hf-granite-speech-5" />。
+- **LLMON 預覽模型**（2026-11-12 發表）：以 Granite 4.1 3B 與 8B 為基礎的兩個實驗性預覽模型，改用 IBM 設計的標記語言明確區隔指令與資料。IBM 表示，藏在使用者資料中的間接<Term id="prompt-injection">提示注入</Term>因此大多會被忽略，部分評測的攻擊成功率接近零；官方定位為供探索與評估的實驗版本，不建議用於正式環境<Cite k="hf-llmon" />。
 
 ## 評測解讀
 
 IBM 在 2026-08-25 公布 Granite 4.2 30B 的自評成績：AIME 2025 為 89.2%、MMLU-Pro 為 77.6%、LiveCodeBench v6 為 75.8%，但 SWE-bench Verified 為 57.0%、SWE-bench Pro 為 33.3%、Terminal-Bench 2.1 為 29.2%<Cite k="hf-granite-4-2" />。考試型題目分數高、多步驟 Agent 任務分數低，正是小模型的典型輪廓。
 
-第三方方面，Artificial Analysis（AA）已完成對 Granite 4.2 30B 的獨立實測，智慧指數為 13（2026-10-17 查核時讀取），高於同尺寸開放權重模型的中位數 8，但與前沿模型仍有很大距離<Cite k="aa-granite-4-2" />。AA 指數 v4.3.2 已大量納入 GDPval、Terminal-Bench 4.0 等 Agent 型評測，小模型普遍分數偏低，不宜直接拿來和 IBM 自評的考試型分數對照。版本之間的比較也要小心：4.1 30B 的 MMLU-Pro 為 64.1%（5-shot CoT 的指令模型）<Cite k="hf-granite-4-1" />，4.2 則預設先思考再作答，進步很可能有一部分來自推理時多花的 tokens，也就是<Term id="test-time-compute">測試時運算</Term>，而不只是知識變多。LMArena 文字競技場（2026-10-02 更新）上，Granite 4.2 30B 為 1340 分，但只有約 3,400 票、信賴區間 ±10<Cite k="lmarena-text" />。另外，AIME 等公開題目也有<Term id="benchmark-contamination">評測汙染</Term>的疑慮，選型時建議以自己的資料實測為準。
+第三方方面，Artificial Analysis（AA）在改版前的智慧指數 v4.3.2 已完成對 Granite 4.2 30B 的獨立實測，分數為 13（2026-10-17 查核時讀取），高於同尺寸開放權重模型的中位數 8，但與前沿模型仍有很大距離<Cite k="aa-granite-4-2" />。v4.3.2 已大量納入 GDPval、Terminal-Bench 4.0 等 Agent 型評測，小模型普遍分數偏低，不宜直接拿來和 IBM 自評的考試型分數對照。
+
+<Callout type="info" title="AA 指數改版：v4 與 v5 不能互比">AA 在 2026-10-27 把綜合智慧指數改為 v5（11 月起為 v5.0.1）：新增 FrontierCode 2.0 與 Terminal-Bench-Science，以 HLE-Diamond 取代 HLE，並移除 GDPval-AA、SciCode 與 AA-LCR，題組與權重全部換新<Cite k="aa-v5" />。v5 的題目更難，中低階模型的分數多半明顯下降，所以上面的 v4.3.2 分數 13 只是改版前的歷史紀錄，不能和下面的 v5 分數放在一起比較。</Callout>
+
+到 2026-11-13，AA v5.0.1 已實測 Granite 4.2 8B 與 3B，兩者都是 5 分，旗艦 30B 則仍列在榜上、但還沒有 v5 分數<Cite k="aa-leaderboard-v5" />。本站星系座標因此暫用 30B 的 v4.3.2 分數，依對照點換算到 v5 尺度的估計值 5，等 AA 實測後再更新。同一份 v5.0.1 榜單上的前沿模型多在 50 分以上，Granite 與它們的差距仍然很大。
+
+版本之間的比較也要小心：4.1 30B 的 MMLU-Pro 為 64.1%（5-shot CoT 的指令模型）<Cite k="hf-granite-4-1" />，4.2 則預設先思考再作答，進步很可能有一部分來自推理時多花的 tokens，也就是<Term id="test-time-compute">測試時運算</Term>，而不只是知識變多。LMArena 文字競技場（2026-10-02 更新）上，Granite 4.2 30B 為 1340 分，但只有約 3,400 票、信賴區間 ±10<Cite k="lmarena-text" />；2026-11-11 的榜單頁面只顯示前約 150 名，沒有 Granite 模型<Cite k="lmarena-text-1111" />，因此這裡仍用 10-02 的數字。另外，AIME 等公開題目也有<Term id="benchmark-contamination">評測汙染</Term>的疑慮，選型時建議以自己的資料實測為準。

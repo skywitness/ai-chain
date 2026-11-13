@@ -30,6 +30,7 @@ keyTakeaways:
   - "Agent 評測讓模型在真實環境把任務做完，同時衡量可靠度、所需時間與成本。"
   - "同一模型的分數會隨推理強度、取樣次數與執行框架改變，跨表比較前要先對齊設定。"
   - "題數有限時，誤差可達數個百分點；排行榜上一兩分的差距，常落在誤差範圍內。"
+  - "綜合指數也會改版：AA 智慧指數在 2026-10-27 改為 v5，新舊版本的分數不能互比。"
 estimatedMinutes: 20
 sources:
   - key: mmlu
@@ -201,8 +202,17 @@ sources:
     url: "https://artificialanalysis.ai/methodology/intelligence-benchmarking"
     type: docs
     lang: en
-    accessed: "2026-10-15"
-    note: "Artificial Analysis Intelligence Index v4.3.2：Agent 類 30%（AA-Briefcase 15%、GDPval-AA 10%、AutomationBench-AA 5%）、程式 20%（Terminal-Bench 4.0、SciCode 各 10%）、一般 30%（AA-Omniscience 15%、GDP.pdf 10%、AA-LCR 5%）、科學推理 20%（HLE、CritPt 各 10%）；所有模型在相同條件下以零樣本指令提示評測，非推理模型溫度 0、推理模型 0.6（實驗室另有建議者除外）；部分評測重複 3 或 5 次，一般以 pass@1 計分"
+    accessed: "2026-11-13"
+    note: "2026-11-13 讀取時為 Artificial Analysis Intelligence Index v5.0.1，納入 9 項評測，四類各占 25%：知識工作（AA-Briefcase 15%、AutomationBench-AA 5%、GDP.pdf 5%）、程式（FrontierCode 2.0 15%、Terminal-Bench 4.0 10%）、科學（Terminal-Bench-Science 15%、CritPt v2 困難子集 10%）、一般（AA-Omniscience v1.1 15%、HLE-Diamond 10%）；以英文文字題為主。所有模型在相同條件下以零樣本指令提示評測，非推理模型溫度 0、推理模型 0.6（實驗室另有建議者除外），一般以 pass@1 計分。版本紀錄：v5.0 為 2026 年 10 月，v5.0.1 自 2026 年 11 月起，以 CritPt 作者改進的評分方式重新評分所有模型。2026-10-15 讀取時為 v4.3.2（10 項評測：Agent 類 30%、程式 20%、一般 30%、科學推理 20%）"
+  - key: aa-v5
+    title: "Announcing Artificial Analysis Intelligence Index v5"
+    publisher: Artificial Analysis
+    url: "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5"
+    type: company-site
+    lang: en
+    published: "2026-10-27"
+    accessed: "2026-11-13"
+    note: "新增 FrontierCode 2.0（Cognition 的不公開程式基準，132 個真實開源專案任務，以維護者是否會合併為準）與 Terminal-Bench-Science（70 個終端機科學研究任務）；以 1,000 題的 HLE-Diamond 取代 HLE，AA-Omniscience 升級 v1.1，CritPt 改用 v2 的 40 題不公開困難子集；移除 GDPval-AA v2.1、SciCode 與 AA-LCR v1.1；60% 的權重來自不公開測試題或保留答案的評測。發布時 Claude Opus 5.5（max）以 58 分居首；最強開放權重模型與榜首的差距由 v4.3 的 3 分擴大到 12 分；Claude Opus 5.5 低推理強度 35 分、最高強度 58 分，每任務成本 0.98 對 10.04 美元；每個指數任務的輸出 tokens 中位數由 3.5 萬增為 5.9 萬，Terminal-Bench-Science、Terminal-Bench 4.0、AA-Briefcase 與 FrontierCode 2.0 四項 Agent 類評測占 55% 權重、約九成輸出 tokens；發布時開放權重第一的 Kimi K3.1 Pro 尚未釋出權重"
   - key: arena-hiw
     title: "How Arena Works"
     publisher: "Arena（原 LMArena）"
@@ -314,9 +324,9 @@ sources:
     lang: en
     accessed: "2026-10-15"
     note: "互動式推理 Benchmark：Agent 要在陌生環境中探索、自行找出目標並持續學習；100% 代表 Agent 能像人類一樣有效率地破完所有遊戲"
-updated: "2026-10-15"
-lastVerified: "2026-10-15"
-editorial: { status: fact-checked, author: learn-15, checkedBy: "learn-15-check", checkedOn: "2026-10-06", notes: "內容以 2026-10-06 為資料基準日，來源實際讀取日為 2026-10-15。查核已逐項比對 arXiv 原文（GPQA 表 2、GSM1k、Codex、Chatbot Arena、SWE-Bench Pro、GDPval 等）、DeepSeek V4-Pro 模型卡、TMMLU+ 資料卡、Scale AI 排行榜、Artificial Analysis 方法說明、Arena 部落格、METR 結果檔與 ARC Prize 頁面。OpenAI 關於 SWE-bench Verified 的原文以程式讀取時遭拒，59.4% 的範圍已依 Epoch AI 審查報告改為「抽查 27.6% 題目中的比例」。各排行榜數字為查閱當下版本，會持續變動；TMMLU+ 資料卡最後更新於 2026-09-23，早於基準日。" }
+updated: "2026-11-13"
+lastVerified: "2026-11-13"
+editorial: { status: fact-checked, author: models-site, checkedBy: check-models-site, checkedOn: "2026-11-13", notes: "2026-11-13 查核（check-models-site）：v5.0.1 的 9 項評測、四類各 25% 的權重、溫度 0／0.6 與 pass@1、零樣本提示、版本紀錄（v5.0.1 以 CritPt 作者的評分改進重新評分），以及 v5 新增、升級、移除的評測、60% 不公開題、Opus 5.5 低／最高強度 35／58 分與 0.98／10.04 美元、輸出 tokens 中位數 3.5 萬到 5.9 萬、開放權重差距 3 到 12 分，皆重新讀取 AA 方法說明頁與 v5 發布文核對無誤。修正：「主要來自 Agent 類評測」原文沒有這樣歸因，改為發布文所寫的「四項 Agent 類評測占 55% 權重、約九成輸出 tokens」；「AA 估計」改為「AA 指出」，並補註發布時居首的開放模型 Kimi K3.1 Pro 尚未釋出權重。2026-11-13 更新（models-site）：Artificial Analysis 智慧指數在 2026-10-27 改版為 v5（11 月起 v5.0.1）。改寫統一評測條件一段的指數構成，新增〈評測本身也會改版〉小節說明 v5 的題組與權重變化、不公開題目的比重，以及新舊分數不能互比；HLE-Diamond 段補上 AA 已採用；重點整理與「五個問題」補上指數版本。依據為 AA v5 發布文（2026-10-27）與方法說明頁（2026-11-13 讀取）。其餘段落與排行榜數字維持原查閱時點並已標明日期。以下為 2026-10 版的紀錄（learn-15 撰寫、learn-15-check 查核）：內容以 2026-10-06 為資料基準日，來源實際讀取日為 2026-10-15。查核已逐項比對 arXiv 原文（GPQA 表 2、GSM1k、Codex、Chatbot Arena、SWE-Bench Pro、GDPval 等）、DeepSeek V4-Pro 模型卡、TMMLU+ 資料卡、Scale AI 排行榜、Artificial Analysis 方法說明、Arena 部落格、METR 結果檔與 ARC Prize 頁面。OpenAI 關於 SWE-bench Verified 的原文以程式讀取時遭拒，59.4% 的範圍已依 Epoch AI 審查報告改為「抽查 27.6% 題目中的比例」。各排行榜數字為查閱當下版本，會持續變動；TMMLU+ 資料卡最後更新於 2026-09-23，早於基準日。" }
 ---
 
 ## 一句話解釋
@@ -380,7 +390,7 @@ DeepSeek 在 V4-Pro 的模型卡中列出一張六個<Term id="frontier-model">�
 
 台灣也有自己的例子。<CompanyChip id="ikala">iKala</CompanyChip> 發布的 TMMLU+ 以繁體中文出題，涵蓋 66 個科目、約 2.2 萬題，內容反映台灣的語言、教育與專業情境。依 2026 年 9 月更新的資料卡，排行榜列出 21 個模型，其中 13 個總分超過 80 分，最高達 96.16 分<Cite k="tmmluplus" />，高分區同樣越來越擁擠。
 
-連 HLE 都在準備後路。題庫難免有少數錯題或答案有爭議的題目，分數高到一定程度後，剩下的差距可能只是雜訊。2026 年 9 月，HLE 團隊推出 HLE-Diamond，目的就是在前沿模型逼近原題庫的雜訊上限時，給研究者一條平順的移轉路徑<Cite k="hle-site" />。
+連 HLE 都在準備後路。題庫難免有少數錯題或答案有爭議的題目，分數高到一定程度後，剩下的差距可能只是雜訊。2026 年 9 月，HLE 團隊推出 HLE-Diamond，目的就是在前沿模型逼近原題庫的雜訊上限時，給研究者一條平順的移轉路徑<Cite k="hle-site" />。一個月後，Artificial Analysis 的綜合智慧指數就改用 1,000 題的 HLE-Diamond 取代原本的 HLE<Cite k="aa-v5" />。
 
 ## 原理二：分數為什麼不能照單全收
 
@@ -405,7 +415,22 @@ SWE-bench Pro 的對策是把部分題目鎖起來。它共有 1,865 題、來�
 - **Agent 執行框架**：Agent 評測時，模型要搭配一套管理工具、上下文與步驟的執行框架（harness）。Arena 部落格發表的一項研究，以 7 個模型搭配 3 種執行框架測試，發現框架對成功率影響不大，成本卻能差到 5 倍<Cite k="arena-harness" />。
 - **誰來測**：在 Scale AI 自行測得的 SWE-bench Pro 公開排行榜上，以 mini-swe-agent 執行的 Claude Opus 4.6（thinking）為 51.9 分<Cite k="scale-swepro" />；DeepSeek 模型卡列出的 Opus 4.6 最高推理模式則是 57.3 分<Cite k="ds-v4-pro" />。兩者推理設定與執行框架都不同，相差 5.4 個百分點。
 
-因此，第三方機構會盡量統一條件。例如 Artificial Analysis 的綜合智慧指數，2026 年 10 月查閱時為 v4.3.2 版，由 10 項評測加權組成：Agent 類 30%、程式 20%、一般能力 30%、科學推理 20%；所有模型都在相同提示方式下評測，除非實驗室另有建議，非推理模型的取樣溫度設為 0、推理模型設為 0.6<Cite k="aa-method" />。統一條件的好處是可以比較，代價是不一定能發揮每個模型的最佳狀態。
+因此，第三方機構會盡量統一條件。例如 Artificial Analysis（AA）的綜合智慧指數，2026 年 11 月查閱時為 v5.0.1 版，由 9 項評測加權組成，知識工作、程式、科學與一般能力四類各占 25%；所有模型都在相同提示方式下評測，除非實驗室另有建議，非推理模型的取樣溫度設為 0、推理模型設為 0.6，一般以 pass@1 計分<Cite k="aa-method" />。統一條件的好處是可以比較，代價是不一定能發揮每個模型的最佳狀態。
+
+### 評測本身也會改版：AA 智慧指數 v5
+
+題庫會飽和、會外洩，綜合指數也得跟著換題。2026 年 10 月 27 日，AA 把智慧指數從 v4 改版為 v5：新增 Cognition 的 FrontierCode 2.0（132 個真實開源專案的程式任務，以維護者是否願意合併修改來評分，題目不公開）與 Terminal-Bench-Science（70 個在終端機裡完成的科學研究任務）；以 HLE-Diamond 取代 HLE，把知識與幻覺評測 AA-Omniscience 升級為移除飽和題與公開題的 v1.1，物理題 CritPt 改用 v2 的 40 題不公開困難子集；同時移除 GDPval-AA、SciCode 與 AA-LCR 三項<Cite k="aa-v5" />。11 月再依 CritPt 作者的建議改進評分方式、重新評分所有模型，版本號成為 v5.0.1<Cite k="aa-method" />。
+
+| 類別（各占 25%） | v5.0.1 納入的評測與權重 |
+|---|---|
+| 知識工作 | AA-Briefcase 15%、AutomationBench-AA 5%、GDP.pdf 5% |
+| 程式 | FrontierCode 2.0 15%、Terminal-Bench 4.0 10% |
+| 科學 | Terminal-Bench-Science 15%、CritPt v2 困難子集 10% |
+| 一般 | AA-Omniscience v1.1 15%、HLE-Diamond 10% |
+
+表中權重取自 AA 的方法說明頁<Cite k="aa-method" />。這次改版正好示範了前面說的幾個問題。第一，**把題目鎖起來**：v5 有 60% 的權重來自不公開測試題或保留答案的評測<Cite k="aa-v5" />，降低背題的空間。第二，**設定的影響更大**：AA 在發布文中指出，同一個 Claude Opus 5.5，低推理強度只拿 35 分，最高強度 58 分，每個指數任務的成本也從 0.98 美元增加到 10.04 美元；每個任務的輸出 tokens 中位數由約 3.5 萬增加到 5.9 萬，其中四項 Agent 類評測只占 55% 權重，卻用掉約九成的輸出 tokens<Cite k="aa-v5" />。第三，**題組換了，排名的面貌也會變**：AA 指出，最強的開放權重模型與榜首的差距，從 v4.3 時的 3 分擴大到 v5 發布時的 12 分（當時居首的開放模型 Kimi K3.1 Pro 尚未釋出權重）<Cite k="aa-v5" />。
+
+因此，v4 與 v5 的分數不能放在一起比較：引用綜合指數時要寫明版本與查閱日期，跨模型比較也只能用同一版本的數字。本站模型頁把 v4 分數保留為歷史紀錄並標明版本，跨系列比較一律改用 v5。
 
 ## 原理三：競技場，讓人類盲測投票
 
@@ -438,7 +463,7 @@ Claude Opus 4.6 有一半機會完成約 12 小時的任務，但若要求八成
 ### 讀懂一張成績表：五個問題
 
 1. **誰測的？** 廠商自行公布，還是第三方用統一條件測得？
-2. **用什麼設定？** 推理強度、嘗試次數、可用工具與執行框架是否相同？
+2. **用什麼設定、哪一版？** 推理強度、嘗試次數、可用工具與執行框架是否相同？綜合指數是不是同一個版本？
 3. **題目可能外洩嗎？** 題庫公開多久了？有沒有不公開的保留題？
 4. **差距大於誤差嗎？** 題目有多少？有沒有附上信賴區間？
 5. **量的是你在乎的能力嗎？** 知識、人類偏好、任務完成度與成本，是四件不同的事。

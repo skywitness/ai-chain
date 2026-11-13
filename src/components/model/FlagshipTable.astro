@@ -4,11 +4,15 @@
  * (its flagship version), sorted by the editors' capability score. Every price and score shows its
  * own date, and a note flags score columns whose dates are more than 90 days apart.
  *
- *   <FlagshipTable families={llmFamilies} benchmarks={['aa-intelligence-index', 'gpqa-diamond', 'hle']} />
+ *   <FlagshipTable families={llmFamilies} benchmarks={['aa-intelligence-index-v5', 'gpqa-diamond', 'hle']} />
+ *
+ * Families are compared on the AA Intelligence Index v5 only: a column for the retired v4 index
+ * ('aa-intelligence-index', historical rows) is dropped, and a flagship without a v5 score shows 「—」.
  */
 import Icon from '../ui/Icon.astro';
 import { formatDate } from '../../lib/format';
 import { modelsCompareHref } from '../../lib/paths';
+import { CAPABILITY_BENCHMARK, LEGACY_CAPABILITY_BENCHMARK } from '../../lib/scene-data/models';
 import {
   ORIGIN_LABELS,
   REASONING_LABELS,
@@ -34,7 +38,7 @@ const bmap = benchmarkMap();
 const rows = families
   .filter((f) => f.data && f.flagship)
   .sort((a, b) => (b.data!.positioning.capability ?? 0) - (a.data!.positioning.capability ?? 0));
-const cols = benchmarks.map((id) => {
+const cols = benchmarks.filter((id) => id !== LEGACY_CAPABILITY_BENCHMARK).map((id) => {
   const info = benchmarkInfo(id, bmap);
   const dates = rows.map((f) => pickBenchmark(f.flagship, id)?.date);
   return { id, info, spread: dateSpread(dates) };
@@ -138,8 +142,14 @@ const REPORTER_SHORT: Record<string, string> = { lab: '自評', 'third-party': '
       <div class="ft__notes">
         <p>
           <Icon name="info" />
-          排序依編輯整理的綜合能力座標（多數取自 Artificial Analysis 綜合智慧指數）。分數優先採用第三方或排行榜的獨立量測，灰色數字為實驗室自評，兩者的測試設定不一定相同。價格為官方標準價，不含批次、快取等折扣；「—」表示尚無可引用的分數。
+          排序依編輯整理的綜合能力座標：多數取自 Artificial Analysis 綜合智慧指數 v5，AA 尚未以 v5 評測的系列為編輯估計（各系列頁說明換算方式）。分數優先採用第三方或排行榜的獨立量測，灰色數字為實驗室自評，兩者的測試設定不一定相同。價格為官方標準價，不含批次、快取等折扣；「—」表示尚無可引用的分數。
         </p>
+        {cols.some((c) => c.id === CAPABILITY_BENCHMARK) && (
+          <p>
+            <Icon name="info" />
+            AA 綜合智慧指數在 2026-10-27 改版為 v5，題組與權重都不同，分數不能與 v4 分數互比，本表只列 v5；「—」也表示 AA 尚未以 v5 評測該版本。
+          </p>
+        )}
         {wideSpread.length > 0 && (
           <p class="ft__warn">
             <Icon name="warn" />

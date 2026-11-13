@@ -27,6 +27,18 @@
   - 參數產生器：`scripts/plan/make-update-args.mjs`。
   - `content-wf.js` 新增了 `financials-update` 與 `refresh` 兩種類型，以及 `asOf`（資料基準日）參數。
 
+## ✅ 大模型、公司動態、趨勢與環節更新（2026-11-13）
+
+依 `research/plan/audit-2026-11-13.md`，同時跑兩個 workflow：
+
+- **大模型**（`research/plan/workflows/models-update-wf.js`，run `wf_8c852406-c95`，58 個 agent、0 錯誤；查核 2,178 項、修正 186 處）：
+  - Artificial Analysis 智慧指數 10-27 改版為 v5：新增 benchmark id `aa-intelligence-index-v5`，舊的 `aa-intelligence-index` 標為 v4（至 2026-10），兩者不可比較；`positioning.capability` 改用 v5（規則與 v4→v5 換算節點見 `docs/CONTENT-GUIDE.md` §4.5）；模型星系、旗艦表、系列卡片、`/models/` 都改用 v5。排行榜快照在 `research/staging/models/leaderboards-2026-11-13.json`（不進 repo）。
+  - 47 個系列全部更新，新增 `meituan-longcat`、`reflection-beam`。新增 benchmark `terminal-bench-4`（舊的 `terminal-bench` 為 4.0 以前），`/models/` 跨系列比較不再混用不同版本的評測。`/models/` 與比較頁的資料日期改由模型檔的最新日期計算。
+- **公司動態＋趨勢＋環節**（`research/plan/workflows/events-wf.js`，由 `content-wf.js` 嵌入 `research/plan/events-args-2026-11-13.json` 產生，run `wf_0b7f7575-5f7`，134 個 agent、0 錯誤；查核 5,907 項、修正 419 處）：31 家上市公司補第三季財報與事件、37 家公司事件與過期文字、12 篇趨勢、5 個環節。
+- **名冊**：主 session 派 1 個 agent 套用 47 處名冊修改（12 個檔案），依據是已查核的公司頁；例如 agility-robotics 改為上市（NASDAQ AGLT）、character-ai 破產程序、firmus 撤回 IPO、scale-ai 新執行長、kunlunxin 移除無來源的持股比例。
+- **待追蹤**：character-ai（12-03/04 出售聽證）、taalas（AMD 交割）、jsr（三井化學交割）、lumentum（Marvell 交割）、cohere／aleph-alpha 合併；agility-robotics 已有 stockanalysis 路徑但還沒有財報檔；部分 10 月中以前的公司頁與名冊有小矛盾（hailo、openrouter、幾家 hq／website），未處理。
+- **尚未更新**：NVIDIA 與 Anthropic（等 11/17 財報、約 11/19 掛牌）、其餘約 280 家公司的第三季財報與台股 9、10 月營收、全站 `DATA_DATE`（仍為 2026-10-06）。
+
 ## ✅ 記憶體專題與群聯模型更新（2026-11-13 上線）
 
 2026-11-13 盤點全站待更新資料，結果在 `research/plan/audit-2026-11-13.md`（季財報 310 家、台股月營收 119 家、大模型 47 個系列受 AA v5 改版影響、約 40 家公司動態、約 12 篇趨勢、記憶體 7 個檔案）。使用者決定**先只做記憶體專題＋群聯模型**；**其他部分尚未更新**，建議在 11/20 左右（NVIDIA 11/17 財報、Anthropic 約 11/19 掛牌之後）用該盤點檔做大更新，12 月中再補美光 FY2027Q1、TrendForce 第三季排名等。

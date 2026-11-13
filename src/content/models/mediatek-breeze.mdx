@@ -5,14 +5,14 @@ kind: "llm"
 lab: "mediatek"
 labName: "MediaTek Research（聯發創新基地）"
 origin: "TW"
-summary: "聯發科旗下研究單位聯發創新基地（MediaTek Research）的繁體中文模型系列。主力語言模型仍是 2025-01-23 釋出的 Breeze 2（3B、8B），以 Llama 3.2 3B 與 Llama 3.1 8B 為基礎續訓繁中資料，並加上圖片理解與函式呼叫，3B 版可在手機上離線執行。2026-02-26 發表的「Breeze 3 系列」轉向台語語音辨識、台語語音合成與台灣在地安全分類器 Breeze Guard 26，沒有推出新一代通用語言模型。"
+summary: "聯發科旗下研究單位聯發創新基地（MediaTek Research）的繁體中文模型系列。主力語言模型仍是 2025-01-23 釋出的 Breeze 2（3B、8B），以 Llama 3.2 3B 與 Llama 3.1 8B 為基礎續訓繁中資料，並加上圖片理解與函式呼叫，3B 版可在手機上離線執行。2026-02-26 發表的「Breeze 3 系列」轉向台語語音辨識、台語語音合成與台灣在地安全分類器 Breeze Guard 26，沒有推出新一代通用語言模型；截至 2026-11-13 也沒有新版本。"
 strengths:
   - "繁中知識題明顯進步：Breeze 2 自測 TMMLU+ 8B 為 46.6、3B 為 42.7，高於同尺寸的 Llama 3.1 8B（39.2）與 Llama 3.2 3B（35.3）"
   - "小模型同時具備圖片理解與函式呼叫，3B 版已在天璣 9400 手機上以 ExecuTorch 離線執行"
   - "語音與安全模型齊全：Breeze ASR 25 強化中英夾雜辨識，Breeze ASR 26 支援台語，Breeze Guard 26 偵測詐騙等台灣在地風險"
-  - "ASR 與 Guard 採 Apache 2.0 寬鬆授權；Breeze ASR 25 與 26 在 Hugging Face 的月下載量各達數萬次，是系列中最多人使用的模型"
+  - "ASR 與 Guard 採 Apache 2.0 寬鬆授權；Breeze ASR 25 與 26 在 Hugging Face 近 30 天的下載量各超過 1 萬次（2026-11-13），是系列中最多人使用的模型"
 weaknesses:
-  - "通用語言模型已約 20 個月未更新，Breeze 2 建立在 2024 年的 Llama 3.1／3.2 上，沒有推理模式"
+  - "通用語言模型已約 22 個月未更新（2026-11 時），Breeze 2 建立在 2024 年的 Llama 3.1／3.2 上，沒有推理模式"
   - "對話能力沒有同步提升：Breeze 2 8B 的 MT-Bench 為 7.05，略低於 Llama 3.1 8B 的 7.21"
   - "沒有官方 API，Artificial Analysis 與 Arena 都未收錄，缺乏第三方評測"
   - "手機端 3B 以 CPU 執行時需約 6.87GB 記憶體、每秒解碼約 3.8 個 tokens，對一般手機仍偏吃力"
@@ -22,12 +22,12 @@ bestFor:
   - "台灣華語、中英夾雜與台語的語音轉文字及字幕生成"
   - "以 Breeze Guard 26 過濾詐騙、非法金融、健康謠言等台灣在地風險"
 positioning:
-  capability: 5
+  capability: 2
   costIndex: 2
   openness: 0.5
   method: "editorial"
-  asOf: "2026-10-06"
-  note: "以旗艦 Breeze 2 8B 計算，三項座標皆為編輯判斷。Breeze 2 未被 Artificial Analysis 評測；其基礎模型 Llama 3.1 8B 在 AA 智慧指數 v4.3.2 為 6.9（估計值），但同榜 Llama 3.1 70B 只有 6.6，顯示舊模型的估計值鑑別力有限；考量 Breeze 2 為 2025 年初的 8B 模型且沒有推理模式，capability 取 5。官方沒有 API，costIndex 以 Arena 列出的 Llama 3.1 8B 第三方託管價（輸入 0.05、輸出 0.08 美元／百萬 tokens）按 3:1 混合約 0.058 美元，套用 0.05 美元 → 0、100 美元 → 100 的對數換算約 2。Breeze 2 受 Llama 3.2 社群授權約束（開放權重、有使用限制），openness 為 0.5；ASR 與 Guard 模型為 Apache 2.0。"
+  asOf: "2026-11-13"
+  note: "以旗艦 Breeze 2 8B 計算，三項座標皆為編輯判斷。capability 為估計值：Artificial Analysis 從未評測 Breeze 2，2026-11-13 讀取的 AA 綜合智慧指數 v5.0.1 也沒有其基礎模型 Llama 3.1 8B 的分數。原本以 v4 尺度訂的編輯估計 5（基礎模型 Llama 3.1 8B 的 v4.3.2 值 6.9 為 AA 估計值、鑑別力有限，再考量 Breeze 2 是 2025 年初、不推理的 8B 模型）依 §4.5 對照點換算為 2.0；再對照 v5 有分數的小型開放權重模型：Nemotron 3 Nano 4B 為 2、Gemma 4 31B（推理模式）為 4、Granite 4.2 8B 為 5。Breeze 2 8B 不推理、底座較舊，應不高於這些較新、具推理能力的模型，故取 2，不確定性高。官方沒有 API，costIndex 以 OpenRouter 在 2026-11-13 列出的 Llama 3.1 8B 第三方託管價（Groq，輸入 0.05、輸出 0.08 美元／百萬 tokens，與 2026-10-06 讀取的 Arena 列價相同）按 3：1 混合約 0.058 美元，套用 0.05 美元 → 0、100 美元 → 100 的對數換算得 1.8，取 2。Breeze 2 受 Llama 3.2 社群授權約束（開放權重、有使用限制），openness 為 0.5；ASR 與 Guard 模型為 Apache 2.0。"
 versions:
   - id: "llama-breeze2-8b-instruct"
     name: "Llama-Breeze2-8B-Instruct"
@@ -177,8 +177,8 @@ sources:
     url: "https://github.com/mtkresearch/MR-Models"
     type: "company-site"
     lang: "zh-TW"
-    accessed: "2026-10-06"
-    note: "Milestones 列出各版本發布日期"
+    accessed: "2026-11-13"
+    note: "Milestones 列出各版本發布日期；2026-11-13 複查，最新一筆仍是 2026-02-26 的 Breeze 3 系列"
   - key: "breeze2-paper"
     title: "The Breeze 2 Herd of Models: Traditional Chinese LLMs Based on Llama with Vision-Aware and Function-Calling Capabilities"
     publisher: "MediaTek Research（arXiv）"
@@ -225,6 +225,7 @@ sources:
     type: "docs"
     lang: "zh-TW"
     accessed: "2026-10-06"
+    note: "Hugging Face API 於 2026-11-13 複查，近 30 天下載 19,493 次、累計約 45.8 萬次（數字逐日變動）"
   - key: "hf-asr26"
     title: "MediaTek-Research/Breeze-ASR-26"
     publisher: "MediaTek Research（Hugging Face）"
@@ -232,15 +233,15 @@ sources:
     type: "docs"
     lang: "en"
     accessed: "2026-10-06"
-    note: "Hugging Face API 於 2026-10-17 複查，近 30 天下載 37,792 次（數字逐日變動）；模型卡致謝段落列出與陽明交通大學語音 AI 研究中心合作"
+    note: "Hugging Face API 於 2026-11-13 複查，近 30 天下載 12,916 次、累計約 10.4 萬次（數字逐日變動；2026-10-17 曾為 37,792 次）；模型卡致謝段落列出與陽明交通大學語音 AI 研究中心合作"
   - key: "hf-mtk-org"
     title: "MediaTek-Research"
     publisher: "Hugging Face"
     url: "https://huggingface.co/MediaTek-Research"
     type: "docs"
     lang: "en"
-    accessed: "2026-10-06"
-    note: "組織頁列出 Breeze 2 3B 手機 NPU 版本等模型"
+    accessed: "2026-11-13"
+    note: "組織頁列出 Breeze 2 3B 手機 NPU 版本等模型；2026-11-13 以 Hugging Face API 複查，最新的模型倉庫仍是 2026-03-17 上傳的 Breeze-Guard-26"
   - key: "breezeapp"
     title: "BreezeApp - AI on phone"
     publisher: "MediaTek Research（GitHub）"
@@ -255,7 +256,31 @@ sources:
     type: "leaderboard"
     lang: "en"
     accessed: "2026-10-06"
-    note: "Breeze 2 8B 基礎模型的參考分數（Intelligence Index v4.3.2，估計值）"
+    note: "Breeze 2 8B 基礎模型的參考分數（Intelligence Index v4.3.2，估計值，2026-10-06 讀取）；2026-11-13 複查時頁面已改用 v5.0.1，Llama 3.1 8B 沒有 v5 分數"
+  - key: "aa-leaderboard"
+    title: "LLM Leaderboard: Comparison of AI Models"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-11-13"
+    note: "Intelligence Index v5.0.1；未列出 Breeze。capability 估計的錨點：Nemotron 3 Nano 4B 2、Gemma 4 31B（推理模式）4、Granite 4.2 8B 5"
+  - key: "aa-v5-article"
+    title: "Announcing Artificial Analysis Intelligence Index v5"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5"
+    type: "other"
+    lang: "en"
+    published: "2026-10-27"
+    accessed: "2026-11-13"
+  - key: "openrouter-llama31-8b"
+    title: "Llama 3.1 8B Instruct（meta-llama/llama-3.1-8b-instruct）供應商與價格"
+    publisher: "OpenRouter"
+    url: "https://openrouter.ai/meta-llama/llama-3.1-8b-instruct"
+    type: "other"
+    lang: "en"
+    accessed: "2026-11-13"
+    note: "第三方託管價，僅作 Breeze costIndex 的參考；Groq 輸入 0.05、輸出 0.08 美元／百萬 tokens（同頁 DeepInfra 的 FP8 版本為 0.02／0.04）"
   - key: "arena-text"
     title: "Text Arena Leaderboard (Overall)"
     publisher: "LMArena"
@@ -265,19 +290,19 @@ sources:
     published: "2026-10-02"
     accessed: "2026-10-06"
     note: "lmarena.ai 已轉址至 arena.ai；榜上未列出 Breeze，僅有基礎模型 Llama 3.1 8B 與 Llama 3.2 3B"
-lastVerified: "2026-10-06"
+lastVerified: "2026-11-13"
 editorial:
   status: "fact-checked"
-  author: "models-13"
-  checkedBy: "models-13-check"
-  checkedOn: "2026-10-06"
+  author: "mdl-taide-3"
+  checkedBy: "check-mdl-taide-3"
+  checkedOn: "2026-11-13"
 ---
 
 ## 系列概覽
 
 Breeze 是 <CompanyChip id="mediatek">聯發科</CompanyChip>旗下研究單位聯發創新基地（MediaTek Research）的模型品牌，主軸是做出適合繁體中文使用者的模型。語言模型這條線始於 2024 年 1 月以 Mistral 7B 為基礎的 Breeze-7B；2025-01-23 推出 Breeze 2，改以 <ModelChip id="meta-muse-llama">Meta Llama</ModelChip> 3.2 3B 與 Llama 3.1 8B 為基礎<Cite k="mr-models" /><Cite k="breeze2-paper" />。
 
-2026-02-26 發表的「Breeze 3 系列」則轉向語音與安全：台語語音辨識 Breeze ASR 26、台語語音合成 BreezyVoice 26，以及安全分類器 Breeze Guard 26，沒有推出新的通用語言模型<Cite k="mtk-breeze3" />。因此截至 2026-10-06，Breeze 系列的旗艦語言模型仍是 Breeze 2 8B。
+2026-02-26 發表的「Breeze 3 系列」則轉向語音與安全：台語語音辨識 Breeze ASR 26、台語語音合成 BreezyVoice 26，以及安全分類器 Breeze Guard 26，沒有推出新的通用語言模型<Cite k="mtk-breeze3" />。2026-11-13 複查聯發創新基地的發布紀錄與 Hugging Face，之後都沒有新模型<Cite k="mr-models" /><Cite k="hf-mtk-org" />，因此 Breeze 系列的旗艦語言模型仍是 Breeze 2 8B。
 
 ## 特性分析
 
@@ -300,7 +325,7 @@ Breeze 是 <CompanyChip id="mediatek">聯發科</CompanyChip>旗下研究單位�
 
 不適合：
 
-- **推理、程式與 Agent 任務**：Breeze 2 沒有推理模式，基礎模型 Llama 3.1 8B 在 AA 綜合智慧指數只有約 7 分（估計值）<Cite k="aa-llama31-8b" />。
+- **推理、程式與 Agent 任務**：Breeze 2 沒有推理模式，基礎模型 Llama 3.1 8B 在舊版 AA 綜合智慧指數 v4.3.2 只有約 7 分（AA 估計值，2026-10-06 讀取）<Cite k="aa-llama31-8b" />。
 - **英文內容審核**：Guard 26 的 ToxicChat F1 只有 0.39 到 0.49，低於 Granite Guardian 3.3 的 0.65<Cite k="hf-breeze-guard" />。
 - **想直接呼叫雲端 API**：官方沒有提供按 token 計價的服務。
 - **需要台語正字的轉寫**：ASR 26 輸出的是華語文字<Cite k="hf-asr26" />。
@@ -320,7 +345,7 @@ Breeze 是 <CompanyChip id="mediatek">聯發科</CompanyChip>旗下研究單位�
 
 ## 評測解讀
 
-<Callout type="warn" title="目前只有官方自測">Breeze 2 的分數來自 2025 年 1 月發表、2 月更新的論文（v3），採 0-shot 設定；TAIDE 用 lm-evaluation-harness 測得的 TMMLU+ 分數方法不同，不能直接比較。Artificial Analysis 與 Arena 都沒有收錄 Breeze 系列。</Callout>
+<Callout type="warn" title="目前只有官方自測">Breeze 2 的分數來自 2025 年 1 月發表、2 月更新的論文（v3），採 0-shot 設定；TAIDE 用 lm-evaluation-harness 測得的 TMMLU+ 分數方法不同，不能直接比較。Artificial Analysis 與 Arena 都沒有收錄 Breeze 系列（2026-11-13 複查）。</Callout>
 
 | 模型 | TMMLU+ | MMLU | MT-Bench-tw | MT-Bench |
 |---|---|---|---|---|
@@ -336,4 +361,5 @@ Breeze 是 <CompanyChip id="mediatek">聯發科</CompanyChip>旗下研究單位�
 - **對話能力沒有同步提升**：3B 版的 MT-Bench 從 6.99 降到 5.96；8B 版只有繁中對話的 MT-Bench-tw 略高於 Llama 3.1 8B（5.79 對 5.54）。論文也承認 Breeze 2 的訓練重點是知識、函式呼叫與視覺，而不是聊天。
 - **同一張表內比較才有意義**：GPT-4o-mini 的選擇題分數低於 3B 小模型、對話分數卻最高，可能反映 0-shot 選擇題的評分方式對不同模型影響很大。
 - **Guard 用的是自家考卷**：TS-Bench 由聯發創新基地自行建立<Cite k="breeze-guard-paper" />，在自家評測領先是常見現象，仍需第三方驗證。
-- **用基礎模型推估水準**：Arena 文字競技場上，Llama 3.1 8B 為 1211 分（第 340 名），Llama 3.2 3B 為 1167 分（第 366 名）<Cite k="arena-text" />；Breeze 2 的通用能力合理推估在相近水準。
+- **用基礎模型推估水準**：Arena 文字競技場 2026-10-02 的榜單上，Llama 3.1 8B 為 1211 分（第 340 名），Llama 3.2 3B 為 1167 分（第 366 名）<Cite k="arena-text" />；Breeze 2 的通用能力合理推估在相近水準。
+- **AA 指數已改版**：Artificial Analysis 在 2026-10-27 把綜合智慧指數改為 v5，題組與權重全部換新，v4 與 v5 的分數不能互比<Cite k="aa-v5-article" />。前文引用的 Llama 3.1 8B 約 7 分是 v4.3.2 的歷史紀錄；2026-11-13 讀取的 v5.0.1 排行榜沒有 Breeze，也沒有 Llama 3.1 8B 的分數<Cite k="aa-leaderboard" />。本站星系圖上的能力座標因此是編輯估計，以 v5 有分數、規模相近的開放權重模型為參考。

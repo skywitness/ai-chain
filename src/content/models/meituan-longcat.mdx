@@ -1,0 +1,591 @@
+---
+title: "美團 LongCat 系列"
+family: "LongCat"
+kind: llm
+lab: meituan
+labName: "美團 LongCat 團隊"
+origin: CN
+summary: "美團 LongCat（龍貓）團隊的大型語言模型家族。2025 年 8 月以 5,600 億參數的 LongCat-Flash-Chat 起步，主力模型一路以 MIT 授權開放權重，之後陸續推出推理、全模態、輕量與定理證明分支。2026-11-02 上線的旗艦 LongCat-2.5 總參數 1.6 兆、每個 token 啟用約 480 億，原生理解圖片與影片，主打長程 Agent 與程式開發，官方稱以國產 AI 加速器訓練；API 限時優惠價每百萬 tokens 輸入 0.3、輸出 1.2 美元。AA 綜合智慧指數 v5 尚未評測。"
+strengths:
+  - "開放程度高、授權寬鬆：從 LongCat-Flash-Chat 到 LongCat-2.5，主力模型都以 MIT 授權在 Hugging Face 釋出權重並公開技術報告或技術部落格，LongCat-2.5 另提供 W4A4 量化版。"
+  - "價格低：LongCat-2.5 的 API 限時優惠價每百萬 tokens 輸入 0.3、輸出 1.2 美元，快取命中的輸入只要 0.006 美元（2026-11-13）。"
+  - "為長任務設計：API 上下文 1,048,576 tokens、單次最多輸出 262,144 tokens，相容 OpenAI 與 Anthropic 兩種 API 格式，官方文件提供 Claude Code、Codex 等工具的接法。"
+  - "架構實驗多且公開：零計算專家與 ScMoE（Flash）、N-gram 嵌入表（Flash-Lite、2.0）、LongCat 稀疏注意力（LSA）、離散視覺 token（Next、2.5）都有技術報告或模型卡說明。"
+  - "原廠自報成績與同期開放權重模型相近：LongCat-2.5 的 Terminal-Bench 2.1 為 88.4%、4.0 為 38.5%，同表引用的 GLM-5.3 為 88.2%、41.8%（原廠自測與引用，2026-11）。"
+weaknesses:
+  - "缺乏第三方綜合評分：截至 2026-11-13，AA 綜合智慧指數 v5 未評測 LongCat-2.5，也未公布 LongCat 2.0 的綜合分數；AA 已跑完的 LongCat 2.0 子項中，Terminal-Bench 4.0 為 0%。"
+  - "API 汰換快、選擇少：2026-05-29 一次停止 Flash-Chat、Flash-Thinking 等 6 個舊模型的 API 服務；2026-11-13 的 API 文件只列 LongCat-2.5 一個模型。"
+  - "官方價格標示為限時優惠價，未公布原價，長期成本不確定；中國大陸用戶儲值前須完成實名或企業認證。"
+  - "LongCat-2.5 的模型卡目前只提供 NPU 平台的部署說明，1.6 兆參數自行部署門檻高。"
+  - "Arena 文字榜只收錄第一代 Flash-Chat 的兩個版本（API 實驗版 2602 為 1,436 分、第 104 名；MIT 原版為 1,401 分、第 167 名，2026-11-11），2.0 以後的新世代模型還沒有人類偏好排名。"
+bestFor:
+  - "成本敏感、需要大量呼叫的程式開發與長程 Agent 工作流程"
+  - "需要 MIT 授權、可商用與微調的兆級開放權重模型的研究與企業團隊"
+  - "結合截圖、圖表或影片理解的視覺程式設計，例如由設計稿產生網頁"
+  - "研究 MoE、稀疏注意力與國產加速器訓練方法的技術團隊"
+positioning:
+  capability: 28
+  costIndex: 31
+  openness: 0.8
+  method: editorial
+  asOf: "2026-11-13"
+  note: "capability 為編輯估計值：AA 綜合智慧指數 v5 尚未評測旗艦 LongCat-2.5（2026-11-13 不在 AA 名單上），AA 也未公布前代 LongCat 2.0 的 v5 綜合分數，本系列在本站也沒有 v4 分數可換算。錨點：原廠表格中 LongCat-2.5 與 GLM-5.3、DeepSeek V4.1 Flash 大致相當（例如 Terminal-Bench 4.0 為 38.5%，同表兩者為 41.8% 與 31.2%），兩者 AA v5.0.1 分別為 32（GLM-5.3，Max 推理強度）與 33（DeepSeek V4.1 Flash 1017，Max 推理強度）；但 LongCat-2.5 的成績全為原廠自報，且 AA 已完成的 LongCat 2.0 v5 子項中，Terminal-Bench 4.0 為 0%，同一測試 GLM-5.3（max）約 42%、DeepSeek V4.1 Flash 1017（max）約 34%，前一代明顯落後同級，因此下修 4 到 5 分，估計為 28，與 GLM-5.3-Flash（28）、MiMo-V2.6-Flash（27）、MiMo-V2.6-Pro（30）同一區間。costIndex 以官方限時優惠價的 3：1 混合價格（(3×0.30 + 1.20)÷4 = 0.525 美元／百萬 tokens）對數換算（0.05 美元 → 0、100 美元 → 100）得 30.9，取 31。openness 為 0.8（MIT 授權開放權重並公開技術細節，但訓練資料未公開）。"
+versions:
+  - id: longcat-flash-chat
+    name: "LongCat-Flash-Chat"
+    released: "2025-08-29"
+    status: retired
+    tier: flagship
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 560, activeB: 27, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 131072
+    reasoning: none
+    availability: [self-host]
+    benchmarks:
+      - benchmark: mmlu-pro
+        score: 82.68
+        setting: "非思考模式"
+        reportedBy: lab
+        date: "2025-08-29"
+        source: { title: "meituan-longcat/LongCat-Flash-Chat", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Chat", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: gpqa-diamond
+        score: 73.23
+        setting: "非思考模式"
+        reportedBy: lab
+        date: "2025-08-29"
+        source: { title: "meituan-longcat/LongCat-Flash-Chat", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Chat", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: swe-bench-verified
+        score: 60.4
+        setting: "非思考模式"
+        reportedBy: lab
+        date: "2025-08-29"
+        source: { title: "meituan-longcat/LongCat-Flash-Chat", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Chat", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: terminal-bench
+        score: 39.51
+        setting: "原廠表格標為 TerminalBench（初版）"
+        reportedBy: lab
+        date: "2025-08-29"
+        source: { title: "meituan-longcat/LongCat-Flash-Chat", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Chat", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: lmarena-text
+        score: 1436
+        setting: "LongCat-Flash-Chat Exp (2602)，名稱標為 2602 的 API 實驗版；頁面日期 2026-11-11；±5；第 104 名（共 421 個模型）；29,016 票；Arena 標示授權為 Proprietary"
+        reportedBy: leaderboard
+        date: "2026-11-11"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-11-13" }
+      - benchmark: lmarena-text
+        score: 1401
+        setting: "LongCat-Flash-Chat（Arena 標示授權為 MIT 的原版）；頁面日期 2026-11-11；±6；第 167 名（共 421 個模型）；11,130 票"
+        reportedBy: leaderboard
+        date: "2026-11-11"
+        source: { title: "Text Arena Leaderboard", publisher: "Arena (LMArena)", url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-11-13" }
+    notes: "LongCat 第一個開源旗艦，非思考模式。以「零計算專家」依 token 重要性動態分配算力，每個 token 啟用 186 億到 313 億參數（平均約 270 億），並以 ScMoE 擴大運算與通訊重疊，官方稱推論速度逾每秒 100 tokens；技術報告 2025-09-01 上傳 arXiv（2509.01322）。2025-09-05 開放 API；2025-12-22 的 API 版更新把上下文由 128K 加倍到 256K 並強化程式能力（Hugging Face 權重未隨之更新）。另有名稱標為 2602 的 API 實驗版 LongCat-Flash-Chat-2602-Exp（更新日誌只在停用公告中列出，Hugging Face 上沒有對應權重）。兩者都在 2026-05-29 停止 API 服務；原版權重仍可在 Hugging Face 下載。"
+  - id: longcat-flash-thinking
+    name: "LongCat-Flash-Thinking"
+    released: "2025-09-22"
+    status: retired
+    tier: reasoning
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 560, activeB: 27, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 131072
+    reasoning: always
+    availability: [self-host]
+    benchmarks:
+      - benchmark: aime-2025
+        score: 90.6
+        setting: "Mean@32"
+        reportedBy: lab
+        date: "2025-09-22"
+        source: { title: "meituan-longcat/LongCat-Flash-Thinking", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Thinking", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: gpqa-diamond
+        score: 81.5
+        setting: "Mean@16"
+        reportedBy: lab
+        date: "2025-09-22"
+        source: { title: "meituan-longcat/LongCat-Flash-Thinking", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Thinking", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: livecodebench
+        score: 79.4
+        setting: "Mean@4"
+        reportedBy: lab
+        date: "2025-09-22"
+        source: { title: "meituan-longcat/LongCat-Flash-Thinking", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Thinking", type: docs, lang: en, accessed: "2026-11-13" }
+    notes: "以 Flash 架構為底的推理模型，同步開源。強化學習採自研的非同步框架 DORA，並把 STEM、程式與 Agent 三個領域分開訓練後再合併；另強化 Lean4 形式化定理證明，原廠自報 MiniF2F-Test Pass@1 為 67.6%。技術報告見 arXiv 2509.18883。2026-03-12 起 API 請求自動轉送至 Flash-Thinking-2601，2026-05-29 停止 API 服務；權重仍可在 Hugging Face 下載。"
+  - id: longcat-flash-omni
+    name: "LongCat-Flash-Omni"
+    released: "2025-10-31"
+    status: retired
+    tier: specialized
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 560, activeB: 27, disclosed: true }
+    modalitiesIn: [text, image, audio, video]
+    modalitiesOut: [text, audio]
+    contextTokens: 131072
+    reasoning: none
+    availability: [self-host]
+    benchmarks:
+      - benchmark: mmmu
+        score: 70.7
+        setting: "MMMU val，Instruct 版"
+        reportedBy: lab
+        date: "2025-10-31"
+        source: { title: "meituan-longcat/LongCat-Flash-Omni", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Omni", type: docs, lang: en, accessed: "2026-11-13" }
+    notes: "以 Flash 的 MoE 主幹加上輕量的影像、語音編碼器與語音解碼器，主打即時影音互動，上下文 128K。Hugging Face 與 GitHub 儲存庫建立於 2025-10-23 至 24，技術報告 2025-10-31 上傳 arXiv（2511.00279），本表以技術報告日期為發布日。2026-03-11 的 API 升級版 LongCat-Flash-Omni-2603 加入原生語音函式呼叫，2026-05-29 停止 API 服務；原版權重仍可在 Hugging Face 下載。"
+  - id: longcat-flash-thinking-2601
+    name: "LongCat-Flash-Thinking-2601"
+    released: "2026-01-14"
+    status: retired
+    tier: reasoning
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 560, activeB: 27, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    reasoning: always
+    availability: [self-host]
+    benchmarks:
+      - benchmark: swe-bench-verified
+        score: 70.0
+        setting: "Avg@5"
+        reportedBy: lab
+        date: "2026-01-14"
+        source: { title: "meituan-longcat/LongCat-Flash-Thinking-2601", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Thinking-2601", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: tau2-bench
+        score: 88.2
+        setting: "零售、航空、電信三領域平均，Avg@4"
+        reportedBy: lab
+        date: "2026-01-14"
+        source: { title: "meituan-longcat/LongCat-Flash-Thinking-2601", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Thinking-2601", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: gpqa-diamond
+        score: 80.5
+        setting: "Avg@16；Heavy Thinking 模式為 85.2"
+        reportedBy: lab
+        date: "2026-01-14"
+        source: { title: "meituan-longcat/LongCat-Flash-Thinking-2601", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Thinking-2601", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: hle
+        score: 25.2
+        setting: "純文字題，不使用工具"
+        reportedBy: lab
+        date: "2026-01-14"
+        source: { title: "meituan-longcat/LongCat-Flash-Thinking-2601", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Thinking-2601", type: docs, lang: en, accessed: "2026-11-13" }
+    notes: "Flash-Thinking 的升級版，重點是 Agent 推理：建構每個含 60 種以上工具的訓練環境做多環境強化學習，並在訓練中逐步注入環境雜訊以提高穩健性。另推出 Heavy Thinking 模式，先平行產生多條推理軌跡再彙整。2026-03-12 起承接 Flash-Thinking 的 API 請求，2026-05-29 停止 API 服務；權重仍可在 Hugging Face 下載。"
+  - id: longcat-flash-lite
+    name: "LongCat-Flash-Lite"
+    released: "2026-02-05"
+    status: retired
+    tier: small
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 68.5, activeB: 3, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 262144
+    reasoning: none
+    availability: [self-host]
+    benchmarks:
+      - benchmark: mmlu-pro
+        score: 78.29
+        reportedBy: lab
+        date: "2026-01-27"
+        source: { title: "meituan-longcat/LongCat-Flash-Lite", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Lite", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: gpqa-diamond
+        score: 66.78
+        setting: "Avg@16"
+        reportedBy: lab
+        date: "2026-01-27"
+        source: { title: "meituan-longcat/LongCat-Flash-Lite", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Lite", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: swe-bench-verified
+        score: 54.4
+        setting: "原廠表格標為 SWE-Bench，Lite-Sparse 模型卡引用時標為 Verified"
+        reportedBy: lab
+        date: "2026-01-27"
+        source: { title: "meituan-longcat/LongCat-Flash-Lite", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Lite", type: docs, lang: en, accessed: "2026-11-13" }
+    notes: "非思考模式的輕量 MoE，總參數 685 億、每次啟用約 29 億到 45 億，其中逾 300 億參數放在 N-gram 嵌入表，官方稱比同等參數的純 MoE 表現更好、推論更快（技術報告 arXiv 2601.21204）。Hugging Face 儲存庫建立於 2026-01-27，API 依官方更新日誌於 2026-02-05 上線，2026-05-29 停止 API 服務；權重仍可在 Hugging Face 下載。"
+  - id: longcat-flash-prover
+    name: "LongCat-Flash-Prover"
+    released: "2026-03-20"
+    status: ga
+    tier: specialized
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 560, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    reasoning: always
+    availability: [self-host]
+    notes: "以 Lean4 做形式化數學證明的專用模型，把任務拆成自動形式化、證明草稿與證明三種能力，可直接呼叫 Lean4 工具編譯驗證。原廠自報每題最多 72 次推論時 MiniF2F-Test 通過率 97.1%；每題最多 220 次嘗試時，ProverBench 與 PutnamBench 分別解出 70.8% 與 41.5%。技術報告 arXiv 2603.21065。"
+  - id: longcat-next
+    name: "LongCat-Next"
+    released: "2026-03-25"
+    status: ga
+    tier: specialized
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { activeB: 3, disclosed: true }
+    modalitiesIn: [text, image, audio]
+    modalitiesOut: [text, image, audio]
+    reasoning: none
+    availability: [self-host]
+    notes: "原生多模態研究模型，以 Flash-Lite 的 MoE 主幹（每次啟用約 30 億參數）把文字、影像與語音都轉成離散 token，用同一個自迴歸目標同時做理解與生成；影像 tokenizer（dNaViT）結合語意編碼器與殘差向量量化。技術報告 arXiv 2603.27538。這套離散視覺 token 後來用在 LongCat-2.5；2026-11-10 起模型庫另補上 dNaViT 檔案。"
+  - id: longcat-2-0
+    name: "LongCat-2.0"
+    released: "2026-06-30"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 1600, activeB: 48, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    reasoning: hybrid
+    availability: [self-host]
+    pricing:
+      - asOf: "2026-10-14"
+        inputPerMTok: 0.30
+        outputPerMTok: 1.20
+        cachedInputPerMTok: 0.006
+        currency: USD
+        tierNote: "官方標示為限時優惠價，未列原價；人民幣為每百萬 tokens 輸入 2 元、輸出 8 元。2026-11-13 的 API 文件已改為只支援 LongCat-2.5（同價）。"
+        source: { title: "Models & Pricing: LongCat-2.0", publisher: "LongCat API Platform", url: "https://longcat.chat/platform/docs/pricing/longcat-2.0", type: docs, lang: en, accessed: "2026-11-13", archiveUrl: "https://web.archive.org/web/20261014072930/https://longcat.chat/platform/docs/pricing/longcat-2.0", note: "頁面已不在文件目錄中，內容與 2026-10-14 網頁封存版相同" }
+    benchmarks:
+      - benchmark: swe-bench-pro
+        score: 59.5
+        reportedBy: lab
+        date: "2026-07-05"
+        source: { title: "meituan-longcat/LongCat-2.0", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-2.0", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: terminal-bench
+        score: 70.8
+        setting: "Terminal-Bench 2.1"
+        reportedBy: lab
+        date: "2026-07-05"
+        source: { title: "meituan-longcat/LongCat-2.0", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-2.0", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: gpqa-diamond
+        score: 88.9
+        reportedBy: lab
+        date: "2026-07-05"
+        source: { title: "meituan-longcat/LongCat-2.0", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-2.0", type: docs, lang: en, accessed: "2026-11-13" }
+    notes: "總參數 1.6 兆、每個 token 啟用約 480 億，以逾 35 兆 tokens 預訓練，官方稱訓練與大規模部署全部在 AI ASIC 超節點上完成、過程沒有回滾或無法恢復的損失尖峰，但未具名晶片供應商。內含 1,350 億 N-gram 嵌入參數，首度採用 LongCat 稀疏注意力（LSA），並以數千億 tokens 的 1M 上下文資料訓練；支援思考與非思考模式。2026-04-20 先以 LongCat-2.0-Preview 開放限量測試（每日 500 萬 tokens 免費額度），2026-06-30 正式上線並開始收費；Hugging Face 儲存庫 2026-07-03 至 05 建立。2026-11-13 的 API 文件只列 LongCat-2.5，官方未發布 2.0 的停用公告，本表仍標為 ga，可下載權重自行部署。AA 已列出此模型並跑完部分 v5 子項，但未公布綜合分數（2026-11-13）。"
+  - id: longcat-flash-lite-sparse
+    name: "LongCat-Flash-Lite-Sparse"
+    released: "2026-07-31"
+    status: ga
+    tier: small
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 69, activeB: 3, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    reasoning: none
+    availability: [self-host]
+    benchmarks:
+      - benchmark: swe-bench-verified
+        score: 68.2
+        setting: "不啟用階層式索引（HI）"
+        reportedBy: lab
+        date: "2026-07-31"
+        source: { title: "meituan-longcat/LongCat-Flash-Lite-Sparse", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Lite-Sparse", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: swe-bench-pro
+        score: 40.63
+        setting: "不啟用階層式索引（HI）"
+        reportedBy: lab
+        date: "2026-07-31"
+        source: { title: "meituan-longcat/LongCat-Flash-Lite-Sparse", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Lite-Sparse", type: docs, lang: en, accessed: "2026-11-13" }
+    notes: "把 Flash-Lite 的密集 MLA 注意力換成 LongCat 稀疏注意力（LSA），原生支援 100 萬 tokens 上下文，原廠稱 Agent 程式與搜尋能力明顯優於密集版（SWE-bench Verified 由 54.4% 升到 68.2%）。LSA 技術報告 2026-08-03 上傳 arXiv（2608.01662）。"
+  - id: longcat-2-5
+    name: "LongCat-2.5"
+    released: "2026-11-02"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "MIT"
+    architecture: moe
+    params: { totalB: 1600, activeB: 48, disclosed: true }
+    modalitiesIn: [text, image, video]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 262144
+    reasoning: hybrid
+    availability: [api, chat-app, self-host]
+    pricing:
+      - asOf: "2026-11-13"
+        inputPerMTok: 0.30
+        outputPerMTok: 1.20
+        cachedInputPerMTok: 0.006
+        currency: USD
+        tierNote: "官方標示為限時優惠價（Discounted Price, limited-time），未列原價；人民幣為每百萬 tokens 輸入 2 元、快取命中 0.04 元、輸出 8 元。"
+        source: { title: "Models & Pricing: LongCat-2.5", publisher: "LongCat API Platform", url: "https://longcat.chat/platform/docs/pricing/longcat-2.5", type: docs, lang: en, accessed: "2026-11-13" }
+    benchmarks:
+      - benchmark: terminal-bench
+        score: 88.4
+        setting: "Terminal-Bench 2.1，Claude Code 執行框架，3 次平均，思考模式"
+        reportedBy: lab
+        date: "2026-11-10"
+        source: { title: "meituan-longcat/LongCat-2.5", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-2.5", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: terminal-bench-4
+        score: 38.5
+        setting: "Terminal-Bench 4.0，Claude Code 執行框架，思考模式"
+        reportedBy: lab
+        date: "2026-11-10"
+        source: { title: "meituan-longcat/LongCat-2.5", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-2.5", type: docs, lang: en, accessed: "2026-11-13" }
+      - benchmark: hle
+        score: 63.1
+        setting: "完整題組，使用工具（Claude Code），最長生成 256K tokens"
+        reportedBy: lab
+        date: "2026-11-10"
+        source: { title: "meituan-longcat/LongCat-2.5", publisher: "Hugging Face (Meituan LongCat)", url: "https://huggingface.co/meituan-longcat/LongCat-2.5", type: docs, lang: en, accessed: "2026-11-13" }
+    notes: "以 LongCat-2.0 為底加入原生視覺：影像以殘差向量量化轉成多層離散 token，與文字共用主幹；API 可輸入圖片與影片。訓練上擴大長程 Agent 強化學習，把 GitHub PR 與內部工程任務自動轉成可驗證環境，並以 Agent、推理、互動三組專家模型做多教師蒸餾。官方稱長上下文訓練在國產 AI 加速器上完成，並提供專家權重與活化值都量化為 4 位元的 W4A4 版（另有 LongCat-2.5-W4A4 權重）。2026-09-25 先上線 LongCat-2.5-Preview（新增圖片理解），2026-11-02 正式上線；Hugging Face 儲存庫建立於 2026-11-04，權重檔於 11-04 至 05 上傳，模型卡最後更新 11-10。模型卡目前只提供 NPU 平台的部署說明；GitHub 標示即將推出。AA 與 Arena 文字榜在 2026-11-13 都尚未收錄。"
+flagshipVersion: longcat-2-5
+relatedLearn: [mixture-of-experts, open-vs-closed-models, multimodal-models, model-evaluation]
+glossary: [moe, open-weights, sparse-attention, multimodal, quantization, npu, agent, reinforcement-learning, distillation, benchmark, elo-rating]
+sources:
+  - key: hf-lc25
+    title: "meituan-longcat/LongCat-2.5"
+    publisher: "Hugging Face (Meituan LongCat)"
+    url: "https://huggingface.co/meituan-longcat/LongCat-2.5"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+    note: "儲存庫建立於 2026-11-04，權重檔 11-04 至 05 上傳，模型卡最後更新 2026-11-10；MIT 授權"
+  - key: lc25-blog
+    title: "Introducing LongCat-2.5"
+    publisher: "Meituan LongCat"
+    url: "https://longcat.ai/blog/longcat-2.5/"
+    type: company-site
+    lang: en
+    accessed: "2026-11-13"
+    note: "技術部落格，另有簡體中文版；頁面摘要寫明訓練全程由國產晶片完成，GitHub 標示即將推出"
+  - key: lc-changelog
+    title: "LongCat API Platform Change Log"
+    publisher: "LongCat API Platform"
+    url: "https://longcat.chat/platform/docs/change-log"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+    note: "2025-08-29 至 2026-11-02 各版本上線、升級與停用紀錄"
+  - key: lc-quickstart
+    title: "LongCat API Platform Quick Start"
+    publisher: "LongCat API Platform"
+    url: "https://longcat.chat/platform/docs/"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+    note: "2026-11-13 支援模型只列 LongCat-2.5；上下文 1M、最長輸出 256K"
+  - key: lc-pricing
+    title: "Models & Pricing: LongCat-2.5"
+    publisher: "LongCat API Platform"
+    url: "https://longcat.chat/platform/docs/pricing/longcat-2.5"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: lc-price20
+    title: "Models & Pricing: LongCat-2.0"
+    publisher: "LongCat API Platform"
+    url: "https://longcat.chat/platform/docs/pricing/longcat-2.0"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+    archiveUrl: "https://web.archive.org/web/20261014072930/https://longcat.chat/platform/docs/pricing/longcat-2.0"
+  - key: lc-params
+    title: "Model Parameters"
+    publisher: "LongCat API Platform"
+    url: "https://longcat.chat/platform/docs/api/model-params"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: lc-vision
+    title: "Visual Understanding"
+    publisher: "LongCat API Platform"
+    url: "https://longcat.chat/platform/docs/image-video-understanding"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: lc-faq
+    title: "LongCat API Platform FAQ"
+    publisher: "LongCat API Platform"
+    url: "https://longcat.chat/platform/docs/faq"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: hf-org
+    title: "meituan-longcat on Hugging Face"
+    publisher: "Hugging Face (Meituan LongCat)"
+    url: "https://huggingface.co/meituan-longcat"
+    type: company-site
+    lang: en
+    accessed: "2026-11-13"
+    note: "2026-11-13 共 31 個模型庫，最新為 2026-11-04 建立的 LongCat-2.5 與 LongCat-2.5-W4A4"
+  - key: hf-lc20
+    title: "meituan-longcat/LongCat-2.0"
+    publisher: "Hugging Face (Meituan LongCat)"
+    url: "https://huggingface.co/meituan-longcat/LongCat-2.0"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: hf-flash-chat
+    title: "meituan-longcat/LongCat-Flash-Chat"
+    publisher: "Hugging Face (Meituan LongCat)"
+    url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Chat"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: lc-flash-report
+    title: "LongCat-Flash Technical Report"
+    publisher: "arXiv (Meituan LongCat Team)"
+    url: "https://arxiv.org/abs/2509.01322"
+    type: paper
+    lang: en
+    published: "2025-09-01"
+    accessed: "2026-11-13"
+  - key: hf-flash-thinking
+    title: "meituan-longcat/LongCat-Flash-Thinking"
+    publisher: "Hugging Face (Meituan LongCat)"
+    url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Thinking"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: hf-omni
+    title: "meituan-longcat/LongCat-Flash-Omni"
+    publisher: "Hugging Face (Meituan LongCat)"
+    url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Omni"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+    note: "技術報告 arXiv 2511.00279，2025-10-31 上傳"
+  - key: hf-2601
+    title: "meituan-longcat/LongCat-Flash-Thinking-2601"
+    publisher: "Hugging Face (Meituan LongCat)"
+    url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Thinking-2601"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: hf-lite
+    title: "meituan-longcat/LongCat-Flash-Lite"
+    publisher: "Hugging Face (Meituan LongCat)"
+    url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Lite"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: hf-prover
+    title: "meituan-longcat/LongCat-Flash-Prover"
+    publisher: "Hugging Face (Meituan LongCat)"
+    url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Prover"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: hf-next
+    title: "meituan-longcat/LongCat-Next"
+    publisher: "Hugging Face (Meituan LongCat)"
+    url: "https://huggingface.co/meituan-longcat/LongCat-Next"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: hf-lite-sparse
+    title: "meituan-longcat/LongCat-Flash-Lite-Sparse"
+    publisher: "Hugging Face (Meituan LongCat)"
+    url: "https://huggingface.co/meituan-longcat/LongCat-Flash-Lite-Sparse"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: aa-lb
+    title: "LLM Leaderboard"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: leaderboard
+    lang: en
+    accessed: "2026-11-13"
+    note: "Intelligence Index v5.0.1；LongCat 2.0 與 LongCat Flash Lite 列於名單但無綜合分數，LongCat-2.5 未列入"
+  - key: aa-lc20
+    title: "LongCat 2.0 - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/longcat-2-0"
+    type: leaderboard
+    lang: en
+    accessed: "2026-11-13"
+    note: "綜合智慧指數為空值；v5 子項 Terminal-Bench 4.0 為 0%、AA-Briefcase Elo 739.73；同頁資料中 GLM-5.3（max）與 DeepSeek V4.1 Flash 1017（max）的 Terminal-Bench 4.0 分別約 41.9% 與 33.8%"
+  - key: aa-v5-article
+    title: "Announcing Artificial Analysis Intelligence Index v5"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5"
+    type: leaderboard
+    lang: en
+    published: "2026-10-27"
+    accessed: "2026-11-13"
+  - key: arena-text
+    title: "Text Arena Leaderboard"
+    publisher: "Arena (LMArena)"
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    accessed: "2026-11-13"
+    note: "lmarena.ai 轉址至 arena.ai；頁面日期 2026-11-11，421 個模型、9,122,174 票"
+lastVerified: "2026-11-13"
+editorial:
+  status: fact-checked
+  author: mdl-meituan-longcat
+  checkedBy: "check-mdl-meituan-longcat"
+  checkedOn: "2026-11-13"
+---
+
+## 系列概覽
+
+LongCat（龍貓）是<CompanyChip id="meituan">美團（Meituan）</CompanyChip>自研的大型語言模型家族。外送與在地生活平台跨界做基礎模型，美團選擇的路線是「規模大、權重全開放」：2025-08-29 發表並同步開源總參數 5,600 億的<Term id="moe">混合專家（MoE）</Term>模型 LongCat-Flash-Chat，9 月 5 日開放 API 平台<Cite k="lc-changelog" /><Cite k="lc-flash-report" />。之後一年陸續推出推理版 Flash-Thinking、全模態 Flash-Omni、輕量版 Flash-Lite、Lean4 定理證明專用的 Flash-Prover，以及原生多模態研究模型 LongCat-Next，主力模型幾乎都以 MIT 授權開放<Term id="open-weights">權重</Term><Cite k="hf-org" />。
+
+2026 年起 LongCat 改走兆級路線。4 月 20 日開放 LongCat-2.0-Preview 限量測試；5 月 29 日為了集中資源，一次停止 Flash-Chat、Flash-Thinking、Flash-Lite 等 6 個舊模型的 API 服務；6 月 30 日正式推出總參數 1.6 兆的 LongCat-2.0 並開始收費<Cite k="lc-changelog" />。9 月 25 日上線的 LongCat-2.5-Preview 新增圖片理解，11 月 2 日推出正式版 LongCat-2.5，權重同樣以 MIT 授權放上 Hugging Face<Cite k="lc-changelog" /><Cite k="hf-lc25" />。截至 2026-11-13，API 文件列出的模型只剩 LongCat-2.5 一個<Cite k="lc-quickstart" />。
+
+同一個團隊也開源影片生成 LongCat-Video、圖像生成 LongCat-Image、語音合成 LongCat-AudioDiT 與數位人 LongCat-Video-Avatar 等模型<Cite k="hf-org" />，本頁只追蹤語言模型。
+
+## 特性分析
+
+- **依 token 調整算力的 MoE**：Flash 系列總參數 5,600 億，以「零計算專家」讓不重要的 token 少用算力，每個 token 啟用 186 億到 313 億參數（平均約 270 億）；再以 ScMoE 設計讓運算與通訊重疊，官方稱推論速度逾每秒 100 tokens<Cite k="hf-flash-chat" />。
+- **用嵌入表取代部分專家**：Flash-Lite 把 300 多億參數放進 N-gram 嵌入表，總參數 685 億、每次只啟用約 30 億，官方稱比同等參數的純 MoE 更好也更快；LongCat-2.0 沿用這個設計，內含 1,350 億 N-gram 嵌入參數<Cite k="hf-lite" /><Cite k="hf-lc20" />。
+- **LongCat 稀疏注意力（LSA）**：以 <ModelChip id="deepseek">DeepSeek</ModelChip> 的 DSA 為基礎改良的<Term id="sparse-attention">稀疏注意力</Term>，加入串流友善索引、相鄰層共用索引與先粗後細的兩段式篩選，用來壓低百萬 token 長上下文的成本。LongCat-2.0 首度採用，並以數千億 tokens 的 1M 上下文資料訓練；7 月底的 Flash-Lite-Sparse 把同一套機制放進輕量模型<Cite k="hf-lc20" /><Cite k="hf-lite-sparse" />。
+- **把影像變成 token**：LongCat-2.5 沿用 LongCat-Next 的做法，以殘差向量量化把原生解析度的影像特徵轉成多層離散 token，讓主幹模型用處理文字的方式處理圖片，屬於<Term id="multimodal">多模態</Term>模型中較少見的「離散化」路線；API 可同時輸入圖片與影片<Cite k="lc25-blog" /><Cite k="hf-next" /><Cite k="lc-vision" />。
+- **長程 Agent 訓練**：LongCat-2.5 把 GitHub PR 與內部工程任務自動轉成可驗證的訓練環境，也把真實 <Term id="agent">Agent</Term> 的失敗軌跡改寫成訓練題，以大規模<Term id="reinforcement-learning">強化學習</Term>提升完整專案開發能力；另由 Agent、推理、互動三組專家模型以<Term id="distillation">蒸餾</Term>方式教學生模型<Cite k="lc25-blog" />。
+- **國產算力**：官方稱 LongCat-2.0 的訓練與大規模部署全部建立在 AI ASIC 超節點上；LongCat-2.5 的長上下文訓練在單顆記憶體不到 80 GB 的國產 AI 加速器上完成，並把專家權重與活化值都<Term id="quantization">量化</Term>為 4 位元（W4A4），在國產加速器上以原生 INT4 推論。兩者都沒有具名晶片供應商<Cite k="hf-lc20" /><Cite k="lc25-blog" /><Cite k="hf-lc25" />。
+- **價格與介面**：LongCat-2.5 的 API 限時優惠價為每百萬 tokens 輸入 0.30、輸出 1.20 美元，快取命中輸入 0.006 美元，與 LongCat-2.0 相同，官方沒有列出原價；上下文 1,048,576 tokens、單次最多輸出 262,144 tokens，並同時相容 OpenAI 與 Anthropic 的 API 格式<Cite k="lc-pricing" /><Cite k="lc-price20" /><Cite k="lc-params" />。
+
+## 適合與不適合的用途
+
+**適合**：成本敏感、需要大量呼叫的程式開發與長程 Agent 流程，官方文件提供 Claude Code、Codex、OpenCode 等工具的接法<Cite k="lc-quickstart" />；需要可商用、可微調的 MIT 授權兆級權重的研究與企業團隊；要看截圖、圖表或影片再寫程式的視覺程式設計，以及官方強調的創意設計與 3D 任務<Cite k="lc25-blog" />。資源有限時，可考慮總參數約 690 億、每次只啟用約 30 億參數的 Flash-Lite-Sparse<Cite k="hf-lite-sparse" />。
+
+**不適合**：需要長期穩定介面的正式系統。LongCat 的 API 汰換很快，2026-05-29 一次停用 6 個模型，而 2026-11-13 的 API 文件只剩 LongCat-2.5 可用，整合時要預留遷移成本<Cite k="lc-changelog" /><Cite k="lc-quickstart" />。現行價格標示為限時優惠，長期成本不確定；中國大陸用戶儲值或購買資源包前，須完成實名或企業認證<Cite k="lc-pricing" /><Cite k="lc-faq" />。想自行部署 LongCat-2.5 的團隊也要注意，模型卡目前只提供 <Term id="npu">NPU</Term> 平台的部署說明，1.6 兆參數的硬體門檻很高<Cite k="hf-lc25" />。
+
+## 版本演進
+
+| 版本 | 時間 | 重點 |
+|---|---|---|
+| LongCat-Flash-Chat | 2025-08-29 | 560B MoE、平均啟用約 27B，MIT；API 已停用 |
+| LongCat-Flash-Thinking | 2025-09-22 | 推理模型，強化形式化定理證明；API 已停用 |
+| LongCat-Flash-Omni | 2025-10-31 | 全模態即時影音互動；升級版 API 已停用 |
+| LongCat-Flash-Thinking-2601 | 2026-01-14 | 多環境 Agent 強化學習、Heavy Thinking 模式；API 已停用 |
+| LongCat-Flash-Lite | 2026-02-05 | 68.5B、啟用約 3B，N-gram 嵌入表；API 已停用 |
+| LongCat-Flash-Prover／LongCat-Next | 2026-03 | Lean4 定理證明；離散 token 原生多模態 |
+| LongCat-2.0 | 2026-06-30 | 1.6 兆參數、1M 上下文、LSA，開始收費 |
+| LongCat-Flash-Lite-Sparse | 2026-07-31 | 輕量版改用 LSA，原生 1M 上下文 |
+| LongCat-2.5 | 2026-11-02 | 原生視覺、長程 Agent 強化學習、W4A4 |
+
+一年多之間，LongCat 從 5,600 億參數的對話模型走到 1.6 兆參數的多模態 Agent 模型，啟用參數也由平均約 270 億增加到約 480 億<Cite k="hf-flash-chat" /><Cite k="hf-lc25" />。商業模式同步改變：2026-06-30 以前 API 平台沒有收費機制（2.0-Preview 採每日 500 萬 tokens 的免費額度），LongCat-2.0 上線時才推出按量計費與 30 天有效的 Token 資源包<Cite k="lc-changelog" />。Flash-Omni 的 Hugging Face 儲存庫建立於 2025-10-23，表中以技術報告上傳 arXiv 的日期為準<Cite k="hf-omni" />。
+
+## 評測解讀
+
+Artificial Analysis（AA）在 2026-10-27 把綜合智慧指數改版為 v5（11 月起為 v5.0.1）：新增 2 項評測、升級 3 項、移除 3 項並重訂權重，六成權重改由不公開測試集或不公開答案的評測組成，分數不能與改版前的 v4 互比<Cite k="aa-v5-article" />。截至 2026-11-13，AA 名單上列有 LongCat 2.0 與 LongCat Flash Lite，但都還沒有 v5 綜合分數，LongCat-2.5 則尚未列入；本系列在本站也沒有 v4 分數。因此本頁的能力座標是編輯估計值，以原廠表格中與 LongCat-2.5 相近的 <ModelChip id="zhipu-glm">GLM-5.3</ModelChip>（Max 推理強度，v5.0.1 為 32 分）與 DeepSeek V4.1 Flash 1017（Max 推理強度，33 分）為錨點，再保守下修<Cite k="aa-lb" />。
+
+下修的理由有兩個。第一，LongCat-2.5 的所有成績都是原廠自測，例如 Terminal-Bench 2.1 為 88.4%、4.0 版為 38.5%，使用工具的 HLE 為 63.1%<Cite k="hf-lc25" />。第二，AA 已跑完 LongCat 2.0 的部分 v5 子項，其中 Terminal-Bench 4.0 為 0%，與原廠表格中的 3.0% 相近；同一測試 AA 量到 GLM-5.3（max）約 42%、DeepSeek V4.1 Flash 1017（max）約 34%，可見前一代在這項新評測上明顯落後同級<Cite k="aa-lc20" /><Cite k="hf-lc25" />。原廠表格顯示 2.5 在 Terminal-Bench 4.0 由 3.0% 大幅進步到 38.5%，這個跳幅是否成立，要等 AA 等第三方實測確認。
+
+解讀時還要注意三點。其一，同一評測的不同版本落差很大：LongCat-2.5 的 Terminal-Bench 2.1 與 4.0 相差近 50 個百分點，引用時要寫明版本。其二，原廠表格混用自家評測（LongCat AppDev、LongCatClawBench）與剛推出的新<Term id="benchmark">評測</Term>，對照模型的分數有些是引用他人報告、有些是自測，不能直接排名。其三，Arena 文字榜（頁面日期 2026-11-11，共 421 個模型）只收錄第一代 Flash-Chat：已停用的 API 實驗版 LongCat-Flash-Chat Exp（2602）為 1,436 分、排第 104，MIT 原版為 1,401 分、排第 167，2.0 以後的新世代模型還沒有<Term id="elo-rating">Elo 分數</Term><Cite k="arena-text" />。各榜單每週變動，引用時務必附上日期。

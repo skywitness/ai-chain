@@ -5,16 +5,18 @@ kind: "llm"
 lab: "deepseek"
 labName: "DeepSeek（深度求索）"
 origin: "CN"
-summary: "深度求索（DeepSeek）的開放權重語言模型系列，近年版本皆採 MIT 授權。2025 年初以 R1 推理模型受到全球關注，之後以 V3.1、V3.2 走向混合推理與稀疏注意力；2026 年 4 月推出 V4（Pro 1.6 兆參數、Flash 2,840 億參數，皆支援 100 萬 tokens 上下文），9 月再推出原生支援影像的 V4.1-Flash。官方 API 尖峰價每百萬 tokens 輸入 0.30、輸出 1.20 美元，離峰再打五折，約為 Kimi K3 的十分之一。"
+summary: "深度求索（DeepSeek）的開放權重語言模型系列，近年版本皆採 MIT 授權。2025 年初以 R1 推理模型受到全球關注，之後以 V3.1、V3.2 走向混合推理與稀疏注意力；2026 年 4 月推出 V4（Pro 1.6 兆參數、Flash 2,840 億參數，皆支援 100 萬 tokens 上下文），9 月推出原生支援影像的 V4.1-Flash，10 月 17 日再小幅升級為 V4.1-Flash-1017，價格不變。官方 API 尖峰價每百萬 tokens 輸入 0.30、輸出 1.20 美元，離峰再打五折。"
 strengths:
   - "MIT 授權、權重完整公開，可商用、微調與自行部署，比 Kimi K3、MiniMax-M3 的自訂授權更寬鬆"
-  - "價格低且有離峰半價：V4.1-Flash 尖峰每百萬 tokens 輸入 0.30、輸出 1.20 美元，快取命中僅 0.006 美元"
+  - "價格低且有離峰半價：V4.1-Flash-1017 尖峰每百萬 tokens 輸入 0.30、輸出 1.20 美元，快取命中僅 0.006 美元"
   - "長上下文效率高：V4 起官方服務標配 100 萬 tokens；V4.1-Flash 的 KV Cache 需求只有前代的約四分之一"
-  - "Agent 程式能力進步快：V4.1-Flash 官方 Terminal-Bench 2.1 為 90.6%；AA 量測的輸出速度約為 V4-Pro 的兩倍"
+  - "開放權重中的能力前段班：AA 綜合智慧指數 v5.0.1 中，V4.1-Flash-1017（Max）為 33，在 AA 標示為開放權重的模型中僅次於 Kimi K3.1 Pro"
+  - "Agent 程式能力持續進步：1017 版官方 Terminal-Bench 4.0 為 42.3%（Claude Code 框架），AA 獨立測得 33.8%；AA 量測的輸出速度約為 V4-Pro 的兩倍"
 weaknesses:
-  - "AA 綜合智慧指數 V4.1-Flash 為 39，低於開放權重的 MiMo-V2.6-Pro（46）、GLM-5.3（45）與 Kimi K3（44）"
-  - "AA 知識可靠度測驗（Omniscience）V4.1-Flash 為 −5.3 分，幻覺率約 96%，不確定時仍傾向作答，事實型內容需另行查證"
-  - "版本更替快：V4-Flash 正式版上線約 6 週即退役，deepseek-chat 等舊 API 名稱已停用，整合者需密切追蹤變更"
+  - "與封閉旗艦仍有差距：AA 綜合智慧指數 v5.0.1 中，V4.1-Flash-1017 為 33，Claude Fable 5.2 為 65、Gemini 4 Carbon 為 60"
+  - "AA 知識可靠度測驗（Omniscience v1.1）中，1017 版答對率約 40%，答不出正確答案時約 64% 仍給出錯誤答案，事實型內容需另行查證"
+  - "輸出冗長：AA 跑完整套 v5 指數時，1017 版共產生約 1.74 億個輸出 tokens，高於同級開放權重模型中位數的約 1.06 億，每項任務平均耗時也略高於同級中位數"
+  - "版本更替快：V4.1-Flash 9 月版上線約 5 週就由 1017 版取代，V4-Flash 正式版約 6 週即退役，deepseek-chat 等舊 API 名稱已停用，整合者需密切追蹤變更"
   - "V4-Pro 不支援影像輸入；尖峰時段價格是離峰的兩倍"
 bestFor:
   - "成本敏感、可排程到離峰時段的大量 API 呼叫與批次處理"
@@ -22,17 +24,158 @@ bestFor:
   - "需要寬鬆授權、可自行部署與微調的企業與研究單位"
   - "數學、競賽程式等重推理任務"
 positioning:
-  capability: 39
+  capability: 33
   costIndex: 31
   openness: 0.8
   method: "computed"
-  asOf: "2026-10-06"
-  note: "capability 取 DeepSeek V4.1 Flash（Max）的 AA 綜合智慧指數 v4.3（39.5）；costIndex 以官方尖峰價（輸入 0.30、輸出 1.20 美元）3:1 混合約 0.525 美元／百萬 tokens，依對數換算（0.05 美元 = 0、100 美元 = 100）得 31，離峰價則約 22；MIT 授權開放權重但未公開訓練資料，openness = 0.8。"
+  asOf: "2026-11-13"
+  note: "capability 取旗艦 DeepSeek V4.1 Flash 1017 的 AA 綜合智慧指數 v5.0.1（Max 推理強度）= 33（2026-11-13 讀取，原始值 32.59）。costIndex 以官方尖峰價 3：1 混合價格（(3×0.30 + 1.20)÷4 = 0.525 美元／百萬 tokens）對數換算（0.05 美元 → 0、100 美元 → 100）得 30.9，取 31；離峰價（0.2625 美元）換算約 22。openness 為 0.8（MIT 授權開放權重，未公開訓練資料）。"
 versions:
-  - id: "deepseek-v4-1-flash"
-    name: "DeepSeek-V4.1-Flash"
-    released: "2026-09-10"
+  - id: "deepseek-v4-1-flash-1017"
+    name: "DeepSeek-V4.1-Flash（1017）"
+    released: "2026-10-17"
     status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "MIT"
+    architecture: "moe"
+    params:
+      totalB: 552
+      activeB: 16
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "text"
+    contextTokens: 1000000
+    reasoning: "hybrid"
+    availability:
+      - "api"
+      - "chat-app"
+      - "self-host"
+    pricing:
+      - asOf: "2026-11-13"
+        inputPerMTok: 0.3
+        outputPerMTok: 1.2
+        cachedInputPerMTok: 0.006
+        currency: "USD"
+        tierNote: "尖峰時段（平日 UTC 01:00–04:00、06:00–10:00，不含中國國定假日）；API 名稱 deepseek-flash，價格與 9 月版相同"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "Models & Pricing"
+          publisher: "DeepSeek API Docs"
+          url: "https://api-docs.deepseek.com/quick_start/pricing"
+          type: "docs"
+      - asOf: "2026-11-13"
+        inputPerMTok: 0.15
+        outputPerMTok: 0.6
+        cachedInputPerMTok: 0.003
+        currency: "USD"
+        tierNote: "離峰時段（其餘時段、週末與中國國定假日，價格為尖峰的一半）"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "Models & Pricing"
+          publisher: "DeepSeek API Docs"
+          url: "https://api-docs.deepseek.com/quick_start/pricing"
+          type: "docs"
+    benchmarks:
+      - benchmark: "aa-intelligence-index-v5"
+        score: 33
+        setting: "v5.0.1，Max 推理強度"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v5.0.1)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-11-13"
+          note: "Intelligence Index v5.0.1; DeepSeek V4.1 Flash 1017 (max); raw 32.59"
+      - benchmark: "aa-intelligence-index-v5"
+        score: 29
+        setting: "v5.0.1，High 推理強度"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v5.0.1)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-11-13"
+          note: "Intelligence Index v5.0.1; DeepSeek V4.1 Flash 1017 (high); raw 28.64"
+      - benchmark: "aa-intelligence-index-v5"
+        score: 19
+        setting: "v5.0.1，不推理（Non-reasoning）"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v5.0.1)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-11-13"
+          note: "Intelligence Index v5.0.1; DeepSeek V4.1 Flash 1017 (non-reasoning); raw 18.51"
+      - benchmark: "hle"
+        score: 42.6
+        setting: "全集、無工具；純文字子集為 44.0（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-10-17"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "DeepSeek-V4.1-Flash-1017 (model card)"
+          publisher: "DeepSeek (Hugging Face)"
+          url: "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017"
+          type: "docs"
+          published: "2026-10-17"
+      - benchmark: "terminal-bench-4"
+        score: 42.3
+        setting: "Terminal-Bench 4.0，Claude Code 框架（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-10-17"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "DeepSeek-V4.1-Flash-1017 (model card)"
+          publisher: "DeepSeek (Hugging Face)"
+          url: "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017"
+          type: "docs"
+          published: "2026-10-17"
+      - benchmark: "hle"
+        score: 43.3
+        setting: "AA 獨立測試，Max"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "DeepSeek V4.1 Flash 1017 (max) - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/deepseek-v4-1-flash-1017"
+          type: "leaderboard"
+      - benchmark: "terminal-bench-4"
+        score: 33.8
+        setting: "Terminal-Bench 4.0，AA 獨立測試，Max"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "DeepSeek V4.1 Flash 1017 (max) - Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/deepseek-v4-1-flash-1017"
+          type: "leaderboard"
+    notes: "官方模型卡稱之為 V4.1-Flash 的小幅更新，Hugging Face 上的架構設定檔（config.json）與 9 月版相同。官方稱各項評測進步，同時縮短任務執行時間與輸出長度，並針對 DeepSeek Harness、騰訊 CodeBuddy 與 WorkBuddy 等平台最佳化（官方建議 DeepSeek Harness 升級到 0.2.1-rc.1 以上）。2026-10-17 起 API 名稱 deepseek-flash 與官方網頁、App 都改用本版；依 2026-11-13 的定價頁，舊名稱 deepseek-v4-flash 與 deepseek-v4-flash-vision-exp 也由本版回應並以 Flash 價格計費。最大輸出 384K tokens。截至 2026-11-13，LMArena 文字榜前 152 名尚未出現本版。"
+  - id: "deepseek-v4-1-flash"
+    name: "DeepSeek-V4.1-Flash（0910）"
+    released: "2026-09-10"
+    status: "retired"
     tier: "flagship"
     weights: "open-weights"
     license: "MIT"
@@ -119,7 +262,7 @@ versions:
           url: "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash"
           type: "docs"
           published: "2026-09-10"
-      - benchmark: "terminal-bench"
+      - benchmark: "terminal-bench-4"
         score: 31.2
         setting: "Terminal-Bench 4.0，DeepSeek Harness minimal 模式，max（官方模型卡）"
         reportedBy: "lab"
@@ -156,7 +299,7 @@ versions:
           publisher: "Artificial Analysis"
           url: "https://artificialanalysis.ai/models/deepseek-v4-1-flash"
           type: "leaderboard"
-      - benchmark: "terminal-bench"
+      - benchmark: "terminal-bench-4"
         score: 26.8
         setting: "Terminal-Bench 4.0，AA 獨立測試，Max"
         reportedBy: "third-party"
@@ -169,20 +312,20 @@ versions:
           url: "https://artificialanalysis.ai/models/deepseek-v4-1-flash"
           type: "leaderboard"
       - benchmark: "lmarena-text"
-        score: 1474
-        setting: "deepseek-v4.1-flash-max，第 38 名，±7"
+        score: 1475
+        setting: "DeepSeek-V4.1-Flash-20260910 (Max)，2026-11-11 榜單第 38 名，±6，未標 Preliminary"
         reportedBy: "leaderboard"
-        date: "2026-10-02"
+        date: "2026-11-11"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Text Arena Leaderboard (Overall)"
           publisher: "LMArena"
           url: "https://arena.ai/leaderboard/text"
           type: "leaderboard"
-          published: "2026-10-02"
-          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
-    notes: "新的因果編碼器—解碼器（CED）架構：40 層 Transformer 分為 20 層編碼器與 20 層解碼器，輸入每 token 啟用 80 億參數、輸出啟用 160 億；552B 為主幹參數，另有約 1,960 億參數的 Engram 條件記憶以查表方式稀疏存取。以 45 兆 tokens 多模態語料從頭訓練，推理強度可在 1–100 間連續調整。官方稱 KV Cache 只需前代的 1/4（HBM）與 1/8（SSD）。最大輸出 384K tokens。舊名稱 deepseek-v4-flash 與 deepseek-v4-flash-vision-exp 暫時導向本模型。"
+          published: "2026-11-11"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型"
+    notes: "新的因果編碼器—解碼器（CED）架構：40 層 Transformer 分為 20 層編碼器與 20 層解碼器，輸入每 token 啟用 80 億參數、輸出啟用 160 億；552B 為主幹參數，另有約 1,960 億參數的 Engram 條件記憶以查表方式稀疏存取。以 45 兆 tokens 多模態語料從頭訓練，推理強度可在 1–100 間連續調整。官方稱 KV Cache 只需前代的 1/4（HBM）與 1/8（SSD）。最大輸出 384K tokens。發布時舊名稱 deepseek-v4-flash 與 deepseek-v4-flash-vision-exp 暫時導向本模型。2026-10-17 由 1017 版取代：API（deepseek-flash）與官方網頁、App 都改用新版，本版權重仍可在 Hugging Face 下載；AA 已把本版列為舊版，未以 v5 指數評測。"
   - id: "deepseek-v4-pro-0813"
     name: "DeepSeek-V4-Pro（0813 正式版）"
     released: "2026-08-13"
@@ -206,20 +349,20 @@ versions:
       - "chat-app"
       - "self-host"
     pricing:
-      - asOf: "2026-10-06"
+      - asOf: "2026-11-13"
         inputPerMTok: 1.32
         outputPerMTok: 3.96
         cachedInputPerMTok: 0.044
         currency: "USD"
-        tierNote: "尖峰時段（平日 UTC 01:00–04:00、06:00–10:00，不含中國國定假日）；API 名稱 deepseek-v4-pro"
+        tierNote: "尖峰時段（平日 UTC 01:00–04:00、06:00–10:00，不含中國國定假日）；API 名稱 deepseek-v4-pro，2026-10-06 起價格未變"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Models & Pricing"
           publisher: "DeepSeek API Docs"
           url: "https://api-docs.deepseek.com/quick_start/pricing"
           type: "docs"
-      - asOf: "2026-10-06"
+      - asOf: "2026-11-13"
         inputPerMTok: 0.66
         outputPerMTok: 1.98
         cachedInputPerMTok: 0.022
@@ -227,7 +370,7 @@ versions:
         tierNote: "離峰時段（其餘時段、週末與中國國定假日，價格為尖峰的一半）"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Models & Pricing"
           publisher: "DeepSeek API Docs"
           url: "https://api-docs.deepseek.com/quick_start/pricing"
@@ -257,6 +400,32 @@ versions:
           publisher: "DeepSeek API Docs"
           url: "https://api-docs.deepseek.com/updates/"
           type: "docs"
+      - benchmark: "aa-intelligence-index-v5"
+        score: 23
+        setting: "v5.0.1，Max 推理強度"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v5.0.1)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-11-13"
+          note: "Intelligence Index v5.0.1; DeepSeek V4 Pro 0813 (max); raw 23.06"
+      - benchmark: "aa-intelligence-index-v5"
+        score: 13
+        setting: "v5.0.1，不推理（Non-reasoning）"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source:
+          title: "LLM Leaderboard (Intelligence Index v5.0.1)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-11-13"
+          note: "Intelligence Index v5.0.1; DeepSeek V4 Pro 0813 (non-reasoning); raw 12.57"
       - benchmark: "aa-intelligence-index"
         score: 36
         setting: "v4.3，DeepSeek V4 Pro 0813（Max）"
@@ -307,19 +476,19 @@ versions:
           type: "leaderboard"
       - benchmark: "lmarena-text"
         score: 1464
-        setting: "deepseek-v4-pro-high-20260813，第 56 名，±7"
+        setting: "DeepSeek-V4-Pro (High, 20260813)，2026-11-11 榜單第 60 名，±7，未標 Preliminary"
         reportedBy: "leaderboard"
-        date: "2026-10-02"
+        date: "2026-11-11"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Text Arena Leaderboard (Overall)"
           publisher: "LMArena"
           url: "https://arena.ai/leaderboard/text"
           type: "leaderboard"
-          published: "2026-10-02"
-          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
-    notes: "正式版強化 Agent 能力，並新增 low／high／max 三段思考強度與 OpenAI Responses API 支援。不支援影像輸入。V4.1-Flash 發布時官方宣布逐步淘汰 V4-Pro，原訂 2026-09-14 起把 deepseek-v4-pro 請求導向 V4.1-Flash、直到 V4.1-Pro 推出；之後更新紀錄改稱應使用者需求，9 月 14 日後繼續提供 V4-Pro，計費方式不變，如有變動另行公告。"
+          published: "2026-11-11"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型"
+    notes: "正式版強化 Agent 能力，並新增 low／high／max 三段思考強度與 OpenAI Responses API 支援。不支援影像輸入。V4.1-Flash 發布時官方宣布逐步淘汰 V4-Pro，原訂 2026-09-14 起把 deepseek-v4-pro 請求導向 V4.1-Flash、直到 V4.1-Pro 推出；之後更新紀錄改稱應使用者需求，9 月 14 日後繼續提供 V4-Pro，計費方式不變，如有變動另行公告。截至 2026-11-13，官方定價頁仍以 deepseek-v4-pro 提供本版，更新紀錄尚未出現 V4.1-Pro。"
   - id: "deepseek-v4-flash-vision-exp"
     name: "DeepSeek-V4-Flash-Vision-Exp"
     released: "2026-08-21"
@@ -527,18 +696,18 @@ versions:
           type: "leaderboard"
       - benchmark: "lmarena-text"
         score: 1455
-        setting: "deepseek-v4-pro-high-preview，第 72 名，±4"
+        setting: "DeepSeek-V4-Pro Preview (High)，2026-11-11 榜單第 75 名，±4，未標 Preliminary"
         reportedBy: "leaderboard"
-        date: "2026-10-02"
+        date: "2026-11-11"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Text Arena Leaderboard (Overall)"
           publisher: "LMArena"
           url: "https://arena.ai/leaderboard/text"
           type: "leaderboard"
-          published: "2026-10-02"
-          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+          published: "2026-11-11"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型"
     notes: "混合注意力（CSA 壓縮稀疏注意力＋HCA 重度壓縮注意力）、mHC 與 Muon 最佳化器；預訓練逾 32 兆 tokens，MoE 專家權重採 FP4、其餘多為 FP8。官方稱在 1M 上下文下，單 token 推論 FLOPs 只有 V3.2 的 27%、KV Cache 只有 10%。2026-08-13 由正式版取代。"
   - id: "deepseek-v4-flash-preview"
     name: "DeepSeek-V4-Flash（預覽版）"
@@ -616,19 +785,19 @@ versions:
           type: "docs"
           published: "2026-04-24"
       - benchmark: "lmarena-text"
-        score: 1438
-        setting: "deepseek-v4-flash-high-preview，第 98 名，±4"
+        score: 1439
+        setting: "DeepSeek-V4-Flash Preview (High)，2026-11-11 榜單第 100 名，±4，未標 Preliminary"
         reportedBy: "leaderboard"
-        date: "2026-10-02"
+        date: "2026-11-11"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Text Arena Leaderboard (Overall)"
           publisher: "LMArena"
           url: "https://arena.ai/leaderboard/text"
           type: "leaderboard"
-          published: "2026-10-02"
-          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+          published: "2026-11-11"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型"
     notes: "上線同時接手 deepseek-chat 與 deepseek-reasoner 兩個舊 API 名稱（分別對應非思考與思考模式），兩者已於 2026-07-24 停用。2026-07-31 由 0731 正式版取代。"
   - id: "deepseek-v3-2"
     name: "DeepSeek-V3.2"
@@ -667,18 +836,18 @@ versions:
           type: "leaderboard"
       - benchmark: "lmarena-text"
         score: 1423
-        setting: "deepseek-v3.2-thinking，第 125 名，±4"
+        setting: "DeepSeek-V3.2 (Thinking)，2026-11-11 榜單第 129 名，±4，未標 Preliminary"
         reportedBy: "leaderboard"
-        date: "2026-10-02"
+        date: "2026-11-11"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Text Arena Leaderboard (Overall)"
           publisher: "LMArena"
           url: "https://arena.ai/leaderboard/text"
           type: "leaderboard"
-          published: "2026-10-02"
-          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+          published: "2026-11-11"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型"
     notes: "V3.2-Exp 的正式後繼版，採 DeepSeek Sparse Attention（DSA），也是 DeepSeek 第一個把思考過程融入工具使用的模型；官方稱合成超過 1,800 個環境、8.5 萬條複雜指令做 Agent 訓練。2026-04-24 起 API 改由 V4-Flash 承接。"
   - id: "deepseek-v3-2-speciale"
     name: "DeepSeek-V3.2-Speciale"
@@ -871,20 +1040,20 @@ versions:
           type: "leaderboard"
       - benchmark: "lmarena-text"
         score: 1422
-        setting: "deepseek-r1-0528，第 128 名，±6"
+        setting: "DeepSeek-R1 (0528)，2026-11-11 榜單第 132 名，±6，未標 Preliminary"
         reportedBy: "leaderboard"
-        date: "2026-10-02"
+        date: "2026-11-11"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Text Arena Leaderboard (Overall)"
           publisher: "LMArena"
           url: "https://arena.ai/leaderboard/text"
           type: "leaderboard"
-          published: "2026-10-02"
-          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+          published: "2026-11-11"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型。共用快照未收錄第 132 列，本列為 2026-11-13 即時頁面讀數"
     notes: "2025-01-20 推出的 R1 的更新版，官方稱幻覺明顯減少並新增 JSON 輸出與函式呼叫；2025-08-21 起 deepseek-reasoner 改由 V3.1 承接。"
-flagshipVersion: "deepseek-v4-1-flash"
+flagshipVersion: "deepseek-v4-1-flash-1017"
 relatedLearn:
   - "open-vs-closed-models"
   - "mixture-of-experts"
@@ -906,19 +1075,35 @@ glossary:
   - "elo-rating"
 sources:
   - lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
     key: "ds-changelog"
     title: "Change Log"
     publisher: "DeepSeek API Docs"
     url: "https://api-docs.deepseek.com/updates/"
     type: "docs"
   - lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
     key: "ds-pricing"
     title: "Models & Pricing"
     publisher: "DeepSeek API Docs"
     url: "https://api-docs.deepseek.com/quick_start/pricing"
     type: "docs"
+  - lang: "en"
+    accessed: "2026-11-13"
+    key: "ds-v41-1017-news"
+    title: "DeepSeek-V4.1-Flash-1017: Wish-Driven Programming Made Real"
+    publisher: "DeepSeek"
+    url: "https://api-docs.deepseek.com/news/news261017"
+    type: "press-release"
+    published: "2026-10-17"
+  - lang: "en"
+    accessed: "2026-11-13"
+    key: "hf-v41-flash-1017"
+    title: "DeepSeek-V4.1-Flash-1017 (model card)"
+    publisher: "DeepSeek (Hugging Face)"
+    url: "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017"
+    type: "docs"
+    published: "2026-10-17"
   - lang: "en"
     accessed: "2026-10-06"
     key: "ds-v41-news"
@@ -984,19 +1169,45 @@ sources:
     type: "docs"
     published: "2025-12-01"
   - lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
     key: "aa-ds-v41-flash"
     title: "DeepSeek V4.1 Flash (Max) Intelligence, Performance & Price Analysis"
     publisher: "Artificial Analysis"
     url: "https://artificialanalysis.ai/models/deepseek-v4-1-flash"
     type: "leaderboard"
+    note: "2026-11-13 再讀取時，AA 已把本版列為舊版（由 1017 版取代），未以 v5 指數評測"
   - lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
+    key: "aa-ds-v41-flash-1017"
+    title: "DeepSeek V4.1 Flash 1017 (max) - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/deepseek-v4-1-flash-1017"
+    type: "leaderboard"
+    note: "Intelligence Index v5.0.1；輸出速度為 DeepSeek 官方 API 的滾動量測，引用 2026-11-13 讀數"
+  - lang: "en"
+    accessed: "2026-11-13"
     key: "aa-ds-v4-pro"
     title: "DeepSeek V4 Pro 0813 (Max) Intelligence, Performance & Price Analysis"
     publisher: "Artificial Analysis"
     url: "https://artificialanalysis.ai/models/deepseek-v4-pro"
     type: "leaderboard"
+    note: "Intelligence Index v5.0.1；輸出速度引用 2026-11-13 讀數"
+  - lang: "en"
+    accessed: "2026-11-13"
+    key: "aa-leaderboard-v5"
+    title: "LLM Leaderboard (Intelligence Index v5.0.1)"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    note: "AA 表示共 111 個模型以 v5.0.1 評測，其中 43 個為開放權重"
+  - lang: "en"
+    accessed: "2026-11-13"
+    key: "aa-v5-article"
+    title: "Announcing Artificial Analysis Intelligence Index v5"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5"
+    type: "docs"
+    published: "2026-10-27"
   - lang: "en"
     accessed: "2026-10-17"
     key: "aa-leaderboard"
@@ -1006,14 +1217,14 @@ sources:
     type: "leaderboard"
     note: "綜合指數與各項分數於 2026-10-06 與 2026-10-17 讀取時一致；輸出速度為滾動中位數，引用 2026-10-17 讀數"
   - lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
     key: "lmarena-text"
     title: "Text Arena Leaderboard (Overall)"
     publisher: "LMArena"
     url: "https://arena.ai/leaderboard/text"
     type: "leaderboard"
-    published: "2026-10-02"
-    note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+    published: "2026-11-11"
+    note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型"
   - lang: "en"
     accessed: "2026-10-06"
     key: "anthropic-sep-2026"
@@ -1023,36 +1234,39 @@ sources:
     type: "other"
     published: "2026-09-10"
     note: "Anthropic 單方面的威脅情報報告"
-lastVerified: "2026-10-06"
+lastVerified: "2026-11-13"
 editorial:
   status: "fact-checked"
-  author: "models-09"
-  checkedBy: "models-09-check"
-  checkedOn: "2026-10-06"
-  notes: "查核依官方定價頁、更新紀錄、新聞稿與 Hugging Face 模型卡，AA 與 LMArena（2026-10-02 快照）逐項核對。修正：HLE 對照表混用全集與純文字子集、V4-Pro 延續服務的說明、AA 輸出速度改用可查證讀數，並移除無法回溯查證的開放權重名次。"
+  author: "mdl-deepseek"
+  checkedBy: "check-mdl-deepseek"
+  checkedOn: "2026-11-13"
+  notes: "2026-11-13 更新：新增 V4.1-Flash-1017（官方更新紀錄、新聞稿、定價頁與 Hugging Face 模型卡），9 月版改列退役；AA 綜合智慧指數 v5.0.1 與 LMArena 2026-11-11 榜單取自共用快照，並逐項在即時頁面核對；v4.3 分數保留為歷史紀錄。查核（2026-11-13）：依官方更新紀錄、新聞稿、定價頁、Hugging Face 模型卡與 config.json、AA 模型頁與排行榜頁、LMArena 即時頁面逐項核對。修正：1017 版 HLE 設定移除模型卡未載明的 Pass@1；v5 改版說明改為「大幅調整」並移除 AA 未明說的難度說法；任務耗時改為「略高於同級中位數」並附數字；R1-0528 的 LMArena 列更新為 2026-11-11 榜單；補上 Agent 評測段落的來源與 LMArena 誤差範圍說明。"
 ---
 
 ## 系列概覽
 
 DeepSeek 是 <CompanyChip id="deepseek">深度求索（DeepSeek）</CompanyChip>開發的語言模型系列，近年的權重皆以 MIT 授權公開。2025-01-20 推出的推理模型 R1 讓它一舉成名，之後更新節奏很快：2025 年 8 月的 V3.1 把思考與非思考模式合進同一個模型，12 月的 V3.2 導入稀疏注意力；2026-04-24 發布 V4 預覽版，分成 Pro 與 Flash 兩個尺寸<Cite k="ds-changelog" />。
 
-| 型號 | 總參數 | 每個 token 啟用參數 | 上下文 | 影像輸入 | 狀態（2026-10-06） |
+| 型號 | 總參數 | 每個 token 啟用參數 | 上下文 | 影像輸入 | 狀態（2026-11-13） |
 |---|---|---|---|---|---|
-| V4.1-Flash | 5,520 億（主幹） | 輸入 80 億、輸出 160 億 | 100 萬 | 支援 | 主力，API 名稱 deepseek-flash |
+| V4.1-Flash（1017） | 5,520 億（主幹） | 輸入 80 億、輸出 160 億 | 100 萬 | 支援 | 主力，API 名稱 deepseek-flash |
 | V4-Pro（0813） | 1.6 兆 | 490 億 | 100 萬 | 不支援 | 仍提供；9 月曾宣布逐步淘汰，後應使用者需求延續 |
+| V4.1-Flash（0910） | 5,520 億（主幹） | 輸入 80 億、輸出 160 億 | 100 萬 | 支援 | 2026-10-17 由 1017 版取代 |
 | V4-Flash（0731） | 2,840 億 | 130 億 | 100 萬 | 不支援 | 2026-09-10 退役 |
 
 參數取自官方模型卡<Cite k="hf-v4-pro" /><Cite k="hf-v41-flash" />。2026-09-10 推出的 V4.1-Flash 是新架構家族中最小的型號，官方稱多方測試顯示它在效能、成本、速度與總執行時間上都勝過 V4-Pro，並一度宣布逐步淘汰 V4-Pro<Cite k="ds-v41-news" />；隨後更新紀錄改稱應使用者需求，9 月 14 日後繼續提供 V4-Pro API，計費方式不變<Cite k="ds-changelog" />。
+
+2026-10-17，官方把 V4.1-Flash 升級為 V4.1-Flash-1017：API 名稱 deepseek-flash、呼叫方式與價格都不變，官方網頁與 App 也同步換成新版<Cite k="ds-changelog" />。模型卡把它定位為 V4.1-Flash 的小幅更新，權重同樣以 MIT 授權放上 Hugging Face<Cite k="hf-v41-flash-1017" />。截至 2026-11-13，官方更新紀錄還沒有出現 V4.1-Pro，定價頁上的 deepseek-v4-pro 仍對應 V4-Pro-0813<Cite k="ds-pricing" />。
 
 ## 特性分析
 
 **長上下文的成本工程。** DeepSeek 的核心路線是把 <Term id="kv-cache">KV Cache</Term> 與注意力運算壓到最低。V3.2 系列導入 DSA <Term id="sparse-attention">稀疏注意力</Term><Cite k="ds-v32exp-news" />；V4 改用壓縮稀疏注意力與重度壓縮注意力的混合設計，官方稱在 100 萬 tokens <Term id="context-window">上下文</Term>下，V4-Pro 單 token 推論運算只需 V3.2 的 27%、KV Cache 只需 10%<Cite k="hf-v4-pro" />。V4.1-Flash 再改成「因果編碼器—解碼器」架構，解碼器的全域 KV Cache 直接由編碼器最後一層的輸出投影而來，不必每層各存一份，官方稱所需 HBM 只有前代的四分之一、SSD 儲存只有八分之一<Cite k="ds-v41-news" />。
 
-**尖離峰計價。** 2026-08-16 起官方 API 改採尖峰與離峰兩種價格，離峰為尖峰的一半。依 2026-10-06 的官方定價頁，V4.1-Flash 尖峰每百萬 tokens 輸入 0.30 美元、輸出 1.20 美元，<Term id="prompt-caching">快取</Term>命中只要 0.006 美元；V4-Pro 尖峰為 1.32 與 3.96 美元<Cite k="ds-pricing" />。
+**尖離峰計價。** 2026-08-16 起官方 API 改採尖峰與離峰兩種價格，離峰為尖峰的一半。依 2026-11-13 的官方定價頁，deepseek-flash（V4.1-Flash-1017）尖峰每百萬 tokens 輸入 0.30 美元、輸出 1.20 美元，<Term id="prompt-caching">快取</Term>命中只要 0.006 美元，與 9 月版相同；V4-Pro 尖峰為 1.32 與 3.96 美元<Cite k="ds-pricing" />。2026-10-17 起，官方也把自家搜尋引擎的 Search 與 Fetch API 開放給所有開發者，每 1,000 次成功呼叫各收 0.75 美元<Cite k="ds-changelog" /><Cite k="ds-pricing" />。
 
-**混合推理與工具整合。** 自 V3.1 起，同一個模型可切換思考與非思考模式；V4 系列提供 low、high、max 三段思考強度，API 同時相容 OpenAI 與 Anthropic 格式並原生支援 Responses API，可直接接上 Claude Code、Codex、OpenCode 等程式 <Term id="agent">Agent</Term> 工具<Cite k="ds-changelog" />。
+**混合推理與工具整合。** 自 V3.1 起，同一個模型可切換思考與非思考模式；V4 系列提供 low、high、max 三段思考強度，API 同時相容 OpenAI 與 Anthropic 格式並原生支援 Responses API，可直接接上 Claude Code、Codex、OpenCode 等程式 <Term id="agent">Agent</Term> 工具<Cite k="ds-changelog" />。1017 版另針對 DeepSeek Harness、騰訊 CodeBuddy 與 WorkBuddy 等平台最佳化，官方稱它在提升評測成績的同時，也縮短了任務執行時間與輸出長度<Cite k="ds-v41-1017-news" />。
 
-**MoE 換取速度。** 整個系列都採 <Term id="moe">MoE</Term> 架構，<Term id="active-parameters">啟用參數</Term>遠小於總參數。Artificial Analysis（AA）於 2026 年 10 月中旬量測的輸出速度中位數，V4.1-Flash 約每秒 176 tokens，V4-Pro 約每秒 79 tokens，前者約為後者的兩倍；這類速度會隨服務負載變動，只宜當作相對參考<Cite k="aa-leaderboard" />。
+**MoE 換取速度，但輸出偏長。** 整個系列都採 <Term id="moe">MoE</Term> 架構，<Term id="active-parameters">啟用參數</Term>遠小於總參數。Artificial Analysis（AA）在 2026-11-13 顯示的 DeepSeek 官方 API 輸出速度，V4.1-Flash-1017 約每秒 156 tokens，V4-Pro（0813）約每秒 77 tokens，前者約為後者的兩倍；這類速度會隨服務負載變動，只宜當作相對參考<Cite k="aa-ds-v41-flash-1017" /><Cite k="aa-ds-v4-pro" />。不過輸出快不等於任務快：AA 指出 1017 版相當冗長，跑完整套 v5 指數共產生約 1.74 億個輸出 tokens，高於同級開放權重模型的中位數（約 1.06 億）；每項任務平均約 14.8 分鐘，也略高於同級模型中位數的 14.6 分鐘<Cite k="aa-ds-v41-flash-1017" />。
 
 ## 適合與不適合的用途
 
@@ -1061,13 +1275,13 @@ DeepSeek 是 <CompanyChip id="deepseek">深度求索（DeepSeek）</CompanyChip>
 - **大量、可延後的批次工作**：文件摘要、翻譯、資料標註等可排到離峰時段，成本再減半。
 - **長文件與大型程式碼庫**：100 萬 tokens 上下文加上便宜的快取命中價，適合反覆讀取同一批資料的 Agent。
 - **自架與微調**：MIT 授權沒有營收門檻或標示義務，比 <ModelChip id="moonshot-kimi" /> 與 <ModelChip id="minimax" /> 的自訂授權單純。
-- **數學與競賽程式**：V4.1-Flash 官方公布的 Codeforces 評分為 3471<Cite k="hf-v41-flash" />。
+- **數學與競賽程式**：V4.1-Flash 9 月版官方公布的 Codeforces 評分為 3471<Cite k="hf-v41-flash" />；1017 版沒有另外公布這項成績。
 
 不適合：
 
-- **需要最強綜合能力的任務**：AA 綜合智慧指數中，V4.1-Flash 為 39，低於 <ModelChip id="xiaomi-mimo" />、<ModelChip id="zhipu-glm" /> 與 Kimi 的旗艦<Cite k="aa-leaderboard" />。
-- **不容許幻覺的事實問答**：AA 的知識可靠度測驗中，V4.1-Flash 遇到不確定的題目仍傾向作答，宜搭配 <LearnLink id="rag-and-vector-search">RAG</LearnLink> 查證<Cite k="aa-ds-v41-flash" />。
-- **需要長期固定版本的系統**：同一個 API 名稱背後的模型常被直接替換，V4-Pro 也曾被宣告逐步淘汰，之後才改為延續服務<Cite k="ds-v41-news" /><Cite k="ds-changelog" />。
+- **需要最強綜合能力的任務**：AA 綜合智慧指數 v5.0.1 中，V4.1-Flash-1017 為 33，雖然在 AA 標示為開放權重的模型中僅次於 Kimi K3.1 Pro（46），但與封閉旗艦 Claude Fable 5.2（65）、Gemini 4 Carbon（60）仍有明顯差距<Cite k="aa-leaderboard-v5" />。
+- **不容許幻覺的事實問答**：AA 的知識可靠度測驗（Omniscience v1.1）中，1017 版答對率約 40%，答不出正確答案的題目約有 64% 仍給出錯誤答案，而不是表明不知道，宜搭配 <LearnLink id="rag-and-vector-search">RAG</LearnLink> 查證<Cite k="aa-ds-v41-flash-1017" />。
+- **需要長期固定版本的系統**：同一個 API 名稱背後的模型常被直接替換。V4.1-Flash 9 月版上線約 5 週就由 1017 版接手；V4-Pro 也曾被宣告逐步淘汰，之後才改為延續服務<Cite k="ds-changelog" /><Cite k="ds-v41-news" />。自行部署時可固定使用 Hugging Face 上的特定版本權重。
 - **資料治理要求嚴格的組織**：Anthropic 2026 年 9 月的報告指控 DeepSeek 等中國實驗室把使用者對話送進 Claude，再用回覆<Term id="distillation">蒸餾</Term>其能力。這是 Anthropic 的單方說法<Cite k="anthropic-sep-2026" />，採購前宜自行評估。
 
 ## 版本演進
@@ -1083,23 +1297,25 @@ DeepSeek 是 <CompanyChip id="deepseek">深度求索（DeepSeek）</CompanyChip>
 | 2026-08-13 | V4-Pro 正式版 | 三段思考強度，隨後改採尖離峰計價 |
 | 2026-08-21 | V4-Flash-Vision-Exp | 實驗性影像理解 |
 | 2026-09-10 | V4.1-Flash | 新架構、原生多模態，取代 V4-Flash |
+| 2026-10-17 | V4.1-Flash-1017 | 小幅更新，評測進步、輸出更短，價格不變 |
 
-資料取自官方更新紀錄<Cite k="ds-changelog" />。DeepSeek 的升級多半是「同名換芯」：API 名稱不變，背後模型直接換新，舊版很快退役。舊名稱 deepseek-chat 與 deepseek-reasoner 已在 2026-07-24 停用<Cite k="ds-v4-news" />。
+資料取自官方更新紀錄<Cite k="ds-changelog" />。DeepSeek 的升級多半是「同名換芯」：API 名稱不變，背後模型直接換新，舊版很快退役，1017 版就是直接接手 deepseek-flash 背後的 9 月版。舊名稱 deepseek-chat 與 deepseek-reasoner 已在 2026-07-24 停用<Cite k="ds-v4-news" />；deepseek-v4-flash 與 deepseek-v4-flash-vision-exp 雖然仍可呼叫，但同樣由 1017 版回應、以 Flash 價格計費<Cite k="ds-pricing" />。
 
 ## 評測解讀
 
-<Callout type="warn" title="注意評測時間與設定">官方數字多以 max 思考強度、搭配自家 DeepSeek Harness 測得；AA 欄位讀取於 2026-10-06，LMArena 榜單標示更新於 2026-10-02。工具框架、思考強度與題目版本不同，分數不能直接相比。</Callout>
+<Callout type="warn" title="注意評測版本、時間與設定">AA 在 2026-10-27 把綜合智慧指數改版為 v5（11 月起為 v5.0.1），題組與權重大幅調整，分數不能與 v4 互比。本頁內文提到的 AA 指數一律是 v5.0.1、讀取於 2026-11-13；資料欄位中保留的 v4.3 分數（讀取於 2026-10-06）只作歷史紀錄。官方數字多以 max 思考強度、搭配自家或指定的工具框架測得；LMArena 榜單標示更新於 2026-11-11。工具框架、思考強度與題目版本不同，分數不能直接相比。</Callout>
 
-| 評測 | V4.1-Flash 官方 | V4.1-Flash AA | V4-Pro（0813）官方 | V4-Pro（0813）AA |
+AA 表示 v5 由 9 項評測組成，知識工作、程式、科學與綜合知識四類各占 25%，約六成的權重來自不公開題目或不公開答案的評測；改版時新增 FrontierCode 2.0 等評測、以 HLE-Diamond 取代原本的 HLE，並移除 SciCode 等 3 項評測，AA 也指出 9 項評測都還有很大的進步空間<Cite k="aa-v5-article" />。V4.1-Flash 9 月版在改版前只有 v4.3 分數，AA 已把它列為舊版、沒有以 v5 重新評測，因此本頁沒有它的 v5 分數<Cite k="aa-ds-v41-flash" />。
+
+| 評測 | V4.1-Flash-1017 官方 | V4.1-Flash-1017 AA | V4-Pro（0813）官方 | V4-Pro（0813）AA |
 |---|---|---|---|---|
-| AA 綜合智慧指數 v4.3 | 無 | 39.5 | 無 | 36.0 |
-| HLE（無工具） | 36.8%（全集）、39.1%（純文字子集） | 39.2% | 42.7%（純文字子集） | 41.0% |
-| Terminal-Bench 2.1 | 90.6% | 未測 | 87.9% | 78.7% |
-| Terminal-Bench 4.0 | 31.2% | 26.8% | 12.4% | 14.1% |
+| AA 綜合智慧指數 v5.0.1（Max） | 無 | 33 | 無 | 23 |
+| HLE（無工具） | 42.6%（全集）、44.0%（純文字子集） | 43.3% | 42.7%（純文字子集） | 41.0% |
+| Terminal-Bench 4.0 | 42.3%（Claude Code 框架） | 33.8% | 12.4% | 14.1% |
 
-表中 V4-Pro 的官方 Terminal-Bench 4.0 成績取自 V4.1-Flash 模型卡的對照表<Cite k="hf-v41-flash" />。比較 HLE 時要注意題目範圍：官方的 V4-Pro 數字只涵蓋純文字子集，應與 V4.1-Flash 的 39.1% 對照，而不是全集的 36.8%。
+1017 版的官方數字取自其模型卡<Cite k="hf-v41-flash-1017" />，V4-Pro 的官方 Terminal-Bench 4.0 成績取自 V4.1-Flash 9 月版模型卡的對照表<Cite k="hf-v41-flash" />，AA 欄位讀取於 2026-11-13<Cite k="aa-ds-v41-flash-1017" /><Cite k="aa-ds-v4-pro" />。比較 HLE 時要注意題目範圍：官方的 V4-Pro 數字只涵蓋純文字子集，應與 1017 版的 44.0% 對照，而不是全集的 42.6%。
 
-- **知識題大致吻合，Agent 題落差大**：HLE 的官方與 AA 數字相差不到 3 個百分點；但 V4-Pro 的 Terminal-Bench 2.1 官方為 87.9%，AA 測得 78.7%，相差約 9 個百分點，顯示工具框架對 Agent 評測影響很大<Cite k="aa-ds-v4-pro" />。
-- **「Flash 勝 Pro」有第三方佐證**：AA 指數 V4.1-Flash 為 39.5、V4-Pro 為 36.0；LMArena 文字榜分別為 1474 分（第 38 名）與 1464 分（第 56 名）<Cite k="lmarena-text" />。
-- **舊題目飽和、新題目拉開差距**：官方對照表裡各家旗艦的 Terminal-Bench 2.1 都落在 87% 到 91% 之間，難度更高的 4.0 版中，V4.1-Flash 官方成績為 31.2%，同表最高的 Claude Opus 5.0 為 51.8%<Cite k="hf-v41-flash" />。
-- **人類偏好排名居中上**：在 LMArena 的 413 個模型中，開放授權模型排在 V4.1-Flash 之前的只有 Kimi K3、MiMo-V2.6-Pro 與兩個 GLM 版本<Cite k="lmarena-text" />。想深入了解評測方法，可參考<LearnLink id="model-evaluation">模型評測</LearnLink>。
+- **小改版、進步明顯**：官方對照表中，1017 版的 HLE（無工具、全集）由 9 月版的 36.8% 提高到 42.6%，Terminal-Bench 4.0 由 31.2% 提高到 42.3%<Cite k="hf-v41-flash-1017" />。不過 9 月版的 31.2% 是用 DeepSeek Harness 測得，1017 版改用 Claude Code 框架，兩者條件不完全相同<Cite k="hf-v41-flash" />。AA 的獨立測試方向一致：Terminal-Bench 4.0 由 9 月版的 26.8%（2026-10-06 讀取）提高到 33.8%<Cite k="aa-ds-v41-flash-1017" />。
+- **「Flash 勝 Pro」仍有第三方佐證**：AA v5.0.1 中，1017 版為 33、V4-Pro（0813）為 23<Cite k="aa-leaderboard-v5" />；LMArena 2026-11-11 的文字榜上，V4.1-Flash 9 月版為 1475 分（第 38 名），V4-Pro（0813，High）為 1464 分（第 60 名），但兩者的 ± 範圍（±6、±7）有部分重疊，差距不大。網頁顯示的前 152 名中還沒有 1017 版<Cite k="lmarena-text" />。
+- **Agent 題的官方與第三方落差大**：1017 版的 Terminal-Bench 4.0 官方為 42.3%，AA 測得 33.8%<Cite k="hf-v41-flash-1017" /><Cite k="aa-ds-v41-flash-1017" />；V4-Pro 的 Terminal-Bench 2.1 官方為 87.9%，AA 測得 78.7%<Cite k="ds-changelog" /><Cite k="aa-ds-v4-pro" />，顯示工具框架與測試設定對 Agent 評測影響很大。
+- **開放權重中的位置**：AA 共以 v5.0.1 評測 111 個模型，其中 43 個標示為開放權重。1017 版在這些開放權重模型中排第二，僅次於 <ModelChip id="moonshot-kimi" /> 的 Kimi K3.1 Pro（46），略高於 <ModelChip id="zhipu-glm" /> 的 GLM-5.3（32）與 <ModelChip id="xiaomi-mimo" /> 的 MiMo-V2.6-Pro（30）<Cite k="aa-leaderboard-v5" />。LMArena 上排在 V4.1-Flash 9 月版之前、授權欄不是專有授權的模型，有 Kimi K3、Kimi K3.1 Pro、GLM-5.3、MiMo-V2.6-Pro 與 GLM-5.3-Flash<Cite k="lmarena-text" />。想深入了解評測方法，可參考<LearnLink id="model-evaluation">模型評測</LearnLink>。

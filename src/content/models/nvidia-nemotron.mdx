@@ -5,31 +5,206 @@ kind: "llm"
 lab: "nvidia"
 labName: "NVIDIA（輝達）"
 origin: "US"
-summary: "輝達（NVIDIA）自行訓練並開放下載的語言模型系列。主力是 2025-12 起陸續推出的 Nemotron 3：Nano（總參數約 316 億、每 token 啟用約 32 億）、Super（1,200 億／120 億）、Ultra（5,500 億／550 億），以及 2026-08 的 Nemotron 3.5 Lightning。採 Mamba-2 與 Transformer 混合的 MoE 架構，上下文最長 100 萬 tokens，並公開大部分訓練資料與配方。旗艦 Ultra 的 AA 綜合智慧指數為 23，效率突出，但能力明顯落後中國頂尖開放權重模型。"
+summary: "輝達（NVIDIA）自行訓練並開放下載的語言模型系列，權重與大部分訓練資料、配方一併公開。採 Mamba-2 與 Transformer 混合的 MoE 架構，強調推論效率。2026-10-15 推出的旗艦 Nemotron 3.5 Super VL（總參數 1,200 億、每 token 啟用 120 億）可讀圖片與影片、上下文 100 萬 tokens，AA 綜合智慧指數 v5 為 14 分，高於規模更大的 Nemotron 3 Ultra（12 分）；同月另推出可在 24GB 記憶體本機執行的 Bolt 與語音轉寫模型 Transcribe。效率突出，但能力仍明顯落後中國頂尖開放權重模型。"
 strengths:
-  - "開放到資料層：權重、超過 12 兆 tokens 的預訓練資料、後訓練樣本與 RL 訓練環境一併公開；Ultra 與 3.5 Lightning 採 OpenMDW-1.1 寬鬆授權"
-  - "推論效率高：Mamba-2 加 MoE 的混合架構，Nano 3 在單張 H200 的吞吐量為 Qwen3-30B-A3B 的 3.3 倍；AA 量測 3.5 Lightning 每秒約 305 tokens，同級最快"
-  - "長上下文：Nano、Super、Ultra 與 3.5 Lightning 都支援最長 100 萬 tokens，Ultra 官方 RULER（1M）為 94.7%"
-  - "尺寸齊全：從 40 億參數的 Nano 4B、可讀影片與聲音的 Nano Omni，到 5,500 億參數的 Ultra，方便依 Agent 任務分工"
+  - "開放到資料層：權重、超過 12 兆 tokens 的預訓練資料、後訓練樣本與 RL 訓練環境一併公開；Ultra 與 3.5 世代各模型（Super VL、Lightning、Bolt、Transcribe）採 OpenMDW-1.1 寬鬆授權"
+  - "推論效率高：Mamba-2 加 MoE 的混合架構，Nano 3 在單張 H200 的吞吐量為 Qwen3-30B-A3B 的 3.3 倍；NVIDIA 稱 Super VL 在單張 GPU 上的 Agent 任務吞吐量最高為同級開放模型的 5 倍"
+  - "多模態與長上下文：Super VL 一個模型就能讀文字、圖片、文件頁面與 2 分鐘內的影片；Super VL、Ultra、3.5 Lightning 與 Nano 都支援最長 100 萬 tokens"
+  - "尺寸齊全：從約 4GB 即可執行的 Bolt E4B、24GB 的 Bolt 74B、30B 級的 Lightning 與 Nano Omni，到 5,500 億參數的 Ultra，另有語音轉寫的 Transcribe，方便依 Agent 任務分工"
 weaknesses:
-  - "絕對能力不在前段：Ultra 的 AA 綜合智慧指數 23，遠低於 MiMo-V2.6-Pro（46）、GLM-5.3（45）等開放權重領先者"
-  - "長程 Agent 任務弱：AA 量測 Terminal-Bench 4.0 時 Ultra 約 0.5%、Super 為 0%；Super 跑完 AA 指數產生 1.7 億 tokens，輸出偏冗長"
-  - "中文支援有限：Nano 30B 與 3.5 Lightning 的官方支援語言不含中文，也缺乏繁體中文公開評測"
-  - "NVIDIA 沒有公開的按量計價 API，正式使用需透過第三方推論服務或自建；Ultra 至少需 8 張 B200、8 張 H200 或 16 張 H100"
+  - "絕對能力不在前段：AA 綜合智慧指數 v5 中，系列最高的 Super VL 為 14 分、Ultra 為 12 分，不到開放權重榜首 Kimi K3.1 Pro（46）的三分之一，也不到 DeepSeek V4.1 Flash（33）、GLM-5.3（32）、MiMo-V2.6-Pro（30）的一半"
+  - "長程 Agent 任務弱：NVIDIA 模型卡列出 Super VL 的 Terminal Bench 4 僅 1%、Ultra 為 0%；AA 指出 Super VL 跑完 v5 指數產生約 1.19 億個輸出 tokens，輸出偏冗長"
+  - "中文支援有限：旗艦 Super VL 與 3.5 Lightning 的模型卡語言清單不含中文，Bolt 74B 也以英文為主要語言（Ultra、Bolt E4B 與 Transcribe 有列出中文），且缺乏繁體中文公開評測"
+  - "NVIDIA 沒有公開的按量計價 API，build.nvidia.com 只有試用端點，正式使用需透過第三方推論服務或自建；舊版試用 API 陸續停止，Nemotron 3 Super 於 2026-10-19 停止支援"
 bestFor:
   - "需要說明訓練資料來源的企業、政府與主權 AI 專案"
   - "多 Agent 系統中負責高流量子任務、與前沿閉源模型分工的低成本模型"
-  - "長文件 RAG、IT 工單自動化等高吞吐量工作"
+  - "以 Super VL 理解文件、圖表、截圖與影片，或以 Nano Omni 處理含語音的多模態輸入"
+  - "在 RTX 個人電腦、DGX Spark 等本機裝置執行日常 Agent 任務（Bolt 74B）與語音助理（Bolt E4B）"
+  - "多語言會議、客服錄音的離線語音轉寫（Transcribe）"
   - "以公開資料與 NeMo 工具進行微調與強化學習研究"
-  - "以 Nano Omni 理解文件、圖表、影片與語音"
 positioning:
-  capability: 23
-  costIndex: 40
+  capability: 14
+  costIndex: 21
   openness: 0.9
   method: "computed"
-  asOf: "2026-10-06"
-  note: "以旗艦 Nemotron 3 Ultra（推理模式）計算。capability 取 Artificial Analysis 綜合智慧指數 v4.3.2 的 22.9 分。NVIDIA 沒有官方按量計價，costIndex 改用 AA 列出的第三方託管價格（輸入 0.60、輸出 2.50 美元／百萬 tokens），按 3:1 混合為 1.075 美元，再依 0.05 美元 → 0、100 美元 → 100 的對數尺度換算約 40。openness 為編輯調整的 0.9：Ultra 採 OpenMDW-1.1 寬鬆授權（0.8 的基準），且公開大部分預訓練與後訓練資料及訓練配方，但僅限 NVIDIA 擁有再散布權的資料，未達完全開源（1）。"
+  asOf: "2026-11-13"
+  note: "capability 取旗艦 Nemotron 3.5 Super VL 的 AA 綜合智慧指數 v5.0.1（推理模式，AA 只列一個設定）= 14（2026-11-13 讀取）。本站自 2026-11-13 起改以 Super VL 為旗艦，因為它的 v5 分數高於規模更大的 Nemotron 3 Ultra（12）；NVIDIA 仍把 Ultra 定位為負責複雜規劃與調度的前沿模型。costIndex：NVIDIA 沒有官方按量計價，改用 AA 模型頁列出的 Super VL 第三方託管價格（各 API 供應商的中位數，輸入 0.17、輸出 0.50 美元／百萬 tokens），以 3：1 混合為 (3×0.17 + 0.50)÷4 = 0.2525 美元，對數換算（0.05 美元 → 0、100 美元 → 100）得 21.3，取 21。openness 為編輯調整的 0.9：Super VL 採 OpenMDW-1.1 寬鬆授權（0.8 的基準），且公開大部分預訓練與後訓練資料及訓練配方，但僅限 NVIDIA 擁有再散布權的資料，未達完全開源（1）。"
 versions:
+  - id: "nemotron-3-5-super-vl"
+    name: "Nemotron 3.5 Super VL 120B-A12B"
+    released: "2026-10-15"
+    status: "ga"
+    tier: "mid"
+    weights: "open-weights"
+    license: "OpenMDW-1.1"
+    architecture: "hybrid"
+    params:
+      totalB: 120
+      activeB: 12
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+      - "video"
+    modalitiesOut:
+      - "text"
+    contextTokens: 1000000
+    reasoning: "hybrid"
+    availability:
+      - "self-host"
+      - "api"
+    benchmarks:
+      - benchmark: "gpqa-diamond"
+        score: 89.52
+        setting: "官方模型卡（NVIDIA 以 NeMo Gym 測得）"
+        reportedBy: "lab"
+        date: "2026-10-15"
+        source: { title: "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", type: "docs", lang: "en", published: "2026-10-15", accessed: "2026-11-13" }
+      - benchmark: "hle"
+        score: 31.79
+        setting: "純文字題組（官方模型卡）；完整題組 29.20%"
+        reportedBy: "lab"
+        date: "2026-10-15"
+        source: { title: "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", type: "docs", lang: "en", published: "2026-10-15", accessed: "2026-11-13" }
+      - benchmark: "livecodebench"
+        score: 88.22
+        setting: "LiveCodeBench v6（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-10-15"
+        source: { title: "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", type: "docs", lang: "en", published: "2026-10-15", accessed: "2026-11-13" }
+      - benchmark: "swe-bench-verified"
+        score: 71.10
+        setting: "官方模型卡"
+        reportedBy: "lab"
+        date: "2026-10-15"
+        source: { title: "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", type: "docs", lang: "en", published: "2026-10-15", accessed: "2026-11-13" }
+      - benchmark: "swe-bench-pro"
+        score: 51.78
+        setting: "官方模型卡"
+        reportedBy: "lab"
+        date: "2026-10-15"
+        source: { title: "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", type: "docs", lang: "en", published: "2026-10-15", accessed: "2026-11-13" }
+      - benchmark: "terminal-bench"
+        score: 60.67
+        setting: "Terminal-Bench 2.1（官方模型卡）；同卡的 Terminal Bench 4 離線評測為 1%"
+        reportedBy: "lab"
+        date: "2026-10-15"
+        source: { title: "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", type: "docs", lang: "en", published: "2026-10-15", accessed: "2026-11-13" }
+      - benchmark: "osworld"
+        score: 51.14
+        setting: "OSWorld-Verified（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-10-15"
+        source: { title: "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16", type: "docs", lang: "en", published: "2026-10-15", accessed: "2026-11-13" }
+      - benchmark: "aa-intelligence-index-v5"
+        score: 14
+        setting: "v5.0.1，推理模式（AA 只列一個設定）"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source: { title: "LLM Leaderboard - Comparison of AI models", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/leaderboards/models", type: "leaderboard", lang: "en", note: "Artificial Analysis Intelligence Index v5.0.1", accessed: "2026-11-13" }
+      - benchmark: "lmarena-text"
+        score: 1414
+        setting: "2026-11-11 排行榜頁面，NVFP4 版本，第 148 名，±10，標為 Preliminary（初步排名）"
+        reportedBy: "leaderboard"
+        date: "2026-11-11"
+        source: { title: "Text Arena Leaderboard (Overall)", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: "leaderboard", lang: "en", published: "2026-11-11", note: "排行榜頁面日期 2026-11-11", accessed: "2026-11-13" }
+    notes: "以 Nemotron 3 Super Base 為起點，經 Nemotron 3 Ultra Base 蒸餾 1 兆 tokens、延伸到 100 萬 tokens 上下文與軟體工程中期訓練，再接上 C-RADIO 視覺編碼器；每個 MoE 層有 512 個路由專家，含 MTP 推測解碼頭。影片輸入為 mp4、最長 2 分鐘。推理可設為關閉、中等或開啟。BF16 版需 4 張 H100 或 2 張 GB200，另有 NVFP4 版（可在 DGX Spark 執行）與 Base 權重。模型卡列出的語言為英、西、法、德、義、日語。NVIDIA 未公布按量定價，build.nvidia.com 提供免費試用端點；AA 列出 10 家 API 供應商，模型頁的供應商中位數價格為輸入 0.17、輸出 0.50 美元／百萬 tokens，輸出速度每秒約 252 tokens（2026-11-13）。"
+  - id: "nemotron-3-5-transcribe"
+    name: "Nemotron 3.5 Transcribe 30B-A4B"
+    released: "2026-10-28"
+    status: "ga"
+    tier: "specialized"
+    weights: "open-weights"
+    license: "OpenMDW-1.1"
+    architecture: "hybrid"
+    params:
+      totalB: 34
+      activeB: 4.3
+      disclosed: true
+    modalitiesIn:
+      - "audio"
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 65536
+    reasoning: "hybrid"
+    availability:
+      - "self-host"
+      - "api"
+    notes: "語音增強語言模型（SALM）：以 Nemotron 3.5 Lightning 為語言模型，加上 Transformer 語音辨識編碼器與 Sortformer 說話者編碼器；含音訊編碼器總參數 340 億、每 token 啟用約 43 億。支援 40 種語言（含中文）、單段錄音最長 1 小時，可做逐字稿、語音翻譯、說話者標註、時間戳、語言辨識與音訊問答。官方 2026-10-12 測得英文 Open ASR Leaderboard 9 個資料集平均詞錯誤率（WER）4.71%。屬離線模型，不是即時串流語音辨識；另有 FP8 與 NVFP4 版，同日上架 build.nvidia.com 與 NGC。"
+  - id: "nemotron-3-5-bolt-e4b"
+    name: "Nemotron 3.5 Bolt E4B"
+    released: "2026-10-23"
+    status: "ga"
+    tier: "small"
+    weights: "open-weights"
+    license: "OpenMDW-1.1（底模 Gemma 4 E4B 依 Apache 2.0）"
+    architecture: "dense"
+    params:
+      totalB: 8
+      disclosed: true
+    modalitiesIn:
+      - "text"
+    modalitiesOut:
+      - "text"
+    contextTokens: 65536
+    reasoning: "hybrid"
+    availability:
+      - "self-host"
+      - "on-device"
+      - "api"
+    benchmarks:
+      - benchmark: "tau2-bench"
+        score: 55.10
+        setting: "BF16 版，推理模式，NVIDIA 以 NeMo Gym 測得（官方模型卡）；4GB（Q4_K_M）版為 52.32%"
+        reportedBy: "lab"
+        date: "2026-10-23"
+        source: { title: "nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16", type: "docs", lang: "en", published: "2026-10-23", accessed: "2026-11-13" }
+    notes: "以 Google Gemma-4-E4B-it 為底、由 NVIDIA 後訓練的對話型小模型，總參數 80 億、有效參數 40 億；強化多輪工具呼叫、指令遵循與輸入依據，提供對話模式與思考預算開關，輸入與輸出各最長 64K tokens，支援 35 種語言（含中文）。另有 Q4_K_M 量化的 4GB 版與 DFlash 推測解碼草稿模型，同日上架 build.nvidia.com。後訓練資料截至 2026-05。AA 尚無 v5 分數。"
+  - id: "nemotron-3-5-bolt-74b"
+    name: "Nemotron 3.5 Bolt 74B-A9B 24GB"
+    released: "2026-10-15"
+    status: "ga"
+    tier: "mid"
+    weights: "open-weights"
+    license: "OpenMDW-1.1"
+    architecture: "hybrid"
+    params:
+      totalB: 74
+      activeB: 9
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+      - "video"
+    modalitiesOut:
+      - "text"
+    contextTokens: 262144
+    reasoning: "hybrid"
+    availability:
+      - "self-host"
+      - "on-device"
+    benchmarks:
+      - benchmark: "gpqa-diamond"
+        score: 86.43
+        setting: "24GB（IQ2 2 位元）版，官方模型卡；同卡測得 3.5 Lightning 為 75.57%"
+        reportedBy: "lab"
+        date: "2026-10-15"
+        source: { title: "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB", type: "docs", lang: "en", published: "2026-10-15", accessed: "2026-11-13" }
+      - benchmark: "hle"
+        score: 25.30
+        setting: "無工具，24GB 版（官方模型卡）"
+        reportedBy: "lab"
+        date: "2026-10-15"
+        source: { title: "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB", type: "docs", lang: "en", published: "2026-10-15", accessed: "2026-11-13" }
+      - benchmark: "terminal-bench"
+        score: 50.98
+        setting: "Terminal-Bench 2.1，24GB 版（官方模型卡）；同卡測得 3.5 Lightning 為 23.46%"
+        reportedBy: "lab"
+        date: "2026-10-15"
+        source: { title: "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB", type: "docs", lang: "en", published: "2026-10-15", accessed: "2026-11-13" }
+    notes: "由 Nemotron 3.5 Super VL 以 Star Elastic 架構搜尋壓縮（每 token 啟用專家數由 22 個減為 9 個），專家權重量化為 IQ2_XXS（每個元素約 2.06 位元）並以量化感知蒸餾恢復準確度，模型約 24GB；另有 BF16 版、GGUF 版與 LiLiCorr 推測解碼草稿模型。vLLM 可在 A100、H100 80GB 或 Blackwell GPU 上以單卡執行；NVIDIA 在 RTX Spark 測得每秒約 84 tokens。後訓練資料截至 2026-05。模型卡的用途說明以英文與程式語言為主要語言，另支援西、法、德、義、日語；輸入規格另列出印地、韓、巴西葡萄牙與中文。AA 尚無 v5 分數。"
   - id: "nemotron-3-ultra"
     name: "Nemotron 3 Ultra 550B-A55B"
     released: "2026-06-04"
@@ -89,6 +264,12 @@ versions:
         reportedBy: "lab"
         date: "2026-06-04"
         source: { title: "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16", type: "docs", lang: "en", published: "2026-06-04", accessed: "2026-10-06" }
+      - benchmark: "aa-intelligence-index-v5"
+        score: 12
+        setting: "v5.0.1，推理模式（Reasoning）"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source: { title: "LLM Leaderboard - Comparison of AI models", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/leaderboards/models", type: "leaderboard", lang: "en", note: "Artificial Analysis Intelligence Index v5.0.1", accessed: "2026-11-13" }
       - benchmark: "aa-intelligence-index"
         score: 22.9
         setting: "v4.3.2，推理模式；同級大型開放權重 117 個模型中第 36 名"
@@ -121,11 +302,17 @@ versions:
         source: { title: "Nemotron 3 Ultra 550B A55B (Reasoning): Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/nvidia-nemotron-3-ultra-550b-a55b", type: "leaderboard", lang: "en", accessed: "2026-10-06" }
       - benchmark: "lmarena-text"
         score: 1426
+        setting: "2026-11-11 排行榜頁面，NVFP4 版本，第 123 名，±7"
+        reportedBy: "leaderboard"
+        date: "2026-11-11"
+        source: { title: "Text Arena Leaderboard (Overall)", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: "leaderboard", lang: "en", published: "2026-11-11", note: "排行榜頁面日期 2026-11-11", accessed: "2026-11-13" }
+      - benchmark: "lmarena-text"
+        score: 1426
         setting: "NVFP4 版本，第 118 名，±7"
         reportedBy: "leaderboard"
         date: "2026-10-02"
         source: { title: "Text Arena Leaderboard (Overall)", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: "leaderboard", lang: "en", published: "2026-10-02", note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02", accessed: "2026-10-06" }
-    notes: "LatentMoE 架構，Mamba-2、MoE 與少量注意力層交錯，含多 token 預測（MTP）層，以 NVFP4 格式預訓練約 20 兆 tokens；預訓練資料截至 2025-09、後訓練資料截至 2026-05。支援英、法、西、義、德、日、印地、韓、巴西葡萄牙與中文。最低硬體需求為 8 張 GB200／B200／GB300／B300、8 張 H200 或 16 張 H100。NVIDIA 未公布按量定價，AA 列出的第三方託管價格為輸入 0.60、輸出 2.50 美元／百萬 tokens，並提供 NVFP4 量化版。"
+    notes: "LatentMoE 架構，Mamba-2、MoE 與少量注意力層交錯，含多 token 預測（MTP）層，以 NVFP4 格式預訓練約 20 兆 tokens；預訓練資料截至 2025-09、後訓練資料截至 2026-05。支援英、法、西、義、德、日、印地、韓、巴西葡萄牙與中文。最低硬體需求為 8 張 GB200／B200／GB300／B300、8 張 H200 或 16 張 H100。NVIDIA 未公布按量定價；AA 列出的第三方託管價格 2026-10-06 為輸入 0.60、輸出 2.50 美元／百萬 tokens，2026-11-13 為輸入 0.60、輸出 2.70 美元，並提供 NVFP4 量化版。2026-10 推出 Super VL 後，NVIDIA 仍把 Ultra 定位為負責複雜規劃與調度的前沿模型。"
   - id: "nemotron-3-5-lightning"
     name: "Nemotron 3.5 Lightning 30B-A3B"
     released: "2026-08-11"
@@ -180,6 +367,12 @@ versions:
         reportedBy: "lab"
         date: "2026-08-11"
         source: { title: "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16", type: "docs", lang: "en", published: "2026-08-11", accessed: "2026-10-06" }
+      - benchmark: "aa-intelligence-index-v5"
+        score: 6
+        setting: "v5.0.1，推理模式（AA 只列一個設定）"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source: { title: "LLM Leaderboard - Comparison of AI models", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/leaderboards/models", type: "leaderboard", lang: "en", note: "Artificial Analysis Intelligence Index v5.0.1", accessed: "2026-11-13" }
       - benchmark: "aa-intelligence-index"
         score: 12.9
         setting: "v4.3.2，推理模式"
@@ -210,7 +403,7 @@ versions:
         reportedBy: "leaderboard"
         date: "2026-10-02"
         source: { title: "Text Arena Leaderboard (Overall)", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: "leaderboard", lang: "en", published: "2026-10-02", note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02", accessed: "2026-10-06" }
-    notes: "Mamba-2、MoE 與注意力混合架構，另提供 MTP、DFlash、DSpark 等推測解碼頭；單張 H100 80GB 可部署（上下文 256K），8 張 H100 或單張 B200／GB200 可開到 100 萬 tokens。官方支援英、西、法、德、義、日語，不含中文。NVIDIA 部落格稱其生成速度最高為同級開放模型的 4 倍；AA 量測每秒約 305 tokens、第三方價格輸入 0.06、輸出 0.20 美元／百萬 tokens。"
+    notes: "Mamba-2、MoE 與注意力混合架構，另提供 MTP、DFlash、DSpark 等推測解碼頭；單張 H100 80GB 可部署（上下文 256K），8 張 H100 或單張 B200／GB200 可開到 100 萬 tokens。官方支援英、西、法、德、義、日語，不含中文。NVIDIA 部落格稱其生成速度最高為同級開放模型的 4 倍；AA 2026-11-13 量測每秒約 255 tokens，第三方價格輸入 0.06、輸出 0.20 美元／百萬 tokens。2026-10-28 推出的 Transcribe 以它為語言模型底座。"
   - id: "nemotron-3-nano-omni"
     name: "Nemotron 3 Nano Omni 30B-A3B Reasoning"
     released: "2026-04-28"
@@ -249,7 +442,7 @@ versions:
         reportedBy: "third-party"
         date: "2026-10-06"
         source: { title: "Nemotron 3 Nano Omni 30B A3B Reasoning: Intelligence, Performance & Price Analysis", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/models/nemotron-3-nano-omni-30b-a3b", type: "leaderboard", lang: "en", accessed: "2026-10-06" }
-    notes: "影片（mp4，最長 2 分鐘）、音訊（最長 1 小時）、圖片與文字輸入，輸出文字；適合影片加語音分析、文件與圖表理解、GUI 操作與語音轉寫。NVFP4 版約 21GB，單張 RTX 5090、DGX Spark 或 Jetson Thor 即可執行。"
+    notes: "影片（mp4，最長 2 分鐘）、音訊（最長 1 小時）、圖片與文字輸入，輸出文字；適合影片加語音分析、文件與圖表理解、GUI 操作與語音轉寫。NVFP4 版約 21GB，單張 RTX 5090、DGX Spark 或 Jetson Thor 即可執行。AA 2026-11-13 尚無 v5 分數。"
   - id: "nemotron-3-nano-4b"
     name: "Nemotron 3 Nano 4B"
     released: "2026-03-16"
@@ -282,17 +475,23 @@ versions:
         reportedBy: "lab"
         date: "2026-03-16"
         source: { title: "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16", publisher: "NVIDIA (Hugging Face)", url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16", type: "docs", lang: "en", published: "2026-03-16", accessed: "2026-10-06" }
+      - benchmark: "aa-intelligence-index-v5"
+        score: 2
+        setting: "v5.0.1，推理模式（AA 只列一個設定）"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source: { title: "LLM Leaderboard - Comparison of AI models", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/leaderboards/models", type: "leaderboard", lang: "en", note: "Artificial Analysis Intelligence Index v5.0.1", accessed: "2026-11-13" }
       - benchmark: "aa-intelligence-index"
         score: 4.8
         setting: "v4.3.2（AA 排行榜）"
         reportedBy: "third-party"
         date: "2026-10-06"
         source: { title: "LLM Leaderboard - Comparison of AI models", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/leaderboards/models", type: "leaderboard", lang: "en", accessed: "2026-10-06" }
-    notes: "以 Nemotron Elastic 框架從 Nemotron Nano 9B v2 壓縮而來的 Mamba-Transformer 混合小模型，只支援英文，提供 GGUF 版本供本機執行。"
+    notes: "以 Nemotron Elastic 框架從 Nemotron Nano 9B v2 壓縮而來的 Mamba-Transformer 混合小模型，只支援英文，提供 GGUF 版本供本機執行。2026-10-23 推出的 Bolt E4B 是 NVIDIA 在同一尺寸的新選項，其模型卡也以 Nano 4B 作為比較對象。"
   - id: "nemotron-3-super"
     name: "Nemotron 3 Super 120B-A12B"
     released: "2026-03-11"
-    status: "ga"
+    status: "deprecated"
     tier: "mid"
     weights: "open-weights"
     license: "NVIDIA Nemotron Open Model License"
@@ -390,11 +589,11 @@ versions:
         reportedBy: "leaderboard"
         date: "2026-10-02"
         source: { title: "Text Arena Leaderboard (Overall)", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: "leaderboard", lang: "en", published: "2026-10-02", note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02", accessed: "2026-10-06" }
-    notes: "LatentMoE 架構，含 MTP 層（另有 MTPv2 檢查點），以 NVFP4 預訓練超過 25 兆 tokens；預訓練資料截至 2025-06、後訓練資料截至 2026-02。最低需 8 張 H100 80GB。AA 列出的第三方價格為輸入 0.30、輸出 0.90 美元／百萬 tokens，並指出其輸出非常冗長。"
+    notes: "LatentMoE 架構，含 MTP 層（另有 MTPv2 檢查點），以 NVFP4 預訓練超過 25 兆 tokens；預訓練資料截至 2025-06、後訓練資料截至 2026-02。最低需 8 張 H100 80GB。AA 列出的第三方價格為輸入 0.30、輸出 0.90 美元／百萬 tokens（2026-11-13 未變）；2026-10-06 讀取時 AA 曾指出其輸出非常冗長（v4 評測），2026-11-13 尚無 v5 分數。build.nvidia.com 試用 API 已於 2026-10-19 停止支援，權重仍可下載；後繼的 Nemotron 3.5 Super VL 即以它的 Base 權重為起點。"
   - id: "nemotron-3-nano"
     name: "Nemotron 3 Nano 30B-A3B"
     released: "2025-12-15"
-    status: "ga"
+    status: "deprecated"
     tier: "small"
     weights: "open-weights"
     license: "NVIDIA Nemotron Open Model License"
@@ -469,7 +668,7 @@ versions:
         reportedBy: "leaderboard"
         date: "2026-10-02"
         source: { title: "Text Arena Leaderboard (Overall)", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: "leaderboard", lang: "en", published: "2026-10-02", note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02", accessed: "2026-10-06" }
-    notes: "23 層 Mamba-2 與 MoE 加 6 層注意力，每層 128 個專家加 1 個共享專家、每 token 啟用 6 個；每 token 啟用約 32 億參數（含嵌入層約 36 億）。NVIDIA 稱吞吐量為 Nemotron 2 Nano 的 4 倍、推理 token 用量最多減少 60%。官方支援英、德、西、法、義、日語。上市時透過 Baseten、DeepInfra、Fireworks、Together AI 等提供，並規劃上架 Amazon Bedrock。"
+    notes: "23 層 Mamba-2 與 MoE 加 6 層注意力，每層 128 個專家加 1 個共享專家、每 token 啟用 6 個；每 token 啟用約 32 億參數（含嵌入層約 36 億）。NVIDIA 稱吞吐量為 Nemotron 2 Nano 的 4 倍、推理 token 用量最多減少 60%。官方支援英、德、西、法、義、日語。上市時透過 Baseten、DeepInfra、Fireworks、Together AI 等提供，並規劃上架 Amazon Bedrock。build.nvidia.com 試用 API 已於 2026-08-31 停止支援，權重仍可下載；AA 2026-11-13 列出的第三方價格為輸入 0.05、輸出 0.20 美元／百萬 tokens，尚無 v5 分數。"
   - id: "nemotron-nano-9b-v2"
     name: "NVIDIA Nemotron Nano 9B v2"
     released: "2025-08-18"
@@ -575,11 +774,12 @@ versions:
         date: "2026-10-02"
         source: { title: "Text Arena Leaderboard (Overall)", publisher: "LMArena", url: "https://arena.ai/leaderboard/text", type: "leaderboard", lang: "en", published: "2026-10-02", note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02", accessed: "2026-10-06" }
     notes: "以 Meta Llama-3.1-405B-Instruct 為底、經 NAS 縮小的推理模型，是 Nemotron 3 之前的旗艦。build.nvidia.com 試用 API 已於 2026-04-22 停止支援，權重仍可下載。"
-flagshipVersion: "nemotron-3-ultra"
+flagshipVersion: "nemotron-3-5-super-vl"
 relatedLearn:
   - "open-vs-closed-models"
   - "mixture-of-experts"
   - "reasoning-models"
+  - "multimodal-models"
   - "inference-optimization"
   - "agents-and-mcp"
 glossary:
@@ -593,6 +793,9 @@ glossary:
   - "rag"
   - "reasoning-model"
   - "quantization"
+  - "multimodal"
+  - "distillation"
+  - "edge-ai"
 sources:
   - key: "nv-n3-pr"
     title: "NVIDIA Debuts Nemotron 3 Family of Open Models"
@@ -617,8 +820,68 @@ sources:
     url: "https://developer.nvidia.com/nemotron"
     type: "company-site"
     lang: "en"
-    note: "資料集說明為 12T+ 預訓練 tokens 與 60M+ 後訓練樣本（2026-10-17 讀取）"
-    accessed: "2026-10-17"
+    note: "資料集說明為 12T+ 預訓練 tokens 與 60M+ 後訓練樣本；頁面列出 Bolt、Nano、Lightning、Super、Ultra 的定位（2026-11-13 讀取）"
+    accessed: "2026-11-13"
+  - key: "hf-super-vl"
+    title: "nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16"
+    publisher: "NVIDIA (Hugging Face)"
+    url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16"
+    type: "docs"
+    lang: "en"
+    published: "2026-10-15"
+    note: "模型卡 Release Date：Hugging Face 10/15/2026"
+    accessed: "2026-11-13"
+  - key: "nv-blog-svl"
+    title: "NVIDIA Nemotron 3.5 Super VL Powers Specialized Agents with Multimodal Reasoning"
+    publisher: "NVIDIA Technical Blog"
+    url: "https://developer.nvidia.com/blog/nvidia-nemotron-3-5-super-vl-powers-specialized-agents-with-multimodal-reasoning/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-10-15"
+    accessed: "2026-11-13"
+  - key: "hf-bolt"
+    title: "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB"
+    publisher: "NVIDIA (Hugging Face)"
+    url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB"
+    type: "docs"
+    lang: "en"
+    published: "2026-10-15"
+    note: "模型卡 Release Date：Hugging Face 10/15/2026"
+    accessed: "2026-11-13"
+  - key: "nv-bolt-blog"
+    title: "NVIDIA Nemotron 3.5 Bolt 74B-A9B 24GB"
+    publisher: "NVIDIA Research"
+    url: "https://research.nvidia.com/labs/nemotron/Nemotron-3.5-Bolt-24GB/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-10-15"
+    accessed: "2026-11-13"
+  - key: "hf-bolt-e4b"
+    title: "nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16"
+    publisher: "NVIDIA (Hugging Face)"
+    url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16"
+    type: "docs"
+    lang: "en"
+    published: "2026-10-23"
+    note: "模型卡 Release Date：Hugging Face 與 build.nvidia.com 10/23/2026"
+    accessed: "2026-11-13"
+  - key: "nv-bolt-e4b-blog"
+    title: "NVIDIA Nemotron 3.5 Bolt E4B 4GB"
+    publisher: "NVIDIA Research"
+    url: "https://research.nvidia.com/labs/nemotron/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-10-23"
+    accessed: "2026-11-13"
+  - key: "hf-transcribe"
+    title: "nvidia/NVIDIA-Nemotron-3.5-Transcribe-30B-A4B"
+    publisher: "NVIDIA (Hugging Face)"
+    url: "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Transcribe-30B-A4B"
+    type: "docs"
+    lang: "en"
+    published: "2026-10-28"
+    note: "模型卡 Release Date：build.nvidia.com、GitHub、Hugging Face、NGC 10/28/2026"
+    accessed: "2026-11-13"
   - key: "hf-ultra"
     title: "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16"
     publisher: "NVIDIA (Hugging Face)"
@@ -659,6 +922,30 @@ sources:
     lang: "en"
     published: "2025-12-15"
     accessed: "2026-10-06"
+  - key: "build-super-vl"
+    title: "nemotron-3.5-super-vl-120b-a12b | NVIDIA NIM"
+    publisher: "NVIDIA"
+    url: "https://build.nvidia.com/nvidia/nemotron-3.5-super-vl-120b-a12b"
+    type: "docs"
+    lang: "en"
+    note: "頁面提供免費試用 API 端點，未列按量價格"
+    accessed: "2026-11-13"
+  - key: "build-super"
+    title: "nemotron-3-super-120b-a12b | NVIDIA NIM"
+    publisher: "NVIDIA"
+    url: "https://build.nvidia.com/nvidia/nemotron-3-super-120b-a12b"
+    type: "docs"
+    lang: "en"
+    note: "頁面註記 API 於 2026-10-19 停止支援"
+    accessed: "2026-11-13"
+  - key: "build-nano"
+    title: "nemotron-3-nano-30b-a3b | NVIDIA NIM"
+    publisher: "NVIDIA"
+    url: "https://build.nvidia.com/nvidia/nemotron-3-nano-30b-a3b"
+    type: "docs"
+    lang: "en"
+    note: "頁面註記 API 於 2026-08-31 停止支援"
+    accessed: "2026-11-13"
   - key: "build-49b"
     title: "llama-3_3-nemotron-super-49b-v1_5 | NVIDIA API Catalog"
     publisher: "NVIDIA"
@@ -698,76 +985,112 @@ sources:
     lang: "en"
     published: "2026-08-11"
     accessed: "2026-10-06"
-  - key: "aa-leaderboard"
+  - key: "aa-leaderboard-v5"
     title: "LLM Leaderboard - Comparison of AI models"
     publisher: "Artificial Analysis"
     url: "https://artificialanalysis.ai/leaderboards/models"
     type: "leaderboard"
-    note: "Artificial Analysis Intelligence Index v4.3.2"
+    note: "Artificial Analysis Intelligence Index v5.0.1（2026-11-13 讀取）"
     lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
+  - key: "aa-v5"
+    title: "Announcing Artificial Analysis Intelligence Index v5"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5"
+    type: "other"
+    lang: "en"
+    published: "2026-10-27"
+    accessed: "2026-11-13"
+  - key: "aa-svl"
+    title: "Nemotron 3.5 Super VL: Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/nemotron-3-5-super-vl"
+    type: "leaderboard"
+    lang: "en"
+    note: "v5.0.1 指數 14；第三方價格輸入 0.17、輸出 0.50 美元；跑完指數產生 1.19 億個輸出 tokens（同級中位數 6,380 萬）"
+    accessed: "2026-11-13"
   - key: "aa-ultra"
     title: "Nemotron 3 Ultra 550B A55B (Reasoning): Intelligence, Performance & Price Analysis"
     publisher: "Artificial Analysis"
     url: "https://artificialanalysis.ai/models/nvidia-nemotron-3-ultra-550b-a55b"
     type: "leaderboard"
     lang: "en"
-    accessed: "2026-10-06"
+    note: "2026-11-13 再讀：v5.0.1 指數 12，第三方價格輸入 0.60、輸出 2.70 美元"
+    accessed: "2026-11-13"
   - key: "aa-super"
     title: "Nemotron 3 Super 120B A12B (Reasoning): Intelligence, Performance & Price Analysis"
     publisher: "Artificial Analysis"
     url: "https://artificialanalysis.ai/models/nvidia-nemotron-3-super-120b-a12b"
     type: "leaderboard"
     lang: "en"
-    accessed: "2026-10-06"
+    note: "2026-11-13 再讀：尚無 v5 分數，第三方價格輸入 0.30、輸出 0.90 美元"
+    accessed: "2026-11-13"
   - key: "aa-lightning"
     title: "Nemotron 3.5 Lightning: Intelligence, Performance & Price Analysis"
     publisher: "Artificial Analysis"
     url: "https://artificialanalysis.ai/models/nemotron-3-5-lightning"
     type: "leaderboard"
     lang: "en"
+    note: "2026-11-13 再讀：v5.0.1 指數 6，每秒約 255 tokens，第三方價格輸入 0.06、輸出 0.20 美元"
+    accessed: "2026-11-13"
+  - key: "aa-leaderboard"
+    title: "LLM Leaderboard - Comparison of AI models"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    note: "Artificial Analysis Intelligence Index v4.3.2（2026-10-06 讀取，歷史紀錄）"
+    lang: "en"
     accessed: "2026-10-06"
-  - key: "lmarena-text"
+  - key: "lmarena-1111"
     title: "Text Arena Leaderboard (Overall)"
     publisher: "LMArena"
     url: "https://arena.ai/leaderboard/text"
     type: "leaderboard"
-    published: "2026-10-02"
-    note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02"
+    published: "2026-11-11"
+    note: "排行榜頁面日期 2026-11-11"
     lang: "en"
-    accessed: "2026-10-06"
-lastVerified: "2026-10-06"
+    accessed: "2026-11-13"
+lastVerified: "2026-11-13"
 editorial:
   status: "fact-checked"
-  author: "models-06"
-  checkedBy: "models-06-check"
-  checkedOn: "2026-10-06"
+  author: "mdl-nvidia-nemotron"
+  checkedBy: "check-mdl-nvidia-nemotron"
+  checkedOn: "2026-11-13"
+  notes: "2026-11-13 更新：新增 Nemotron 3.5 Super VL（改列旗艦）、Bolt 74B 24GB、Bolt E4B 與 Transcribe，Nemotron 3 Super 與 Nano 30B 的 build.nvidia.com 試用 API 標為停止支援，AA 綜合智慧指數改用 v5.0.1（共用快照 research/staging/models/leaderboards-2026-11-13.json），LMArena 改用 2026-11-11 榜單；v4.3.2 舊分數保留為歷史紀錄。查核（2026-11-13）：逐項以 Hugging Face 模型卡原文（Super VL、Bolt 74B、Bolt E4B、Transcribe、Ultra、Lightning）、NVIDIA 技術部落格與研究頁、developer.nvidia.com、build.nvidia.com 頁面資料（停用日期與免費端點）、AA 模型頁與 v5 改版文章、共用排行榜快照核對。修正：開放權重對照補上榜首 Kimi K3.1 Pro（46）；AA v5 是新增、升級與移除部分評測並重配權重，不是題組全部換新；Bolt 74B 上下文 262,144 tokens 應為約 26.2 萬而非 25.6 萬；Scale AI 案例為廠商折讓單據（vendor credit）處理；Ultra 的定位依原文改為「複雜的規劃與調度」；AA 價格註明為供應商中位數；Nemotron 3 Super 的「輸出非常冗長」標明為 2026-10-06 的 v4 讀取。"
 ---
 
 ## 系列概覽
 
 Nemotron 是 <CompanyChip id="nvidia">輝達（NVIDIA）</CompanyChip>自己訓練、開放下載的語言模型系列。輝達的主業是賣 GPU，Nemotron 比較像示範與催化劑：證明自家硬體能訓練出高效率的模型，再把權重、資料與訓練配方一起公開，讓企業改造成自己的 <Term id="agent">AI Agent</Term>。
 
-在 Nemotron 3 之前，NVIDIA 的旗艦推理模型（Llama-Nemotron 系列）是以 Meta Llama 為底，再經架構搜尋與後訓練而成。2025-12-15 發表的 Nemotron 3 則整個系列從頭訓練，分成 Nano、Super、Ultra 三種尺寸<Cite k="nv-n3-pr" />：
+在 Nemotron 3 之前，NVIDIA 的旗艦推理模型（Llama-Nemotron 系列）是以 Meta Llama 為底，再經架構搜尋與後訓練而成。2025-12-15 發表的 Nemotron 3 則整個系列從頭訓練<Cite k="nv-n3-pr" />，2026 年 8 月起再陸續推出 3.5 世代：
 
-| 版本 | 發布日 | 總參數／每 token 啟用 | 授權 |
-|---|---|---|---|
-| Nemotron 3 Nano | 2025-12-15 | 316 億／32 億 | NVIDIA Nemotron Open Model License |
-| Nemotron 3 Super | 2026-03-11 | 1,200 億／120 億 | 同上 |
-| Nemotron 3 Ultra | 2026-06-04 | 5,500 億／550 億 | OpenMDW-1.1 |
-| Nemotron 3.5 Lightning | 2026-08-11 | 約 300 億／30 億 | OpenMDW-1.1 |
+| 版本 | 發布日 | 總參數／每 token 啟用 | 輸入 | 授權 |
+|---|---|---|---|---|
+| Nemotron 3 Nano | 2025-12-15 | 316 億／32 億 | 文字 | NVIDIA Nemotron Open Model License |
+| Nemotron 3 Super | 2026-03-11 | 1,200 億／120 億 | 文字 | 同上 |
+| Nemotron 3 Ultra | 2026-06-04 | 5,500 億／550 億 | 文字 | OpenMDW-1.1 |
+| Nemotron 3.5 Lightning | 2026-08-11 | 約 300 億／30 億 | 文字 | OpenMDW-1.1 |
+| Nemotron 3.5 Super VL | 2026-10-15 | 1,200 億／120 億 | 文字、圖片、影片 | OpenMDW-1.1 |
+| Nemotron 3.5 Bolt 74B 24GB | 2026-10-15 | 740 億／90 億 | 文字、圖片、影片 | OpenMDW-1.1 |
 
-參數與日期取自 NVIDIA 研究頁與 Hugging Face 模型卡<Cite k="nv-n3-research" /><Cite k="hf-super" /><Cite k="hf-ultra" /><Cite k="hf-lightning" />。另有 40 億參數的 Nano 4B、能讀影片與聲音的 Nano Omni，以及嵌入、語音、安全分類等周邊模型<Cite k="nv-dev" />。
+參數與日期取自 NVIDIA 研究頁與 Hugging Face 模型卡<Cite k="nv-n3-research" /><Cite k="hf-super" /><Cite k="hf-ultra" /><Cite k="hf-lightning" /><Cite k="hf-super-vl" /><Cite k="hf-bolt" />。10 月下旬又推出兩個特定用途的模型：以 Google Gemma 4 E4B 為底再後訓練的 Bolt E4B（總參數 80 億、有效參數 40 億，2026-10-23）<Cite k="hf-bolt-e4b" />，以及語音轉寫模型 Transcribe（總參數 340 億、每 token 啟用約 43 億，2026-10-28）<Cite k="hf-transcribe" />。另有 40 億參數的 Nano 4B、能讀影片與聲音的 Nano Omni，以及嵌入、重排序、安全分類等周邊模型<Cite k="nv-dev" />。
+
+本站從 2026-11-13 起以 Nemotron 3.5 Super VL 作為系列旗艦：它在 AA 綜合智慧指數 v5 的分數（14）高於規模大得多的 Nemotron 3 Ultra（12）<Cite k="aa-leaderboard-v5" />；NVIDIA 部落格列出的 Hermes Bench 與 LangChain 行為評測，Super VL 也高於 Ultra（63.4% 對 56.3%、87.1% 對 84.3%）<Cite k="nv-blog-svl" />。不過 NVIDIA 自己的分工仍是 Lightning 處理大量文字任務、Super VL 處理需要看圖與用工具的專門任務，Ultra 則負責複雜的規劃與調度<Cite k="nv-blog-svl" />。
 
 ## 特性分析
 
-**混合架構換速度。** Nemotron 3 把 Mamba-2（一種<Term id="ssm">狀態空間模型</Term>）、<Term id="moe">MoE</Term> 與少量注意力層交錯堆疊。Mamba 層處理長序列時不必保存龐大的 KV Cache，因此省記憶體、吞吐量高。NVIDIA 表示 Nano 3 在單張 H200 上的吞吐量是 Qwen3-30B-A3B 的 3.3 倍<Cite k="nv-n3-research" />；Artificial Analysis（AA）量測 3.5 Lightning 每秒輸出約 305 tokens，在同級 142 個模型中最快<Cite k="aa-lightning" />。Super 與 Ultra 另加入 LatentMoE 與多 token 預測（MTP，可用於<Term id="speculative-decoding">推測解碼</Term>），並直接以 4 位元 NVFP4 格式預訓練<Cite k="hf-ultra" />。
+**混合架構換速度。** Nemotron 3 起的模型把 Mamba-2（一種<Term id="ssm">狀態空間模型</Term>）、<Term id="moe">MoE</Term> 與少量注意力層交錯堆疊。Mamba 層處理長序列時不必保存龐大的 KV Cache，因此省記憶體、吞吐量高。NVIDIA 表示 Nano 3 在單張 H200 上的吞吐量是 Qwen3-30B-A3B 的 3.3 倍<Cite k="nv-n3-research" />，Super VL 在單張 GPU 上的 Agent 任務吞吐量最高可達同級開放模型的 5 倍<Cite k="nv-blog-svl" />。Super、Ultra 與 Super VL 另有多 token 預測（MTP，可用於<Term id="speculative-decoding">推測解碼</Term>），Super 與 Ultra 並直接以 4 位元 NVFP4 格式預訓練<Cite k="hf-ultra" /><Cite k="hf-super-vl" />。
 
-**開放到資料層。** NVIDIA 公開了超過 12 兆 tokens 的預訓練資料與 6,000 萬筆以上的後訓練樣本<Cite k="nv-dev" />，模型卡也逐一列出資料來源，這在大型模型中相當少見。Ultra 與 3.5 Lightning 採 OpenMDW-1.1 授權，對模型輸出不設限制，只有在使用者提起專利或著作權訴訟時授權才會終止<Cite k="openmdw" />。
+**一個模型讀文字、圖片與影片。** Super VL 是<Term id="multimodal">多模態</Term>模型：以 Nemotron 3 Super Base 為起點，用 Ultra Base 做 1 兆 tokens 的<Term id="distillation">蒸餾</Term>，再接上 C-RADIO 視覺編碼器，可讀圖片、文件頁面與最長 2 分鐘的 mp4 影片，上下文最長 100 萬 tokens；BF16 版需要 4 張 H100 或 2 張 GB200<Cite k="hf-super-vl" />。NVIDIA 表示 Scale AI、Ramp、AI21 等已針對自己的工作流程後訓練它，用途包括處理廠商折讓單據（vendor credit）、把收據圖片轉成結構化資料，以及資安威脅分析<Cite k="nv-blog-svl" />。
 
-**長上下文與推理開關。** Nano、Super、Ultra 與 3.5 Lightning 的<Term id="context-window">上下文</Term>最長都是 100 萬 tokens（Nano Omni 為 25.6 萬），Ultra 官方 RULER（1M）成績為 94.7%；推理模式可在聊天範本中開關，並支援推理預算控制<Cite k="hf-ultra" />。
+**壓縮到 24GB 的本機模型。** Bolt 74B 由 Super VL 壓縮而來：先以 Star Elastic 架構搜尋把每 token 啟用的專家數從 22 個減為 9 個，再把專家權重<Term id="quantization">量化</Term>到約 2 位元（IQ2_XXS），並以量化感知蒸餾找回準確度，整個模型約 24GB，NVIDIA 在 RTX Spark 上測得每秒約 84 tokens<Cite k="nv-bolt-blog" />。Bolt E4B 則鎖定語音助理、遊戲角色與機器人介面等對話型 Agent，主打約 4GB 記憶體即可執行、支援 35 種語言<Cite k="nv-bolt-e4b-blog" />，屬於<Term id="edge-ai">邊緣 AI</Term> 的應用。
 
-**限制。** Ultra 至少需要 8 張 B200、8 張 H200 或 16 張 H100 才能自架<Cite k="hf-ultra" />；3.5 Lightning 與 Nano 30B 的官方支援語言不含中文<Cite k="hf-lightning" /><Cite k="hf-nano" />。AA 也指出 Super 跑完整套評測產生 1.7 億 tokens，屬於「非常冗長」<Cite k="aa-super" />。
+**語音轉寫。** Transcribe 以 3.5 Lightning 為語言模型底座，加上語音辨識與說話者編碼器，支援 40 種語言（含中文）、單段錄音最長 1 小時，可產生逐字稿、翻譯、說話者標註與時間戳；它是離線模型，不是即時串流服務<Cite k="hf-transcribe" />。
+
+**開放到資料層。** NVIDIA 公開了超過 12 兆 tokens 的預訓練資料與 6,000 萬筆以上的後訓練樣本<Cite k="nv-dev" />，模型卡也逐一列出資料來源，這在大型模型中相當少見。Ultra 與 3.5 世代各模型採 OpenMDW-1.1 授權，對模型輸出不設限制，只有在使用者提起專利或著作權訴訟時授權才會終止<Cite k="openmdw" />。
+
+**限制。** Ultra 至少需要 8 張 B200、8 張 H200 或 16 張 H100 才能自架<Cite k="hf-ultra" />。Super VL 與 3.5 Lightning 的模型卡語言清單不含中文，Bolt 74B 的用途說明也以英文為主要語言<Cite k="hf-super-vl" /><Cite k="hf-lightning" /><Cite k="hf-bolt" />。AA 指出 Super VL 跑完 v5 指數產生約 1.19 億個輸出 tokens，接近同級中位數（6,380 萬）的兩倍，屬於「非常冗長」<Cite k="aa-svl" />。
 
 ## 適合與不適合的用途
 
@@ -775,15 +1098,16 @@ Nemotron 是 <CompanyChip id="nvidia">輝達（NVIDIA）</CompanyChip>自己訓�
 
 - **主權 AI 與可稽核需求**：訓練資料可追溯，適合需要說明資料來源的政府、金融與醫療單位。輝達表示日本企業、新創與研究機構正以 Nemotron 建立產業專用模型<Cite k="nv-q2fy27" />。
 - **多 Agent 系統的分工**：讓 Nemotron 處理高流量子任務，困難步驟再交給前沿閉源模型。Perplexity 在 Nemotron 3 發表時表示，其 Agent 路由器可把工作分派給 Nemotron 3 Ultra 等微調過的開放模型，需要時再交給閉源模型<Cite k="nv-n3-pr" />。
-- **長文件 <Term id="rag">RAG</Term> 與高吞吐量工作**：例如 IT 工單自動化，這是 Super 模型卡列出的主要用途<Cite k="hf-super" />。
-- **微調與強化學習研究**：有 Base 權重、公開資料與 NeMo Gym、NeMo RL 等工具<Cite k="nv-n3-pr" />。
-- **多模態理解**：Nano Omni 可輸入影片、音訊、圖片與文字，官方 OSWorld 成績為 47.4%<Cite k="hf-omni" />。
+- **文件、圖表與影片理解**：Super VL 一個模型就能處理文字與視覺輸入，官方 OSWorld-Verified 成績 51.1%<Cite k="hf-super-vl" />；需要同時聽音訊時可用 Nano Omni<Cite k="hf-omni" />。
+- **在個人電腦或邊緣裝置執行 Agent**：Bolt 74B 可在 24GB 記憶體內執行瀏覽網頁、終端機操作等任務，Bolt E4B 適合語音助理與互動角色<Cite k="nv-bolt-blog" /><Cite k="nv-bolt-e4b-blog" />。
+- **多語言語音轉寫**：會議紀錄、客服錄音分析等離線轉寫可用 Transcribe<Cite k="hf-transcribe" />。
+- **長文件 <Term id="rag">RAG</Term>、微調與強化學習研究**：有 Base 權重、公開資料與 NeMo Gym、NeMo RL 等工具<Cite k="nv-n3-pr" />。
 
 不適合：
 
-- **追求開放權重的最強能力**：AA 開放權重榜前段是 <ModelChip id="xiaomi-mimo" />、<ModelChip id="zhipu-glm" /> 與 <ModelChip id="moonshot-kimi" />（44 到 46 分），Ultra 只有 23 分<Cite k="aa-leaderboard" />。
-- **以繁體中文為主的產品**：中文支援有限，也缺少 TMMLU+ 等繁中評測。
-- **想直接向原廠按量付費**：NVIDIA 沒有公開每百萬 tokens 的定價，build.nvidia.com 以試用與 NIM 部署為主，正式上線多半透過第三方推論服務。
+- **追求開放權重的最強能力**：AA v5 開放權重模型中，榜首 Kimi K3.1 Pro（46 分）超過 Super VL（14 分）的三倍，DeepSeek V4.1 Flash（33 分）、GLM-5.3（32 分）與 MiMo-V2.6-Pro（30 分）也都是它的兩倍以上<Cite k="aa-leaderboard-v5" />（見 <ModelChip id="moonshot-kimi" />、<ModelChip id="deepseek" />、<ModelChip id="zhipu-glm" />、<ModelChip id="xiaomi-mimo" />）。
+- **以繁體中文為主的產品**：旗艦 Super VL 與 3.5 Lightning 的官方語言清單不含中文，也缺少 TMMLU+ 等繁中評測。
+- **想直接向原廠按量付費**：NVIDIA 沒有公開每百萬 tokens 的定價，build.nvidia.com 以免費試用端點與 NIM 部署為主<Cite k="build-super-vl" />，正式上線多半透過第三方推論服務。
 
 ## 版本演進
 
@@ -796,24 +1120,43 @@ Nemotron 是 <CompanyChip id="nvidia">輝達（NVIDIA）</CompanyChip>自己訓�
 | 2026-03-11 | Nemotron 3 Super | LatentMoE、MTP、NVFP4 預訓練 |
 | 2026-03-16 | Nemotron 3 Nano 4B | 由 Nano 9B v2 壓縮而來 |
 | 2026-04-28 | Nemotron 3 Nano Omni | 影片、音訊、圖片、文字輸入 |
-| 2026-06-04 | Nemotron 3 Ultra | 系列旗艦，預訓練約 20 兆 tokens |
+| 2026-06-04 | Nemotron 3 Ultra | 最大尺寸，預訓練約 20 兆 tokens |
 | 2026-08-11 | Nemotron 3.5 Lightning | 30B 級，主打速度與可客製化 |
+| 2026-10-15 | Nemotron 3.5 Super VL | 加入圖片與影片理解，本站目前列為旗艦 |
+| 2026-10-15 | Nemotron 3.5 Bolt 74B 24GB | 由 Super VL 壓縮並量化到 2 位元，供本機執行 |
+| 2026-10-23 | Nemotron 3.5 Bolt E4B | 以 Gemma 4 E4B 後訓練的對話型小模型 |
+| 2026-10-28 | Nemotron 3.5 Transcribe | 40 種語言的離線語音轉寫 |
 
-舊版的雲端試用 API 已陸續停止：Ultra 253B 於 2026-04-22，Super 49B v1.5 與 Nano 9B v2 於 2026-08-25<Cite k="build-253b" /><Cite k="build-49b" />，權重仍可在 Hugging Face 下載。NVIDIA 部落格稱 3.5 Lightning 的生成速度最高可達同級開放模型的 4 倍<Cite k="nv-blog-lightning" />。
+舊版的雲端試用 API 已陸續停止：Ultra 253B 於 2026-04-22，Super 49B v1.5 與 Nano 9B v2 於 2026-08-25，Nemotron 3 Nano 30B 於 2026-08-31，Nemotron 3 Super 於 2026-10-19<Cite k="build-253b" /><Cite k="build-49b" /><Cite k="build-nano" /><Cite k="build-super" />，權重仍可在 Hugging Face 下載。NVIDIA 部落格稱 3.5 Lightning 的生成速度最高可達同級開放模型的 4 倍<Cite k="nv-blog-lightning" />。
 
 ## 評測解讀
 
-<Callout type="warn" title="注意日期與設定">官方數字取自各模型卡（2025-12 到 2026-08），AA 數字讀取於 2026-10-06，LMArena 排行榜標示更新日為 2026-10-02。Terminal-Bench 有 2.0、2.1、4.0 等版本，不同版本的分數不能直接比較。</Callout>
+<Callout type="warn" title="注意日期、版本與設定">官方數字取自各模型卡（2025-12 到 2026-10），由 NVIDIA 自行測試；AA 數字讀取於 2026-11-13；LMArena 排行榜頁面日期為 2026-11-11。Artificial Analysis 在 2026-10-27 把綜合智慧指數改為 v5（11 月起為 v5.0.1），新增 2 項評測、升級 3 項、移除 3 項並重新配置權重，v5 分數不能與先前的 v4 互比；本頁版本資料中保留的 v4.3.2 分數（2026-10-06 讀取）只是歷史紀錄。Terminal-Bench 也有 2.1、4.0 等版本，分數不能直接比較。</Callout>
 
-| 評測 | Ultra 官方 | Ultra AA | Super 官方 | Super AA | Lightning 官方 | Lightning AA |
-|---|---|---|---|---|---|---|
-| GPQA Diamond | 87.0% | 86.7% | 79.2% | 80.0% | 75.4% | 74.3% |
-| HLE（無工具） | 26.7% | 28.4% | 18.3% | 20.8% | 11.7% | 10.6% |
-| Terminal-Bench 2.1 | 56.4% | 53.9% | 39.6% | 38.6% | 24.6% | 24.3% |
-| AA 綜合智慧指數 v4.3.2 | 無 | 23 | 無 | 13 | 無 | 13 |
+**AA 綜合智慧指數 v5.0.1**（2026-11-13 讀取）<Cite k="aa-leaderboard-v5" /><Cite k="aa-v5" />：
 
-- **官方數字大致可重現**：上表官方值與 AA 自測的差距都在 3 個百分點以內<Cite k="aa-ultra" /><Cite k="aa-super" />。
-- **比較對象要看清楚**：Ultra 模型卡比較的是 GLM-5.1、Kimi-K2.6、DeepSeek-V4 等當時版本<Cite k="hf-ultra" />；到 2026-10，新一代的 GLM-5.3 與 Kimi K3 在 AA 指數已達 45 與 44 分<Cite k="aa-leaderboard" />。
-- **效率才是賣點**：3.5 Lightning 每 token 只啟用約 30 億參數，AA 指數卻與 Super 同為 13 分，AA 列出的價格（輸入 0.06、輸出 0.20 美元／百萬 tokens）約是 Super 的五分之一<Cite k="aa-lightning" />。
-- **長程 Agent 仍是短板**：在 AA 的 Terminal-Bench 4.0 中，Ultra 約 0.5%、Super 為 0%<Cite k="aa-ultra" /><Cite k="aa-super" />。
-- **人類偏好排名居中**：LMArena 文字榜上，Ultra（NVFP4 版）1426 分、第 118 名，Super 1360 分、第 203 名，榜首為 1525 分<Cite k="lmarena-text" />。和 <ModelChip id="openai-gpt-oss" /> 相比，Super 略勝 gpt-oss-120b（1352 分）。
+| 版本 | v5 分數 | AA 列出的第三方價格（輸入／輸出，美元／百萬 tokens） |
+|---|---|---|
+| Nemotron 3.5 Super VL | 14 | 0.17／0.50 |
+| Nemotron 3 Ultra | 12 | 0.60／2.70 |
+| Nemotron 3.5 Lightning | 6 | 0.06／0.20 |
+| Nemotron 3 Nano 4B | 2 | 無 |
+
+價格取自 AA 各模型頁，為各家 API 供應商價格的中位數<Cite k="aa-svl" /><Cite k="aa-ultra" /><Cite k="aa-lightning" />。Bolt 74B、Bolt E4B、Nemotron 3 Super、Nano 30B 與 Nano Omni 在 AA 尚無 v5 分數。v5 的 9 項評測包含 Terminal-Bench 4.0、AutomationBench 等 Agent 任務，以及 HLE-Diamond、CritPt 等難題<Cite k="aa-svl" />。AA 把 Super VL 歸在 400 億到 1,500 億參數的中型開放權重級距，該級距中位數為 4 分；Ultra 則在大型級距中排在後段（中位數 24 分）<Cite k="aa-svl" /><Cite k="aa-ultra" />。
+
+**官方模型卡：Super VL 與 Ultra 同場比較。** Super VL 模型卡用同一套 NeMo Gym 流程重測了 Ultra，數字與 Ultra 自己的模型卡略有出入<Cite k="hf-super-vl" />：
+
+| 評測 | Super VL | Ultra（重測） |
+|---|---|---|
+| GPQA Diamond | 89.5% | 87.0% |
+| HLE（純文字） | 31.8% | 29.2% |
+| SWE-bench Verified | 71.1% | 73.9% |
+| SWE-bench Pro | 51.8% | 49.7% |
+| Terminal-Bench 2.1 | 60.7% | 54.8% |
+| IFBench 指令遵循 | 70.9% | 82.9% |
+| τ²-bench 零售客服 | 69.2% | 73.7% |
+
+- **Super VL 不是全面勝過 Ultra**：GPQA、HLE、SWE-bench Pro 與 Terminal-Bench 2.1 較強；SWE-bench Verified、指令遵循（IFBench）與客服情境的工具使用（τ²-bench）則是 Ultra 較好，與 NVIDIA 讓 Ultra 負責複雜規劃的分工一致。
+- **長程 Agent 仍是短板**：同一張模型卡的 Terminal Bench 4 離線評測，Super VL 只有 1%、Ultra 為 0%，Qwen3.8-Flash-Next 則為 20.7%<Cite k="hf-super-vl" />；而 AA v5 正好把 Terminal-Bench 4.0 納入指數。
+- **Bolt 的取捨**：Bolt 74B（2 位元版）官方 GPQA Diamond 86.4%、Terminal-Bench 2.1 51.0%，同一張模型卡測得的 3.5 Lightning 為 75.6% 與 23.5%<Cite k="hf-bolt" />；代價是上下文只有約 26.2 萬 tokens（256K），不到 Lightning 的三分之一。
+- **人類偏好排名居中**：LMArena 文字榜（2026-11-11 頁面）上，Ultra（NVFP4 版）1426 分、第 123 名；Super VL（NVFP4 版）1414 分、第 148 名，仍標為初步排名<Cite k="lmarena-1111" />。

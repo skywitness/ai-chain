@@ -5,30 +5,199 @@ kind: "llm"
 lab: "moonshot-ai"
 labName: "月之暗面（Moonshot AI）"
 origin: "CN"
-summary: "月之暗面（Moonshot AI）的 Kimi 開放權重模型系列。2025 年 7 月的 Kimi K2 以 1 兆參數 MoE 打開知名度，之後 K2 Thinking、K2.5、K2.6 陸續加入推理、原生視覺與多代理能力；2026-07-16 推出的 Kimi K3 總參數 2.8 兆、每個 token 啟用 1,040 億，支援約 105 萬 tokens 上下文，官方稱是第一個 3 兆參數級的開放權重模型。K3 的 AA 綜合智慧指數為 44，屬於開放權重模型的領先群。"
+summary: "月之暗面（Moonshot AI）的 Kimi 開放權重模型系列。2025 年 7 月的 Kimi K2 以 1 兆參數 MoE 打開知名度；2026-07-16 的 Kimi K3 總參數 2.8 兆、每個 token 啟用 1,040 億。2026-10-24 推出的新旗艦 Kimi K3.1 Pro 以 K3 加大強化學習後訓練，上下文約 105 萬 tokens，API 價格降為每百萬 tokens 輸入 2 美元、輸出 10 美元，權重已於 11 月初公開。K3.1 Pro 的 AA 綜合智慧指數 v5 為 46，是 AA v5 開放權重模型中的最高分。"
 strengths:
-  - "能力位居開放權重前段：K3（max）AA 綜合智慧指數 44，與 MiMo-V2.6-Pro（46）、GLM-5.3（45）同屬領先群；LMArena 文字榜第 16 名，是榜上最高的開放授權模型"
-  - "長程程式與 Agent 任務強：官方 Terminal-Bench 2.1 為 88.3%、OSWorld-Verified 84.8%，AA 自測 Terminal-Bench 2.1 也有 85.0%"
-  - "原生多模態：K2.5 起可理解圖片與影片，K3 上下文約 105 萬 tokens"
-  - "產品線分工清楚：旗艦 K3 之外，另有價格約為 K3 三分之一到四分之一的程式專用 K2.7 Code"
+  - "開放權重中能力最強：K3.1 Pro 的 AA 綜合智慧指數 v5.0.1 為 46，是 AA v5 評測的 43 個開放權重模型中最高，第二名 DeepSeek V4.1 Flash 1017（Max）為 33"
+  - "長程程式與 Agent 任務強：官方 Terminal-Bench 4.0 為 65.7%，AA 獨立測試為 67.2%；官方 OSWorld V2.1 為 79.6%"
+  - "原生多模態與長上下文：可輸入圖片（官方 API 也示範影片檔輸入），上下文約 105 萬 tokens，且不依上下文長度分級計價"
+  - "比 K3 便宜且有高速選項：K3.1 Pro 標準價約為 K3 的三分之二，另有速度約 2 到 3 倍的 Highspeed 版"
 weaknesses:
-  - "價格在中國模型中偏高：K3 每百萬 tokens 輸入 3 美元、輸出 15 美元，約為 DeepSeek V4.1-Flash 尖峰價的 10 到 12.5 倍"
+  - "價格明顯高於 DeepSeek 等低價模型：K3.1 Pro 每百萬 tokens 輸入 2 美元、輸出 10 美元，約為 DeepSeek V4.1-Flash（1017）尖峰價的 6.7 到 8.3 倍"
   - "部署門檻高：總參數 2.8 兆，即使以 MXFP4 量化，權重仍以 TB 計，需要多張高階 GPU 才能自架"
-  - "K3 授權非標準開源：以模型即服務營利、12 個月營收超過 2,000 萬美元者須另簽協議，大型產品須標示「Kimi K3」"
-  - "速度偏慢且永遠開啟思考：AA 於 2026 年 10 月中旬量測 K3 輸出約每秒 42 tokens，簡單任務的延遲與成本偏高"
+  - "授權非標準開源：K3 與 K3.1 Pro 的授權都規定，經營模型即服務、12 個月營收超過 2,000 萬美元者須另簽協議，大型產品須標示模型名稱"
+  - "標準版偏慢且永遠開啟思考：AA 於 2026-11-13 讀取的 K3.1 Pro 輸出速度約每秒 31 tokens，要更快須改用價格加倍的 Highspeed 版"
+  - "舊型號汰換快：K2.6 與 K2.7 Code 自 2026-10-31 起不再開放新用戶，官方計畫在 2026 年 12 月底前退役"
 bestFor:
   - "需要長時間自主執行的程式開發、終端機操作與 Agent 工作流"
-  - "需要讀圖、讀影片的研究報告與知識工作"
+  - "財務模型、文件分析等重視事實正確性的知識工作"
+  - "3D 建模、參數化設計，以及遊戲與網頁前端開發"
   - "想用最強開放權重模型做私有部署或微調、且具備大型 GPU 叢集的企業與研究機構"
-  - "預算有限的程式開發場景（改用 K2.7 Code）"
 positioning:
-  capability: 44
-  costIndex: 63
+  capability: 46
+  costIndex: 58
   openness: 0.5
   method: "computed"
-  asOf: "2026-10-06"
-  note: "capability 取 Kimi K3（Max）的 AA 綜合智慧指數 v4.3（43.6）；costIndex 以官方定價（輸入 3.00、輸出 15.00 美元）3:1 混合為 6.00 美元／百萬 tokens，依對數換算（0.05 美元 = 0、100 美元 = 100）得 63；權重開放但採 Kimi K3 License，對大型模型即服務業者設有另簽協議與標示義務，openness = 0.5。"
+  asOf: "2026-11-13"
+  note: "capability 取旗艦 Kimi K3.1 Pro 的 AA 綜合智慧指數 v5.0.1（Max 推理強度，AA 只列此一設定）= 46（2026-11-13 讀取）。costIndex 以 3：1 混合價格（(3×2 + 10)÷4 = 4 美元／百萬 tokens）對數換算（0.05 美元 → 0、100 美元 → 100）得 57.7，取 58。openness 為 0.5：權重開放，但 Kimi K3.1 Pro License 對大型模型即服務業者設有另簽協議義務、對大型產品設有標示義務。"
 versions:
+  - id: "kimi-k3-1-pro"
+    name: "Kimi K3.1 Pro"
+    released: "2026-10-24"
+    status: "ga"
+    tier: "flagship"
+    weights: "open-weights"
+    license: "Kimi K3.1 Pro License"
+    architecture: "moe"
+    params:
+      totalB: 2800
+      activeB: 104
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+      - "video"
+    modalitiesOut:
+      - "text"
+    contextTokens: 1048576
+    reasoning: "always"
+    availability:
+      - "api"
+      - "chat-app"
+      - "self-host"
+    pricing:
+      - asOf: "2026-11-13"
+        inputPerMTok: 2
+        outputPerMTok: 10
+        cachedInputPerMTok: 0.2
+        currency: "USD"
+        tierNote: "kimi-k3.1-pro；快取寫入另計：TTL 5 分鐘每百萬 tokens 2.00 美元、TTL 1 小時 4.00 美元；不依上下文長度分級；Batch API 為標準價的 60%"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "Model Inference Pricing"
+          publisher: "Kimi API Platform"
+          url: "https://platform.kimi.ai/docs/pricing/chat"
+          type: "docs"
+      - asOf: "2026-11-13"
+        inputPerMTok: 4
+        outputPerMTok: 20
+        cachedInputPerMTok: 0.2
+        currency: "USD"
+        tierNote: "kimi-k3.1-pro-highspeed（官方稱智慧相同、速度約 2 到 3 倍）；快取寫入 TTL 5 分鐘每百萬 tokens 4.00 美元、TTL 1 小時 8.00 美元"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "Model Inference Pricing"
+          publisher: "Kimi API Platform"
+          url: "https://platform.kimi.ai/docs/pricing/chat"
+          type: "docs"
+    benchmarks:
+      - benchmark: "aa-intelligence-index-v5"
+        score: 46
+        setting: "v5.0.1，Max 推理強度（AA 只列此一設定）"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "LLM Leaderboard: Comparison of AI Models (Intelligence Index v5.0.1)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+      - benchmark: "terminal-bench-4"
+        score: 65.7
+        setting: "Terminal-Bench 4.0，Claude Code 框架，max 推理強度（官方部落格）"
+        reportedBy: "lab"
+        date: "2026-10-24"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "Kimi K3.1 Pro Tech Blog: Advancing Open Intelligence"
+          publisher: "Moonshot AI"
+          url: "https://www.kimi.ai/blog/kimi-k3-1-pro"
+          type: "company-site"
+          published: "2026-10-24"
+      - benchmark: "gpqa-diamond"
+        score: 94.2
+        setting: "max 推理強度（官方部落格）"
+        reportedBy: "lab"
+        date: "2026-10-24"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "Kimi K3.1 Pro Tech Blog: Advancing Open Intelligence"
+          publisher: "Moonshot AI"
+          url: "https://www.kimi.ai/blog/kimi-k3-1-pro"
+          type: "company-site"
+          published: "2026-10-24"
+      - benchmark: "hle"
+        score: 51.1
+        setting: "HLE 全集（2,500 題），無工具；有工具為 70.0（官方部落格）"
+        reportedBy: "lab"
+        date: "2026-10-24"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "Kimi K3.1 Pro Tech Blog: Advancing Open Intelligence"
+          publisher: "Moonshot AI"
+          url: "https://www.kimi.ai/blog/kimi-k3-1-pro"
+          type: "company-site"
+          published: "2026-10-24"
+      - benchmark: "hle"
+        score: 39.4
+        setting: "HLE-Diamond（1,000 題），無工具（官方部落格）"
+        reportedBy: "lab"
+        date: "2026-10-24"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "Kimi K3.1 Pro Tech Blog: Advancing Open Intelligence"
+          publisher: "Moonshot AI"
+          url: "https://www.kimi.ai/blog/kimi-k3-1-pro"
+          type: "company-site"
+          published: "2026-10-24"
+      - benchmark: "osworld"
+        score: 79.6
+        setting: "OSWorld V2.1，Kimi Agent 框架（官方部落格）"
+        reportedBy: "lab"
+        date: "2026-10-24"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "Kimi K3.1 Pro Tech Blog: Advancing Open Intelligence"
+          publisher: "Moonshot AI"
+          url: "https://www.kimi.ai/blog/kimi-k3-1-pro"
+          type: "company-site"
+          published: "2026-10-24"
+      - benchmark: "terminal-bench-4"
+        score: 67.2
+        setting: "Terminal-Bench 4.0，AA 獨立測試，Max"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "Kimi K3.1 Pro Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/kimi-k3-1-pro"
+          type: "leaderboard"
+      - benchmark: "hle"
+        score: 37.3
+        setting: "HLE-Diamond，AA 獨立測試，Max"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "Kimi K3.1 Pro Intelligence, Performance & Price Analysis"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/models/kimi-k3-1-pro"
+          type: "leaderboard"
+      - benchmark: "lmarena-text"
+        score: 1485
+        setting: "Kimi K3.1 Pro (Max)，2026-11-11 頁面，第 24 名，±10，3,995 票，未標 Preliminary"
+        reportedBy: "leaderboard"
+        date: "2026-11-11"
+        source:
+          lang: "en"
+          accessed: "2026-11-13"
+          title: "Text Arena Leaderboard (Overall)"
+          publisher: "LMArena"
+          url: "https://arena.ai/leaderboard/text"
+          type: "leaderboard"
+          published: "2026-11-11"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型、9,122,174 票"
+    notes: "以 K3 為基礎、投入大幅增加的後訓練算力，在數百個下游領域做聯合強化學習，不是重新預訓練。93 層：69 層 KDA 加 24 層 Gated DeepSeek Sparse Attention（Gated DSA，取代 K3 的 Gated MLA 全注意力層，以提高長上下文效率）；896 個專家中每個 token 選 16 個，另有 2 個共享專家；視覺編碼器 MoonViT-V2 約 4.01 億參數；以 MXFP4 權重、MXFP8 激活值做量化感知訓練。永遠開啟思考，推理強度可設 low、high、max（預設 max），多輪對話須把含 reasoning_content 的完整回覆傳回。模型卡列出的模態為文字與圖片，官方 API 快速入門另示範影片檔輸入。官方表示開放權重版在中期訓練與強化學習階段移除了資安相關的資料與任務。發布時承諾 2026-11-04 前釋出權重，Hugging Face 儲存庫的初始提交日為 2026-11-02。另有 kimi-k3.1-pro-highspeed 型號，官方稱智慧相同、速度約 2 到 3 倍。AA 列出的發布日為 2026-10-23，本站採官方部落格日期。"
   - id: "kimi-k3"
     name: "Kimi K3"
     released: "2026-07-16"
@@ -54,17 +223,17 @@ versions:
       - "chat-app"
       - "self-host"
     pricing:
-      - asOf: "2026-10-06"
+      - asOf: "2026-11-13"
         inputPerMTok: 3
         outputPerMTok: 15
         cachedInputPerMTok: 0.3
         currency: "USD"
-        tierNote: "kimi-k3；快取寫入另計：TTL 5 分鐘每百萬 tokens 3.00 美元、TTL 1 小時 6.00 美元；不依上下文長度分級"
+        tierNote: "kimi-k3（與 2026-10-06 相同）；快取寫入另計：TTL 5 分鐘每百萬 tokens 3.00 美元、TTL 1 小時 6.00 美元；不依上下文長度分級；Batch API 為標準價的 60%"
         source:
           lang: "en"
-          accessed: "2026-10-06"
-          title: "Model Inference Pricing Explanation"
-          publisher: "Kimi Open Platform"
+          accessed: "2026-11-13"
+          title: "Model Inference Pricing"
+          publisher: "Kimi API Platform"
           url: "https://platform.kimi.ai/docs/pricing/chat"
           type: "docs"
     benchmarks:
@@ -168,7 +337,7 @@ versions:
           publisher: "Artificial Analysis"
           url: "https://artificialanalysis.ai/models/kimi-k3"
           type: "leaderboard"
-      - benchmark: "terminal-bench"
+      - benchmark: "terminal-bench-4"
         score: 12.6
         setting: "Terminal-Bench 4.0，AA 獨立測試，Max"
         reportedBy: "third-party"
@@ -181,24 +350,24 @@ versions:
           url: "https://artificialanalysis.ai/models/kimi-k3"
           type: "leaderboard"
       - benchmark: "lmarena-text"
-        score: 1488
-        setting: "kimi-k3-max，第 16 名，±5"
+        score: 1487
+        setting: "Kimi K3 (Max)，2026-11-11 頁面，第 20 名，±4，未標 Preliminary"
         reportedBy: "leaderboard"
-        date: "2026-10-02"
+        date: "2026-11-11"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Text Arena Leaderboard (Overall)"
           publisher: "LMArena"
           url: "https://arena.ai/leaderboard/text"
           type: "leaderboard"
-          published: "2026-10-02"
-          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
-    notes: "93 層：69 層 Kimi Delta Attention（KDA，混合線性注意力）加 24 層 Gated MLA，並採 Attention Residuals；896 個專家中每個 token 選 16 個，另有 2 個共享專家。視覺編碼器 MoonViT-V2 約 4.01 億參數。自 SFT 階段起以 MXFP4 權重、MXFP8 激活值做量化感知訓練。永遠開啟思考，推理強度可設 low、high、max（預設 max）；多輪對話須把含 reasoning_content 的完整回覆傳回。官方發布時承諾於 2026-07-27 前釋出完整權重，現已可在 Hugging Face 下載。"
+          published: "2026-11-11"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型、9,122,174 票"
+    notes: "93 層：69 層 Kimi Delta Attention（KDA，混合線性注意力）加 24 層 Gated MLA，並採 Attention Residuals；896 個專家中每個 token 選 16 個，另有 2 個共享專家。視覺編碼器 MoonViT-V2 約 4.01 億參數。自 SFT 階段起以 MXFP4 權重、MXFP8 激活值做量化感知訓練。永遠開啟思考，推理強度可設 low、high、max（預設 max）；多輪對話須把含 reasoning_content 的完整回覆傳回。官方發布時承諾於 2026-07-27 前釋出完整權重，現已可在 Hugging Face 下載。K3.1 Pro 推出後，官方 API 將 K3 列為前一代旗艦，仍可呼叫；AA 已把 K3 標為舊版並指向 K3.1 Pro，2026-11-13 讀取時 v5 指數沒有 K3 的分數，上列 AA 綜合指數為改版前的 v4.3。"
   - id: "kimi-k2-7-code"
     name: "Kimi K2.7 Code"
     released: "2026-06-12"
-    status: "ga"
+    status: "deprecated"
     tier: "specialized"
     weights: "open-weights"
     license: "Modified MIT"
@@ -219,30 +388,30 @@ versions:
       - "api"
       - "self-host"
     pricing:
-      - asOf: "2026-10-06"
+      - asOf: "2026-11-13"
         inputPerMTok: 0.95
         outputPerMTok: 4
         cachedInputPerMTok: 0.19
         currency: "USD"
-        tierNote: "kimi-k2.7-code"
+        tierNote: "kimi-k2.7-code（與 2026-10-06 相同）；2026-10-31 起不開放新註冊用戶，預計 2026 年 12 月底退役"
         source:
           lang: "en"
-          accessed: "2026-10-06"
-          title: "Model Inference Pricing Explanation"
-          publisher: "Kimi Open Platform"
+          accessed: "2026-11-13"
+          title: "Model Inference Pricing"
+          publisher: "Kimi API Platform"
           url: "https://platform.kimi.ai/docs/pricing/chat"
           type: "docs"
-      - asOf: "2026-10-06"
+      - asOf: "2026-11-13"
         inputPerMTok: 1.9
         outputPerMTok: 8
         cachedInputPerMTok: 0.38
         currency: "USD"
-        tierNote: "kimi-k2.7-code-highspeed（輸出約每秒 180 tokens）"
+        tierNote: "kimi-k2.7-code-highspeed（2026-10-06 讀取時標示輸出約每秒 180 tokens）；同樣不開放新註冊用戶，預計 2026 年 12 月底退役"
         source:
           lang: "en"
-          accessed: "2026-10-06"
-          title: "Model Inference Pricing Explanation"
-          publisher: "Kimi Open Platform"
+          accessed: "2026-11-13"
+          title: "Model Inference Pricing"
+          publisher: "Kimi API Platform"
           url: "https://platform.kimi.ai/docs/pricing/chat"
           type: "docs"
     benchmarks:
@@ -294,11 +463,11 @@ versions:
           publisher: "Artificial Analysis"
           url: "https://artificialanalysis.ai/models/kimi-k2-7-code"
           type: "leaderboard"
-    notes: "程式專用版本，不支援非思考模式；官方稱相較 K2.6 長上下文指令遵循更穩定，過度思考傾向平均減少 30%。可輸入圖片與影片（影片為官方 API 的實驗功能）。官方評測多為自家基準（Kimi Code Bench v2 等），未列入本站評測清單。"
+    notes: "程式專用版本，不支援非思考模式；官方稱相較 K2.6 長上下文指令遵循更穩定，過度思考傾向平均減少 30%。可輸入圖片與影片（影片為官方 API 的實驗功能）。官方評測多為自家基準（Kimi Code Bench v2 等），未列入本站評測清單。官方定價頁把 K2.6 與 K2.7 Code 歸為「K2 系列」：2026-10-31 起不再開放新註冊用戶（之前註冊者可繼續使用），計畫在 2026 年 12 月底前全數退役，定價頁的遷移說明連到 K3.1 Pro 快速入門。AA 列出 K2.7 Code，但 v5 指數沒有其分數。"
   - id: "kimi-k2-6"
     name: "Kimi K2.6"
     released: "2026-04-20"
-    status: "ga"
+    status: "deprecated"
     tier: "mid"
     weights: "open-weights"
     license: "Modified MIT"
@@ -317,17 +486,17 @@ versions:
       - "chat-app"
       - "self-host"
     pricing:
-      - asOf: "2026-10-06"
+      - asOf: "2026-11-13"
         inputPerMTok: 0.95
         outputPerMTok: 4
         cachedInputPerMTok: 0.16
         currency: "USD"
-        tierNote: "kimi-k2.6"
+        tierNote: "kimi-k2.6（與 2026-10-06 相同）；2026-10-31 起不開放新註冊用戶，預計 2026 年 12 月底退役"
         source:
           lang: "en"
-          accessed: "2026-10-06"
-          title: "Model Inference Pricing Explanation"
-          publisher: "Kimi Open Platform"
+          accessed: "2026-11-13"
+          title: "Model Inference Pricing"
+          publisher: "Kimi API Platform"
           url: "https://platform.kimi.ai/docs/pricing/chat"
           type: "docs"
     benchmarks:
@@ -472,19 +641,19 @@ versions:
           type: "leaderboard"
       - benchmark: "lmarena-text"
         score: 1461
-        setting: "kimi-k2.6，第 58 名，±4"
+        setting: "Kimi K2.6，2026-11-11 頁面，第 61 名，±4，未標 Preliminary"
         reportedBy: "leaderboard"
-        date: "2026-10-02"
+        date: "2026-11-11"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Text Arena Leaderboard (Overall)"
           publisher: "LMArena"
           url: "https://arena.ai/leaderboard/text"
           type: "leaderboard"
-          published: "2026-10-02"
-          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
-    notes: "原生多模態 Agent 模型，強調長程程式、程式驅動設計與多代理（Agent Swarm）協作；影片輸入為實驗功能，僅官方 API 支援。原生 INT4 量化。"
+          published: "2026-11-11"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型、9,122,174 票"
+    notes: "原生多模態 Agent 模型，強調長程程式、程式驅動設計與多代理（Agent Swarm）協作；影片輸入為實驗功能，僅官方 API 支援。原生 INT4 量化。2026-10-31 起不再開放新註冊用戶，官方計畫在 2026 年 12 月底前退役。"
   - id: "kimi-k2-5"
     name: "Kimi K2.5"
     released: "2026-01-27"
@@ -599,18 +768,18 @@ versions:
           type: "leaderboard"
       - benchmark: "lmarena-text"
         score: 1450
-        setting: "kimi-k2.5-thinking，第 78 名，±3"
+        setting: "Kimi K2.5 (Thinking)，2026-11-11 頁面，第 82 名，±3，未標 Preliminary"
         reportedBy: "leaderboard"
-        date: "2026-10-02"
+        date: "2026-11-11"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Text Arena Leaderboard (Overall)"
           publisher: "LMArena"
           url: "https://arena.ai/leaderboard/text"
           type: "leaderboard"
-          published: "2026-10-02"
-          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+          published: "2026-11-11"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型、9,122,174 票"
     notes: "以 Kimi-K2-Base 持續預訓練約 15 兆視覺與文字混合 tokens，加入原生視覺能力；API 於 2026-08-31 停止服務。"
   - id: "kimi-k2-thinking"
     name: "Kimi K2 Thinking"
@@ -742,19 +911,19 @@ versions:
           url: "https://artificialanalysis.ai/models/kimi-k2-0905"
           type: "leaderboard"
       - benchmark: "lmarena-text"
-        score: 1419
-        setting: "kimi-k2-0905-preview，第 131 名，±7"
+        score: 1418
+        setting: "Kimi K2 Preview (0905)，2026-11-11 頁面，第 136 名，±7，未標 Preliminary"
         reportedBy: "leaderboard"
-        date: "2026-10-02"
+        date: "2026-11-11"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Text Arena Leaderboard (Overall)"
           publisher: "LMArena"
           url: "https://arena.ai/leaderboard/text"
           type: "leaderboard"
-          published: "2026-10-02"
-          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+          published: "2026-11-11"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型、9,122,174 票"
     notes: "K2 的更新版，上下文由 128K 擴大到 256K，強化 Agent 程式能力；API 於 2026-05-25 退役。"
   - id: "kimi-k2-0711"
     name: "Kimi K2-Instruct"
@@ -802,20 +971,20 @@ versions:
           type: "leaderboard"
       - benchmark: "lmarena-text"
         score: 1418
-        setting: "kimi-k2-0711-preview，第 132 名，±5"
+        setting: "Kimi K2 Preview (0711)，2026-11-11 頁面，第 137 名，±5，未標 Preliminary"
         reportedBy: "leaderboard"
-        date: "2026-10-02"
+        date: "2026-11-11"
         source:
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
           title: "Text Arena Leaderboard (Overall)"
           publisher: "LMArena"
           url: "https://arena.ai/leaderboard/text"
           type: "leaderboard"
-          published: "2026-10-02"
-          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+          published: "2026-11-11"
+          note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型、9,122,174 票"
     notes: "1 兆參數 MoE，以 Muon 最佳化器預訓練 15.5 兆 tokens，官方稱過程中沒有出現訓練不穩定；API 於 2026-05-25 退役。"
-flagshipVersion: "kimi-k3"
+flagshipVersion: "kimi-k3-1-pro"
 relatedLearn:
   - "open-vs-closed-models"
   - "mixture-of-experts"
@@ -835,7 +1004,59 @@ glossary:
   - "reasoning-model"
   - "distillation"
   - "elo-rating"
+  - "post-training"
+  - "reinforcement-learning"
+  - "sparse-attention"
+  - "hallucination"
 sources:
+  - lang: "en"
+    accessed: "2026-11-13"
+    key: "kimi-k31-blog"
+    title: "Kimi K3.1 Pro Tech Blog: Advancing Open Intelligence"
+    publisher: "Moonshot AI"
+    url: "https://www.kimi.ai/blog/kimi-k3-1-pro"
+    type: "company-site"
+    published: "2026-10-24"
+    note: "發布日依官方部落格列表（2026-10-24）"
+  - lang: "en"
+    accessed: "2026-11-13"
+    key: "hf-kimi-k31-pro"
+    title: "Kimi K3.1 Pro (model card)"
+    publisher: "Moonshot AI (Hugging Face)"
+    url: "https://huggingface.co/moonshotai/Kimi-K3.1-Pro"
+    type: "docs"
+    published: "2026-11-02"
+    note: "儲存庫初始提交日 2026-11-02；2026-11-13 讀取時累計下載 37,486 次"
+  - lang: "en"
+    accessed: "2026-11-13"
+    key: "kimi-k31-license"
+    title: "Kimi K3.1-Pro License"
+    publisher: "Moonshot AI (Hugging Face)"
+    url: "https://huggingface.co/moonshotai/Kimi-K3.1-Pro/blob/main/LICENSE"
+    type: "docs"
+  - lang: "en"
+    accessed: "2026-11-13"
+    key: "kimi-k31-quickstart"
+    title: "Kimi K3.1 Pro Quickstart"
+    publisher: "Kimi API Platform"
+    url: "https://platform.kimi.ai/docs/guide/kimi-k3-1-pro-quickstart"
+    type: "docs"
+  - lang: "en"
+    accessed: "2026-11-13"
+    key: "aa-kimi-k31-pro"
+    title: "Kimi K3.1 Pro Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/kimi-k3-1-pro"
+    type: "leaderboard"
+    note: "2026-11-13 讀取；輸出速度為 AA 近 5 天量測的平均"
+  - lang: "en"
+    accessed: "2026-11-13"
+    key: "deepseek-pricing"
+    title: "Models & Pricing"
+    publisher: "DeepSeek API Docs"
+    url: "https://api-docs.deepseek.com/quick_start/pricing"
+    type: "docs"
+    note: "deepseek-flash（DeepSeek-V4.1-Flash-1017）尖峰價每百萬 tokens 輸入 0.30、輸出 1.20 美元"
   - lang: "en"
     accessed: "2026-10-17"
     key: "hf-kimi-k3"
@@ -853,7 +1074,7 @@ sources:
     type: "company-site"
     published: "2026-07-16"
   - lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
     key: "kimi-k3-license"
     title: "Kimi K3 License"
     publisher: "Moonshot AI (Hugging Face)"
@@ -867,24 +1088,25 @@ sources:
     url: "https://platform.kimi.ai/docs/guide/kimi-k3-quickstart"
     type: "docs"
   - lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
     key: "kimi-pricing"
-    title: "Model Inference Pricing Explanation"
-    publisher: "Kimi Open Platform"
+    title: "Model Inference Pricing"
+    publisher: "Kimi API Platform"
     url: "https://platform.kimi.ai/docs/pricing/chat"
     type: "docs"
+    note: "2026-10-06 讀取時頁面標題為 Model Inference Pricing Explanation、平台名稱為 Kimi Open Platform"
   - lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
     key: "kimi-models"
     title: "Model List"
-    publisher: "Kimi Open Platform"
+    publisher: "Kimi API Platform"
     url: "https://platform.kimi.ai/docs/models"
     type: "docs"
   - lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
     key: "kimi-changelog"
     title: "Platform Changelog"
-    publisher: "Kimi Open Platform"
+    publisher: "Kimi API Platform"
     url: "https://platform.kimi.ai/docs/platform-changelog"
     type: "docs"
   - lang: "en"
@@ -927,12 +1149,13 @@ sources:
     type: "docs"
     published: "2025-07-11"
   - lang: "en"
-    accessed: "2026-10-17"
+    accessed: "2026-11-13"
     key: "aa-kimi-k3"
     title: "Kimi K3 (Max) Intelligence, Performance & Price Analysis"
     publisher: "Artificial Analysis"
     url: "https://artificialanalysis.ai/models/kimi-k3"
     type: "leaderboard"
+    note: "v4.3 數字於 2026-10-06 與 2026-10-17 讀取；2026-11-13 讀取時 AA 已把 K3 標為舊版並指向 K3.1 Pro，v5 指數沒有 K3 的分數"
   - lang: "en"
     accessed: "2026-10-06"
     key: "aa-kimi-k27-code"
@@ -941,22 +1164,30 @@ sources:
     url: "https://artificialanalysis.ai/models/kimi-k2-7-code"
     type: "leaderboard"
   - lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
     key: "aa-leaderboard"
-    title: "LLM Leaderboard: Comparison of AI Models (Intelligence Index v4.3)"
+    title: "LLM Leaderboard: Comparison of AI Models (Intelligence Index v5.0.1)"
     publisher: "Artificial Analysis"
     url: "https://artificialanalysis.ai/leaderboards/models"
     type: "leaderboard"
-    note: "綜合指數於 2026-10-06 與 2026-10-17 讀取時一致；名次會隨新模型加入而變動，本頁不引用名次"
+    note: "2026-11-13 讀取；智慧指數為 v5.0.1（2026-10-27 起改版為 v5），共 111 個模型有 v5 分數，其中 43 個為開放權重；名次會隨新模型加入而變動"
   - lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
+    key: "aa-index-v5"
+    title: "Artificial Analysis Intelligence Index v5"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5"
+    type: "leaderboard"
+    published: "2026-10-27"
+  - lang: "en"
+    accessed: "2026-11-13"
     key: "lmarena-text"
     title: "Text Arena Leaderboard (Overall)"
     publisher: "LMArena"
     url: "https://arena.ai/leaderboard/text"
     type: "leaderboard"
-    published: "2026-10-02"
-    note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-10-02，共 413 個模型"
+    published: "2026-11-11"
+    note: "lmarena.ai 已轉址至 arena.ai；排行榜標示更新日 2026-11-11，共 421 個模型、9,122,174 票"
   - lang: "en"
     accessed: "2026-10-06"
     key: "wiki-moonshot"
@@ -974,55 +1205,63 @@ sources:
     type: "other"
     published: "2026-09-10"
     note: "Anthropic 單方面的威脅情報報告"
-lastVerified: "2026-10-06"
+lastVerified: "2026-11-13"
 editorial:
   status: "fact-checked"
-  author: "models-09"
-  checkedBy: "models-09-check"
-  checkedOn: "2026-10-06"
-  notes: "查核依 Kimi 開放平台定價頁與模型清單、Hugging Face 模型卡與 Kimi K3 License、官方技術部落格，AA 與 LMArena（2026-10-02 快照）逐項核對。修正：移除無法回溯查證的 AA 開放權重名次、AA 輸出速度與 Hugging Face 下載量改用可查證讀數、補上 K2.7 Code 的影片輸入與授權的內部使用豁免。"
+  author: "mdl-moonshot-kimi"
+  checkedBy: "check-mdl-moonshot-kimi"
+  checkedOn: "2026-11-13"
+  notes: "2026-11-13 更新：新增旗艦 Kimi K3.1 Pro（官方部落格、Hugging Face 模型卡與授權、API 定價頁與快速入門），K2.6 與 K2.7 Code 改為 deprecated（定價頁與模型清單），AA 綜合智慧指數改用 v5.0.1（共用快照 research/staging/models/leaderboards-2026-11-13.json，並以 AA 模型頁核對），LMArena 改用 2026-11-11 榜單；v4.3 舊分數保留為歷史紀錄。查核（2026-11-13）：逐項以官方部落格內嵌評測表、Hugging Face 模型卡、授權檔與 API（下載數、提交紀錄）、定價頁原始資料、模型清單、平台更新紀錄、AA 模型頁與排行榜頁資料、AA v5 改版文章、LMArena 2026-11-11 頁面與 DeepSeek 定價頁核對。修正：K3 授權同樣豁免透過官方產品或認證推論夥伴的使用（原文誤寫為 K3.1 Pro 獨有）；AA v5 是新增、升級與移除部分評測並重配權重，不是題組全部換新；v5 封閉模型對照補上榜首 Claude Fable 5.2（Max，65）；資安段落改為依原文的「資安相關資料與任務」並註明 pass@3；其餘為用字微調。"
 ---
 
 ## 系列概覽
 
-Kimi 是北京 <CompanyChip id="moonshot-ai">月之暗面（Moonshot AI）</CompanyChip>的模型系列，同時用在 Kimi 聊天 App、Kimi Code 程式工具與開放平台 API。2025 年 7 月公開權重的 Kimi K2 是 1 兆參數的 <Term id="moe">MoE</Term> 模型，之後每隔兩、三個月推出一版；2026-07-16 發布的 Kimi K3 把總參數推到 2.8 兆<Cite k="wiki-moonshot" />。官方表示，在 2025 年 7 月到 2026 年 7 月的 12 個月中，有 9 個月是由 Kimi 保持開放權重模型的規模上限<Cite k="kimi-k3-blog" />。
+Kimi 是北京 <CompanyChip id="moonshot-ai">月之暗面（Moonshot AI）</CompanyChip>的模型系列，同時用在 Kimi 聊天 App、Kimi Work、Kimi Code 程式工具與 API 平台。2025 年 7 月公開權重的 Kimi K2 是 1 兆參數的 <Term id="moe">MoE</Term> 模型，之後每隔兩、三個月推出一版；2026-07-16 發布的 Kimi K3 把總參數推到 2.8 兆<Cite k="wiki-moonshot" />。官方表示，在 2025 年 7 月到 2026 年 7 月的 12 個月中，有 9 個月是由 Kimi 保持開放權重模型的規模上限<Cite k="kimi-k3-blog" />。
 
-截至 2026-10-06，官方 API 提供三個型號<Cite k="kimi-models" /><Cite k="kimi-pricing" />：
+2026-10-24，月之暗面推出 K3.1 系列的第一個模型 Kimi K3.1 Pro，同時推出速度約 2 到 3 倍的 Kimi K3.1 Pro Highspeed<Cite k="kimi-k31-blog" />。官方原本承諾 11 月 4 日前釋出權重，Hugging Face 權重儲存庫的初始提交日為 2026-11-02，2026-11-13 讀取時累計下載約 3.7 萬次<Cite k="hf-kimi-k31-pro" />。前一代 K3 的權重在 2026-10-17 讀取時近 30 天下載量約 105 萬次<Cite k="hf-kimi-k3" />。
+
+截至 2026-11-13，官方 API 提供以下型號<Cite k="kimi-models" /><Cite k="kimi-pricing" />：
 
 | 型號 | 定位 | 總參數／啟用參數 | 上下文 | 每百萬 tokens 價格（輸入／輸出） |
 |---|---|---|---|---|
-| kimi-k3 | 旗艦，永遠開啟思考 | 2.8 兆／1,040 億 | 1,048,576 | 3.00／15.00 美元 |
-| kimi-k2.7-code | 程式專用 | 1 兆／320 億 | 262,144 | 0.95／4.00 美元 |
-| kimi-k2.6 | 通用，可關閉思考 | 1 兆／320 億 | 262,144 | 0.95／4.00 美元 |
+| kimi-k3.1-pro | 旗艦，永遠開啟思考 | 2.8 兆／1,040 億 | 1,048,576 | 2.00／10.00 美元 |
+| kimi-k3.1-pro-highspeed | 同一模型的高速版 | 2.8 兆／1,040 億 | 1,048,576 | 4.00／20.00 美元 |
+| kimi-k3 | 前一代旗艦 | 2.8 兆／1,040 億 | 1,048,576 | 3.00／15.00 美元 |
+| kimi-k2.7-code | 程式專用，不再開放新用戶 | 1 兆／320 億 | 262,144 | 0.95／4.00 美元 |
+| kimi-k2.6 | 通用，不再開放新用戶 | 1 兆／320 億 | 262,144 | 0.95／4.00 美元 |
 
-K3 權重放在 Hugging Face，2026-10-17 讀取時近 30 天下載量約 105 萬次<Cite k="hf-kimi-k3" />。據報導，Thinking Machines 的 <ModelChip id="thinking-machines-inkling" /> 與 Cursor 的 Composer 2 都曾以 Kimi 模型為基礎再訓練<Cite k="wiki-moonshot" />。
+據報導，Thinking Machines 的 <ModelChip id="thinking-machines-inkling" /> 與 Cursor 的 Composer 2 都曾以 Kimi 模型為基礎再訓練<Cite k="wiki-moonshot" />。
 
 ## 特性分析
 
-**以規模與稀疏度換能力。** K3 有 93 層，其中 69 層使用 Kimi Delta Attention（KDA）這種混合線性注意力，其餘 24 層為 Gated MLA；896 個專家中每個 token 只選 16 個，<Term id="active-parameters">啟用參數</Term>約 1,040 億<Cite k="hf-kimi-k3" />。官方稱整體擴展效率約為 K2 的 2.5 倍<Cite k="kimi-k3-blog" />。
+**以規模與稀疏度換能力。** K3 有 93 層，其中 69 層使用 Kimi Delta Attention（KDA）這種混合線性注意力，其餘 24 層為 Gated MLA；896 個專家中每個 token 只選 16 個，<Term id="active-parameters">啟用參數</Term>約 1,040 億<Cite k="hf-kimi-k3" />。K3.1 Pro 沿用相同規模，但把那 24 層全注意力換成 Gated DeepSeek Sparse Attention（Gated DSA），用<Term id="sparse-attention">稀疏注意力</Term>降低長上下文的運算量<Cite k="hf-kimi-k31-pro" />。
 
-**原生多模態與長上下文。** K2.5 起加入約 4 億參數的 MoonViT 視覺編碼器，可直接理解圖片與影片（影片為官方 API 的實驗功能）<Cite k="hf-kimi-k25" />；K3 的<Term id="context-window">上下文視窗</Term>擴大到約 105 萬 tokens，而且不依上下文長度分級計價<Cite k="kimi-k3-quickstart" />。
+**加碼後訓練，不重新預訓練。** K3.1 Pro 以 K3 為基礎，投入大幅增加的<Term id="post-training">後訓練</Term>算力，在數百個下游領域做聯合<Term id="reinforcement-learning">強化學習</Term><Cite k="kimi-k31-blog" />。官方稱程式、3D 建模、財務研究與事實正確性都有進步：在自家設計的<Term id="hallucination">幻覺</Term>壓力測試中，逐項陳述的錯誤率從 K3 的 23.4% 降到 8.3%；官方也提醒這是刻意挑難題的測試，不代表日常使用的錯誤率<Cite k="kimi-k31-blog" />。
 
-**永遠先想再答。** K3 一律開啟思考，可設定 low、high、max 三種推理強度（預設 max）；多輪對話時必須把含思考內容的完整回覆傳回模型<Cite k="hf-kimi-k3" />。這讓長程 <Term id="agent">Agent</Term> 任務更穩定，但簡單問答也要付出思考的時間與 tokens。AA 於 2026 年 10 月中旬量測 K3 的輸出速度中位數約每秒 42 tokens，在同級模型中偏慢<Cite k="aa-kimi-k3" />。
+**原生多模態與長上下文。** K2.5 起加入約 4 億參數的 MoonViT 視覺編碼器，可直接理解圖片與影片<Cite k="hf-kimi-k25" />。K3.1 Pro 的模型卡列出文字與圖片兩種模態，官方 API 快速入門另示範上傳影片檔<Cite k="kimi-k31-quickstart" />。K3 系列的<Term id="context-window">上下文視窗</Term>約 105 萬 tokens，而且不依上下文長度分級計價<Cite k="kimi-pricing" />。
 
-**低位元量化。** K2 Thinking 起採 INT4 量化感知訓練，K3 則自 SFT 階段就以 <Term id="fp4">MXFP4</Term> 權重訓練，降低推論記憶體需求<Cite k="hf-kimi-k3" />。不過 2.8 兆參數即使經過<Term id="quantization">量化</Term>，自架仍需要大型 GPU 叢集。
+**永遠先想再答。** K3 與 K3.1 Pro 一律開啟思考，可設定 low、high、max 三種推理強度（預設 max）；多輪對話時必須把含思考內容的完整回覆傳回模型<Cite k="hf-kimi-k3" /><Cite k="hf-kimi-k31-pro" />。這讓長程 <Term id="agent">Agent</Term> 任務更穩定，但簡單問答也要付出思考的時間與 tokens。AA 於 2026-11-13 讀取的 K3.1 Pro 輸出速度約每秒 31 tokens<Cite k="aa-kimi-k31-pro" />；需要更快回應時，可改用價格加倍的 Highspeed 版<Cite k="kimi-pricing" />。
 
-**授權有條件。** K2 系列採修改版 MIT 授權；K3 改用自訂的 Kimi K3 License：一般使用、修改與商用皆可，但經營模型即服務、且連續 12 個月營收超過 2,000 萬美元者須另簽協議，月活躍用戶超過 1 億或月營收超過 2,000 萬美元的產品須在介面標示「Kimi K3」；純內部使用不受這兩項限制<Cite k="kimi-k3-license" />。
+**低位元量化。** K2 Thinking 起採 INT4 量化感知訓練，K3 與 K3.1 Pro 則以 <Term id="fp4">MXFP4</Term> 權重、MXFP8 激活值訓練，降低推論記憶體需求<Cite k="hf-kimi-k3" /><Cite k="hf-kimi-k31-pro" />。不過 2.8 兆參數即使經過<Term id="quantization">量化</Term>，自架仍需要大型 GPU 叢集。
+
+**開放權重的資安取捨。** 官方表示，K3.1 Pro 的開放權重版在中期訓練與強化學習兩個階段刻意移除資安相關的資料與任務：在自家漏洞利用評測 xdev-bench-hard 中，未做這些處理的內部版本解出 90.5% 的題目，正式版為 81.0%（皆為每題 3 次嘗試的 pass@3）；官方稱其攻擊能力仍落後已公開三個月以上的封閉前沿模型<Cite k="kimi-k31-blog" />。這是實驗室自述，尚無第三方驗證。
+
+**授權有條件。** K2 系列採修改版 MIT 授權；K3 與 K3.1 Pro 各有自訂授權，條款結構相同：一般使用、修改與商用皆可，但經營模型即服務、且連續 12 個月營收超過 2,000 萬美元者須另簽協議，月活躍用戶超過 1 億或月營收超過 2,000 萬美元的產品須在介面標示模型名稱；純內部使用，以及透過月之暗面官方產品或認證推論夥伴的使用，都不受這兩項限制<Cite k="kimi-k3-license" /><Cite k="kimi-k31-license" />。
 
 ## 適合與不適合的用途
 
 適合：
 
-- **長時間自主執行的程式工作**：官方展示 K3 優化 GPU 核心、開發編譯器、以截圖回饋做前端與遊戲開發等案例<Cite k="kimi-k3-blog" />。
-- **需要看圖、看影片的知識工作**：研究報告、資料視覺化與影片剪輯等多模態 Agent 流程。
-- **想要接近封閉旗艦能力、又需要權重可下載的組織**：K3 是目前綜合排名最高的開放權重模型之一。
-- **預算有限的程式開發**：K2.7 Code 價格約為 K3 的三分之一到四分之一。
+- **長時間自主執行的程式工作**：官方展示 K3.1 Pro 搭配 Unity、Unreal Engine、Godot 等遊戲引擎與 3D 生成工具，從頭做出遊戲與互動網頁<Cite k="kimi-k31-blog" />。
+- **3D 建模與參數化設計**：官方以 BenchCAD（從多視角圖重建 3D 物件並輸出 CAD 程式碼）測得使用工具時 92.7%，並能寫腳本操作 Blender 等軟體<Cite k="kimi-k31-blog" />。
+- **財務模型與文件分析**：官方稱 K3.1 Pro 在 OfficeQA Pro v2（跨財務文件檢索與數值推理）得 64.4 分，是其比較表中的最高分<Cite k="kimi-k31-blog" />。
+- **想要接近封閉旗艦能力、又需要權重可下載的組織**：K3.1 Pro 是 AA v5 分數最高的開放權重模型<Cite k="aa-leaderboard" />。
 
 不適合：
 
-- **大量、低單價的簡單任務**：K3 輸出價格是 DeepSeek V4.1-Flash 尖峰價的 12.5 倍，<ModelChip id="deepseek" /> 或 <ModelChip id="minimax" /> 會便宜得多。
+- **大量、低單價的簡單任務**：K3.1 Pro 輸出價格是 DeepSeek V4.1-Flash（1017）尖峰價的約 8.3 倍<Cite k="deepseek-pricing" />，<ModelChip id="deepseek" /> 或 <ModelChip id="minimax" /> 會便宜得多。
 - **小團隊自架**：需要多節點高階 GPU，維運成本高。
-- **重視低延遲的即時互動**：思考無法關閉，輸出速度也偏慢。
+- **重視低延遲的即時互動**：思考無法關閉，標準版輸出偏慢，高速版則要付兩倍價格。
 - **對供應商爭議敏感的採購**：Anthropic 2026 年 9 月的報告指控月之暗面等中國實驗室以 Claude 的回覆<Term id="distillation">蒸餾</Term>模型，屬 Anthropic 單方說法<Cite k="anthropic-sep-2026" />。
 
 ## 版本演進
@@ -1036,21 +1275,23 @@ K3 權重放在 Hugging Face，2026-10-17 讀取時近 30 天下載量約 105 �
 | 2026-04-20 | K2.6 | 長程程式與多代理協作 |
 | 2026-06-12 | K2.7 Code | 程式專用，另有高速版 |
 | 2026-07-16 | K3 | 2.8 兆參數、約 105 萬上下文，官方承諾 7 月 27 日前釋出完整權重 |
+| 2026-10-24 | K3.1 Pro | 以 K3 加大強化學習後訓練，24 層全注意力改為 Gated DSA，另有高速版；權重 11 月初公開 |
 
-舊版退役速度也快：K2 系列 API 於 2026-05-25 停止服務，K2.5 與 moonshot-v1 系列則在 2026-08-31 退役<Cite k="kimi-changelog" />。
+舊版退役速度也快：K2 系列 API 於 2026-05-25 停止服務，K2.5 與 moonshot-v1 系列則在 2026-08-31 退役<Cite k="kimi-changelog" />。官方定價頁把 K2.6 與 K2.7 Code 也歸為「K2 系列」：2026-10-31 起不再開放新註冊用戶，既有用戶不受影響，官方計畫在 2026 年 12 月底前全數退役<Cite k="kimi-pricing" /><Cite k="kimi-models" />。K3 則仍可透過 API 使用，10 月起 Batch API 也支援 K3.1 Pro 與 K3，價格為標準價的 60%<Cite k="kimi-changelog" />。
 
 ## 評測解讀
 
-<Callout type="warn" title="注意評測時間與設定">官方數字以 max 推理強度、搭配自家 Kimi Code 等框架測得；AA 欄位讀取於 2026-10-06，LMArena 榜單標示更新於 2026-10-02。HLE 有全集與純文字子集之分，Terminal-Bench 也有 2.0、2.1、4.0 等版本，不能混著比。</Callout>
+<Callout type="warn" title="AA 指數已改版，v4 與 v5 不能互比">Artificial Analysis 在 2026-10-27 把綜合智慧指數改為 v5（2026 年 11 月起為 v5.0.1），新增 FrontierCode 2.0 與 Terminal-Bench-Science、以 HLE-Diamond 取代 HLE、移除三項舊評測，權重也重新分配，v4 與 v5 的分數不能放在一起比較<Cite k="aa-index-v5" />。本頁 K3、K2.6 等舊版本的 AA 綜合指數是 v4.3（2026-10-06 讀取），K3.1 Pro 的是 v5.0.1（2026-11-13 讀取）；AA 已把 K3 列為舊版，v5 沒有 K3 的分數<Cite k="aa-kimi-k3" />。官方數字以 max 推理強度、搭配 Claude Code 或自家 Kimi Code 等框架測得；LMArena 榜單標示更新於 2026-11-11。</Callout>
 
-| 評測 | K3 官方 | K3 AA | K2.6 官方 | K2.6 AA |
-|---|---|---|---|---|
-| AA 綜合智慧指數 v4.3 | 無 | 43.6 | 無 | 27.0 |
-| GPQA Diamond | 93.5% | 93.5% | 90.5% | 91.1% |
-| HLE（全集，無工具） | 43.5% | 46.9% | 34.7% | 37.5% |
-| Terminal-Bench 2.1 | 88.3% | 85.0% | 無 | 65.9% |
+| 評測 | K3.1 Pro 官方 | K3.1 Pro AA |
+|---|---|---|
+| AA 綜合智慧指數 v5.0.1 | 無 | 46 |
+| Terminal-Bench 4.0 | 65.7% | 67.2% |
+| HLE-Diamond（無工具） | 39.4% | 37.3% |
+| GPQA Diamond | 94.2% | 無 |
 
-- **官方數字大致可被重現**：K3 的 GPQA 官方與 AA 完全相同，HLE 甚至是 AA 測得較高；Terminal-Bench 2.1 相差約 3 個百分點，落差比多數 Agent 評測小<Cite k="aa-kimi-k3" />。
-- **一代之間跳幅很大**：AA 指數從 K2.6 的 27.0 升到 K3 的 43.6，與小米 MiMo-V2.6-Pro（46.3）、智譜 GLM-5.3（44.8）同屬開放權重模型的領先群<Cite k="aa-leaderboard" />。
-- **最新難題仍有差距**：AA 測得 K3 在 Terminal-Bench 4.0 只有 12.6%，顯示面對更長、更難的終端機任務時，與封閉旗艦仍有距離<Cite k="aa-kimi-k3" />。
-- **人類偏好也領先開放模型**：LMArena 文字榜 K3（max）為 1488 分、第 16 名，是榜上最高的開放授權模型<Cite k="lmarena-text" />。評測方法的差異可參考<LearnLink id="model-evaluation">模型評測</LearnLink>。
+- **v5 下開放權重的領先者**：K3.1 Pro 的 v5.0.1 分數 46，是 AA v5 評測的 43 個開放權重模型中最高，第二名 DeepSeek V4.1 Flash 1017（Max）為 33、GLM-5.3（Max）為 32；但仍低於榜首 Claude Fable 5.2（Max，65），以及 Claude Opus 5.5（Max，59）、GPT-6 Astra（Max，57）等封閉模型<Cite k="aa-leaderboard" />。
+- **官方數字大致可被重現**：Terminal-Bench 4.0 官方 65.7%、AA 67.2%；HLE-Diamond 官方 39.4%、AA 37.3%，差距都在 2 個百分點左右<Cite k="kimi-k31-blog" /><Cite k="aa-kimi-k31-pro" />。AA 在 2026-10-27 的改版文章指出，v5 的九項評測中，K3.1 Pro 在 Terminal-Bench 4.0（67%）領先所有受測模型，這也是九項中唯一由開放權重模型領先的一項<Cite k="aa-index-v5" />。
+- **科學推理仍有明顯差距**：AA 測得 K3.1 Pro 在 HLE-Diamond 為 37%、Terminal-Bench-Science 為 34%，而這兩項的最高分分別是 Claude Opus 5.5（Max）的 68% 與 GPT-6 Astra（Max）的 63%<Cite k="aa-index-v5" />。
+- **舊分數只能和舊分數比**：改版前的 v4.3 指數中，K3（Max）為 43.6（2026-10-06 讀取）<Cite k="aa-kimi-k3" />；這類分數只能和其他 v4 分數比較，不能拿來和 K3.1 Pro 的 46 相比。
+- **人類偏好仍在開放模型前段**：2026-11-11 的 LMArena 文字榜上，K3（Max）為 1487 分、第 20 名，是榜上排名最高的開放權重模型；K3.1 Pro（Max）為 1485 分、第 24 名，但只有約 4,000 票，信賴區間為 ±10，與 K3 的差距在誤差範圍內<Cite k="lmarena-text" />。評測方法的差異可參考<LearnLink id="model-evaluation">模型評測</LearnLink>。

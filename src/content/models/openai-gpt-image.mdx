@@ -5,28 +5,118 @@ kind: "image"
 lab: "openai"
 labName: "OpenAI"
 origin: "US"
-summary: "OpenAI 的圖像生成與編輯模型系列，接替 DALL·E，內建於 ChatGPT 並透過 API 提供。首代於 2025 年 3 月以「GPT-4o 圖像生成」推出，之後依序發布 GPT Image 1.5、2 與 2.5。最新的 GPT Image 2.5（2026-09）分為重視編輯精準度的 Sunburst 與主打速度的 Flare，在 Artificial Analysis 文生圖競技場包辦前兩名；強項是指令遵循與圖中文字，代價是單張成本偏高。"
+summary: "OpenAI 的圖像生成與編輯模型系列，接替 DALL·E，內建於 ChatGPT 並透過 API 提供。首代於 2025 年 3 月以「GPT-4o 圖像生成」推出，之後依序發布 GPT Image 1.5、2、2.5 與 2.6。最新的 GPT Image 2.6（2026-11-04）延續雙版本設計：重視細節與編輯的 Sunburst、主打快速迭代的 Flare，並新增 SVG 向量圖與動態 GIF 輸出；在 Artificial Analysis 文生圖競技場包辦前五名。強項是指令遵循與圖中文字，代價是單張成本偏高。"
 strengths:
-  - "AA 文生圖競技場前三名都是 GPT Image：2.5 Sunburst 1197、2.5 Flare 1191、GPT Image 2 1172（2026-10）"
+  - "AA 文生圖競技場（AA-Image-T2I v2.1，2026-11-13）前五名都是 GPT Image：2.6 Sunburst 1261、2.5 Sunburst 1229、2.6 Flare 1226、2.5 Flare 1210、GPT Image 2 1191"
+  - "GPT Image 2.6 新增可調整出圖前規劃程度的 complexity 參數、標註式修圖，以及 SVG 向量圖與 2 到 16 格的動態 GIF 輸出"
   - "原生多模態：可同時輸入文字與圖片，並可透過 Responses API 在對話中多輪修圖"
   - "GPT Image 2 起支援彈性尺寸，最長邊 3,840 像素（約 4K），並可輸出透明背景"
   - "與 ChatGPT 及 GPT 文字模型直接整合，容易串成 Agent 或設計工作流程"
 weaknesses:
-  - "單張成本高：AA 估算 GPT Image 2.5（max）每千張約 211 美元，Nano Banana 2 約 67 美元"
+  - "單張成本高：AA 估算 GPT Image 2.6 Sunburst（max）每千張約 211 美元，Nano Banana 2.1 約 34 美元"
+  - "GPT Image 2.6 目前不支援 Batch，無法享有 2.5 與 2 的 Batch 半價"
   - "官方文件仍列出限制：複雜提示可能要 2 分鐘、文字精確排版與角色一致性仍可能出錯"
+  - "版本汰換快：gpt-image-2 推出不到 7 個月就公告棄用（2027-02-10 下架），整合到產品中需預留遷移時間"
   - "閉源、只能經 API 使用，無法自行部署或微調；使用 API 前可能需先完成組織驗證"
 bestFor:
   - "含大量文字的海報、資訊圖表與簡報插圖"
   - "既有圖片的精細修改與商品圖編輯"
   - "需要與 GPT 對話流程整合的多輪設計工作"
+  - "圖示、標誌草稿等需要可編輯向量檔（SVG）或簡短動態 GIF 的素材"
 positioning:
-  capability: 90
+  capability: 100
   costIndex: 71
   openness: 0
   method: "editorial"
-  asOf: "2026-10-06"
-  note: "capability 為編輯判斷：GPT Image 2.5 Sunburst 在 AA-Image-T2I v2.0 以 Elo 1197 居第 1（2026-10-06），圖像 Elo 無法直接換算成 LLM 智慧指數。costIndex 以官方 token 價（文字輸入 5、圖片輸出 30 美元／百萬 tokens，3:1 混合 11.25 美元）依對數換算（0.05 美元 = 0、100 美元 = 100），但實際成本取決於每張圖消耗的 token 數。閉源，openness = 0。"
+  asOf: "2026-11-13"
+  note: "capability 為編輯判斷，採本站 Nano Banana、Midjourney、FLUX 等圖像模型頁共用的換算：AA 文生圖競技場 Elo 依 800 → 0、1200 → 100 線性換算。旗艦 GPT Image 2.6 Sunburst 在 AA-Image-T2I v2.1 以 Elo 1261 居第 1（2026-11-13 讀取），換算得 115，超出量表上限，取 100；圖像 Elo 與語言模型的智慧指數不能互比。costIndex 以官方 token 價（文字輸入 5、圖片輸出 30 美元／百萬 tokens，3：1 混合 (3×5 + 30)÷4 = 11.25 美元）依對數換算（0.05 美元 → 0、100 美元 → 100）得 71.3，取 71；實際成本取決於每張圖消耗的 token 數。閉源，openness 為 0。"
 versions:
+  - id: "gpt-image-2-6-sunburst"
+    name: "GPT Image 2.6 Sunburst"
+    released: "2026-11-04"
+    status: "ga"
+    tier: "flagship"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "image"
+    availability:
+      - "api"
+    pricing:
+      - asOf: "2026-11-13"
+        inputPerMTok: 5
+        outputPerMTok: 30
+        cachedInputPerMTok: 1.25
+        currency: "USD"
+        tierNote: "輸入欄為文字 token 價、輸出欄為圖片 token 價；圖片輸入 8 美元（快取 2 美元）；不支援 Batch；調整 complexity 不另收費"
+        source:
+          title: "Pricing | OpenAI API"
+          publisher: "OpenAI"
+          url: "https://developers.openai.com/api/docs/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-11-13"
+    benchmarks:
+      - benchmark: "aa-text-to-image-elo"
+        score: 1261
+        setting: "max 畫質，AA-Image-T2I v2.1，±14，5,282 次比較，第 1 名（排名區間 1）"
+        reportedBy: "leaderboard"
+        date: "2026-11-13"
+        source:
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.1)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-11-13"
+    notes: "2026-11-04 發布，官方定位為細節豐富的視覺工作。新增 complexity 參數（low、medium、high，預設 high）控制出圖前的規劃程度，並支援標註式修圖、SVG 與動態 GIF 輸出（經 Image API）；畫質選項與 2.5 相同（low 至 max）。模型頁的端點表標示不支援 Batch。"
+  - id: "gpt-image-2-6-flare"
+    name: "GPT Image 2.6 Flare"
+    released: "2026-11-04"
+    status: "ga"
+    tier: "mid"
+    weights: "closed"
+    license: "proprietary"
+    architecture: "unknown"
+    modalitiesIn:
+      - "text"
+      - "image"
+    modalitiesOut:
+      - "image"
+    availability:
+      - "api"
+    pricing:
+      - asOf: "2026-11-13"
+        inputPerMTok: 5
+        outputPerMTok: 30
+        cachedInputPerMTok: 1.25
+        currency: "USD"
+        tierNote: "輸入欄為文字 token 價、輸出欄為圖片 token 價；圖片輸入 8 美元（快取 2 美元）；不支援 Batch"
+        source:
+          title: "Pricing | OpenAI API"
+          publisher: "OpenAI"
+          url: "https://developers.openai.com/api/docs/pricing"
+          type: "docs"
+          lang: "en"
+          accessed: "2026-11-13"
+    benchmarks:
+      - benchmark: "aa-text-to-image-elo"
+        score: 1226
+        setting: "max 畫質，AA-Image-T2I v2.1，±12，7,169 次比較，第 3 名（排名區間 2–3）"
+        reportedBy: "leaderboard"
+        date: "2026-11-13"
+        source:
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.1)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-11-13"
+    notes: "官方定位為快速迭代的互動式生成與編輯；功能（complexity、標註式修圖、SVG、GIF）與 token 單價都和 Sunburst 相同。"
   - id: "gpt-image-2-5-sunburst"
     name: "GPT Image 2.5 Sunburst"
     released: "2026-09-08"
@@ -43,7 +133,7 @@ versions:
     availability:
       - "api"
     pricing:
-      - asOf: "2026-10-06"
+      - asOf: "2026-11-13"
         inputPerMTok: 5
         outputPerMTok: 30
         cachedInputPerMTok: 1.25
@@ -55,21 +145,21 @@ versions:
           url: "https://developers.openai.com/api/docs/pricing"
           type: "docs"
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
     benchmarks:
       - benchmark: "aa-text-to-image-elo"
-        score: 1197
-        setting: "max 畫質，AA-Image-T2I v2.0，±9，第 1 名（排名區間 1–2）"
+        score: 1229
+        setting: "max 畫質，AA-Image-T2I v2.1，±10，13,626 次比較，第 2 名（排名區間 2–3）"
         reportedBy: "leaderboard"
-        date: "2026-10-06"
+        date: "2026-11-13"
         source:
-          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.1)"
           publisher: "Artificial Analysis"
           url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
           type: "leaderboard"
           lang: "en"
-          accessed: "2026-10-06"
-    notes: "官方最強的生成與編輯版本，適合重視編輯精準度的工作；支援 low、medium、high、xhigh、max 與 auto 畫質。"
+          accessed: "2026-11-13"
+    notes: "2.6 推出前的主力版本，適合重視編輯精準度的工作；支援 low、medium、high、xhigh、max 與 auto 畫質，可用 Batch。2026-11-04 起官方指南建議新的整合改用 2.6，但截至 2026-11-13 未列入棄用時程。"
   - id: "gpt-image-2-5-flare"
     name: "GPT Image 2.5 Flare"
     released: "2026-09-08"
@@ -86,7 +176,7 @@ versions:
     availability:
       - "api"
     pricing:
-      - asOf: "2026-10-06"
+      - asOf: "2026-11-13"
         inputPerMTok: 5
         outputPerMTok: 30
         cachedInputPerMTok: 1.25
@@ -98,25 +188,25 @@ versions:
           url: "https://developers.openai.com/api/docs/pricing"
           type: "docs"
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
     benchmarks:
       - benchmark: "aa-text-to-image-elo"
-        score: 1191
-        setting: "max 畫質，AA-Image-T2I v2.0，±9，第 2 名（排名區間 1–2）"
+        score: 1210
+        setting: "max 畫質，AA-Image-T2I v2.1，±10，12,970 次比較，第 4 名（排名區間 4）"
         reportedBy: "leaderboard"
-        date: "2026-10-06"
+        date: "2026-11-13"
         source:
-          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.1)"
           publisher: "Artificial Analysis"
           url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
           type: "leaderboard"
           lang: "en"
-          accessed: "2026-10-06"
-    notes: "官方定位為最快、適合日常使用的高品質生成版本；token 單價與 Sunburst 相同。"
+          accessed: "2026-11-13"
+    notes: "官方定位為快速、適合日常使用的高品質生成版本；token 單價與 Sunburst 相同。"
   - id: "gpt-image-2"
     name: "GPT Image 2"
     released: "2026-04-21"
-    status: "ga"
+    status: "deprecated"
     tier: "mid"
     weights: "closed"
     license: "proprietary"
@@ -129,33 +219,33 @@ versions:
     availability:
       - "api"
     pricing:
-      - asOf: "2026-10-06"
+      - asOf: "2026-11-13"
         inputPerMTok: 5
         outputPerMTok: 30
         cachedInputPerMTok: 1.25
         currency: "USD"
-        tierNote: "輸入欄為文字 token 價、輸出欄為圖片 token 價；圖片輸入 8 美元；1024×1024 每張約 0.006（low）、0.053（medium）、0.211 美元（high）"
+        tierNote: "輸入欄為文字 token 價、輸出欄為圖片 token 價；圖片輸入 8 美元；Batch 半價；1024×1024 每張約 0.006（low）、0.053（medium）、0.211 美元（high）"
         source:
           title: "Pricing | OpenAI API"
           publisher: "OpenAI"
           url: "https://developers.openai.com/api/docs/pricing"
           type: "docs"
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
     benchmarks:
       - benchmark: "aa-text-to-image-elo"
-        score: 1172
-        setting: "high 畫質，AA-Image-T2I v2.0，±9，第 3 名"
+        score: 1191
+        setting: "high 畫質，AA-Image-T2I v2.1，±11，13,439 次比較，第 5 名"
         reportedBy: "leaderboard"
-        date: "2026-10-06"
+        date: "2026-11-13"
         source:
-          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.1)"
           publisher: "Artificial Analysis"
           url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
           type: "leaderboard"
           lang: "en"
-          accessed: "2026-10-06"
-    notes: "支援彈性尺寸（最長邊 3,840 像素）、高保真圖片輸入與 Batch；2026-08-20 起預覽透明背景。"
+          accessed: "2026-11-13"
+    notes: "支援彈性尺寸（最長邊 3,840 像素）、高保真圖片輸入與 Batch；2026-08-20 起預覽透明背景。2026-11-10 公告棄用，排定 2027-02-10 下架，官方建議改用 2.6 Sunburst 或 Flare。"
   - id: "gpt-image-1-5"
     name: "GPT Image 1.5"
     released: "2025-12-16"
@@ -173,7 +263,7 @@ versions:
     availability:
       - "api"
     pricing:
-      - asOf: "2026-10-06"
+      - asOf: "2026-11-13"
         inputPerMTok: 5
         outputPerMTok: 32
         cachedInputPerMTok: 1.25
@@ -185,21 +275,21 @@ versions:
           url: "https://developers.openai.com/api/docs/pricing"
           type: "docs"
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
     benchmarks:
       - benchmark: "aa-text-to-image-elo"
-        score: 1107
-        setting: "high 畫質，AA-Image-T2I v2.0，±8"
+        score: 1126
+        setting: "high 畫質，AA-Image-T2I v2.1，±11，第 12 名（排名區間 10–16）"
         reportedBy: "leaderboard"
-        date: "2026-10-06"
+        date: "2026-11-13"
         source:
-          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.1)"
           publisher: "Artificial Analysis"
           url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
           type: "leaderboard"
           lang: "en"
-          accessed: "2026-10-06"
-    notes: "以「ChatGPT Images」名義向所有使用者推出；2026-06-02 公告棄用，2026-12-01 下架。"
+          accessed: "2026-11-13"
+    notes: "以「ChatGPT Images」名義向所有使用者推出；2026-06-02 公告棄用，2026-12-01 下架，官方建議的替代型號已改為 2.6 Sunburst 或 Flare。"
   - id: "gpt-image-1-mini"
     name: "GPT Image 1 Mini"
     released: "2025-10-06"
@@ -216,7 +306,7 @@ versions:
     availability:
       - "api"
     pricing:
-      - asOf: "2026-10-06"
+      - asOf: "2026-11-13"
         inputPerMTok: 2
         outputPerMTok: 8
         cachedInputPerMTok: 0.2
@@ -228,25 +318,25 @@ versions:
           url: "https://developers.openai.com/api/docs/pricing"
           type: "docs"
           lang: "en"
-          accessed: "2026-10-06"
+          accessed: "2026-11-13"
     benchmarks:
       - benchmark: "aa-text-to-image-elo"
-        score: 917
-        setting: "medium 畫質，AA-Image-T2I v2.0，±7"
+        score: 938
+        setting: "medium 畫質，AA-Image-T2I v2.1，±16，第 76 名（排名區間 75–83）"
         reportedBy: "leaderboard"
-        date: "2026-10-06"
+        date: "2026-11-13"
         source:
-          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.1)"
           publisher: "Artificial Analysis"
           url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
           type: "leaderboard"
           lang: "en"
-          accessed: "2026-10-06"
-    notes: "於 OpenAI DevDay 2025 推出的低價版；2026-12-01 下架。"
+          accessed: "2026-11-13"
+    notes: "於 OpenAI DevDay 2025 推出的低價版；2026-12-01 下架，官方建議的替代型號已改為 2.6 Sunburst 或 Flare。"
   - id: "gpt-image-1"
     name: "GPT Image 1"
     released: "2025-04-23"
-    status: "deprecated"
+    status: "retired"
     tier: "flagship"
     weights: "closed"
     license: "proprietary"
@@ -265,7 +355,7 @@ versions:
         outputPerMTok: 40
         cachedInputPerMTok: 1.25
         currency: "USD"
-        tierNote: "輸入欄為文字 token 價、輸出欄為圖片 token 價；圖片輸入 10 美元；1024×1024 每張 0.011–0.167 美元"
+        tierNote: "下架前的價格；輸入欄為文字 token 價、輸出欄為圖片 token 價；圖片輸入 10 美元；1024×1024 每張 0.011–0.167 美元"
         source:
           title: "Pricing | OpenAI API"
           publisher: "OpenAI"
@@ -275,19 +365,19 @@ versions:
           accessed: "2026-10-06"
     benchmarks:
       - benchmark: "aa-text-to-image-elo"
-        score: 1010
-        setting: "high 畫質，AA-Image-T2I v2.0，±9"
+        score: 1018
+        setting: "high 畫質，AA-Image-T2I v2.1，±11，第 46 名（排名區間 34–49）；API 已下架，AA 仍列在榜上"
         reportedBy: "leaderboard"
-        date: "2026-10-06"
+        date: "2026-11-13"
         source:
-          title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
+          title: "Text to Image Leaderboard (AA-Image-T2I v2.1)"
           publisher: "Artificial Analysis"
           url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
           type: "leaderboard"
           lang: "en"
-          accessed: "2026-10-06"
-    notes: "2025-03-25 先以「GPT-4o 圖像生成」在 ChatGPT 推出，04-23 開放 API；2026-04-22 公告棄用，2026-10-23 下架。"
-flagshipVersion: "gpt-image-2-5-sunburst"
+          accessed: "2026-11-13"
+    notes: "2025-03-25 先以「GPT-4o 圖像生成」在 ChatGPT 推出，04-23 開放 API；2026-04-22 公告棄用，已於 2026-10-23 下架。"
+flagshipVersion: "gpt-image-2-6-sunburst"
 relatedLearn:
   - "multimodal-models"
   - "model-evaluation"
@@ -298,41 +388,55 @@ glossary:
   - "token"
   - "elo-rating"
 sources:
+  - key: "oai-gpt-image-2-6-sunburst"
+    title: "GPT-Image-2.6 Sunburst | OpenAI API model page"
+    publisher: "OpenAI"
+    url: "https://developers.openai.com/api/docs/models/gpt-image-2.6-sunburst"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-11-13"
+  - key: "oai-gpt-image-2-6-flare"
+    title: "GPT-Image-2.6 Flare | OpenAI API model page"
+    publisher: "OpenAI"
+    url: "https://developers.openai.com/api/docs/models/gpt-image-2.6-flare"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-11-13"
   - key: "oai-gpt-image-2-5-sunburst"
     title: "GPT-Image-2.5 Sunburst | OpenAI API model page"
     publisher: "OpenAI"
     url: "https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst"
     type: "docs"
     lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - key: "oai-image-guide"
     title: "Image generation | OpenAI API"
     publisher: "OpenAI"
     url: "https://developers.openai.com/api/docs/guides/image-generation"
     type: "docs"
     lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - key: "oai-pricing"
     title: "Pricing | OpenAI API"
     publisher: "OpenAI"
     url: "https://developers.openai.com/api/docs/pricing"
     type: "docs"
     lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - key: "oai-changelog"
     title: "Changelog | OpenAI API"
     publisher: "OpenAI"
     url: "https://developers.openai.com/api/docs/changelog"
     type: "docs"
     lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - key: "oai-deprecations"
     title: "Deprecations | OpenAI API"
     publisher: "OpenAI"
     url: "https://developers.openai.com/api/docs/deprecations"
     type: "docs"
     lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - key: "oai-models"
     title: "Models | OpenAI API"
     publisher: "OpenAI"
@@ -341,41 +445,60 @@ sources:
     lang: "en"
     accessed: "2026-10-06"
   - key: "aa-t2i"
+    title: "Text to Image Leaderboard (AA-Image-T2I v2.1)"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-11-13"
+  - key: "aa-t2i-v20"
     title: "Text to Image Leaderboard (AA-Image-T2I v2.0)"
     publisher: "Artificial Analysis"
     url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
     type: "leaderboard"
     lang: "en"
     accessed: "2026-10-06"
+    archiveUrl: "https://web.archive.org/web/20261006202639/https://artificialanalysis.ai/image/leaderboard/text-to-image"
+    note: "v2.0 榜單，本站 2026-10-06 讀取的歷史數字"
+  - key: "aa-image-method"
+    title: "Image Generation Benchmarking Methodology"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/methodology/image"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-11-13"
   - key: "wiki-gpt-image"
     title: "GPT Image"
     publisher: "Wikipedia"
     url: "https://en.wikipedia.org/wiki/GPT_Image"
     type: "other"
     lang: "en"
-    accessed: "2026-10-06"
-lastVerified: "2026-10-06"
+    accessed: "2026-11-13"
+    note: "沿革整理；2.6 在 ChatGPT 加入動態 GIF 一事引用 The Verge 2026-11-04 報導"
+lastVerified: "2026-11-13"
 editorial:
   status: "fact-checked"
-  author: "models-01"
-  checkedBy: "models-01-check"
-  checkedOn: "2026-10-06"
-  notes: "查核：token 單價、每張成本、尺寸限制、發布與下架日期對照 OpenAI 定價頁、模型頁、影像生成指南、更新紀錄與棄用頁；AA 文生圖 Elo、信賴區間、名次與每千張成本對照 2026-10-06 網頁封存；沿革對照 Wikipedia。僅調整尺寸限制的版本歸屬（2560×1440 實驗性說明屬 2.5 版文件）。"
+  author: "mdl-openai-gpt-image-3"
+  checkedBy: "check-mdl-openai-gpt-image-3"
+  checkedOn: "2026-11-13"
+  notes: "2026-11-13 查核：版本日期、狀態、2.6 功能（complexity、標註式修圖、SVG、GIF 2–16 格）、各版 token 價格、棄用與下架日期，逐條對照 OpenAI 模型頁、定價頁、棄用時程頁、更新紀錄與圖像生成指南；AA-Image-T2I v2.1 的 Elo、信賴區間、比較次數、排名區間與每千張成本對照 AA 榜單頁資料；v2.0 數字對照 2026-10-06 封存頁。capability 換算（1261 → 115，取 100）與 costIndex（11.25 美元 → 71）已重算。ChatGPT 動態 GIF 為經 Wikipedia 引用的媒體報導。"
 ---
 
 ## 系列概覽
 
 GPT Image 是 <CompanyChip id="openai">OpenAI</CompanyChip> 的<Term id="generative-ai">生成式 AI</Term>圖像模型系列，接替 DALL·E，內建於 ChatGPT（ChatGPT Images），也透過 API 提供。首代在 2025-03-25 以「GPT-4o 圖像生成」在 ChatGPT 推出，OpenAI 表示第一週就有超過 1.3 億名使用者產生 7 億多張圖；2025-04-23 以 gpt-image-1 的名稱開放 API<Cite k="wiki-gpt-image" />。
 
-和 DALL·E 2、3 使用的<Term id="diffusion-model">擴散模型</Term>不同，GPT Image 採自迴歸方式生成，屬於原生<Term id="multimodal">多模態</Term>的語言模型架構，能同時理解文字與圖片<Cite k="wiki-gpt-image" />。截至 2026-10-06，API 主推 2026-09-08 發布的 GPT Image 2.5，分成兩個版本：重視編輯精準度的 Sunburst，以及主打速度、適合日常生成的 Flare<Cite k="oai-image-guide" />。
+和 DALL·E 2、3 使用的<Term id="diffusion-model">擴散模型</Term>不同，GPT Image 採自迴歸方式生成，屬於原生<Term id="multimodal">多模態</Term>的語言模型架構，能同時理解文字與圖片<Cite k="wiki-gpt-image" />。2026-11-04，OpenAI 發布 GPT Image 2.6，延續 2.5 的雙版本設計：Sunburst 用於細節豐富的視覺工作，Flare 用於快速迭代<Cite k="oai-changelog" />。截至 2026-11-13，官方指南建議新的整合直接採用 2.6；2026-09 推出的 2.5 仍可使用，gpt-image-2 則已公告棄用<Cite k="oai-image-guide" /><Cite k="oai-deprecations" />。
 
 ## 特性分析
 
-**文字與圖片都能當輸入。** 模型接收文字與圖片、輸出圖片；透過 Responses API，還能在對話中多輪修改同一張圖，或讓 GPT 文字模型呼叫圖像生成工具<Cite k="oai-image-guide" />。
+**文字與圖片都能當輸入。** 模型接收文字與圖片、輸出圖片；透過 Responses API，還能在對話中多輪修改同一張圖，或讓 GPT 文字模型呼叫圖像生成工具（官方範例以 2.5 為例，2.6 的新功能則列為經 Image API 提供）<Cite k="oai-image-guide" />。
 
-**尺寸與畫質更彈性。** GPT Image 2 起支援自訂尺寸，寬高須為 16 像素的倍數、最長邊 3,840 像素、總像素上限約 829 萬（4K），也可輸出 PNG、WebP 透明背景。GPT Image 2.5 另外新增 xhigh 與 max 兩個畫質等級，官方文件並註明 2.5 版超過 2560×1440 的解析度仍屬實驗性功能<Cite k="oai-image-guide" />。Wikipedia 整理指出，2.5 版把生成延遲縮短約一半，並在 ChatGPT 加入把手繪草圖轉成圖片的 Sketch 功能<Cite k="wiki-gpt-image" />。
+**2.6 的新功能。** 2.6 的兩個版本都能用 complexity 參數（low、medium、high，預設 high）調整出圖前的規劃程度：較低適合換背景、改招牌這類局部修改，較高有助於密集文字、複雜版面與物件之間的關係，但會增加延遲，也可能帶來不想要的改動；調整 complexity 不另收費。另外新增三種用法：用標註圖層指出要改的位置（標註式修圖，2.5 也支援）、輸出可編輯路徑與顏色的 SVG 向量圖，以及 2 到 16 格的動態 GIF<Cite k="oai-image-guide" />。SVG 是先生成一張參考圖再轉成向量，費用包含圖像模型與負責撰寫 SVG 的模型兩部分<Cite k="oai-image-guide" />。據 Wikipedia 整理的媒體報導，ChatGPT 也同步加入以文字或上傳照片製作動態 GIF 的功能<Cite k="wiki-gpt-image" />。
 
-**以 <Term id="token">token</Term> 計價。** 官方價格為每百萬 tokens：文字輸入 5 美元、圖片輸入 8 美元、圖片輸出 30 美元，Batch 半價<Cite k="oai-pricing" />。實際每張成本取決於尺寸與畫質：以 GPT Image 2 的 1024×1024 為例，low 約 0.006 美元、medium 約 0.053 美元、high 約 0.211 美元<Cite k="oai-image-guide" />。2.5 版的 token 單價與 2 相同，但每張圖消耗的 token 數可能不同。
+**尺寸與畫質更彈性。** GPT Image 2 起支援自訂尺寸，寬高須為 16 像素的倍數、最長邊 3,840 像素、總像素上限約 829 萬（4K），也可輸出 PNG、WebP 透明背景。2.5 與 2.6 的 Sunburst、Flare 都提供 low、medium、high、xhigh、max 五個畫質等級，官方文件並註明 2.5 版超過 2560×1440 的解析度仍屬實驗性功能<Cite k="oai-image-guide" />。Wikipedia 整理指出，2.5 版把生成延遲縮短約一半，並在 ChatGPT 加入把手繪草圖轉成圖片的 Sketch 功能<Cite k="wiki-gpt-image" />。
+
+**以 <Term id="token">token</Term> 計價。** 2.6、2.5 與 2 的官方價格相同，每百萬 tokens：文字輸入 5 美元、圖片輸入 8 美元、圖片輸出 30 美元；2.5 與 2 的 Batch 半價，2.6 目前不在 Batch 價目表上<Cite k="oai-pricing" />。實際每張成本取決於尺寸與畫質：以 GPT Image 2 的 1024×1024 為例，low 約 0.006 美元、medium 約 0.053 美元、high 約 0.211 美元<Cite k="oai-image-guide" />。官方也提醒，單價相同不代表每張成本相同，因為不同版本與畫質消耗的 token 數不一樣。
 
 **已知限制。** 官方文件列出：複雜提示可能要 2 分鐘才完成；文字的精確位置、跨多張圖的角色或品牌一致性、需要精準排版的構圖，仍可能出錯<Cite k="oai-image-guide" />。使用 API 前也可能需要先完成組織驗證。
 
@@ -384,48 +507,53 @@ GPT Image 是 <CompanyChip id="openai">OpenAI</CompanyChip> 的<Term id="generat
 適合：
 
 - **含大量文字的圖像**：海報、資訊圖表、簡報插圖、菜單等需要正確字樣的設計。
-- **既有圖片的修改**：換背景、換場景、局部修圖，Sunburst 主打編輯精準度。
+- **既有圖片的修改**：換背景、換場景、局部修圖；2.6 可用標註圖層指出修改位置。
+- **向量圖示與簡短動畫**：2.6 能直接輸出 SVG 與動態 GIF，適合圖示、標誌草稿與社群貼圖。
 - **與文字工作流程整合**：在 ChatGPT 或 Agent 流程中邊討論邊產生、修改圖片。
 - **數量不多但要求品質的素材**：在人類偏好評比中名列前茅。
 
 不適合：
 
-- **大量、低單價的生成**：AA 估算 GPT Image 2.5（max）每千張約 211 美元，<ModelChip id="google-nano-banana" /> 的 Nano Banana 2 約 67 美元、Meta 的 Muse Image 約 10 美元<Cite k="aa-t2i" />。
+- **大量、低單價的生成**：AA 估算 GPT Image 2.6 Sunburst（max）每千張約 211 美元，<ModelChip id="google-nano-banana" /> 的 Nano Banana 2.1 約 34 美元、Meta 的 Muse Image 約 10 美元<Cite k="aa-t2i" />。
 - **需要自行部署或微調**：GPT Image 只能經 API 使用，可考慮有開放權重版本的 <ModelChip id="bfl-flux" />。
-- **影片生成**：OpenAI 的 Sora 2 與 Videos API 已於 2026-09-24 關閉，官方沒有指定替代模型<Cite k="oai-deprecations" />。
+- **影片生成**：OpenAI 的 Sora 2 與 Videos API 已於 2026-09-24 關閉，官方沒有指定替代模型<Cite k="oai-deprecations" />；2.6 的動態 GIF 最多 16 格，只適合簡短循環動畫。
 - **精準的版面控制**：官方承認構圖與元素定位仍不夠穩定。
 
 ## 版本演進
 
-| 發布日 | 版本 | 重點 | 狀態（2026-10-06） |
+| 發布日 | 版本 | 重點 | 狀態（2026-11-13） |
 |---|---|---|---|
 | 2025-03-25 | GPT-4o 圖像生成 | 首代，在 ChatGPT 推出 | 已由新版取代 |
-| 2025-04-23 | gpt-image-1 | 首度開放 API | 已棄用，2026-10-23 下架 |
+| 2025-04-23 | gpt-image-1 | 首度開放 API | 2026-10-23 已下架 |
 | 2025-10-06 | gpt-image-1-mini | 低價版，API 價格比 gpt-image-1 低約 80% | 已棄用，2026-12-01 下架 |
 | 2025-12-16 | gpt-image-1.5 | 修圖時保留細節，生成速度最多快 4 倍 | 已棄用，2026-12-01 下架 |
-| 2026-04-21 | gpt-image-2 | 彈性尺寸、token 計價、支援 Batch | 可用 |
-| 2026-09-08 | gpt-image-2.5 Sunburst、Flare | 新增 xhigh、max 畫質，延遲約減半 | 主力版本 |
+| 2026-04-21 | gpt-image-2 | 彈性尺寸、token 計價、支援 Batch | 已棄用，2027-02-10 下架 |
+| 2026-09-08 | gpt-image-2.5 Sunburst、Flare | 新增 xhigh、max 畫質，延遲約減半 | 可用 |
+| 2026-11-04 | gpt-image-2.6 Sunburst、Flare | complexity 參數、標註式修圖、SVG 與動態 GIF | 主力版本 |
 
-版本資訊取自官方更新紀錄與 Wikipedia 整理<Cite k="oai-changelog" />。據 Wikipedia，GPT Image 2 開始在生成過程中加入推理步驟<Cite k="wiki-gpt-image" />。舊模型的淘汰也很快：DALL·E 2 與 DALL·E 3 已在 2026-05-12 下架，gpt-image-1.5、gpt-image-1-mini 與 chatgpt-image-latest 則排定 2026-12-01 下架，官方建議改用 2.5 Sunburst 或 Flare<Cite k="oai-deprecations" />。從 1.5 到 2.5 不到 9 個月就換了三版，整合到產品中的團隊需要預留遷移與重新調整提示的時間。
+版本資訊取自官方更新紀錄與 Wikipedia 整理<Cite k="oai-changelog" />。據 Wikipedia，GPT Image 2 開始在生成過程中加入推理步驟<Cite k="wiki-gpt-image" />。舊模型的淘汰也很快：DALL·E 2 與 DALL·E 3 已在 2026-05-12 下架，gpt-image-1 已在 2026-10-23 下架；gpt-image-1.5、gpt-image-1-mini 與 chatgpt-image-latest 排定 2026-12-01 下架，gpt-image-2 在 2026-11-10 公告棄用、排定 2027-02-10 下架，官方建議的替代型號都已改為 2.6 Sunburst 或 Flare<Cite k="oai-deprecations" />。從 1.5 到 2.6 不到 11 個月就推出三個新版本，gpt-image-2 上線不到 7 個月就公告棄用，整合到產品中的團隊需要預留遷移與重新調整提示的時間。
 
 ## 評測解讀
 
-<Callout type="info" title="圖像模型怎麼比">Artificial Analysis 的文生圖競技場（AA-Image-T2I v2.0）讓評審在不知道模型名稱的情況下，比較同一個提示產生的兩張圖，再換算成 <Term id="elo-rating">Elo</Term> 分數。票源包含 AA 招募的評審，以及 2026 年 1 月 1 日以前的公開投票<Cite k="aa-t2i" />。</Callout>
+<Callout type="info" title="圖像模型怎麼比">Artificial Analysis 的文生圖競技場（AA-Image-T2I v2.1）讓評審在不知道模型名稱的情況下，比較同一個提示產生的兩張圖，再以統計模型換算成 <Term id="elo-rating">Elo</Term> 分數，並以 FLUX.2 [dev] = 1000 為基準。票源是 AA 篩選、驗證過的評審，所有模型的圖都統一以 1024×1024 的正方形比較<Cite k="aa-image-method" />。</Callout>
 
 | 排名 | 模型 | Elo | 每千張估計成本 |
 |---|---|---|---|
-| 1 | GPT Image 2.5 Sunburst（max） | 1197 ±9 | 210.7 美元 |
-| 2 | GPT Image 2.5 Flare（max） | 1191 ±9 | 210.7 美元 |
-| 3 | GPT Image 2（high） | 1172 ±9 | 211.0 美元 |
-| 4 | Grok Imagine Image 2.0 | 1155 ±11 | 60.0 美元 |
-| 5 | MAI-Image-2.6 | 1151 ±10 | 38.9 美元 |
-| 6 | Nano Banana 2 | 1125 ±8 | 67.0 美元 |
-| 8 | GPT Image 1.5（high） | 1107 ±8 | 133.0 美元 |
-| 38 | GPT Image 1（high） | 1010 ±9 | 167.0 美元 |
+| 1 | GPT Image 2.6 Sunburst（max） | 1261 ±14 | 210.72 美元 |
+| 2 | GPT Image 2.5 Sunburst（max） | 1229 ±10 | 210.72 美元 |
+| 3 | GPT Image 2.6 Flare（max） | 1226 ±12 | 210.72 美元 |
+| 4 | GPT Image 2.5 Flare（max） | 1210 ±10 | 210.72 美元 |
+| 5 | GPT Image 2（high） | 1191 ±11 | 211.00 美元 |
+| 6 | Nano Banana 2.1 | 1176 ±12 | 33.60 美元 |
+| 7 | MAI-Image-2.6 | 1169 ±12 | 38.91 美元 |
+| 8 | Grok Imagine Image 2.0 | 1168 ±12 | 60.00 美元 |
+| 12 | GPT Image 1.5（high） | 1126 ±11 | 133.00 美元 |
+| 46 | GPT Image 1（high） | 1018 ±11 | 167.00 美元 |
 
-資料讀取於 2026-10-06<Cite k="aa-t2i" />。解讀時有幾點要注意：
+資料讀取於 2026-11-13<Cite k="aa-t2i" />。解讀時有幾點要注意：
 
-- **前兩名在統計上並列**：Sunburst 與 Flare 只差 6 分，信賴區間重疊，AA 也把兩者的排名區間標為 1 到 2。
-- **世代進步明顯**：同一個榜上，GPT Image 1 為 1010、1.5 為 1107、2 為 1172、2.5 為 1197，三個版本合計進步近 190 分。
-- **偏好不等於正確**：Elo 反映評審覺得哪張圖較好、較符合提示，不直接衡量文字拼寫正確率或多輪編輯的一致性；而且 AA 測的是 max 或 high 畫質，使用預設 auto 時的畫質與成本都可能不同。
-- **性價比要另外算**：前三名每千張約 211 美元，第 4、5 名只要 39 到 60 美元。大量生成的應用，第二梯隊的成本效益可能更好。
+- **v2.1 與 v2.0 的分數不能直接比較**：本站 2026-10-06 讀取時，AA 用的還是 v2.0 榜，當時 2.5 Sunburst 為 1197、GPT Image 2 為 1172<Cite k="aa-t2i-v20" />。之後 AA 改為 v2.1，換用更嚴謹的統計方法（信賴區間納入其他模型評分的不確定性，排名區間改由模擬整個榜單得出），並移除 AA 不再維護或票數太少的模型<Cite k="aa-image-method" />。同一模型在 v2.1 的分數較高，主要是計分方法改變，不代表模型本身變好。另外，AA 的語言模型綜合智慧指數在 2026-10-27 改版為 v5，那是另一套評測，與本頁的圖像 Elo 無關。
+- **2.6 Sunburst 明顯領先**：比第 2 名高 32 分，兩者的信賴區間沒有重疊；2.6 Flare 與 2.5 Sunburst 只差 3 分，AA 把兩者的排名區間都標為 2 到 3，可視為並列。
+- **新版本樣本較少**：2.6 兩個版本上榜不到兩週，比較次數約 5,300 與 7,200 次，少於 2.5 的約 13,000 次，分數仍可能變動。
+- **偏好不等於正確**：Elo 反映評審覺得哪張圖較好、較符合提示，不直接衡量文字拼寫正確率、多輪編輯的一致性，或 SVG、GIF 這類新輸出；而且 AA 測的是 max 或 high 畫質，使用預設 auto 時的畫質與成本都可能不同。
+- **性價比要另外算**：前五名每千張約 211 美元，第 6 名的 Nano Banana 2.1 只要約 34 美元。大量生成的應用，第二梯隊的成本效益可能更好。

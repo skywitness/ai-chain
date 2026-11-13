@@ -9,6 +9,7 @@
  */
 import Icon from '../ui/Icon.astro';
 import { formatDate } from '../../lib/format';
+import { CAPABILITY_BENCHMARK, LEGACY_CAPABILITY_BENCHMARK } from '../../lib/scene-data/models';
 import {
   AVAILABILITY_LABELS,
   KIND_LABELS,
@@ -41,12 +42,14 @@ const { family: f, headingLevel = 3, as = 'li', compact = false } = Astro.props;
 const H = `h${headingLevel}` as 'h3' | 'h4';
 const Wrapper = as;
 const bmap = benchmarkMap();
+// Language models: the AA Intelligence Index v5 first. The retired v4 index is never shown as the key
+// score (its numbers are on another scale); a flagship without a v5 score falls back to the next id.
 const KEY_BENCH: Record<string, string[]> = {
-  llm: ['aa-intelligence-index', 'lmarena-text', 'gpqa-diamond'],
+  llm: [CAPABILITY_BENCHMARK, 'lmarena-text', 'gpqa-diamond'],
   image: ['aa-text-to-image-elo'],
   video: ['aa-text-to-video-elo'],
 };
-const tryBench = Astro.props.benchmarks ?? KEY_BENCH[f.kind] ?? [];
+const tryBench = (Astro.props.benchmarks ?? KEY_BENCH[f.kind] ?? []).filter((id) => id !== LEGACY_CAPABILITY_BENCHMARK);
 let key: { label: string; value: string; date: string } | undefined;
 for (const id of tryBench) {
   const b = pickBenchmark(f.flagship, id);

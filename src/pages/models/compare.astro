@@ -16,6 +16,14 @@ import { DATA_DATE } from '../../lib/seo';
 const families = await getFamilies();
 const data = buildCompareData(families);
 const familyCount = new Set(data.versions.map((v) => v.familyId)).size;
+// Model data are refreshed on their own schedule: the latest lastVerified of the analysed families
+// (falls back to the site-wide DATA_DATE).
+const modelsAsOf =
+  families
+    .map((f) => (f.data ? String(f.data.lastVerified).slice(0, 10) : ''))
+    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+    .sort()
+    .at(-1) ?? DATA_DATE;
 ---
 
 <BaseLayout
@@ -33,7 +41,7 @@ const familyCount = new Set(data.versions.map((v) => v.familyId)).size;
         挑選 2 到 4 個版本，並排比較規格、API 價格與評測分數。目前可比較 {familyCount} 個系列、{data.versions.length} 個版本；評測分數各自標示日期與來源類型。
       </p>
       <div class="compare__meta">
-        <DataAsOf date={DATA_DATE} />
+        <DataAsOf date={modelsAsOf} />
         <a href={sectionHref('models')} class="compare__back">
           <Icon name="arrow-left" /> 回到大模型總覽
         </a>

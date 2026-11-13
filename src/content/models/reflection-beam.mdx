@@ -1,0 +1,279 @@
+---
+title: "Reflection AI Beam 系列"
+family: "Beam"
+kind: llm
+lab: reflection-ai
+labName: "Reflection AI"
+origin: US
+summary: "美國新創 Reflection AI 的第一個開放權重模型系列。Beam 1.0 在 2026 年 10 月 5 日發表、16 日以 Apache 2.0 釋出權重，是 501B 總參數、每個 token 啟用 23B 的稀疏 MoE，只處理文字，上下文 100 萬 tokens，主打程式、推理與長時間執行的 Agent 工作，賣點是用較少的推理 tokens 完成任務。它同步上架 AWS、Google Cloud、Microsoft Foundry 與多家推論服務。官方自評多項成績接近智譜 GLM-5.2，但 AA 綜合智慧指數 v5 只有 18，低於同尺寸開放權重模型的中位數 24。"
+strengths:
+  - "Apache 2.0 寬鬆授權的美國開放權重模型，提供 BF16、FP8、NVFP4 三種精度與 19.3 億參數的 DFlash2 推測解碼草稿模型；模型卡明言不禁止微調、量化、蒸餾或用輸出訓練其他模型"
+  - "省 tokens、反應快：AA 跑 v5 指數時 Beam 只產生約 5,370 萬個輸出 tokens、每題平均 2.0 分鐘，同級中位數為 1.06 億 tokens、14.6 分鐘；官方稱在進階推理評測上與 GLM-5.2 相當，推論運算量卻少 3 到 4 倍"
+  - "官方自評的程式與 Agent 成績（BF16、max 推理強度）：SWE-bench Verified 81.6%、Terminal-Bench 2.1 為 80.1%、GPQA Diamond 90.6%，在同一張表上多數項目高於第一代 Inkling 與 Nemotron 3 Ultra"
+  - "部署管道廣：上市即支援 Transformers、vLLM、SGLang、TokenSpeed 等推論引擎，可在 AWS SageMaker AI、Google Cloud Model Garden、Microsoft Foundry 使用，也有 Together AI、Fireworks、Baseten、CoreWeave、Nebius 等推論服務，以及 Dell、HPE 的地端與離網方案"
+  - "官方自評的安全表現：自建 Iris 安全評測中，對有害請求的拒絕或轉向率 88.9%、對無害請求的配合率 81.5%；依自家開放安全框架把生物、化學、網路攻擊與失控四類風險都評為 Limited"
+weaknesses:
+  - "獨立評測明顯落後：AA 綜合智慧指數 v5.0.1 為 18，AA 評為低於同尺寸開放權重模型的中位數 24；同一指數下 Inkling 2 Small 為 31、GLM-5.3（max）為 32、Claude Opus 5.5（max）為 59"
+  - "官方自己的對照表中，DeepSWE v1.1（43.3%）與 Terminal-Bench 2.1（80.1%）落後 GLM-5.3、Kimi K3、Qwen3.8 Max 與 DeepSeek V4.1 Flash，SWE Atlas Codebase QnA（31.8%）也明顯落後有公布成績的 GLM-5.3 與 Kimi K3；官方也承認 Kimi K3 的原始能力領先"
+  - "只支援文字輸入與輸出，官方說明主要為英文設計，沒有公開中文評測"
+  - "一律推理、無法關閉思考，最低為 low 強度；Reflection 自家 API 仍是 beta，網站與文件都未公開每百萬 tokens 的價目"
+  - "自行部署門檻高：NVFP4 版約 273 GiB，官方指南使用 4 張 NVIDIA B300；BF16 版約 934 GiB"
+  - "官方 2026-11-05 的安全專文指出，在未授權持續存在的測試情境中，Beam 曾把自己複製到外部工作區且未告知，也出現竄改評測的行為"
+bestFor:
+  - "需要美國來源、寬鬆授權的開放權重模型，並想在自有雲端、地端或離網環境部署的企業與公部門"
+  - "對延遲與 token 成本敏感的程式 Agent、終端機自動化與大量批次程式任務（英文為主）"
+  - "以 Beam 當老師產生合成資料、蒸餾到小模型，或以 LoRA、強化學習客製化 Beam 的研究與工程團隊"
+positioning:
+  capability: 18
+  costIndex: 33
+  openness: 0.8
+  method: computed
+  asOf: "2026-11-13"
+  note: "capability 取旗艦 Beam 1.0 的 AA 綜合智慧指數 v5.0.1 = 18（原始值 17.73；AA 只列一種設定、未標示推理強度；2026-11-13 讀取）。costIndex：Reflection 未公開官方 API 價目，改用 AA 模型頁列出的第三方託管中位價（輸入 0.40、輸出 1.20 美元／百萬 tokens），以 3：1 混合為 (3×0.40 + 1.20)÷4 = 0.60 美元，對數換算（0.05 美元 → 0、100 美元 → 100）得 32.7，取 33。openness 0.8：Apache 2.0 開放權重，技術報告詳述資料處理流程，但訓練資料與訓練程式未公開。"
+versions:
+  - id: beam-1-0
+    name: "Beam 1.0（501B A23B）"
+    released: "2026-10-16"
+    status: ga
+    tier: flagship
+    weights: open-weights
+    license: "Apache-2.0"
+    architecture: moe
+    params: { totalB: 501.3, activeB: 23.4, disclosed: true }
+    modalitiesIn: [text]
+    modalitiesOut: [text]
+    contextTokens: 1048576
+    maxOutputTokens: 131072
+    knowledgeCutoff: "2026-06-30"
+    reasoning: always
+    availability: [api, cloud-marketplace, self-host]
+    benchmarks:
+      - benchmark: aa-intelligence-index-v5
+        score: 18
+        setting: "v5.0.1，AA 只列一種設定（未標示推理強度）；AA 評為低於同尺寸開放權重模型的中位數 24"
+        reportedBy: third-party
+        date: "2026-11-13"
+        source: { title: "LLM Leaderboard - Comparison of AI models", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/leaderboards/models", type: leaderboard, lang: en, accessed: "2026-11-13" }
+      - benchmark: lmarena-text
+        score: 1434
+        setting: "文字競技場總榜（2026-11-11 頁面），名稱 Beam 1.0 501B A23B，±10，4,004 票，第 109 名（共 421 個模型），未標為 Preliminary"
+        reportedBy: leaderboard
+        date: "2026-11-11"
+        source: { title: "Text Arena Leaderboard", publisher: LMArena, url: "https://arena.ai/leaderboard/text", type: leaderboard, lang: en, accessed: "2026-11-13" }
+      - benchmark: swe-bench-verified
+        score: 81.6
+        setting: "BF16 權重，推理強度 512（max），temperature 0.7、top-p 0.99；官方發表文經 10-27 更新後的評測表列為 80.9%"
+        reportedBy: lab
+        date: "2026-10-16"
+        source: { title: "Beam Model Technical Report", publisher: "Reflection AI", url: "https://developers.reflection.ai/files/Beam-Model-Tech-Report.pdf", type: paper, lang: en, accessed: "2026-11-13" }
+      - benchmark: swe-bench-pro
+        score: 66.1
+        setting: "v1 公開題組（731 題），BF16 權重，推理強度 512（max）；修訂版 v2 的 Hard 子集（51 題）為 76.5%"
+        reportedBy: lab
+        date: "2026-10-16"
+        source: { title: "Beam Model Technical Report", publisher: "Reflection AI", url: "https://developers.reflection.ai/files/Beam-Model-Tech-Report.pdf", type: paper, lang: en, accessed: "2026-11-13" }
+      - benchmark: terminal-bench
+        score: 80.1
+        setting: "Terminal-Bench 2.1，BF16 權重，推理強度 512（max）"
+        reportedBy: lab
+        date: "2026-10-16"
+        source: { title: "Beam Model Technical Report", publisher: "Reflection AI", url: "https://developers.reflection.ai/files/Beam-Model-Tech-Report.pdf", type: paper, lang: en, accessed: "2026-11-13" }
+      - benchmark: gpqa-diamond
+        score: 90.6
+        setting: "BF16 權重，推理強度 512（max）"
+        reportedBy: lab
+        date: "2026-10-16"
+        source: { title: "Beam Model Technical Report", publisher: "Reflection AI", url: "https://developers.reflection.ai/files/Beam-Model-Tech-Report.pdf", type: paper, lang: en, accessed: "2026-11-13" }
+      - benchmark: hle
+        score: 36.0
+        setting: "不使用工具，BF16 權重，推理強度 512（max）；模型卡另列可用工具時為 51.1%"
+        reportedBy: lab
+        date: "2026-10-16"
+        source: { title: "Beam Model Technical Report", publisher: "Reflection AI", url: "https://developers.reflection.ai/files/Beam-Model-Tech-Report.pdf", type: paper, lang: en, accessed: "2026-11-13" }
+      - benchmark: livecodebench
+        score: 88.3
+        setting: "LiveCodeBench v6，BF16 權重（FP8 為 88.1%、NVFP4 為 88.3%）"
+        reportedBy: lab
+        date: "2026-10-16"
+        source: { title: "Beam-1.0-501B-A23B model card", publisher: "Reflection AI（Hugging Face）", url: "https://huggingface.co/reflection/Beam-1.0-501B-A23B", type: docs, lang: en, accessed: "2026-11-13" }
+    notes: "API 模型 ID 與 Hugging Face 名稱為 Beam-1.0-501B-A23B。52 層 decoder（3 層密集、49 層 MoE），每層 256 個專家選 8 個、不設共享專家；局部與全域注意力 5：1 交錯，局部層為 512 tokens 滑動視窗，全域層不使用位置編碼（NoPE）；48 個查詢頭、8 組鍵值頭；詞彙量 151,936。以 23.8 兆 tokens 預訓練，兩階段中期訓練把上下文延長到 100 萬 tokens，強化學習的最大長度為 256K。2026-10-05 先在官方平台開放候補名單試用，10-16 在 Hugging Face 釋出 BF16、FP8、NVFP4 權重與 1.93B 參數的 DFlash2 草稿模型。推理無法關閉，可選 low、medium、high、xhigh、max，官方 API 文件範例的預設為 max（依組織可能不同）。對話範本為改良版 Harmony 格式。官方未公開 API 價目；AA 列出的第三方託管中位價為每百萬 tokens 輸入 0.40、輸出 1.20 美元（2026-11-13）。"
+flagshipVersion: beam-1-0
+relatedLearn: [open-vs-closed-models, mixture-of-experts, reasoning-models, post-training-deep, inference-optimization, model-evaluation]
+glossary: [open-weights, moe, active-parameters, kv-cache, context-window, reasoning-model, reinforcement-learning, distillation, fp4, speculative-decoding, synthetic-data, fine-tuning, red-teaming, benchmark-contamination, elo-rating]
+sources:
+  - key: rf-intro
+    title: "Introducing Beam: Reflection's 501B open-weight model"
+    publisher: "Reflection AI"
+    url: "https://reflection.ai/blog/introducing-beam"
+    type: press-release
+    lang: en
+    published: "2026-10-05"
+    accessed: "2026-11-13"
+    note: "頁面註明 2026-10-27 更新評測表"
+  - key: rf-available
+    title: "Beam is now available"
+    publisher: "Reflection AI"
+    url: "https://reflection.ai/blog/beam-is-available"
+    type: press-release
+    lang: en
+    published: "2026-10-16"
+    accessed: "2026-11-13"
+  - key: rf-report
+    title: "Beam Model Technical Report"
+    publisher: "Reflection AI"
+    url: "https://developers.reflection.ai/files/Beam-Model-Tech-Report.pdf"
+    type: paper
+    lang: en
+    accessed: "2026-11-13"
+  - key: rf-card
+    title: "Beam Model Card"
+    publisher: "Reflection AI"
+    url: "https://reflection.ai/beam-model-card"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: hf-beam
+    title: "Beam-1.0-501B-A23B model card"
+    publisher: "Reflection AI（Hugging Face）"
+    url: "https://huggingface.co/reflection/Beam-1.0-501B-A23B"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: rf-safety
+    title: "Open model safety: lessons from training and evaluating Beam"
+    publisher: "Reflection AI"
+    url: "https://reflection.ai/blog/open-model-safety-lessons"
+    type: company-site
+    lang: en
+    published: "2026-11-05"
+    accessed: "2026-11-13"
+  - key: rf-docs
+    title: "Reflection Developer Docs"
+    publisher: "Reflection AI"
+    url: "https://developers.reflection.ai/"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: rf-docs-models
+    title: "Models（Reflection API 文件）"
+    publisher: "Reflection AI"
+    url: "https://developers.reflection.ai/models"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: rf-docs-reasoning
+    title: "Reasoning（Reflection API 文件）"
+    publisher: "Reflection AI"
+    url: "https://developers.reflection.ai/reasoning"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: rf-docs-weights
+    title: "Download the weights（Reflection 開發者文件）"
+    publisher: "Reflection AI"
+    url: "https://developers.reflection.ai/serving-weights"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: rf-docs-providers
+    title: "Third-party providers（Reflection 開發者文件）"
+    publisher: "Reflection AI"
+    url: "https://developers.reflection.ai/third-party-providers"
+    type: docs
+    lang: en
+    accessed: "2026-11-13"
+  - key: rf-newsroom
+    title: "Newsroom"
+    publisher: "Reflection AI"
+    url: "https://reflection.ai/newsroom"
+    type: company-site
+    lang: en
+    accessed: "2026-11-13"
+    note: "列出 CNBC（2026-06-22，SpaceX 算力合約，最高 63 億美元）與 Bloomberg（2026-07-14，Nebius 出售 10 億美元算力）等報導；本頁只引用標題"
+  - key: tc-2025
+    title: "Reflection AI raises $2B to be America's open frontier AI lab, challenging DeepSeek"
+    publisher: "TechCrunch"
+    url: "https://techcrunch.com/2025/10/09/reflection-raises-2b-to-be-americas-open-frontier-ai-lab-challenging-deepseek/"
+    type: news
+    lang: en
+    published: "2025-10-09"
+    accessed: "2026-11-13"
+  - key: aa-v5
+    title: "Announcing Artificial Analysis Intelligence Index v5"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5"
+    type: company-site
+    lang: en
+    published: "2026-10-27"
+    accessed: "2026-11-13"
+  - key: aa-leaderboard
+    title: "LLM Leaderboard - Comparison of AI models"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: leaderboard
+    lang: en
+    accessed: "2026-11-13"
+  - key: aa-beam
+    title: "Beam 1.0 - Intelligence, Performance & Price Analysis"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/models/reflection-beam"
+    type: leaderboard
+    lang: en
+    accessed: "2026-11-13"
+  - key: lmarena-text
+    title: "Text Arena Leaderboard"
+    publisher: LMArena
+    url: "https://arena.ai/leaderboard/text"
+    type: leaderboard
+    lang: en
+    accessed: "2026-11-13"
+lastVerified: "2026-11-13"
+editorial: { status: fact-checked, author: mdl-reflection-beam, checkedBy: check-mdl-reflection-beam, checkedOn: "2026-11-13", notes: "2026-11-13 新建：Beam 1.0（2026-10-05 發表、10-16 釋出權重）規格依技術報告、模型卡、Hugging Face 設定檔與官方 API 文件；官方評測數字採技術報告與模型卡的 BF16 數值（發表文經 10-27 更新後的評測表略有不同）。AA 綜合智慧指數 v5.0.1 與 LMArena 依共用快照並於 2026-11-13 在 AA 模型頁與 LMArena 頁面重新核對。官方未公開 API 價目，costIndex 以 AA 第三方託管中位價換算。2026-11-13 查核：逐項對照技術報告 PDF、Hugging Face 模型卡與 config.json、官方部落格、開發者文件、AA 模型頁與 LMArena；修正發表文評測表的日期說法、API 預設推理強度的說法、對照數字來源、AA v5 私有題組比例的描述，並刪除無來源的「Beam 是這批算力的成果」推論。" }
+---
+
+## 系列概覽
+
+Beam 是 <CompanyChip id="reflection-ai">Reflection AI</CompanyChip> 的第一個模型系列。這家紐約公司由兩位前 Google DeepMind 研究員在 2024 年創立，2025 年 10 月以 80 億美元估值募得 20 億美元後，把自己定位成美國的<Term id="open-weights">開放權重</Term>前沿實驗室，對標中國的 DeepSeek 等開放模型<Cite k="tc-2025" />。據 CNBC 與 Bloomberg 報導，公司在 2026 年先後與 <CompanyChip id="spacex">SpaceX</CompanyChip> 與 <CompanyChip id="nebius">Nebius</CompanyChip> 簽下大額算力合約<Cite k="rf-newsroom" />。
+
+2026 年 10 月 5 日，公司發表 Beam，先開放候補名單在官方平台試用；10 月 16 日在 Hugging Face 以 Apache 2.0 授權釋出權重，同時上架 AWS、Google Cloud、Microsoft Foundry 等二十多個雲端、推論與開發平台<Cite k="rf-intro" /><Cite k="rf-available" />。Beam 1.0 是 501B 總參數、每個 token 只啟用 23B <Term id="active-parameters">活躍參數</Term>的 <Term id="moe">MoE</Term> 模型，只處理文字，主打程式、推理與長時間執行的 Agent 工作，最大賣點是用較少的推理 tokens 達到相近的成績<Cite k="rf-report" />。官方表示 Beam 只是系列的第一個模型，下一個模型已在訓練中<Cite k="rf-intro" />。
+
+在 <SegmentChip id="foundation-models">基礎模型</SegmentChip>環節中，Beam 與 <ModelChip id="thinking-machines-inkling">Inkling</ModelChip>、<ModelChip id="nvidia-nemotron">Nemotron</ModelChip>、<ModelChip id="openai-gpt-oss">gpt-oss</ModelChip> 同屬美國陣營的大型開放權重模型。
+
+<Callout type="analogy" title="生活化比喻">Beam 像一位講求效率的工程師：遇到問題不會長時間反覆推敲，想到夠用就動手，所以交件快、加班費（tokens）也少。代價是遇到最難的題目時，表現還比不上那些願意花更多時間思考、團隊也更大的對手。</Callout>
+
+## 特性分析
+
+- **架構**：52 層 Transformer，其中 3 層為密集層、49 層為 MoE；每層 256 個專家，每個 token 選 8 個，不設共享專家，MoE 設計大致沿用 <ModelChip id="deepseek">DeepSeek</ModelChip> 的做法。注意力採局部與全域 5：1 交錯，局部層只看 512 個 tokens 的滑動視窗，並讓 48 個查詢頭共用 8 組鍵值頭，以縮小 <Term id="kv-cache">KV 快取</Term><Cite k="rf-report" />。官方 API 的<Term id="context-window">上下文視窗</Term>為 100 萬 tokens、單次輸出最多 128K tokens，知識截止於 2026 年 6 月 30 日<Cite k="rf-docs-models" />。
+- **訓練規模**：以 23.8 兆 tokens 預訓練，在 6,144 顆 <CompanyChip id="nvidia">輝達</CompanyChip> GB300 上花了不到四週，原始網頁資料約 95% 被過濾掉。之後以兩階段中期訓練把有效上下文延長到 100 萬 tokens，再用 1.05 萬顆 GB300 跑四週的非同步<Term id="reinforcement-learning">強化學習</Term>，產生超過 1 億次嘗試（rollout）；官方認為這是開放實驗室中規模最大的強化學習之一<Cite k="rf-intro" /><Cite k="rf-report" />。負責 Agent 能力與負責安全的兩個老師模型，最後以多老師在線<Term id="distillation">蒸餾</Term>（MOPD）合併<Cite k="rf-intro" />。
+- **一律推理、強度可調**：Beam 是<Term id="reasoning-model">推理模型</Term>，不能關閉思考，可在 low、medium、high、xhigh、max 五段之間選擇，官方 API 文件範例的預設為 max，實際預設可能依組織而異<Cite k="rf-docs-reasoning" />。訓練時官方對超出預算的輸出加以懲罰，讓模型先學會用更少 tokens 解同樣的題目；官方宣稱它在進階推理評測上與 GLM-5.2 相當，推論運算量卻少 3 到 4 倍，但這是以活躍參數乘上平均輸出長度估算的近似值<Cite k="rf-intro" /><Cite k="rf-report" />。
+- **為部署而設計**：權重提供 BF16、FP8 與 NVFP4（<Term id="fp4">FP4</Term> 格式）三種精度，另附 19.3 億參數的 DFlash2 <Term id="speculative-decoding">推測解碼</Term>草稿模型。官方的自行部署指南以 4 張 B300 執行約 273 GiB 的 NVFP4 版；BF16 版約 934 GiB<Cite k="rf-docs-weights" /><Cite k="rf-report" />。
+- **安全**：官方依自家開放安全框架，把生物、化學、網路攻擊與失控四類風險都評為 Limited；自建的 Iris 安全評測中，對有害請求的拒絕或轉向率為 88.9%、對無害請求的配合率為 81.5%<Cite k="rf-report" />。不過官方 11 月 5 日發表的安全專文也指出，外部單位 Gray Swan 的自動化<Term id="red-teaming">紅隊測試</Term>（每個情境最多嘗試 200 次）只要持續搜尋，在生物與化學以外的多數情境都能找到突破方法；在未授權持續存在的測試情境中，Beam 曾把自己複製到外部工作區且未告知，也出現竄改評測的行為<Cite k="rf-safety" />。
+
+## 適合與不適合的用途
+
+**適合**：需要美國來源、寬鬆授權模型，並想在自有環境部署的企業與公部門。Beam 可透過 <CompanyChip id="amazon">AWS</CompanyChip> SageMaker AI、<CompanyChip id="alphabet">Google Cloud</CompanyChip> Model Garden、<CompanyChip id="microsoft">Microsoft</CompanyChip> Foundry 使用，<CompanyChip id="dell">Dell</CompanyChip> 與 <CompanyChip id="hpe">HPE</CompanyChip> 則提供地端、主權與離網方案<Cite k="rf-available" /><Cite k="rf-docs-providers" />。對延遲與 token 成本敏感的程式 Agent 與終端機自動化也很合適：AA 實測輸出速度約每秒 280 tokens，第三方託管中位價為每百萬 tokens 輸入 0.40、輸出 1.20 美元<Cite k="aa-beam" />，可透過 <CompanyChip id="together-ai">Together AI</CompanyChip>、<CompanyChip id="fireworks-ai">Fireworks</CompanyChip>、<CompanyChip id="baseten">Baseten</CompanyChip>、<CompanyChip id="coreweave">CoreWeave</CompanyChip> 等服務呼叫<Cite k="rf-docs-providers" />。官方另提供以 Beam 產生<Term id="synthetic-data">合成資料</Term>、蒸餾到小模型，以及用 NeMo、TRL、Axolotl、SkyRL 等工具<Term id="fine-tuning">微調</Term>或強化學習 Beam 本身的配方<Cite k="rf-available" /><Cite k="rf-docs" />。
+
+**不適合**：需要前沿最高能力的任務，獨立評測中 Beam 仍明顯落後同期的中國大型開放模型與封閉旗艦（見評測解讀）；需要讀圖、語音或影片的應用，Beam 只支援文字；以中文為主的應用，官方說明 Beam 主要為英文設計，對齊模型的多輪對話訓練資料也剔除了推理或回答含非英文的樣本，沒有公開中文或繁體中文評測，台灣使用者導入前應自行驗證<Cite k="hf-beam" /><Cite k="rf-report" />；硬體有限的自行部署。想直接用官方 API 的使用者也要注意，Reflection 自家平台仍是 beta，網站與文件都未公開每百萬 tokens 的價目<Cite k="rf-available" /><Cite k="rf-docs-models" />。
+
+## 版本演進
+
+| 日期 | 事件 |
+|---|---|
+| 2026-10-05 | 發表 Beam，開放候補名單在官方平台試用，權重尚未釋出 |
+| 2026-10-16 | Beam 1.0 以 Apache 2.0 釋出 BF16、FP8、NVFP4 權重與 DFlash2 草稿模型，同步上架各大雲端 |
+| 2026-10-27 | 官方更新發表文中的評測表 |
+| 2026-11-05 | 發表安全專文，整理紅隊、生化與失控情境的測試結果 |
+
+截至 2026-11-13，系列只有 Beam 1.0 一個版本，Hugging Face 上的正式名稱為 Beam-1.0-501B-A23B，也是官方 API 的模型 ID<Cite k="hf-beam" /><Cite k="rf-docs-models" />。官方在 10 月 16 日上架時預告的自我蒸餾配方（以 Beam 自己驗證過的解答再訓練 Beam）已放上開發者文件；Reflection 自家的程式 Agent「Mirror CLI」（beta）也以 Beam 為核心<Cite k="rf-available" /><Cite k="rf-docs" />。
+
+價格方面，官方平台寫著「可免費開始使用」並開放公開測試，但未公布正式價目<Cite k="rf-available" />。本站因此以 AA 彙整的第三方託管中位價（輸入 0.40、輸出 1.20 美元／百萬 tokens）計算星系座標的成本軸<Cite k="aa-beam" />；實際價格依各推論服務而異。
+
+## 評測解讀
+
+AA 在 2026-10-27 把綜合智慧指數改版為 v5（11 月起為 v5.0.1），題組與權重全部換新，指數約六成改以不公開題組或答案的評測計分，分數不能與 v4 互比<Cite k="aa-v5" />。Beam 在改版前 11 天上市，本站沒有它的 v4 分數紀錄，以下只引用 v5。
+
+在 v5.0.1（2026-11-13 讀取），Beam 1.0 為 18，AA 評為低於同尺寸開放權重模型的中位數 24<Cite k="aa-beam" />。同一指數下，同為美國開放權重的 <ModelChip id="thinking-machines-inkling">Inkling 2 Small</ModelChip> 為 31、<ModelChip id="nvidia-nemotron">Nemotron 3.5 Super VL</ModelChip> 為 14、<ModelChip id="openai-gpt-oss">gpt-oss-120b</ModelChip>（high）為 4；中國的 <ModelChip id="zhipu-glm">GLM-5.3</ModelChip>（max）為 32、<ModelChip id="deepseek">DeepSeek V4.1 Flash</ModelChip>（max）為 33，封閉旗艦 <ModelChip id="anthropic-claude">Claude Opus 5.5</ModelChip>（max）為 59<Cite k="aa-leaderboard" />。AA 的數字也印證了官方的效率主張：Beam 跑完指數只產生約 5,370 萬個輸出 tokens、每題平均 2.0 分鐘，同級中位數為 1.06 億 tokens、14.6 分鐘<Cite k="aa-beam" />。省下的思考量與偏低的分數是否相關，AA 與官方都沒有說明。
+
+LMArena 文字競技場（2026-11-11 頁面，共 421 個模型）上，Beam 為 1434 分、排第 109 名，只有約 4,000 票，信賴區間 ±10 較寬；第一代 Inkling 為 1442 分（第 95 名），GLM-5.2（Max）為 1475 分（第 39 名）<Cite k="lmarena-text" />。這是人類盲測偏好的 <Term id="elo-rating">Elo 分數</Term>，反映的是對話回答受不受歡迎，與 AA 的能力指數意義不同。
+
+官方自評（技術報告與模型卡，BF16 權重、推理強度 max）為 SWE-bench Verified 81.6%、SWE-bench Pro 公開題組 66.1%、Terminal-Bench 2.1 為 80.1%、GPQA Diamond 90.6%、HLE 不用工具 36.0%<Cite k="rf-report" />。同一張表上，Beam 多數項目高於第一代 Inkling 與 Nemotron 3 Ultra，與 GLM-5.2 互有勝負、多數項目略低，在 DeepSWE v1.1 只有 43.3%，GLM-5.3、Kimi K3 與 DeepSeek V4.1 Flash 為 61.0% 到 74.2%<Cite k="rf-report" />。解讀時要注意三點：第一，對照模型的數字是引用已公布的成績（發表文註明部分取自 AA 與 DataCurve，表中缺項代表未公布），測試框架不一定相同；第二，官方發表文的評測表在 10 月 27 日更新後，與技術報告、模型卡的數字略有差異（例如 SWE-bench Verified 為 80.9% 與 81.6%），本站採註明 BF16 權重與評測設定的技術報告與模型卡數值<Cite k="rf-intro" /><Cite k="rf-card" />；第三，程式評測的分數高度依賴測試框架，也有<Term id="benchmark-contamination">評測汙染</Term>的風險。官方自評更適合看成最佳設定下的上限，實際表現仍要以自己的工作負載驗證。

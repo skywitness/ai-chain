@@ -5,19 +5,21 @@ kind: "world"
 lab: "nvidia"
 labName: "NVIDIA（輝達）"
 origin: "US"
-summary: "輝達（NVIDIA）為機器人、自駕車與視覺 AI 打造的開放世界基礎模型平台，用來產生合成資料、預測未來畫面與理解物理場景。2025 年分成 Predict、Transfer、Reason 三條產品線；2026-05-31 推出的 Cosmos 3 以混合 Transformer 架構，把文字、圖片、影片、聲音與動作的理解和生成整合進單一模型，提供 Super（640 億參數）、Nano（160 億）與 Edge（40 億）三種尺寸，採 OpenMDW-1.1 寬鬆授權。"
+summary: "輝達（NVIDIA）為機器人、自駕車與視覺 AI 打造的開放世界基礎模型平台，用來產生合成資料、預測未來畫面與理解物理場景。2025 年分成 Predict、Transfer、Reason 三條產品線；2026-05-31 推出的 Cosmos 3 以混合 Transformer 架構，把文字、圖片、影片、聲音與動作的理解和生成整合進單一模型，提供 Super（640 億參數）、Nano（160 億）與 Edge（40 億）三種尺寸，採 OpenMDW-1.1 寬鬆授權。2026-10 再釋出可即時互動的模擬檢查點與資料、訓練工具。"
 strengths:
   - "單一模型整合世界生成、視覺推理與動作預測，可輸出文字、圖片、影片、聲音與機器人動作"
   - "Cosmos 3 的權重與原始碼都採 OpenMDW-1.1 寬鬆授權，可自由商用、微調與部署，只需保留授權與來源聲明"
   - "尺寸齊全：Super 640 億、Nano 160 億、Edge 40 億參數，Edge 可在 Jetson 與 DGX Spark 上執行"
-  - "與 Isaac Sim、GR00T、Jetson 串成完整工具鏈；GR00T N1.7 即以 Cosmos-Reason2-2B 為視覺語言骨幹"
+  - "2026-10-20 釋出三個由 Nano 蒸餾的即時模擬檢查點，可依機器人動作、空間控制訊號或駕駛場景串流生成影片，在閉環中評估策略"
+  - "與 Isaac Sim、GR00T、Jetson 串成完整工具鏈；GR00T N1.7 以 Cosmos-Reason2-2B 為視覺語言骨幹，2026-11 發表的 GR00T 2 也建立在 Cosmos 上"
 weaknesses:
   - "物理精確度的領先成績多為原廠自報；模型卡自承可能出現時間不一致、物體互動不精確與動作漂移"
-  - "第三方人類偏好榜落後閉源模型：AA 圖生影片榜最佳版本 Elo 1273（第 21 名），開放權重第一已由 MiniMax H3 取得"
+  - "第三方人類偏好榜落後閉源模型：AA 文生圖榜（v2.1）最佳檢查點 Elo 995，在 112 個模型中排第 56；AA 圖生影片榜改為 v2.1 後未列入 Cosmos 3"
   - "Super 部署門檻高，官方建議以 8 張 H100、H200 或 A100 部署；也沒有官方按量計價的託管服務"
 bestFor:
   - "為機器人與自駕車產生多樣化的合成訓練資料"
   - "在虛擬環境中預演與評估機器人策略"
+  - "自駕感知與駕駛策略的閉環模擬（多視角影片加 LiDAR）"
   - "影片分析 Agent 與物理場景理解"
   - "作為機器人 VLA 模型的視覺與世界模型骨幹"
 positioning:
@@ -25,8 +27,8 @@ positioning:
   costIndex: 35
   openness: 0.8
   method: "editorial"
-  asOf: "2026-10-06"
-  note: "世界模型沒有可比較的第三方綜合指標，也不按 tokens 計價，capability 與 costIndex 為編輯判斷，不宜與語言模型直接比較。capability 68：Cosmos 3 是少數同時涵蓋生成、推理與動作的開放世界模型，原廠宣稱多項物理 AI 評測居開放模型第一；但第三方人類偏好榜上，圖生影片（Elo 1273、第 21 名）與文生圖（Elo 995、第 49 名）都落後閉源前沿模型，物理評測也多為自報。costIndex 35：權重免費下載、沒有官方計價，成本主要是自備 GPU（Super 建議 8 張 H100／H200，8 張 H200 每段影片約 55 秒；Edge 可在 Jetson 執行），屬中低區間。openness 0.8：Cosmos 3 的權重與程式碼都採 OpenMDW-1.1 寬鬆授權，並公開部分資料集，但未公開完整訓練資料。"
+  asOf: "2026-11-13"
+  note: "世界模型沒有可比較的第三方綜合指標，也不按 tokens 計價，capability 與 costIndex 為編輯判斷，不宜與語言模型直接比較；AA 綜合智慧指數 v5 只評語言模型，不適用。capability 68（與 2026-10-06 相同）：Cosmos 3 是少數同時涵蓋生成、推理與動作的開放世界模型，2026-10 又加入即時互動的模擬檢查點，原廠宣稱多項物理 AI 評測居開放模型前列；但第三方人類偏好榜上，文生圖（AA-Image-T2I v2.1，Elo 995、第 56 名）落後閉源前沿模型，AA 圖生影片榜改為 v2.1 後已不再列出 Cosmos 3，物理評測也多為自報，因此維持不變。costIndex 35：權重免費下載、沒有官方計價，成本主要是自備 GPU（Super 建議 8 張 H100／H200，8 張 H200 每段影片約 55 秒；Edge 可在 Jetson 執行），屬中低區間。openness 0.8：Cosmos 3 的權重與程式碼都採 OpenMDW-1.1 寬鬆授權，並公開部分資料集，但未公開完整訓練資料。"
 versions:
   - id: "cosmos-3-super"
     name: "Cosmos 3 Super"
@@ -58,16 +60,16 @@ versions:
     benchmarks:
       - benchmark: "aa-text-to-image-elo"
         score: 995
-        setting: "AA-Image-T2I v2.0，Cosmos3-Super-Text2Image（agentic）檢查點，第 49 名，±8"
+        setting: "AA-Image-T2I v2.1，Cosmos3-Super-Text2Image（agentic）檢查點，112 個模型中第 56 名，±9（2026-10-06 讀取的 v2.0 榜同為 995、第 49 名）"
         reportedBy: "leaderboard"
-        date: "2026-10-06"
-        source: { title: "Text to Image Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/image/leaderboard/text-to-image", type: "leaderboard", lang: "en", accessed: "2026-10-06" }
+        date: "2026-11-13"
+        source: { title: "AA-Image-T2I v2.1 Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/image/leaderboard/text-to-image", type: "leaderboard", lang: "en", accessed: "2026-11-13" }
       - benchmark: "aa-text-to-image-elo"
-        score: 987
-        setting: "AA-Image-T2I v2.0，Cosmos3-Super-Text2Image 標準檢查點，第 55 名"
+        score: 988
+        setting: "AA-Image-T2I v2.1，Cosmos3-Super-Text2Image 標準檢查點，第 61 名，±10（2026-10-06 讀取的 v2.0 榜為 987、第 55 名）"
         reportedBy: "leaderboard"
-        date: "2026-10-06"
-        source: { title: "Text to Image Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/image/leaderboard/text-to-image", type: "leaderboard", lang: "en", accessed: "2026-10-06" }
+        date: "2026-11-13"
+        source: { title: "AA-Image-T2I v2.1 Leaderboard", publisher: "Artificial Analysis", url: "https://artificialanalysis.ai/image/leaderboard/text-to-image", type: "leaderboard", lang: "en", accessed: "2026-11-13" }
     notes: "混合 Transformer（Mixture-of-Transformers）架構：自回歸 Transformer 生成文字，擴散 Transformer 生成圖片、影片、聲音與動作。影片可生成 256p、480p、720p，長度 5 到 400 格（預設 189 格）；動作支援 10 種格式，涵蓋 Franka、UR、AgiBot 等機械臂與自駕車。建議以 8 張 H100、H200 或 A100 部署，8 張 H200 以 50 步生成一段影片約 55 秒。另有 Image2Video、Text2Image 與 4 步蒸餾等衍生檢查點。NVIDIA 未公布按量定價，可透過 build.nvidia.com 試用或由 Baseten、CoreWeave、Microsoft Azure、Nebius 等合作夥伴部署。"
   - id: "cosmos-3-nano"
     name: "Cosmos 3 Nano"
@@ -123,6 +125,27 @@ versions:
       - "self-host"
       - "on-device"
     notes: "大小約為 Nano 的四分之一，可在 DGX Spark 與 Jetson 上於裝置端執行；模型卡稱其在單張 H100 的圖生影片測試中生成吞吐量為受測模型最高，可作為機器人策略後訓練的起點（Cosmos3-Edge-Policy-DROID）。"
+  - id: "cosmos-3-nano-sim"
+    name: "Cosmos 3 Nano Sim（Bimanual／Transfer／Auto）"
+    released: "2026-10-20"
+    status: "ga"
+    tier: "specialized"
+    weights: "open-weights"
+    license: "OpenMDW-1.1"
+    architecture: "hybrid"
+    params:
+      totalB: 16
+      disclosed: true
+    modalitiesIn:
+      - "text"
+      - "image"
+      - "video"
+    modalitiesOut:
+      - "video"
+    reasoning: "none"
+    availability:
+      - "self-host"
+    notes: "由 Cosmos 3 Nano 後訓練、再經因果蒸餾而成的三個即時互動模擬檢查點：每次依快取的歷史與新傳入的控制訊號生成一小段影片，以串流方式往下模擬。Bimanual 依相機軌跡與雙臂機器人動作預測畫面（單張 GB300、480p 約每秒 48.1 格、延遲 166 毫秒）；Transfer 把深度、分割、邊緣或模糊影片轉成逼真的 RGB 畫面（單張 GB200、640×640 約每秒 15.85 格）；Auto 依駕駛場景控制同步生成最多 11 個相機視角與 LiDAR（7 個視角加 LiDAR、每視角 480p 時，以 16 張 GB200 約每秒 16.7 格）。控制訊號可來自 VLA 等策略模型或人工操作，用於閉環策略評估、強化學習與合成示範資料。動作與 LiDAR 控制屬於本站模態欄位以外的輸入。"
   - id: "cosmos-reason-2"
     name: "Cosmos Reason 2（2B／8B／32B）"
     released: "2025-12-19"
@@ -192,6 +215,7 @@ glossary:
   - "vla"
   - "digital-twin"
   - "open-weights"
+  - "distillation"
 sources:
   - key: "nv-cosmos3"
     title: "NVIDIA Launches Cosmos 3, the Open Frontier Foundation Model for Physical AI"
@@ -208,7 +232,7 @@ sources:
     type: "docs"
     lang: "en"
     published: "2026-05-31"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - key: "hf-cosmos3-nano"
     title: "nvidia/Cosmos3-Nano"
     publisher: "NVIDIA (Hugging Face)"
@@ -232,7 +256,7 @@ sources:
     type: "dataset"
     note: "downloads 欄位為近 30 天下載次數"
     lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - key: "nv-blog-local"
     title: "NVIDIA and Local AI Community Fuel Open Source Models and Intelligent Agents"
     publisher: "NVIDIA Blog"
@@ -262,9 +286,9 @@ sources:
     publisher: "NVIDIA (GitHub)"
     url: "https://github.com/NVIDIA/cosmos"
     type: "docs"
-    note: "README 註明 Cosmos 3 的原始碼與模型皆以 OpenMDW-1.1 釋出"
+    note: "README 註明 Cosmos 3 的原始碼與模型皆以 OpenMDW-1.1 釋出；What's new 列出 2026-10 的互動式世界模擬範例檢查點"
     lang: "en"
-    accessed: "2026-10-17"
+    accessed: "2026-11-13"
   - key: "gh-reason2"
     title: "nvidia-cosmos/cosmos-reason2"
     publisher: "NVIDIA (GitHub)"
@@ -314,23 +338,81 @@ sources:
     publisher: "Artificial Analysis"
     url: "https://artificialanalysis.ai/video/leaderboard/image-to-video"
     type: "leaderboard"
-    note: "AA-Video-I2V-Silent v1.0"
+    note: "2026-10-06 讀取時為 AA-Video-I2V-Silent v1.0；2026-11-13 讀取時已改為 v2.1（含 Silent 與有聲兩榜），兩榜都未列入 Cosmos 3"
     lang: "en"
-    accessed: "2026-10-06"
+    accessed: "2026-11-13"
   - key: "aa-t2i"
     title: "Text to Image Leaderboard"
     publisher: "Artificial Analysis"
     url: "https://artificialanalysis.ai/image/leaderboard/text-to-image"
     type: "leaderboard"
-    note: "AA-Image-T2I v2.0"
+    note: "2026-10-06 讀取時為 AA-Image-T2I v2.0；2026-11-13 讀取時為 v2.1，共 112 個模型"
     lang: "en"
-    accessed: "2026-10-06"
-lastVerified: "2026-10-06"
+    accessed: "2026-11-13"
+  - key: "nv-sim"
+    title: "Interactive World Simulation with Cosmos for Physical AI"
+    publisher: "NVIDIA Research (Cosmos Lab)"
+    url: "https://research.nvidia.com/labs/cosmos-lab/cosmos-simulation/"
+    type: "company-site"
+    lang: "en"
+    accessed: "2026-11-13"
+    note: "三個 Nano 模擬檢查點的幀率、延遲與測試硬體"
+  - key: "hf-sim-bimanual"
+    title: "nvidia/Cosmos3-Nano-Sim-Bimanual"
+    publisher: "NVIDIA (Hugging Face)"
+    url: "https://huggingface.co/nvidia/Cosmos3-Nano-Sim-Bimanual"
+    type: "docs"
+    lang: "en"
+    published: "2026-10-20"
+    accessed: "2026-11-13"
+  - key: "hf-sim-auto"
+    title: "nvidia/Cosmos3-Nano-Sim-Auto"
+    publisher: "NVIDIA (Hugging Face)"
+    url: "https://huggingface.co/nvidia/Cosmos3-Nano-Sim-Auto"
+    type: "docs"
+    lang: "en"
+    published: "2026-10-20"
+    accessed: "2026-11-13"
+  - key: "hf-h-embodied"
+    title: "nvidia/Cosmos3-H-Embodied-Nano"
+    publisher: "NVIDIA (Hugging Face)"
+    url: "https://huggingface.co/nvidia/Cosmos3-H-Embodied-Nano"
+    type: "docs"
+    lang: "en"
+    published: "2026-10-20"
+    accessed: "2026-11-13"
+    note: "模型卡註明 Hugging Face 與 GitHub 釋出日皆為 2026-10-20，採 NVIDIA Open Model License"
+  - key: "hf-h-dreams"
+    title: "nvidia/Cosmos3-H-Dreams"
+    publisher: "NVIDIA (Hugging Face)"
+    url: "https://huggingface.co/nvidia/Cosmos3-H-Dreams"
+    type: "docs"
+    lang: "en"
+    published: "2026-10-20"
+    accessed: "2026-11-13"
+    note: "以 Cosmos3-H-Embodied-Nano 為底，針對 CMR Surgical Versius 微調並蒸餾為少步數因果串流模型，採 NVIDIA Open Model License"
+  - key: "nv-gtc-berlin"
+    title: "NVIDIA Cosmos Opens New Tools to Train, Evaluate and Deploy World Models"
+    publisher: "NVIDIA Blog"
+    url: "https://blogs.nvidia.com/blog/cosmos-open-train-evaluate-deploy-world-models/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-10-21"
+    accessed: "2026-11-13"
+  - key: "nv-corl"
+    title: "Practice Makes Precise: At CoRL, NVIDIA and Partners Reveal How Robots Rehearse Delicate Work in Simulation"
+    publisher: "NVIDIA Blog"
+    url: "https://blogs.nvidia.com/blog/robotics-simulation-advancements-corl/"
+    type: "company-site"
+    lang: "en"
+    published: "2026-11-09"
+    accessed: "2026-11-13"
+lastVerified: "2026-11-13"
 editorial:
   status: "fact-checked"
-  author: "models-06"
-  checkedBy: "models-06-check"
-  checkedOn: "2026-10-06"
+  author: "mdl-google-genie-3"
+  checkedBy: "check-mdl-google-genie-3"
+  checkedOn: "2026-11-13"
 ---
 
 ## 系列概覽
@@ -353,7 +435,11 @@ NVIDIA 在 2025 年 1 月發表 Cosmos 平台與第一批模型<Cite k="arxiv-co
 
 **三種尺寸。** Super（640 億參數）追求最高物理精確度，Nano（160 億）主打在幾分之一秒內完成影片與動作推理<Cite k="nv-cosmos3" /><Cite k="hf-cosmos3-nano" />，Edge（40 億）可在 DGX Spark 與 Jetson 上執行<Cite k="nv-blog-local" />。Super 建議以 8 張 H100 或 H200 部署，在 8 張 H200 上以 50 步生成一段影片約需 55 秒，改用 2 張 H200 約需 3 分鐘<Cite k="hf-cosmos3-super" />。
 
-**生態與採用。** 2026-10-06 讀取的 Hugging Face 近 30 天下載量：Cosmos3-Edge 約 87 萬次、Cosmos-Reason2-2B 約 67 萬次、Cosmos3-Super 約 12 萬次<Cite k="hf-api-cosmos" />；這是滾動統計，數字每天都會變動，只適合看相對熱度。NVIDIA 同步成立 Cosmos Coalition，創始成員包括 <CompanyChip id="black-forest-labs">Black Forest Labs</CompanyChip>、<CompanyChip id="runway">Runway</CompanyChip>、<CompanyChip id="skild-ai">Skild AI</CompanyChip> 與 <CompanyChip id="generalist-ai">Generalist</CompanyChip> 等<Cite k="nv-cosmos3" />。
+**即時互動的模擬檢查點（2026-10）。** 2026-10-20，NVIDIA 用同一套後訓練與<Term id="distillation">蒸餾</Term>流程，把 Cosmos 3 Nano 變成三個可串流的互動式世界模型：模型每次依快取的歷史與新傳入的控制訊號生成一小段影片，再接著往下模擬<Cite k="nv-sim" />。Bimanual 依相機軌跡與雙臂機器人動作預測畫面，官方測得單張 GB300、480p 約每秒 48 格、延遲 166 毫秒；Transfer 把深度、分割、邊緣等控制訊號轉成逼真的 RGB 畫面；Auto 為自駕車同步生成最多 11 個相機視角與 LiDAR 點雲<Cite k="nv-sim" /><Cite k="hf-sim-bimanual" /><Cite k="hf-sim-auto" />。控制訊號可以來自 VLA 等策略模型，因此能在閉環中評估策略、做強化學習，或不靠遙控操作就產生示範資料<Cite k="hf-sim-bimanual" />。同日釋出的 Cosmos3-H-Embodied-Nano 與 Cosmos3-H-Dreams 則是以 Nano 為底的手術機器人世界模型，後者再以 CMR Surgical 的 Versius 系統資料微調，並蒸餾成可即時串流的版本；兩者都採 NVIDIA Open Model License，而不是 OpenMDW-1.1<Cite k="hf-h-embodied" /><Cite k="hf-h-dreams" />。
+
+**資料與部署工具。** 2026-10-21 在 GTC Berlin，NVIDIA 推出 Cosmos Data Factory，提供自駕資料生成、罕見事件影片、瑕疵影像、天氣與光線擴增等 5 種藍圖，可在 GitHub、Microsoft Azure、<CompanyChip id="nebius">Nebius</CompanyChip> 與 <CompanyChip id="coreweave">CoreWeave</CompanyChip> 使用；更新的 Cosmos 3 NIM 微服務官方稱推論最多快 2 倍。NVIDIA 並稱 Cosmos 平台在 6 個開放模型排行榜進入前五，這同樣是原廠說法<Cite k="nv-gtc-berlin" />。
+
+**生態與採用。** 2026-11-13 讀取的 Hugging Face 近 30 天下載量：Cosmos3-Nano 約 163 萬次、Cosmos-Reason2-2B 約 53 萬次、Cosmos3-Edge 約 5.6 萬次、Cosmos3-Super 約 4.5 萬次<Cite k="hf-api-cosmos" />。這是滾動統計，波動很大（2026-10-06 讀取時 Edge 約 87 萬次），只適合看相對熱度。NVIDIA 在 Cosmos 3 發表時成立 Cosmos Coalition，創始成員包括 <CompanyChip id="black-forest-labs">Black Forest Labs</CompanyChip>、<CompanyChip id="runway">Runway</CompanyChip>、<CompanyChip id="skild-ai">Skild AI</CompanyChip> 與 <CompanyChip id="generalist-ai">Generalist</CompanyChip> 等<Cite k="nv-cosmos3" />。
 
 **官方也提醒限制。** 模型卡明言 Cosmos 3 可能出現時間不一致、物體互動不精確、聲音與畫面不同步、動作逐步漂移等問題，輸出不應被視為物理上精確的模擬<Cite k="hf-cosmos3-super" />。
 
@@ -361,17 +447,17 @@ NVIDIA 在 2025 年 1 月發表 Cosmos 平台與第一批模型<Cite k="arxiv-co
 
 適合：
 
-- **機器人與自駕的合成資料**：用 Transfer 或 Cosmos 3，把少量模擬場景變成大量光線、天氣、材質各異的訓練影片。
-- **策略評估與預演**：讓世界模型預測機器人動作的後果，先在虛擬環境篩選策略。
+- **機器人與自駕的合成資料**：用 Transfer、Cosmos 3 或 Cosmos Data Factory 藍圖，把少量模擬場景變成大量光線、天氣、材質各異的訓練影片；保時捷（Porsche）透過 Voxel51 在 Azure 上使用 Cosmos Data Factory，官方稱預期可減少最多 90% 的重複實車測試<Cite k="nv-gtc-berlin" />。
+- **策略評估與預演**：讓世界模型預測機器人動作的後果，先在虛擬環境篩選策略；2026-10 的模擬檢查點讓這件事可以即時、閉環地進行<Cite k="nv-sim" />。
 - **影片分析 Agent**：Salesforce 結合 Agentforce、Cosmos Reason 與 NVIDIA 的影片搜尋摘要藍圖，分析機器人拍攝的影片，事件處理時間縮短一半<Cite k="nv-ces26" />。
-- **機器人大腦的基礎**：<ModelChip id="nvidia-gr00t" /> N1.7 的視覺語言骨幹就是 Cosmos-Reason2-2B<Cite k="gh-groot" />。
-- **醫療與工業**：CMR Surgical 以 Cosmos-H 模擬訓練並驗證手術機器人<Cite k="nv-gtc26" />。
+- **機器人大腦的基礎**：<ModelChip id="nvidia-gr00t" /> N1.7 的視覺語言骨幹就是 Cosmos-Reason2-2B<Cite k="gh-groot" />；2026-11-09 在 CoRL 發表的 GR00T 2 是建立在 Cosmos 上的開放世界動作模型<Cite k="nv-corl" />。
+- **醫療與工業**：CMR Surgical 以 Cosmos-H 模擬訓練並驗證手術機器人<Cite k="nv-gtc26" />，2026-10 又有以 Cosmos 3 為底的手術世界模型<Cite k="hf-h-embodied" />。
 
 不適合：
 
-- **一般創意影片與廣告**：在人類盲測排行榜上，Cosmos 3 落後閉源影片模型（見下方評測），<ModelChip id="google-veo" /> 等模型更適合。
+- **一般創意影片與廣告**：在人類盲測排行榜上，Cosmos 3 落後閉源模型（見下方評測），<ModelChip id="google-veo" /> 等模型更適合。
 - **未經驗證就直接控制機器**：官方要求安全關鍵應用必須另做驗證與防護。
-- **沒有多張 GPU 的小團隊想跑 Super**：可改用 Nano 或 Edge。
+- **沒有多張 GPU 的小團隊想跑 Super**：可改用 Nano 或 Edge；Auto 模擬檢查點的多視角即時模擬也需要多張資料中心 GPU<Cite k="nv-sim" />。
 - **想要原廠按量計費的 API**：NVIDIA 沒有公布每次生成或每百萬 tokens 的價格，需要自建或透過合作雲端。
 
 ## 版本演進
@@ -384,25 +470,27 @@ NVIDIA 在 2025 年 1 月發表 Cosmos 平台與第一批模型<Cite k="arxiv-co
 | 2026-03-16 | Cosmos 3 預告 | GTC 宣布整合生成、推理與動作的世界模型 |
 | 2026-05-31 | Cosmos 3 Super、Nano | 正式開放，改用 OpenMDW-1.1 |
 | 2026-07-20 | Cosmos 3 Edge | 40 億參數，可在裝置端執行 |
+| 2026-10-20 | Nano Sim 三款、Cosmos3-H | 即時互動模擬檢查點與手術機器人世界模型 |
 
-日期取自 GitHub 與官方新聞稿<Cite k="gh-predict25" /><Cite k="gh-reason2" /><Cite k="nv-gtc26" /><Cite k="hf-cosmos3-edge" />。Predict 2.5、Transfer 2.5 與 Reason 2 的 GitHub 都已註明不再積極開發，新功能集中在 Cosmos 3。授權也從要求標示「Built on NVIDIA Cosmos」的 NVIDIA Open Model License<Cite k="nv-oml" />（舊版程式碼為 Apache 2.0），改為權重與原始碼一律採用的 OpenMDW-1.1<Cite k="gh-cosmos3" />；後者對模型輸出不設限制，散布時只需附上授權與來源聲明<Cite k="openmdw" />。
+日期取自 GitHub、Hugging Face 模型卡與官方新聞稿<Cite k="gh-predict25" /><Cite k="gh-reason2" /><Cite k="nv-gtc26" /><Cite k="hf-cosmos3-edge" /><Cite k="hf-sim-bimanual" />。Predict 2.5、Transfer 2.5 與 Reason 2 的 GitHub 都已註明不再積極開發，新功能集中在 Cosmos 3。授權也從要求標示「Built on NVIDIA Cosmos」的 NVIDIA Open Model License<Cite k="nv-oml" />（舊版程式碼為 Apache 2.0），改為權重與原始碼一律採用的 OpenMDW-1.1<Cite k="gh-cosmos3" />；後者對模型輸出不設限制，散布時只需附上授權與來源聲明<Cite k="openmdw" />。不過衍生檢查點的授權要逐一確認：Nano Sim 三款採 OpenMDW-1.1，Cosmos3-H 兩款則採 NVIDIA Open Model License<Cite k="hf-sim-bimanual" /><Cite k="hf-h-embodied" /><Cite k="hf-h-dreams" />。
 
 ## 評測解讀
 
-<Callout type="warn" title="世界模型沒有統一分數">語言模型有 AA 綜合智慧指數，世界模型則沒有公認的單一指標。下列第三方排行榜衡量的是人類對畫面的偏好，不是物理正確性；資料讀取於 2026-10-06。</Callout>
+<Callout type="warn" title="世界模型沒有統一分數">語言模型有 AA 綜合智慧指數（2026-10-27 改版為 v5，與 v4 分數不能互比），但它只評語言模型；世界模型沒有公認的單一指標。下列第三方排行榜衡量的是人類對畫面的偏好，不是物理正確性；資料讀取於 2026-11-13。</Callout>
 
 **原廠宣稱（2026-05-31）**：NVIDIA 表示 Cosmos 3 在開放模型中，於 Artificial Analysis、Physics-IQ、PAI-Bench、R-Bench（世界生成），RoboLab、RoboArena（動作策略），以及 VANTAGE-Bench、TAR（視覺理解）都排名第一<Cite k="nv-cosmos3" />。這些是發表當時的自報結果。
 
-**第三方現況（2026-10-06）**：
+**第三方現況（2026-11-13）**：
 
 | 排行榜 | Cosmos 3 檢查點 | Elo | 名次 | 對照 |
 |---|---|---|---|---|
-| AA 圖生影片（I2V Silent v1.0） | Super Image2Video 4Step | 1273 | 第 21 | 榜首 Gemini Omni Flash 1368；開放權重第一 MiniMax H3 1358 |
-| AA 圖生影片（I2V Silent v1.0） | Super Image2Video | 1253 | 第 33 | 同上 |
-| AA 文生圖（T2I v2.0） | Super Text2Image（agentic） | 995 | 第 49 | 榜首 GPT Image 2.5 Sunburst 1197；開放權重第一 Qwen-Image-2.1 1036 |
+| AA 文生圖（T2I v2.1） | Super Text2Image（agentic） | 995 | 第 56 | 榜首 GPT Image 2.6 Sunburst（max）1261；開放權重第一 H3-Image 1066 |
+| AA 文生圖（T2I v2.1） | Super Text2Image | 988 | 第 61 | 同上 |
+| AA 圖生影片（I2V v2.1） | 未列入 | — | — | 開放權重第一 MiniMax H3（768p）1134 |
 
-資料來源：Artificial Analysis 圖生影片與文生圖排行榜<Cite k="aa-i2v" /><Cite k="aa-t2i" />。
+資料來源：Artificial Analysis 文生圖與圖生影片排行榜<Cite k="aa-t2i" /><Cite k="aa-i2v" />。文生圖榜共 112 個模型。
 
-- **開放模型第一的宣稱要看日期**：原廠在 2026-05 發表時稱 Cosmos 3 居開放模型之首；到 2026-10，AA 圖生影片榜的開放權重第一是 <ModelChip id="minimax" /> 的 MiniMax H3，Cosmos 3 的兩個檢查點緊追在後。
+- **排行榜也會改版**：2026-10-06 讀取時，舊版 AA 圖生影片榜（I2V Silent v1.0）上 Super Image2Video 4Step 為 Elo 1273、第 21 名；AA 之後把圖生影片榜改為 v2.1，新榜沒有列入 Cosmos 3，新舊兩版的 Elo 不能直接比較<Cite k="aa-i2v" />。
+- **開放模型第一的宣稱要看日期**：原廠在 2026-05 發表時稱 Cosmos 3 居開放模型之首；到 2026-11，AA 文生圖與圖生影片榜的開放權重第一都是其他模型。
 - **偏好分數不等於物理精確度**：Cosmos 的設計目標是物理一致與可控，而不是畫面美感，人類偏好 Elo 只反映其中一部分。
-- **物理評測仍待獨立驗證**：Physics-IQ、PAI-Bench 等成績主要由 NVIDIA 自報，導入前應以自己的機體與任務實測。
+- **物理評測仍待獨立驗證**：Physics-IQ、PAI-Bench 等成績與模擬檢查點的比較結果主要由 NVIDIA 自報，導入前應以自己的機體與任務實測。

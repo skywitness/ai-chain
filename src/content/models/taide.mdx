@@ -4,15 +4,15 @@ family: "TAIDE"
 kind: "llm"
 labName: "國科會／國家實驗研究院"
 origin: "TW"
-summary: "國科會於 2023 年啟動、國家實驗研究院執行的「推動臺灣可信任生成式 AI 發展計畫」，以國外開放權重模型為基礎，用合法授權的台灣資料續訓成繁體中文對話模型。目前主力是 2026-02-13 釋出的 Gemma-3-TAIDE-12b-Chat-2602（124 億參數、128K 上下文），TMMLU+ 自測平均 58.02，高於 Google 原版 Gemma 3 12B 的 53.82；2026 年 6 月另推出法規檢索用的嵌入模型。規模小、沒有推理模式，定位是公部門與在地應用的基礎模型。"
+summary: "國科會於 2023 年啟動、國家實驗研究院執行的「推動臺灣可信任生成式 AI 發展計畫」，以國外開放權重模型為基礎，用合法授權的台灣資料續訓成繁體中文對話模型。主力仍是 2026-02-13 釋出的 Gemma-3-TAIDE-12b-Chat-2602（124 億參數、128K 上下文），TMMLU+ 自測平均 58.02，高於 Google 原版 Gemma 3 12B 的 53.82；2026 年 6 月另推出法規檢索用的嵌入模型，截至 2026-11-13 沒有更新的版本。規模小、沒有推理模式，定位是公部門與在地應用的基礎模型。"
 strengths:
   - "訓練資料來自與政府單位、出版社洽談的合法授權，2602 版公開列出中央社、光華雜誌、司法院裁判書、教育部辭典等資料來源"
   - "台灣在地知識有實際提升：TMMLU+ 平均 58.02、台灣地理 70.05，皆高於基礎模型 Gemma-3-12b-it 的 53.82 與 60.93"
   - "授權免費，條款未禁止商業使用，散布衍生模型時也可收費；可在自有伺服器部署，12B 模型的 BF16 權重檔約 27GB"
   - "針對摘要、寫信、寫文章、中英互譯等辦公室任務，以及修正翻譯腔做加強"
 weaknesses:
-  - "只有 12B 等級，沒有推理模式；基礎模型 Gemma 3 12B 在 AA 綜合智慧指數僅 3.75 分"
-  - "沒有官方 API 或按 token 計價服務，AA 與 Arena 也未收錄，缺乏第三方評測"
+  - "只有 12B 等級，沒有推理模式；基礎模型 Gemma 3 12B 在舊版 AA 綜合智慧指數 v4.3.2 僅 3.75 分（2026-10-06 讀取），2026-10-27 改版後的 v5 沒有評測此模型"
+  - "沒有官方 API 或按 token 計價服務，AA 與 Arena 也未收錄 TAIDE，缺乏第三方評測"
   - "授權有額外限制：禁止軍事用途、只能從國研院授權網站取得，並同時受 Gemma 或 Llama 原始條款約束"
   - "建議只用文字輸入；TMMLU+ 閩南語子項僅 37.98 分"
 bestFor:
@@ -21,12 +21,12 @@ bestFor:
   - "以嵌入模型 Embeddinggemma-GTAIDE 建立法規檢索與陳情回覆的 RAG 系統"
   - "作為繁體中文微調與在地化研究的起點"
 positioning:
-  capability: 4
+  capability: 2
   costIndex: 5
   openness: 0.5
   method: "editorial"
-  asOf: "2026-10-06"
-  note: "TAIDE 沒有被 Artificial Analysis 評測，三項座標皆為編輯判斷。capability 以基礎模型 Gemma 3 12B Instruct 在 AA 智慧指數 v4.3.2 的 3.75 分（實測值）為參考；TAIDE 2602 主要提升繁中知識（TMMLU+ 高約 4 個百分點），通用推理沒有證據顯示大幅改變，故取 4。官方沒有 API，costIndex 以 Arena 列出的 Gemma-3-12b-it 第三方託管價（輸入 0.05、輸出 0.15 美元／百萬 tokens）按 3:1 混合為 0.075 美元，套用 0.05 美元 → 0、100 美元 → 100 的對數換算約 5。權重免費開放但須登入同意條款、禁止軍事用途並限定取得管道，openness 為 0.5。"
+  asOf: "2026-11-13"
+  note: "以旗艦 Gemma-3-TAIDE-12b-Chat-2602 計算，三項座標皆為編輯判斷。capability 為估計值：Artificial Analysis 從未評測 TAIDE，2026-11-13 讀取的 AA 綜合智慧指數 v5.0.1 也沒有其基礎模型 Gemma 3 12B 的分數。原本以 v4 尺度訂的編輯估計 4（參考 Gemma 3 12B Instruct 的 v4.3.2 分數 3.75；TAIDE 2602 主要提升繁中知識，通用推理沒有證據顯示大幅改變）依 §4.5 對照點換算為 1.6；再對照 v5 有分數的小型開放權重模型：Gemma 4 31B（推理模式）為 4、Nemotron 3 Nano 4B 為 2。TAIDE 2602 只有 12B、不推理，又以前一代 Gemma 3 為底，通用能力應低於 Gemma 4 31B，故取 2，不確定性高。官方沒有 API，costIndex 以 OpenRouter 在 2026-11-13 列出的 Gemma-3-12b-it 第三方託管價（DeepInfra，輸入 0.05、輸出 0.15 美元／百萬 tokens，與 2026-10-06 讀取的 Arena 列價相同）按 3：1 混合為 0.075 美元，套用 0.05 美元 → 0、100 美元 → 100 的對數換算得 5.3，取 5。權重免費開放但須登入同意條款、禁止軍事用途並限定取得管道，openness 為 0.5。"
 versions:
   - id: "gemma-3-taide-12b-chat-2602"
     name: "Gemma-3-TAIDE-12b-Chat-2602"
@@ -151,8 +151,24 @@ sources:
     url: "https://taide.stpi.niar.org.tw/index"
     type: "government"
     lang: "zh-TW"
-    accessed: "2026-10-06"
-    note: "首頁「重點研發與活動歷程」列出計畫啟動與各版本釋出日期（民國紀年）"
+    accessed: "2026-11-13"
+    note: "首頁「重點研發與活動歷程」列出計畫啟動與各版本釋出日期（民國紀年）；2026-11-13 複查，最新一筆仍是 2026-06-12 的嵌入模型，「最新動態」頁也沒有更新的模型消息"
+  - key: "hf-taide-org"
+    title: "taide（Hugging Face 組織頁）"
+    publisher: "Hugging Face"
+    url: "https://huggingface.co/taide"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-11-13"
+    note: "2026-11-13 以 Hugging Face API 複查：最新上傳仍是 2026-06-12 的 embeddinggemma-GTAIDE-300m-2605；Gemma-3-TAIDE-12b-Chat-2602 最後更新於 2026-02-13，近 30 天下載不到 200 次（數字逐日變動）、累計約 5.1 萬次，沒有推論服務商部署"
+  - key: "nchc-forum-1110"
+    title: "從研發到產業：共築台灣 AI 創新生態系（國研院國網中心 2026-11-10 論壇活動頁）"
+    publisher: "DIGITIMES"
+    url: "https://www.digitimes.com.tw/seminar/NCHC_20261110/"
+    type: "other"
+    lang: "zh-TW"
+    accessed: "2026-11-13"
+    note: "活動議程（頁面只寫 11.10，年份見網址），列有中研院資訊所所長主講「新一代多模態主權 AI 模型研發技術成果分享」，未寫明模型名稱、與 TAIDE 的關係或釋出時程"
   - key: "taide-license"
     title: "TAIDE模型：Llama3-TAIDE 與 Gemma-TAIDE 模型授權條款"
     publisher: "國家實驗研究院"
@@ -204,7 +220,31 @@ sources:
     type: "leaderboard"
     lang: "en"
     accessed: "2026-10-06"
-    note: "TAIDE 基礎模型的參考分數（Intelligence Index v4.3.2）"
+    note: "TAIDE 基礎模型的參考分數（Intelligence Index v4.3.2，2026-10-06 讀取）；2026-11-13 複查時頁面已改用 v5.0.1，Gemma 3 12B 沒有 v5 分數"
+  - key: "aa-leaderboard"
+    title: "LLM Leaderboard: Comparison of AI Models"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/leaderboards/models"
+    type: "leaderboard"
+    lang: "en"
+    accessed: "2026-11-13"
+    note: "Intelligence Index v5.0.1；未列出 TAIDE。capability 估計的錨點：Gemma 4 31B（推理模式）4、Nemotron 3 Nano 4B 2"
+  - key: "aa-v5-article"
+    title: "Announcing Artificial Analysis Intelligence Index v5"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5"
+    type: "other"
+    lang: "en"
+    published: "2026-10-27"
+    accessed: "2026-11-13"
+  - key: "openrouter-gemma3-12b"
+    title: "Gemma 3 12B（google/gemma-3-12b-it）供應商與價格"
+    publisher: "OpenRouter"
+    url: "https://openrouter.ai/google/gemma-3-12b-it"
+    type: "other"
+    lang: "en"
+    accessed: "2026-11-13"
+    note: "第三方託管價，僅作 TAIDE costIndex 的參考；DeepInfra（BF16，標準服務層級）輸入 0.05、輸出 0.15 美元／百萬 tokens（同頁 DeepInfra 另有 flex 層級 0.04／0.12 與 priority 層級 0.075／0.225）"
   - key: "arena-text"
     title: "Text Arena Leaderboard (Overall)"
     publisher: "LMArena"
@@ -214,19 +254,19 @@ sources:
     published: "2026-10-02"
     accessed: "2026-10-06"
     note: "lmarena.ai 已轉址至 arena.ai；榜上未列出 TAIDE，僅有基礎模型 gemma-3-12b-it"
-lastVerified: "2026-10-06"
+lastVerified: "2026-11-13"
 editorial:
   status: "fact-checked"
-  author: "models-13"
-  checkedBy: "models-13-check"
-  checkedOn: "2026-10-06"
+  author: "mdl-taide-3"
+  checkedBy: "check-mdl-taide-3"
+  checkedOn: "2026-11-13"
 ---
 
 ## 系列概覽
 
-TAIDE 是「推動臺灣可信任生成式 AI 發展計畫」的簡稱，由國科會在 2023-04-27 啟動，國家實驗研究院（國研院）負責執行，目標是開發符合台灣語言與文化的對話模型，避免過度依賴外國技術<Cite k="taide-site" />。它不從零訓練，而是拿國外的<Term id="open-weights">開放權重</Term>模型當基礎（先是 Meta Llama，現在是 Google Gemma 3），再用台灣資料續訓與<Term id="fine-tuning">微調</Term>。這是典型的<Term id="sovereign-ai">主權 AI</Term>做法：用較少的算力，換取在地語言能力與資料自主。
+TAIDE 是「推動臺灣可信任生成式 AI 發展計畫」的簡稱，由國科會在 2023-04-27 啟動，國家實驗研究院（國研院）負責執行，目標是開發符合台灣語言與文化的對話模型，避免過度依賴外國技術<Cite k="taide-site" />。它不從零訓練，而是拿國外的<Term id="open-weights">開放權重</Term>模型當基礎（先是 <ModelChip id="meta-muse-llama">Meta Llama</ModelChip>，現在是 <ModelChip id="google-gemma">Google Gemma</ModelChip> 3），再用台灣資料續訓與<Term id="fine-tuning">微調</Term>。這是典型的<Term id="sovereign-ai">主權 AI</Term>做法：用較少的算力，換取在地語言能力與資料自主。
 
-目前的主力對話模型是 2026-02-13 釋出的 Gemma-3-TAIDE-12b-Chat-2602；2026-06-12 又釋出法規檢索用的嵌入模型<Cite k="taide-site" />。
+目前的主力對話模型是 2026-02-13 釋出的 Gemma-3-TAIDE-12b-Chat-2602；2026-06-12 又釋出法規檢索用的嵌入模型<Cite k="taide-site" />。2026-11-13 複查官網與 Hugging Face，之後都沒有新模型<Cite k="hf-taide-org" />。
 
 ## 特性分析
 
@@ -249,7 +289,7 @@ TAIDE 是「推動臺灣可信任生成式 AI 發展計畫」的簡稱，由國�
 
 不適合：
 
-- **複雜推理、程式與 Agent 任務**：沒有推理模式，基礎模型 Gemma 3 12B 在 AA 綜合智慧指數只有 3.75 分<Cite k="aa-gemma3-12b" />。
+- **複雜推理、程式與 Agent 任務**：沒有推理模式，基礎模型 Gemma 3 12B 在舊版 AA 綜合智慧指數 v4.3.2 只有 3.75 分（2026-10-06 讀取）<Cite k="aa-gemma3-12b" />。
 - **圖片理解**：官方建議只用文字輸入。
 - **想直接呼叫雲端 API**：官方沒有按 token 計價的服務，Hugging Face 也顯示沒有推論服務商部署<Cite k="hf-taide-2602" />。
 - **台語應用**：TMMLU+ 閩南語子項只有 37.98 分<Cite k="hf-taide-2602" />。
@@ -267,9 +307,11 @@ TAIDE 是「推動臺灣可信任生成式 AI 發展計畫」的簡稱，由國�
 
 版本日期取自 TAIDE 官網的研發歷程<Cite k="taide-site" />，TAIDE-LX-7B 的詞彙擴充數取自其模型卡<Cite k="hf-taide-lx7b" />。可以看出 TAIDE 的策略是「跟著主流開放模型換底座」：從 Llama 2、Llama 3、Llama 3.1 一路換到 Gemma 3，每次換底座都要重做續訓。2025-08 那一版使用 460 億 tokens 繁中資料<Cite k="hf-taide-12b" />，2602 版只用 220 億 tokens，但多了中期訓練，分數反而較高。
 
+截至 2026-11-13，對話模型已約 9 個月沒有改版。國研院國網中心 2026-11-10 舉辦的論壇議程中，有一場由中研院資訊所所長主講的「新一代多模態主權 AI 模型研發技術成果分享」<Cite k="nchc-forum-1110" />，但議程沒有寫明模型名稱、是否屬於 TAIDE 計畫或釋出時程；TAIDE 官網與 Hugging Face 截至 2026-11-13 也沒有新的對話模型，可列為後續觀察重點。
+
 ## 評測解讀
 
-<Callout type="warn" title="目前只有官方自測">以下 TMMLU+ 分數都由 TAIDE 團隊以 lm-evaluation-harness 自行測得，刊於 2026-02-13 的模型卡。Artificial Analysis 與 Arena 都沒有收錄 TAIDE，尚無第三方驗證。</Callout>
+<Callout type="warn" title="目前只有官方自測">以下 TMMLU+ 分數都由 TAIDE 團隊以 lm-evaluation-harness 自行測得，刊於 2026-02-13 的模型卡。Artificial Analysis 與 Arena 都沒有收錄 TAIDE（2026-11-13 複查），尚無第三方驗證。</Callout>
 
 | 模型 | TMMLU+ 平均 | 台灣地理 | 台灣用語 | 閩南語 |
 |---|---|---|---|---|
@@ -283,4 +325,5 @@ TAIDE 是「推動臺灣可信任生成式 AI 發展計畫」的簡稱，由國�
 - **續訓不一定加分**：2025-08 版的平均分 49.95 反而低於 Google 原版的 53.82，可能是續訓時遺忘了部分通用知識，也可能與 TAIDE 自行做的指令微調不如 Google 官方版有關；2602 版加入中期訓練後才回升到 58.02，比原版高約 4.2 個百分點。
 - **各子項有取捨**：2602 版的台灣用語子項（76.11）低於前一版（80.53），平均分進步不代表每個面向都進步。
 - **TMMLU+ 只測知識**：它是選擇題，無法反映生成品質、推理、工具使用或安全性。
-- **用基礎模型推估水準**：基礎模型 Gemma-3-12b-it 在 Arena 文字競技場為 1342 分、排第 230 名<Cite k="arena-text" />，AA 綜合智慧指數 3.75 分<Cite k="aa-gemma3-12b" />。TAIDE 的通用能力合理推估落在相近水準，強項主要在台灣在地知識與用語。
+- **用基礎模型推估水準**：基礎模型 Gemma-3-12b-it 在 Arena 文字競技場為 1342 分、排第 230 名（2026-10-02 的榜單）<Cite k="arena-text" />，在舊版 AA 綜合智慧指數 v4.3.2 為 3.75 分（2026-10-06 讀取）<Cite k="aa-gemma3-12b" />。TAIDE 的通用能力合理推估落在相近水準，強項主要在台灣在地知識與用語。
+- **AA 指數已改版**：Artificial Analysis 在 2026-10-27 把綜合智慧指數改為 v5，題組與權重全部換新，v4 與 v5 的分數不能互比<Cite k="aa-v5-article" />。上面的 3.75 分是 v4 的歷史紀錄；2026-11-13 讀取的 v5.0.1 排行榜沒有 TAIDE，也沒有 Gemma 3 12B 的分數<Cite k="aa-leaderboard" />。本站星系圖上的能力座標因此是編輯估計，以 v5 有分數、規模相近的開放權重模型為參考。

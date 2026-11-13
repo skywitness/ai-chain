@@ -5,14 +5,14 @@ kind: "llm"
 lab: "lg-ai-research"
 labName: "LG AI Research"
 origin: "KR"
-summary: "LG 集團旗下 LG AI 研究院開發的語言模型系列，近 18 個月涵蓋 EXAONE 4.0／4.5 中型模型與 K-EXAONE 大型 MoE 模型。2026-07-31 推出的旗艦 K-EXAONE 2.0 總參數 7,500 億、每個 token 啟用 370 億，支援 10 種語言與 262,144 tokens 上下文，並改採 Apache 2.0 授權，是韓國政府「主權 AI 基礎模型計畫」的成果。Artificial Analysis 智慧指數約 20 分（估計值），仍落後規模相近的中國開放權重模型。"
+summary: "LG 集團旗下 LG AI 研究院開發的語言模型系列，近 18 個月涵蓋 EXAONE 4.0／4.5 中型模型與 K-EXAONE 大型 MoE 模型。2026-07-31 推出的旗艦 K-EXAONE 2.0 總參數 7,500 億、每個 token 啟用 370 億，支援 10 種語言與 262,144 tokens 上下文，並改採 Apache 2.0 授權，是韓國政府「主權 AI 基礎模型計畫」的成果。在 Artificial Analysis 改版後的綜合智慧指數 v5.0.1 只有 8 分，遠低於同尺寸開放權重模型的中位數 24。截至 2026-11-13 沒有更新的版本。"
 strengths:
   - "K-EXAONE 2.0 改採 Apache 2.0 授權，可商用與再散布；前代 EXAONE 4.0、4.5 為禁止商用的 NC 授權"
   - "長上下文檢索強：官方 OpenAI-MRCR 成績 94.4，高於同表的 Qwen3.5（93.0）與 GLM-5.1（71.5），前代 K-EXAONE 只有 52.3"
   - "韓語與在地安全評測領先：KGC-Safety 99.8、ROK-Fortress 89.5，針對韓國文化與歷史情境做對齊"
   - "產品線完整：從 1.2B 端側模型、33B 視覺語言模型到 750B MoE；K-EXAONE 2.0 支援 MTP 與 DSpark 推測解碼，官方稱可加速約 3–5 倍"
 weaknesses:
-  - "AA 綜合智慧指數 v4.3.2 約 20 分（AA 標示為估計值），低於總參數相近的 GLM-5.1（26 分）"
+  - "AA 綜合智慧指數 v5.0.1 只有 8 分（2026-11-13 讀取），AA 列出的同尺寸開放權重模型中位數為 24"
   - "官方自報 HLE 18.3%、Terminal-Bench 2.1 43.8%，在同一張比較表中落後 Qwen3.5、GLM-5.1 與 DeepSeek V4 Pro"
   - "沒有官方按 token 計價的公開 API，AA 與 OpenRouter 也未列出託管服務；官方部署範例需要兩台各 8 張 H200 的伺服器"
   - "支援的 10 種語言不含中文，不適合以中文為主的應用"
@@ -22,12 +22,12 @@ bestFor:
   - "需要寬鬆授權大型 MoE 模型的研究機構與企業"
   - "以 EXAONE 4.5 研究韓文與英文文件、圖表理解（非商用）"
 positioning:
-  capability: 20
-  costIndex: 48
+  capability: 8
+  costIndex: 47
   openness: 0.8
-  method: "editorial"
-  asOf: "2026-10-06"
-  note: "以旗艦 K-EXAONE 2.0 計算。capability 直接取 Artificial Analysis 智慧指數 v4.3.2 的 19.7 分（AA 標示為估計值）。LG 沒有按 token 計價的官方 API，AA、OpenRouter 也沒有託管報價，因此 costIndex 為編輯估計：以規模最接近的 GLM-5.1（總參數 7,540 億、啟用 400 億）在 AA 的託管中位價（輸入 1.285、輸出 4.07 美元／百萬 tokens）按 3:1 混合約 1.98 美元，套用 0.05 美元 → 0、100 美元 → 100 的對數換算得 48。Apache 2.0 開放權重但未公開訓練資料，openness 為 0.8；若看 EXAONE 4.x 的 NC 授權則約為 0.5。"
+  method: "computed"
+  asOf: "2026-11-13"
+  note: "以旗艦 K-EXAONE 2.0 計算。capability 取 K-EXAONE 2.0 的 AA 綜合智慧指數 v5.0.1 = 8（推理模式，AA 只列一種設定；原始值 7.56，2026-11-13 讀取）。costIndex 為編輯估計：LG 沒有按 token 計價的官方 API，AA 與 OpenRouter 沒有託管報價，FriendliAI 只提供專屬端點，因此改用規模最接近的 GLM-5.1（總參數 7,440 億、啟用 400 億）在 AA 的託管中位價（輸入 1.19、輸出 3.74 美元／百萬 tokens），以 3：1 混合為 (3×1.19 + 3.74)÷4 ≈ 1.83 美元，對數換算（0.05 美元 → 0、100 美元 → 100）得 47.3，取 47。openness 為 0.8（Apache 2.0 開放權重，未公開訓練資料）；若看 EXAONE 4.x 的 NC 授權則約為 0.5。"
 versions:
   - id: "k-exaone-2-0"
     name: "K-EXAONE 2.0（750B-A37B）"
@@ -123,6 +123,19 @@ versions:
           type: "leaderboard"
           lang: "en"
           accessed: "2026-10-06"
+      - benchmark: "aa-intelligence-index-v5"
+        score: 8
+        setting: "v5.0.1，推理模式（AA 只列一種設定）"
+        reportedBy: "third-party"
+        date: "2026-11-13"
+        source:
+          title: "LLM Leaderboard - Comparison of AI models (Intelligence Index v5.0.1)"
+          publisher: "Artificial Analysis"
+          url: "https://artificialanalysis.ai/leaderboards/models"
+          type: "leaderboard"
+          lang: "en"
+          accessed: "2026-11-13"
+          note: "K-EXAONE 2.0 只有一種設定；模型頁 artificialanalysis.ai/models/k-exaone-2-0 的原始值為 7.56，AA 標示同尺寸開放權重模型的中位數為 24"
       - benchmark: "gpqa-diamond"
         score: 82.9
         setting: "AA 獨立測試，推理模式"
@@ -624,8 +637,24 @@ sources:
     url: "https://github.com/LG-AI-EXAONE/K-EXAONE-2.0"
     type: "docs"
     lang: "en"
-    accessed: "2026-10-06"
-    note: "News 段落列出 EXAONE 3.5、EXAONE Deep、EXAONE 4.0、K-EXAONE、EXAONE 4.5 與 K-EXAONE 2.0 的發布日期"
+    accessed: "2026-11-13"
+    note: "News 段落列出 EXAONE 3.5、EXAONE Deep、EXAONE 4.0、K-EXAONE、EXAONE 4.5 與 K-EXAONE 2.0 的發布日期；2026-11-13 查閱時最新一則仍是 2026-07-31 的 K-EXAONE 2.0"
+  - key: "hf-lgai-exaone"
+    title: "LGAI-EXAONE（Hugging Face 組織頁）"
+    publisher: "LG AI Research（Hugging Face）"
+    url: "https://huggingface.co/LGAI-EXAONE"
+    type: "docs"
+    lang: "en"
+    accessed: "2026-11-13"
+    note: "依建立時間排序，最新的語言模型為 2026-07-30 上傳的 K-EXAONE 2.0 量化版（FP8、NVFP4、DSpark）"
+  - key: "lg-talkconcert-day2"
+    title: "LG AI Talk Concert 2026 Day 2: EXAONE based Products and Vision"
+    publisher: "LG AI Research"
+    url: "https://www.lgresearch.ai/news/view?seq=705"
+    type: "press-release"
+    lang: "en"
+    published: "2026-09-16"
+    accessed: "2026-11-13"
   - key: "lg-kexaone-blog"
     title: "K-EXAONE"
     publisher: "LG AI Research"
@@ -664,13 +693,22 @@ sources:
     lang: "en"
     accessed: "2026-10-06"
   - key: "aa-kexaone2"
-    title: "K-EXAONE 2.0 0803 Intelligence, Performance & Price Analysis"
+    title: "K-EXAONE 2.0 - Intelligence, Performance & Price Analysis"
     publisher: "Artificial Analysis"
-    url: "https://artificialanalysis.ai/models/k-exaone-2-0-0803"
+    url: "https://artificialanalysis.ai/models/k-exaone-2-0"
     type: "leaderboard"
     lang: "en"
-    accessed: "2026-10-06"
-    note: "Intelligence Index v4.3.2，19.7 分標示為估計值；頁面顯示無託管服務與價格，AA 將此版本的發布日列為 2026-08-12"
+    accessed: "2026-11-13"
+    note: "Intelligence Index v5.0.1 為 8 分（同尺寸開放權重模型中位數 24），v5 子項 Terminal-Bench 4.0 與 Terminal-Bench-Science 皆為 0；跑完整套指數產生 6,310 萬個輸出 tokens（中位數 1.06 億）。單項成績 GPQA Diamond 82.9%、HLE 18.6%、Terminal-Bench 2.1 40.4% 與 2026-10-06 讀取值相同。頁面仍無託管服務與價格，AA 將發布日列為 2026-08-12。原網址 k-exaone-2-0-0803（2026-10-06 讀取 v4.3.2 估計值 19.7 時使用）已改為此網址"
+  - key: "aa-v5"
+    title: "Artificial Analysis Intelligence Index v5"
+    publisher: "Artificial Analysis"
+    url: "https://artificialanalysis.ai/articles/artificial-analysis-intelligence-index-v5"
+    type: "docs"
+    lang: "en"
+    published: "2026-10-27"
+    accessed: "2026-11-13"
+    note: "9 項評測分為知識工作、程式、科學、綜合知識四類各占 25%，約 60% 的權重來自使用不公開測試資料或答案的評測；分數不能與 v4 互比"
   - key: "aa-kexaone"
     title: "K-EXAONE Intelligence, Performance & Price Analysis"
     publisher: "Artificial Analysis"
@@ -680,36 +718,37 @@ sources:
     accessed: "2026-10-06"
     note: "Intelligence Index v4.3.2 為 14.4 分（估計值），頁面標示同類模型中位數為 18 分"
   - key: "aa-glm51"
-    title: "GLM-5.1 Intelligence, Performance & Price Analysis"
+    title: "GLM-5.1 (Reasoning) - Intelligence, Performance & Price Analysis"
     publisher: "Artificial Analysis"
     url: "https://artificialanalysis.ai/models/glm-5-1"
     type: "leaderboard"
     lang: "en"
-    accessed: "2026-10-06"
-    note: "用於 costIndex 的同級模型參考價"
+    accessed: "2026-11-13"
+    note: "用於 costIndex 的同級模型參考價：託管中位價輸入 1.19、輸出 3.74 美元／百萬 tokens；總參數 744B、啟用 40B"
   - key: "friendli-kexaone2"
     title: "K-EXAONE-2.0-750B-A37B on FriendliAI"
     publisher: "FriendliAI"
     url: "https://friendli.ai/models/LGAI-EXAONE/K-EXAONE-2.0-750B-A37B"
     type: "docs"
     lang: "en"
-    accessed: "2026-10-06"
-    note: "僅列出專屬端點與容器部署，未公布按 token 價格"
+    accessed: "2026-11-13"
+    note: "僅提供專屬端點（Dedicated Endpoints），未公布按 token 價格"
   - key: "arena-text"
-    title: "Text Arena Leaderboard (Overall)"
+    title: "Text Arena Leaderboard (Overall, open-source license view)"
     publisher: "LMArena"
     url: "https://arena.ai/leaderboard/text"
     type: "leaderboard"
     lang: "en"
-    published: "2026-10-02"
-    accessed: "2026-10-06"
-    note: "lmarena.ai 已轉址至 arena.ai；榜上未列出 EXAONE 系列"
-lastVerified: "2026-10-06"
+    published: "2026-11-11"
+    accessed: "2026-11-13"
+    note: "lmarena.ai 已轉址至 arena.ai。2026-11-11 頁面共 421 個模型，其中 230 個為開放授權；網頁只提供前約 152 列，開放授權檢視的這些列中沒有 EXAONE。2026-10-02 頁面也未列出 EXAONE 系列"
+lastVerified: "2026-11-13"
 editorial:
   status: "fact-checked"
-  author: "models-13"
-  checkedBy: "models-13-check"
-  checkedOn: "2026-10-06"
+  author: "mdl-lg-exaone-3"
+  checkedBy: "check-mdl-lg-exaone-3"
+  checkedOn: "2026-11-13"
+  notes: "查核（2026-11-13）：AA v5.0.1 分數 8（原始 7.56）、同尺寸開放權重中位數 24、Terminal-Bench 4.0 與 Terminal-Bench-Science 為 0、輸出 6,306 萬 tokens（中位數 1.06 億）、發布日 2026-08-12、無託管服務，對照 AA 模型頁資料與共用快照；K-EXAONE、EXAONE 4.5、4.0 在 AA 均無 v5 分數；GLM-5.1 的 744B／40B 與中位價 1.19／3.74 美元、costIndex 47.35 重算無誤；Hugging Face、GitHub News、FriendliAI、LG 新聞 seq=705 與 Arena 開放授權檢視均已重讀。修正：v5 權重說明改為「約六成權重來自不公開測試資料或答案的評測」（原寫成六成題目）；表格 AA 欄補回來源，並註明 2026-11-13 模型頁數字相同。"
 ---
 
 ## 系列概覽
@@ -737,8 +776,8 @@ EXAONE 是韓國 LG 集團 AI 研究機構 <CompanyChip id="lg-ai-research">LG A
 
 不適合：
 
-- **追求開放權重的最強能力**：AA 綜合智慧指數約 20 分，低於規模相近的 GLM-5.1（26 分）<Cite k="aa-kexaone2" /><Cite k="aa-glm51" />。
-- **想直接按用量付費呼叫**：LG 沒有公開的按 token 計價 API，FriendliAI 只提供專屬端點<Cite k="friendli-kexaone2" />；官方的部署範例需要兩台各 8 張 H200 GPU 的伺服器<Cite k="hf-kexaone2" />。
+- **追求開放權重的最強能力**：AA 綜合智慧指數 v5.0.1 只有 8 分，AA 列出的同尺寸開放權重模型中位數為 24<Cite k="aa-kexaone2" />。
+- **想直接按用量付費呼叫**：LG 沒有公開的按 token 計價 API，AA 也沒有列出任何託管服務，FriendliAI 只提供專屬端點<Cite k="aa-kexaone2" /><Cite k="friendli-kexaone2" />；官方的部署範例需要兩台各 8 張 H200 GPU 的伺服器<Cite k="hf-kexaone2" />。
 - **中文為主的應用**：K-EXAONE 2.0 支援的 10 種語言沒有中文<Cite k="hf-kexaone2" />。
 
 ## 版本演進
@@ -752,11 +791,15 @@ EXAONE 是韓國 LG 集團 AI 研究機構 <CompanyChip id="lg-ai-research">LG A
 
 表中日期取自 LG AI 研究院在 GitHub 的發布紀錄<Cite k="gh-kexaone2" />。在這之前，LG 已推出 EXAONE 3.5（2024 年 12 月）與推理專用的 EXAONE Deep（2025 年 3 月），EXAONE 4.0 把兩者合而為一<Cite k="hf-exaone40" />。排名變化很快：LG 在 2026-01-12 表示 K-EXAONE 在 AA 指數的開放權重模型中排名全球第 7、韓國第 1<Cite k="lg-kexaone-blog" />；到了 2026-10-06，AA 指數已改為 v4.3.2 版，K-EXAONE 約 14 分（估計值），低於 AA 標示的同類模型中位數 18 分<Cite k="aa-kexaone" />。
 
+2026-10-06 到 2026-11-13 之間，LG 沒有發布新的 EXAONE 語言模型：GitHub 發布紀錄的最新一則仍是 K-EXAONE 2.0，Hugging Face 上最新上傳的語言模型也是它的 FP8、NVFP4 與 DSpark 版本<Cite k="gh-kexaone2" /><Cite k="hf-lgai-exaone" />。LG AI 研究院負責人 Woohyung Lim 在 2026-09-16 的 LG AI Talk Concert 表示，下一步要發展成提升產業現場效率的次世代基礎模型，但沒有公布規格或時程<Cite k="lg-talkconcert-day2" />。
+
 ## 評測解讀
 
-<Callout type="warn" title="注意評測日期與方法">官方數字來自 2026-07-31 的模型卡，AA 數字讀取於 2026-10-06，且 AA 把 K-EXAONE 2.0 的綜合指數標為估計值。Terminal-Bench 使用 2.1 版，不能和 2.0 版的分數直接比較。</Callout>
+<Callout type="warn" title="注意評測日期與方法">官方數字來自 2026-07-31 的模型卡，下表 AA 欄的單項成績讀取於 2026-10-06。AA 在 2026-10-27 把綜合智慧指數改版為 v5（11 月起為 v5.0.1），題組與權重全部換新，v5 分數不能和本站先前記錄的 v4.x 分數互相比較。Terminal-Bench 使用 2.1 版，也不能和 2.0 版的分數直接比較。</Callout>
 
-| 評測 | K-EXAONE 2.0 官方 | K-EXAONE 2.0 AA | 前代 K-EXAONE 官方 | GLM-5.1（LG 比較表） |
+**AA 綜合智慧指數 v5。** 新版指數由 9 項評測組成，知識工作、程式、科學與綜合知識四類各占 25%，約六成的權重來自使用不公開測試資料或答案的評測<Cite k="aa-v5" />。K-EXAONE 2.0 在 v5.0.1 拿到 8 分，AA 列出的同尺寸開放權重模型中位數為 24，差距明顯，其中新版的 Terminal-Bench 4.0 與 Terminal-Bench-Science 兩項都是 0 分；不過它跑完整套指數只產生約 6,310 萬個輸出 tokens，少於同級模型的中位數約 1.06 億，回答相對精簡<Cite k="aa-kexaone2" />。截至 2026-11-13，前代 K-EXAONE、EXAONE 4.5 與 4.0 都還沒有 v5 分數。
+
+| 評測 | K-EXAONE 2.0 官方 | K-EXAONE 2.0 AA（2026-10-06） | 前代 K-EXAONE 官方 | GLM-5.1（LG 比較表） |
 |---|---|---|---|---|
 | GPQA Diamond | 82.2% | 82.9% | 79.1% | 86.2% |
 | Humanity's Last Exam | 18.3% | 18.6% | 13.6% | 31.0% |
@@ -764,9 +807,9 @@ EXAONE 是韓國 LG 集團 AI 研究機構 <CompanyChip id="lg-ai-research">LG A
 | Terminal-Bench 2.1 | 43.8% | 40.4% | 30.3% | 61.8% |
 | MMLU-Pro | 83.5% | 未測 | 83.8% | 86.0% |
 
-除了 AA 欄來自 AA 的獨立測試<Cite k="aa-kexaone2" />，其餘三欄都取自 K-EXAONE 2.0 模型卡的同一張比較表<Cite k="hf-kexaone2" />。
+AA 欄是 AA 的獨立測試，本站在 2026-10-06 讀取，2026-11-13 模型頁上的這三項數字沒有改變<Cite k="aa-kexaone2" />；其餘三欄都取自 K-EXAONE 2.0 模型卡的同一張比較表<Cite k="hf-kexaone2" />。
 
 - **官方數字可被重現**：GPQA 與 HLE 的官方值和 AA 自測相差不到 1 個百分點，Terminal-Bench 也只差 3.4 個百分點。
 - **進步集中在 Agent 與程式**：SWE-bench Verified 從 49.4% 升到 68.2%，MMLU-Pro 卻持平，表示這一代的重點是 Agent 能力，不是知識量。
 - **和中國同級模型仍有差距**：在 LG 自己挑選的比較表中，HLE 與 Terminal-Bench 都明顯落後 GLM-5.1 與 DeepSeek V4 Pro<Cite k="hf-kexaone2" />。
-- **缺少人類偏好資料**：截至 2026-10-02，Arena 文字競技場沒有列出任何 EXAONE 模型<Cite k="arena-text" />，因此無法得知一般使用者實際對話時的偏好。
+- **缺少人類偏好資料**：Arena 文字競技場 2026-10-02 的榜單沒有任何 EXAONE 模型，2026-11-11 頁面的開放授權模型列表（網頁只提供前約 152 列）中也看不到<Cite k="arena-text" />，因此無法得知一般使用者實際對話時的偏好。

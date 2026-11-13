@@ -12,8 +12,10 @@
 // Optional extension read by the scene (src/three/scenes/model-galaxy/data.ts): `history`, the
 // family's earlier versions on the same scale, which drive the star trails, the time slider and
 // the moving efficient frontier. It is only derived where it can be computed honestly: language
-// families whose capability IS the Artificial Analysis Intelligence Index of the flagship, using
-// each earlier version's own third-party index score and official price.
+// families whose capability IS the Artificial Analysis Intelligence Index v5 score of the flagship,
+// using each earlier version's own third-party v5 score and official price. Rows of the retired v4
+// index (benchmark id 'aa-intelligence-index', until 2026-10-27) are on another scale and are never
+// mixed in: a version without a v5 score simply leaves no point on the trail.
 import { getModelsIndex, safeEntry } from '../collections';
 
 export interface ModelGalaxyPoint {
@@ -77,8 +79,14 @@ interface FamilyLike {
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const day = (d: unknown) => String(d ?? '').slice(0, 10);
 
-/** The capability scale of language-model positioning (CONTENT-GUIDE §4.5). */
-export const CAPABILITY_BENCHMARK = 'aa-intelligence-index';
+/**
+ * The capability scale of language-model positioning (CONTENT-GUIDE §4.5): Artificial Analysis
+ * Intelligence Index v5 (from 2026-10-27). The v4 id below holds historical rows only; its scores
+ * are on another scale and are never compared with v5.
+ */
+export const CAPABILITY_BENCHMARK = 'aa-intelligence-index-v5';
+/** The retired v4 index (rows dated up to 2026-10; kept for history, never used for comparisons). */
+export const LEGACY_CAPABILITY_BENCHMARK = 'aa-intelligence-index';
 
 /**
  * Cost index from a price: 3:1 blended input/output $/1M tokens, log-scaled so that US$0.05 → 0
@@ -96,7 +104,7 @@ function latestPrice(v: VersionLike): PriceLike | undefined {
   return best;
 }
 
-/** The independent (third-party / leaderboard) index score of a version, latest first. */
+/** The independent (third-party / leaderboard) v5 index score of a version, latest first. */
 function indexScore(v: VersionLike): number | undefined {
   const list = (v.benchmarks ?? []).filter((b) => b.benchmark === CAPABILITY_BENCHMARK && b.reportedBy !== 'lab');
   if (!list.length) return undefined;
@@ -105,8 +113,9 @@ function indexScore(v: VersionLike): number | undefined {
 
 /**
  * Earlier positions of a language family on the galaxy's own scale. Empty unless the flagship's
- * capability equals its index score (so both ends of the trail use the same measure). Only
- * flagship-class versions count; the trail keeps, in release order, each one that matched or beat
+ * capability equals its v5 index score (so both ends of the trail use the same measure, and an
+ * estimated capability never anchors a trail); earlier versions count only with their own v5 score.
+ * Only flagship-class versions count; the trail keeps, in release order, each one that matched or beat
  * the best capability so far (the family's own frontier), never above today's flagship.
  */
 export function familyHistory(d: FamilyLike): ModelGalaxyPoint[] {

@@ -31,9 +31,10 @@ import {
   kindColor,
   opennessBucket,
   originGroupOf,
+  pickBenchmark,
   type FamilyView,
 } from '../../components/model/model-data';
-import { getModelGalaxyData } from '../../lib/scene-data/models';
+import { CAPABILITY_BENCHMARK, LEGACY_CAPABILITY_BENCHMARK, getModelGalaxyData } from '../../lib/scene-data/models';
 import { levelMeta, safeEntry } from '../../lib/collections';
 import { learnHref, modelsCompareHref } from '../../lib/paths';
 import { DATA_DATE } from '../../lib/seo';
@@ -47,18 +48,33 @@ const nonLlm = families.filter((f) => f.kind !== 'llm');
 // Scene (every star links to its family page; the directory below lists the same families in HTML)
 const galaxy = await getModelGalaxyData();
 
+// The model families are refreshed on their own schedule (e.g. 2026-11-13 while the site-wide
+// DATA_DATE stayed 2026-10-06): this page's date is the latest positioning date of the analysed
+// families, the date the galaxy coordinates and the flagship table were read.
+const modelsAsOf =
+  withData
+    .map((f) => String(f.data!.positioning.asOf).slice(0, 10))
+    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+    .sort()
+    .at(-1) ?? DATA_DATE;
+
 // Intro (pages/models-intro.mdx)
 const intro = await safeEntry('pages', 'models-intro');
 const introRendered = intro ? await render(intro) : undefined;
 const IntroContent = introRendered?.Content;
 const introSources = intro?.data.sources ?? [];
 
-// Table + dot plots
-const flagshipBench = (() => {
-  const picked = commonBenchmarks(llmWithData.map((f) => f.flagship), 3);
-  return picked.length ? picked : ['aa-intelligence-index', 'gpqa-diamond', 'hle'];
-})();
-const dotBench = commonBenchmarks(llmWithData.map((f) => f.flagship), 4);
+// Table + dot plots. Families are compared on the AA Intelligence Index v5 only (always the first
+// column; 「—」 where a flagship has no v5 score yet); the retired v4 index is never a column or a chart.
+// Two more ids are never put side by side across families: `terminal-bench` holds the versions before 4.0
+// (the first release to 3.0 and AA's Hard subset, with very different difficulty; 4.x has its own id) and `hle` mixes
+// runs with and without tools, text-only subsets and HLE-Diamond, so one axis would rank unlike runs.
+const flagships = llmWithData.map((f) => f.flagship);
+const AA_IDS = [CAPABILITY_BENCHMARK, LEGACY_CAPABILITY_BENCHMARK];
+const NOT_CROSS_FAMILY = [...AA_IDS, 'terminal-bench', 'hle'];
+const flagshipBench = [CAPABILITY_BENCHMARK, ...commonBenchmarks(flagships, 2, NOT_CROSS_FAMILY)];
+const v5Count = flagships.filter((v) => pickBenchmark(v, CAPABILITY_BENCHMARK)).length;
+const dotBench = [...(v5Count >= 2 ? [CAPABILITY_BENCHMARK] : []), ...commonBenchmarks(flagships, v5Count >= 2 ? 3 : 4, NOT_CROSS_FAMILY)];
 const flagshipItems = llmWithData.map((f) => ({
   version: f.flagship!,
   label: f.flagship!.name,
@@ -165,7 +181,7 @@ const description =
         }
       </dl>
       <div class="models-head__meta">
-        <DataAsOf date={DATA_DATE} />
+        <DataAsOf date={modelsAsOf} />
         {openFamilies > 0 && <span class="models-head__note">其中 {openFamilies} 個已整理系列提供開放權重</span>}
       </div>
       <span hidden data-pagefind-filter="類型:模型"></span>
@@ -189,14 +205,14 @@ const description =
         autoload="visible"
         height="tall"
         data={galaxy}
-        caption={`大模型星系：每顆星是一個模型系列，高度是綜合能力、左右是使用成本、前後是開放程度，顏色代表來源地區（${galaxy.length} 個系列，資料截至 ${DATA_DATE}）。點選星點可前往該系列頁面；同樣的清單見下方「模型系列」。`}
+        caption={`大模型星系：每顆星是一個模型系列，高度是綜合能力、左右是使用成本、前後是開放程度，顏色代表來源地區（${galaxy.length} 個系列，資料截至 ${modelsAsOf}）。點選星點可前往該系列頁面；同樣的清單見下方「模型系列」。`}
       />
       <div class="axes" role="group" aria-labelledby="axes-title">
         <h3 id="axes-title" class="axes__title">星系座標怎麼算</h3>
         <dl class="axes__list">
           <div>
             <dt><span class="axes__dot" style="--c: var(--chart-1)"></span>綜合能力（0–100）・高度</dt>
-            <dd>語言模型多取 Artificial Analysis 綜合智慧指數；圖像、影片與世界模型沒有共同指數，改用各自排行榜換算或編輯判斷，不同類型之間不宜直接比較。</dd>
+            <dd>語言模型取 Artificial Analysis 綜合智慧指數 v5（2026-10-27 改版，分數不能與 v4 互比），AA 尚未評測的系列為編輯估計；圖像、影片與世界模型沒有共同指數，改用各自排行榜換算或編輯判斷，不同類型之間不宜直接比較。</dd>
           </div>
           <div>
             <dt><span class="axes__dot" style="--c: var(--chart-2)"></span>成本指數（0–100）・左右</dt>
