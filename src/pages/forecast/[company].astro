@@ -1,0 +1,502 @@
+---
+/**
+ * /forecast/<id>/ 「<公司>財報模型」 — one page per company of the 財報模型 topic (FC_META topic 'forecast' in
+ * src/lib/forecast-config.ts) whose inputs and model files exist in src/data/forecast/. Same order as the memory
+ * sub-pages (/memory/phison/), 由淺入深:
+ * hero → 一分鐘看懂 → 預測摘要 → 預測 vs 實際（only with model.liveChecks） → 驅動因子 → 數量與營收 → 模型怎麼做 →
+ * 回測（incl. the company's guidance） → 情境預測 → 限制與風險 → 大事記 → 資料來源.
+ * Generic sections come from src/components/memory/forecast/ and src/components/forecast/; company-specific ones
+ * are plugged in from src/components/forecast/<id>/{Basics,Drivers,Volume,Method,Backtest,Scenarios}.astro
+ * (src/components/forecast/registry.ts; a missing file renders the generic content or nothing).
+ * Data: src/lib/forecast-data.ts (zod-validated; check and re-run the models with npx tsx scripts/check-forecast.ts).
+ */
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Icon from '../../components/ui/Icon.astro';
+import SourcesList from '../../components/content/SourcesList.astro';
+import NextSteps from '../../components/content/NextSteps.astro';
+import { registerSources } from '../../components/content/page-state';
+import SummaryCards from '../../components/memory/forecast/SummaryCards.astro';
+import TrainTestBar from '../../components/memory/forecast/TrainTestBar.astro';
+import CandidateCards from '../../components/memory/forecast/CandidateCards.astro';
+import ParamTable from '../../components/memory/forecast/ParamTable.astro';
+import BacktestTabs from '../../components/memory/forecast/BacktestTabs.astro';
+import MetricsTable from '../../components/memory/forecast/MetricsTable.astro';
+import ScenarioAssumptions from '../../components/memory/forecast/ScenarioAssumptions.astro';
+import ForecastTable from '../../components/memory/forecast/ForecastTable.astro';
+import ScenarioLines from '../../components/memory/forecast/ScenarioLines.astro';
+import SensitivityTable from '../../components/memory/forecast/SensitivityTable.astro';
+import LimitList from '../../components/memory/forecast/LimitList.astro';
+import EventTimeline from '../../components/memory/forecast/EventTimeline.astro';
+import FcSentences from '../../components/memory/forecast/FcSentences.astro';
+import LiveCheck from '../../components/memory/forecast/LiveCheck.astro';
+import CompanySlot from '../../components/forecast/CompanySlot.astro';
+import ForecastBasics from '../../components/forecast/ForecastBasics.astro';
+import DriverTables from '../../components/forecast/DriverTables.astro';
+import DerivedTable from '../../components/forecast/DerivedTable.astro';
+import HistoryCharts from '../../components/forecast/HistoryCharts.astro';
+import GuidanceCompare from '../../components/forecast/GuidanceCompare.astro';
+import { companySection, companySourceKeys } from '../../components/forecast/registry';
+import '../../components/memory/memory.css';
+import '../../components/memory/forecast/forecast.css';
+import '../../components/forecast/forecast-topic.css';
+import {
+  driverGroups,
+  fcDescription,
+  forecastCompaniesWithPages,
+  forecastHref,
+  forecastOf,
+  forecastQuarters,
+  getForecastData,
+  isYear,
+  lastReportedOf,
+  liveRows,
+  monthsOfQuarter,
+  nextGuidance,
+  pageSources,
+  periodLabel,
+  reportedQuartersIn,
+  scenarioOf,
+  selectedCandidate,
+  summaryPeriodsOf,
+  FC_META,
+  type FcCompany,
+} from '../../lib/forecast-data';
+import { errHeadline, type Target } from '../../components/memory/forecast/fc-labels';
+import { segmentMeta } from '../../lib/collections';
+import { companyHref, sectionHref, segmentHref } from '../../lib/paths';
+import { joinZh } from '../../lib/format';
+import { articleJsonLd, datasetJsonLd, ogImageFor } from '../../lib/seo';
+
+export const getStaticPaths = (() =>
+  forecastCompaniesWithPages('forecast').map((company) => ({ params: { company } }))) satisfies GetStaticPaths;
+
+const company = Astro.params.company as FcCompany;
+const b = getForecastData(company);
+if (!b) throw new Error(`[forecast/${company}] forecast data missing`);
+const { meta, model: m } = b;
+const seg = segmentMeta(meta.segment);
+const asOf = m.asOf;
+const description = fcDescription(b);
+const lastReported = lastReportedOf(m);
+const live = liveRows(b);
+const livePeriod = live[0]?.period;
+const sp = summaryPeriodsOf(b);
+// 預測摘要 lede: a year that already contains reported quarters (2026) is actual plus forecast — name it separately
+const mixedYears = sp.forecast.filter((p) => isYear(p) && reportedQuartersIn(b.inputs, p) > 0);
+const pureForecastLabels = joinZh(
+  sp.forecast.filter((p) => !mixedYears.includes(p)).map((p) => periodLabel(p, 'long')),
+  '與',
+);
+const mixedText = mixedYears
+  .map((p) => {
+    const n = reportedQuartersIn(b.inputs, p);
+    return `${periodLabel(p, 'long')}是前 ${n} 季的財報實際數加上${n === 3 ? '第四季' : `其餘 ${4 - n} 季`}的推估`;
+  })
+  .join('；');
+const sources = pageSources(b, companySourceKeys(b));
+registerSources(Astro, sources);
+
+/**
+ * The company name inside zh text, with a half-width space only between a CJK character and a Latin letter or digit
+ * (「另列 SpaceX 自己的財測」, 「；SpaceX 自己…」, 「特斯拉自己…」).
+ */
+const CJK = { test: (c: string) => c.length > 0 && c.charCodeAt(0) >= 0x4e00 && c.charCodeAt(0) <= 0x9fff };
+const gap = (a: string, b: string) =>
+  (/[A-Za-z0-9]$/.test(a) && CJK.test(b.charAt(0))) || (CJK.test(a.charAt(a.length - 1)) && /^[A-Za-z0-9]/.test(b)) ? ' ' : '';
+const nm = (before: string, after: string) => `${before}${gap(before, meta.name)}${meta.name}${gap(meta.name, after)}${after}`;
+const sel = selectedCandidate(m);
+const naive = m.candidates.find((c) => c.id === 'naive-last-quarter' || c.id === 'naive');
+const guidanceCand = m.candidates.find((c) => c.id === 'guidance');
+const exAnte = m.candidates.find((c) => c.id.endsWith('-ex-ante'));
+const g = nextGuidance(b);
+const hasGuidanceHistory = b.inputs.quarters.some((q) => q.guidance);
+/** the first forecast quarter when some of its months are reported (October of 2026Q4) */
+const firstFq = forecastQuarters(scenarioOf(m, 'base'))[0];
+const partialMonths = firstFq && !firstFq.known.includes('revenue') ? monthsOfQuarter(b.inputs, firstFq.period) : [];
+const partialText =
+  firstFq && partialMonths.length > 0 && partialMonths.length < 3
+    ? `${periodLabel(firstFq.period, 'long')}的 ${partialMonths.map((x) => Number(x.period.slice(5))).join('、')} 月營收已公布，其餘月份與毛利率以下仍是推估`
+    : '';
+const anyKnown = !!sp.actual || sp.forecast.some((p) => (forecastOf(m, 'base', p)?.known.length ?? 0) > 0) || partialText !== '';
+const testSpan = `${periodLabel(m.test.from)}–${periodLabel(m.test.to)}`;
+const nTest = sel.metrics.revenue?.n ?? sel.metrics.grossMargin?.n ?? 0;
+const fixedParams = m.parameters.some((p) => /不重估/.test(p.name));
+
+// hero: the selected model and its backtest error in one sentence, against the naive model, the company's own
+// guidance and the same model with drivers forecast in advance
+const HEAD: Target[] = ['revenue', 'grossMargin', 'eps'];
+const NAME: Record<string, string> = { revenue: '營收', grossMargin: '毛利率', eps: 'EPS' };
+const errsOf = (c: typeof sel | undefined, withNames: boolean) =>
+  c
+    ? HEAD.filter((t) => c.metrics[t] && sel.metrics[t])
+        .map((t) => `${withNames ? `${NAME[t]}${t === 'eps' ? ' ' : ''}平均誤差 ` : ''}${errHeadline(b, t, c.metrics[t])}`)
+        .join('、')
+    : '';
+const exAnteRev = sel.metrics.revenueExAnte ?? exAnte?.metrics.revenue;
+const heroModel = `${testSpan} 共 ${nTest} 季逐季回測（代入${meta.backtest.known}）：${errsOf(sel, true)}${naive ? `；沿用上一季的天真模型為 ${errsOf(naive, false)}` : ''}${guidanceCand ? `${nm('；', '自己的財測為')} ${errsOf(guidanceCand, false)}` : ''}${exAnteRev ? `；${meta.backtest.exAnteLine}時，營收誤差為 ${errHeadline(b, 'revenue', exAnteRev)}` : ''}。`;
+
+const hasDrivers = driverGroups(b).length > 0;
+const DriversSec = companySection(company, 'Drivers');
+const VolumeSec = companySection(company, 'Volume');
+const toc = [
+  { href: '#basics', label: '一分鐘看懂' },
+  { href: '#summary', label: '預測摘要' },
+  ...(live.length ? [{ href: '#live-check', label: '預測 vs 實際' }] : []),
+  ...(hasDrivers || DriversSec ? [{ href: '#drivers', label: '驅動因子' }] : []),
+  { href: '#volume', label: '數量與營收' },
+  { href: '#method', label: '模型怎麼做' },
+  { href: '#backtest', label: '回測' },
+  { href: '#scenarios', label: '情境預測' },
+  { href: '#risks', label: '限制與風險' },
+  { href: '#timeline', label: '大事記' },
+  { href: '#sources', label: '資料來源' },
+];
+// next model in chain order (wraps around), for 繼續探索
+const pages = forecastCompaniesWithPages('forecast');
+const other = pages.length > 1 ? pages[(pages.indexOf(company) + 1) % pages.length] : undefined;
+
+const jsonLd = [
+  articleJsonLd({
+    title: meta.h1,
+    description,
+    path: Astro.url,
+    site: Astro.site,
+    dateModified: asOf,
+    section: '專題',
+    keywords: [meta.name, '財報模型', '回測', '情境分析', ...(seg ? [seg.short] : [])],
+  }),
+  datasetJsonLd({
+    name: `${meta.title}：回測與情境預測`,
+    description: `${meta.name}的季度財報、驅動因子與模型推估：${m.candidates.length} 個候選模型的回測（${testSpan}），以及保守、基準、樂觀三種情境的預測。`,
+    path: Astro.url,
+    site: Astro.site,
+    dateModified: asOf,
+    sources: sources.slice(0, 20).map((s) => ({ title: s.title, url: s.url, publisher: s.publisher })),
+    keywords: [meta.name, '財報', '驅動因子', '模型'],
+  }),
+];
+---
+
+<BaseLayout
+  title={meta.title}
+  description={description}
+  image={ogImageFor('companies')}
+  imageAlt={`AI 產業鏈全景：${meta.title}`}
+  type="article"
+  breadcrumbs={[{ label: '財報模型', href: sectionHref('forecast') }, { label: meta.title }]}
+  section="forecast"
+  jsonLd={jsonLd}
+  sources={sources}
+  modifiedTime={asOf}
+>
+  <span hidden data-pagefind-filter="類型:專題"></span>
+  {seg && <span hidden data-pagefind-filter={`環節:${seg.title}`}></span>}
+  <span hidden data-pagefind-sort={`updated:${asOf}`}></span>
+
+  <div class="fct" style={`--seg-memory-storage: var(--seg-${meta.segment}); --fc-seg: var(--seg-${meta.segment})`}>
+    <div class="mem-hero fc-hero">
+      <div class="container">
+        <header class="page-head mem-head fc-head">
+          <p class="page-head__kicker mem-head__kicker">
+            <span class="mem-head__badge">財報模型</span>
+            {meta.kicker}
+          </p>
+          <h1 data-pagefind-weight="10">{meta.h1}</h1>
+          <p class="page-head__lede mem-head__lede">{meta.promise}</p>
+          <div class="mem-head__meta">
+            <DataAsOf date={asOf} note={`財報截至 ${periodLabel(lastReported)}${m.periodLabel ? `；${m.periodLabel.replace(/（.*$/, '')}` : ''}`} />
+          </div>
+          <p class="fc-head__model">
+            <span class="fc-role fc-role--selected">選定模型</span>
+            <span>
+              <strong>{sel.name}</strong>：{heroModel}
+            </span>
+          </p>
+          <div class="fc-notice" role="note" aria-label="重要提醒">
+            <Icon name="warn" size="1.25em" />
+            <p>
+              <strong>模型推估，不是投資建議；本頁不提供目標價或買賣建議。</strong>
+              <span>
+                數字是依{meta.noticeInputs}推算的教學模型，誤差區間大；{nm('', '實際的財報以公司公告為準')}{g ? `${nm('，', '自己的財測另以')}「${nm('', '財測')}」標示` : ''}。
+              </span>
+            </p>
+          </div>
+          <ul class="mem-head__facts" role="list" aria-label="本頁內容">
+            <li><strong>{m.candidates.length}</strong> 個模型比較</li>
+            <li><strong>{nTest}</strong> 季回測</li>
+            <li><strong>3</strong> 種情境</li>
+            <li><strong>{sources.length}</strong> 筆來源</li>
+          </ul>
+        </header>
+      </div>
+    </div>
+
+    <nav class="mem-bar" aria-label="本頁段落" data-pagefind-ignore>
+      <div class="container mem-bar__in">
+        {toc.map((t) => <a href={t.href}>{t.label}</a>)}
+      </div>
+    </nav>
+
+    <section class="container section mem-basics fc-basics" id="basics" aria-labelledby="basics-h">
+      <p class="mem-sec-kicker">一分鐘看懂</p>
+      <h2 id="basics-h" class="fct-basics__h">{meta.basicsTitle ?? `${meta.name}的財報怎麼推估`}</h2>
+      <CompanySlot b={b} name="Basics">
+        <ForecastBasics b={b} />
+      </CompanySlot>
+    </section>
+
+    <section class="container section" id="summary" aria-labelledby="summary-h">
+      <div class="sec-head">
+        <h2 id="summary-h">預測摘要</h2>
+        <p class="sec-head__lede">
+          {`${pureForecastLabels}是模型推估${mixedText ? `，${mixedText}` : ''}。大字是基準情境，下方是保守到樂觀情境的區間${g ? `；${periodLabel(g.period, 'long')}${nm('另列', '自己的財測對照')}` : ''}${partialText ? `；${partialText}` : ''}。`}
+        </p>
+      </div>
+      <SummaryCards b={b} />
+      <div class="fc-legend" aria-label="標示說明">
+        <span><span class="mem-st mem-st--forecast">模型推估</span>本站模型的推算，不是公司數字</span>
+        {anyKnown && <span><span class="fc-tag fc-tag--known">已公布</span>公司已公告、直接採用</span>}
+        {g && <span><span class="fc-tag fc-tag--guidance">{nm('', '財測')}</span>公司在法說會公布的預估</span>}
+      </div>
+    </section>
+
+    {
+      livePeriod && (
+        <section class="container section fc-live-sec" id="live-check" aria-labelledby="live-check-h">
+          <div class="sec-head">
+            <h2 id="live-check-h">預測 vs 實際：{periodLabel(livePeriod, 'long')}</h2>
+            <p class="sec-head__lede">
+              {`本站 ${live[0]!.madeOn} 發布的模型預測了 ${periodLabel(livePeriod, 'long')}的財報，${nm('', '之後公布了實際數字')}。這是在財報公布前就公開、也沒有用來選模的預測，比回測更能說明模型實際使用時的誤差；不過只有一季，不能當成平均誤差。`}
+            </p>
+          </div>
+          <LiveCheck b={b} />
+        </section>
+      )
+    }
+
+    {
+      (hasDrivers || DriversSec) && (
+        <section class="container section" id="drivers" aria-labelledby="drivers-h">
+          <div class="sec-head">
+            <h2 id="drivers-h">驅動因子：哪些數字在推動財報</h2>
+            <p class="sec-head__lede">
+              {meta.driversLede ?? `${nm('', '公布的營運數字與模型用到的外部資料')}，依類別整理；估計、預測與財測另外標示。`}
+            </p>
+          </div>
+          <CompanySlot b={b} name="Drivers" />
+          {hasDrivers &&
+            (DriversSec ? (
+              <details class="mem-more fct-all">
+                <summary>
+                  全部驅動因子序列（{driverGroups(b).reduce((n, x) => n + x.series.length, 0)} 個）
+                  <Icon name="chevron-down" />
+                </summary>
+                <DriverTables b={b} headingLevel="h4" />
+              </details>
+            ) : (
+              <DriverTables b={b} />
+            ))}
+        </section>
+      )
+    }
+
+    <section class="container section" id="volume" aria-labelledby="volume-h">
+      <div class="sec-head">
+        <h2 id="volume-h">數量與營收：財報的實際走勢</h2>
+        <p class="sec-head__lede">
+          {`${nm('', '每季的營收與利潤率')}，以及模型從財報與驅動因子推算出的中間序列；推算值是模型的估計，不是公司公布的數字。`}
+        </p>
+      </div>
+      <CompanySlot b={b} name="Volume">
+        <HistoryCharts b={b} />
+      </CompanySlot>
+      {
+        m.derived.length > 0 &&
+          (VolumeSec ? (
+            <details class="mem-more fct-all">
+              <summary>
+                模型推算的序列（{m.derived.length} 個）
+                <Icon name="chevron-down" />
+              </summary>
+              <DerivedTable b={b} />
+            </details>
+          ) : (
+            <>
+              <h3 class="fc-h3">模型推算的序列</h3>
+              <DerivedTable b={b} />
+            </>
+          ))
+      }
+    </section>
+
+    <section class="container section" id="method" aria-labelledby="method-h">
+      <div class="sec-head">
+        <h2 id="method-h">模型怎麼做</h2>
+        <p class="sec-head__lede">
+          同一份資料試了 {m.candidates.length} 種做法，從「什麼都不做」的天真模型到用驅動因子拆解營收與成本的模型，再用同一段回測期比較誤差，選出一個主模型來跑情境。公式中的 t 代表這一季、t−1 代表上一季。
+        </p>
+      </div>
+      <TrainTestBar b={b} />
+      <CandidateCards b={b} />
+      <CompanySlot b={b} name="Method" />
+      <h3 class="fc-h3">參數</h3>
+      <p class="fc-p">
+        參數分兩組：回測用的只看訓練期資料，預測用的再加入到 {periodLabel(lastReported)} 為止的資料重新估計{fixedParams ? '，但標示「不重估」的參數沿用訓練期的估計（原因見表中說明）' : ''}。{g ? `${periodLabel(g.period, 'long')}的財測與預測起點也列在表中。` : ''}
+      </p>
+      <ParamTable b={b} />
+    </section>
+
+    <section class="container section" id="backtest" aria-labelledby="backtest-h">
+      <div class="sec-head">
+        <h2 id="backtest-h">回測：模型在 {testSpan} 準不準</h2>
+        <p class="sec-head__lede">
+          {`把模型放回過去 ${nTest} 季，逐季預測後${nm('與', '實際公布的數字比較')}。每一季都代入${meta.backtest.known}，衡量的是「${meta.backtest.when}」模型拆解財報的能力${exAnte || exAnteRev ? `；另列${meta.backtest.exAnteLine}時的誤差，做公平的事前比較` : ''}${
+            guidanceCand || hasGuidanceHistory
+              ? `${nm('；', '自己的財測是季初、還不知道結果時給的，也一併比較')}`
+              : g
+                ? `${nm('；', '在回測期間沒有公布數字財測，所以主要和天真模型比較')}；${periodLabel(g.period, 'long')}的財測列在預測摘要與各期預測`
+                : `${nm('；', '沒有公布營收或獲利財測，所以主要和天真模型比較')}`
+          }。`}
+        </p>
+      </div>
+      <BacktestTabs b={b} />
+      <h3 class="fc-h3">各模型的誤差與選模規則</h3>
+      <MetricsTable b={b} />
+      <aside class="fc-rule" aria-label="選模規則">
+        <p class="fc-rule__h"><Icon name="check" /> 選模規則與檢驗：{sel.name}</p>
+        <FcSentences b={b} text={sel.note} />
+      </aside>
+      {
+        hasGuidanceHistory && (
+          <>
+            <h3 class="fc-h3">{nm('和', '自己的財測比較')}</h3>
+            <GuidanceCompare b={b} />
+          </>
+        )
+      }
+      <CompanySlot b={b} name="Backtest" />
+    </section>
+
+    <section class="container section" id="scenarios" aria-labelledby="scenarios-h">
+      <div class="sec-head">
+        <h2 id="scenarios-h">情境預測：保守、基準、樂觀</h2>
+        <p class="sec-head__lede">
+          用選定模型跑三條路徑。近期的數字多半依公司說法、已公布的營運數字或研究機構的估計設定，更遠的季度沒有公開的數字預測，是本模型的假設；每一項假設與出處列在下方「情境假設」。
+        </p>
+      </div>
+      <div class="mem-grid mem-grid--charts">
+        <ScenarioLines b={b} target="revenue" as="h3" />
+        <ScenarioLines b={b} target={forecastQuarters(scenarioOf(m, 'base')).every((f) => f.eps != null) ? 'eps' : 'grossMargin'} as="h3" />
+      </div>
+      <h3 class="fc-h3">各期預測</h3>
+      <ForecastTable b={b} />
+      <h3 class="fc-h3">情境假設</h3>
+      <ScenarioAssumptions b={b} />
+      {
+        m.sensitivities.length > 0 && (
+          <>
+            <h3 class="fc-h3">敏感度：只改一項假設</h3>
+            <SensitivityTable b={b} />
+          </>
+        )
+      }
+      <CompanySlot b={b} name="Scenarios" />
+    </section>
+
+    <section class="container section" id="risks" aria-labelledby="risks-h">
+      <div class="sec-head">
+        <h2 id="risks-h">限制與風險</h2>
+        <p class="sec-head__lede">模型能說明驅動因子如何傳到財報，但有幾個它看不到或刻意簡化的地方。讀數字時請一併考慮。</p>
+      </div>
+      <LimitList b={b} />
+    </section>
+
+    {
+      b.inputs.events.length > 0 && (
+        <section class="container section" id="timeline" aria-labelledby="timeline-h">
+          <div class="sec-head">
+            <h2 id="timeline-h">{nm('', '大事記')}</h2>
+            <p class="sec-head__lede">財報、法說會與公司公告中和驅動因子、毛利率與展望有關的事件，新的在前。</p>
+          </div>
+          <EventTimeline b={b} />
+        </section>
+      )
+    }
+
+    <section class="container section mem-end">
+      <NextSteps
+        title="繼續探索"
+        items={[
+          { href: sectionHref('forecast'), title: '財報模型專題', kicker: '所有公司的模型、回測與情境' },
+          ...(other ? [{ href: forecastHref(other), title: FC_META[other].title, kicker: `另一個模型：${FC_META[other].kicker.split(' · ').at(-1)}` }] : []),
+          { href: companyHref(company), title: nm('', '公司檔案'), kicker: '產品、財報與大事記' },
+          ...(seg ? [{ href: segmentHref(seg.id), title: seg.title, kicker: '回到產業鏈環節' }] : []),
+        ]}
+      />
+      <div class="mem-sources">
+        <SourcesList sources={sources} note={`本頁 ${sources.length} 筆來源：${nm('', '的財報、法說會與公告在前')}，驅動因子的來源在後；方括號編號對應下列順序，括號內為讀取日期。`} />
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .sec-head {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-end: var(--space-5);
+  }
+  .sec-head h2 {
+    font-size: var(--fs-2xl);
+    scroll-margin-block-start: calc(var(--header-h) + var(--mem-bar-h, 0px) + var(--space-4));
+  }
+  .sec-head__lede {
+    margin: 0;
+    max-width: 46em;
+    color: var(--c-fg-muted);
+  }
+  .fct-basics__h {
+    margin-block-end: var(--space-4);
+    font-size: var(--fs-2xl);
+  }
+  section[id] {
+    scroll-margin-block-start: calc(var(--header-h) + var(--mem-bar-h) + var(--space-2));
+  }
+</style>
+
+<script>
+  // Mark the section being read in the sticky bar and keep its link in view inside the bar (same as /memory/).
+  const bar = document.querySelector<HTMLElement>('.mem-bar__in');
+  if (bar && 'IntersectionObserver' in window) {
+    const links = [...bar.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')];
+    const targets = links
+      .map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1))))
+      .filter((el): el is HTMLElement => !!el);
+    const visible = new Set<HTMLElement>();
+    const update = () => {
+      const current = targets.filter((t) => visible.has(t)).at(-1) ?? null;
+      for (const a of links) {
+        const on = !!current && a.hash === `#${current.id}`;
+        if (on) a.setAttribute('aria-current', 'true');
+        else a.removeAttribute('aria-current');
+        if (on) {
+          const left = a.offsetLeft - (bar.clientWidth - a.offsetWidth) / 2;
+          bar.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+        }
+      }
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.boundingClientRect.top < window.innerHeight / 3) visible.add(e.target as HTMLElement);
+          else visible.delete(e.target as HTMLElement);
+        }
+        update();
+      },
+      { rootMargin: '0px 0px -66% 0px', threshold: [0, 1] },
+    );
+    for (const t of targets) io.observe(t);
+  }
+</script>

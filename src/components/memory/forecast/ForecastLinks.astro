@@ -1,16 +1,18 @@
 ---
 /**
- * Links to the financial-model sub-pages of the memory topic, with the model's headline from its data:
- *   <ForecastLinks />                              → two cards (section 「財報模型：群聯與美光」 on /memory/)
- *   <ForecastLinks variant="callout" company="micron" /> → one card on /companies/micron/
+ * Link cards to the financial-model pages, with the model's headline from its data:
+ *   <ForecastLinks />                                   → the memory-topic cards (section 「財報模型：群聯與美光」 on /memory/)
+ *   <ForecastLinks companies={['tsmc', 'spacex']} />     → cards of the given companies
+ *   <ForecastLinks variant="callout" company="micron" /> → one card on /companies/<id>/ (every company with a page)
  * A company whose forecast files are missing is left out (renders nothing when none is available).
  */
 import './forecast-links.css';
 import Icon from '../../ui/Icon.astro';
 import {
-  FC_COMPANIES,
   FC_META,
+  calendarHint,
   fcPct,
+  forecastCompaniesWithPages,
   forecastHref,
   forecastOf,
   forecastQuarters,
@@ -22,14 +24,18 @@ import {
 } from '../../../lib/forecast-data';
 import { errHeadline } from './fc-labels';
 import { uid } from '../../content/page-state';
+import { sectionHref } from '../../../lib/paths';
+import { zhConcat } from '../../../lib/format';
 
 interface Props {
   variant?: 'cards' | 'callout' | undefined;
   company?: FcCompany | undefined;
+  companies?: readonly FcCompany[] | undefined;
   class?: string | undefined;
 }
-const { variant = 'cards', company, class: className } = Astro.props;
-const list = (company ? [company] : FC_COMPANIES).flatMap((c) => {
+const { variant = 'cards', company, companies, class: className } = Astro.props;
+const HEAD_LABEL = { revenue: '營收', grossMargin: '毛利率', eps: 'EPS' } as const;
+const list = (company ? [company] : (companies ?? forecastCompaniesWithPages('memory'))).flatMap((c) => {
   const b = getForecastData(c);
   if (!b) return [];
   const m = b.model;
@@ -37,14 +43,20 @@ const list = (company ? [company] : FC_COMPANIES).flatMap((c) => {
   const fq = forecastQuarters(scenarioOf(m, 'base'));
   const firstQ = fq[0];
   const year = scenarioOf(m, 'base')?.forecasts.filter((f) => !/Q/.test(f.period)).at(-1);
-  const err =
-    b.company === 'micron'
-      ? `營收平均誤差 ${errHeadline(b, 'revenue', sel.metrics.revenue)}、毛利率 ${errHeadline(b, 'grossMargin', sel.metrics.grossMargin)}`
-      : `毛利率平均誤差 ${errHeadline(b, 'grossMargin', sel.metrics.grossMargin)}`;
-  const blurb =
-    c === 'phison'
-      ? '用 NAND 合約價推估群聯的進貨成本，對照庫存何時賣出，說明低價庫存如何推高毛利率、何時淡化。'
-      : '把 DRAM、NAND 合約價換算成美光售價，再拆解每位元成本、折舊與 HBM，並和美光自己的財測比較。';
+  // 「營收平均誤差 4.1%、毛利率 1.2 個百分點」 (群聯: 毛利率 only)
+  const err = (b.meta.headline ?? ['revenue', 'grossMargin'])
+    .filter((t) => sel.metrics[t])
+    .map((t, i) => `${HEAD_LABEL[t]}${i === 0 ? `${t === 'eps' ? ' ' : ''}平均誤差` : ''} ${errHeadline(b, t, sel.metrics[t])}`)
+    .join('、');
+  // fiscal years (美光 9, 輝達 2): 「FY 是美光的會計年度：FY2027 Q1 約為 2026 年 9–11 月，FY2027 約為 2026 年 9 月至 2027 年 8 月。」
+  const fy = b.meta.fyStartMonth;
+  const cal = (p: string) => `${periodLabel(p)} 約為 ${calendarHint(p, fy).replace(/^約 /, '')}`;
+  const fyNote = fy
+    ? `${zhConcat('FY 是', b.meta.name, '的會計年度：')}${[firstQ?.period, year?.period]
+        .filter((p): p is string => !!p && p.startsWith('FY'))
+        .map(cal)
+        .join('，')}。`
+    : '';
   return [
     {
       c,
@@ -57,10 +69,13 @@ const list = (company ? [company] : FC_COMPANIES).flatMap((c) => {
         firstQ ? { p: periodLabel(firstQ.period), v: fcPct(forecastOf(m, 'base', firstQ.period)?.grossMargin) } : null,
         year ? { p: periodLabel(year.period), v: fcPct(year.grossMargin) } : null,
       ].filter((x): x is { p: string; v: string } => !!x),
-      blurb,
+      blurb: FC_META[c].blurb,
+      fyNote: /約為/.test(fyNote) ? fyNote : '',
     },
   ];
 });
+// callout kicker: the topic the page belongs to
+const topic = list[0]?.meta.topic ?? 'memory';
 const hid = uid(Astro, 'fc-links');
 ---
 
@@ -70,12 +85,12 @@ const hid = uid(Astro, 'fc-links');
       {variant === 'callout' && (
         <p class="fc-links__kicker" id={hid}>
           <span class="mem-head__badge">財報模型</span>
-          記憶體與儲存專題
+          {topic === 'memory' ? '記憶體與儲存專題' : <a href={sectionHref('forecast')}>財報模型專題</a>}
         </p>
       )}
       <ul class="fc-links__list" role="list" aria-labelledby={variant === 'callout' ? hid : undefined}>
         {list.map((x) => (
-          <li class="fc-link">
+          <li class="fc-link" style={x.meta.topic === 'memory' ? undefined : `--fc-seg: var(--seg-${x.meta.segment})`}>
             <p class="fc-link__title">
               <a href={x.href}>{x.meta.h1}</a>
             </p>
@@ -108,8 +123,9 @@ const hid = uid(Astro, 'fc-links');
                 </dd>
               </div>
             </dl>
+            {x.fyNote && <p class="fc-link__fy">{x.fyNote}</p>}
             <a class="fc-link__cta" href={x.href}>
-              看{x.meta.name}的模型、回測與情境
+              {zhConcat('看', x.meta.name, '的模型、回測與情境')}
               <Icon name="arrow-right" />
             </a>
           </li>

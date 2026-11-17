@@ -15,7 +15,7 @@
 | 繁中用語 | `npm run lint:zh` | — | 簡體字、中國用語 |
 | 內容規則 | `npm run lint:content` | — | 必要標題、層級段落 |
 | 記憶體專題資料 | `npx tsx scripts/check-memory.ts` | — | `src/data/memory/*.yaml` 的 schema、名冊 id、來源 key、市占與需求結構加總、佔位字 |
-| 財報模型資料 | `npx tsx scripts/check-forecast.ts` | — | `src/data/memory/forecast/` 的 schema（`src/schemas/forecast.ts`）、來源 key、季度連續與排序、佔位字，以及重跑 `scripts/models/*.ts` 後模型 JSON 是否與提交的一致 |
+| 財報模型資料 | `npx tsx scripts/check-forecast.ts` | — | `src/data/memory/forecast/`（價格、群聯、美光）與 `src/data/forecast/`（`<公司>-inputs.yaml`、`-drivers.yaml`、`-model.json`）的 schema（`src/schemas/forecast.ts`）、來源 key、季度連續與排序、佔位字，以及重跑 `scripts/models/*.ts` 後模型 JSON 是否與提交的一致；暫存區用 `--dir <資料夾>` |
 | 覆蓋率報告 | `npm run coverage` | — | 預設只報告；`--strict` 時缺檔即失敗 |
 | 建置 | `npm run build` | — | 建置失敗 |
 | 站內連結 | `npm run links` | `dist/` | 站內失效連結、`#錨點` 不存在 |

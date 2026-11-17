@@ -1,0 +1,124 @@
+---
+/**
+ * 數量與營收（SpaceX）: the reported quarters from FC_META.historyFrom — consolidated revenue (bars, with the segment
+ * split in each tooltip), gross and operating margins, revenue by segment and the segment mix. Replaces the generic
+ * HistoryCharts; the model's derived series follow in the page's disclosure.
+ *   <Volume b={bundle} />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import QuarterBars from '../../memory/forecast/QuarterBars.astro';
+import ChartCites from '../../memory/forecast/ChartCites.astro';
+import StackedShares from '../../memory/StackedShares.astro';
+import { chartKey, periodLabel, type FcBundle } from '../../../lib/forecast-data';
+import { formatNumber } from '../../../lib/format';
+import { SEGMENTS, ex, grossMarginOf, shareOf, shownQuarters } from './sx-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const qs = shownQuarters(b);
+const first = qs[0];
+const last = qs.at(-1);
+const span = first && last ? `${periodLabel(first.period)}–${periodLabel(last.period)}` : '';
+const yi = (millions: number | undefined) => (millions == null ? '—' : `${formatNumber(millions / 100, { digits: 1 })} 億美元`);
+const keys = qs.map((q) => q.src);
+// consecutive operating losses before the latest quarter
+let lossRun = 0;
+for (const q of qs.slice(0, -1).reverse()) {
+  if ((q.operatingIncome ?? 0) < 0) lossRun++;
+  else break;
+}
+// where the increase since the first quarter came from, largest first
+const adds = first && last ? SEGMENTS.map((s) => ({ name: s.name, v: (ex(last, s.rev) ?? 0) - (ex(first, s.rev) ?? 0) })).sort((a, c) => c.v - a.v) : [];
+const derivedQs = qs.filter((q) => /全年.*減.*前九個月/.test(q.note ?? '')).map((q) => periodLabel(q.period));
+const segSeries = SEGMENTS.map((s) => ({
+  name: s.full,
+  color: s.color,
+  points: qs.map((q) => ({ x: chartKey(q.period), y: ex(q, s.rev) != null ? (ex(q, s.rev) ?? 0) / 100 : null })),
+}));
+// no per-row src: the quarters' sources are cited once below the charts (ChartCites)
+const mixRows = [...qs].reverse().map((q) => ({
+  label: periodLabel(q.period),
+  items: SEGMENTS.map((s) => ({ key: s.id, name: s.full, share: Number((shareOf(ex(q, s.rev), q.revenue) ?? 0).toFixed(1)), color: s.color })),
+}));
+---
+
+{
+  first && last && (
+    <>
+      <p class="fc-p">
+        營收從 {periodLabel(first.period)} 的 {yi(first.revenue)}增加到 {periodLabel(last.period)} 的 {yi(last.revenue)}；增加的 {yi(last.revenue - first.revenue)}中，{adds.map((a) => `${a.name} ${yi(a.v)}`).join('、')}。
+        {last.operatingIncome != null && last.operatingIncome > 0 && lossRun > 0
+          ? `GAAP 營業利益在 ${periodLabel(last.period)} 轉為 ${yi(last.operatingIncome)}，之前連續 ${lossRun} 季虧損。`
+          : ''}
+        {derivedQs.length ? `${derivedQs.join('、')} 公司沒有單獨公布，是本站以全年減前九個月推算。` : ''}
+      </p>
+      <div class="mem-grid mem-grid--charts">
+        <QuarterBars
+          title="每季營收"
+          subtitle={`${span}，財報實際值`}
+          unit="億美元"
+          points={qs.map((q) => ({
+            period: q.period,
+            value: Number((q.revenue / 100).toFixed(1)),
+            note: SEGMENTS.map((s) => `${s.name} ${yi(ex(q, s.rev))}`).join('、'),
+          }))}
+          digits={1}
+          color="var(--fc-seg, var(--chart-1))"
+          as="h3"
+        />
+        <MultiLine
+          title="毛利率與營業利益率"
+          subtitle={`${span}，財報實際值（GAAP）`}
+          unit="%"
+          format="percent"
+          digits={1}
+          includeZero
+          height={210}
+          series={[
+            { name: '毛利率', color: 'var(--chart-2)', points: qs.map((q) => ({ x: chartKey(q.period), y: grossMarginOf(q) ?? null })) },
+            {
+              name: '營業利益率',
+              color: 'var(--chart-7)',
+              points: qs.map((q) => ({ x: chartKey(q.period), y: q.operatingIncome != null ? (q.operatingIncome / q.revenue) * 100 : null })),
+            },
+          ]}
+          xTitle="季度"
+          as="h3"
+          class="mem-chart"
+          notes={['營業利益已扣除股份基礎給付、重組與減損；2026 Q3 起另含 Cursor 併購相關的股份基礎給付。']}
+        />
+      </div>
+      <div class="mem-grid mem-grid--charts sx-vol">
+        <MultiLine
+          title="三個部門的營收"
+          subtitle={`${span}，財報實際值`}
+          unit="億美元"
+          digits={1}
+          height={230}
+          series={segSeries}
+          xTitle="季度"
+          as="h3"
+          class="mem-chart"
+          notes={['2026 年 2 月併購 xAI 屬共同控制下的合併，所有期間都追溯合併 xAI 與 X，所以 2025 年的 AI 部門營收也包含 X 的廣告收入。']}
+        />
+        <StackedShares
+          title="營收組成"
+          subtitle="各部門占當季營收的比重，新的在上"
+          unit="占營收（%）"
+          rows={mixRows}
+          itemTitle="部門"
+          as="h3"
+        />
+      </div>
+      <ChartCites keys={[...keys, 'sec-424b4']} label="各季財報出處" />
+    </>
+  )
+}
+
+<style>
+  .sx-vol {
+    margin-block-start: var(--space-4);
+  }
+</style>

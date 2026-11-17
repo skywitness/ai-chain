@@ -1,0 +1,590 @@
+---
+/**
+ * 驅動因子（特斯拉）: the charts behind the model — deliveries (actual and the base scenario) and the delivery mix,
+ * deliveries vs the consensus Tesla's IR site compiles, price and cost per vehicle with the automotive margins,
+ * the gross margin split into segment contributions, regulatory credits and energy margin, storage deployments and
+ * energy revenue per kWh, and operating expenses. Driver points come from src/data/forecast/tesla-drivers.yaml,
+ * reported figures from tesla-inputs.yaml, the per-vehicle and contribution series and the forecasts from
+ * tesla-model.json (forecast quarters dashed or hatched). The generic tables of every driver series follow in a
+ * closed disclosure (src/pages/forecast/[company].astro).
+ *   <Drivers b={bundle} />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import QuarterBars from '../../memory/forecast/QuarterBars.astro';
+import ChartCites from '../../memory/forecast/ChartCites.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import FcText from '../../memory/forecast/FcText.astro';
+import StatusTag from '../../memory/StatusTag.astro';
+import MarginStack, { type StackQuarter } from './MarginStack.astro';
+import { chartKey, driverOf, fcMoney, fcPct, periodLabel, plainText, qIndex, quartersFrom, type FcBundle } from '../../../lib/forecast-data';
+import { formatNumber } from '../../../lib/format';
+import { deliveryMix, derivedAt, derivedPts, driverAt, driverPts, extraOf, paramOfPrefix, scenarioQuarters, scenarioYear } from './tesla';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m, meta } = b;
+const from = meta.historyFrom;
+const last = inputs.quarters.at(-1)!;
+const P = last.period;
+const qs = quartersFrom(inputs, from);
+const qSrcs = [...new Set(qs.map((q) => q.src))];
+const span = `${periodLabel(from)}–${periodLabel(P)}`;
+const base = scenarioQuarters(b, 'base');
+const bear = scenarioQuarters(b, 'bear');
+const bull = scenarioQuarters(b, 'bull');
+const fq0 = base[0]?.period;
+const fy = base.at(-1)?.period.slice(0, 4);
+const fcFrom = fq0 ? `${periodLabel(fq0)} 起為基準情境` : '';
+const n0 = (v: number | null | undefined) => (v == null || !Number.isFinite(v) ? '—' : formatNumber(v));
+const n1 = (v: number | null | undefined) => (v == null || !Number.isFinite(v) ? '—' : formatNumber(v, { digits: 1 }));
+const line = (pts: Array<{ period: string; value: number; status?: string | undefined }>) =>
+  pts.map((p) => ({ x: chartKey(p.period), y: p.value, forecast: p.status === 'forecast' }));
+const ev = (re: RegExp) => inputs.events.find((e) => re.test(e.title) || re.test(e.detail));
+
+// ── A. deliveries and mix ──
+const dels = driverPts(b, 'deliveries-total', from);
+const delBars = [
+  ...dels.map((p) => ({ period: p.period, value: p.value / 1e4 })),
+  ...base
+    .filter((f) => f.fig.deliveries != null)
+    .map((f) => ({ period: f.period, value: Number(f.fig.deliveries) / 1e4, status: 'forecast' as const, note: '基準情境（分析師共識）' })),
+];
+const yBear = fy ? scenarioYear(b, fy, 'bear') : undefined;
+const yBase = fy ? scenarioYear(b, fy, 'base') : undefined;
+const yBull = fy ? scenarioYear(b, fy, 'bull') : undefined;
+const spread = yBase?.fig.deliveries && yBull?.fig.deliveries ? (yBull.fig.deliveries / yBase.fig.deliveries - 1) * 100 : undefined;
+// first clause of the base scenario's 「交車的季節分配與組合」: 「2027 年各季依 2023–2025 年平均季節比重分配」
+const seasonal = m.scenarios.find((s) => s.id === 'base')?.assumptions.find((a) => /季節/.test(a.name))?.value.split('；')[0];
+const mix = dels.map((p) => ({ period: p.period, ...deliveryMix(b, p.period) }));
+const mixNow = deliveryMix(b, P);
+const mixFirst = mix[0];
+const a1 = paramOfPrefix(b, '其他車款占比對售價的影響');
+const c2 = paramOfPrefix(b, '其他車款占比對成本的影響');
+const mixSrcs = [
+  ...dels.map((p) => p.src),
+  ...driverPts(b, 'deliveries-other', from).map((p) => p.src),
+  ...driverPts(b, 'deliveries-leased', from).map((p) => p.src),
+];
+const sxStop = ev(/Model S／X 產線停用/);
+
+// deliveries and storage vs the consensus published before each quarter ended
+const consRows = driverPts(b, 'deliveries-consensus').map((c) => {
+  const act = driverAt(b, 'deliveries-total', c.period);
+  const sc = driverAt(b, 'storage-consensus', c.period);
+  const sa = driverAt(b, 'storage-deployed', c.period);
+  return {
+    period: c.period,
+    cons: c,
+    act,
+    dDiff: act ? (act.value / c.value - 1) * 100 : undefined,
+    sc,
+    sa,
+    sDiff: sc && sa ? (sa.value / sc.value - 1) * 100 : undefined,
+  };
+});
+const consYear = (id: string, y: string | undefined) => (y ? driverAt(b, id, y) : undefined);
+const thisYear = P.slice(0, 4);
+const cD0 = consYear('deliveries-consensus-annual', thisYear);
+const cD1 = consYear('deliveries-consensus-annual', fy);
+const cS0 = consYear('storage-consensus-annual', thisYear);
+const cS1 = consYear('storage-consensus-annual', fy);
+const signed = (v: number | undefined) => (v == null ? '—' : `${formatNumber(v, { digits: 1, signed: true })}%`);
+
+// ── B. price and cost per vehicle, automotive margins ──
+const aspPts = derivedPts(b, 'asp-per-vehicle', from);
+const costPts = derivedPts(b, 'cost-per-vehicle', from);
+const perVehicle = aspPts
+  .filter((p) => p.status !== 'forecast')
+  .map((p) => ({ period: p.period, asp: p.value, cost: derivedAt(b, 'cost-per-vehicle', p.period) }))
+  .filter((x): x is { period: string; asp: number; cost: number } => x.cost != null)
+  .map((x) => ({ ...x, gp: x.asp - x.cost }));
+const gpPeak = perVehicle.length ? perVehicle.reduce((x, y) => (y.gp > x.gp ? y : x)) : undefined;
+const gpNow = perVehicle.find((x) => x.period === P);
+const aspSrcs = [...driverPts(b, 'asp-proxy', from).map((p) => p.src), ...driverPts(b, 'cogs-per-vehicle', from).map((p) => p.src)];
+/** the drivers file's definition of the cost per vehicle cites the company's own figures (deck-q3-2023, deck-q4-2024) */
+const cogsDef = driverOf(b, 'cogs-per-vehicle')?.definition;
+const autoGm = qs.map((q) => ({ period: q.period, incl: extraOf(q, '汽車毛利率'), excl: extraOf(q, '汽車毛利率不含積分') }));
+const gaps = autoGm.filter((x) => x.incl != null && x.excl != null).map((x) => ({ period: x.period, gap: x.incl! - x.excl! }));
+const gapMax = gaps.length ? gaps.reduce((x, y) => (y.gap > x.gap ? y : x)) : undefined;
+const gapNow = gaps.find((x) => x.period === P);
+const a0 = paramOfPrefix(b, '每輛車售價趨勢');
+const c0 = paramOfPrefix(b, '每輛車成本趨勢');
+const c1 = paramOfPrefix(b, '量的攤提效果');
+const fsdNow = driverAt(b, 'fsd-subscriptions', P);
+const fsdYa = driverPts(b, 'fsd-subscriptions').find((p) => qIndex(p.period) === qIndex(P) - 4);
+const fsdOnly = ev(/只提供訂閱/);
+const signedParam = (v: number | undefined, unit = '') => (v == null ? '—' : `${formatNumber(v, { digits: 2, signed: true })}${unit}`);
+
+// ── C. gross margin by segment ──
+const CONTRIB = [
+  { id: 'gm-contrib-auto-sales', key: 'auto', name: '汽車銷售', color: 'var(--chart-1)' },
+  { id: 'gm-contrib-credits', key: 'credits', name: '監管積分', color: 'var(--chart-4)' },
+  { id: 'gm-contrib-leasing', key: 'leasing', name: '汽車租賃', color: 'var(--chart-5)' },
+  { id: 'gm-contrib-energy', key: 'energy', name: '能源', color: 'var(--chart-3)' },
+  { id: 'gm-contrib-services', key: 'services', name: '服務及其他', color: 'var(--chart-7)' },
+];
+const stackRows: StackQuarter[] = derivedPts(b, 'gm-contrib-auto-sales', m.test.from).map((p) => ({
+  period: p.period,
+  status: p.status === 'forecast' ? 'forecast' : 'actual',
+  items: CONTRIB.map((c) => ({ key: c.key, name: c.name, color: c.color, value: derivedAt(b, c.id, p.period) ?? 0 })),
+}));
+const contrib = (id: string, period: string) => derivedAt(b, id, period);
+const testSrcs = [...new Set(quartersFrom(inputs, m.test.from).map((q) => q.src))];
+const credits = driverPts(b, 'regulatory-credits', from);
+const credBars = credits.map((p) => ({ period: p.period, value: p.value / 100 }));
+const credScen = fq0 ? { bear: bear[0]?.fig.credits, base: base[0]?.fig.credits, bull: bull[0]?.fig.credits } : undefined;
+const credBearHalves = /減半/.test(m.scenarios.find((s) => s.id === 'bear')?.assumptions.find((a) => /監管積分/.test(a.name))?.value ?? '');
+const egm = derivedPts(b, 'energy-gross-margin', from);
+const egmParam = paramOfPrefix(b, '能源毛利率');
+const egmBear = fq0 ? m.scenarios.find((s) => s.id === 'bear')?.assumptions.find((a) => /能源毛利率/.test(a.name)) : undefined;
+const egmBull = fq0 ? m.scenarios.find((s) => s.id === 'bull')?.assumptions.find((a) => /能源毛利率/.test(a.name)) : undefined;
+const pctIn = (s: string | undefined) => /([\d.]+)%/.exec(s ?? '')?.[1];
+
+// ── D. storage and energy revenue ──
+const stor = driverPts(b, 'storage-deployed', from);
+const storBars = [
+  ...stor.map((p) => ({ period: p.period, value: p.value })),
+  ...base.filter((f) => f.fig.storage != null).map((f) => ({ period: f.period, value: f.fig.storage!, status: 'forecast' as const, note: '基準情境' })),
+];
+const KWH_FROM = '2023Q1';
+const perKwh = derivedPts(b, 'energy-revenue-per-kwh', KWH_FROM);
+const perKwhNow = perKwh.find((p) => p.period === P)?.value;
+const e1 = paramOfPrefix(b, '能源營收對儲能部署的彈性');
+const refund = ev(/客戶退款/);
+const perKwhNote = plainText(b, m.derived.find((d) => d.id === 'energy-revenue-per-kwh')?.note);
+const storSrcs = stor.map((p) => p.src);
+const storYear = { bear: fy ? yBear?.fig.storage : undefined, base: yBase?.fig.storage, bull: yBull?.fig.storage };
+
+// ── E. operating expenses ──
+const opexFc = derivedPts(b, 'operating-expenses').filter((p) => p.status === 'forecast');
+const opexBars = [
+  ...qs.filter((q) => q.operatingExpenses != null).map((q) => ({ period: q.period, value: Number(q.operatingExpenses) / 100 })),
+  ...opexFc.map((p) => ({ period: p.period, value: p.value / 100, status: 'forecast' as const, note: '三個情境相同的假設' })),
+];
+const opexYear = fy ? opexFc.filter((p) => p.period.startsWith(fy)).reduce((s, p) => s + p.value, 0) : 0;
+const opexStep = paramOfPrefix(b, '營業費用每季增加額');
+const ratio = (q: (typeof qs)[number], k: string) => {
+  const v = extraOf(q, k);
+  return v != null ? (v / q.revenue) * 100 : null;
+};
+const rdNow = ratio(last, '研發費用');
+const ya = inputs.quarters.find((q) => qIndex(q.period) === qIndex(P) - 4);
+const rdYa = ya ? ratio(ya, '研發費用') : null;
+const opexFlat = m.sensitivities.find((s) => /營業費用/.test(s.driver) && /不再增加/.test(s.change));
+const oiBase = yBase?.operatingIncome;
+const oiBear = yBear?.operatingIncome;
+const oiBull = yBull?.operatingIncome;
+// 「2027 年營業利益 +43.7 億美元、EPS +0.94 美元（營收不變）」
+const flatOi = Number((/營業利益 ([+−-][\d.]+) 億美元/.exec(opexFlat?.effect ?? '')?.[1] ?? 'NaN').replace('−', '-')) * 100;
+const flatEps = /EPS ([+−-][\d.]+) 美元/.exec(opexFlat?.effect ?? '')?.[1];
+const flips = oiBase != null && Number.isFinite(flatOi) && Math.sign(oiBase) === -1 && Math.sign(oiBase + flatOi) === 1;
+// the base scenario's implied fourth-quarter deliveries and storage (full-year consensus minus the reported quarters)
+const impliedDel = m.parameters.find((p) => /^公司彙整共識隱含的 .*交車$/.test(p.name));
+const impliedSto = m.parameters.find((p) => /^公司彙整共識隱含的 .*儲能部署$/.test(p.name));
+---
+
+<h3 class="fc-h3">交車量：模型最重要的輸入</h3>
+<p class="fc-p">
+  汽車銷售營收約等於「非租賃交車 × 每輛車售價」，所以交車量是模型最重要的輸入。回測代入當季實際的交車（財報公布前就已知道）；預測時，基準情境採特斯拉投資人關係網站彙整的分析師共識（第三方估計），保守與樂觀情境各差 {spread != null ? formatNumber(spread, { digits: 0 }) : '—'}%。高價車款（Model S／X、Cybertruck 等）的占比從 {periodLabel(from)} 的 {fcPct(mixFirst?.other)} 降到 {periodLabel(P)} 的 {fcPct(mixNow.other)}，對平均售價的影響已經很小。
+</p>
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars
+    title="每季交車量"
+    subtitle={`${span} 為公司公布的實際值；${fcFrom}（分析師共識，斜線）`}
+    unit="萬輛"
+    valueName="交車"
+    digits={1}
+    points={delBars}
+    notes={[
+      yBear && yBase && yBull && fy
+        ? `${fy} 年全年：保守 ${n1((yBear.fig.deliveries ?? 0) / 1e4)} 萬、基準 ${n1((yBase.fig.deliveries ?? 0) / 1e4)} 萬、樂觀 ${n1((yBull.fig.deliveries ?? 0) / 1e4)} 萬輛${seasonal ? `；${seasonal}` : ''}。`
+        : null,
+    ]}
+    height={220}
+  />
+  <MultiLine
+    title="交車組合：高價車款與租賃占比"
+    subtitle={`${span}，占總交車的比重，由公司公布的交車數計算；其他車款＝Model S／X、Cybertruck 等，租賃＝適用營業租賃會計的交車`}
+    unit="%"
+    format="percent"
+    digits={1}
+    height={220}
+    series={[
+      { name: '其他車款', color: 'var(--chart-1)', points: mix.map((x) => ({ x: chartKey(x.period), y: x.other ?? null })) },
+      { name: '租賃', color: 'var(--chart-4)', points: mix.map((x) => ({ x: chartKey(x.period), y: x.leased ?? null })) },
+    ]}
+    notes={[
+      a1 && c2
+        ? `模型估計其他車款占比每增加 1 個百分點，每輛車售價約增 ${formatNumber(a1.value, { digits: 2 })}%、成本約增 ${formatNumber(c2.value, { digits: 2 })}%。租賃交車的營收在租期內認列，計算每輛車售價時要先扣除。`
+        : null,
+    ]}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart fc-years"
+  />
+</div>
+<ChartCites keys={mixSrcs} label="交車與車款出處" />
+{sxStop && (
+  <p class="mem-fine fc-cites">
+    Fremont 的 Model S／X 產線已停用、改建 Optimus 產線<FcCite k={sxStop.src} />，其他車款的交車只剩 Cybertruck 與庫存車。
+  </p>
+)}
+
+{
+  consRows.length > 0 && (
+    <>
+      <h4 class="fc-h4 tsl-h4">實際交車與季末前的分析師共識</h4>
+      <div class="mem-tablewrap mem-tablewrap--cards fc-bits" tabindex="0" role="region" aria-label="實際交車、儲能部署與分析師共識">
+        <table class="mem-table">
+          <caption class="ch-sr">特斯拉投資人關係網站在季末前彙整的分析師共識（第三方估計）與實際的交車、儲能部署</caption>
+          <thead>
+            <tr>
+              <th scope="col">季度</th>
+              <th scope="col" class="num">交車共識<small>輛</small></th>
+              <th scope="col" class="num">實際交車<small>輛</small></th>
+              <th scope="col" class="num">交車差距<small>實際比共識</small></th>
+              <th scope="col" class="num">儲能共識<small>GWh</small></th>
+              <th scope="col" class="num">實際部署<small>GWh</small></th>
+              <th scope="col" class="num">部署差距<small>實際比共識</small></th>
+            </tr>
+          </thead>
+          <tbody>
+            {consRows.map((r) => (
+              <tr>
+                <th scope="row" data-label="季度">
+                  {periodLabel(r.period)}
+                </th>
+                <td class="num" data-label="交車共識（輛）">
+                  {n0(r.cons.value)}
+                  <StatusTag status="estimate" />
+                  <FcCite k={r.cons.src} />
+                </td>
+                <td class="num" data-label="實際交車（輛）">
+                  {n0(r.act?.value)}
+                  {r.act && <FcCite k={r.act.src} />}
+                </td>
+                <td class="num" data-label="交車差距">{signed(r.dDiff)}</td>
+                <td class="num" data-label="儲能共識（GWh）">
+                  {n1(r.sc?.value)}
+                  {r.sc && <StatusTag status="estimate" />}
+                  {r.sc && r.sc.src !== r.cons.src && <FcCite k={r.sc.src} />}
+                </td>
+                <td class="num" data-label="實際部署（GWh）">
+                  {n1(r.sa?.value)}
+                  {r.sa && r.sa.src !== r.act?.src && <FcCite k={r.sa.src} />}
+                </td>
+                <td class="num" data-label="部署差距">{signed(r.sDiff)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="mem-fine">
+        共識是特斯拉投資人關係網站在季末前彙整的賣方分析師預估平均（公司不背書），經媒體轉載。
+        {cD0 && (
+          <>
+            {cD0.period} 年全年交車共識 {n0(cD0.value)} 輛
+            <FcCite k={cD0.src} />
+          </>
+        )}
+        {cD1 && (
+          <>
+            、{cD1.period} 年約 {formatNumber(cD1.value / 1e4)} 萬輛（報導只寫到萬輛）
+            <FcCite k={cD1.src} />
+          </>
+        )}
+        {cS0 && cS1 && (
+          <>
+            ；儲能部署 {cS0.period} 年 {n1(cS0.value)} GWh、{cS1.period} 年 {n1(cS1.value)} GWh
+            {cS0.src !== cD0?.src && <FcCite k={cS0.src} />}
+            {cS1.src !== cD1?.src && <FcCite k={cS1.src} />}
+          </>
+        )}
+        。
+      </p>
+      {(impliedDel || impliedSto) && (
+        <ul class="fc-sent tsl-implied" role="list">
+          {impliedDel && (
+            <li>
+              共識隱含的 {fq0 ? periodLabel(fq0) : ''} 交車 {n0(impliedDel.value)} 輛：<FcText b={b} text={impliedDel.note} />
+            </li>
+          )}
+          {impliedSto && (
+            <li>
+              共識隱含的 {fq0 ? periodLabel(fq0) : ''} 儲能部署 {n1(impliedSto.value)} GWh：<FcText b={b} text={impliedSto.note} />
+            </li>
+          )}
+        </ul>
+      )}
+    </>
+  )
+}
+
+<h3 class="fc-h3">每輛車售價與成本：汽車毛利從哪裡來</h3>
+<p class="fc-p">
+  特斯拉不公布各車款的售價，本站用財報的汽車銷售營收與銷貨成本，分別除以非租賃交車，推算每輛車的平均售價與成本（售價含 FSD 等附加銷售與匯率影響）。{
+    gpPeak && gpNow && (
+      <>
+        和每輛車毛利最高的 {periodLabel(gpPeak.period)} 相比，{periodLabel(P)} 的售價低了 {formatNumber((1 - gpNow.asp / gpPeak.asp) * 100, { digits: 0 })}%，成本只低了 {formatNumber((1 - gpNow.cost / gpPeak.cost) * 100, { digits: 0 })}%，每輛車毛利從約 {n0(gpPeak.gp)} 美元縮小到約 {n0(gpNow.gp)} 美元。
+      </>
+    )
+  }
+  {gapMax && gapNow && `監管積分讓公司公布的汽車毛利率高出一截：兩者的差距在 ${periodLabel(gapMax.period)} 達 ${n1(gapMax.gap)} 個百分點，${periodLabel(P)} 只剩 ${n1(gapNow.gap)} 個百分點。`}
+</p>
+<div class="mem-grid mem-grid--charts">
+  <MultiLine
+    title="每輛車平均售價與銷貨成本"
+    subtitle={`${span} 由財報與交車推算；${fcFrom}（虛線）`}
+    unit="美元／輛"
+    badge="本站推算"
+    digits={0}
+    valueSuffix=" 美元"
+    includeZero={false}
+    height={240}
+    series={[
+      { name: '每輛車售價', color: 'var(--chart-1)', points: line(aspPts) },
+      { name: '每輛車銷貨成本', color: 'var(--chart-2)', points: line(costPts) },
+    ]}
+    notes={[
+      '售價＝汽車銷售營收（不含監管積分與租賃）÷ 非租賃交車；成本＝汽車銷售成本 ÷ 非租賃交車。縱軸不從 0 開始。',
+    ]}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart fc-years"
+  />
+  <MultiLine
+    title="汽車毛利率：含與不含監管積分"
+    subtitle={`${span}，由財報的汽車營收與成本計算`}
+    unit="%"
+    format="percent"
+    digits={1}
+    includeZero={false}
+    height={240}
+    series={[
+      { name: '汽車毛利率（含積分）', color: 'var(--chart-1)', points: autoGm.map((x) => ({ x: chartKey(x.period), y: x.incl ?? null })) },
+      { name: '不含監管積分', color: 'var(--chart-4)', points: autoGm.map((x) => ({ x: chartKey(x.period), y: x.excl ?? null })) },
+    ]}
+    notes={['汽車毛利率＝（汽車營收 − 汽車營業成本）÷ 汽車營收，汽車營收含銷售、監管積分與租賃；不含積分的計算方式與公司的非 GAAP 定義相同。']}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart fc-years"
+  />
+</div>
+<ChartCites keys={[...aspSrcs, ...qSrcs]} label="財報與交車出處" />
+{
+  cogsDef && (
+    <p class="mem-fine fc-cites">
+      每輛車銷貨成本：<FcText b={b} text={cogsDef} />
+    </p>
+  )
+}
+
+<ul class="fc-drivers tsl-drivers" role="list" aria-label="售價與成本的模型參數">
+  {
+    a0 && (
+      <li class="fc-driver">
+        <p class="fc-driver__k">售價趨勢</p>
+        <p class="fc-driver__v">{signedParam(a0.value, '%／年')}</p>
+        <p>
+          扣除車款組合後的每輛車售價長期變化（全期估計）。<FcText b={b} text={a0.note} />
+        </p>
+      </li>
+    )
+  }
+  {
+    a1 && (
+      <li class="fc-driver">
+        <p class="fc-driver__k">高價車款占比</p>
+        <p class="fc-driver__v">+{formatNumber(a1.value, { digits: 2 })}%<small class="tsl-per">／個百分點</small></p>
+        <p>
+          <FcText b={b} text={a1.note} />
+        </p>
+      </li>
+    )
+  }
+  {
+    c0 && c1 && (
+      <li class="fc-driver">
+        <p class="fc-driver__k">成本趨勢與規模</p>
+        <p class="fc-driver__v">{signedParam(c0.value, '%／年')}</p>
+        <p>
+          每輛車成本的長期變化（全期估計）。<FcText b={b} text={c0.note} />量的攤提效果（彈性 {formatNumber(c1.value, { digits: 3 })}）：<FcText b={b} text={c1.note} />
+        </p>
+      </li>
+    )
+  }
+  {
+    fsdNow && (
+      <li class="fc-driver">
+        <p class="fc-driver__k">FSD 有效訂閱</p>
+        <p class="fc-driver__v">{formatNumber(fsdNow.value * 100)} 萬</p>
+        <p>
+          {periodLabel(P)} 期末有效的 FSD（Supervised）用戶，{fsdYa ? `一年前 ${formatNumber(fsdYa.value * 100)} 萬` : ''}<FcCite k={fsdNow.src} />
+          {fsdYa && fsdYa.src !== fsdNow.src && <FcCite k={fsdYa.src} />}。{fsdOnly && (
+            <>
+              特斯拉在 {fsdOnly.date.slice(0, 4)} 年初宣布 FSD 改為只提供月訂閱<FcCite k={fsdOnly.src} />，
+            </>
+          )}訂閱收入列在汽車銷售的附加銷售，會墊高推算的每輛車售價；樂觀情境把這一點列為售價上升的理由。
+        </p>
+      </li>
+    )
+  }
+</ul>
+
+<h3 class="fc-h3">毛利率由哪幾段組成</h3>
+<p class="fc-p">
+  把每一段業務的毛利除以總營收，五段相加就是總毛利率。{periodLabel(m.test.from)} 以來，監管積分的貢獻從 {n1(contrib('gm-contrib-credits', m.test.from))} 個百分點降到 {n1(contrib('gm-contrib-credits', P))} 個百分點，服務及其他則從 {n1(contrib('gm-contrib-services', m.test.from))} 升到 {n1(contrib('gm-contrib-services', P))} 個百分點。基準情境假設積分維持 {periodLabel(P)} 的水準、能源毛利率回到前四季平均、服務營收照前八季的平均速度成長。
+</p>
+<MarginStack
+  title="毛利率的組成：各段業務貢獻幾個百分點"
+  subtitle={`${periodLabel(m.test.from)}–${periodLabel(P)} 由財報計算，${fcFrom}（斜線）`}
+  rows={stackRows}
+  forecastLabel="基準情境"
+  notes={['汽車銷售的毛利以汽車銷售營收減汽車銷售成本計算，不含監管積分與租賃。']}
+  class="fc-chart-wide"
+/>
+<ChartCites keys={testSrcs} label="各季財報出處" />
+
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars
+    title="監管積分營收"
+    subtitle={`${span}，財報實際值`}
+    unit="億美元"
+    valueName="監管積分"
+    digits={2}
+    points={credBars}
+    notes={[
+      credScen && fq0
+        ? `情境假設（${periodLabel(fq0)}）：保守 ${n0(credScen.bear)}、基準 ${n0(credScen.base)}、樂觀 ${n0(credScen.bull)} 百萬美元${credBearHalves ? '；保守情境之後每季再減半' : ''}。`
+        : null,
+    ]}
+    height={220}
+  />
+  <MultiLine
+    title="能源發電與儲能毛利率"
+    subtitle={`${span} 為財報實際值；${fcFrom}（虛線）`}
+    unit="%"
+    format="percent"
+    digits={1}
+    height={220}
+    series={[{ name: '能源毛利率', color: 'var(--chart-3)', points: line(egm) }]}
+    notes={[
+      egmParam ? `基準情境 ${fcPct(egmParam.value)}（前四季平均）${egmBear && egmBull ? `，保守 ${pctIn(egmBear.value) ?? '—'}%、樂觀 ${pctIn(egmBull.value) ?? '—'}%` : ''}。2026 年前三季含保固費用、關稅相關的一次性利益與退款。` : null,
+    ]}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart fc-years"
+  />
+</div>
+<ChartCites keys={[...credits.map((p) => p.src), ...qSrcs]} label="監管積分與能源出處" />
+
+<h3 class="fc-h3">儲能部署與能源營收</h3>
+<p class="fc-p">
+  能源營收跟著 Megapack、Powerwall 的部署量變動，但模型估計的彈性只有 {e1 ? formatNumber(e1.value, { digits: 2 }) : '—'}：部署增加 10%，能源營收約增 {e1 ? formatNumber(e1.value * 10, { digits: 1 }) : '—'}%，因為能源營收也含太陽能與服務等不隨部署變動的部分，認列時點也可能和部署不同。{periodLabel(P)} 每 kWh 部署對應的能源營收約 {n0(perKwhNow)} 美元{refund && <>，部分受關稅相關的客戶退款影響<FcCite k={refund.src} /></>}。
+</p>
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars
+    title="儲能部署量"
+    subtitle={`${span} 為公司公布的實際值；${fcFrom}（斜線）`}
+    unit="GWh"
+    valueName="部署"
+    digits={1}
+    points={storBars}
+    notes={[
+      storYear.bear != null && storYear.base != null && storYear.bull != null && fy
+        ? `${fy} 年全年：保守 ${n1(storYear.bear)}、基準 ${n1(storYear.base)}、樂觀 ${n1(storYear.bull)} GWh。2024 年第一季以前公司以 MWh 公布，這裡換算為 GWh。`
+        : null,
+    ]}
+    height={220}
+  />
+  <MultiLine
+    title="每 kWh 部署對應的能源營收"
+    subtitle={`${periodLabel(KWH_FROM)} 起（更早的季度部署量小，比值偏高）；${fcFrom}（虛線）`}
+    unit="美元／kWh"
+    badge="本站推算"
+    digits={0}
+    valueSuffix=" 美元"
+    height={220}
+    series={[{ name: '能源營收 ÷ 部署', color: 'var(--chart-3)', points: line(perKwh) }]}
+    notes={[perKwhNote || null]}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart"
+  />
+</div>
+<ChartCites keys={[...storSrcs, ...testSrcs]} label="儲能部署與能源營收出處" />
+
+<h3 class="fc-h3">營業費用：獲利預測中影響最大的假設</h3>
+<p class="fc-p">
+  {periodLabel(P)} 營業費用 {fcMoney(last.operatingExpenses, 'USD')}，近八季平均每季增加約 {opexStep ? fcMoney(opexStep.value, 'USD') : '—'}<FcCite k={last.src} />；三個情境都假設這個增幅延續，{fy} 年營業費用合計約 {fcMoney(opexYear, 'USD')}。研發費用占營收從一年前的 {fcPct(rdYa)} 升到 {fcPct(rdNow)}。
+</p>
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars
+    title="營業費用"
+    subtitle={`${span} 為財報實際值；${fq0 ? `${periodLabel(fq0)} 起為三個情境相同的假設` : ''}（斜線）`}
+    unit="億美元"
+    valueName="營業費用"
+    digits={1}
+    points={opexBars}
+    notes={['含研發、銷管與重組及其他費用。']}
+    height={220}
+  />
+  <MultiLine
+    title="研發與銷管費用占營收"
+    subtitle={`${span}，財報實際值`}
+    unit="%"
+    format="percent"
+    digits={1}
+    height={220}
+    series={[
+      { name: '研發費用', color: 'var(--chart-7)', points: qs.map((q) => ({ x: chartKey(q.period), y: ratio(q, '研發費用') })) },
+      { name: '銷管費用', color: 'var(--chart-2)', points: qs.map((q) => ({ x: chartKey(q.period), y: ratio(q, '銷管費用') })) },
+    ]}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart fc-years"
+  />
+</div>
+<ChartCites keys={qSrcs} label="各季財報出處" />
+{
+  opexFlat && fy && oiBase != null && (
+    <aside class="fc-rule fc-rule--warn" aria-label="營業費用假設的影響">
+      <p class="fc-rule__h">{flips ? `營業費用的假設決定 ${fy} 年營業利益是正是負` : `營業費用的假設對 ${fy} 年營業利益影響很大`}</p>
+      <p>
+        照近八季的增幅延續，基準情境 {fy} 年營業利益約 {fcMoney(oiBase, 'USD')}（保守 {fcMoney(oiBear, 'USD')}、樂觀 {fcMoney(oiBull, 'USD')}）。{
+          Number.isFinite(flatOi) ? (
+            <>
+              如果營業費用不再增加、維持 {periodLabel(P)} 的水準，{fy} 年營業利益會多約 {fcMoney(flatOi, 'USD')}{flatEps ? `、EPS 多 ${flatEps.replace(/^\+/, '')} 美元` : ''}（營收不變）。
+            </>
+          ) : (
+            <>
+              如果營業費用{opexFlat.change}：<FcText b={b} text={opexFlat.effect} />。
+            </>
+          )
+        }這兩個規則各有勝負：訓練期以「上季不變」的一季前誤差較小，回測期費用一路增加，延續增幅的規則較準（見參數表）。
+      </p>
+    </aside>
+  )
+}
+
+<style>
+  .tsl-h4 {
+    margin-block-start: var(--space-6);
+    margin-block-end: var(--space-3);
+  }
+  .tsl-drivers {
+    margin-block-start: var(--space-5);
+  }
+  .tsl-per {
+    margin-inline-start: 0.2em;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-muted);
+  }
+  .tsl-implied {
+    margin-block-start: var(--space-2);
+    font-size: var(--fs-xs);
+  }
+</style>

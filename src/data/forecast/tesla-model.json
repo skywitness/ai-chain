@@ -1,0 +1,5088 @@
+{
+  "company": "tesla",
+  "generatedBy": "scripts/models/tesla.ts",
+  "generatedOn": "2026-11-17",
+  "asOf": "2026-11-17",
+  "currency": "USD",
+  "amountUnit": "million",
+  "periodLabel": "日曆季度（特斯拉會計年度與日曆年相同）",
+  "train": {
+    "from": "2018Q4",
+    "to": "2024Q4"
+  },
+  "test": {
+    "from": "2025Q1",
+    "to": "2026Q3"
+  },
+  "lastReported": "2026Q3",
+  "summary": "選定模型是「交車驅動的單位經濟模型」：汽車銷售營收＝非租賃交車 × 每輛車售價、成本＝非租賃交車 × 每輛車成本，再加上監管積分、租賃、隨儲能部署變動的能源營收與服務營收。2025Q1–2026Q3 回測代入當季實際交車與部署（產銷報告公布後、財報公布前的推估），營收平均誤差（MAPE）2.1%；不估計參數、只把上季每輛車售價與成本乘上當季交車的版本為 2.6%，差距在統計上不顯著；不知道交車的天真模型為 16.1%。毛利率平均誤差 1.9 個百分點，沒有比天真模型（1.7 個百分點）好；交車也要事前預測時，營收誤差升到 10.8%。基準情境（交車採公司彙整的分析師共識：2026 年第四季隱含約 46.7 萬輛、2027 年約 192 萬輛；營業費用照近八季平均增幅延續）2026 年第四季營收約 277 億美元、毛利率 19.3%；2027 年營收約 1,162 億美元（保守至樂觀 1,011–1,271 億美元）、毛利率 19.4%、營業利益約 −10 億美元（−69 至 48 億美元），營業費用若維持 2026Q3 水準，營業利益多約 44 億美元。這是依假設推算的模型結果，不是投資建議。",
+  "candidates": [
+    {
+      "id": "naive",
+      "name": "天真模型（上一季不變）",
+      "description": "假設本季營收與毛利率都和上一季一樣。這是最簡單的對照組：模型如果贏不了它，就表示那一部分沒有額外的解釋力。特斯拉不提供營收與毛利率財測，所以沒有公司財測可以當對照。其他代入當季實際交車的模型比它多知道當季交車，比較營收時也要看不估計參數的「上季單價直接放大」。",
+      "equations": [
+        "營收_t = 營收_t−1",
+        "毛利率_t = 毛利率_t−1"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 3839.857,
+          "bias": -334.143,
+          "n": 7,
+          "mape": 16.05
+        },
+        "grossMargin": {
+          "mae": 1.693,
+          "bias": -0.476,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 576.429,
+          "bias": -187.857,
+          "n": 7,
+          "mape": 79.04
+        },
+        "netIncome": {
+          "mae": 419.88,
+          "bias": -154.522,
+          "n": 7,
+          "mape": 57.65
+        },
+        "eps": {
+          "mae": 0.119,
+          "bias": -0.044,
+          "n": 7,
+          "mape": 57.21
+        },
+        "epsPure": {
+          "mae": 0.186,
+          "bias": 0.054,
+          "n": 7,
+          "mape": 104.42
+        }
+      },
+      "selected": false,
+      "note": "營業利益、淨利與 EPS 由營收與毛利率換算，營業費用、業外收支、稅與少數股權比例、股數用當季實際值（與其他代入實際交車的模型相同）。若連 EPS 也直接沿用上季（完全事前），EPS 的 MAPE 為 104.4%（epsPure）。"
+    },
+    {
+      "id": "regression",
+      "name": "交車與部署迴歸",
+      "description": "不拆業務，直接用歷史資料迴歸：營收的季成長率對交車量與儲能部署的季成長率，毛利率對上季毛利率與交車成長率。簡單，但把售價、成本與產品組合的變化都壓進固定係數。",
+      "equations": [
+        "ln(營收_t ÷ 營收_t−1) = −0.0134 + 0.890 × ln(交車_t ÷ 交車_t−1) + 0.021 × ln(儲能部署_t ÷ 儲能部署_t−1)",
+        "毛利率_t = 4.13 + 0.772 × 毛利率_t−1 + 5.37 × ln(交車_t ÷ 交車_t−1)"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 800.198,
+          "bias": -555.912,
+          "n": 7,
+          "mape": 3.53
+        },
+        "grossMargin": {
+          "mae": 2.222,
+          "bias": -0.454,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 689.788,
+          "bias": -163.265,
+          "n": 7,
+          "mape": 114.49
+        },
+        "netIncome": {
+          "mae": 521.806,
+          "bias": -89.542,
+          "n": 7,
+          "mape": 68.1
+        },
+        "eps": {
+          "mae": 0.148,
+          "bias": -0.025,
+          "n": 7,
+          "mape": 67.9
+        }
+      },
+      "selected": false,
+      "note": "以 2018Q4–2024Q4 共 25 季估計，交車與部署代入當季實際值。"
+    },
+    {
+      "id": "unit-basic",
+      "name": "單位經濟（上季單價直接放大）",
+      "description": "把營收拆成汽車銷售、監管積分、汽車租賃、能源、服務及其他五段。汽車銷售＝非租賃交車 × 上季每輛車售價，成本＝非租賃交車 × 上季每輛車成本；能源營收按上季每 kWh 營收乘以本季部署量；其他各段與各段毛利率沿用上季。沒有任何估計參數，用來檢驗「只用交車量放大上季單價」能做到多好。",
+      "equations": [
+        "汽車銷售營收_t = 非租賃交車_t × 每輛車售價_t；汽車銷售成本_t = 非租賃交車_t × 每輛車成本_t（非租賃交車 = 總交車 − 適用營業租賃會計的交車）",
+        "每輛車售價_t = 每輛車售價_t−1；每輛車成本_t = 每輛車成本_t−1",
+        "能源營收_t = 儲能部署_t ×（能源營收_t−1 ÷ 儲能部署_t−1）",
+        "監管積分、租賃、服務及其他營收與各段毛利率沿用上季"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 619.223,
+          "bias": -89.499,
+          "n": 7,
+          "mape": 2.61
+        },
+        "grossMargin": {
+          "mae": 1.915,
+          "bias": -0.344,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 567.062,
+          "bias": -90.33,
+          "n": 7,
+          "mape": 94.92
+        },
+        "netIncome": {
+          "mae": 437.446,
+          "bias": -47.731,
+          "n": 7,
+          "mape": 51.6
+        },
+        "eps": {
+          "mae": 0.124,
+          "bias": -0.014,
+          "n": 7,
+          "mape": 51.62
+        }
+      },
+      "selected": false,
+      "note": "交車量（含租賃交車、車款組合）與儲能部署代入當季實際值。"
+    },
+    {
+      "id": "unit-model",
+      "name": "交車驅動的單位經濟模型",
+      "description": "在「上季單價直接放大」之上，用訓練期資料估計售價與成本的變化：每輛車售價有長期趨勢，並隨高價車款（Model S／X、Cybertruck）占比上升而提高；每輛車成本除了趨勢與車款組合，還有「量大時固定成本被攤薄」的效果；能源營收對儲能部署的彈性小於 1（營收含太陽能等不隨部署變動的部分）；服務及其他營收按前八季平均成長率成長。監管積分幾乎沒有成本，直接墊高毛利率，所以單獨處理。",
+      "equations": [
+        "汽車銷售營收_t = 非租賃交車_t × 每輛車售價_t；汽車銷售成本_t = 非租賃交車_t × 每輛車成本_t（非租賃交車 = 總交車 − 適用營業租賃會計的交車）",
+        "ln(每輛車售價_t ÷ 每輛車售價_t−1) = a0 + a1 × Δ其他車款占比_t",
+        "ln(每輛車成本_t ÷ 每輛車成本_t−1) = c0 + c1 × ln(非租賃交車_t ÷ 非租賃交車_t−1) + c2 × Δ其他車款占比_t",
+        "ln(能源營收_t ÷ 能源營收_t−1) = e0 + e1 × ln(儲能部署_t ÷ 儲能部署_t−1)；能源成本 = 能源營收 ×（1 − 能源毛利率規則）",
+        "服務及其他營收_t = 服務及其他營收_t−1 × e^(前八季平均對數成長)；毛利率沿用上季",
+        "監管積分、汽車租賃營收與租賃毛利率沿用上季",
+        "毛利率_t =（各段營收 − 各段成本）÷ 營收_t"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 500.73,
+          "bias": -160.917,
+          "n": 7,
+          "mape": 2.07
+        },
+        "grossMargin": {
+          "mae": 1.906,
+          "bias": -0.712,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 491.368,
+          "bias": -190.419,
+          "n": 7,
+          "mape": 73.77
+        },
+        "netIncome": {
+          "mae": 381.904,
+          "bias": -129.641,
+          "n": 7,
+          "mape": 41.58
+        },
+        "eps": {
+          "mae": 0.108,
+          "bias": -0.037,
+          "n": 7,
+          "mape": 41.66
+        }
+      },
+      "selected": true,
+      "note": "以 2018Q4–2024Q4 共 25 季估計：每輛車售價 a0 = −0.0054（約 −2.1%／年）、a1 = 1.52；每輛車成本 c0 = −0.0022（約 −0.9%／年）、c1 = −0.042、c2 = 1.12；能源營收 e0 = 0.0098、e1 = 0.47；能源毛利率規則「上季」、服務毛利率規則「上季」（R² 售價 0.56、成本 0.46、能源 0.85）。毛利率規則依訓練期一季前的分段毛利誤差選擇（能源：上季 60、前四季平均 67 百萬美元；服務：45、57 百萬美元）。選擇規則：在代入當季實際交車與部署的三個模型（交車與部署迴歸、單位經濟上季單價放大、本模型）中，取「營收 MAPE（%）＋ 毛利率 MAE（個百分點）」最小者：本模型 3.98、上季單價放大 4.53、迴歸 5.75。與不估計參數的「上季單價直接放大」相比，7 季中本模型營收誤差明顯較小（差 0.5 個百分點以上）的有 2 季、明顯較大的 1 季、其餘 4 季相近；平均誤差的差距主要來自 2026Q1（本模型 0.5%、上季單價放大 5.0%；該季本模型的汽車銷售營收低估 583、能源營收高估 688 百萬美元，部分互相抵銷）。逐季差距的成對 t 值（差距平均 ÷ 標準誤，絕對值小於 2 通常視為不顯著）為 0.8，差距在統計上不顯著。代入實際交車、往前 2–4 季的多季回測（起點 2024Q4–2026Q1，共 15 組、彼此重疊）：營收誤差本模型 3.1%、上季單價放大 3.5%；毛利率誤差 2.72 對 2.32 個百分點，本模型較差；服務及其他營收按前八季趨勢成長的部分在多季時明顯較準（往前 4 季的服務營收平均誤差 514 百萬美元，不成長為 1,074 百萬美元），所以基準與樂觀情境保留這個成長規則。本模型的營收誤差遠小於天真模型（2.1% 對 16.1%），但毛利率誤差 1.91 個百分點並沒有比天真模型（1.69 個百分點）小：特斯拉的毛利率常被保固費用、關稅相關利益與退款等一次性項目推動，模型沿用上季的每輛車成本與分段毛利率，會把上季的一次性項目帶進下一季。"
+    },
+    {
+      "id": "unit-model-ex-ante",
+      "name": "單位經濟模型（事前版本：交車與部署也要預測）",
+      "description": "與選定模型完全相同，但交車量與儲能部署改用季度開始前就能算出的規則：去年同季 × 前四季的年增率；租賃交車比例與車款組合沿用上季。營業利益、淨利與 EPS 也改用事前規則：營業費用沿用上季、業外收支取前四季平均、淨利對稅前淨利的比例取前四季。這相當於上一季財報公布後（本季開始約 3–4 週）就能做的完整預測。情境預測用同樣的分段結構，但營業費用改用近八季平均增加額（見參數）。",
+      "equations": [
+        "交車_t（預測）= 交車_t−4 ×（交車_t−1 至 t−4 合計 ÷ 交車_t−5 至 t−8 合計）；儲能部署同理",
+        "其餘同「交車驅動的單位經濟模型」",
+        "營業利益 = 毛利 − 上季營業費用；淨利 =（營業利益 + 前四季平均業外收支）× 前四季淨利 ÷ 稅前淨利"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 2706.66,
+          "bias": 60.742,
+          "n": 7,
+          "mape": 10.75
+        },
+        "grossMargin": {
+          "mae": 1.697,
+          "bias": -0.48,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 346.06,
+          "bias": 180.115,
+          "n": 7,
+          "mape": 57.15
+        },
+        "netIncome": {
+          "mae": 305.023,
+          "bias": 216.049,
+          "n": 7,
+          "mape": 45.56
+        },
+        "eps": {
+          "mae": 0.087,
+          "bias": 0.061,
+          "n": 7,
+          "mape": 45.08
+        },
+        "deliveries": {
+          "mae": 58069.946,
+          "bias": -3983.583,
+          "n": 7,
+          "mape": 13.76
+        },
+        "storage": {
+          "mae": 4.775,
+          "bias": 3.694,
+          "n": 7,
+          "mape": 45.48
+        }
+      },
+      "selected": false,
+      "note": "不參與模型選擇：參數與選定模型相同。交車量本身的事前誤差（deliveries）MAPE 13.8%、儲能部署（storage）MAPE 45.5%，是營收誤差由 2.1% 升到 10.8% 的主因；毛利率誤差 1.70 個百分點，和代入實際交車時（1.91 個百分點）差不多，表示毛利率的誤差主要不是來自交車量。營業費用沿用上季是訓練期一季前誤差最小的規則（MAPE 11.1%，近八季平均增加額為 11.8%）；測試期營業費用每季增加，這個規則的 MAPE 為 8.3%、平均每季低估約 3.1 億美元。"
+    },
+    {
+      "id": "unit-model-consensus",
+      "name": "單位經濟模型（交車與部署改用公司彙整的分析師共識，診斷用）",
+      "description": "與事前版本相同，但交車與儲能部署改用特斯拉投資人關係網站在季末前公布的分析師共識（第三方估計，公司不背書）。共識只有 3 季（2026Q1–2026Q3），樣本太少，只用來對照事前版本。",
+      "equations": [
+        "交車_t、儲能部署_t = 季末前公布的共識平均值；其餘同事前版本"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 1224.441,
+          "bias": -835.152,
+          "n": 3,
+          "mape": 4.52
+        },
+        "grossMargin": {
+          "mae": 2.905,
+          "bias": 0.09,
+          "n": 3
+        },
+        "operatingIncome": {
+          "mae": 547.969,
+          "bias": 263.052,
+          "n": 3,
+          "mape": 120.7
+        },
+        "netIncome": {
+          "mae": 305.085,
+          "bias": 24.381,
+          "n": 3,
+          "mape": 47.83
+        },
+        "eps": {
+          "mae": 0.085,
+          "bias": 0.008,
+          "n": 3,
+          "mape": 49.28
+        },
+        "deliveries": {
+          "mae": 35427.333,
+          "bias": -30346,
+          "n": 3,
+          "mape": 7.54
+        },
+        "storage": {
+          "mae": 2.7,
+          "bias": 2.7,
+          "n": 3,
+          "mape": 27.31
+        }
+      },
+      "selected": false,
+      "note": "不參與模型選擇。同樣 3 季：共識交車 MAPE 7.5%、儲能部署 MAPE 27.3%；營收 MAPE 4.5%，事前版本 11.0%、代入實際交車 1.5%、天真模型 10.9%。"
+    }
+  ],
+  "parameters": [
+    {
+      "name": "每輛車售價趨勢 a0（全期估計）",
+      "value": -0.33,
+      "unit": "%／年",
+      "note": "2018Q4–2026Q3 估計；訓練期（至 2024Q4）為 −2.14%／年，反映 2023–2024 年的降價。2025 年起售價大致持平。"
+    },
+    {
+      "name": "其他車款占比對售價的影響 a1",
+      "value": 1.553,
+      "note": "其他車款（Model S／X、Cybertruck）占交車比重每增加 1 個百分點，每輛車售價約增 1.55%。占比由 2018Q3 的 33.1% 降到 2026Q3 的 1.7%（Fremont 的 Model S／X 產線已停用，ex-q2-2026），之後這個因子的影響很小。"
+    },
+    {
+      "name": "每輛車成本趨勢 c0（全期估計）",
+      "value": -0.67,
+      "unit": "%／年",
+      "note": "訓練期為 −0.89%／年。"
+    },
+    {
+      "name": "量的攤提效果 c1（成本對交車量的彈性）",
+      "value": -0.031,
+      "note": "非租賃交車季增 10%，每輛車成本約降 0.31%；訓練期為 −0.042。效果不大，表示汽車成本大多隨量變動。"
+    },
+    {
+      "name": "其他車款占比對成本的影響 c2",
+      "value": 1.092,
+      "note": "訓練期為 1.121；與售價係數 a1 接近，高價車款的售價與成本一起高。"
+    },
+    {
+      "name": "能源營收對儲能部署的彈性 e1",
+      "value": 0.498,
+      "note": "部署增加 10%，能源營收約增 5.0%；訓練期為 0.469。彈性小於 1，因為能源營收也含太陽能與服務等不隨部署變動的部分，部署量與營收認列的時點也可能不同。"
+    },
+    {
+      "name": "能源毛利率（情境起點）",
+      "value": 29.71,
+      "unit": "%",
+      "note": "全期資料下，一季前的能源毛利誤差以「前四季平均」較小（上季 94、前四季平均 83 百萬美元；訓練期選的是「上季」），情境預測採 2025Q4–2026Q3 平均。2026 年前三季能源毛利率在 20.4%–39.5% 之間：第一季有保固與關稅相關的一次性利益（ex-q1-2026）、第二季有供應商電芯問題的保固費用（ex-q2-2026）。"
+    },
+    {
+      "name": "服務及其他營收成長（前八季平均）",
+      "value": 28.5,
+      "unit": "%／年",
+      "note": "每季約 6.5%（2024Q3–2026Q3）；成長並不平均：2026Q2 季增 22.3%、2026Q3 季增 0.5%。特斯拉表示車隊擴大與效率改善會讓服務獲利持續成長（ex-q2-2026），但沒有給數字；毛利率沿用 2026Q3 的 15.9%。"
+    },
+    {
+      "name": "公司彙整共識隱含的 2026Q4 交車",
+      "value": 467132,
+      "unit": "輛",
+      "note": "2026-09-29 公布的全年共識 1,767,255 輛減去第一、二季實際與第三季共識 461,974 輛（第三方估計，consensus-q3-2026）。實際第三季交車 486,532 輛，比共識多 5.3%。"
+    },
+    {
+      "name": "公司彙整的 2027 年交車共識",
+      "value": 1920000,
+      "unit": "輛",
+      "note": "2026-09-29 公布（第三方估計，consensus-q3-2026-dtc；報導只寫到萬輛，約 192 萬輛），在 2026Q3 交車公布之前；6 月公布的 2027 年共識較低，當時 2026 年共識還沒上修。2027 年交車約比基準情境的 2026 年多 7.2%。各季依 2023–2025 年平均季節比重分配（第一至第四季 21.9%、24.7%、26.8%、26.7%）。"
+    },
+    {
+      "name": "公司彙整共識隱含的 2026Q4 儲能部署",
+      "value": 18.3,
+      "unit": "GWh",
+      "note": "全年共識 56.5 GWh 減第一、二季實際與第三季共識（consensus-q3-2026）。2026 年三季的共識都高於實際（實際比共識少 39%、2%、14%），所以基準情境取共識與 2026Q3 水準（13.7 GWh）的中間。"
+    },
+    {
+      "name": "租賃交車占比（前四季）",
+      "value": 1.66,
+      "unit": "%",
+      "note": "適用營業租賃會計的交車占總交車比重，2025Q4–2026Q3 合計；預測期三個情境相同。"
+    },
+    {
+      "name": "營業費用每季增加額（近八季平均）",
+      "value": 312,
+      "unit": "百萬美元",
+      "note": "2024Q3 到 2026Q3 的營業費用增加額 ÷ 8。訓練期（2020Q4–2024Q4）一季前誤差以「上季不變」較小（MAPE 11.1%，這個規則 11.8%）；測試期營業費用每季增加，這個規則較準（MAPE 4.7%，上季不變 8.3%），而且特斯拉表示 SI 研發與股份基礎給付推高費用、年底前把 SI 訓練運算擴大到 400 MW（ex-q3-2026），所以三個情境都採這個規則（看過測試期後的選擇，在此揭露）；維持 2026Q3 水準的影響見敏感度。"
+    },
+    {
+      "name": "業外收支（每季，前四季平均）",
+      "value": 187,
+      "unit": "百萬美元",
+      "note": "含利息收支、匯兌與數位資產公允價值變動，波動大；2025Q4–2026Q3 各季為 −228、−193、931、238 百萬美元。"
+    },
+    {
+      "name": "歸屬普通股股東淨利 ÷ 稅前淨利（前四季）",
+      "value": 0.764,
+      "note": "反映所得稅與少數股權；三個情境相同。"
+    },
+    {
+      "name": "稀釋股數",
+      "value": 3541,
+      "unit": "百萬股",
+      "note": "2026Q3 的稀釋加權平均股數，預測期不變。"
+    }
+  ],
+  "derived": [
+    {
+      "id": "asp-per-vehicle",
+      "name": "每輛車平均售價（推算）",
+      "unit": "美元／輛",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": 70049,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q4",
+          "value": 68455,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q1",
+          "value": 53409,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q2",
+          "value": 56684,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q3",
+          "value": 56731,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q4",
+          "value": 58210,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q1",
+          "value": 55090,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q2",
+          "value": 52022,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q3",
+          "value": 53628,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q4",
+          "value": 51685,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q1",
+          "value": 47800,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 50960,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 50696,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 51369,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 52081,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 55690,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 53436,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 51887,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 47134,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 45962,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 44493,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 43528,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 43494,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 42723,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 41992,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 39818,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 40020,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 41825,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 41816,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 41131,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 43636,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 42337,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 41896,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 41861,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 41826,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 41791,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 41756,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 41721,
+          "status": "forecast"
+        }
+      ],
+      "note": "汽車銷售營收（不含監管積分與租賃，含 FSD 等附加銷售與匯率影響）÷ 非租賃交車。2026Q4 起為基準情境的模型值。"
+    },
+    {
+      "id": "cost-per-vehicle",
+      "name": "每輛車銷貨成本（推算）",
+      "unit": "美元／輛",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": 54251,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q4",
+          "value": 53351,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q1",
+          "value": 46322,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q2",
+          "value": 47683,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q3",
+          "value": 45562,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q4",
+          "value": 46636,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q1",
+          "value": 44895,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q2",
+          "value": 43098,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q3",
+          "value": 41372,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q4",
+          "value": 41441,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q1",
+          "value": 37700,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 38108,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 36265,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 36545,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 36639,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 41362,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 39357,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 39562,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 38505,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 37908,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 37487,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 36295,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 36721,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 36802,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 35106,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 34716,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 35487,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 35944,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 35667,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 34069,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 35579,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 35692,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 34548,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 34536,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 34592,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 34404,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 34261,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 34207,
+          "status": "forecast"
+        }
+      ],
+      "note": "汽車銷售成本 ÷ 非租賃交車（公司定義的「每輛車銷貨成本」）。2026Q4 起為基準情境的模型值。"
+    },
+    {
+      "id": "auto-sales-margin",
+      "name": "汽車銷售毛利率（不含監管積分與租賃）",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": 22.55,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q4",
+          "value": 22.06,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q1",
+          "value": 13.27,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q2",
+          "value": 15.88,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q3",
+          "value": 19.69,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q4",
+          "value": 19.88,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q1",
+          "value": 18.51,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q2",
+          "value": 17.15,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q3",
+          "value": 22.85,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q4",
+          "value": 19.82,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q1",
+          "value": 21.13,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 25.22,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 28.46,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 28.86,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 29.65,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 25.73,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 26.35,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 23.75,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 18.31,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 17.52,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 15.75,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 16.62,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 15.57,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 13.86,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 16.4,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 12.81,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 11.33,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 14.06,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 14.71,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 17.17,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 18.46,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 15.7,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 17.54,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 17.5,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 17.3,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 17.67,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 17.95,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 18.01,
+          "status": "forecast"
+        }
+      ],
+      "note": "（每輛車售價 − 每輛車成本）÷ 每輛車售價；比公司的「汽車毛利率（不含積分）」少了租賃，兩者差距多在 1 個百分點內。"
+    },
+    {
+      "id": "gm-contrib-auto-sales",
+      "name": "毛利率組成：汽車銷售",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": 18.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q4",
+          "value": 18.25,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q1",
+          "value": 9.62,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q2",
+          "value": 12.65,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q3",
+          "value": 15.61,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q4",
+          "value": 16.18,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q1",
+          "value": 14.04,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q2",
+          "value": 12.74,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q3",
+          "value": 18.11,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q4",
+          "value": 15.93,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q1",
+          "value": 16.65,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 20.08,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 23.57,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 24.47,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 24.53,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 20.77,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 21.84,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 19.77,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 14.81,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 14.35,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 12.53,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 13.62,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 12.03,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 10.07,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 12.26,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 9.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 7.57,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 9.87,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 10.66,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 11.55,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 12.76,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 11.12,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 12.57,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 12.14,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 11.57,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 12.02,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 12.37,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 12.15,
+          "status": "forecast"
+        }
+      ],
+      "note": "各段毛利 ÷ 總營收；五段相加等於總毛利率。"
+    },
+    {
+      "id": "gm-contrib-credits",
+      "name": "毛利率組成：監管積分",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": 2.77,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q4",
+          "value": 1.31,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q1",
+          "value": 4.76,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q2",
+          "value": 1.75,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q3",
+          "value": 2.13,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q4",
+          "value": 1.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q1",
+          "value": 5.91,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q2",
+          "value": 7.09,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q3",
+          "value": 4.53,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q4",
+          "value": 3.73,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q1",
+          "value": 4.99,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 2.96,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 2.03,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 1.77,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 3.62,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 2.03,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 1.33,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 1.92,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 2.23,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 1.13,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 2.37,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 1.72,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 2.08,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 3.49,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 2.93,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 2.69,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 3.08,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 1.95,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 1.48,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 2.18,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 1.7,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 0.52,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 0.4,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 0.41,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 0.44,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 0.39,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 0.37,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 0.36,
+          "status": "forecast"
+        }
+      ],
+      "note": "監管積分幾乎沒有對應成本，整筆計入毛利。"
+    },
+    {
+      "id": "gm-contrib-leasing",
+      "name": "毛利率組成：汽車租賃",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": 1.49,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q4",
+          "value": 1.69,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q1",
+          "value": 2.16,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q2",
+          "value": 1.61,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q3",
+          "value": 1.65,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q4",
+          "value": 1.44,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q1",
+          "value": 1.95,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q2",
+          "value": 1.99,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q3",
+          "value": 1.37,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q4",
+          "value": 1.23,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q1",
+          "value": 1.32,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 1.2,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 1.1,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 1.31,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 1.39,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 1.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 1.12,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 1.02,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 0.99,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 0.92,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 0.81,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 0.81,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 0.97,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 0.84,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 0.79,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 0.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 1.08,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 0.92,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 0.73,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 0.78,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 0.83,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 0.63,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 0.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 0.61,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 0.66,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 0.59,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 0.55,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 0.54,
+          "status": "forecast"
+        }
+      ]
+    },
+    {
+      "id": "gm-contrib-energy",
+      "name": "毛利率組成：能源發電與儲能",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": 1.01,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q4",
+          "value": 0.58,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q1",
+          "value": 0.18,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q2",
+          "value": 0.68,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q3",
+          "value": 1.4,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q4",
+          "value": 0.69,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q1",
+          "value": 0.18,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q2",
+          "value": 0.35,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q3",
+          "value": 0.24,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q4",
+          "value": -0.33,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q1",
+          "value": -0.97,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 0.17,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 0.02,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": -0.29,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": -0.38,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 0.57,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 0.48,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 0.65,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 0.72,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 1.12,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 1.63,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 1.25,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 1.89,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 2.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 2.88,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 3,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 4.06,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 3.76,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 3.82,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 4.41,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 4.25,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 2.27,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 3.4,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 3.33,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 3.28,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 3.26,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 3.05,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 3.22,
+          "status": "forecast"
+        }
+      ]
+    },
+    {
+      "id": "gm-contrib-services",
+      "name": "毛利率組成：服務及其他",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": -1.73,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q4",
+          "value": -1.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q1",
+          "value": -4.25,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q2",
+          "value": -2.17,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q3",
+          "value": -1.89,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q4",
+          "value": -1.27,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q1",
+          "value": -1.47,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q2",
+          "value": -1.18,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q3",
+          "value": -0.72,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q4",
+          "value": -1.33,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q1",
+          "value": -0.66,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": -0.29,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": -0.12,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 0.09,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": -0.04,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 0.33,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 0.31,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 0.39,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 0.58,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 0.67,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 0.55,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 0.23,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 0.38,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 0.65,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 0.98,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 0.46,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 0.52,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 0.74,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 1.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 1.2,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 1.55,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 2.29,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 2.62,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 2.82,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 3.23,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 3.09,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 3.08,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 3.22,
+          "status": "forecast"
+        }
+      ]
+    },
+    {
+      "id": "energy-revenue-per-kwh",
+      "name": "能源營收 ÷ 儲能部署",
+      "unit": "美元／kWh",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": 1663,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q4",
+          "value": 1649,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q1",
+          "value": 1419,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q2",
+          "value": 889,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q3",
+          "value": 843,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q4",
+          "value": 823,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q1",
+          "value": 1127,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q2",
+          "value": 883,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q3",
+          "value": 763,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q4",
+          "value": 475,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q1",
+          "value": 1110,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 629,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 622,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 703,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 728,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 764,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 532,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 532,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 393,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 413,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 392,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 449,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 403,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 321,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 344,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 278,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 263,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 291,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 273,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 270,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 274,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 233,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 210,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 194,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 212,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 191,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 190,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 177,
+          "status": "forecast"
+        }
+      ],
+      "note": "能源發電與儲能營收（含太陽能與服務）÷ 當季儲能部署量，不是儲能產品的售價；部署量小的季度會被不隨部署變動的營收墊高。"
+    },
+    {
+      "id": "energy-gross-margin",
+      "name": "能源發電與儲能毛利率",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": 17.3,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q4",
+          "value": 11.3,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q1",
+          "value": 2.5,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q2",
+          "value": 11.7,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q3",
+          "value": 21.9,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q4",
+          "value": 11.7,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q1",
+          "value": 3.8,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q2",
+          "value": 5.7,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q3",
+          "value": 3.6,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q4",
+          "value": -4.7,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q1",
+          "value": -20.4,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q2",
+          "value": 2.5,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q3",
+          "value": 0.4,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q4",
+          "value": -7.4,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q1",
+          "value": -11.7,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q2",
+          "value": 11.2,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q3",
+          "value": 9.3,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q4",
+          "value": 12.1,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q1",
+          "value": 11,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q2",
+          "value": 18.4,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q3",
+          "value": 24.4,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q4",
+          "value": 21.8,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q1",
+          "value": 24.6,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q2",
+          "value": 24.6,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q3",
+          "value": 30.5,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q4",
+          "value": 25.2,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q1",
+          "value": 28.8,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": 30.3,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 31.4,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 28.6,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 39.5,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 20.4,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 33.1,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q4",
+          "value": 29.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 29.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 29.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 29.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 29.7,
+          "status": "forecast"
+        }
+      ],
+      "note": "2026Q4 起為基準情境假設（29.7%，前四季平均）。"
+    },
+    {
+      "id": "credits-revenue",
+      "name": "監管積分營收",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": 189,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q4",
+          "value": 95,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q1",
+          "value": 216,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q2",
+          "value": 111,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q3",
+          "value": 134,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q4",
+          "value": 133,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q1",
+          "value": 354,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q2",
+          "value": 428,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q3",
+          "value": 397,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q4",
+          "value": 401,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q1",
+          "value": 518,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q2",
+          "value": 354,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q3",
+          "value": 279,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q4",
+          "value": 314,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q1",
+          "value": 679,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q2",
+          "value": 344,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q3",
+          "value": 286,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q4",
+          "value": 467,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q1",
+          "value": 521,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q2",
+          "value": 282,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q3",
+          "value": 554,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q4",
+          "value": 433,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q1",
+          "value": 442,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q2",
+          "value": 890,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q3",
+          "value": 739,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q4",
+          "value": 692,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q1",
+          "value": 595,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": 439,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 417,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 542,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 380,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 146,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 113,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q4",
+          "value": 113,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 113,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 113,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 113,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 113,
+          "status": "forecast"
+        }
+      ],
+      "note": "2026Q4 起為基準情境假設（維持 2026Q3 水準）。"
+    },
+    {
+      "id": "operating-expenses",
+      "name": "營業費用",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": 1108,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q4",
+          "value": 1029,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q1",
+          "value": 1088,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q2",
+          "value": 1088,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q3",
+          "value": 930,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q4",
+          "value": 1032,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q1",
+          "value": 951,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q2",
+          "value": 940,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q3",
+          "value": 1254,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q4",
+          "value": 1491,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q1",
+          "value": 1621,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q2",
+          "value": 1572,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q3",
+          "value": 1656,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q4",
+          "value": 2234,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q1",
+          "value": 1857,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q2",
+          "value": 1770,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q3",
+          "value": 1694,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q4",
+          "value": 1876,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q1",
+          "value": 1847,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q2",
+          "value": 2134,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q3",
+          "value": 2414,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q4",
+          "value": 2374,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q1",
+          "value": 2525,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q2",
+          "value": 2973,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q3",
+          "value": 2280,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q4",
+          "value": 2596,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q1",
+          "value": 2754,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": 2955,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 3430,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 3600,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 3779,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 4353,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 4776,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q4",
+          "value": 5088,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 5400,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 5712,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 6024,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 6336,
+          "status": "forecast"
+        }
+      ],
+      "note": "含研發、銷管與重組費用。2026Q4 起為三個情境共用的假設：每季增加近八季平均增加額（約 3.1 億美元）。"
+    },
+    {
+      "id": "rd-to-revenue",
+      "name": "研發費用占營收比重",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2018Q3",
+          "value": 5.14,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q4",
+          "value": 4.93,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q1",
+          "value": 7.49,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q2",
+          "value": 5.1,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q3",
+          "value": 5.3,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q4",
+          "value": 4.67,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q1",
+          "value": 5.41,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q2",
+          "value": 4.62,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q3",
+          "value": 4.17,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q4",
+          "value": 4.86,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q1",
+          "value": 6.41,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q2",
+          "value": 4.82,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q3",
+          "value": 4.44,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q4",
+          "value": 4.18,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q1",
+          "value": 4.61,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q2",
+          "value": 3.94,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q3",
+          "value": 3.42,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q4",
+          "value": 3.33,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q1",
+          "value": 3.3,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q2",
+          "value": 3.78,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q3",
+          "value": 4.97,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q4",
+          "value": 4.35,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q1",
+          "value": 5.4,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q2",
+          "value": 4.21,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q3",
+          "value": 4.13,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q4",
+          "value": 4.96,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q1",
+          "value": 7.29,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": 7.06,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 5.8,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 7.16,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 8.69,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 8.4,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 9.84,
+          "status": "actual"
+        }
+      ],
+      "note": "研發費用 ÷ 總營收（實際值）。"
+    }
+  ],
+  "backtest": [
+    {
+      "period": "2025Q1",
+      "metric": "revenue",
+      "actual": 19335,
+      "predicted": 19796,
+      "candidate": "unit-model",
+      "benchmark": 25707,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "revenue",
+      "actual": 22496,
+      "predicted": 21229,
+      "candidate": "unit-model",
+      "benchmark": 19335,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 28095,
+      "predicted": 27650,
+      "candidate": "unit-model",
+      "benchmark": 22496,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 24901,
+      "predicted": 25022,
+      "candidate": "unit-model",
+      "benchmark": 28095,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 22387,
+      "predicted": 22492,
+      "candidate": "unit-model",
+      "benchmark": 24901,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 28236,
+      "predicted": 27632,
+      "candidate": "unit-model",
+      "benchmark": 22387,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 28046,
+      "predicted": 28548,
+      "candidate": "unit-model",
+      "benchmark": 28236,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "grossMargin",
+      "actual": 16.31,
+      "predicted": 15.91,
+      "candidate": "unit-model",
+      "benchmark": 16.26,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "grossMargin",
+      "actual": 17.24,
+      "predicted": 15.69,
+      "candidate": "unit-model",
+      "benchmark": 16.31,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 17.99,
+      "predicted": 17.43,
+      "candidate": "unit-model",
+      "benchmark": 17.24,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 20.12,
+      "predicted": 17.81,
+      "candidate": "unit-model",
+      "benchmark": 17.99,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 21.08,
+      "predicted": 19.87,
+      "candidate": "unit-model",
+      "benchmark": 20.12,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 16.83,
+      "predicted": 21.01,
+      "candidate": "unit-model",
+      "benchmark": 21.08,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 19.59,
+      "predicted": 16.45,
+      "candidate": "unit-model",
+      "benchmark": 16.83,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "operatingIncome",
+      "actual": 399,
+      "predicted": 395,
+      "candidate": "unit-model",
+      "benchmark": 1425,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "operatingIncome",
+      "actual": 923,
+      "predicted": 376,
+      "candidate": "unit-model",
+      "benchmark": 198,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "operatingIncome",
+      "actual": 1624,
+      "predicted": 1391,
+      "candidate": "unit-model",
+      "benchmark": 448,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "operatingIncome",
+      "actual": 1409,
+      "predicted": 857,
+      "candidate": "unit-model",
+      "benchmark": 1454,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "operatingIncome",
+      "actual": 941,
+      "predicted": 689,
+      "candidate": "unit-model",
+      "benchmark": 1230,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "operatingIncome",
+      "actual": 398,
+      "predicted": 1451,
+      "candidate": "unit-model",
+      "benchmark": 367,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "operatingIncome",
+      "actual": 718,
+      "predicted": -80,
+      "candidate": "unit-model",
+      "benchmark": -25,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "netIncome",
+      "actual": 409,
+      "predicted": 406,
+      "candidate": "unit-model",
+      "benchmark": 1121,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "netIncome",
+      "actual": 1172,
+      "predicted": 758,
+      "candidate": "unit-model",
+      "benchmark": 623,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "netIncome",
+      "actual": 1373,
+      "predicted": 1210,
+      "candidate": "unit-model",
+      "benchmark": 549,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "netIncome",
+      "actual": 840,
+      "predicted": 447,
+      "candidate": "unit-model",
+      "benchmark": 872,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "netIncome",
+      "actual": 477,
+      "predicted": 317,
+      "candidate": "unit-model",
+      "benchmark": 661,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "netIncome",
+      "actual": 1114,
+      "predicted": 1997,
+      "candidate": "unit-model",
+      "benchmark": 1088,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "netIncome",
+      "actual": 787,
+      "predicted": 130,
+      "candidate": "unit-model",
+      "benchmark": 175,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "eps",
+      "actual": 0.12,
+      "predicted": 0.12,
+      "candidate": "unit-model",
+      "benchmark": 0.32,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "eps",
+      "actual": 0.33,
+      "predicted": 0.21,
+      "candidate": "unit-model",
+      "benchmark": 0.17,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "eps",
+      "actual": 0.39,
+      "predicted": 0.34,
+      "candidate": "unit-model",
+      "benchmark": 0.16,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "eps",
+      "actual": 0.24,
+      "predicted": 0.13,
+      "candidate": "unit-model",
+      "benchmark": 0.25,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "eps",
+      "actual": 0.13,
+      "predicted": 0.08,
+      "candidate": "unit-model",
+      "benchmark": 0.18,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "eps",
+      "actual": 0.32,
+      "predicted": 0.57,
+      "candidate": "unit-model",
+      "benchmark": 0.31,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "eps",
+      "actual": 0.22,
+      "predicted": 0.03,
+      "candidate": "unit-model",
+      "benchmark": 0.05,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "revenue",
+      "actual": 19335,
+      "predicted": 21266,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 25707,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "revenue",
+      "actual": 22496,
+      "predicted": 24497,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 19335,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 28095,
+      "predicted": 25417,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 22496,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 24901,
+      "predicted": 28315,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 28095,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 22387,
+      "predicted": 20805,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 24901,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 28236,
+      "predicted": 23235,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 22387,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 28046,
+      "predicted": 30386,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 28236,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "grossMargin",
+      "actual": 16.31,
+      "predicted": 15.89,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 16.26,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "grossMargin",
+      "actual": 17.24,
+      "predicted": 16.62,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 16.31,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 17.99,
+      "predicted": 17.27,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 17.24,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 20.12,
+      "predicted": 18.19,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 17.99,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 21.08,
+      "predicted": 19.94,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 20.12,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 16.83,
+      "predicted": 21.08,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 21.08,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 19.59,
+      "predicted": 16.78,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 16.83,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "operatingIncome",
+      "actual": 399,
+      "predicted": 784,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 1425,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "operatingIncome",
+      "actual": 923,
+      "predicted": 1319,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 198,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "operatingIncome",
+      "actual": 1624,
+      "predicted": 1435,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 448,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "operatingIncome",
+      "actual": 1409,
+      "predicted": 1720,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 1454,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "operatingIncome",
+      "actual": 941,
+      "predicted": 549,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 1230,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "operatingIncome",
+      "actual": 398,
+      "predicted": 1120,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 367,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "operatingIncome",
+      "actual": 718,
+      "predicted": 746,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": -25,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "netIncome",
+      "actual": 409,
+      "predicted": 996,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 1121,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "netIncome",
+      "actual": 1172,
+      "predicted": 1323,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 623,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "netIncome",
+      "actual": 1373,
+      "predicted": 1494,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 549,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "netIncome",
+      "actual": 840,
+      "predicted": 1721,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 872,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "netIncome",
+      "actual": 477,
+      "predicted": 560,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 661,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "netIncome",
+      "actual": 1114,
+      "predicted": 891,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 1088,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "netIncome",
+      "actual": 787,
+      "predicted": 698,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 175,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "eps",
+      "actual": 0.12,
+      "predicted": 0.28,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 0.32,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "eps",
+      "actual": 0.33,
+      "predicted": 0.38,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 0.17,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "eps",
+      "actual": 0.39,
+      "predicted": 0.42,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 0.16,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "eps",
+      "actual": 0.24,
+      "predicted": 0.49,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 0.25,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "eps",
+      "actual": 0.13,
+      "predicted": 0.16,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 0.18,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "eps",
+      "actual": 0.32,
+      "predicted": 0.25,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 0.31,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "eps",
+      "actual": 0.22,
+      "predicted": 0.2,
+      "candidate": "unit-model-ex-ante",
+      "benchmark": 0.05,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 22387,
+      "predicted": 22971,
+      "candidate": "unit-model-consensus",
+      "benchmark": 24901,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 28236,
+      "predicted": 25199,
+      "candidate": "unit-model-consensus",
+      "benchmark": 22387,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 28046,
+      "predicted": 27993,
+      "candidate": "unit-model-consensus",
+      "benchmark": 28236,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 21.08,
+      "predicted": 19.86,
+      "candidate": "unit-model-consensus",
+      "benchmark": 20.12,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 16.83,
+      "predicted": 21.32,
+      "candidate": "unit-model-consensus",
+      "benchmark": 21.08,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 19.59,
+      "predicted": 16.59,
+      "candidate": "unit-model-consensus",
+      "benchmark": 16.83,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "operatingIncome",
+      "actual": 941,
+      "predicted": 962,
+      "candidate": "unit-model-consensus",
+      "benchmark": 1230,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "operatingIncome",
+      "actual": 398,
+      "predicted": 1593,
+      "candidate": "unit-model-consensus",
+      "benchmark": 367,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "operatingIncome",
+      "actual": 718,
+      "predicted": 291,
+      "candidate": "unit-model-consensus",
+      "benchmark": -25,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "netIncome",
+      "actual": 477,
+      "predicted": 858,
+      "candidate": "unit-model-consensus",
+      "benchmark": 661,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "netIncome",
+      "actual": 1114,
+      "predicted": 1228,
+      "candidate": "unit-model-consensus",
+      "benchmark": 1088,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "netIncome",
+      "actual": 787,
+      "predicted": 366,
+      "candidate": "unit-model-consensus",
+      "benchmark": 175,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "eps",
+      "actual": 0.13,
+      "predicted": 0.24,
+      "candidate": "unit-model-consensus",
+      "benchmark": 0.18,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "eps",
+      "actual": 0.32,
+      "predicted": 0.35,
+      "candidate": "unit-model-consensus",
+      "benchmark": 0.31,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "eps",
+      "actual": 0.22,
+      "predicted": 0.1,
+      "candidate": "unit-model-consensus",
+      "benchmark": 0.05,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "revenue",
+      "actual": 19335,
+      "predicted": 19741,
+      "candidate": "unit-basic",
+      "benchmark": 25707,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "revenue",
+      "actual": 22496,
+      "predicted": 21306,
+      "candidate": "unit-basic",
+      "benchmark": 19335,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 28095,
+      "predicted": 27915,
+      "candidate": "unit-basic",
+      "benchmark": 22496,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 24901,
+      "predicted": 25229,
+      "candidate": "unit-basic",
+      "benchmark": 28095,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 22387,
+      "predicted": 21277,
+      "candidate": "unit-basic",
+      "benchmark": 24901,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 28236,
+      "predicted": 28820,
+      "candidate": "unit-basic",
+      "benchmark": 22387,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 28046,
+      "predicted": 28582,
+      "candidate": "unit-basic",
+      "benchmark": 28236,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "grossMargin",
+      "actual": 16.31,
+      "predicted": 17.19,
+      "candidate": "unit-basic",
+      "benchmark": 16.26,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "grossMargin",
+      "actual": 17.24,
+      "predicted": 15.67,
+      "candidate": "unit-basic",
+      "benchmark": 16.31,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 17.99,
+      "predicted": 17.11,
+      "candidate": "unit-basic",
+      "benchmark": 17.24,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 20.12,
+      "predicted": 18.67,
+      "candidate": "unit-basic",
+      "benchmark": 17.99,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 21.08,
+      "predicted": 19.83,
+      "candidate": "unit-basic",
+      "benchmark": 20.12,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 16.83,
+      "predicted": 21.44,
+      "candidate": "unit-basic",
+      "benchmark": 21.08,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 19.59,
+      "predicted": 16.82,
+      "candidate": "unit-basic",
+      "benchmark": 16.83,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "operatingIncome",
+      "actual": 399,
+      "predicted": 640,
+      "candidate": "unit-basic",
+      "benchmark": 1425,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "operatingIncome",
+      "actual": 923,
+      "predicted": 385,
+      "candidate": "unit-basic",
+      "benchmark": 198,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "operatingIncome",
+      "actual": 1624,
+      "predicted": 1347,
+      "candidate": "unit-basic",
+      "benchmark": 448,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "operatingIncome",
+      "actual": 1409,
+      "predicted": 1110,
+      "candidate": "unit-basic",
+      "benchmark": 1454,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "operatingIncome",
+      "actual": 941,
+      "predicted": 441,
+      "candidate": "unit-basic",
+      "benchmark": 1230,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "operatingIncome",
+      "actual": 398,
+      "predicted": 1826,
+      "candidate": "unit-basic",
+      "benchmark": 367,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "operatingIncome",
+      "actual": 718,
+      "predicted": 31,
+      "candidate": "unit-basic",
+      "benchmark": -25,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "netIncome",
+      "actual": 409,
+      "predicted": 576,
+      "candidate": "unit-basic",
+      "benchmark": 1121,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "netIncome",
+      "actual": 1172,
+      "predicted": 765,
+      "candidate": "unit-basic",
+      "benchmark": 623,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "netIncome",
+      "actual": 1373,
+      "predicted": 1179,
+      "candidate": "unit-basic",
+      "benchmark": 549,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "netIncome",
+      "actual": 840,
+      "predicted": 627,
+      "candidate": "unit-basic",
+      "benchmark": 872,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "netIncome",
+      "actual": 477,
+      "predicted": 158,
+      "candidate": "unit-basic",
+      "benchmark": 661,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "netIncome",
+      "actual": 1114,
+      "predicted": 2311,
+      "candidate": "unit-basic",
+      "benchmark": 1088,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "netIncome",
+      "actual": 787,
+      "predicted": 222,
+      "candidate": "unit-basic",
+      "benchmark": 175,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "eps",
+      "actual": 0.12,
+      "predicted": 0.17,
+      "candidate": "unit-basic",
+      "benchmark": 0.32,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "eps",
+      "actual": 0.33,
+      "predicted": 0.21,
+      "candidate": "unit-basic",
+      "benchmark": 0.17,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "eps",
+      "actual": 0.39,
+      "predicted": 0.33,
+      "candidate": "unit-basic",
+      "benchmark": 0.16,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "eps",
+      "actual": 0.24,
+      "predicted": 0.18,
+      "candidate": "unit-basic",
+      "benchmark": 0.25,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "eps",
+      "actual": 0.13,
+      "predicted": 0.04,
+      "candidate": "unit-basic",
+      "benchmark": 0.18,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "eps",
+      "actual": 0.32,
+      "predicted": 0.66,
+      "candidate": "unit-basic",
+      "benchmark": 0.31,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "eps",
+      "actual": 0.22,
+      "predicted": 0.06,
+      "candidate": "unit-basic",
+      "benchmark": 0.05,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "revenue",
+      "actual": 19335,
+      "predicted": 17959,
+      "candidate": "regression",
+      "benchmark": 25707,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "revenue",
+      "actual": 22496,
+      "predicted": 21417,
+      "candidate": "regression",
+      "benchmark": 19335,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 28095,
+      "predicted": 28076,
+      "candidate": "regression",
+      "benchmark": 22496,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 24901,
+      "predicted": 23832,
+      "candidate": "regression",
+      "benchmark": 28095,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 22387,
+      "predicted": 21184,
+      "candidate": "regression",
+      "benchmark": 24901,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 28236,
+      "predicted": 28938,
+      "candidate": "regression",
+      "benchmark": 22387,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 28046,
+      "predicted": 28199,
+      "candidate": "regression",
+      "benchmark": 28236,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "grossMargin",
+      "actual": 16.31,
+      "predicted": 14.61,
+      "candidate": "regression",
+      "benchmark": 16.26,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "grossMargin",
+      "actual": 17.24,
+      "predicted": 17.43,
+      "candidate": "regression",
+      "benchmark": 16.31,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 17.99,
+      "predicted": 18.83,
+      "candidate": "regression",
+      "benchmark": 17.24,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 20.12,
+      "predicted": 17.09,
+      "candidate": "regression",
+      "benchmark": 17.99,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 21.08,
+      "predicted": 18.83,
+      "candidate": "regression",
+      "benchmark": 20.12,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 16.83,
+      "predicted": 21.99,
+      "candidate": "regression",
+      "benchmark": 21.08,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 19.59,
+      "predicted": 17.19,
+      "candidate": "regression",
+      "benchmark": 16.83,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "operatingIncome",
+      "actual": 399,
+      "predicted": -130,
+      "candidate": "regression",
+      "benchmark": 1425,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "operatingIncome",
+      "actual": 923,
+      "predicted": 778,
+      "candidate": "regression",
+      "benchmark": 198,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "operatingIncome",
+      "actual": 1624,
+      "predicted": 1855,
+      "candidate": "regression",
+      "benchmark": 448,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "operatingIncome",
+      "actual": 1409,
+      "predicted": 474,
+      "candidate": "regression",
+      "benchmark": 1454,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "operatingIncome",
+      "actual": 941,
+      "predicted": 210,
+      "candidate": "regression",
+      "benchmark": 1230,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "operatingIncome",
+      "actual": 398,
+      "predicted": 2009,
+      "candidate": "regression",
+      "benchmark": 367,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "operatingIncome",
+      "actual": 718,
+      "predicted": 73,
+      "candidate": "regression",
+      "benchmark": -25,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "netIncome",
+      "actual": 409,
+      "predicted": 41,
+      "candidate": "regression",
+      "benchmark": 1121,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "netIncome",
+      "actual": 1172,
+      "predicted": 1062,
+      "candidate": "regression",
+      "benchmark": 623,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "netIncome",
+      "actual": 1373,
+      "predicted": 1535,
+      "candidate": "regression",
+      "benchmark": 549,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "netIncome",
+      "actual": 840,
+      "predicted": 175,
+      "candidate": "regression",
+      "benchmark": 872,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "netIncome",
+      "actual": 477,
+      "predicted": 11,
+      "candidate": "regression",
+      "benchmark": 661,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "netIncome",
+      "actual": 1114,
+      "predicted": 2465,
+      "candidate": "regression",
+      "benchmark": 1088,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "netIncome",
+      "actual": 787,
+      "predicted": 256,
+      "candidate": "regression",
+      "benchmark": 175,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "eps",
+      "actual": 0.12,
+      "predicted": 0.02,
+      "candidate": "regression",
+      "benchmark": 0.32,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "eps",
+      "actual": 0.33,
+      "predicted": 0.3,
+      "candidate": "regression",
+      "benchmark": 0.17,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "eps",
+      "actual": 0.39,
+      "predicted": 0.44,
+      "candidate": "regression",
+      "benchmark": 0.16,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "eps",
+      "actual": 0.24,
+      "predicted": 0.05,
+      "candidate": "regression",
+      "benchmark": 0.25,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "eps",
+      "actual": 0.13,
+      "predicted": 0,
+      "candidate": "regression",
+      "benchmark": 0.18,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "eps",
+      "actual": 0.32,
+      "predicted": 0.7,
+      "candidate": "regression",
+      "benchmark": 0.31,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "eps",
+      "actual": 0.22,
+      "predicted": 0.07,
+      "candidate": "regression",
+      "benchmark": 0.05,
+      "benchmarkLabel": "天真模型（上季不變）"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "revenue",
+      "actual": 19335,
+      "predicted": 25707,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "revenue",
+      "actual": 22496,
+      "predicted": 19335,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 28095,
+      "predicted": 22496,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 24901,
+      "predicted": 28095,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 22387,
+      "predicted": 24901,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 28236,
+      "predicted": 22387,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 28046,
+      "predicted": 28236,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "grossMargin",
+      "actual": 16.31,
+      "predicted": 16.26,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "grossMargin",
+      "actual": 17.24,
+      "predicted": 16.31,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 17.99,
+      "predicted": 17.24,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 20.12,
+      "predicted": 17.99,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 21.08,
+      "predicted": 20.12,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 16.83,
+      "predicted": 21.08,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 19.59,
+      "predicted": 16.83,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "operatingIncome",
+      "actual": 399,
+      "predicted": 1425,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "operatingIncome",
+      "actual": 923,
+      "predicted": 198,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "operatingIncome",
+      "actual": 1624,
+      "predicted": 448,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "operatingIncome",
+      "actual": 1409,
+      "predicted": 1454,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "operatingIncome",
+      "actual": 941,
+      "predicted": 1230,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "operatingIncome",
+      "actual": 398,
+      "predicted": 367,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "operatingIncome",
+      "actual": 718,
+      "predicted": -25,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "netIncome",
+      "actual": 409,
+      "predicted": 1121,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "netIncome",
+      "actual": 1172,
+      "predicted": 623,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "netIncome",
+      "actual": 1373,
+      "predicted": 549,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "netIncome",
+      "actual": 840,
+      "predicted": 872,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "netIncome",
+      "actual": 477,
+      "predicted": 661,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "netIncome",
+      "actual": 1114,
+      "predicted": 1088,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "netIncome",
+      "actual": 787,
+      "predicted": 175,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "eps",
+      "actual": 0.12,
+      "predicted": 0.32,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "eps",
+      "actual": 0.33,
+      "predicted": 0.17,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "eps",
+      "actual": 0.39,
+      "predicted": 0.16,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "eps",
+      "actual": 0.24,
+      "predicted": 0.25,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "eps",
+      "actual": 0.13,
+      "predicted": 0.18,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "eps",
+      "actual": 0.32,
+      "predicted": 0.31,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "eps",
+      "actual": 0.22,
+      "predicted": 0.05,
+      "candidate": "naive"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "bear",
+      "name": "保守",
+      "assumptions": [
+        {
+          "name": "2026 年第四季交車",
+          "value": "420,419 輛：比公司彙整的分析師共識少 10%（2026-09-29 公布的全年共識 1,767,255 輛減第一、二季實際與第三季共識，隱含 467,132 輛；第三方估計，公司不背書）。2026 年前三季實際交車比季末前的共識 −2%、+18%、+5%，因此以 ±10% 作為保守與樂觀的範圍",
+          "src": "consensus-q3-2026"
+        },
+        {
+          "name": "2027 年交車",
+          "value": "1,728,000 輛：比公司彙整的分析師共識少 10%（2026-09-29 公布的 2027 年共識約 192 萬輛，報導只寫到萬輛；第三季實際交車高於共識的部分沒有反映；第三方估計，公司不背書）",
+          "src": "consensus-q3-2026-dtc"
+        },
+        {
+          "name": "交車的季節分配與組合",
+          "value": "2027 年各季依 2023–2025 年平均季節比重分配；租賃交車占 1.7%、其他車款占 1.7%（2026Q3 水準，Model S／X 產線已停用）",
+          "src": "ex-q2-2026"
+        },
+        {
+          "name": "每輛車售價",
+          "value": "模型趨勢之外每季多降 0.5%（本模型假設）：較便宜的 Standard 車款（2025 年 10 月推出）比重提高，或以銷售優惠支撐需求",
+          "src": "ex-q3-2025"
+        },
+        {
+          "name": "每輛車銷貨成本",
+          "value": "模型趨勢之外每季多升 0.5%（本模型假設）：關稅與固定成本分攤曾使每輛車成本上升（ex-q3-2025、ex-q4-2025）；特斯拉提到要確保記憶體等晶片的長期供應，但沒有說明成本影響",
+          "src": "ex-q4-2025"
+        },
+        {
+          "name": "監管積分營收",
+          "value": "每季減半（2026Q4 約 57 百萬美元，2027Q4 約 4 百萬美元）；2026 年各季為 380、146、113 百萬美元，持續下降",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "2026 年第四季儲能部署",
+          "value": "維持 2026Q3 的 13.7 GWh；2026 年三季的共識都高於實際，保守情境假設不再成長",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "2027 年儲能部署",
+          "value": "54.8 GWh（2026Q3 水準 × 4）；德州 Megafactory 已開始生產（規劃 50 GWh），保守情境假設新產能在 2027 年沒有轉成更多部署",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "能源毛利率",
+          "value": "24.7%（前四季平均 −5 個百分點）；2026 年前三季在 20.4%–39.5% 之間，含一次性保固費用與關稅相關的客戶退款",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "服務及其他營收",
+          "value": "維持 2026Q3 的 46 億美元／季",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "營業費用（三個情境相同）",
+          "value": "每季增加約 3.1 億美元（近八季平均增加額），2027 年合計約 235 億美元；維持 2026Q3 水準的影響見敏感度；特斯拉表示 SI 研發、股份基礎給付與銷管費用推高營業費用，並計畫在年底前把 SI 訓練運算擴大到 400 MW",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "業外、稅與股數",
+          "value": "業外收支每季約 1.9 億美元（前四季平均）；淨利 ÷ 稅前淨利 0.764（前四季）；稀釋股數 3,541 百萬股",
+          "src": "ex-q3-2026"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "2026Q4",
+          "revenue": 25113,
+          "grossMargin": 17.9,
+          "operatingIncome": -594,
+          "netIncome": -311,
+          "eps": -0.09,
+          "known": [],
+          "note": "交車 420,419 輛、每輛車售價 41,651 美元、成本 34,821 美元；汽車營收 176 億美元（監管積分 57 百萬美元）、能源 29 億美元（部署 13.7 GWh）、服務及其他 46 億美元；營業費用 51 億美元。"
+        },
+        {
+          "period": "2027Q1",
+          "revenue": 22974,
+          "grossMargin": 17.13,
+          "operatingIncome": -1464,
+          "netIncome": -975,
+          "eps": -0.28,
+          "known": [],
+          "note": "交車 377,731 輛、每輛車售價 41,408 美元、成本 35,052 美元；汽車營收 158 億美元（監管積分 28 百萬美元）、能源 26 億美元（部署 11.3 GWh）、服務及其他 46 億美元；營業費用 54 億美元。"
+        },
+        {
+          "period": "2027Q2",
+          "revenue": 25120,
+          "grossMargin": 16.72,
+          "operatingIncome": -1512,
+          "netIncome": -1012,
+          "eps": -0.29,
+          "known": [],
+          "note": "交車 426,609 輛、每輛車售價 41,167 美元、成本 35,037 美元；汽車營收 176 億美元（監管積分 14 百萬美元）、能源 29 億美元（部署 13.8 GWh）、服務及其他 46 億美元；營業費用 57 億美元。"
+        },
+        {
+          "period": "2027Q3",
+          "revenue": 26465,
+          "grossMargin": 16.21,
+          "operatingIncome": -1735,
+          "netIncome": -1182,
+          "eps": -0.33,
+          "known": [],
+          "note": "交車 462,579 輛、每輛車售價 40,927 美元、成本 35,065 美元；汽車營收 190 億美元（監管積分 7 百萬美元）、能源 29 億美元（部署 13.8 GWh）、服務及其他 46 億美元；營業費用 60 億美元。"
+        },
+        {
+          "period": "2027Q4",
+          "revenue": 26499,
+          "grossMargin": 15.72,
+          "operatingIncome": -2171,
+          "netIncome": -1515,
+          "eps": -0.43,
+          "known": [],
+          "note": "交車 461,081 輛、每輛車售價 40,688 美元、成本 35,184 美元；汽車營收 188 億美元（監管積分 4 百萬美元）、能源 31 億美元（部署 15.9 GWh）、服務及其他 46 億美元；營業費用 63 億美元。"
+        },
+        {
+          "period": "2026",
+          "revenue": 103782,
+          "grossMargin": 18.75,
+          "operatingIncome": 1463,
+          "netIncome": 2067,
+          "eps": 0.58,
+          "known": [],
+          "note": "第一至第三季為實際值，第四季為模型值；全年交車 1,745,100 輛、儲能部署 49.7 GWh。EPS 為四季加總。"
+        },
+        {
+          "period": "2027",
+          "revenue": 101058,
+          "grossMargin": 16.42,
+          "operatingIncome": -6882,
+          "netIncome": -4684,
+          "eps": -1.32,
+          "known": [],
+          "note": "四季加總；毛利率為全年毛利 ÷ 全年營收。全年交車 1,728,000 輛、儲能部署 54.8 GWh。"
+        }
+      ]
+    },
+    {
+      "id": "base",
+      "name": "基準",
+      "assumptions": [
+        {
+          "name": "2026 年第四季交車",
+          "value": "467,132 輛：採公司彙整的分析師共識（2026-09-29 公布的全年共識 1,767,255 輛減第一、二季實際與第三季共識，隱含 467,132 輛；第三方估計，公司不背書）。2026 年前三季實際交車比季末前的共識 −2%、+18%、+5%，因此以 ±10% 作為保守與樂觀的範圍",
+          "src": "consensus-q3-2026"
+        },
+        {
+          "name": "2027 年交車",
+          "value": "1,920,000 輛：採公司彙整的分析師共識（2026-09-29 公布的 2027 年共識約 192 萬輛，報導只寫到萬輛；第三季實際交車高於共識的部分沒有反映；第三方估計，公司不背書）",
+          "src": "consensus-q3-2026-dtc"
+        },
+        {
+          "name": "交車的季節分配與組合",
+          "value": "2027 年各季依 2023–2025 年平均季節比重分配；租賃交車占 1.7%、其他車款占 1.7%（2026Q3 水準，Model S／X 產線已停用）",
+          "src": "ex-q2-2026"
+        },
+        {
+          "name": "每輛車售價",
+          "value": "依模型趨勢（約 −0.3%／年，幾乎持平），由 2026Q3 的約 41,896 美元出發",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "每輛車銷貨成本",
+          "value": "依模型趨勢（約 −0.7%／年）與量的攤提效果，由 2026Q3 的約 34,548 美元出發",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "監管積分營收",
+          "value": "維持 2026Q3 的 113 百萬美元；2026 年各季為 380、146、113 百萬美元，持續下降",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "2026 年第四季儲能部署",
+          "value": "16.0 GWh：取 2026Q3 水準（13.7 GWh）與共識隱含值（18.3 GWh）的中間，因為 2026 年三季的共識都高於實際",
+          "src": "consensus-q3-2026"
+        },
+        {
+          "name": "2027 年儲能部署",
+          "value": "65.4 GWh，取 2026Q3 水準 × 4 與全年共識 76.0 GWh（第三方估計）的中間；德州 Megafactory 已開始生產（規劃 50 GWh）",
+          "src": "consensus-q3-2026-dtc"
+        },
+        {
+          "name": "能源毛利率",
+          "value": "29.7%（前四季平均）；2026 年前三季在 20.4%–39.5% 之間，含一次性保固費用與關稅相關的客戶退款",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "服務及其他營收",
+          "value": "每季成長約 6.5%（前八季平均），毛利率 15.9%",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "營業費用（三個情境相同）",
+          "value": "每季增加約 3.1 億美元（近八季平均增加額），2027 年合計約 235 億美元；維持 2026Q3 水準的影響見敏感度；特斯拉表示 SI 研發、股份基礎給付與銷管費用推高營業費用，並計畫在年底前把 SI 訓練運算擴大到 400 MW",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "業外、稅與股數",
+          "value": "業外收支每季約 1.9 億美元（前四季平均）；淨利 ÷ 稅前淨利 0.764（前四季）；稀釋股數 3,541 百萬股",
+          "src": "ex-q3-2026"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "2026Q4",
+          "revenue": 27708,
+          "grossMargin": 19.32,
+          "operatingIncome": 264,
+          "netIncome": 344,
+          "eps": 0.1,
+          "known": [],
+          "note": "交車 467,132 輛、每輛車售價 41,861 美元、成本 34,536 美元；汽車營收 197 億美元（監管積分 113 百萬美元）、能源 31 億美元（部署 16.0 GWh）、服務及其他 49 億美元；營業費用 51 億美元。"
+        },
+        {
+          "period": "2027Q1",
+          "revenue": 25794,
+          "grossMargin": 19.17,
+          "operatingIncome": -455,
+          "netIncome": -205,
+          "eps": -0.06,
+          "known": [],
+          "note": "交車 419,701 輛、每輛車售價 41,826 美元、成本 34,592 美元；汽車營收 177 億美元（監管積分 113 百萬美元）、能源 28 億美元（部署 13.4 GWh）、服務及其他 52 億美元；營業費用 54 億美元。"
+        },
+        {
+          "period": "2027Q2",
+          "revenue": 28646,
+          "grossMargin": 19.36,
+          "operatingIncome": -168,
+          "netIncome": 15,
+          "eps": 0,
+          "known": [],
+          "note": "交車 474,010 輛、每輛車售價 41,791 美元、成本 34,404 美元；汽車營收 199 億美元（監管積分 113 百萬美元）、能源 31 億美元（部署 16.4 GWh）、服務及其他 56 億美元；營業費用 57 億美元。"
+        },
+        {
+          "period": "2027Q3",
+          "revenue": 30636,
+          "grossMargin": 19.42,
+          "operatingIncome": -75,
+          "netIncome": 85,
+          "eps": 0.02,
+          "known": [],
+          "note": "交車 513,977 輛、每輛車售價 41,756 美元、成本 34,261 美元；汽車營收 216 億美元（監管積分 113 百萬美元）、能源 31 億美元（部署 16.5 GWh）、服務及其他 59 億美元；營業費用 60 億美元。"
+        },
+        {
+          "period": "2027Q4",
+          "revenue": 31156,
+          "grossMargin": 19.49,
+          "operatingIncome": -262,
+          "netIncome": -58,
+          "eps": -0.02,
+          "known": [],
+          "note": "交車 512,312 輛、每輛車售價 41,721 美元、成本 34,207 美元；汽車營收 215 億美元（監管積分 113 百萬美元）、能源 34 億美元（部署 19.0 GWh）、服務及其他 63 億美元；營業費用 63 億美元。"
+        },
+        {
+          "period": "2026",
+          "revenue": 106377,
+          "grossMargin": 19.1,
+          "operatingIncome": 2321,
+          "netIncome": 2722,
+          "eps": 0.77,
+          "known": [],
+          "note": "第一至第三季為實際值，第四季為模型值；全年交車 1,791,813 輛、儲能部署 52.0 GWh。EPS 為四季加總。"
+        },
+        {
+          "period": "2027",
+          "revenue": 116232,
+          "grossMargin": 19.37,
+          "operatingIncome": -960,
+          "netIncome": -162,
+          "eps": -0.05,
+          "known": [],
+          "note": "四季加總；毛利率為全年毛利 ÷ 全年營收。全年交車 1,920,000 輛、儲能部署 65.4 GWh。"
+        }
+      ]
+    },
+    {
+      "id": "bull",
+      "name": "樂觀",
+      "assumptions": [
+        {
+          "name": "2026 年第四季交車",
+          "value": "513,845 輛：比公司彙整的分析師共識多 10%（2026-09-29 公布的全年共識 1,767,255 輛減第一、二季實際與第三季共識，隱含 467,132 輛；第三方估計，公司不背書）。2026 年前三季實際交車比季末前的共識 −2%、+18%、+5%，因此以 ±10% 作為保守與樂觀的範圍",
+          "src": "consensus-q3-2026"
+        },
+        {
+          "name": "2027 年交車",
+          "value": "2,112,000 輛：比公司彙整的分析師共識多 10%（2026-09-29 公布的 2027 年共識約 192 萬輛，報導只寫到萬輛；第三季實際交車高於共識的部分沒有反映；第三方估計，公司不背書）",
+          "src": "consensus-q3-2026-dtc"
+        },
+        {
+          "name": "交車的季節分配與組合",
+          "value": "2027 年各季依 2023–2025 年平均季節比重分配；租賃交車占 1.7%、其他車款占 1.7%（2026Q3 水準，Model S／X 產線已停用）",
+          "src": "ex-q2-2026"
+        },
+        {
+          "name": "每輛車售價",
+          "value": "模型趨勢之外每季多漲 0.5%（本模型假設）：FSD 改為只提供訂閱後訂閱數成長（2026Q3 有效訂閱 174 萬），附加銷售增加",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "每輛車銷貨成本",
+          "value": "模型趨勢之外每季多降 0.5%（本模型假設）：材料成本下降（ex-q1-2026）、BNEF 估計 2025 年電動車電池包均價降到每 kWh 99 美元並預期續降（第三方估計）",
+          "src": "bnef-2025"
+        },
+        {
+          "name": "監管積分營收",
+          "value": "回到 2026 年前三季平均約 213 百萬美元；2026 年各季為 380、146、113 百萬美元，持續下降",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "2026 年第四季儲能部署",
+          "value": "18.3 GWh：2026-09-29 公布的全年共識 56.5 GWh 減第一、二季實際與第三季共識（第三方估計）",
+          "src": "consensus-q3-2026"
+        },
+        {
+          "name": "2027 年儲能部署",
+          "value": "76.0 GWh，採 2026-09-29 公布的全年共識（第三方估計）",
+          "src": "consensus-q3-2026-dtc"
+        },
+        {
+          "name": "能源毛利率",
+          "value": "34.7%（前四季平均 +5 個百分點）；2026 年前三季在 20.4%–39.5% 之間，含一次性保固費用與關稅相關的客戶退款",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "服務及其他營收",
+          "value": "每季成長約 6.5%（前八季平均），毛利率 15.9%",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "營業費用（三個情境相同）",
+          "value": "每季增加約 3.1 億美元（近八季平均增加額），2027 年合計約 235 億美元；維持 2026Q3 水準的影響見敏感度；特斯拉表示 SI 研發、股份基礎給付與銷管費用推高營業費用，並計畫在年底前把 SI 訓練運算擴大到 400 MW",
+          "src": "ex-q3-2026"
+        },
+        {
+          "name": "業外、稅與股數",
+          "value": "業外收支每季約 1.9 億美元（前四季平均）；淨利 ÷ 稅前淨利 0.764（前四季）；稀釋股數 3,541 百萬股",
+          "src": "ex-q3-2026"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "2026Q4",
+          "revenue": 30051,
+          "grossMargin": 20.84,
+          "operatingIncome": 1175,
+          "netIncome": 1040,
+          "eps": 0.29,
+          "known": [],
+          "note": "交車 513,845 輛、每輛車售價 42,070 美元、成本 34,262 美元；汽車營收 218 億美元（監管積分 213 百萬美元）、能源 33 億美元（部署 18.3 GWh）、服務及其他 49 億美元；營業費用 51 億美元。"
+        },
+        {
+          "period": "2027Q1",
+          "revenue": 28032,
+          "grossMargin": 21.24,
+          "operatingIncome": 555,
+          "netIncome": 567,
+          "eps": 0.16,
+          "known": [],
+          "note": "交車 461,671 輛、每輛車售價 42,245 美元、成本 34,146 美元；汽車營收 197 億美元（監管積分 213 百萬美元）、能源 31 億美元（部署 15.6 GWh）、服務及其他 52 億美元；營業費用 54 億美元。"
+        },
+        {
+          "period": "2027Q2",
+          "revenue": 31261,
+          "grossMargin": 21.97,
+          "operatingIncome": 1156,
+          "netIncome": 1026,
+          "eps": 0.29,
+          "known": [],
+          "note": "交車 521,411 輛、每輛車售價 42,421 美元、成本 33,791 美元；汽車營收 223 億美元（監管積分 213 百萬美元）、能源 34 億美元（部署 19.1 GWh）、服務及其他 56 億美元；營業費用 57 億美元。"
+        },
+        {
+          "period": "2027Q3",
+          "revenue": 33559,
+          "grossMargin": 22.56,
+          "operatingIncome": 1547,
+          "netIncome": 1324,
+          "eps": 0.37,
+          "known": [],
+          "note": "交車 565,374 輛、每輛車售價 42,597 美元、成本 33,482 美元；汽車營收 242 億美元（監管積分 213 百萬美元）、能源 34 億美元（部署 19.2 GWh）、服務及其他 59 億美元；營業費用 60 億美元。"
+        },
+        {
+          "period": "2027Q4",
+          "revenue": 34204,
+          "grossMargin": 23.15,
+          "operatingIncome": 1583,
+          "netIncome": 1352,
+          "eps": 0.38,
+          "known": [],
+          "note": "交車 563,543 輛、每輛車售價 42,774 美元、成本 33,262 美元；汽車營收 243 億美元（監管積分 213 百萬美元）、能源 36 億美元（部署 22.1 GWh）、服務及其他 63 億美元；營業費用 63 億美元。"
+        },
+        {
+          "period": "2026",
+          "revenue": 108720,
+          "grossMargin": 19.52,
+          "operatingIncome": 3232,
+          "netIncome": 3418,
+          "eps": 0.96,
+          "known": [],
+          "note": "第一至第三季為實際值，第四季為模型值；全年交車 1,838,526 輛、儲能部署 54.3 GWh。EPS 為四季加總。"
+        },
+        {
+          "period": "2027",
+          "revenue": 127056,
+          "grossMargin": 22.28,
+          "operatingIncome": 4841,
+          "netIncome": 4268,
+          "eps": 1.21,
+          "known": [],
+          "note": "四季加總；毛利率為全年毛利 ÷ 全年營收。全年交車 2,112,000 輛、儲能部署 76.0 GWh。"
+        }
+      ]
+    }
+  ],
+  "sensitivities": [
+    {
+      "driver": "交車量（2026Q4–2027Q4）",
+      "change": "每季多 5%",
+      "effect": "2027 年營收 +39.4 億美元（+3.4%）、毛利率 +0.03 個百分點、營業利益 +8.0 億美元、EPS +0.17 美元"
+    },
+    {
+      "driver": "交車量（2026Q4–2027Q4）",
+      "change": "每季少 5%",
+      "effect": "2027 年營收 −39.4 億美元（−3.4%）、毛利率 −0.03 個百分點、營業利益 −8.0 億美元、EPS −0.17 美元"
+    },
+    {
+      "driver": "每輛車平均售價",
+      "change": "自 2026Q4 起低 1%（約 419 美元）",
+      "effect": "2027 年營收 −7.9 億美元（−0.7%）、毛利率 −0.55 個百分點、營業利益 −7.9 億美元、EPS −0.17 美元"
+    },
+    {
+      "driver": "每輛車銷貨成本",
+      "change": "自 2026Q4 起高 1%（約 345 美元，例如關稅、原物料或晶片等零組件漲價）",
+      "effect": "2027 年毛利率 −0.56 個百分點、營業利益 −6.5 億美元、EPS −0.14 美元（營收不變）"
+    },
+    {
+      "driver": "監管積分營收",
+      "change": "自 2026Q4 起歸零",
+      "effect": "2027 年營收 −4.5 億美元（−0.4%）、毛利率 −0.31 個百分點、營業利益 −4.5 億美元、EPS −0.10 美元"
+    },
+    {
+      "driver": "儲能部署",
+      "change": "每年多 10 GWh",
+      "effect": "2027 年營收 +9.3 億美元（+0.8%）、毛利率 +0.08 個百分點、營業利益 +2.7 億美元、EPS +0.06 美元"
+    },
+    {
+      "driver": "能源毛利率",
+      "change": "低 5 個百分點",
+      "effect": "2027 年毛利率 −0.54 個百分點、營業利益 −6.3 億美元、EPS −0.13 美元（營收不變）"
+    },
+    {
+      "driver": "服務及其他營收",
+      "change": "不再成長（維持 2026Q3 水準）",
+      "effect": "2027 年營收 −45.7 億美元（−3.9%）、毛利率 +0.14 個百分點、營業利益 −7.3 億美元、EPS −0.16 美元"
+    },
+    {
+      "driver": "營業費用",
+      "change": "全年多 10 億美元",
+      "effect": "2027 年營業利益 −10.0 億美元、EPS −0.22 美元（營收不變）"
+    },
+    {
+      "driver": "營業費用",
+      "change": "不再增加（維持 2026Q3 水準，訓練期一季前誤差最小的規則）",
+      "effect": "2027 年營業利益 +43.7 億美元、EPS +0.94 美元（營收不變）"
+    }
+  ],
+  "limitations": [
+    "回測代入當季實際的交車量與儲能部署，衡量的是「交車已知時」模型拆解營收與毛利的能力；特斯拉在季末約 2 天後公布產銷報告，比財報早約 3 週，所以這相當於財報前的推估。交車也要事前預測的版本（上一季財報公布後就能做），營收誤差是 10.8%（交車本身誤差 13.8%）。選定模型和不估計參數的「上季單價直接放大」差距在統計上不顯著；往前 2–4 季的多季回測中，後者的毛利率誤差反而較小（2.32 對 2.72 個百分點），估計的售價、成本與能源參數對較長期預測的幫助有限。",
+    "毛利率的回測誤差（1.9 個百分點）沒有小於天真模型：2026Q3 每輛車售價與成本只差約 7,347 美元，售價差 1%，汽車銷售毛利率就差約 0.8 個百分點；2026 年前三季總毛利率在 16.8%–21.1% 之間跳動，其中有保固費用、關稅相關利益與退款等一次性項目，模型無法事先知道。測試期只有 7 季，指標的不確定性很大。",
+    "每輛車售價與成本是由汽車銷售營收、銷貨成本除以非租賃交車推算的近似值：營收含 FSD 等附加銷售與匯率影響，也不分車款；特斯拉不揭露各車款的售價與成本，高價車款的影響只能用「其他車款占比」粗略估計。",
+    "情境的交車量與儲能部署以特斯拉投資人關係網站彙整的分析師共識為基準（第三方估計，公司不背書）；2027 年的共識在 2026-09-29 公布，轉載報導只寫到萬輛（交車約 192 萬輛、儲能 76.0 GWh），2026Q3 實際交車高於共識的部分與之後的政策變化都沒有反映。各情境的售價、成本、能源毛利率與服務成長都是本模型假設，保守與樂觀之間的差距主要來自交車、售價與成本的假設；營業費用三個情境相同。",
+    "能源營收以 2026Q3 為起點，該季能源營收部分受關稅相關的客戶退款影響（ex-q3-2026），每 kWh 部署對應的能源營收約 210 美元，2025Q4–2026Q2 為 233–274 美元；模型的能源營收對部署彈性約 0.50，部署增加時每 kWh 營收還會下降。退款若只是一次性的，情境的能源營收可能偏低；儲能電池價格下跌（bnef-2025）則可能讓售價續降。",
+    "營業費用是獲利預測中影響最大的假設：近八季平均每季增加約 3.1 億美元，三個情境都假設延續，2027 年營業費用約 235 億美元。資本支出由 2025 年每季約 15–24 億美元升到 2026 年第二、三季的 58、47 億美元，之後的折舊會逐步進入銷貨成本或營業費用，模型沒有單獨推算折舊。",
+    "Robotaxi、Cybercab、Semi、Optimus 等新業務還沒有單獨揭露的營收與成本，模型沒有分開處理，只隱含在汽車與服務營收的趨勢中；這些業務放量或延後都可能讓實際結果偏離情境。記憶體合約價在 2026 年大幅上漲（TrendForce 估計，見記憶體專題），但特斯拉沒有揭露記憶體成本對每輛車成本的影響，模型沒有使用記憶體價格，影響可用「每輛車銷貨成本」的敏感度估算。",
+    "業外收支含數位資產公允價值變動，2025Q4–2026Q3 單季在 −228 至 931 百萬美元之間擺動，淨利與 EPS 的不確定性因此比營業利益更大。淨利 ÷ 稅前淨利的比例（0.764）在稅前虧損時也照樣套用，等於假設虧損可以認列所得稅利益；實際上各地區分開課稅，虧損季度的淨損可能更大。"
+  ],
+  "sourceKeys": [
+    "sec-companyfacts",
+    "ex-q3-2026",
+    "ex-q2-2026",
+    "ex-q1-2026",
+    "ex-q4-2025",
+    "ex-q3-2025",
+    "deck-q2-2025",
+    "deck-q4-2024",
+    "consensus-q1-2026",
+    "consensus-q2-2026",
+    "consensus-q3-2026",
+    "consensus-q3-2026-dtc",
+    "bnef-2025",
+    "letter-q3-2019",
+    "deck-q4-2020"
+  ]
+}

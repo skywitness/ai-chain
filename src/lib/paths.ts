@@ -66,6 +66,8 @@ export const ROUTES = {
   /** sub-pages of the memory topic: financial models (src/pages/memory/[company].astro) */
   memoryPhison: '/memory/phison/',
   memoryMicron: '/memory/micron/',
+  /** 財報模型: hub of every company model (src/pages/forecast/index.astro); pages /forecast/<id>/ and the two above */
+  forecast: '/forecast/',
   glossary: '/glossary/',
   sources: '/sources/',
   about: '/about/',
@@ -104,6 +106,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { key: 'trends', label: '未來趨勢', path: ROUTES.trends },
   { key: 'taiwan', label: '台灣供應鏈', path: ROUTES.taiwan },
   { key: 'memory', label: '記憶體', path: ROUTES.memory },
+  { key: 'forecast', label: '財報模型', path: ROUTES.forecast },
   { key: 'glossary', label: '名詞', path: ROUTES.glossary },
 ];
 

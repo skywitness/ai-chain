@@ -1,0 +1,2384 @@
+{
+  "company": "spacex",
+  "generatedBy": "scripts/models/spacex.ts",
+  "generatedOn": "2026-11-17",
+  "asOf": "2026-11-17",
+  "currency": "USD",
+  "amountUnit": "million",
+  "periodLabel": "日曆季度（百萬美元；EPS 為稀釋 EPS，美元）",
+  "train": {
+    "from": "2025Q1",
+    "to": "2025Q2"
+  },
+  "test": {
+    "from": "2025Q3",
+    "to": "2026Q3"
+  },
+  "lastReported": "2026Q3",
+  "summary": "選定模型把營收拆成 Starlink 用戶 × 每用戶營收、客戶發射 × 每次營收，以及 AI 算力營收（既有營收加上新增額定算力 × 最近一季的邊際每瓦營收），部門毛利率加權成合併毛利率。公開財報只有 7 季，回測只有 2025Q3–2026Q3 共 5 季（代入當季實際用戶、發射與算力）：營收平均誤差（MAPE）17.4%、毛利率平均誤差 4.3 個百分點，天真模型為 26.3% 與 4.6 個百分點；驅動因子改用事前推估時營收誤差 21.4%；2026 年第二、三季分別低估 30% 與 25%（季中新簽的雲端算力合約只能落後一季反映），樣本太少，誤差只能當參考。基準情境 2026 年第四季營收約 229 億美元、毛利率依財務長說法約 55%，2027 年第一季 361 億美元（公司財測 330–370 億美元），2027 年約 2,237 億美元（保守至樂觀 1,051–3,811 億美元），差距主要來自算力擴充速度與每瓦營收。這是依假設推算的模型結果，不是投資建議。",
+  "candidates": [
+    {
+      "id": "naive",
+      "name": "天真模型（上一季不變）",
+      "description": "假設本季營收與毛利率都和上一季一樣。這是最簡單的對照組：模型如果贏不了它，就沒有存在的價值。SpaceX 在 2026 年營收倍增，這種假設在高成長期會系統性低估。",
+      "equations": [
+        "營收_t = 營收_t−1",
+        "毛利率_t = 毛利率_t−1"
+      ],
+      "metrics": {
+        "revenue": {
+          "mape": 26.28,
+          "mae": 2453.6,
+          "bias": -2100.8,
+          "n": 5
+        },
+        "grossMargin": {
+          "mae": 4.639,
+          "bias": -3.694,
+          "n": 5
+        },
+        "connectivityRevenue": {
+          "mape": 12.74,
+          "mae": 532,
+          "bias": -532,
+          "n": 5
+        },
+        "spaceRevenue": {
+          "mape": 54.61,
+          "mae": 623,
+          "bias": -204.2,
+          "n": 5
+        },
+        "aiRevenue": {
+          "mape": 33.66,
+          "mae": 1406.6,
+          "bias": -1364.6,
+          "n": 5
+        },
+        "revenueExAnte": {
+          "mape": 26.28,
+          "mae": 2453.6,
+          "bias": -2100.8,
+          "n": 5
+        },
+        "grossMarginExAnte": {
+          "mae": 4.639,
+          "bias": -3.694,
+          "n": 5
+        }
+      },
+      "selected": false,
+      "note": "2026 年第二、三季分別低估 40% 與 46%。部門層級（各部門沿用上一季）的營收誤差：連網 12.7%、太空 54.6%、AI 33.7%。測試期內 SpaceX 沒有公布任何營收或毛利率財測（第一次營收財測是 2026-10-20 對 2027 年第一季的 330–370 億美元），因此沒有「公司財測」對照組；財測改在預測段落對照。"
+    },
+    {
+      "id": "momentum",
+      "name": "動能外推（上一季成長率延續）",
+      "description": "假設本季營收以上一季的季成長率繼續成長，毛利率沿用上一季。成長加速時比天真模型好，但成長率忽高忽低時會放大誤差。",
+      "equations": [
+        "營收_t = 營收_t−1 ×（營收_t−1 ÷ 營收_t−2）",
+        "毛利率_t = 毛利率_t−1"
+      ],
+      "metrics": {
+        "revenue": {
+          "mape": 28.16,
+          "mae": 1879.853,
+          "bias": -808.9,
+          "n": 5
+        },
+        "grossMargin": {
+          "mae": 4.639,
+          "bias": -3.694,
+          "n": 5
+        },
+        "revenueExAnte": {
+          "mape": 28.16,
+          "mae": 1879.853,
+          "bias": -808.9,
+          "n": 5
+        },
+        "grossMarginExAnte": {
+          "mae": 4.639,
+          "bias": -3.694,
+          "n": 5
+        }
+      },
+      "selected": false,
+      "note": "2026 年第二、三季分別低估 43% 與 11%；2025 年第四季把第三季的發射高峰當成趨勢，高估 54%。"
+    },
+    {
+      "id": "segment-average-yield",
+      "name": "部門單位經濟（算力以平均每 GW 營收換算）",
+      "description": "把營收拆成三個部門的「數量 × 單價」：Starlink 用戶 × 每用戶營收、客戶發射 × 每次營收、AI 額定算力 × 每 GW 營收；單價用上一季的值，數量用當季實際值。AI 這一版假設所有算力（含 xAI 自己訓練 Grok 用的部分）都以上一季的平均每 GW 營收變現。",
+      "equations": [
+        "Starlink 消費者營收_t = 平均用戶數_t × 3 × 每用戶月營收_t−1（每用戶月營收含終端設備）",
+        "企業與政府營收_t = 企業與政府營收_t−1",
+        "發射服務營收_t = 客戶發射次數_t × 每次客戶發射營收（2023 年至 t−1 季的累計平均）",
+        "發射與開發營收_t = 最近四季平均（開發合約依里程碑認列，波動大）",
+        "X 廣告營收_t = X 廣告營收_t−1；Cursor 營收_t 用當季實際值（2026-08-14 起併入）",
+        "AI 算力營收_t = 平均額定算力_t × 平均每 GW 營收_t−1（AI 算力營收＝AI 解決方案與基礎設施營收，不含 Cursor）",
+        "合併毛利率_t =（太空營收_t × 太空毛利率_t−1 + 連網營收_t × 連網毛利率_t−1 + AI 營收_t × AI 毛利率_t−1）÷ 營收_t"
+      ],
+      "metrics": {
+        "revenue": {
+          "mape": 19.6,
+          "mae": 1805.539,
+          "bias": -1369.165,
+          "n": 5
+        },
+        "grossMargin": {
+          "mae": 4.427,
+          "bias": -4.427,
+          "n": 5
+        },
+        "connectivityRevenue": {
+          "mape": 10.6,
+          "mae": 420.918,
+          "bias": -155.583,
+          "n": 5
+        },
+        "spaceRevenue": {
+          "mape": 19.79,
+          "mae": 278.237,
+          "bias": -208.581,
+          "n": 5
+        },
+        "aiRevenue": {
+          "mape": 29.81,
+          "mae": 1129.299,
+          "bias": -1005.001,
+          "n": 5
+        },
+        "revenueExAnte": {
+          "mape": 23.92,
+          "mae": 2116.759,
+          "bias": -1491.321,
+          "n": 5
+        },
+        "grossMarginExAnte": {
+          "mae": 4.459,
+          "bias": -4.148,
+          "n": 5
+        }
+      },
+      "selected": false,
+      "note": "測試期 2025Q3–2026Q3 共 5 季，每季只用上一季以前的資料估參數（擴張視窗），並代入當季實際的用戶數、客戶發射次數與額定算力，屬於「已知驅動因子條件下」的誤差。2026 年第二、三季分別低估 29% 與 34%：2025 年算力多半供 xAI 自己使用，平均每 GW 營收逐季下降，2026 年第二季起對外出租後又急升，平均值跟不上。revenueExAnte／grossMarginExAnte 為驅動因子改用事前推估時的誤差（營收 23.9%）。"
+    },
+    {
+      "id": "segment-marginal-yield",
+      "name": "部門單位經濟（新增算力以邊際每 GW 營收換算）",
+      "description": "與上一個模型相同，但 AI 算力營收改成「上一季的算力營收照舊，新增的算力以最近一次觀察到的邊際每 GW 營收變現」。既有合約延續、新上線的算力才帶來新營收，比較貼近雲端算力出租的實際運作。",
+      "equations": [
+        "Starlink 消費者營收_t = 平均用戶數_t × 3 × 每用戶月營收_t−1（每用戶月營收含終端設備）",
+        "企業與政府營收_t = 企業與政府營收_t−1",
+        "發射服務營收_t = 客戶發射次數_t × 每次客戶發射營收（2023 年至 t−1 季的累計平均）",
+        "發射與開發營收_t = 最近四季平均（開發合約依里程碑認列，波動大）",
+        "X 廣告營收_t = X 廣告營收_t−1；Cursor 營收_t 用當季實際值（2026-08-14 起併入）",
+        "AI 算力營收_t = AI 算力營收_t−1 + 邊際每 GW 營收 ×（平均額定算力_t − 平均額定算力_t−1）",
+        "邊際每 GW 營收 =（AI 算力營收_t−1 − AI 算力營收_t−2）÷（平均額定算力_t−1 − 平均額定算力_t−2）",
+        "合併毛利率_t =（太空營收_t × 太空毛利率_t−1 + 連網營收_t × 連網毛利率_t−1 + AI 營收_t × AI 毛利率_t−1）÷ 營收_t"
+      ],
+      "metrics": {
+        "revenue": {
+          "mape": 17.41,
+          "mae": 1522.355,
+          "bias": -1146.564,
+          "n": 5
+        },
+        "grossMargin": {
+          "mae": 4.327,
+          "bias": -4.251,
+          "n": 5
+        },
+        "connectivityRevenue": {
+          "mape": 10.6,
+          "mae": 420.918,
+          "bias": -155.583,
+          "n": 5
+        },
+        "spaceRevenue": {
+          "mape": 19.79,
+          "mae": 278.237,
+          "bias": -208.581,
+          "n": 5
+        },
+        "aiRevenue": {
+          "mape": 23.81,
+          "mae": 843.6,
+          "bias": -782.4,
+          "n": 5
+        },
+        "revenueExAnte": {
+          "mape": 21.36,
+          "mae": 1787.817,
+          "bias": -1222.962,
+          "n": 5
+        },
+        "grossMarginExAnte": {
+          "mae": 4.362,
+          "bias": -3.973,
+          "n": 5
+        }
+      },
+      "selected": true,
+      "note": "測試期 2025Q3–2026Q3 共 5 季，每季只用上一季以前的資料估參數（擴張視窗），並代入當季實際的用戶數、客戶發射次數與額定算力，屬於「已知驅動因子條件下」的誤差。選擇規則：在兩個部門單位經濟模型中，取「營收 MAPE（%）＋ 毛利率 MAE（個百分點）」最小者：本模型 21.74、平均每 GW 版本 24.03；天真模型 30.92、動能外推 32.80。本模型營收誤差低於天真模型、毛利率誤差低於天真模型，但只有 5 季樣本：天真模型與本模型逐季絕對百分比誤差的配對 t 值約 1.8，自由度 4，未達 5% 顯著水準所需的 2.78。平均每 GW 版本與本模型的逐季絕對誤差差距為 −0.9、1.6、1.5、−0.6、9.4 個百分點（正值代表本模型較準），差距主要來自 2026 年第三季（其餘各季相差不到 2 個百分點），回測本身不足以區分兩者。另一個依據是公司財測：若新增算力改用平均每瓦年營收（16.6 美元）換算，基準情境 2027 年第一季營收約 224 億美元，低於財測區間下緣 330 億美元；本模型為 361 億美元，在財測區間 330–370 億美元內。2026 年第二、三季分別低估 30% 與 25%，主因是 2026 年 5 月起與 Anthropic 等客戶的雲端算力合約：新增算力的邊際每瓦年營收在 2026 年第一季約 1.5 美元，第二季跳到約 22.9 美元、第三季約 48.2 美元，模型用上一季的值，只能落後一季跟上。部門營收誤差：連網 10.6%、太空 19.8%、AI 23.8%。毛利率只反映部門組合變化，部門內的毛利率變化（例如 AI 部門由 2026 年第一季的 44.3% 升到第三季的 64.6%）要落後一季才反映。營業利益在測試期介於 −19.4 億美元與 27.9 億美元之間，接近零時百分比誤差沒有意義，因此回測只評估營收與毛利率。revenueExAnte／grossMarginExAnte 為驅動因子改用事前推估時的誤差（營收 21.4%、毛利率 4.4 個百分點）。"
+    },
+    {
+      "id": "segment-marginal-ex-ante",
+      "name": "部門單位經濟（邊際每 GW，驅動因子事前推估）",
+      "description": "與選定模型完全相同，但不代入當季實際的驅動因子：用戶數與額定算力延續上一季的增量、客戶發射取最近四季平均，Cursor 併購在季初尚未完成而不計入。用來衡量「真的事前預測」時的誤差。",
+      "equations": [
+        "期末用戶數_t = 期末用戶數_t−1 +（期末用戶數_t−1 − 期末用戶數_t−2）",
+        "期末額定算力_t = 期末額定算力_t−1 +（期末額定算力_t−1 − 期末額定算力_t−2）",
+        "客戶發射次數_t = 最近四季平均；其餘同選定模型"
+      ],
+      "metrics": {
+        "revenue": {
+          "mape": 21.36,
+          "mae": 1787.817,
+          "bias": -1222.962,
+          "n": 5
+        },
+        "grossMargin": {
+          "mae": 4.362,
+          "bias": -3.973,
+          "n": 5
+        },
+        "connectivityRevenue": {
+          "mape": 10.68,
+          "mae": 424.105,
+          "bias": -173.88,
+          "n": 5
+        },
+        "spaceRevenue": {
+          "mape": 39.24,
+          "mae": 463.512,
+          "bias": -189.682,
+          "n": 5
+        },
+        "aiRevenue": {
+          "mape": 25.36,
+          "mae": 918.6,
+          "bias": -859.4,
+          "n": 5
+        }
+      },
+      "selected": false,
+      "note": "不參與模型選擇：參數與選定模型相同，只是驅動因子改用事前推估。營收 MAPE 21.4%，仍低於天真模型的 26.3%。"
+    }
+  ],
+  "parameters": [
+    {
+      "name": "新增算力的邊際每瓦年營收（2026Q3）",
+      "value": 48.2,
+      "unit": "美元／瓦／年",
+      "note": "（6,414 − 2,194）百萬美元 × 4 ÷（1.55 − 1.20）GW，即每 GW 每季約 121 億美元、每瓦每年約 48.2 美元（每 GW 1 百萬美元＝每瓦 0.001 美元）。落在管理層每瓦 30–50 美元估計的上緣（tr-q2-2026；財務長 2026-10 稱目前價格略高於上緣、新部署回收期不到一年，tr-q3-2026），基準與樂觀情境沿用；只由一季的變化估計，這段增量也包含第二季已上線的 Anthropic 合約第一次整季認列，可能高估新算力的變現速度（見限制）。"
+    },
+    {
+      "name": "AI 算力平均每瓦年營收（2026Q3）",
+      "value": 16.6,
+      "unit": "美元／瓦／年",
+      "note": "AI 解決方案與基礎設施營收（不含 Cursor）64 億美元 × 4 ÷ 平均額定算力 1.55 GW；額定算力也包含 xAI 自用的部分。"
+    },
+    {
+      "name": "Starlink 消費者每用戶月營收（含設備，2026Q3）",
+      "value": 81.3,
+      "unit": "美元／月",
+      "note": "公司公布的服務 ARPU 為 69 美元，差額是終端設備營收。"
+    },
+    {
+      "name": "每次客戶發射的發射服務營收（累計平均）",
+      "value": 61.5,
+      "unit": "百萬美元",
+      "note": "2023、2024 年與 2025Q1–2026Q3 的發射服務營收合計 ÷ 客戶發射次數合計（Falcon 客戶發射；Starship 全部歸為內部發射）。"
+    },
+    {
+      "name": "發射與開發營收（最近四季平均）",
+      "value": 382,
+      "unit": "百萬美元／季"
+    },
+    {
+      "name": "X 廣告營收（最近四季平均）",
+      "value": 442,
+      "unit": "百萬美元／季"
+    },
+    {
+      "name": "Cursor 營收（第三季 48 天換算整季）",
+      "value": 1165,
+      "unit": "百萬美元／季",
+      "note": "第三季 2026-08-14 至 09-30 認列 608 百萬美元（pr-q3-2026），× 92 ÷ 48；預測期持平（本模型假設，公司未揭露 Cursor 的成長展望）。"
+    },
+    {
+      "name": "太空部門毛利率（最近四季合計）",
+      "value": 68.9,
+      "unit": "%"
+    },
+    {
+      "name": "連網部門毛利率（2026Q3 扣除一次性利益）",
+      "value": 51.9,
+      "unit": "%",
+      "note": "第三季 54.9% 減約 3 個百分點的關稅退款等一次性利益（tr-q3-2026）。"
+    },
+    {
+      "name": "AI 部門毛利率（2026Q3）",
+      "value": 64.6,
+      "unit": "%",
+      "note": "樂觀情境 2027 年沿用。"
+    },
+    {
+      "name": "AI 部門毛利率（2026Q4，依財務長說法反推）",
+      "value": 55.7,
+      "unit": "%",
+      "note": "財務長表示第四季合併毛利率與第二季（55.3%）相近，因第三季有一次性利益與客戶組合因素（tr-q3-2026）；以基準情境的部門組合反推 AI 部門毛利率，三個情境的第四季都用這個值。"
+    },
+    {
+      "name": "模型未調整的 2026Q4 合併毛利率",
+      "value": 61.6,
+      "unit": "%",
+      "note": "部門毛利率全部沿用第三季（連網扣除一次性利益）時的結果，比財務長的說法高 6.3 個百分點。"
+    },
+    {
+      "name": "營業費用（不含併購相關股份基礎給付）每季成長",
+      "value": 12.8,
+      "unit": "%",
+      "note": "2025Q3 至 2026Q3 的幾何平均（31 億美元 → 51 億美元），三個情境相同。"
+    },
+    {
+      "name": "併購相關股份基礎給付（每季）",
+      "value": 2333,
+      "unit": "百萬美元",
+      "note": "第三季 48 天認列 1,217 百萬美元換算整季並假設持平（本模型假設）。Cursor 併購另有 234 億美元的股權獎酬要在員工後續服務期間認列（pr-q3-2026），公司未揭露各期金額。"
+    },
+    {
+      "name": "業外收支（每季）",
+      "value": 198,
+      "unit": "百萬美元",
+      "note": "2026Q3 利息收入 873 減利息費用 675；不含投資公允價值變動等其他收支（第三季 1,025，含對 The Boring Company 投資的利益 5.61 億美元）。"
+    },
+    {
+      "name": "所得稅率",
+      "value": 21,
+      "unit": "%",
+      "note": "美國聯邦法定稅率，本模型假設；稅前虧損時不計所得稅利益。公司過去各季的稅負與稅率差異很大（2026Q3 認列所得稅利益 3.9 億美元）。"
+    },
+    {
+      "name": "稀釋加權平均股數",
+      "value": 12475,
+      "unit": "百萬股",
+      "note": "2026Q3 的值，預測期持平（本模型假設）；Cursor 併購與股份基礎給付會增加股數。"
+    },
+    {
+      "name": "2027Q1 營收財測中值",
+      "value": 35000,
+      "unit": "百萬美元",
+      "note": "財務長 2026-10-20 財測 330–370 億美元（tr-q3-2026）；基準情境模型值 361 億美元，在財測區間 330–370 億美元內。"
+    },
+    {
+      "name": "2026 年 12 月年化營收目標",
+      "value": 100000,
+      "unit": "百萬美元",
+      "note": "12 月單月營收 × 12（tr-q3-2026）。基準情境第四季營收 × 4 為 915 億美元；季內營收逐月增加時，12 月單月年化會高於季平均。"
+    },
+    {
+      "name": "2026 年底額定算力財測中值",
+      "value": 2.75,
+      "unit": "GW",
+      "note": "財務長財測 2.5–3 GW（tr-q3-2026），三個情境分別用下緣、中點與上緣。"
+    },
+    {
+      "name": "2026Q3 底未完成合約中一年內認列的金額",
+      "value": 42183,
+      "unit": "百萬美元",
+      "note": "未完成合約 630 億美元 × 約 67%（sec-10q-q3-2026）。基準情境 2026Q4–2027Q3 的合約型營收（不含 Starlink 消費者、X 廣告與 Cursor）合計 1,490 億美元，未完成合約只涵蓋其中約 28%；其餘要靠新簽或續約，而且未完成合約只計不可取消期間。"
+    }
+  ],
+  "derived": [
+    {
+      "id": "segment-revenue-connectivity",
+      "name": "連網部門（Starlink）營收",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 2474,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": 2588,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 3097,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 3228,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 3257,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 4291,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 5248,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q4",
+          "value": 5782,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 6324,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 6877,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 7445,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 8033,
+          "status": "forecast"
+        }
+      ],
+      "note": "2025Q4 由招股書全年減前九個月推算；2026Q4 起為基準情境的模型值。"
+    },
+    {
+      "id": "segment-revenue-space",
+      "name": "太空部門（發射與開發）營收",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 865,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": 746,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 1666,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 809,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 619,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 962,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 1767,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q4",
+          "value": 936,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 936,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 936,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 936,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 936,
+          "status": "forecast"
+        }
+      ],
+      "note": "2025Q4 由招股書全年減前九個月推算；2026Q4 起為基準情境的模型值。"
+    },
+    {
+      "id": "segment-revenue-ai",
+      "name": "AI 部門（SI：算力、Grok、X、Cursor）營收",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 728,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": 737,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 813,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 923,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 818,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 2561,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 7560,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q4",
+          "value": 16160,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 28820,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 41480,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 54140,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 66800,
+          "status": "forecast"
+        }
+      ],
+      "note": "2025Q4 由招股書全年減前九個月推算；2026Q4 起為基準情境的模型值。"
+    },
+    {
+      "id": "segment-gross-margin-connectivity",
+      "name": "連網部門（Starlink）毛利率",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 50.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 45.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 46.5,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 48.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 49.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 52,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 54.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 51.9,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 51.9,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 51.9,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 51.9,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 51.9,
+          "status": "forecast"
+        }
+      ],
+      "note": "（部門營收 − 部門銷貨成本）÷ 部門營收，本站計算。2026Q3 約 3 個百分點為關稅退款等一次性利益（tr-q3-2026），預測期以 54.9% 扣除後的 51.9% 計。"
+    },
+    {
+      "id": "segment-gross-margin-space",
+      "name": "太空部門（發射與開發）毛利率",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 65.7,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 55.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 71.4,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 69.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 54.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 65.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 75.4,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 68.9,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 68.9,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 68.9,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 68.9,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 68.9,
+          "status": "forecast"
+        }
+      ],
+      "note": "本站計算。太空部門大部分 Starship 開發費用列在研發費用，不在銷貨成本，因此毛利率偏高；預測期用最近四季合計的 68.9%。"
+    },
+    {
+      "id": "segment-gross-margin-ai",
+      "name": "AI 部門（SI：算力、Grok、X、Cursor）毛利率",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 38,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 25.2,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 29.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 34.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 44.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 56.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 64.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 55.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 55.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 55.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 55.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 55.7,
+          "status": "forecast"
+        }
+      ],
+      "note": "本站計算。2026Q4 為依財務長「第四季毛利率與第二季相近」反推的 55.7%（三個情境相同），2027 年基準情境維持此值。"
+    },
+    {
+      "id": "gross-margin-bridge-mix",
+      "name": "合併毛利率季變化：部門組合效果",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "2025Q2",
+          "value": -0.46,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 1.87,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": -4.05,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": -0.47,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": -0.82,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 0.89,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 0.18,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 0.1,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 0.04,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 0.02,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 0.02,
+          "status": "forecast"
+        }
+      ],
+      "note": "Σ（本季部門營收比重 − 上季比重）× 上季部門毛利率，本站計算；與「部門內毛利率效果」相加等於合併毛利率的季變化。2026 年第二、三季組合效果只有 −0.8 個百分點、+0.9 個百分點：AI 部門比重大增，但 AI 部門上一季的毛利率與連網部門差距不大（2026Q1 為 −5.1 個百分點、2026Q2 為 +4.8 個百分點），組合改變本身影響不大。2026Q4 起為基準情境的模型值。"
+    },
+    {
+      "id": "gross-margin-bridge-within",
+      "name": "合併毛利率季變化：部門內毛利率效果",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "2025Q2",
+          "value": -7.35,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 5.67,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 2.12,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 0.04,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 6.97,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 6.25,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": -7.32,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 0,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 0,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 0,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 0,
+          "status": "forecast"
+        }
+      ],
+      "note": "Σ 本季部門營收比重 ×（本季 − 上季部門毛利率），本站計算。2026 年第二、三季合併毛利率上升主要來自這一項（+7.0 個百分點、+6.3 個百分點），其中又以 AI 部門自身毛利率改善（對外出租算力）為主；選定模型的毛利率只用上一季的部門毛利率，因此這部分會落後一季。2026Q4 的負值來自依財務長說法反推的 AI 部門毛利率下降與連網一次性利益消失。"
+    },
+    {
+      "id": "starlink-revenue-per-subscriber",
+      "name": "Starlink 消費者每用戶月營收（含終端設備）",
+      "unit": "美元／月",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 105.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 104.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 100.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 83.2,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 74.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 74.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 81.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 79.3,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 77.3,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 75.4,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 73.5,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 71.7,
+          "status": "forecast"
+        }
+      ],
+      "note": "消費者營收 ÷ 平均用戶數（期初與期末平均）÷ 3，本站計算；含終端設備營收，因此高於公司公布、只計服務營收的 ARPU。2026 年第一季的下降反映低價方案與國際市場比重提高；預測期基準情境每季 −2.5%。"
+    },
+    {
+      "id": "starlink-hardware-revenue",
+      "name": "Starlink 消費者終端設備營收（推算）",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 279,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 319,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 343,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 247,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 277,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 471,
+          "status": "estimate"
+        }
+      ],
+      "note": "消費者營收 − 公司公布的 ARPU × 平均用戶數 × 3，本站推算；平均用戶數用期初與期末平均，與公司以月計算的口徑不同，只能看大致規模。2025Q4 公司未公布單季 ARPU，省略。"
+    },
+    {
+      "id": "revenue-per-customer-launch",
+      "name": "每次客戶發射的發射服務營收",
+      "unit": "百萬美元／次",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 47.2,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 54.4,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 66.7,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 74.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 47.1,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 64.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 94.2,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 61.5,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 61.5,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 61.5,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 61.5,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 61.5,
+          "status": "forecast"
+        }
+      ],
+      "note": "發射服務營收 ÷ 客戶發射次數，本站計算；發射服務營收也含 Dragon 載人與貨運等任務，單季受任務組合影響很大（例如 2026Q3 含 Falcon Heavy 發射的 NASA 羅曼太空望遠鏡）。預測期用 2023、2024 年與 2025Q1–2026Q3 的累計平均 61.5 百萬美元。"
+    },
+    {
+      "id": "ai-revenue-per-watt-average",
+      "name": "AI 算力平均每瓦年營收",
+      "unit": "美元／瓦／年",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 3.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 3.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 2.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 2.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 2.1,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 7.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 16.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 26.2,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 33.2,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 36.9,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 39.1,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 40.6,
+          "status": "forecast"
+        }
+      ],
+      "note": "AI 解決方案與基礎設施營收（不含 Cursor）× 4 ÷ 平均額定算力，本站計算。額定算力含 xAI 自己訓練 Grok 使用的部分，因此平均值低於管理層所說出租價格（每瓦約 30–50 美元以上）。"
+    },
+    {
+      "id": "ai-revenue-per-watt-marginal",
+      "name": "AI 新增算力的邊際每瓦年營收",
+      "unit": "美元／瓦／年",
+      "points": [
+        {
+          "period": "2025Q2",
+          "value": 2.2,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 1.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 0.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 1.5,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 22.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 48.2,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 48.2,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 48.2,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 48.2,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 48.2,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 48.2,
+          "status": "forecast"
+        }
+      ],
+      "note": "（本季 − 上季 AI 算力營收）× 4 ÷（本季 − 上季平均額定算力），本站計算（平均算力沒有增加的季度省略）；選定模型用最近一季的值預測下一季。2026 年第二季起對外出租算力，邊際值大幅上升；預測期為基準情境假設（沿用 2026Q3 的值）。"
+    },
+    {
+      "id": "ai-capex-per-watt-added",
+      "name": "AI 部門資本支出 ÷ 新增額定算力",
+      "unit": "美元／瓦",
+      "points": [
+        {
+          "period": "2025Q2",
+          "value": 7.5,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 23.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 23.2,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 38.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 39.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 54.8,
+          "status": "estimate"
+        }
+      ],
+      "note": "AI 部門當季資本支出 ÷ 當季新增的期末額定算力，本站計算（額定算力沒有增加的季度省略）。資料中心建設與預付設備的支出通常早於算力上線，單季比值波動大；以融資租賃取得的 GPU 不在資本支出內。可與新增算力的邊際每瓦年營收（2026Q3 約 48.2 美元）對照，粗看投資回收速度；財務長稱新部署的回收期不到一年（tr-q3-2026）。"
+    },
+    {
+      "id": "nameplate-compute-path",
+      "name": "AI 額定算力（期末）",
+      "unit": "GW",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 0.3,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": 0.4,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 0.6,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 0.8,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 1,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 1.4,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 1.7,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q4",
+          "value": 2.75,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 3.8,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 4.85,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 5.9,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 6.95,
+          "status": "forecast"
+        }
+      ],
+      "note": "公司公布的期末額定算力；2026Q4 為財務長財測 2.5–3 GW 的中點，2027 年基準情境每季增加 1.05 GW（延續第四季的增幅），年底約 7.0 GW，低於執行長口頭目標的約 13 GW。"
+    },
+    {
+      "id": "contract-type-revenue",
+      "name": "合約型營收（不含 Starlink 消費者、X 廣告與 Cursor）",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 2131,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 1924,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 3136,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 2429,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 2203,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 4962,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 10308,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 17846,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 30762,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 43705,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 56679,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 69687,
+          "status": "forecast"
+        }
+      ],
+      "note": "營收 − Starlink 消費者 − X 廣告 − Cursor，本站計算；大致對應企業與政府、發射與 AI 算力等以合約計價的營收，與未完成合約對照用。"
+    },
+    {
+      "id": "backlog-implied-next-quarter",
+      "name": "未完成合約隱含的下一季認列額",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2026Q1",
+          "value": 2270,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 2486,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 6645,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 10546,
+          "status": "estimate"
+        }
+      ],
+      "note": "上一季底未完成合約 × 一年內認列比重 ÷ 4，本站計算，標在預計認列的季度。未完成合約只計不可取消期間（雲端算力合約多可提前 90 天通知終止），所以實際合約型營收常高於這個數字，例如 2026 年第二季的 Anthropic 合約在季中才簽訂。"
+    },
+    {
+      "id": "capex-intensity",
+      "name": "資本支出占營收比重",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 102,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 69,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 123,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 139,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 215,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 235,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 134,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 164,
+          "status": "forecast"
+        }
+      ],
+      "note": "現金流量表的購置不動產廠房設備支出 ÷ 營收，本站計算。2026Q4 以財務長財測中值 375 億美元（350–400 億美元）除以基準情境營收。以融資租賃取得的 GPU（例如 2026-10 與 Apollo 約 400 億美元的租賃承諾）不計入資本支出。"
+    }
+  ],
+  "backtest": [
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 5576,
+      "predicted": 4877,
+      "candidate": "segment-marginal-yield",
+      "benchmark": 4071,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 4960,
+      "predicted": 5223,
+      "candidate": "segment-marginal-yield",
+      "benchmark": 5576,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 4694,
+      "predicted": 5371,
+      "candidate": "segment-marginal-yield",
+      "benchmark": 4960,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 7814,
+      "predicted": 5489,
+      "candidate": "segment-marginal-yield",
+      "benchmark": 4694,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 14575,
+      "predicted": 10927,
+      "candidate": "segment-marginal-yield",
+      "benchmark": 7814,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 51.49,
+      "predicted": 44.69,
+      "candidate": "segment-marginal-yield",
+      "benchmark": 43.94,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 49.56,
+      "predicted": 47.56,
+      "candidate": "segment-marginal-yield",
+      "benchmark": 51.49,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 49.13,
+      "predicted": 49.32,
+      "candidate": "segment-marginal-yield",
+      "benchmark": 49.56,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 55.27,
+      "predicted": 49.38,
+      "candidate": "segment-marginal-yield",
+      "benchmark": 49.13,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 62.42,
+      "predicted": 55.66,
+      "candidate": "segment-marginal-yield",
+      "benchmark": 55.27,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 5576,
+      "predicted": 4564,
+      "candidate": "segment-marginal-ex-ante",
+      "benchmark": 4071,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 4960,
+      "predicted": 5437,
+      "candidate": "segment-marginal-ex-ante",
+      "benchmark": 5576,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 4694,
+      "predicted": 5629,
+      "candidate": "segment-marginal-ex-ante",
+      "benchmark": 4960,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 7814,
+      "predicted": 5389,
+      "candidate": "segment-marginal-ex-ante",
+      "benchmark": 4694,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 14575,
+      "predicted": 10485,
+      "candidate": "segment-marginal-ex-ante",
+      "benchmark": 7814,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 51.49,
+      "predicted": 44.18,
+      "candidate": "segment-marginal-ex-ante",
+      "benchmark": 43.94,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 49.56,
+      "predicted": 48.84,
+      "candidate": "segment-marginal-ex-ante",
+      "benchmark": 51.49,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 49.13,
+      "predicted": 50.1,
+      "candidate": "segment-marginal-ex-ante",
+      "benchmark": 49.56,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 55.27,
+      "predicted": 49.39,
+      "candidate": "segment-marginal-ex-ante",
+      "benchmark": 49.13,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 62.42,
+      "predicted": 55.49,
+      "candidate": "segment-marginal-ex-ante",
+      "benchmark": 55.27,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 5576,
+      "predicted": 4929,
+      "candidate": "segment-average-yield",
+      "benchmark": 4071,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 4960,
+      "predicted": 5302,
+      "candidate": "segment-average-yield",
+      "benchmark": 5576,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 4694,
+      "predicted": 5443,
+      "candidate": "segment-average-yield",
+      "benchmark": 4960,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 7814,
+      "predicted": 5537,
+      "candidate": "segment-average-yield",
+      "benchmark": 4694,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 14575,
+      "predicted": 9562,
+      "candidate": "segment-average-yield",
+      "benchmark": 7814,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 51.49,
+      "predicted": 44.49,
+      "candidate": "segment-average-yield",
+      "benchmark": 43.94,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 49.56,
+      "predicted": 47.29,
+      "candidate": "segment-average-yield",
+      "benchmark": 51.49,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 49.13,
+      "predicted": 49.12,
+      "candidate": "segment-average-yield",
+      "benchmark": 49.56,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 55.27,
+      "predicted": 49.33,
+      "candidate": "segment-average-yield",
+      "benchmark": 49.13,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 62.42,
+      "predicted": 55.49,
+      "candidate": "segment-average-yield",
+      "benchmark": 55.27,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 5576,
+      "predicted": 4075,
+      "candidate": "momentum",
+      "benchmark": 4071,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 4960,
+      "predicted": 7637,
+      "candidate": "momentum",
+      "benchmark": 5576,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 4694,
+      "predicted": 4412,
+      "candidate": "momentum",
+      "benchmark": 4960,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 7814,
+      "predicted": 4442,
+      "candidate": "momentum",
+      "benchmark": 4694,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 14575,
+      "predicted": 13008,
+      "candidate": "momentum",
+      "benchmark": 7814,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 51.49,
+      "predicted": 43.94,
+      "candidate": "momentum",
+      "benchmark": 43.94,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 49.56,
+      "predicted": 51.49,
+      "candidate": "momentum",
+      "benchmark": 51.49,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 49.13,
+      "predicted": 49.56,
+      "candidate": "momentum",
+      "benchmark": 49.56,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 55.27,
+      "predicted": 49.13,
+      "candidate": "momentum",
+      "benchmark": 49.13,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 62.42,
+      "predicted": 55.27,
+      "candidate": "momentum",
+      "benchmark": 55.27,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 5576,
+      "predicted": 4071,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 4960,
+      "predicted": 5576,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 4694,
+      "predicted": 4960,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 7814,
+      "predicted": 4694,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 14575,
+      "predicted": 7814,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 51.49,
+      "predicted": 43.94,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 49.56,
+      "predicted": 51.49,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 49.13,
+      "predicted": 49.56,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 55.27,
+      "predicted": 49.13,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 62.42,
+      "predicted": 55.27,
+      "candidate": "naive"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "bear",
+      "name": "保守",
+      "assumptions": [
+        {
+          "name": "AI 額定算力",
+          "value": "2026 年底 2.5 GW（財測下緣），2027 年每季增加 0.30 GW（2026 年第一至三季的平均增幅），年底約 3.7 GW",
+          "src": "tr-q3-2026"
+        },
+        {
+          "name": "新增算力的每瓦年營收",
+          "value": "每瓦 30 美元（管理層 30–50 美元估計的下緣），代表出租價格較低或較多算力留給 xAI 自用",
+          "src": "tr-q2-2026"
+        },
+        {
+          "name": "AI 部門毛利率",
+          "value": "2026 年第四季 55.7%（依財務長「第四季合併毛利率與第二季相近」反推，三個情境相同）；2027 年再低 5 個百分點至 50.7%（本模型假設，代表價格競爭或新算力的成本）",
+          "src": "tr-q3-2026"
+        },
+        {
+          "name": "Starlink 消費者用戶",
+          "value": "每季淨增 1.40 百萬戶（最近四季淨增 1.7、1.4、1.7、1.6 百萬戶的最小值）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "Starlink 每用戶月營收",
+          "value": "每季 −4.5%（ARPU 由 2025Q3 的 83 美元降到 2026Q3 的 69 美元，年減 16.9%，換算每季）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "企業與政府營收",
+          "value": "維持 2026 年第三季水準",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "客戶發射",
+          "value": "每季 7 次（最近四季 7、7、10、12 次的最小值），每次營收 61.5 百萬美元；公司預期 Starship 投入營運後 Falcon 9 發射會逐步減少",
+          "src": "sec-424b4"
+        },
+        {
+          "name": "發射與開發、X 廣告、Cursor",
+          "value": "發射與開發每季 3.8 億美元、X 廣告每季 4.4 億美元（最近四季平均）；Cursor 每季 11.7 億美元（第三季 48 天換算整季，持平）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "太空與連網部門毛利率",
+          "value": "太空 68.9%（最近四季合計）；連網 51.9%（2026 年第三季扣除約 3 個百分點的一次性利益）",
+          "src": "tr-q3-2026"
+        },
+        {
+          "name": "營業費用、業外、稅率與股數",
+          "value": "營業費用（不含併購相關股份基礎給付）每季 +12.8%，另加併購相關股份基礎給付每季 23.3 億美元；業外收支每季 2.0 億美元（利息收入減利息費用）；稅率 21%；稀釋股數 12,475 百萬股（三個情境相同）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "與公司展望對照",
+          "value": "2027 年第一季營收 227 億美元，低於財測區間下緣 330 億美元；2026 年第四季營收 × 4 為 737 億美元，公司目標是 12 月單月年化 1,000 億美元",
+          "src": "tr-q3-2026"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "2026Q4",
+          "revenue": 18416,
+          "grossMargin": 55.15,
+          "operatingIncome": 2084,
+          "netIncome": 1802,
+          "eps": 0.14,
+          "known": [],
+          "note": "AI 121 億美元（算力 105 億美元，平均額定算力 2.10 GW）、連網 55 億美元（期末用戶 15.0 百萬戶）、太空 8 億美元。"
+        },
+        {
+          "period": "2027Q1",
+          "revenue": 22702,
+          "grossMargin": 51.64,
+          "operatingIncome": 2917,
+          "netIncome": 2461,
+          "eps": 0.2,
+          "known": [],
+          "note": "AI 163 億美元（算力 147 億美元，平均額定算力 2.65 GW）、連網 56 億美元（期末用戶 16.4 百萬戶）、太空 8 億美元。公司財測 330–370 億美元。"
+        },
+        {
+          "period": "2027Q2",
+          "revenue": 25092,
+          "grossMargin": 51.56,
+          "operatingIncome": 3301,
+          "netIncome": 2765,
+          "eps": 0.22,
+          "known": [],
+          "note": "AI 185 億美元（算力 169 億美元，平均額定算力 2.95 GW）、連網 58 億美元（期末用戶 17.8 百萬戶）、太空 8 億美元。"
+        },
+        {
+          "period": "2027Q3",
+          "revenue": 27462,
+          "grossMargin": 51.49,
+          "operatingIncome": 3570,
+          "netIncome": 2977,
+          "eps": 0.24,
+          "known": [],
+          "note": "AI 208 億美元（算力 192 億美元，平均額定算力 3.25 GW）、連網 59 億美元（期末用戶 19.2 百萬戶）、太空 8 億美元。"
+        },
+        {
+          "period": "2027Q4",
+          "revenue": 29813,
+          "grossMargin": 51.43,
+          "operatingIncome": 3710,
+          "netIncome": 3087,
+          "eps": 0.25,
+          "known": [],
+          "note": "AI 230 億美元（算力 214 億美元，平均額定算力 3.55 GW）、連網 60 億美元（期末用戶 20.6 百萬戶）、太空 8 億美元。"
+        },
+        {
+          "period": "2026",
+          "revenue": 45499,
+          "grossMargin": 56.88,
+          "operatingIncome": 2789,
+          "netIncome": 1389,
+          "known": [],
+          "note": "第一至三季為實際值，第四季為模型值；淨利為合併淨利（第一季歸屬普通股股東的淨損另含特別股視同股利 6.71 億美元）。各季股數差異很大，不列全年 EPS。"
+        },
+        {
+          "period": "2027",
+          "revenue": 105069,
+          "grossMargin": 51.52,
+          "operatingIncome": 13497,
+          "netIncome": 11289,
+          "eps": 0.9,
+          "known": [],
+          "note": "四季加總；毛利率為全年毛利 ÷ 全年營收，EPS 為四季加總。AI 786 億美元、連網 232 億美元、太空 33 億美元。"
+        }
+      ]
+    },
+    {
+      "id": "base",
+      "name": "基準",
+      "assumptions": [
+        {
+          "name": "AI 額定算力",
+          "value": "2026 年底 2.75 GW（財測中點），2027 年每季增加 1.05 GW（延續第四季的增幅），年底約 7.0 GW",
+          "src": "tr-q3-2026"
+        },
+        {
+          "name": "新增算力的每瓦年營收",
+          "value": "每瓦約 48.2 美元：沿用 2026 年第三季資料算出的邊際值，與管理層「略高於每瓦 30–50 美元上緣」的說法一致（tr-q3-2026）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "AI 部門毛利率",
+          "value": "2026 年第四季 55.7%（依財務長「第四季合併毛利率與第二季相近」反推，三個情境相同）；2027 年維持第四季水準",
+          "src": "tr-q3-2026"
+        },
+        {
+          "name": "Starlink 消費者用戶",
+          "value": "每季淨增 1.60 百萬戶（最近四季淨增 1.7、1.4、1.7、1.6 百萬戶的平均）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "Starlink 每用戶月營收",
+          "value": "每季 −2.5%（2024、2025 年 ARPU 年減 8.1%、11.0% 的平均換算每季；公司預期國際市場比重提高與低價方案使 ARPU 繼續下降）",
+          "src": "sec-424b4"
+        },
+        {
+          "name": "企業與政府營收",
+          "value": "每季 +10.8%（2025 年全年成長 50.9% 換算每季）",
+          "src": "sec-424b4"
+        },
+        {
+          "name": "客戶發射",
+          "value": "每季 9 次（最近四季 7、7、10、12 次的平均），每次營收 61.5 百萬美元；公司預期 Starship 投入營運後 Falcon 9 發射會逐步減少",
+          "src": "sec-424b4"
+        },
+        {
+          "name": "發射與開發、X 廣告、Cursor",
+          "value": "發射與開發每季 3.8 億美元、X 廣告每季 4.4 億美元（最近四季平均）；Cursor 每季 11.7 億美元（第三季 48 天換算整季，持平）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "太空與連網部門毛利率",
+          "value": "太空 68.9%（最近四季合計）；連網 51.9%（2026 年第三季扣除約 3 個百分點的一次性利益）",
+          "src": "tr-q3-2026"
+        },
+        {
+          "name": "營業費用、業外、稅率與股數",
+          "value": "營業費用（不含併購相關股份基礎給付）每季 +12.8%，另加併購相關股份基礎給付每季 23.3 億美元；業外收支每季 2.0 億美元（利息收入減利息費用）；稅率 21%；稀釋股數 12,475 百萬股（三個情境相同）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "與公司展望對照",
+          "value": "2027 年第一季營收 361 億美元，在財測區間 330–370 億美元內；2026 年第四季營收 × 4 為 915 億美元，公司目標是 12 月單月年化 1,000 億美元",
+          "src": "tr-q3-2026"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "2026Q4",
+          "revenue": 22878,
+          "grossMargin": 55.27,
+          "operatingIncome": 4573,
+          "netIncome": 3769,
+          "eps": 0.3,
+          "known": [],
+          "note": "AI 162 億美元（算力 146 億美元，平均額定算力 2.23 GW）、連網 58 億美元（期末用戶 15.2 百萬戶）、太空 9 億美元。部門毛利率全部沿用第三季時，模型的合併毛利率為 61.6%；依財務長說法調整後為 55.3%。"
+        },
+        {
+          "period": "2027Q1",
+          "revenue": 36080,
+          "grossMargin": 55.37,
+          "operatingIncome": 11171,
+          "netIncome": 8981,
+          "eps": 0.72,
+          "known": [],
+          "note": "AI 288 億美元（算力 272 億美元，平均額定算力 3.28 GW）、連網 63 億美元（期末用戶 16.8 百萬戶）、太空 9 億美元。公司財測 330–370 億美元。"
+        },
+        {
+          "period": "2027Q2",
+          "revenue": 49293,
+          "grossMargin": 55.42,
+          "operatingIncome": 17681,
+          "netIncome": 14124,
+          "eps": 1.13,
+          "known": [],
+          "note": "AI 415 億美元（算力 399 億美元，平均額定算力 4.32 GW）、連網 69 億美元（期末用戶 18.4 百萬戶）、太空 9 億美元。"
+        },
+        {
+          "period": "2027Q3",
+          "revenue": 62522,
+          "grossMargin": 55.44,
+          "operatingIncome": 24092,
+          "netIncome": 19189,
+          "eps": 1.54,
+          "known": [],
+          "note": "AI 541 億美元（算力 525 億美元，平均額定算力 5.38 GW）、連網 74 億美元（期末用戶 20.0 百萬戶）、太空 9 億美元。"
+        },
+        {
+          "period": "2027Q4",
+          "revenue": 75769,
+          "grossMargin": 55.46,
+          "operatingIncome": 30395,
+          "netIncome": 24168,
+          "eps": 1.94,
+          "known": [],
+          "note": "AI 668 億美元（算力 652 億美元，平均額定算力 6.42 GW）、連網 80 億美元（期末用戶 21.6 百萬戶）、太空 9 億美元。"
+        },
+        {
+          "period": "2026",
+          "revenue": 49961,
+          "grossMargin": 56.78,
+          "operatingIncome": 5278,
+          "netIncome": 3356,
+          "known": [],
+          "note": "第一至三季為實際值，第四季為模型值；淨利為合併淨利（第一季歸屬普通股股東的淨損另含特別股視同股利 6.71 億美元）。各季股數差異很大，不列全年 EPS。"
+        },
+        {
+          "period": "2027",
+          "revenue": 223664,
+          "grossMargin": 55.43,
+          "operatingIncome": 83338,
+          "netIncome": 66463,
+          "eps": 5.33,
+          "known": [],
+          "note": "四季加總；毛利率為全年毛利 ÷ 全年營收，EPS 為四季加總。AI 1,912 億美元、連網 287 億美元、太空 37 億美元。"
+        }
+      ]
+    },
+    {
+      "id": "bull",
+      "name": "樂觀",
+      "assumptions": [
+        {
+          "name": "AI 額定算力",
+          "value": "2026 年底 3 GW（財測上緣），2027 年每季增加 2.50 GW，年底達到執行長口頭目標的約 13 GW（不是正式財測）",
+          "src": "tr-q3-2026"
+        },
+        {
+          "name": "新增算力的每瓦年營收",
+          "value": "每瓦約 48.2 美元：沿用 2026 年第三季資料算出的邊際值，與管理層「略高於每瓦 30–50 美元上緣」的說法一致（tr-q3-2026）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "AI 部門毛利率",
+          "value": "2026 年第四季 55.7%（依財務長「第四季合併毛利率與第二季相近」反推，三個情境相同）；2027 年回到 2026 年第三季的 64.6%",
+          "src": "tr-q3-2026"
+        },
+        {
+          "name": "Starlink 消費者用戶",
+          "value": "每季淨增 1.70 百萬戶（最近四季淨增 1.7、1.4、1.7、1.6 百萬戶的最大值）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "Starlink 每用戶月營收",
+          "value": "持平：假設 2026 年第三季的有利客戶組合（ARPU 季增約 5%）延續，每用戶營收不再下降",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "企業與政府營收",
+          "value": "每季 +17.6%（最近四季的幾何平均成長）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "客戶發射",
+          "value": "每季 12 次（最近四季 7、7、10、12 次的最大值），每次營收 61.5 百萬美元；公司預期 Starship 投入營運後 Falcon 9 發射會逐步減少",
+          "src": "sec-424b4"
+        },
+        {
+          "name": "發射與開發、X 廣告、Cursor",
+          "value": "發射與開發每季 3.8 億美元、X 廣告每季 4.4 億美元（最近四季平均）；Cursor 每季 11.7 億美元（第三季 48 天換算整季，持平）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "太空與連網部門毛利率",
+          "value": "太空 68.9%（最近四季合計）；連網 51.9%（2026 年第三季扣除約 3 個百分點的一次性利益）",
+          "src": "tr-q3-2026"
+        },
+        {
+          "name": "營業費用、業外、稅率與股數",
+          "value": "營業費用（不含併購相關股份基礎給付）每季 +12.8%，另加併購相關股份基礎給付每季 23.3 億美元；業外收支每季 2.0 億美元（利息收入減利息費用）；稅率 21%；稀釋股數 12,475 百萬股（三個情境相同）",
+          "src": "pr-q3-2026"
+        },
+        {
+          "name": "與公司展望對照",
+          "value": "2027 年第一季營收 486 億美元，高於財測區間上緣 370 億美元；2026 年第四季營收 × 4 為 993 億美元，公司目標是 12 月單月年化 1,000 億美元",
+          "src": "tr-q3-2026"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "2026Q4",
+          "revenue": 24813,
+          "grossMargin": 55.37,
+          "operatingIncome": 5666,
+          "netIncome": 4632,
+          "eps": 0.37,
+          "known": [],
+          "note": "AI 177 億美元（算力 161 億美元，平均額定算力 2.35 GW）、連網 60 億美元（期末用戶 15.3 百萬戶）、太空 11 億美元。"
+        },
+        {
+          "period": "2027Q1",
+          "revenue": 48578,
+          "grossMargin": 62.91,
+          "operatingIncome": 21753,
+          "netIncome": 17342,
+          "eps": 1.39,
+          "known": [],
+          "note": "AI 406 億美元（算力 390 億美元，平均額定算力 4.25 GW）、連網 69 億美元（期末用戶 17.0 百萬戶）、太空 11 億美元。公司財測 330–370 億美元。"
+        },
+        {
+          "period": "2027Q2",
+          "revenue": 79654,
+          "grossMargin": 63.43,
+          "operatingIncome": 40886,
+          "netIncome": 32457,
+          "eps": 2.6,
+          "known": [],
+          "note": "AI 707 億美元（算力 691 億美元，平均額定算力 6.75 GW）、連網 78 億美元（期末用戶 18.7 百萬戶）、太空 11 億美元。"
+        },
+        {
+          "period": "2027Q3",
+          "revenue": 110821,
+          "grossMargin": 63.64,
+          "operatingIncome": 59961,
+          "netIncome": 47526,
+          "eps": 3.81,
+          "known": [],
+          "note": "AI 1,009 億美元（算力 993 億美元，平均額定算力 9.25 GW）、連網 88 億美元（期末用戶 20.4 百萬戶）、太空 11 億美元。"
+        },
+        {
+          "period": "2027Q4",
+          "revenue": 142097,
+          "grossMargin": 63.76,
+          "operatingIncome": 78972,
+          "netIncome": 62544,
+          "eps": 5.01,
+          "known": [],
+          "note": "AI 1,310 億美元（算力 1,294 億美元，平均額定算力 11.75 GW）、連網 100 億美元（期末用戶 22.1 百萬戶）、太空 11 億美元。"
+        },
+        {
+          "period": "2026",
+          "revenue": 51896,
+          "grossMargin": 56.77,
+          "operatingIncome": 6371,
+          "netIncome": 4219,
+          "known": [],
+          "note": "第一至三季為實際值，第四季為模型值；淨利為合併淨利（第一季歸屬普通股股東的淨損另含特別股視同股利 6.71 億美元）。各季股數差異很大，不列全年 EPS。"
+        },
+        {
+          "period": "2027",
+          "revenue": 381149,
+          "grossMargin": 63.55,
+          "operatingIncome": 201573,
+          "netIncome": 159868,
+          "eps": 12.82,
+          "known": [],
+          "note": "四季加總；毛利率為全年毛利 ÷ 全年營收，EPS 為四季加總。AI 3,432 億美元、連網 335 億美元、太空 45 億美元。"
+        }
+      ]
+    }
+  ],
+  "sensitivities": [
+    {
+      "driver": "新增算力的每瓦年營收（2026 年第四季起）",
+      "change": "每瓦多 10 美元",
+      "effect": "2027 年營收 +330 億美元（+14.8%）、營業利益 +184 億美元、EPS +1.16 美元"
+    },
+    {
+      "driver": "新增算力的每瓦年營收（2026 年第四季起）",
+      "change": "每瓦少 10 美元",
+      "effect": "2027 年營收 −330 億美元（−14.8%）、營業利益 −184 億美元、EPS −1.16 美元"
+    },
+    {
+      "driver": "2027 年每季新增額定算力",
+      "change": "每季多 0.5 GW",
+      "effect": "2027 年營收 +482 億美元（+21.6%）、營業利益 +269 億美元、EPS +1.70 美元"
+    },
+    {
+      "driver": "2027 年每季新增額定算力",
+      "change": "每季少 0.5 GW",
+      "effect": "2027 年營收 −482 億美元（−21.6%）、毛利率 −0.1 個百分點、營業利益 −269 億美元、EPS −1.70 美元"
+    },
+    {
+      "driver": "AI 部門毛利率（2027 年）",
+      "change": "低 5 個百分點",
+      "effect": "2027 年毛利率 −4.3 個百分點、營業利益 −96 億美元、EPS −0.61 美元（營收不變）"
+    },
+    {
+      "driver": "Starlink 每季淨增用戶",
+      "change": "每季少 30 萬戶",
+      "effect": "2027 年營收 −8 億美元（−0.4%）、營業利益 −4 億美元、EPS −0.03 美元"
+    },
+    {
+      "driver": "Starlink 每用戶月營收",
+      "change": "每季多降 2 個百分點",
+      "effect": "2027 年營收 −12 億美元（−0.5%）、營業利益 −6 億美元、EPS −0.04 美元"
+    },
+    {
+      "driver": "客戶發射次數",
+      "change": "每季少 3 次",
+      "effect": "2027 年營收 −7 億美元（−0.3%）、營業利益 −5 億美元、EPS −0.03 美元"
+    },
+    {
+      "driver": "營業費用",
+      "change": "多 10%",
+      "effect": "2027 年營業利益 −41 億美元、EPS −0.26 美元（營收不變）"
+    }
+  ],
+  "limitations": [
+    "歷史太短：SpaceX 在 2026 年 6 月才上市，招股書只有 2025 年起的季資料，回測只有 5 季、參數由 2–6 季估計。營收誤差 17.4% 與天真模型 26.3% 的差距不具統計顯著性（天真模型與本模型逐季絕對百分比誤差的配對 t 值約 1.8，自由度 4，未達 5% 顯著水準所需的 2.78），選定模型主要是因為它的結構（數量 × 單價）較能說明營收從哪裡來，而不是因為回測證明它比較準。",
+    "回測是條件式的：代入當季實際的用戶數、客戶發射次數與額定算力（Cursor 營收也用實際值），衡量的是「驅動因子已知時」模型拆解營收的能力；驅動因子改用趨勢推估時營收誤差升到 21.4%。2026 年第二、三季的大幅低估來自季中新簽的雲端算力合約，任何只看過去資料的模型都難以事前預知。",
+    "AI 營收高度集中：2026 年第三季單一 AI 客戶（Customer B）占合併營收 34.5%，雲端算力合約多可提前 90 天通知終止；未完成合約只計不可取消期間，基準情境未來四季的合約型營收只有約 28% 有未完成合約支撐。2027 年的算力擴充（樂觀情境的約 13 GW 是執行長口頭目標）與每瓦營收都是假設，三個情境 2027 年營收相差約 3.6 倍。",
+    "新增算力的每瓦年營收（約 48.2 美元）只由 2026 年第二到第三季一次變化估計，平均每 GW 版本與本模型的回測差距也集中在 2026 年第三季。這段增量包含 5 月起的 Anthropic 合約第一次整季認列（第二季已開始認列，所用算力在第二季已上線），因此可能高估新算力的變現速度；它與財務長「略高於每瓦 30–50 美元上緣」的說法相近，基準與樂觀情境假設之後新增的算力都和這段增量一樣變現（自用比例不變）。新增算力每瓦少 10 美元，基準情境 2027 年營收變動約 −14.8%（見敏感度）。",
+    "毛利率：部門毛利率沿用最近一季或最近四季，沒有分開建模折舊、電力與新算力爬坡成本；Cursor 的毛利率未單獨揭露，模型以 AI 部門整體毛利率計；2026 年第四季的 AI 部門毛利率是依財務長「與第二季相近」的口頭說法反推（未給數字）。以融資租賃取得的 GPU（2026-10 與 Apollo 約 400 億美元的租賃承諾，2027 上半年起租）不計入資本支出，租賃成本與利息會影響之後的毛利率與淨利。",
+    "營業費用、併購相關股份基礎給付（Cursor 的 234 億美元股權獎酬認列時程未揭露）、業外收支、21% 稅率與股數都是簡化假設；Cursor 營收只有第三季 48 天的資料，預測期假設持平。EPS 對這些假設很敏感。",
+    "太空部門的發射與開發營收用最近四季平均，但 2025、2026 年都是第三季最高（666、637 百萬美元，其他季度 256–314 百萬美元），可能有季節性，模型沒有處理；太空部門只占基準情境 2027 年營收約 1.7%，對合併數影響小。",
+    "SpaceX 與 Tesla 的董事會已各自成立特別委員會評估合併（尚無決定），EchoStar 與 800 MHz 頻譜收購、Starship 商業發射與 Starlink 直連手機服務等事件都可能改變營收結構，模型沒有納入。"
+  ],
+  "sourceKeys": [
+    "sec-424b4",
+    "pr-q2-2026",
+    "pr-q3-2026",
+    "sec-10q-q2-2026",
+    "sec-10q-q3-2026",
+    "tr-q2-2026",
+    "tr-q3-2026",
+    "sec-fwp-google",
+    "sec-8k-apollo",
+    "sec-companyfacts"
+  ]
+}

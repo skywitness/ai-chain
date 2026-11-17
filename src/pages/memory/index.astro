@@ -24,7 +24,9 @@ import FabTable from '../../components/memory/FabTable.astro';
 import MemoryFamily from '../../components/memory/MemoryFamily.astro';
 import MemoryRisks from '../../components/memory/MemoryRisks.astro';
 import ForecastLinks from '../../components/memory/forecast/ForecastLinks.astro';
-import { FC_COMPANIES, hasForecast } from '../../lib/forecast-data';
+import { FC_META, forecastCompaniesWithPages } from '../../lib/forecast-data';
+import { sectionHref } from '../../lib/paths';
+import { joinZh } from '../../lib/format';
 import '../../components/memory/memory.css';
 import {
   BALANCE_META,
@@ -76,7 +78,9 @@ const byCountry = countries
   .sort((a, b) => b.n - a.n);
 
 // financial-model sub-pages (/memory/phison/, /memory/micron/): linked when their data files exist
-const hasModels = FC_COMPANIES.some((c) => hasForecast(c));
+const hasModels = forecastCompaniesWithPages('memory').length > 0;
+// the other companies of the 財報模型 topic (/forecast/), named in the link to its hub
+const otherModels = forecastCompaniesWithPages('forecast').map((c) => FC_META[c].name);
 
 const toc = [
   { href: '#basics', label: '一分鐘看懂' },
@@ -277,6 +281,12 @@ const jsonLd = [
           </p>
         </div>
         <ForecastLinks />
+        <p class="mem-fine mem-risks__foot">
+          <Icon name="arrow-right" size="1em" />
+          <span>
+            同樣的做法也用在{otherModels.length ? joinZh(otherModels, '與') : '其他公司'}：<a href={sectionHref('forecast')}>財報模型專題</a>依產業鏈整理所有公司的模型、回測誤差與下一季的情境推估。
+          </span>
+        </p>
       </section>
     )
   }

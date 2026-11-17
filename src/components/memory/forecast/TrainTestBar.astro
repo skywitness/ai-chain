@@ -42,7 +42,7 @@ const keepFixed = m.parameters.some((p) => /不重估/.test(p.name));
     }
   </ol>
   <figcaption class="mem-fine">
-    參數只用訓練期的資料估計。回測期的每一季，只用上一季以前的財報，加上當季實際的合約價{b.company === 'micron' ? '與美光公布的位元出貨' : '與月營收'}來預測，再和實際財報比較，衡量的是「價格已知時」模型拆解財報的能力。
+    參數只用訓練期的資料估計。回測期的每一季，只用上一季以前的財報，加上{b.meta.backtest.known}來預測，再和實際財報比較，衡量的是「{b.meta.backtest.when}」模型拆解財報的能力。
     {outOfSample && `${periodLabel(nextQuarter(m.test.to)) === periodLabel(last) ? periodLabel(last) : `${periodLabel(nextQuarter(m.test.to))}–${periodLabel(last)}`} 在回測期之後才公布，不拿來選模，只用來重估參數、當作預測起點${m.liveChecks?.length ? '，並和本站之前的預測對照' : ''}。`}
     預測期的參數改用到 {periodLabel(last)} 為止的資料重新估計{keepFixed ? '（標示「不重估」的參數除外）' : ''}。
   </figcaption>

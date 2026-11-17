@@ -88,6 +88,13 @@
     .fc-qbars--tail .ch-xg:not(:has(~ .ch-xg)) {
       visibility: hidden;
     }
+    /* …and the same for a short first year (QuarterBars marks it) */
+    .fc-qbars--head .ch-xg:not(.ch-xg ~ .ch-xg) {
+      visibility: hidden;
+    }
+  }
+  .fc-qbars--head-all .ch-xg:not(.ch-xg ~ .ch-xg) {
+    visibility: hidden;
   }
   @container ch (width < 18rem) {
     :is(.fc-years, .fc-qbars) .ch-xg {
@@ -825,6 +832,19 @@
   }
   .fc-mtable tbody tr.is-selected th {
     box-shadow: inset 4px 0 0 var(--fc-model);
+  }
+  /* phone cards: mark the whole card instead (the row header has no inline padding there, so the inset bar would
+     cover the model name) */
+  @media (max-width: 47.99rem) {
+    .mem-tablewrap--cards .fc-mtable tbody tr.is-selected {
+      border-color: color-mix(in srgb, var(--fc-model) 55%, var(--c-border));
+      border-inline-start: 4px solid var(--fc-model);
+      background: color-mix(in srgb, var(--fc-model) 10%, var(--c-bg-elev));
+    }
+    .mem-tablewrap--cards .fc-mtable tbody tr.is-selected > * {
+      background: transparent;
+      box-shadow: none;
+    }
   }
   .fc-rtable {
     min-inline-size: 46rem;

@@ -1,0 +1,454 @@
+---
+/**
+ * 驅動因子（台積電）: the charts that explain the results — the node mix and what it does to the revenue per wafer,
+ * the HPC platform, the exchange rate against the guidance assumption, the company's own statements on new-node and
+ * overseas-fab dilution, capex and depreciation, and the selected model's quarterly gross-margin bridge.
+ * Data: tsmc-drivers.yaml (company-reported shares, shipments, rates, guidance) and tsmc-model.json (derived series).
+ *   <Drivers b={bundle} />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import QuarterBars from '../../memory/forecast/QuarterBars.astro';
+import ChartCites from '../../memory/forecast/ChartCites.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import FcText from '../../memory/forecast/FcText.astro';
+import StatusTag from '../../memory/StatusTag.astro';
+import StackedShares from '../../memory/StackedShares.astro';
+import Icon from '../../ui/Icon.astro';
+import BridgeBars from './BridgeBars.astro';
+import { actualGrossMargin, chartKey, driverOf, fcPct, isQuarter, lastReportedOf, nextQuarter, periodLabel, qIndex, quartersFrom, type FcBundle } from '../../../lib/forecast-data';
+import { formatNumber, joinZh } from '../../../lib/format';
+import { BRIDGE, bridgeWindows, derivedMap, dilutionRows, driverMap, mixPeriods, nodeMixRow, param, quarters } from './tsmc-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m, meta } = b;
+const from = meta.historyFrom;
+const last = lastReportedOf(m);
+const qs = quarters(from, last);
+const fsKeys = quartersFrom(inputs, from).map((q) => q.src);
+const keysOf = (id: string, ps: readonly string[] = qs) => {
+  const d = driverMap(b, id);
+  return ps.map((p) => d.get(p)?.src);
+};
+const val = (id: string, p: string) => driverMap(b, id).get(p);
+const num = (v: number, d = 0) => formatNumber(v, { digits: d });
+
+// ── 製程組合 ──
+const mixRows = mixPeriods(b)
+  .map((p) => nodeMixRow(b, p))
+  .filter((r) => r.items.length > 0)
+  .map((r) => ({ label: periodLabel(r.period), items: r.items, src: r.src }));
+const advSeries = driverOf(b, 'node-advanced-share');
+const adv0 = advSeries?.points[0];
+const adv1 = val('node-advanced-share', last);
+const ppw = derivedMap(b, 'usd-per-wafer');
+const mix = derivedMap(b, 'node-mix-price-index');
+const base = (mp: Map<string, { value: number }>) => mp.get(from)?.value;
+const ppw0 = base(ppw);
+const mix0 = base(mix);
+const idxPts = (mp: Map<string, { value: number }>, v0: number | undefined) =>
+  qs.map((p) => ({ x: chartKey(p), y: v0 && mp.get(p) ? (mp.get(p)!.value / v0) * 100 : null }));
+const gamma = param(b, /^製程世代價差/);
+const ppwLast = ppw.get(last)?.value;
+
+// ── 平台 ──
+const hpcUsd = derivedMap(b, 'hpc-revenue-usd');
+const nonUsd = derivedMap(b, 'non-hpc-revenue-usd');
+const usdPeriods = [...hpcUsd.keys()].filter((p) => isQuarter(p) && qIndex(p) >= qIndex(from)).sort((x, y) => qIndex(x) - qIndex(y));
+const usdPts = (mp: Map<string, { value: number; status: string }>) =>
+  usdPeriods.map((p) => ({ x: chartKey(p), y: mp.get(p) ? mp.get(p)!.value / 100 : null, forecast: mp.get(p)?.status === 'forecast' }));
+const fcFrom = usdPeriods.find((p) => hpcUsd.get(p)?.status === 'forecast');
+const fcTo = usdPeriods.at(-1);
+const shareSum = (ids: string[], p: string) => {
+  const v = ids.map((id) => val(id, p)?.value);
+  return v.every((x) => x != null) ? v.reduce((s, x) => s! + x!, 0)! : null;
+};
+const OTHER_PLATFORMS = ['platform-iot-share', 'platform-automotive-share', 'platform-dce-share', 'platform-others-share'];
+const hpc0 = val('platform-hpc-share', from);
+const hpc1 = val('platform-hpc-share', last);
+const ph0 = val('platform-smartphone-share', from);
+const ph1 = val('platform-smartphone-share', last);
+const ai = driverOf(b, 'ai-accelerator-revenue-share');
+const aiLast = ai?.points.at(-1);
+const pkg = driverOf(b, 'advanced-packaging-revenue-share')?.points.at(-1);
+const aiGrowth = ai?.note?.replace(/^成長說法：/, '');
+
+// ── 匯率 ──
+const fxQs = [...qs, ...(val('fx-guidance', nextQuarter(last)) ? [nextQuarter(last)] : [])];
+const fxEvent = inputs.events.find((e) => /升值約 [\d.]+%，使毛利率減少約/.test(e.detail));
+const fxQ = fxEvent ? /(第[一二三四]季)新台幣較財測假設升值約 ([\d.]+)%，使毛利率減少約 ([\d.]+) 個百分點/.exec(fxEvent.detail) : null;
+const fxSens = param(b, /^模型隱含的匯率敏感度/);
+const fxBridge = derivedMap(b, 'gm-bridge-fx');
+const fxWorst = quarters(m.test.from, last)
+  .map((p) => ({ p, v: fxBridge.get(p)?.value }))
+  .filter((x): x is { p: string; v: number } => x.v != null)
+  .sort((x, y) => x.v - y.v)[0];
+
+// ── 稀釋 ──
+const dil = dilutionRows(b);
+const amount = (r: (typeof dil)[number]) => {
+  const q = /略高於/.test(r.detail) ? '略高於 ' : /接近/.test(r.detail) ? '接近 ' : '';
+  return r.low != null && r.high != null ? `${num(r.low)}–${num(r.high)}` : `${q}${formatNumber(r.value, { digits: 1, trim: true })}`;
+};
+const dilPeriod = (r: (typeof dil)[number]) => (r.kind === 'year' ? `${r.period} 全年` : periodLabel(r.period));
+const dilNodes = dil.filter((r) => /奈米$/.test(r.item));
+const dilNodeNames = [...new Set(dilNodes.map((r) => r.item))];
+const dilFirst = dilNodes[0]?.period.slice(0, 4);
+const dilLo = dilNodes.length ? num(Math.min(...dilNodes.map((r) => r.low ?? r.value))) : '';
+const dilHi = dilNodes.length ? num(Math.max(...dilNodes.map((r) => r.high ?? r.value))) : '';
+const overseasLast = dil.filter((r) => r.item === '海外廠').at(-1);
+
+// ── 資本支出與折舊 ──
+const capexQ = driverMap(b, 'capex-usd');
+const budget = driverOf(b, 'capex-budget');
+const lastYear = Number(last.slice(0, 4));
+const y0 = Number(from.slice(0, 4));
+const capexBars: Array<{ period: string; value: number; status?: 'guidance'; note?: string }> = [];
+const capexKeys: string[] = [];
+for (let y = y0; y <= lastYear; y++) {
+  const ps = [1, 2, 3, 4].map((n) => capexQ.get(`${y}Q${n}`));
+  if (ps.every((p) => p)) {
+    capexBars.push({ period: String(y), value: ps.reduce((s, p) => s + p!.value, 0) / 100 });
+    ps.forEach((p) => capexKeys.push(p!.src));
+  } else {
+    const bp = budget?.points.find((p) => p.period === String(y));
+    if (!bp) continue;
+    const ytd = ps.filter((p) => p);
+    capexBars.push({
+      period: String(y),
+      value: bp.value / 100,
+      status: 'guidance',
+      note: `公司資本預算${bp.low != null && bp.high != null ? ` ${num(bp.low / 100)}–${num(bp.high / 100)} 億美元的中值` : ''}${ytd.length ? `；前 ${ytd.length} 季實際 ${num(ytd.reduce((s, p) => s + p!.value, 0) / 100)} 億美元` : ''}`,
+    });
+    capexKeys.push(bp.src, ...ytd.map((p) => p!.src));
+  }
+}
+const bud = capexBars.find((x) => x.status === 'guidance');
+const budPt = bud ? budget?.points.find((p) => p.period === bud.period) : undefined;
+const prevYearBar = bud ? capexBars.find((x) => x.period === String(Number(bud.period) - 1)) : undefined;
+const depGuide = driverOf(b, 'depreciation-growth-guidance')?.points.at(-1);
+const dep = derivedMap(b, 'depreciation-intensity');
+const depPts = qs.map((p) => ({ p, v: dep.get(p)?.value })).filter((x): x is { p: string; v: number } => x.v != null);
+// the highest share of the last three calendar years (2024Q1 on for a 2026 report): 「近兩年」 of the sentence
+const depPeak = depPts.filter((x) => qIndex(x.p) >= qIndex(`${lastYear - 2}Q1`)).sort((x, y) => y.v - x.v)[0];
+const depLast = dep.get(last)?.value;
+const depSens = m.sensitivities.find((s) => /折舊/.test(s.driver));
+const phi = param(b, /^折舊中視為固定成本的比重/);
+const gmSeries = quartersFrom(inputs, from).map((q) => ({ x: chartKey(q.period), y: actualGrossMargin(b.company, q) ?? null }));
+
+// ── 毛利率拆解 ──
+const bw = bridgeWindows(b);
+const kappa = param(b, /^成本對美元營收的彈性/);
+const trend = param(b, /^成本趨勢/);
+const span = (rows: typeof bw.actual.rows) => (rows.length ? `${periodLabel(rows[0]!.period)}–${periodLabel(rows.at(-1)!.period)}` : '');
+const parts = (sums: number[]) => BRIDGE.map((c, i) => ({ short: c.short, name: c.name, value: sums[i]! }));
+const totalOf = (sums: number[]) => sums.reduce((s, x) => s + x, 0);
+const allVals = [...bw.actual.sums, totalOf(bw.actual.sums), ...bw.forecast.sums, totalOf(bw.forecast.sums)];
+const domain: [number, number] = [Math.min(0, ...allVals), Math.max(0, ...allVals)];
+const iOther = BRIDGE.findIndex((c) => c.id === 'gm-bridge-other');
+const iScale = BRIDGE.findIndex((c) => c.id === 'gm-bridge-scale');
+const iDil = BRIDGE.findIndex((c) => c.id === 'gm-bridge-dilution');
+const otherTop = [...bw.actual.rows].sort((x, y) => y.parts[iOther]! - x.parts[iOther]!).slice(0, 2).filter((r) => r.parts[iOther]! > 0.5);
+const pp = (v: number) => `${formatNumber(v, { digits: 1, signed: true })} 個百分點`;
+const btRows = [...bw.actual.rows, ...bw.forecast.rows];
+---
+
+<h3 class="fc-h3">製程組合：先進製程撐起每片晶圓的價格</h3>
+<p class="fc-p">
+  台積電每季公布各製程占晶圓營收的比重。每一代製程量產後比重先上升、幾年後讓位給下一代；{adv0 && adv1 && `7 奈米及以下的先進製程由 ${periodLabel(adv0.period)} 的 ${num(adv0.value)}% 升到 ${periodLabel(last)} 的 ${num(adv1.value)}%`}{adv0 && <FcCite k={adv0.src} />}{adv1 && <FcCite k={adv1.src} />}。「每片晶圓營收與製程組合」圖把兩個推算序列都換算成 {periodLabel(from)}＝100：每片晶圓平均營收是美元營收 ÷ 晶圓出貨；製程組合單價指數假設各製程的每片單價固定{gamma && `、每升一個世代貴 ${num((Math.exp(gamma.value) - 1) * 100)}%`}，只反映組合的變化。
+</p>
+<div class="mem-grid mem-grid--charts">
+  <StackedShares
+    title="各製程占晶圓營收的比重"
+    subtitle={`${periodLabel(last)} 與 ${mixRows.length > 1 ? `${mixRows.at(-1)!.label}–${mixRows[1]!.label} 各年第四季` : '最近一季'}；公司公布的整數百分比`}
+    rows={mixRows.map(({ src: _src, ...r }) => r)}
+    unit="占晶圓營收（%）"
+    itemTitle="製程"
+    notes={['40 奈米以上為 40／45、65 與 90 奈米以上三組相加；晶圓營收不含先進封裝、光罩等其他營收。']}
+    as="h4"
+  />
+  <MultiLine
+    title="每片晶圓營收與製程組合"
+    subtitle={`${periodLabel(from)}–${periodLabel(last)}，兩者都以 ${periodLabel(from)}＝100`}
+    unit={`指數（${periodLabel(from)}＝100）`}
+    badge="推算值"
+    series={[
+      { name: '每片晶圓平均營收', color: 'var(--chart-1)', points: idxPts(ppw, ppw0) },
+      { name: '製程組合單價指數', color: 'var(--chart-4)', points: idxPts(mix, mix0) },
+    ]}
+    digits={0}
+    height={240}
+    notes={[
+      ppwLast != null ? `${periodLabel(last)} 每片晶圓平均營收約 ${num(ppwLast)} 美元（含先進封裝、光罩等非晶圓營收，不是公司公布的單價）。` : null,
+      '兩條線的差距代表同一製程的價格變化與非晶圓營收；製程組合單價指數由營收比重與出貨反推的統計值估計，不是公司公布的價格。',
+    ]}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart fc-years"
+  />
+</div>
+<ChartCites label="製程比重" keys={mixRows.map((r) => r.src)} />
+<ChartCites label="晶圓出貨與美元營收" keys={[...keysOf('wafer-shipments'), ...keysOf('revenue-usd')]} />
+
+<h3 class="fc-h3">平台：高效能運算成為最大的營收來源</h3>
+<p class="fc-p">
+  {hpc0 && hpc1 && `高效能運算（HPC）占營收由 ${periodLabel(from)} 的 ${num(hpc0.value)}% 升到 ${periodLabel(last)} 的 ${num(hpc1.value)}%`}{ph0 && ph1 && `，智慧型手機由 ${num(ph0.value)}% 降到 ${num(ph1.value)}%`}{hpc1 && <FcCite k={hpc1.src} />}{hpc0 && <FcCite k={hpc0.src} />}。
+  {aiLast && <>公司說 AI 加速器（資料中心訓練與推論用的 AI GPU、AI ASIC 與 HBM 控制器）約占 {aiLast.period} 年營收 {num(aiLast.value)}%（公司以文字區間描述，本頁換算）<FcCite k={aiLast.src} />；成長說法：<FcText b={b} text={aiGrowth} /></>}
+  {pkg && <>先進封裝與測試約占 {pkg.period} 年營收 {num(pkg.value)}%<FcCite k={pkg.src} />。</>}
+  「HPC 與其他平台的美元營收」圖是美元營收 × 平台比重的推算值；{fcFrom && `${periodLabel(fcFrom)} 起是基準情境的假設（虛線）`}。
+</p>
+<div class="mem-grid mem-grid--charts">
+  <MultiLine
+    title="HPC 與其他平台的美元營收"
+    subtitle={`${periodLabel(from)}–${periodLabel(last)} 為推算${fcFrom && fcTo ? `，${periodLabel(fcFrom)}–${periodLabel(fcTo)} 為基準情境（虛線）` : ''}`}
+    unit="億美元"
+    badge="推算與預測"
+    series={[
+      { name: 'HPC', color: 'var(--chart-1)', points: usdPts(hpcUsd) },
+      { name: '其他平台', color: 'var(--chart-2)', points: usdPts(nonUsd) },
+    ]}
+    digits={0}
+    height={240}
+    notes={['其他平台＝智慧型手機、物聯網、車用、消費性電子與其他。美元營收 × 公司公布的平台比重（整數百分比）；比重的進位使推算值有約 ±0.5% 營收的誤差。']}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart fc-years"
+  />
+  <MultiLine
+    title="各平台占營收的比重"
+    subtitle={`${periodLabel(from)}–${periodLabel(last)}，公司公布的整數百分比`}
+    unit="%"
+    format="percent"
+    digits={0}
+    height={240}
+    series={[
+      { name: 'HPC', color: 'var(--chart-1)', points: qs.map((p) => ({ x: chartKey(p), y: val('platform-hpc-share', p)?.value ?? null })) },
+      { name: '智慧型手機', color: 'var(--chart-4)', points: qs.map((p) => ({ x: chartKey(p), y: val('platform-smartphone-share', p)?.value ?? null })) },
+      { name: '其他', color: 'var(--c-fg-subtle)', points: qs.map((p) => ({ x: chartKey(p), y: shareSum(OTHER_PLATFORMS, p) })) },
+    ]}
+    notes={['其他＝物聯網、車用、消費性電子與其他四項相加。']}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart fc-years"
+  />
+</div>
+<ChartCites label="平台比重" keys={keysOf('platform-hpc-share')} />
+<ChartCites label="美元營收" keys={keysOf('revenue-usd')} />
+
+<h3 class="fc-h3">匯率：營收是美元，成本多是新台幣</h3>
+<p class="fc-p">
+  新台幣每升值 1%，毛利率約減少 0.4 個百分點{fxEvent && <FcCite k={fxEvent.src} />}。{fxQ && fxEvent && <>例如 {fxEvent.date.slice(0, 4)} 年{fxQ[1]}新台幣比財測時的假設升值約 {fxQ[2]}%，公司說毛利率因此減少約 {fxQ[3]} 個百分點<FcCite k={fxEvent.src} />。</>}
+  公司在財測中寫明匯率假設，實際匯率偏離時，毛利率就會偏離財測。{fxSens && `模型估計的敏感度較小（每 1% 約 ${formatNumber(fxSens.value, { digits: 2, trim: true })} 個百分點），因為毛利率越高、成本占營收越少，同樣的匯率變動影響越小。`}{fxWorst && fxWorst.v < 0 && `回測期間匯率對毛利率影響最大的一季是 ${periodLabel(fxWorst.p, 'long')}（${pp(fxWorst.v)}，模型拆解）。`}
+</p>
+<MultiLine
+  title="新台幣兌美元：實際平均匯率與財測假設"
+  subtitle={`${periodLabel(from)}–${periodLabel(fxQs.at(-1)!)}；數字越大代表新台幣越弱`}
+  unit="新台幣／美元"
+  series={[
+    { name: '當季實際平均匯率', color: 'var(--chart-1)', points: fxQs.map((p) => ({ x: chartKey(p), y: val('fx-usd-ntd-avg', p)?.value ?? null })) },
+    { name: '上一季法說會的財測匯率假設', color: 'var(--chart-4)', points: fxQs.map((p) => ({ x: chartKey(p), y: val('fx-guidance', p)?.value ?? null })) },
+  ]}
+  digits={2}
+  includeZero={false}
+  height={220}
+  notes={[`${periodLabel(fxQs.at(-1)!)} 只有財測假設。實際匯率是財報附註的當季加權平均匯率。`]}
+  xTitle="季度"
+  as="h4"
+  class="mem-chart fc-chart-wide fc-years"
+/>
+<ChartCites label="實際匯率" keys={keysOf('fx-usd-ntd-avg')} />
+<ChartCites label="財測匯率假設" keys={keysOf('fx-guidance', fxQs)} />
+
+<h3 class="fc-h3">新製程與海外廠：量產初期先稀釋毛利率</h3>
+<p class="fc-p">
+  新製程剛量產時良率與產量還在爬坡，毛利率會被稀釋；海外廠（亞利桑那、熊本）放量時也一樣。台積電通常在法說會事先說明幅度：{dilNodes.length > 0 && <>{dilFirst} 年以來，公司對 {dilNodeNames.join('、')}量產初期的稀釋預估在 {dilLo}–{dilHi} 個百分點之間（各筆說法與出處見下方「公司歷來的稀釋說法」）</>}{overseasLast && <>；海外廠 {overseasLast.period} 年稀釋{amount(overseasLast)} 個百分點<FcCite k={overseasLast.src} />{/3–4 個百分點/.test(overseasLast.detail) && '，公司表示未來幾年會擴大到 3–4 個百分點'}</>}。模型把區間換算成中值計入毛利率；回測只用該季財報公布前已知的說法，{periodLabel(nextQuarter(last), 'long')}另依財測反推額外的稀釋（見「情境預測」）。
+</p>
+<details class="mem-more tsmc-dil-more">
+  <summary>
+    公司歷來的稀釋說法（{dil.length} 筆）
+    <Icon name="chevron-down" />
+  </summary>
+  <div class="mem-tablewrap mem-tablewrap--cards" tabindex="0" role="region" aria-label="新製程與海外廠的毛利率稀釋">
+    <table class="mem-table tsmc-dil">
+      <caption class="ch-sr">台積電在法說會對新製程與海外廠稀釋毛利率幅度的預估（正值代表毛利率減少，單位：個百分點）</caption>
+      <thead>
+        <tr>
+          <th scope="col">期間</th>
+          <th scope="col">項目</th>
+          <th scope="col" class="num">預估稀釋<small>個百分點</small></th>
+          <th scope="col">說明</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          dil.map((r) => (
+            <tr>
+              <th scope="row" data-label="期間">
+                <div class="fct-cell">{dilPeriod(r)}</div>
+              </th>
+              <td data-label="項目">
+                <div class="fct-cell">{r.item}</div>
+              </td>
+              <td class="num" data-label="預估稀釋">
+                <div class="fct-cell">
+                  <span class="tsmc-dil__v">{amount(r)}</span>
+                </div>
+              </td>
+              <td data-label="說明">
+                <div class="fct-cell">
+                  <FcText b={b} text={r.detail || '—'} src={r.src} />
+                </div>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  <p class="mem-fine">「預估」是公司在量產前或當季初的說法，不是事後的實際稀釋；公司沒有公布實際稀釋幅度。半年的說法同時列在該半年的兩季。</p>
+</details>
+
+<h3 class="fc-h3">資本支出與折舊：今天的投資，之後的成本</h3>
+<p class="fc-p">
+  蓋廠與買設備的資本支出，之後幾年以折舊進入銷貨成本。{bud && budPt && <>{bud.period} 年資本預算 {budPt.low != null && budPt.high != null ? `${num(budPt.low / 100)}–${num(budPt.high / 100)}` : num(budPt.value / 100)} 億美元<FcCite k={budPt.src} />{prevYearBar && `，中值比 ${prevYearBar.period} 年實際的 ${num(prevYearBar.value)} 億美元多 ${num((bud.value / prevYearBar.value - 1) * 100)}%`}；</>}{depGuide && <>公司預估 {depGuide.period} 年折舊年增約 {num(depGuide.value)}%<FcCite k={depGuide.src} />。</>}
+  {depPeak && depLast != null && `折舊占營收的比重由 ${periodLabel(depPeak.p)} 的 ${fcPct(depPeak.v)} 降到 ${periodLabel(last)} 的 ${fcPct(depLast)}，營收成長得比折舊快，是近兩年毛利率上升的原因之一。`}
+  {phi && phi.value === 0 && '選定模型沒有單獨處理折舊，'}{depSens && <>敏感度分析：{depSens.change}，<FcText b={b} text={depSens.effect} />。</>}
+</p>
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars
+    title="每年資本支出"
+    subtitle={`${capexBars[0]?.period ?? ''}–${capexBars.at(-1)?.period ?? ''}；實際為四季加總${bud ? `，${bud.period} 年為公司資本預算中值（斜線）` : ''}`}
+    unit="億美元"
+    points={capexBars.map((x) => ({ period: x.period, value: x.value, status: x.status, note: x.note }))}
+    valueName="資本支出"
+    legend={bud ? [{ label: '實際', kind: 'bar' }, { label: '公司預算（斜線）', kind: 'estimate' }] : undefined}
+    digits={0}
+    as="h4"
+  />
+  <MultiLine
+    title="折舊占營收比重與毛利率"
+    subtitle={`${periodLabel(from)}–${periodLabel(last)}，每季`}
+    unit="%"
+    format="percent"
+    digits={1}
+    height={210}
+    series={[
+      { name: '毛利率', color: 'var(--chart-2)', points: gmSeries },
+      { name: '折舊占營收比重', color: 'var(--chart-7)', points: depPts.map((x) => ({ x: chartKey(x.p), y: x.v })) },
+    ]}
+    notes={['折舊占營收比重＝現金流量表的折舊及攤銷 ÷ 營收（含計入營業費用的部分）。']}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart fc-years"
+  />
+</div>
+<ChartCites label="資本支出" keys={capexKeys} />
+<ChartCites label="折舊、營收與毛利率" keys={fsKeys} />
+
+{
+  bw.actual.rows.length > 0 && (
+    <>
+      <h3 class="fc-h3">合起來看：毛利率每季變化的拆解</h3>
+      <p class="fc-p">
+        選定的成本彈性模型把每季毛利率的變化拆成五項：美元營收規模（銷貨成本的成長率約為美元營收成長率的 {kappa ? `κ = ${formatNumber(kappa.value, { digits: 2 })} 倍` : '一部分'}）、匯率、成本趨勢{trend && `（每季 ${formatNumber(trend.value, { digits: 2, signed: true })}%）`}、新製程與海外廠稀釋，以及模型沒有解釋的「其他」；五項相加等於毛利率的季變化。
+        {bw.actual.start != null && bw.actual.end != null && `${span(bw.actual.rows)}，毛利率由 ${fcPct(bw.actual.start)} 變為 ${fcPct(bw.actual.end)}：規模 ${pp(bw.actual.sums[iScale]!)}、稀釋 ${pp(bw.actual.sums[iDil]!)}，「其他」${pp(bw.actual.sums[iOther]!)}`}{otherTop.length > 0 && `，主要在 ${joinZh(otherTop.map((r) => periodLabel(r.period)), '與')}`}{bw.actual.start != null && '。'}
+        「其他」包含模型沒有單獨處理的漲價、產品組合、產能利用率與一次性事件，是這個模型最大的盲點。{bw.forecast.start != null && bw.forecast.end != null && `基準情境下，${span(bw.forecast.rows)} 毛利率由 ${fcPct(bw.forecast.start)} 變為 ${fcPct(bw.forecast.end)}，「其他」設為 0。`}
+      </p>
+      <div class="mem-grid mem-grid--charts">
+        <BridgeBars
+          title={`${span(bw.actual.rows)}：實際毛利率的變化`}
+          subtitle={bw.actual.start != null && bw.actual.end != null ? `${fcPct(bw.actual.start)} → ${fcPct(bw.actual.end)}；各季拆解加總` : undefined}
+          parts={parts(bw.actual.sums)}
+          total={totalOf(bw.actual.sums)}
+          domain={domain}
+          badge="模型拆解"
+          as="h4"
+        />
+        {bw.forecast.rows.length > 0 && (
+          <BridgeBars
+            title={`${span(bw.forecast.rows)}：基準情境`}
+            subtitle={bw.forecast.start != null && bw.forecast.end != null ? `${fcPct(bw.forecast.start)} → ${fcPct(bw.forecast.end)}；模型預測` : undefined}
+            parts={parts(bw.forecast.sums)}
+            total={totalOf(bw.forecast.sums)}
+            domain={domain}
+            forecast
+            badge="模型預測"
+            as="h4"
+          />
+        )}
+      </div>
+      <details class="mem-more tsmc-bridge-more">
+        <summary>
+          每季的拆解（{btRows.length} 季）
+          <Icon name="chevron-down" />
+        </summary>
+        <div class="mem-tablewrap mem-tablewrap--cards" tabindex="0" role="region" aria-label="每季毛利率變化的拆解">
+          <table class="mem-table tsmc-bt">
+            <caption class="ch-sr">台積電每季毛利率變化的拆解（個百分點），{span(bw.actual.rows)} 為實際財報的拆解，之後為基準情境</caption>
+            <thead>
+              <tr>
+                <th scope="col">季度</th>
+                <th scope="col" class="num">毛利率</th>
+                <th scope="col" class="num">季變化</th>
+                {BRIDGE.map((c) => <th scope="col" class="num">{c.short}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {btRows.map((r) => {
+                const q = inputs.quarters.find((x) => x.period === r.period);
+                return (
+                  <tr class:list={[r.forecast && 'fc-row--forecast']}>
+                    <th scope="row" data-label="季度">
+                      <div class="fct-cell">
+                        {periodLabel(r.period)}
+                        {r.forecast ? <StatusTag status="forecast" /> : q && <FcCite k={q.src} />}
+                      </div>
+                    </th>
+                    <td class="num" data-label="毛利率">{fcPct(r.gm)}</td>
+                    <td class="num" data-label="季變化">{r.gm != null && r.gmPrev != null ? formatNumber(r.gm - r.gmPrev, { digits: 2, signed: true }) : '—'}</td>
+                    {BRIDGE.map((c, i) => (
+                      <td class="num" data-label={c.name}>
+                        {formatNumber(r.parts[i]!, { digits: 2, signed: true })}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p class="mem-fine">
+          規模＝美元營收規模（營運槓桿）；稀釋＝新製程與海外廠稀釋；其他＝實際毛利率與模型的差距。預測各季為基準情境，「其他」設為 0。拆解用全期參數（{kappa ? `κ = ${formatNumber(kappa.value, { digits: 3 })}` : ''}{trend ? `、g = ${formatNumber(trend.value, { digits: 2 })}%／季` : ''}），與回測時只用訓練期資料的參數不同。
+        </p>
+      </details>
+    </>
+  )
+}
+
+<style>
+  .tsmc-dil__v {
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;
+  }
+  .tsmc-dil td:last-child {
+    min-inline-size: 16rem;
+    font-size: var(--fs-xs);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+  }
+  .tsmc-bridge-more,
+  .tsmc-dil-more {
+    margin-block-start: var(--space-4);
+  }
+  /* phone cards: the bridge labels are long (「美元營收規模（營運槓桿）」) */
+  @media (max-width: 47.99rem) {
+    .mem-tablewrap--cards .tsmc-bt.mem-table tbody tr > * {
+      grid-template-columns: 10em minmax(0, 1fr);
+    }
+    .tsmc-dil td:last-child {
+      min-inline-size: 0;
+    }
+  }
+</style>

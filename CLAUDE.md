@@ -5,6 +5,7 @@
 - 內容規模：14 個產業鏈環節、710 家公司（99 家完整檔案含財報）、47 個模型系列、40 篇趨勢、38 篇學習文章、299 個名詞、24 個 3D 場景，以及記憶體與儲存專題 `/memory/`（2026-10-23 加入）。
 - 記憶體專題的資料在 `src/data/memory/*.yaml`（格式見 `src/schemas/memory.ts`），更新方式見 `docs/UPDATING.md` §2.8。
 - 記憶體專題有兩個財報模型子頁：`/memory/phison/`「群聯財報模型」與 `/memory/micron/`「美光財報模型」（路由 `src/pages/memory/[company].astro`，元件 `src/components/memory/forecast/`）。輸入在 `src/data/memory/forecast/*.yaml`，模型結果 `*-model.json` 由 `scripts/models/<公司>.ts` 產生、不要手改（格式見 `src/schemas/forecast.ts`），更新方式見 `docs/UPDATING.md` §2.9。
+- 財報模型專題 `/forecast/`「財報模型」（2026-11-17 加入，導覽列「財報模型」）：專題首頁 `src/pages/forecast/index.astro` 列出所有模型頁（含群聯、美光），公司頁 `/forecast/<公司>/`（`src/pages/forecast/[company].astro`：台積電、聯發科、SpaceX、特斯拉，輝達的模型完成後自動出現）。資料在 `src/data/forecast/<公司>-inputs.yaml`、`<公司>-drivers.yaml`（驅動因子）與 `<公司>-model.json`（由 `scripts/models/<公司>.ts` 產生、不要手改）；每家公司的標題、期間與口徑設定在 `src/lib/forecast-config.ts`（`FC_META`），讀取在 `src/lib/forecast-data.ts`，公司專屬段落放在 `src/components/forecast/<公司>/`（`Basics`、`Drivers`、`Volume`…，見 `src/components/forecast/registry.ts`）。更新與新增公司見 `docs/UPDATING.md` §2.9。
 - 完成狀態與歷程見 `PROGRESS.md`；驗證結果、已知限制與部署方式見 `docs/QA-REPORT.md`。
 
 ## 要更新網站時
@@ -28,6 +29,7 @@
 | `docs/SCENES.md`、`docs/SCENE-CONTRACT.md` | 3D 場景的契約與開發 API |
 | `docs/QA.md` | 所有檢查指令與完整驗證流程（§5） |
 | `src/schemas/index.ts`、`src/schemas/roster.ts`、`src/schemas/memory.ts`、`src/schemas/forecast.ts` | 資料格式（strictObject，不允許多餘欄位） |
+| `src/lib/forecast-config.ts` | 財報模型頁的公司設定（標題、期間、口徑、路徑、環節） |
 | `research/design/architecture.md`、`research/design/scenes3d.md` | 原始架構設計 |
 
 ## 常用指令
@@ -44,6 +46,7 @@ npx tsx scripts/check-roster.ts            # 公司名冊檢查
 npx tsx scripts/check-memory.ts            # 記憶體專題資料檢查（src/data/memory/*.yaml）
 npx tsx scripts/models/phison.ts           # 重跑群聯財報模型 → src/data/memory/forecast/phison-model.json（加 --dir 改用暫存區）
 npx tsx scripts/models/micron.ts           # 重跑美光財報模型 → src/data/memory/forecast/micron-model.json
+npx tsx scripts/models/<公司>.ts           # 重跑 /forecast/ 的財報模型（tsmc、mediatek、spacex、tesla…）→ src/data/forecast/<公司>-model.json
 npx tsx scripts/check-forecast.ts          # 財報模型資料檢查（schema、來源、季度連續，並確認模型 JSON 可重現）
 npx tsx scripts/check-links.ts             # 站內連結檢查（需要先建置）
 node scripts/plan/make-update-args.mjs ... # 產生更新 workflow 的參數（見 docs/UPDATING.md）

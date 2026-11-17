@@ -27,6 +27,27 @@
   - 參數產生器：`scripts/plan/make-update-args.mjs`。
   - `content-wf.js` 新增了 `financials-update` 與 `refresh` 兩種類型，以及 `asOf`（資料基準日）參數。
 
+## 🚧 進行中：輝達財報模型（2026-11-18 開始）
+
+- 用同一支 `research/plan/workflows/forecast2-wf.js`，args `{"asOf":"2026-11-18","companies":["nvidia"],"searchBudget":6,"platform":false}`，run `wf_6caea094-f93`（6 個 agent：資料→查核→建模→模型審查→專屬段落→審查）。腳本已加入前四家審查學到的規則（回測不得用同日法說的說法、條件式回測不和事前財測直接比較、參數顯著性、財測參數命名、模型 JSON 先放暫存區）。
+- 模型檔進 `src/data/forecast/nvidia-model.json` 後，`/forecast/nvidia/`、專題卡片與 `/companies/nvidia/` 的連結會自動出現；`FC_META.nvidia` 是事先寫的，要對照資料確認。
+
+## ✅ 財報模型專題 `/forecast/`：台積電、聯發科、SpaceX、特斯拉（2026-11-18 上線）
+
+使用者要求：仿照 `/memory/phison/`，做台積電、聯發科、NVIDIA、SpaceX、Tesla 的財報模型頁。決定：新專題 `/forecast/`（總覽頁加入頂部導覽「財報模型」，群聯與美光也列入總覽但網址不變）；NVIDIA 等 FY2027Q3 財報公布後再做；驗證後直接上線。
+
+- **契約**（主 session）：`src/schemas/forecast.ts`（`FORECAST_COMPANIES`、`companyDrivers`；`companyInputs.quarters` 下限改為 4 季，因 SpaceX 上市後只有 7 季）、`scripts/check-forecast.ts`（涵蓋 7 家與驅動因子檔，重跑 `buildModel(inputs, prices, drivers)` 確認可重現）。
+- **Workflow**：`research/plan/workflows/forecast2-wf.js`，run `wf_e1bac889-504`（22 個 agent、0 錯誤）：每家資料→獨立查核→建模→獨立模型審查；平台；各家專屬段落；整體審查（11 個問題修 8 個）。
+- **資料**（`src/data/forecast/`）：台積電 43 季＋130 個月＋39 條驅動因子（製程、平台、地區比重、晶圓出貨、匯率、財測、稀釋）；聯發科 43 季＋130 個月＋21 條（產品線、IDC 手機出貨、ASIC、匯率）；SpaceX 7 季＋24 條（Starlink 用戶與 ARPU、發射、額定算力、未完成合約）；特斯拉 43 季＋18 條（交車、租賃、儲能部署、監管積分、分析師共識）。
+- **模型**（`scripts/models/{tsmc,mediatek,spacex,tesla}.ts` 與各自的 `-lib.ts`；回測 2025Q1–2026Q3，SpaceX 為 2025Q3–2026Q3）：
+  - 台積電「成本彈性模型」：條件式回測毛利率誤差 1.14 個百分點（天真 1.54）；事前版本 1.44，與台積電財測相當。基準 2026Q4 營收約 1.72 兆元、毛利率 66.9%；2027 年 EPS 146.1 元（113.3–175.2）。
+  - 聯發科「財測校正模型」：營收 MAPE 1.9%（事前 3.0%，公司財測 4.1%）；基準 2026Q4 營收 2,246 億元（高於財測上緣，10 月只占 25%，頁面已說明）；2027 年依 ASIC 約 160 億美元目標推算 EPS 174.6 元。
+  - SpaceX「部門單位經濟（邊際每瓦營收）」：營收 MAPE 17.4%（天真 26.3%），只有 5 季，排名主要取決於一季；2027Q1 基準 361 億美元（公司財測 330–370 億）；2027 年 2,237 億美元（1,051–3,811 億），差距來自算力擴充速度與每瓦營收。
+  - 特斯拉「交車驅動的單位經濟模型」：營收 MAPE 2.1%（不估參數版本 2.6%，差距不顯著），毛利率沒有贏過天真模型；2027 年基準營業利益約 −10 億美元，主要因營業費用照近八季平均增幅延續（維持 2026Q3 水準時多約 44 億美元）。
+- **頁面**：`src/pages/forecast/index.astro`（總覽，依產業鏈分層的卡片）、`src/pages/forecast/[company].astro`（有模型檔才產生頁面）、`src/lib/forecast-config.ts`（`FC_META`）、`src/components/forecast/`（通用元件與 `registry.ts`，公司專屬段落在 `<id>/`）；`/companies/<id>/` 自動出現模型頁連結；`/memory/` 連到總覽；群聯、美光頁內容不變。台積電以美元給財測，頁面由驅動因子的財測序列乘上公司匯率假設換算。
+- **驗證**：`astro check` 0 錯誤；`check-forecast`（7 家都可重現）、`validate-data`、`check-zh`、`check-content-rules`、`check-memory`、`check-roster` 0 錯誤；`BASE_PATH=/ai-chain/` 建置 867 頁；連結 35,017 條 0 失效；預算與海報通過；E2E 1,743 項通過（1 項略過）；axe 36 項通過（總覽、四個公司頁、群聯、美光、特斯拉與 SpaceX 公司頁，淺色與深色、桌機與手機）。
+- **已知限制**：特斯拉 2027 年基準的營業費用假設；SpaceX 樣本少、每瓦營收只由一季估計；台積電模型的匯率敏感度（0.25）低於公司說法（0.4），頁面已註明；台積電、聯發科的來源清單有部分已登記但未在內文引用的驅動因子資料點。
+
 ## ✅ 大模型、公司動態、趨勢與環節更新（2026-11-13）
 
 依 `research/plan/audit-2026-11-13.md`，同時跑兩個 workflow：

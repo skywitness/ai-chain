@@ -1,0 +1,282 @@
+---
+/**
+ * /forecast/ 「財報模型」 — hub of the company financial models: what the pages are and are not (method, backtest
+ * without look-ahead, scenarios, not investment advice), then one card per model page in industry-chain order
+ * (segment order bottom → top, grouped by layer), including the memory-topic pages /memory/phison/ and
+ * /memory/micron/. A card shows the next forecast period's base revenue with the bear–bull range and the base gross
+ * margin, the selected model with its backtest error, and the data date. Cards appear only for companies whose
+ * model files exist (src/lib/forecast-data.ts forecastCompaniesWithPages), so a new model shows up by itself.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DataAsOf from '../../components/ui/DataAsOf.astro';
+import Icon from '../../components/ui/Icon.astro';
+import NextSteps from '../../components/content/NextSteps.astro';
+import '../../components/memory/memory.css';
+import '../../components/memory/forecast/forecast.css';
+import '../../components/forecast/forecast-topic.css';
+import {
+  calendarHint,
+  fcPct,
+  forecastCompaniesWithPages,
+  forecastHref,
+  forecastOf,
+  forecastQuarters,
+  getForecastData,
+  nextGuidance,
+  periodLabel,
+  scenarioOf,
+  selectedCandidate,
+} from '../../lib/forecast-data';
+import { errHeadline } from '../../components/memory/forecast/fc-labels';
+import { LAYERS, getRoster, segmentMeta } from '../../lib/collections';
+import { formatDate, formatMoney, formatMoneyRange, zhConcat } from '../../lib/format';
+import { sectionHref } from '../../lib/paths';
+import { articleJsonLd, ogImageFor } from '../../lib/seo';
+
+const HEAD = { revenue: '營收', grossMargin: '毛利率', eps: 'EPS' } as const;
+const cards = forecastCompaniesWithPages().flatMap((c) => {
+  const b = getForecastData(c);
+  if (!b) return [];
+  const { model: m, meta } = b;
+  const sel = selectedCandidate(m);
+  const first = forecastQuarters(scenarioOf(m, 'base'))[0];
+  const base = first ? forecastOf(m, 'base', first.period) : undefined;
+  const lo = first ? forecastOf(m, 'bear', first.period) : undefined;
+  const hi = first ? forecastOf(m, 'bull', first.period) : undefined;
+  const err = (meta.headline ?? ['revenue', 'grossMargin'])
+    .filter((t) => sel.metrics[t])
+    .map((t, i) => `${HEAD[t]}${i === 0 ? `${t === 'eps' ? ' ' : ''}平均誤差` : ''} ${errHeadline(b, t, sel.metrics[t])}`)
+    .join('、');
+  const g = nextGuidance(b);
+  return [
+    {
+      c,
+      meta,
+      seg: segmentMeta(meta.segment),
+      href: forecastHref(c),
+      sel: sel.name,
+      err,
+      test: `${periodLabel(m.test.from)}–${periodLabel(m.test.to)}`,
+      period: first?.period,
+      base,
+      range: lo && hi && base ? [Math.min(lo.revenue, hi.revenue, base.revenue), Math.max(lo.revenue, hi.revenue, base.revenue)] : undefined,
+      guide: g && first && g.period === first.period ? g : undefined,
+      asOf: m.asOf,
+      nModels: m.candidates.length,
+    },
+  ];
+});
+const layers = LAYERS.map((l) => ({ l, cards: cards.filter((x) => x.seg?.layer === l.id) })).filter((x) => x.cards.length > 0);
+const asOf = cards.map((x) => x.asOf).sort().at(-1) ?? '2026-11-17';
+const title = '財報模型';
+const h1 = '財報模型：用驅動因子推估公司的營收與獲利';
+const description = `${cards.length} 家 AI 產業鏈公司的財報模型：找出推動營收與毛利率的驅動因子，比較數個候選模型的回測誤差，選定一個模型後以保守、基準、樂觀三種情境推估未來。模型推估，不是投資建議。`;
+const jsonLd = [
+  articleJsonLd({
+    title: h1,
+    description,
+    path: Astro.url,
+    site: Astro.site,
+    dateModified: asOf,
+    section: '專題',
+    keywords: ['財報模型', '回測', '情境分析', ...cards.map((x) => x.meta.name)],
+  }),
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  image={ogImageFor('companies')}
+  imageAlt="AI 產業鏈全景：財報模型"
+  type="article"
+  breadcrumbs={[{ label: '財報模型' }]}
+  section="forecast"
+  jsonLd={jsonLd}
+  modifiedTime={asOf}
+>
+  <span hidden data-pagefind-filter="類型:專題"></span>
+  <span hidden data-pagefind-sort={`updated:${asOf}`}></span>
+
+  <div class="fct" style="--seg-memory-storage: var(--c-accent)">
+    <div class="mem-hero fc-hero">
+      <div class="container">
+        <header class="page-head mem-head fc-head">
+          <p class="page-head__kicker mem-head__kicker">
+            <span class="mem-head__badge">專題</span>
+            財報模型 · 驅動因子、回測與情境
+          </p>
+          <h1 data-pagefind-weight="10">{h1}</h1>
+          <p class="page-head__lede mem-head__lede">
+            每一頁拆解一家公司：哪些可觀察的數字推動它的營收與毛利率，用過去的財報檢驗幾個模型誤差多大，再用選定的模型推估接下來幾季與全年，並和公司自己的財測對照。
+          </p>
+          <div class="mem-head__meta">
+            <DataAsOf date={asOf} note="各頁的財報與驅動因子截至該頁標示的日期" />
+          </div>
+          <div class="fc-notice" role="note" aria-label="重要提醒">
+            <Icon name="warn" size="1.25em" />
+            <p>
+              <strong>模型推估，不是投資建議；本專題不提供目標價、評價或買賣建議。</strong>
+              <span>數字是依公開財報、公司說法與假設的情境推算的教學模型，誤差區間大；公司實際的財報以公告為準。</span>
+            </p>
+          </div>
+          <ul class="mem-head__facts" role="list" aria-label="本專題收錄範圍">
+            <li><strong>{cards.length}</strong> 家公司</li>
+            <li><strong>{cards.reduce((n, x) => n + x.nModels, 0)}</strong> 個候選模型</li>
+            <li><strong>3</strong> 種情境</li>
+          </ul>
+        </header>
+      </div>
+    </div>
+
+    <section class="container section" id="method" aria-labelledby="method-h">
+      <div class="sec-head">
+        <h2 id="method-h">這些頁面怎麼做</h2>
+        <p class="sec-head__lede">每一家公司都走同樣的五個步驟，所以不同公司的頁面可以用同一套方式閱讀與比較。</p>
+      </div>
+      <ol class="fct-hub-method" role="list">
+        <li>
+          <h3>找出驅動因子</h3>
+          <p>從財報、法說會與營運報告找出推動營收與毛利率的數字：製程組合、交車量、訂閱用戶、算力、匯率、記憶體價格……每個數字都附出處。</p>
+        </li>
+        <li>
+          <h3>建立幾個候選模型</h3>
+          <p>從「沿用上一季」的天真模型，到用驅動因子拆解數量、單價與成本的模型；有財測的公司也把財測本身當成一個對照。</p>
+        </li>
+        <li>
+          <h3>回測，不偷看未來</h3>
+          <p>把模型放回 2025–2026 年，每一季只用當時已公布的財報估計參數，再和實際財報比較誤差；也看驅動因子要事前預測時誤差會變多大。</p>
+        </li>
+        <li>
+          <h3>依事先說明的規則選模</h3>
+          <p>以回測期的平均誤差為主、兼顧穩健性選出一個模型，選模規則與各模型的誤差都列在頁面上，包括選定模型不如對照組的地方。</p>
+        </li>
+        <li>
+          <h3>三種情境推估</h3>
+          <p>用選定模型跑保守、基準、樂觀三條路徑，推估接下來幾季與全年；每一項假設都寫出來源或理由，並附敏感度分析。</p>
+        </li>
+      </ol>
+      <div class="fct-isnot">
+        <div>
+          <h3><Icon name="check" /> 這些頁面是</h3>
+          <ul>
+            <li>看懂一家公司的財報由哪些數字推動的教學工具</li>
+            <li>把假設、回測誤差與資料來源都攤開的模型</li>
+            <li>和公司財測、天真模型並列比較的參考數字</li>
+          </ul>
+        </div>
+        <div>
+          <h3><Icon name="warn" /> 這些頁面不是</h3>
+          <ul>
+            <li>投資建議、目標價、評價或買賣訊號</li>
+            <li>公司的財測或官方數字（公司數字另有標示）</li>
+            <li>精準的點預測：越遠的季度越該當成方向與區間</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="container section" id="models" aria-labelledby="models-h">
+      <div class="sec-head">
+        <h2 id="models-h">各公司的財報模型</h2>
+        <p class="sec-head__lede">依產業鏈由下而上排列。卡片上是下一季的基準情境推估與保守到樂觀的區間、選定模型與它在回測期的平均誤差；點進去看完整的驅動因子、回測與情境。</p>
+      </div>
+      {
+        layers.map(({ l, cards: list }) => (
+          <section class="fct-layer" aria-labelledby={`layer-${l.id}`}>
+            <h3 class="fct-layer__h" id={`layer-${l.id}`}>
+              {l.title}
+              <small>{list.length} 個模型</small>
+            </h3>
+            <ul class="fct-cards" role="list">
+              {list.map((x) => (
+                <li class="fct-card" style={`--fc-seg: var(--seg-${x.meta.segment})`}>
+                  <p class="fct-card__kicker">
+                    <span class="fct-card__seg">{x.seg?.short ?? ''}</span>
+                    {x.meta.topic === 'memory' && <span>記憶體與儲存專題</span>}
+                  </p>
+                  <h4 class="fct-card__title">
+                    <a href={x.href}>{x.meta.title}</a>
+                  </h4>
+                  <p class="fct-card__desc">{x.meta.blurb}</p>
+                  {x.period && x.base && (
+                    <dl class="fct-card__next">
+                      <dt>
+                        {`${periodLabel(x.period, 'long')}${x.meta.fyStartMonth ? `（${calendarHint(x.period, x.meta.fyStartMonth)}）` : ''}營收`}
+                        <span class="mem-st mem-st--forecast">基準情境</span>
+                      </dt>
+                      <dd>
+                        <span class="fct-card__big">{formatMoney(x.base.revenue, x.meta.currency, { unit: '億' })}</span>
+                        {x.range && (
+                          <span class="fct-card__range">
+                            保守–樂觀 {formatMoneyRange(x.range[0]!, x.range[1]!, x.meta.currency, { unit: '億' })}
+                          </span>
+                        )}
+                        <span class="fct-card__gm">
+                          {x.meta.gmLabel} {fcPct(x.base.grossMargin)}
+                          {x.guide && `；${zhConcat(x.meta.name, '財測營收')} ${formatMoney(x.guide.revenue, x.meta.currency, { unit: '億' })}${x.guide.basis ? '（美元財測換算）' : ''}`}
+                        </span>
+                      </dd>
+                    </dl>
+                  )}
+                  <dl class="fct-card__facts">
+                    <div>
+                      <dt>選定模型</dt>
+                      <dd>
+                        {x.sel}
+                        <small>
+                          回測 {x.test}：{x.err}
+                        </small>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>資料截至</dt>
+                      <dd>
+                        <time datetime={x.asOf}>{formatDate(x.asOf)}</time>
+                      </dd>
+                    </div>
+                  </dl>
+                  <a class="fct-card__cta" href={x.href}>
+                    {zhConcat('看', x.meta.name, '的驅動因子、回測與情境')}
+                    <Icon name="arrow-right" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+      <p class="mem-fine fct-hub-foot">
+        <Icon name="info" size="1em" />
+        <span>卡片上的數字是各頁選定模型的推估，假設與出處在各公司頁面；「財測」是公司在法說會公布的預估，不是本站的模型。</span>
+      </p>
+    </section>
+
+    <section class="container section mem-end">
+      <NextSteps
+        title="繼續探索"
+        items={[
+          { href: sectionHref('companies'), title: '公司資料庫', kicker: `${getRoster().length} 家公司的檔案與財報` },
+          { href: sectionHref('memory'), title: '記憶體與儲存專題', kicker: '群聯與美光的模型用到的價格與產能' },
+          { href: sectionHref('chain'), title: '產業鏈', kicker: '14 個環節怎麼串起來' },
+        ]}
+      />
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .sec-head {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-end: var(--space-5);
+  }
+  .sec-head h2 {
+    font-size: var(--fs-2xl);
+  }
+  .sec-head__lede {
+    margin: 0;
+    max-width: 46em;
+    color: var(--c-fg-muted);
+  }
+</style>

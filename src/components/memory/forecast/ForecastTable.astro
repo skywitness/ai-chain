@@ -1,14 +1,14 @@
 ---
 /**
  * Scenario forecasts as one table: a row per period (quarters, then full years), the base scenario in bold with the
- * bear and bull values underneath, fields already reported tagged 「已公布」, and Micron's guidance as its own row
+ * bear and bull values underneath, fields already reported tagged 「已公布」, and the company's guidance as its own row
  * under the quarter it covers. Amounts in 億 (新台幣億元／億美元), margins in %, EPS in 元／美元.
  *   <ForecastTable b={bundle} />
  */
 import FcText from './FcText.astro';
 import FcCite from './FcCite.astro';
-import { calendarHint, fcPctExact, forecastOf, isYear, nextGuidance, periodLabel, scenarioOf, type FcBundle } from '../../../lib/forecast-data';
-import { formatNumber } from '../../../lib/format';
+import { calendarHint, fcPctExact, forecastOf, forecastQuarters, isYear, lastReportedOf, nextGuidance, periodLabel, scenarioOf, type FcBundle } from '../../../lib/forecast-data';
+import { formatNumber, zhConcat } from '../../../lib/format';
 import { numTarget, TARGET_SHORT, targetLabel, unitOf, type Target } from './fc-labels';
 
 interface Props {
@@ -20,6 +20,10 @@ const base = scenarioOf(m, 'base');
 const periods = (base?.forecasts ?? []).map((f) => f.period);
 const cols: Target[] = ['revenue', 'grossMargin', 'operatingIncome', 'netIncome', 'eps'];
 const guide = nextGuidance(b);
+// 「美光在 FY2026 第四季法說會公布的下一季財測（非 GAAP 毛利率與 EPS）」: 「下一季」 when the guidance covers the first
+// forecast quarter, else the period itself (SpaceX gave 2027Q1 at its 2026Q3 call)
+const guideWhat =
+  guide && forecastQuarters(base)[0]?.period === guide.period ? '下一季財測' : guide ? `${periodLabel(guide.period, 'long')}財測` : '';
 const shown = cols.filter((t) => base?.forecasts.some((f) => f[t] != null));
 /** card label on phones, where the header row (and its units) is hidden: 「營收（新台幣億元）」 */
 const cardLabel = (t: Target) => `${TARGET_SHORT[t]}（${unitOf(b, t).replace(/^新台幣/, '')}）`;
@@ -53,7 +57,7 @@ const cardLabel = (t: Target) => `${TARGET_SHORT[t]}（${unitOf(b, t).replace(/^
               <tr class:list={[isYear(p) && 'fc-ftable__year']}>
                 <th scope="row" data-label="期間">
                   {periodLabel(p, 'long')}
-                  <small>{calendarHint(p)}</small>
+                  <small>{calendarHint(p, b.meta.fyStartMonth)}</small>
                 </th>
                 {shown.map((t) => {
                   const known = f.known.includes(t);
@@ -82,7 +86,7 @@ const cardLabel = (t: Target) => `${TARGET_SHORT[t]}（${unitOf(b, t).replace(/^
               {guide && guide.period === p && (
                 <tr class="fc-ftable__guide">
                   <th scope="row" data-label="期間">
-                    <span class="fc-tag fc-tag--guidance">美光財測</span>
+                    <span class="fc-tag fc-tag--guidance">{zhConcat(b.meta.name, '財測')}</span>
                     <small>{periodLabel(p, 'long')}</small>
                   </th>
                   {shown.map((t) => (
@@ -109,7 +113,7 @@ const cardLabel = (t: Target) => `${TARGET_SHORT[t]}（${unitOf(b, t).replace(/^
                     </td>
                   ))}
                   <td class="mem-table__note" data-label="說明">
-                    美光在 {periodLabel(m.test.to, 'long')}法說會公布的下一季財測（非 GAAP 毛利率與 EPS），不是本站的模型
+                    {zhConcat(b.meta.name, '在', periodLabel(lastReportedOf(m), 'long'), '法說會公布的', guideWhat)}{b.meta.guidanceBasis ?? ''}{guide.basis ? `（${guide.basis}）` : ''}，不是本站的模型
                     {guide.src && <FcCite k={guide.src} />}
                   </td>
                 </tr>

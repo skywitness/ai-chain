@@ -1,0 +1,318 @@
+---
+/**
+ * 數量與營收（聯發科）: quarterly revenue and margins with the base scenario after the latest reported quarter, the
+ * October check of the first forecast quarter (how much of it the ASIC ramp still has to deliver), and the annual
+ * revenue built from the product lines and the data-center ASIC. Slot `Volume` of /forecast/mediatek/; the generic
+ * table of the model's derived series follows in a disclosure.
+ *   <Volume b={bundle} />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import QuarterBars from '../../memory/forecast/QuarterBars.astro';
+import ChartCites from '../../memory/forecast/ChartCites.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import StatusTag from '../../memory/StatusTag.astro';
+import {
+  derivedOf,
+  fcPct,
+  fcYi,
+  forecastOf,
+  forecastQuarters,
+  inWindow,
+  monthsOfQuarter,
+  nextGuidance,
+  periodLabel,
+  quartersFrom,
+  scenarioOf,
+  type FcBundle,
+} from '../../../lib/forecast-data';
+import { formatMoneyRange, formatNumber } from '../../../lib/format';
+import { LINES, asicFacts, derivedYear, driverAt, isForecastQ, uniq } from './mtk';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m, inputs, meta } = b;
+const qs = quartersFrom(inputs, meta.historyFrom);
+const fq = forecastQuarters(scenarioOf(m, 'base'));
+const g = nextGuidance(b);
+const lastQ = inputs.quarters.at(-1)!;
+const qKeys = uniq(qs.map((q) => q.src));
+
+// ── revenue and margins, reported then base scenario ──
+const revPoints = [
+  ...qs.map((q) => ({ period: q.period, value: q.revenue / 100 })),
+  ...fq.map((f) => ({ period: f.period, value: f.revenue / 100, status: 'forecast' as const, note: '基準情境' })),
+];
+const opex = (derivedOf(m, 'opex-ratio')?.points ?? []).filter((p) => inWindow(meta, p.period));
+const gOpex = g ? driverAt(b, 'guidance-opex-ratio', g.period) : undefined;
+const lastOpex = opex.find((p) => p.period === lastQ.period);
+const oneOff = inputs.events.find((e) => /一次性/.test(e.title) && /毛利率/.test(e.title));
+// the quarter an event reports on: the calendar quarter before the one it is dated in (2024-04-26 → 2024Q1)
+const oneOffQ = oneOff
+  ? (() => {
+      const y = Number(oneOff.date.slice(0, 4));
+      const q = Math.ceil(Number(oneOff.date.slice(5, 7)) / 3) - 1;
+      return q === 0 ? `${y - 1}Q4` : `${y}Q${q}`;
+    })()
+  : undefined;
+const span = `${periodLabel(qs[0]!.period)}–${periodLabel(fq.at(-1)?.period ?? lastQ.period)}`;
+
+// ── the first forecast quarter: months already reported ──
+const fq0 = fq[0];
+const known = fq0 ? monthsOfQuarter(inputs, fq0.period) : [];
+const partial = fq0 && known.length > 0 && known.length < 3 ? fq0 : undefined;
+const knownSum = known.reduce((s, x) => s + x.revenue, 0);
+const needPerMonth = partial ? (partial.revenue - knownSum) / (3 - known.length) : undefined;
+const qMonth = (p: string) => Number(p.slice(5));
+const firstMonth = partial ? (Number(partial.period.slice(5)) - 1) * 3 + 1 : 0;
+const months = inputs.monthly.slice(-(partial ? 16 - (3 - known.length) : 16));
+const implied = partial
+  ? Array.from({ length: 3 - known.length }, (_, i) => {
+      const mo = firstMonth + known.length + i;
+      return { period: partial.period.slice(0, 4) + '-' + String(mo).padStart(2, '0'), value: (needPerMonth ?? 0) / 100 };
+    })
+  : [];
+const yearPrefix = partial ? partial.period.slice(0, 4) + '-' : '';
+const yearMonths = partial ? inputs.monthly.filter((x) => x.period.startsWith(yearPrefix)) : [];
+const maxMonth = [...yearMonths].sort((x, y) => y.revenue - x.revenue)[0];
+const share = derivedOf(m, 'october-share-of-q4')?.points ?? [];
+const shareHist = share.filter((p) => p.status === 'actual');
+const shareAvg = shareHist.length ? shareHist.reduce((s, p) => s + p.value, 0) / shareHist.length : undefined;
+const shareNow = partial ? share.find((p) => p.period === partial.period.slice(0, 4) && p.status !== 'actual') : undefined;
+const monthKeys = uniq(inputs.monthly.slice(-16).map((x) => x.src));
+
+// ── annual revenue by product line ──
+const asic = asicFacts(b);
+const lastYear = Number(lastQ.period.slice(0, 4));
+const years = [lastYear - 1, lastYear, lastYear + 1].map(String);
+const sumYear = (id: string, y: string) => {
+  const pts = (derivedOf(m, id)?.points ?? []).filter((p) => p.period.startsWith(`${y}Q`));
+  return pts.length ? pts.reduce((s, p) => s + p.value, 0) : undefined;
+};
+const annual = years.map((y) => {
+  const reported = inputs.quarters.filter((q) => q.period.startsWith(`${y}Q`));
+  const fc = forecastOf(m, 'base', y);
+  const total = fc?.revenue ?? (reported.length === 4 ? reported.reduce((s, q) => s + q.revenue, 0) : undefined);
+  const lines = LINES.map((l) => derivedYear(b, `segment-revenue-${l.id}`, y));
+  const asicY = sumYear('datacenter-asic-revenue', y);
+  const lo = forecastOf(m, 'bear', y)?.revenue;
+  const hi = forecastOf(m, 'bull', y)?.revenue;
+  return {
+    year: y,
+    kind: reported.length === 4 ? 'actual' : reported.length > 0 ? 'mixed' : 'forecast',
+    nReported: reported.length,
+    total,
+    lines,
+    asic: asicY,
+    usd: derivedYear(b, 'revenue-usd', y),
+    range: lo != null && hi != null ? [Math.min(lo, hi), Math.max(lo, hi)] : undefined,
+  };
+});
+const yoyOf = (i: number) => {
+  const a = annual[i]?.total;
+  const p = i > 0 ? annual[i - 1]?.total : (() => {
+    const y0 = String(Number(years[0]) - 1);
+    const r = inputs.quarters.filter((q) => q.period.startsWith(`${y0}Q`));
+    return r.length === 4 ? r.reduce((s, q) => s + q.revenue, 0) : undefined;
+  })();
+  return a != null && p ? (a / p - 1) * 100 : undefined;
+};
+const annualKeys = uniq([
+  ...inputs.quarters.filter((q) => Number(q.period.slice(0, 4)) >= lastYear - 2).map((q) => q.src),
+  ...LINES.flatMap((l) => years.flatMap((y) => [1, 2, 3, 4].map((n) => driverAt(b, `revenue-share-${l.id}`, `${y}Q${n}`)?.src))),
+]);
+const ZH_N = ['', '一', '兩', '三', '四'];
+/** 「前三季」, 「第一季」 */
+const firstQs = (n: number) => (n === 1 ? '第一季' : '前' + (ZH_N[n] ?? String(n)) + '季');
+const cell = (v: number | undefined) => (v == null ? '—' : fcYi(v, 0));
+---
+
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars
+    title="每季營收"
+    subtitle={`${span}；${periodLabel(lastQ.period)} 以前為財報，之後為基準情境（斜線）`}
+    unit="新台幣億元"
+    points={revPoints}
+    valueLabels={false}
+    legend={[
+      { label: '財報', kind: 'bar', color: 'var(--chart-1)' },
+      { label: '基準情境（斜線）', kind: 'estimate', color: 'var(--chart-1)' },
+    ]}
+    notes={[
+      g && g.revenueLow != null && g.revenueHigh != null
+        ? `${periodLabel(g.period)} 公司財測${formatMoneyRange(g.revenueLow, g.revenueHigh, meta.currency, { unit: '億' })}；${fq.length > 1 ? `${periodLabel(fq[1]!.period)} 起沒有公司財測，由產品線相加推估，單季走勢不如全年合計可靠。` : ''}`
+        : null,
+    ]}
+    as="h3"
+  />
+  <MultiLine
+    title="毛利率與營業費用率"
+    subtitle={`${span}；${periodLabel(lastQ.period)} 以後為基準情境（虛線）`}
+    unit="%"
+    format="percent"
+    digits={1}
+    includeZero={false}
+    height={210}
+    series={[
+      {
+        name: meta.gmLabel,
+        color: 'var(--chart-2)',
+        points: [
+          ...qs.map((q) => ({ x: q.period, y: q.grossProfit != null ? (q.grossProfit / q.revenue) * 100 : null })),
+          ...fq.map((f) => ({ x: f.period, y: f.grossMargin, forecast: true })),
+        ],
+      },
+      {
+        name: '營業費用率',
+        color: 'var(--chart-7)',
+        points: opex.map((p) => ({ x: p.period, y: p.value, forecast: isForecastQ(b, p.period) })),
+      },
+    ]}
+    notes={[
+      gOpex && lastOpex
+        ? `營業費用以研發為主、不隨營收同比例增加：${periodLabel(lastQ.period)} 營業費用率 ${fcPct(lastOpex.value)}，${periodLabel(gOpex.period)} 財測 ${fcPct(gOpex.value, 0)}。`
+        : null,
+      oneOffQ ? `${periodLabel(oneOffQ, 'long')}毛利率含一次性成本迴轉（見大事記）。` : null,
+    ]}
+    xTitle="季度"
+    as="h3"
+    class="mem-chart fc-years"
+  />
+</div>
+<ChartCites keys={[...qKeys, g?.src, gOpex?.src, oneOff?.src]} />
+
+{
+  partial && needPerMonth != null && (
+    <>
+      <h3 class="fc-h3">
+        {periodLabel(partial.period, 'long')}：已公布的 {known.map((x) => qMonth(x.period)).join('、')} 月只占基準情境的 {formatNumber((knownSum / partial.revenue) * 100, { digits: 1 })}%
+      </h3>
+      <p class="fc-p">
+        {known.map((x) => `${qMonth(x.period)} 月`).join('、')}營收 {formatNumber(knownSum / 100)} 億元
+        <FcCite k={known[0]!.src} />
+        ，只占基準情境 {periodLabel(partial.period, 'long')}營收 {fcYi(partial.revenue, 0)} 億元的 {formatNumber((knownSum / partial.revenue) * 100, { digits: 1 })}%
+        {shareAvg != null && `；${shareHist[0]!.period}–${shareHist.at(-1)!.period} 年第四季第一個月平均占 ${formatNumber(shareAvg, { digits: 1 })}%`}
+        。要達到基準情境，其餘月份平均每月需約 {formatNumber(needPerMonth / 100)} 億元
+        {maxMonth && `，${maxMonth.period.slice(0, 4)} 年到目前單月最高是 ${qMonth(maxMonth.period)} 月的 ${formatNumber(maxMonth.revenue / 100)} 億元`}
+        。差額主要要靠資料中心 ASIC 在年底前放量
+        {asic.quarterUsd != null && `（公司預期這一季約 ${formatNumber(asic.quarterUsd / 100)} 億美元`}
+        {asic.quarterUsd != null && asic.targetSrc && <FcCite k={asic.targetSrc} />}
+        {asic.quarterUsd != null && '）'}；若出貨遞延，這一季的營收可能低於保守情境。
+      </p>
+      <div class="mem-grid mem-grid--charts">
+        <QuarterBars
+          title="每月營收"
+          subtitle={`${periodLabel(partial.period)} 未公布的月份為基準情境隱含的平均（斜線）`}
+          unit="新台幣億元"
+          points={[
+            ...months.map((x) => ({
+              period: x.period,
+              value: x.revenue / 100,
+              color: known.some((k) => k.period === x.period) ? 'var(--chart-2)' : undefined,
+            })),
+            ...implied.map((x) => ({ period: x.period, value: x.value, status: 'forecast' as const, color: 'var(--chart-2)', note: '基準情境的季營收扣除已公布月份後的平均，不是公司數字' })),
+          ]}
+          valueLabels={false}
+          legend={[
+            { label: '過去月份', kind: 'bar', color: 'var(--chart-1)' },
+            { label: `${periodLabel(partial.period)} 已公布`, kind: 'bar', color: 'var(--chart-2)' },
+            { label: '基準情境隱含（斜線）', kind: 'estimate', color: 'var(--chart-2)' },
+          ]}
+          as="h4"
+        />
+        {share.length > 0 && (
+          <QuarterBars
+            title="第四季第一個月營收占全季比重"
+            subtitle={`${share[0]!.period}–${share.at(-1)!.period} 年；${shareNow ? `${shareNow.period} 年為已公布月份 ÷ 基準情境的季營收（斜線）` : '財報與月營收'}`}
+            unit="%"
+            digits={1}
+            points={share.map((p) => ({
+              period: p.period,
+              value: p.value,
+              status: p.status === 'actual' ? undefined : 'forecast',
+              color: p.status === 'actual' ? undefined : 'var(--chart-2)',
+            }))}
+            as="h4"
+          />
+        )}
+      </div>
+      <ChartCites keys={[...monthKeys, ...qKeys]} />
+    </>
+  )
+}
+
+<h3 class="fc-h3">全年營收怎麼組成</h3>
+<p class="fc-p">
+  把產品線與資料中心 ASIC 加總成全年營收（基準情境）。產品線金額由公司的整數占比換算，屬於估計；預測期的智慧邊緣平台不含 ASIC，ASIC 另列。{
+    asic.target ? `${asic.target.period} 年的 ASIC 依公司目標約 ${formatNumber(asic.target.value / 100)} 億美元設定，是全年營收最大的不確定來源。` : ''
+  }
+</p>
+<div class="mem-tablewrap mem-tablewrap--cards fct-mtk-annual" tabindex="0" role="region" aria-label="全年營收組成">
+  <table class="mem-table">
+    <caption class="ch-sr">聯發科全年營收依產品線與資料中心 ASIC 拆分（新台幣億元）：財報與基準情境</caption>
+    <thead>
+      <tr>
+        <th scope="col">年度</th>
+        {LINES.map((l) => <th scope="col" class="num">{l.name}</th>)}
+        <th scope="col" class="num">資料中心 ASIC</th>
+        <th scope="col" class="num">合計</th>
+        <th scope="col" class="num">年增</th>
+        <th scope="col" class="num">合計<small>億美元</small></th>
+        <th scope="col" class="num">保守–樂觀</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        annual.map((a, i) => (
+          <tr class:list={[a.kind === 'forecast' && 'fc-row--forecast']}>
+            <th scope="row" data-label="年度">
+              {a.year} 年
+              {a.kind === 'actual' ? (
+                <small>財報</small>
+              ) : a.kind === 'mixed' ? (
+                <small>{firstQs(a.nReported)}財報＋基準情境</small>
+              ) : (
+                <StatusTag status="forecast" />
+              )}
+            </th>
+            {a.lines.map((v, j) => (
+              <td class="num" data-label={LINES[j]!.name}>
+                {cell(v)}
+              </td>
+            ))}
+            <td class="num" data-label="資料中心 ASIC">
+              {a.asic != null ? cell(a.asic) : <span class="mem-na">—</span>}
+            </td>
+            <td class="num" data-label="合計">
+              <strong>{cell(a.total)}</strong>
+            </td>
+            <td class="num" data-label="年增">
+              {yoyOf(i) != null ? `${formatNumber(yoyOf(i)!, { digits: 1, signed: true })}%` : '—'}
+            </td>
+            <td class="num" data-label="合計（億美元）">
+              {a.usd != null ? formatNumber(a.usd / 100) : '—'}
+            </td>
+            <td class="num" data-label="保守–樂觀">
+              {a.range ? `${fcYi(a.range[0], 0)}–${fcYi(a.range[1], 0)}` : <span class="mem-na">—</span>}
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+<p class="mem-fine">
+  單位：新台幣億元（另列億美元）。智慧邊緣平台的財報季度含公司未揭露的 ASIC 初期出貨（2026 年 9 月開始），預測季度不含，ASIC 欄只計預測季度。億美元以聯準會 H.10 季平均匯率換算（預測期為基準情境匯率）。
+</p>
+<ChartCites keys={annualKeys} />
+
+<style>
+  .fct-mtk-annual th[scope='row'] small {
+    display: block;
+    font-weight: var(--fw-regular);
+  }
+  .fct-mtk-annual th[scope='row'] .mem-st {
+    margin-inline-start: 0.4em;
+  }
+</style>

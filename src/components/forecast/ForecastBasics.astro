@@ -1,0 +1,126 @@
+---
+/**
+ * Generic body of 「一分鐘看懂」 on a /forecast/<id>/ page, used when the company has no Basics.astro section: the
+ * model's own summary (one sentence per item, citations kept), the chain from drivers to EPS as a flow, and the key
+ * figures of the latest reported quarter next to the first base-scenario forecast.
+ *   <ForecastBasics b={bundle} />
+ */
+import FlowSteps from '../content/FlowSteps.astro';
+import FcCite from '../memory/forecast/FcCite.astro';
+import FcSentences from '../memory/forecast/FcSentences.astro';
+import StatusTag from '../memory/StatusTag.astro';
+import {
+  actualEps,
+  actualGrossMargin,
+  driverGroups,
+  fcEps,
+  fcPct,
+  forecastOf,
+  forecastQuarters,
+  periodLabel,
+  qIndex,
+  scenarioOf,
+  selectedCandidate,
+  type FcBundle,
+} from '../../lib/forecast-data';
+import { formatMoney, formatMoneyRange, formatNumber, joinZh, zhConcat } from '../../lib/format';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m, meta } = b;
+const last = inputs.quarters.at(-1)!;
+const yearAgo = inputs.quarters.find((q) => qIndex(q.period) === qIndex(last.period) - 4);
+const gm = actualGrossMargin(b.company, last);
+const gm0 = yearAgo ? actualGrossMargin(b.company, yearAgo) : undefined;
+const eps = actualEps(b.company, last);
+const yoy = yearAgo ? (last.revenue / yearAgo.revenue - 1) * 100 : undefined;
+const first = forecastQuarters(scenarioOf(m, 'base'))[0];
+const lo = first ? forecastOf(m, 'bear', first.period) : undefined;
+const hi = first ? forecastOf(m, 'bull', first.period) : undefined;
+const cats = driverGroups(b).map((g) => g.category);
+const sel = selectedCandidate(m);
+const money = (v: number) => formatMoney(v, meta.currency, { unit: '億' });
+---
+
+<div class="mem-basics__grid fct-basics">
+  <div class="prose mem-basics__prose">
+    <p>
+      {zhConcat('本頁用', meta.nameFull)}公開的財報{cats.length ? `與${joinZh(cats.slice(0, 4), '、')}等驅動因子` : ''}建立模型：先找出影響營收與毛利率的幾個數字，用過去的資料比較 {m.candidates.length} 種做法的誤差，選出「{sel.name}」，再用三種情境推估未來。模型自己的摘要：
+    </p>
+    <FcSentences b={b} text={m.summary} />
+  </div>
+  <aside class="mem-basics__aside fc-figs" aria-label="關鍵數字">
+    <p class="fc-figs__title">關鍵數字</p>
+    <ul class="fc-figs__list" role="list">
+      <li class="mem-fig">
+        <p class="mem-fig__label">{periodLabel(last.period)} 營收</p>
+        <p class="mem-fig__value"><strong>{money(last.revenue)}</strong></p>
+        <p class="mem-fig__meta">
+          財報{yoy != null ? `；${yoy >= 0 ? '年增' : '年減'} ${formatNumber(Math.abs(yoy), { digits: 1 })}%` : ''}
+          <FcCite k={last.src} />
+          {yearAgo && yearAgo.src !== last.src && <FcCite k={yearAgo.src} />}
+        </p>
+      </li>
+      {
+        gm != null && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">
+              {periodLabel(last.period)} {meta.gmLabel}
+            </p>
+            <p class="mem-fig__value">
+              <strong>{fcPct(gm)}</strong>
+            </p>
+            <p class="mem-fig__meta">
+              財報{gm0 != null ? `；一年前 ${fcPct(gm0)}` : ''}
+              <FcCite k={last.src} />
+            </p>
+          </li>
+        )
+      }
+      {
+        eps != null && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">
+              {periodLabel(last.period)} {meta.epsLabel}
+            </p>
+            <p class="mem-fig__value">
+              <strong>{fcEps(eps, meta.epsUnit)}</strong>
+            </p>
+            <p class="mem-fig__meta">
+              財報
+              <FcCite k={last.src} />
+            </p>
+          </li>
+        )
+      }
+      {
+        first && (
+          <li class="mem-fig" data-status="forecast">
+            <p class="mem-fig__label">
+              {periodLabel(first.period)} 營收<StatusTag status="forecast" />
+            </p>
+            <p class="mem-fig__value">
+              <strong>{money(first.revenue)}</strong>
+            </p>
+            <p class="mem-fig__meta">
+              基準情境{lo && hi ? `；保守到樂觀 ${formatMoneyRange(Math.min(lo.revenue, hi.revenue), Math.max(lo.revenue, hi.revenue), meta.currency, { unit: '億' })}` : ''}；毛利率 {fcPct(first.grossMargin)}
+            </p>
+          </li>
+        )
+      }
+    </ul>
+  </aside>
+</div>
+<FlowSteps
+  class="fc-flow"
+  title="從驅動因子到每股盈餘"
+  steps={[
+    { title: '驅動因子', detail: cats.length ? joinZh(cats.slice(0, 3), '、') : '公司公布的營運數字' },
+    { title: '營收', detail: '數量 × 單價，或公司自己的財測' },
+    { title: '毛利率', detail: '產品組合、成本與稼動率' },
+    { title: '營業利益', detail: '減去研發、管銷等營業費用' },
+    { title: 'EPS', detail: '加業外、扣稅後除以股數' },
+  ]}
+/>

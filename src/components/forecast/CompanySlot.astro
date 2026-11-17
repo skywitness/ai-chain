@@ -1,0 +1,19 @@
+---
+/**
+ * Renders a company's section for a slot of the /forecast/<id>/ page (src/components/forecast/<id>/<Slot>.astro, see
+ * registry.ts), or the fallback content passed as children when the company has none (nothing by default).
+ *   <CompanySlot b={bundle} name="Drivers" />
+ *   <CompanySlot b={bundle} name="Basics"><ForecastBasics b={bundle} /></CompanySlot>
+ */
+import { companySection, type SlotName } from './registry';
+import type { FcBundle } from '../../lib/forecast-data';
+
+interface Props {
+  b: FcBundle;
+  name: SlotName;
+}
+const { b, name } = Astro.props;
+const Section = companySection(b.company, name);
+---
+
+{Section ? <Section b={b} /> : <slot />}

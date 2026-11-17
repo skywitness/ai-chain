@@ -78,7 +78,16 @@ const slots: BarSlot[] = points.map((p) => {
 });
 // a short last year (2026 with two quarters among 30 bars) has no room for its year label on phones (forecast.css)
 const lastGroup = slots.at(-1)?.group;
-const shortTail = n > 16 && lastGroup != null && slots.filter((s) => s.group === lastGroup).length < 3;
+const lastCount = slots.filter((s) => s.group === lastGroup).length;
+// …nor a last year narrower than its label (three bars of 37: about 27 px on a phone for a 31 px 「2026」, which the
+// right-edge clamp then pushes over 「2025」)
+const shortTail = n > 16 && lastGroup != null && (lastCount < 3 || lastCount / n < 0.095);
+// a short first year (2017 with Q3–Q4 among 37 bars) is covered by the next year's label: hide it on phones, and at
+// every width when it is narrower than ~8% of the plot (the tick stays; the subtitle, tooltip and table give the start)
+const firstGroup = slots[0]?.group;
+const firstCount = slots.filter((s) => s.group === firstGroup).length;
+const shortHead = n > 16 && firstGroup != null && firstGroup !== lastGroup && firstCount / n < 0.095;
+const shortHeadAll = shortHead && firstCount / n < 0.08;
 const anyEst = points.some((p) => p.status && p.status !== 'actual');
 const legendItems: LegendItem[] = legend ?? (anyEst ? [{ label: '實際', kind: 'bar', color }, { label: '估計或預測（斜線）', kind: 'estimate', color }] : []);
 const vals = points.map((p) => p.value).filter(isNum);
@@ -109,7 +118,7 @@ const table: TableSpec = {
   notes={notes}
   table={table}
   empty={n === 0}
-  class:list={['mem-chart', 'fc-qbars', shortTail && 'fc-qbars--tail', className]}
+  class:list={['mem-chart', 'fc-qbars', shortTail && 'fc-qbars--tail', shortHead && 'fc-qbars--head', shortHeadAll && 'fc-qbars--head-all', className]}
 >
   <BarsPlot slots={slots} ariaLabel={aria} height={height} color={color} />
 </ChartFrame>

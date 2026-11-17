@@ -1,0 +1,87 @@
+---
+/**
+ * Gross-margin bridge of 台積電 over a window of quarters: the summed contribution of each part (個百分點, bars from
+ * zero, positive and negative coloured apart) and the total change. Built on ChartFrame + BarsPlot, with a data table.
+ *   <BridgeBars title="…" parts={[{ short: '規模', name: '美元營收規模', value: 6.9 }]} total={7.4} />
+ */
+import '../../charts/charts.css';
+import ChartFrame from '../../charts/ChartFrame.astro';
+import BarsPlot, { type BarSlot } from '../../charts/BarsPlot.astro';
+import { tip } from '../../charts/chart-utils';
+import type { LegendItem, TableSpec } from '../../charts/types';
+import { formatNumber } from '../../../lib/format';
+
+interface Part {
+  short: string;
+  name: string;
+  value: number;
+}
+interface Props {
+  title: string;
+  parts: Part[];
+  /** total change (shown as the last bar) */
+  total: number;
+  subtitle?: string | undefined;
+  /** forecast window: hatched bars, 「預測」 in the tooltip and table */
+  forecast?: boolean | undefined;
+  /** shared axis across charts, e.g. [-6, 8] */
+  domain?: [number, number] | undefined;
+  notes?: Array<string | null | undefined> | undefined;
+  badge?: string | undefined;
+  as?: 'h3' | 'h4' | 'p' | undefined;
+  class?: string | undefined;
+}
+const { title, parts, total, subtitle, forecast = false, domain, notes = [], badge, as = 'h4', class: className } = Astro.props;
+const fmt = (v: number) => formatNumber(v, { digits: 1, signed: true });
+const POS = 'var(--c-pos)';
+const NEG = 'var(--c-neg)';
+const TOT = 'var(--c-fg-muted)';
+const tag = forecast ? '（預測）' : '';
+const slots: BarSlot[] = [
+  ...parts.map((p) => ({
+    value: p.value,
+    estimate: forecast,
+    color: p.value >= 0 ? POS : NEG,
+    label: p.short,
+    valueLabel: fmt(p.value),
+    tip: tip(p.name, [['毛利率變動', `${fmt(p.value)} 個百分點${tag}`]]),
+  })),
+  {
+    value: total,
+    estimate: forecast,
+    color: TOT,
+    label: '合計',
+    valueLabel: fmt(total),
+    tip: tip('毛利率的變化合計', [['毛利率變動', `${fmt(total)} 個百分點${tag}`]]),
+  },
+];
+const legend: LegendItem[] = [
+  { label: '推高毛利率', kind: 'bar', color: POS },
+  { label: '拉低毛利率', kind: 'bar', color: NEG },
+  { label: '合計', kind: 'bar', color: TOT },
+  ...(forecast ? [{ label: '預測（斜線）', kind: 'estimate' as const, color: TOT }] : []),
+];
+const table: TableSpec = {
+  columns: [
+    { key: 'k', label: '項目' },
+    { key: 'v', label: `毛利率變動（個百分點）${tag}`, numeric: true },
+  ],
+  rows: [...parts.map((p) => ({ k: p.name, v: fmt(p.value) })), { k: '合計', v: fmt(total) }],
+};
+const aria = `${title}：${parts.map((p) => `${p.name} ${fmt(p.value)}`).join('、')}，合計 ${fmt(total)} 個百分點${tag}。`;
+---
+
+<ChartFrame
+  title={title}
+  as={as}
+  subtitle={subtitle}
+  badge={badge}
+  unit="個百分點"
+  legend={legend}
+  notes={notes}
+  table={table}
+  empty={parts.length === 0}
+  class:list={['mem-chart', 'tsmc-bridge', className]}
+>
+  <BarsPlot slots={slots} ariaLabel={aria} height={200} domain={domain} yTickCount={6} yFormat={(v) => formatNumber(v, { digits: 0, signed: true })} />
+</ChartFrame>

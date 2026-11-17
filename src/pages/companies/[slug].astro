@@ -51,7 +51,7 @@ export const getStaticPaths = (() =>
   [...new Set(getRoster().map((r) => r.id))].map((slug) => ({ params: { slug } }))) satisfies GetStaticPaths;
 
 const slug = String(Astro.params.slug ?? '');
-// 群聯 and 美光 have a financial model in the memory topic (/memory/phison/, /memory/micron/)
+// companies with a financial-model page (/memory/phison/, /memory/micron/, /forecast/<id>/; src/lib/forecast-config.ts)
 const forecastCompany = (FC_COMPANIES as readonly string[]).includes(slug) && hasForecast(slug as FcCompany) ? (slug as FcCompany) : undefined;
 const roster = getRosterCompany(slug);
 const entry = await findEntry('companies', slug);

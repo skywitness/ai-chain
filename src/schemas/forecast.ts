@@ -1,15 +1,23 @@
-// 記憶體專題的財報模型子頁（/memory/phison/、/memory/micron/）的資料格式。
-// 檔案（src/data/memory/forecast/）：
-//   market-prices.yaml   NAND／DRAM 合約價與現貨價序列（兩家模型共用的輸入）       → marketPrices
+// 財報模型頁的資料格式。
+// 記憶體專題（/memory/phison/、/memory/micron/）的檔案在 src/data/memory/forecast/：
+//   market-prices.yaml   NAND／DRAM 合約價與現貨價序列（記憶體相關模型共用的輸入）   → marketPrices
 //   phison-inputs.yaml   群聯的季財報、月營收、年報產銷量值與進貨、事件、過去的預測  → companyInputs
 //   micron-inputs.yaml   美光的季財報（會計季度）、DRAM／NAND 拆分、位元與 ASP、財測 → companyInputs
 //   phison-model.json    scripts/models/phison.ts 產生的模型結果（不要手改；含預測與實際對照 liveChecks） → modelOutput
 //   micron-model.json    scripts/models/micron.ts 產生的模型結果（不要手改）         → modelOutput
+// 財報模型專題（/forecast/<公司>/）的檔案在 src/data/forecast/：
+//   <公司>-inputs.yaml   季財報、月營收、財測、事件                                  → companyInputs
+//   <公司>-drivers.yaml  公司特有的驅動因子序列（製程別營收、交車量、訂閱用戶…）       → companyDrivers
+//   <公司>-model.json    scripts/models/<公司>.ts 產生的模型結果（不要手改）          → modelOutput
 // 驗證：npx tsx scripts/check-forecast.ts（schema、來源 key、期間連續性、模型輸出是否可由輸入重算）。
 import { z } from 'astro/zod';
 import { Editorial, IsoDate, Source } from './common';
 
 const SrcKey = z.string().min(1); // key into the file's `sources` map
+/** 有財報模型頁的公司（roster id）。群聯與美光在記憶體專題，其餘在 /forecast/。 */
+export const FORECAST_COMPANIES = ['phison', 'micron', 'tsmc', 'mediatek', 'nvidia', 'spacex', 'tesla'] as const;
+export type ForecastCompany = (typeof FORECAST_COMPANIES)[number];
+const CompanyId = z.enum(FORECAST_COMPANIES);
 /** actual＝公司公布；estimate＝第三方或推算；forecast＝對未來的預測；guidance＝公司財測 */
 const Status = z.enum(['actual', 'estimate', 'forecast', 'guidance']);
 /** 日曆季度「2025Q3」（群聯）或會計季度「FY2026Q4」（美光）；年度「2025」「FY2026」；月「2026-09」 */
@@ -53,6 +61,44 @@ export const marketPrices = z.strictObject({
   editorial: Editorial,
 });
 
+/* ───────────── company drivers (input of the /forecast/ models) ───────────── */
+
+/** 公司特有的驅動因子：製程別營收比重、晶圓出貨、匯率、交車量、儲能部署、訂閱用戶、發射次數…（附來源） */
+export const companyDrivers = z.strictObject({
+  company: CompanyId,
+  asOf: IsoDate,
+  series: z
+    .array(
+      z.strictObject({
+        id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/), // 「node-n3-share」「deliveries」「starlink-subscribers」
+        name: z.string().min(2), // zh
+        category: z.string().min(2), // 「製程」「平台」「匯率」「交車」「儲能」「用戶」…（頁面分組用）
+        kind: z.enum(['level', 'share', 'qoq-change', 'yoy-change', 'index']),
+        unit: z.string().min(1), // 「%」「千片（12 吋約當）」「輛」「GWh」「百萬戶」「新台幣／美元」
+        frequency: z.enum(['quarter', 'month', 'year']),
+        definition: z.string().min(4), // 涵蓋範圍、口徑、會計季度或日曆季度
+        points: z
+          .array(
+            z.strictObject({
+              period: z.string().min(4),
+              value: z.number(),
+              low: z.number().optional(),
+              high: z.number().optional(),
+              status: Status.default('actual'),
+              src: SrcKey,
+              note: z.string().optional(),
+            }),
+          )
+          .min(2),
+        note: z.string().optional(),
+      }),
+    )
+    .min(1),
+  sources: z.record(z.string(), Source),
+  lastVerified: IsoDate,
+  editorial: Editorial,
+});
+
 /* ───────────── company inputs ───────────── */
 
 const Guidance = z.strictObject({
@@ -67,7 +113,7 @@ const Guidance = z.strictObject({
 });
 
 export const companyInputs = z.strictObject({
-  company: z.enum(['phison', 'micron']), // roster id
+  company: CompanyId, // roster id
   currency: z.enum(['TWD', 'USD']),
   amountUnit: z.literal('million'), // 所有金額欄位的單位
   periodNote: z.string().min(10), // 期間定義（日曆季度，或美光 52/53 週會計年度）
@@ -109,7 +155,7 @@ export const companyInputs = z.strictObject({
         src: SrcKey,
       }),
     )
-    .min(8),
+    .min(4), // SpaceX 上市後只有 7 季財報（2025Q1–2026Q3）；回測期本身也至少 4 季（modelOutput.backtest）
   monthly: z
     .array(z.strictObject({ period: MonthId, revenue: z.number().positive(), src: SrcKey, note: z.string().optional() }))
     .default([]),
@@ -172,7 +218,7 @@ const Forecast = z.strictObject({
 });
 
 export const modelOutput = z.strictObject({
-  company: z.enum(['phison', 'micron']),
+  company: CompanyId,
   generatedBy: z.string(), // 「scripts/models/phison.ts」
   generatedOn: IsoDate,
   asOf: IsoDate, // 輸入資料的截至日
@@ -256,3 +302,4 @@ export const modelOutput = z.strictObject({
 export type MarketPrices = z.output<typeof marketPrices>;
 export type CompanyInputs = z.output<typeof companyInputs>;
 export type ModelOutput = z.output<typeof modelOutput>;
+export type CompanyDrivers = z.output<typeof companyDrivers>;

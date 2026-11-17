@@ -43,15 +43,14 @@ import MicronVolume from '../../components/memory/forecast/micron/MicronVolume.a
 import '../../components/memory/memory.css';
 import '../../components/memory/forecast/forecast.css';
 import {
-  FC_COMPANIES,
   fcDescription,
   fcPct,
   fcEps,
   forecastHref,
   forecastOf,
   forecastQuarters,
+  forecastCompaniesWithPages,
   getForecastData,
-  hasForecast,
   isYear,
   lastReportedOf,
   liveOffset,
@@ -74,8 +73,9 @@ import { companyHref, sectionHref } from '../../lib/paths';
 import { formatDate, formatNumber, joinZh } from '../../lib/format';
 import { articleJsonLd, datasetJsonLd, ogImageFor } from '../../lib/seo';
 
+// the memory-topic companies (FC_META topic 'memory'); the others are built by src/pages/forecast/[company].astro
 export const getStaticPaths = (() =>
-  FC_COMPANIES.filter((c) => hasForecast(c)).map((company) => ({ params: { company } }))) satisfies GetStaticPaths;
+  forecastCompaniesWithPages('memory').map((company) => ({ params: { company } }))) satisfies GetStaticPaths;
 
 const company = Astro.params.company as FcCompany;
 const b = getForecastData(company);

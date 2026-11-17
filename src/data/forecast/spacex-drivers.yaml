@@ -1,0 +1,341 @@
+# SpaceX 財報模型的驅動因子：Starlink 用戶與 ARPU、發射次數與入軌酬載量、AI（SI）算力、資本支出、未完成合約、客戶集中度、雲端合約與公司展望。格式見 src/schemas/forecast.ts（companyDrivers）。
+# 由 fc2-data-spacex 整理；季度為日曆季度，期末存量（用戶、算力、未完成合約）以季末日為準。財報數字在 spacex-inputs.yaml。
+
+company: "spacex"
+asOf: "2026-11-17"
+series:
+  - id: "starlink-subscribers"
+    name: "Starlink 消費者用戶數"
+    category: "用戶"
+    kind: "level"
+    unit: "百萬戶"
+    frequency: "quarter"
+    definition: "期末 Starlink 消費者訂閱線路數（Service Line）：含個人（住宅、漫遊）與商業（Local Priority、Global Priority）方案，不含與業務團隊簽約的企業與政府客戶（航空、海事、陸運、固定站點、政府）。同一戶可有多條線路。2026 年第三季起改稱 Starlink consumer subscribers，定義不變。"
+    points:
+      - { period: "2023Q4", value: 2.3, src: "sec-424b4" }
+      - { period: "2024Q4", value: 4.4, src: "sec-424b4" }
+      - { period: "2025Q1", value: 5.0, src: "sec-424b4" }
+      - { period: "2025Q2", value: 6.0, src: "pr-q2-2026" }
+      - { period: "2025Q3", value: 7.2, src: "pr-q3-2026" }
+      - { period: "2025Q4", value: 8.9, src: "sec-424b4" }
+      - { period: "2026Q1", value: 10.3, src: "sec-424b4" }
+      - { period: "2026Q2", value: 12.0, src: "pr-q2-2026" }
+      - { period: "2026Q3", value: 13.6, src: "pr-q3-2026", note: "季增 160 萬戶，主要來自已開發市場；公司預期零售通路備貨後第四季開通數增加（tr-q3-2026）" }
+    note: "企業與政府用戶另有數十萬條線路，未計入。"
+  - id: "starlink-arpu"
+    name: "Starlink 消費者每用戶月均營收（ARPU）"
+    category: "用戶"
+    kind: "level"
+    unit: "美元／月"
+    frequency: "quarter"
+    definition: "消費者用戶的服務營收 ÷ 期間平均用戶數 ÷ 月數；不含終端設備（kit）營收。公司預期國際市場比重提高、推出低價方案，ARPU 未來幾年會繼續下降。"
+    points:
+      - { period: "2025Q1", value: 86, src: "sec-424b4" }
+      - { period: "2025Q2", value: 85, src: "pr-q2-2026" }
+      - { period: "2025Q3", value: 83, src: "pr-q3-2026" }
+      - { period: "2026Q1", value: 66, src: "sec-424b4", note: "較 2025Q1 的 86 美元下降約 23%（本站以表列數計算），主要因國際擴張與低價方案" }
+      - { period: "2026Q2", value: 66, src: "pr-q2-2026" }
+      - { period: "2026Q3", value: 69, src: "pr-q3-2026", note: "季增 5%，公司稱來自有利的客戶組合" }
+    note: "2025Q4 未單獨揭露（2025 全年 81 美元、前九個月 84 美元）。"
+  - id: "starlink-arpu-annual"
+    name: "Starlink 消費者 ARPU（年度）"
+    category: "用戶"
+    kind: "level"
+    unit: "美元／月"
+    frequency: "year"
+    definition: "同 starlink-arpu，以全年計算。"
+    points:
+      - { period: "2023", value: 99, src: "sec-424b4" }
+      - { period: "2024", value: 91, src: "sec-424b4" }
+      - { period: "2025", value: 81, src: "sec-424b4" }
+  - id: "launches-total"
+    name: "總發射次數"
+    category: "發射"
+    kind: "level"
+    unit: "次"
+    frequency: "quarter"
+    definition: "期間內成功的軌道發射與飛行測試次數（Falcon 9、Falcon Heavy 與 Starship），含內部 Starlink 部署、開發測試與客戶任務，不含取消或延後。依公司表列數，上層級失事的 Starship 試飛（如 2025 年第 7、8 次）也計入（2025 年 5 次 Starship 全部計入 170 次）。"
+    points:
+      - { period: "2025Q1", value: 38, src: "sec-424b4" }
+      - { period: "2025Q2", value: 46, src: "pr-q2-2026" }
+      - { period: "2025Q3", value: 44, src: "pr-q3-2026" }
+      - { period: "2025Q4", value: 42, src: "sec-424b4", note: "全年 170 次（sec-424b4）減前九個月 128 次（pr-q3-2026）推算" }
+      - { period: "2026Q1", value: 40, src: "sec-424b4" }
+      - { period: "2026Q2", value: 38, src: "pr-q2-2026" }
+      - { period: "2026Q3", value: 35, src: "pr-q3-2026" }
+  - id: "launches-customer"
+    name: "客戶發射次數"
+    category: "發射"
+    kind: "level"
+    unit: "次"
+    frequency: "quarter"
+    definition: "主酬載為外部客戶酬載、任務參數依客戶需求設計的發射；目前所有 Starship 發射都歸為內部發射。太空部門的發射服務營收只來自客戶發射，內部 Starlink 部署不認列部門間營收。"
+    points:
+      - { period: "2025Q1", value: 12, src: "sec-424b4" }
+      - { period: "2025Q2", value: 9, src: "pr-q2-2026" }
+      - { period: "2025Q3", value: 15, src: "pr-q3-2026" }
+      - { period: "2025Q4", value: 7, src: "sec-424b4", note: "全年 Falcon 客戶發射 43 次（sec-424b4）減前九個月 36 次（pr-q3-2026）推算" }
+      - { period: "2026Q1", value: 7, src: "sec-424b4" }
+      - { period: "2026Q2", value: 10, src: "pr-q2-2026" }
+      - { period: "2026Q3", value: 12, src: "pr-q3-2026", note: "含以 Falcon Heavy 發射的 NASA 羅曼太空望遠鏡任務（tr-q3-2026）" }
+  - id: "launches-internal"
+    name: "內部發射次數"
+    category: "發射"
+    kind: "level"
+    unit: "次"
+    frequency: "quarter"
+    definition: "主酬載為公司自己（主要是 Starlink 衛星）或開發測試的發射，含所有 Starship 飛行。"
+    points:
+      - { period: "2025Q1", value: 26, src: "sec-424b4", note: "總發射 38 次減客戶 12 次" }
+      - { period: "2025Q2", value: 37, src: "pr-q2-2026" }
+      - { period: "2025Q3", value: 29, src: "pr-q3-2026" }
+      - { period: "2025Q4", value: 35, src: "sec-424b4", note: "全年內部發射 127 次（Falcon 122 次加 Starship 5 次，sec-424b4）減前九個月 92 次（pr-q3-2026）推算" }
+      - { period: "2026Q1", value: 33, src: "sec-424b4" }
+      - { period: "2026Q2", value: 28, src: "pr-q2-2026" }
+      - { period: "2026Q3", value: 23, src: "pr-q3-2026", note: "含 21 次 Falcon 9 Starlink 與 2 次 Starship（tr-q3-2026）" }
+  - id: "starship-flights"
+    name: "Starship 飛行次數"
+    category: "發射"
+    kind: "level"
+    unit: "次"
+    frequency: "quarter"
+    definition: "公司在 10-Q 營運指標表揭露的 Starship 發射次數（所有 Starship 都歸為內部發射）；第一季以上半年減第二季、2025Q4 以全年（170－165＝5 次）減前九個月推算。各次飛行的編號與日期依維基百科「List of Starship launches」（第 7–11 次在 2025 年，第 12–14 次在 2026 年第二、三季，第 15 次在 2026-11-13），與公司數字一致。"
+    points:
+      - { period: "2025Q1", value: 2, src: "sec-10q-q2-2026", note: "上半年 3 次減第二季 1 次；第 7 次（1 月 16 日）與第 8 次（3 月 6 日）" }
+      - { period: "2025Q2", value: 1, src: "sec-10q-q2-2026", note: "第 9 次（5 月 27 日）" }
+      - { period: "2025Q3", value: 1, src: "sec-10q-q3-2026", note: "第 10 次（8 月 26 日）" }
+      - { period: "2025Q4", value: 1, src: "sec-424b4", note: "全年 5 次減前九個月 4 次（sec-10q-q3-2026）；第 11 次（10 月 13 日），Block 2 最後一次飛行" }
+      - { period: "2026Q1", value: 0, src: "sec-10q-q2-2026", note: "上半年 1 次減第二季 1 次；第一季 40 次發射全部是 Falcon" }
+      - { period: "2026Q2", value: 1, src: "sec-10q-q2-2026", note: "第 12 次（5 月 22 日），V3 首飛" }
+      - { period: "2026Q3", value: 2, src: "sec-10q-q3-2026", note: "第 13 次（7 月 24 日）與第 14 次（9 月 28 日，首次入軌）" }
+    note: "2026 年第四季至 11-17 已完成第 15 次（11 月 13 日，首次以發射塔接住上層級），第 16 次排定不早於 12 月 10 日（wiki-starship-launches）。執行長預期 2027 上半年某個時點每週飛行一次、下半年每週兩次以上（tr-q3-2026，口頭說法）。"
+  - id: "falcon-launches"
+    name: "Falcon 發射次數"
+    category: "發射"
+    kind: "level"
+    unit: "次"
+    frequency: "quarter"
+    definition: "Falcon 9 與 Falcon Heavy 發射次數，公司在招股書與 10-Q 營運指標表揭露；第一季以上半年減第二季、2025Q4 以全年減前九個月推算。2023–2025 年全年數與維基百科「List of Falcon 9 and Falcon Heavy launches」一致（96、134、165 次）。"
+    points:
+      - { period: "2025Q1", value: 36, src: "sec-424b4" }
+      - { period: "2025Q2", value: 45, src: "sec-10q-q2-2026" }
+      - { period: "2025Q3", value: 43, src: "sec-10q-q3-2026" }
+      - { period: "2025Q4", value: 41, src: "sec-424b4", note: "全年 Falcon 165 次減前九個月 124 次（sec-10q-q3-2026）推算" }
+      - { period: "2026Q1", value: 40, src: "sec-424b4", note: "與 sec-10q-q2-2026 的上半年 77 次減第二季 37 次一致" }
+      - { period: "2026Q2", value: 37, src: "sec-10q-q2-2026" }
+      - { period: "2026Q3", value: 33, src: "sec-10q-q3-2026", note: "法說會：21 次 Falcon 9 Starlink 加 12 次客戶任務（含 1 次 Falcon Heavy，tr-q3-2026）" }
+    note: "公司預期 Falcon 9 發射次數會隨 Starship 投入營運而逐步減少（sec-424b4）。"
+  - id: "launches-total-annual"
+    name: "總發射次數（年度）"
+    category: "發射"
+    kind: "level"
+    unit: "次"
+    frequency: "year"
+    definition: "同 launches-total，以全年計。Falcon 次數：2023 年 96、2024 年 134、2025 年 165（其餘為 Starship）。"
+    points:
+      - { period: "2023", value: 98, src: "sec-424b4" }
+      - { period: "2024", value: 138, src: "sec-424b4" }
+      - { period: "2025", value: 170, src: "sec-424b4" }
+  - id: "launches-customer-annual"
+    name: "客戶發射次數（年度）"
+    category: "發射"
+    kind: "level"
+    unit: "次"
+    frequency: "year"
+    definition: "Falcon 客戶發射次數（Starship 全部歸為內部）。"
+    points:
+      - { period: "2023", value: 33, src: "sec-424b4" }
+      - { period: "2024", value: 45, src: "sec-424b4" }
+      - { period: "2025", value: 43, src: "sec-424b4" }
+  - id: "mass-to-orbit"
+    name: "入軌酬載量"
+    category: "發射"
+    kind: "level"
+    unit: "公噸"
+    frequency: "quarter"
+    definition: "期間內所有成功軌道發射與飛行測試送入軌道的酬載重量合計（Starlink 衛星、客戶酬載與開發貨物），不含失敗或取消的任務。2025 年平均每次發射約 13 公噸（2,213 ÷ 170，本站計算）。"
+    points:
+      - { period: "2025Q1", value: 450, src: "sec-424b4" }
+      - { period: "2025Q2", value: 652, src: "pr-q2-2026" }
+      - { period: "2025Q3", value: 525, src: "pr-q3-2026" }
+      - { period: "2025Q4", value: 586, src: "sec-424b4", note: "全年 2,213 公噸減前九個月 1,627 公噸推算" }
+      - { period: "2026Q1", value: 556, src: "sec-424b4" }
+      - { period: "2026Q2", value: 485, src: "pr-q2-2026" }
+      - { period: "2026Q3", value: 476, src: "pr-q3-2026", note: "客戶酬載 119 公噸、內部 358 公噸" }
+  - id: "mass-to-orbit-annual"
+    name: "入軌酬載量（年度）"
+    category: "發射"
+    kind: "level"
+    unit: "公噸"
+    frequency: "year"
+    definition: "同 mass-to-orbit，以全年計。客戶酬載：2023 年 205、2024 年 282、2025 年 312 公噸。"
+    points:
+      - { period: "2023", value: 1210, src: "sec-424b4" }
+      - { period: "2024", value: 1699, src: "sec-424b4" }
+      - { period: "2025", value: 2213, src: "sec-424b4" }
+  - id: "nameplate-compute"
+    name: "AI 資料中心額定算力（Nameplate compute）"
+    category: "算力"
+    kind: "level"
+    unit: "GW"
+    frequency: "quarter"
+    definition: "期末資料中心已安裝 GPU 數量 × 各自的全機功率（all-in power draw）；代表已安裝容量，不是實際用電或使用率，也不含冷卻、配電損失等設施負載。招股書與 10-Q 稱 Nameplate Compute Draw，財報新聞稿稱 Nameplate compute。"
+    points:
+      - { period: "2023Q4", value: 0, src: "sec-424b4" }
+      - { period: "2024Q4", value: 0.3, src: "sec-424b4" }
+      - { period: "2025Q1", value: 0.3, src: "sec-424b4" }
+      - { period: "2025Q2", value: 0.4, src: "pr-q2-2026" }
+      - { period: "2025Q3", value: 0.6, src: "pr-q3-2026" }
+      - { period: "2025Q4", value: 0.8, src: "sec-424b4" }
+      - { period: "2026Q1", value: 1.0, src: "sec-424b4" }
+      - { period: "2026Q2", value: 1.4, src: "pr-q2-2026" }
+      - { period: "2026Q3", value: 1.7, src: "pr-q3-2026" }
+      - { period: "2026Q4", value: 2.75, low: 2.5, high: 3.0, status: "guidance", src: "tr-q3-2026", note: "財務長：10 月底接近 2 GW，年底 2.5–3 GW（2026-10-20）；8 月時的說法是年底超過 2 GW（tr-q2-2026）。中值為本站取區間中點" }
+      - { period: "2027Q4", value: 13, status: "guidance", src: "tr-q3-2026", note: "執行長口頭目標：有把握 2027 年再增加 10 GW、年底約 13 GW，並以增加 20 GW 電力與冷卻為目標，超過 20 GW 算力的機率「不是零」；不是正式財測" }
+  - id: "capex"
+    name: "資本支出"
+    category: "資本支出"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "現金流量表的購置不動產廠房設備支出（與 inputs 的 capex 相同），另列公司對下一季的資本支出財測。以融資租賃取得的 GPU（例如 2026-10 與 Apollo 約 400 億美元的租賃承諾）不計入此數。"
+    points:
+      - { period: "2025Q1", value: 4140, src: "sec-424b4" }
+      - { period: "2025Q2", value: 2825, src: "pr-q2-2026" }
+      - { period: "2025Q3", value: 6880, src: "pr-q3-2026" }
+      - { period: "2025Q4", value: 6891, src: "sec-424b4", note: "全年 20,737 減前九個月 13,846 推算" }
+      - { period: "2026Q1", value: 10107, src: "sec-424b4", note: "AI 部門 7,723" }
+      - { period: "2026Q2", value: 18369, src: "pr-q2-2026", note: "AI 部門 15,828；財務長當時表示下兩季資本支出與本季相近（tr-q2-2026）" }
+      - { period: "2026Q3", value: 19593, src: "pr-q3-2026", note: "SI 部門 16,444" }
+      - { period: "2026Q4", value: 37500, low: 35000, high: 40000, status: "guidance", src: "tr-q3-2026", note: "財務長財測 350–400 億美元（2026-10-20），因本季有更多算力上線；中值為本站取區間中點" }
+  - id: "backlog"
+    name: "未完成合約（Backlog）"
+    category: "合約"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "已簽訂、尚待履行的履約義務交易價格（含已收款的遞延收入）；不含交付時才計費認列的項目、非重大權利的選擇性購買，以及受限制的變動對價；合約在形成可強制執行的協議後才計入。雲端服務合約可由任一方提前 90 天通知終止，公司未說明計入的期間。"
+    points:
+      - { period: "2025Q4", value: 28377, src: "sec-424b4", note: "約 32% 預計一年內認列" }
+      - { period: "2026Q1", value: 27621, src: "sec-424b4", note: "約 36% 預計一年內認列" }
+      - { period: "2026Q2", value: 47461, src: "sec-10q-q2-2026", note: "約 56% 預計一年內認列" }
+      - { period: "2026Q3", value: 62959, src: "sec-10q-q3-2026", note: "約 67%（約 420 億美元）預計一年內認列" }
+  - id: "backlog-next-12m-share"
+    name: "未完成合約中一年內認列的比重"
+    category: "合約"
+    kind: "share"
+    unit: "%"
+    frequency: "quarter"
+    definition: "公司揭露的未完成合約中，預計 12 個月內認列為營收的比例（約數）。"
+    points:
+      - { period: "2025Q4", value: 32, src: "sec-424b4" }
+      - { period: "2026Q1", value: 36, src: "sec-424b4" }
+      - { period: "2026Q2", value: 56, src: "sec-10q-q2-2026" }
+      - { period: "2026Q3", value: 67, src: "sec-10q-q3-2026" }
+  - id: "customer-a-share"
+    name: "最大客戶（Customer A）營收占比"
+    category: "客戶集中"
+    kind: "share"
+    unit: "%"
+    frequency: "quarter"
+    definition: "10-Q 揭露的未具名客戶 A 占合併營收的比重；營收來自三個部門。"
+    points:
+      - { period: "2025Q2", value: 16.7, src: "sec-10q-q2-2026" }
+      - { period: "2025Q3", value: 23.9, src: "sec-10q-q3-2026" }
+      - { period: "2026Q2", value: 18.3, src: "sec-10q-q2-2026" }
+      - { period: "2026Q3", value: 16.6, src: "sec-10q-q3-2026" }
+  - id: "customer-a-share-annual"
+    name: "最大客戶（Customer A）營收占比（年度）"
+    category: "客戶集中"
+    kind: "share"
+    unit: "%"
+    frequency: "year"
+    definition: "招股書揭露的未具名客戶 A 占全年合併營收的比重。"
+    points:
+      - { period: "2023", value: 25.2, src: "sec-424b4" }
+      - { period: "2024", value: 24.2, src: "sec-424b4" }
+      - { period: "2025", value: 20.9, src: "sec-424b4" }
+  - id: "customer-b-share"
+    name: "AI 算力客戶（Customer B）營收占比"
+    category: "客戶集中"
+    kind: "share"
+    unit: "%"
+    frequency: "quarter"
+    definition: "10-Q 揭露的未具名客戶 B 占合併營收的比重；營收全部來自 AI（SI）部門，2025 年同期低於 10%。公司未揭露客戶名稱。"
+    points:
+      - { period: "2026Q2", value: 19.5, src: "sec-10q-q2-2026", note: "約 15.2 億美元（本站以占比 × 合併營收計算）" }
+      - { period: "2026Q3", value: 34.5, src: "sec-10q-q3-2026", note: "約 50.3 億美元（本站以占比 × 合併營收計算）；9 月底占應收帳款 27.7% 的單一客戶未具名" }
+  - id: "cloud-contract-monthly-fees"
+    name: "已公開的雲端算力合約月費"
+    category: "合約"
+    kind: "level"
+    unit: "百萬美元／月"
+    frequency: "month"
+    definition: "公開條款可查的雲端服務合約（Cloud Services Agreements）每月固定費用合計，依合約起始月份列示。只含 Anthropic（每月 12.5 億美元，2026 年 5、6 月爬坡期間費用較低，至 2029 年 5 月；最初三個月後任一方可提前 90 天通知終止）與 Google（每月 9.2 億美元，2026 年 10 月至 2029 年 6 月；2026 年底後任一方可提前 90 天通知終止）；不含第三季初新簽、為期六個月、合計 67 億美元的合約（10 月起爬坡）及第三季的其他新約（客戶未具名）。第二季新簽合約的不可取消期間金額合計 141 億美元（pr-q2-2026）。"
+    points:
+      - { period: "2026-07", value: 1250, src: "sec-424b4", note: "Anthropic 合約爬坡結束後的月費" }
+      - { period: "2026-10", value: 2170, status: "estimate", src: "sec-fwp-google", note: "本站加總：Anthropic 1,250＋Google 920（假設兩約都未終止）" }
+  - id: "revenue-outlook"
+    name: "營收與公司營收財測"
+    category: "公司展望"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "最新一季實際營收與公司對未來季度的營收財測（區間與中值）。公司沒有給 2026 年第四季營收財測。"
+    points:
+      - { period: "2026Q3", value: 14575, src: "pr-q3-2026" }
+      - { period: "2027Q1", value: 35000, low: 33000, high: 37000, status: "guidance", src: "tr-q3-2026", note: "財務長 2026-10-20 財測 330–370 億美元，理由是未來六個月算力合約的能見度提高；中值為本站取區間中點" }
+  - id: "annualized-revenue"
+    name: "年化營收"
+    category: "公司展望"
+    kind: "level"
+    unit: "百萬美元（年化）"
+    frequency: "quarter"
+    definition: "實際值為本站以季營收 × 4 計算；財測值為公司的 12 月年化營收（ARR）目標，定義是 2026 年 12 月單月營收 × 12，兩者口徑不同，只能大致對照。"
+    points:
+      - { period: "2026Q2", value: 31256, status: "estimate", src: "pr-q2-2026", note: "7,814 × 4" }
+      - { period: "2026Q3", value: 58300, status: "estimate", src: "pr-q3-2026", note: "14,575 × 4" }
+      - { period: "2026Q4", value: 100000, status: "guidance", src: "tr-q3-2026", note: "公司目標：2026 年 12 月年化營收 1,000 億美元（2026-08-04 法說會提出，tr-q2-2026；2026-10-20 重申「仍在軌道上」）" }
+  - id: "gross-margin"
+    name: "合併毛利率"
+    category: "公司展望"
+    kind: "level"
+    unit: "%"
+    frequency: "quarter"
+    definition: "（營收－銷貨成本）÷ 營收，GAAP；由各季財報計算，另列公司對 2026 年第四季的毛利率說法。"
+    points:
+      - { period: "2025Q1", value: 51.8, src: "sec-424b4" }
+      - { period: "2025Q2", value: 43.9, src: "pr-q2-2026" }
+      - { period: "2025Q3", value: 51.5, src: "pr-q3-2026" }
+      - { period: "2025Q4", value: 49.6, src: "sec-424b4", note: "全年減前九個月推算" }
+      - { period: "2026Q1", value: 49.1, src: "sec-424b4" }
+      - { period: "2026Q2", value: 55.3, src: "pr-q2-2026" }
+      - { period: "2026Q3", value: 62.4, src: "pr-q3-2026", note: "含一次性利益（連網約 3 個百分點的關稅退款等）與客戶組合因素（tr-q3-2026）" }
+      - { period: "2026Q4", value: 55.3, status: "estimate", src: "tr-q3-2026", note: "財務長只說第四季毛利率「與第二季較一致」，未給數字；本站以第二季的 55.3% 代表，因此標為推算而非財測" }
+  - id: "compute-price-per-watt"
+    name: "算力租賃每瓦價格（管理層說法）"
+    category: "算力"
+    kind: "level"
+    unit: "美元／瓦"
+    frequency: "quarter"
+    definition: "管理層在法說會對 AI 算力變現的口頭估計：2026-08 執行長估 Vera Rubin 世代每瓦 30–50 美元（自稱只是猜測）；2026-10 財務長稱目前價格略高於這個區間的上緣、新部署回收期不到一年。公司沒有說明是每年營收還是合約總值；依「回收期不到一年」的說法，本站推測較可能指每年營收。不是正式揭露的指標。"
+    points:
+      - { period: "2026Q2", value: 40, low: 30, high: 50, status: "estimate", src: "tr-q2-2026", note: "區間中點由本站計算" }
+      - { period: "2026Q3", value: 50, status: "estimate", src: "tr-q3-2026", note: "「略高於 30–50 美元區間的上緣」，未給確切數字，以 50 作為下限參考" }
+sources:
+  sec-424b4: { title: "Prospectus (Rule 424(b)(4)) - Class A Common Stock initial public offering", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026042639/spaceexplorationtechnologi.htm", type: "filing", lang: "en", published: "2026-06-12", accessed: "2026-11-17", note: "Key Business Metrics（入軌酬載量、發射次數、Starlink 用戶與 ARPU、額定算力）、部門營運資料、未完成合約、客戶集中度、Anthropic 合約與 Colossus 規模" }
+  pr-q2-2026: { title: "SpaceX Reports Second Quarter 2026 Results (Exhibit 99.1 to Form 8-K)", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026052515/earningsreleaseq22608042.htm", type: "press-release", lang: "en", published: "2026-08-04", accessed: "2026-11-17", note: "各部門營運資料表：發射次數、酬載、Starlink 用戶與 ARPU、額定算力（2026Q2、2026Q1、2025Q2 與上半年）" }
+  pr-q3-2026: { title: "SpaceX Reports Third Quarter 2026 Results (Exhibit 99.1 to Form 8-K)", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026066482/spaceexplorationtechnologi.htm", type: "press-release", lang: "en", published: "2026-10-20", accessed: "2026-11-17", note: "各部門營運資料表（2026Q3、2026Q2、2025Q3 與前九個月）" }
+  sec-10q-q2-2026: { title: "Form 10-Q for the quarterly period ended June 30, 2026", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026052535/spcx-20260630.htm", type: "filing", lang: "en", published: "2026-08-04", accessed: "2026-11-17", note: "Note 3：未完成合約 474.61 億美元與認列時程、客戶 A／B 營收占比；MD&A 營運指標表：Falcon 與 Starship 發射次數（第二季與上半年）" }
+  sec-10q-q3-2026: { title: "Form 10-Q for the quarterly period ended September 30, 2026", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026066880/spcx-20260930.htm", type: "filing", lang: "en", published: "2026-10-22", accessed: "2026-11-17", note: "Note 3：未完成合約 629.59 億美元與認列時程、客戶 A／B 營收占比與應收帳款集中度；MD&A 營運指標表：Falcon 與 Starship 發射次數（第三季與前九個月）" }
+  tr-q2-2026: { title: "SpaceX Q2 2026 Earnings Webcast Transcript", publisher: "Space Exploration Technologies Corp. (Investor Relations)", url: "https://s21.q4cdn.com/184289198/files/doc_financials/2026/q2/SpaceX-Q2-2026-Earnings_Transcript-FINAL.pdf", type: "earnings-call", lang: "en", accessed: "2026-11-17", note: "2026-08-04 法說會（講稿於隔日公布於投資人網站）：年底 1,000 億美元年化營收目標、年底逾 2 GW 算力、每瓦 30–50 美元估計" }
+  tr-q3-2026: { title: "SpaceX Third Quarter 2026 Webcast Transcript", publisher: "Space Exploration Technologies Corp. (Investor Relations)", url: "https://s21.q4cdn.com/184289198/files/content_files/SpaceX-Third-Quarter-2026-Webcast-Transcript.pdf", type: "earnings-call", lang: "en", accessed: "2026-11-17", note: "2026-10-20 法說會講稿：第四季資本支出與毛利率、2027 年第一季營收財測、算力目標、第三季發射組成" }
+  sec-fwp-google: { title: "Free Writing Prospectus (Form FWP) - Cloud Service Agreement with Google LLC", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026041150/spacexagreementfwp.htm", type: "filing", lang: "en", published: "2026-06-05", accessed: "2026-11-17", note: "2026-06-05 與 Google 簽訂的雲端服務合約：約 11 萬顆 NVIDIA GPU、2026-10 至 2029-06 每月 9.2 億美元、9 月前爬坡、2026-12-31 後任一方可提前 90 天通知終止" }
+  wiki-starship-launches: { title: "List of Starship launches", publisher: "Wikipedia", url: "https://en.wikipedia.org/wiki/List_of_Starship_launches", type: "other", lang: "en", accessed: "2026-11-17", note: "次要來源：Starship 各次飛行日期與結果（2026-11-14 更新）" }
+lastVerified: "2026-11-17"
+editorial:
+  status: "fact-checked"
+  author: "fc2-data-spacex"
+  checkedBy: "fc2-check-spacex"
+  checkedOn: "2026-11-17"
+  notes: "營運指標取自招股書與兩份財報新聞稿的部門營運資料表，2025Q4 以全年減前九個月推算；Starship 季度次數依維基百科飛行日期歸季，與公司總發射次數減 Falcon 次數一致。財測與目標取自法說會講稿原文；執行長的口頭目標（2027 年 13 GW、每瓦 30–50 美元）不是正式財測，已在 note 註明。查核（fc2-check-spacex，2026-11-17）：發射、酬載、用戶、ARPU、算力、資本支出、未完成合約、客戶占比與財測逐點比對招股書與第三季 8-K 的 EDGAR Online 表格擷取、兩份 10-Q、SEC XBRL 與兩份法說會講稿，全部吻合；Falcon 與 Starship 季度次數改引 10-Q 直接揭露的數字；Google 合約改引一手 FWP；2026Q4 毛利率改標推算；刪去無法以第二來源核對的 Colossus 規模與回收助推器次數。"

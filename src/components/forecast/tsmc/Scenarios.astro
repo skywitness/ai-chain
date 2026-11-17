@@ -1,0 +1,72 @@
+---
+/**
+ * 情境預測（台積電）, after the generic tables: where the next quarter's three scenarios come from — 台積電's own
+ * guidance plus the history of how far the reported revenue and gross margin landed from the guidance midpoint
+ * (the model's derived series guidance-beat-*), with how often the result fell inside the guided range.
+ *   <Scenarios b={bundle} />
+ */
+import QuarterBars from '../../memory/forecast/QuarterBars.astro';
+import ChartCites from '../../memory/forecast/ChartCites.astro';
+import { derivedOf, lastReportedOf, nextQuarter, periodLabel, type FcBundle } from '../../../lib/forecast-data';
+import { formatNumber } from '../../../lib/format';
+import { gmGuidanceRows, guidanceRanges } from './tsmc-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const m = b.model;
+const next = nextQuarter(lastReportedOf(m));
+const rev = derivedOf(m, 'guidance-beat-revenue');
+const gm = derivedOf(m, 'guidance-beat-gross-margin');
+const revRows = guidanceRanges(b);
+const gmRows = gmGuidanceRows(b);
+const span = (ps: Array<{ period: string }>) => (ps.length ? `${periodLabel(ps[0]!.period)}–${periodLabel(ps.at(-1)!.period)}` : '');
+const above = revRows.filter((r) => r.position === 'above').length;
+const below = revRows.filter((r) => r.position === 'below').length;
+const overMid = revRows.filter((r) => r.beat > 0).length;
+const gmOver = gmRows.filter((r) => r.beat > 0).length;
+const gmAbove = gmRows.filter((r) => r.high != null && r.gm > r.high).length;
+const gmBelow = gmRows.filter((r) => r.low != null && r.gm < r.low).length;
+const minRev = revRows.length ? revRows.reduce((a, r) => (r.beat < a.beat ? r : a)) : undefined;
+---
+
+{
+  rev && gm && revRows.length > 0 && (
+    <>
+      <h3 class="fc-h3">近一季情境的依據：實際與財測的差距</h3>
+      <p class="fc-p">
+        {`${periodLabel(next, 'long')}的三個情境從台積電的財測出發，再加上歷來實際數字與財測中值的差距（保守、基準、樂觀分別取這段差距的低、中、高分位，見上方「情境假設」）。`}
+        {`${span(revRows)} 共 ${revRows.length} 季，實際美元營收有 ${overMid} 季高於財測中值，${above} 季高於財測區間上緣、${below} 季低於下緣`}
+        {minRev && minRev.beat < 0 && `（最低的是 ${periodLabel(minRev.period)}，${formatNumber(minRev.beat, { digits: 1, signed: true })}%）`}
+        {`；毛利率 ${gmRows.length} 季中有 ${gmOver} 季高於財測中值，${gmAbove} 季高於區間上緣、${gmBelow} 季低於下緣。`}
+        差距每季不同，所以保守情境的營收仍可能貼近或低於財測中值；這兩張圖是本頁由各季財測與財報計算的結果。
+      </p>
+      <div class="mem-grid mem-grid--charts">
+        <QuarterBars
+          title="美元營收相對財測中值"
+          subtitle={`${span(rev.points)}；正值代表實際高於財測`}
+          unit="%"
+          valueName="差距"
+          points={rev.points.map((p) => ({ period: p.period, value: p.value }))}
+          digits={1}
+          notes={['（實際美元營收 ÷ 上一季法說會的美元營收財測中值 − 1）× 100；台積電自 2017 年第三季起以美元公布營收財測。']}
+          as="h4"
+        />
+        <QuarterBars
+          title="毛利率相對財測中值"
+          subtitle={`${span(gm.points)}；正值代表實際高於財測`}
+          unit="個百分點"
+          valueName="差距"
+          points={gm.points.map((p) => ({ period: p.period, value: p.value }))}
+          digits={1}
+          notes={['實際毛利率 − 上一季法說會的毛利率財測中值；財測附有匯率假設，實際匯率偏離時差距也會變大。']}
+          color="var(--chart-2)"
+          as="h4"
+        />
+      </div>
+      <ChartCites label="各季財測" keys={[...revRows, ...gmRows].map((r) => r.srcs[0]).sort()} />
+      <ChartCites label="各季財報" keys={[...revRows, ...gmRows].map((r) => r.srcs[1]).sort()} />
+    </>
+  )
+}

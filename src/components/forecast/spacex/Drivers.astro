@@ -1,0 +1,497 @@
+---
+/**
+ * 驅動因子（SpaceX）: the unit economics behind the three segments, from spacex-drivers.yaml and the model's derived
+ * series — AI nameplate compute and annual revenue per watt (average vs marginal), contract-type revenue against the
+ * backlog and capex, Starlink subscribers × revenue per subscriber, customer launches × revenue per launch, and the
+ * gross-margin bridge (segment mix vs margins within segments). History up to the latest report is solid; guidance
+ * and the base scenario are hatched or dashed and labelled. The page renders every driver series as tables below.
+ *   <Drivers b={bundle} />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import QuarterBars from '../../memory/forecast/QuarterBars.astro';
+import ChartCites from '../../memory/forecast/ChartCites.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import StatusTag from '../../memory/StatusTag.astro';
+import {
+  chartKey,
+  derivedOf,
+  driverOf,
+  fcPct,
+  fcPp,
+  forecastOf,
+  forecastQuarters,
+  lastReportedOf,
+  periodLabel,
+  qIndex,
+  scenarioOf,
+  type FcBundle,
+} from '../../../lib/forecast-data';
+import { formatNumber } from '../../../lib/format';
+import { SEGMENTS, derivedAt, derivedQ, driverAt, driverQ, ex, fromNotes, growth, grossMarginOf, shownQuarters, type SxPoint } from './sx-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m } = b;
+const P = lastReportedOf(m);
+const qs = shownQuarters(b);
+const last = qs.at(-1)!;
+const yearAgo = qs.find((q) => qIndex(q.period) === qIndex(P) - 4);
+const first = qs[0]!;
+const qKeys = qs.map((q) => q.src);
+const base = scenarioOf(m, 'base');
+const fq = forecastQuarters(base);
+const nextP = fq[0]?.period;
+const span = `${periodLabel(first.period)}–${periodLabel(P)}`;
+const n1 = (v: number | undefined, d = 1) => (v == null ? '—' : formatNumber(v, { digits: d }));
+const yi = (millions: number | undefined, d = 1) => (millions == null ? '—' : `${formatNumber(millions / 100, { digits: d })} 億美元`);
+const line = (pts: SxPoint[], scale = 1) => pts.map((p) => ({ x: chartKey(p.period), y: p.value * scale, forecast: p.forecast }));
+const keysOf = (...lists: Array<Array<{ src: string }>>) => lists.flatMap((l) => l.map((p) => p.src));
+
+// ── AI: nameplate compute × revenue per watt ──
+const gw = driverQ(b, 'nameplate-compute');
+const gwHist = gw.filter((p) => p.status === 'actual');
+const gwGuide = gw.filter((p) => p.status === 'guidance' && p.period === nextP);
+const gwTarget = gw.filter((p) => p.status === 'guidance' && p.period !== nextP).at(-1);
+const gwPath = derivedQ(b, 'nameplate-compute-path').filter((p) => p.forecast && !gwGuide.some((g) => g.period === p.period));
+const bullTarget = /執行長口頭目標/.test(scenarioOf(m, 'bull')?.assumptions.find((a) => /算力/.test(a.name) && /GW/.test(a.value))?.value ?? '');
+const gwStep = gwPath.length > 1 ? gwPath[1]!.value - gwPath[0]!.value : undefined;
+const gwFirst = gwHist[0];
+const gwLast = gwHist.at(-1);
+const gwBars = [
+  ...gwHist.map((p) => ({ period: p.period, value: p.value })),
+  ...gwGuide.map((p) => ({
+    period: p.period,
+    value: p.value,
+    status: 'guidance' as const,
+    note: p.low != null && p.high != null ? `財測 ${n1(p.low)}–${n1(p.high)} GW 的中點` : undefined,
+  })),
+  ...gwPath.map((p) => ({ period: p.period, value: p.value, status: 'forecast' as const, note: '基準情境' })),
+];
+const yAvg = derivedQ(b, 'ai-revenue-per-watt-average');
+const yMarg = derivedQ(b, 'ai-revenue-per-watt-marginal');
+const yAvgNow = yAvg.find((p) => p.period === P)?.value;
+const yMargNow = yMarg.find((p) => p.period === P)?.value;
+const ppw = driverQ(b, 'compute-price-per-watt');
+const ppwRange = ppw.find((p) => p.low != null && p.high != null);
+const ppwLater = ppw.filter((p) => ppwRange && qIndex(p.period) > qIndex(ppwRange.period)).at(-1);
+const aiSolPrev = ex(qs.at(-2), 'AI解決方案與基礎設施營收');
+const fqYear = gwPath.at(-1)?.period.slice(0, 4);
+
+// ── contracts, customers and capex ──
+const backlog = driverQ(b, 'backlog');
+const bl0 = backlog[0];
+const bl1 = backlog.at(-1);
+const bl12 = driverAt(b, 'backlog-next-12m-share', bl1?.period ?? P);
+const ctrAll = derivedQ(b, 'contract-type-revenue');
+const ctr = ctrAll.filter((p) => !p.forecast || p.period === nextP);
+const implied = (derivedOf(m, 'backlog-implied-next-quarter')?.points ?? []).map((p) => ({
+  period: p.period,
+  value: p.value,
+  forecast: p.status === 'forecast',
+}));
+const ctrNext = ctrAll.find((p) => p.period === nextP);
+const impNext = implied.find((p) => p.period === nextP);
+const custB = driverQ(b, 'customer-b-share');
+const fees = (driverOf(b, 'cloud-contract-monthly-fees')?.points ?? []).at(-1);
+const computeNext = nextP ? fromNotes(b, /算力 ([\d,]+) 億美元/).find((x) => x.period === nextP)?.value : undefined;
+const feeQ = fees ? (fees.value * 3) / 100 : undefined;
+const contractEvent = inputs.events.find((e) => /67 億美元/.test(e.detail));
+const capexG = driverQ(b, 'capex').filter((p) => p.status === 'guidance' && p.period === nextP);
+const capexBars = [
+  ...qs.map((q) => ({
+    period: q.period,
+    value: q.capex != null ? q.capex / 100 : null,
+    note: ex(q, 'AI部門資本支出') != null ? `AI 部門 ${yi(ex(q, 'AI部門資本支出'))}` : undefined,
+  })),
+  ...capexG.map((p) => ({
+    period: p.period,
+    value: p.value / 100,
+    status: 'guidance' as const,
+    note: p.low != null && p.high != null ? `財測 ${formatNumber(p.low / 100)}–${formatNumber(p.high / 100)} 億美元的中點` : undefined,
+  })),
+];
+const aiCapexShare = last.capex ? ((ex(last, 'AI部門資本支出') ?? 0) / last.capex) * 100 : undefined;
+const capexPerW = derivedAt(b, 'ai-capex-per-watt-added', P);
+const leaseEvent = inputs.events.find((e) => /融資租賃/.test(e.title));
+
+// ── Starlink: subscribers × revenue per subscriber ──
+const subs = driverQ(b, 'starlink-subscribers');
+const subsNow = subs.find((p) => p.period === P);
+const subsYearAgo = yearAgo ? subs.find((p) => p.period === yearAgo.period) : undefined;
+const subsFc = fromNotes(b, /期末用戶 ([\d.]+) 百萬戶/);
+const subsStep = subsFc.length && subsNow ? (subsFc.at(-1)!.value - subsNow.value) / subsFc.length : undefined;
+const arpu = driverQ(b, 'starlink-arpu');
+const arpuNow = arpu.find((p) => p.period === P);
+const arpuYearAgo = yearAgo ? arpu.find((p) => p.period === yearAgo.period) : undefined;
+const perSub = derivedQ(b, 'starlink-revenue-per-subscriber');
+const perSubNow = perSub.find((p) => p.period === P)?.value;
+const perSubNext = perSub.find((p) => p.period === nextP)?.value;
+const perSubStep = perSubNow && perSubNext ? (perSubNext / perSubNow - 1) * 100 : undefined;
+const consYoy = growth(ex(yearAgo, '消費者營收'), ex(last, '消費者營收'));
+const arpuReasonSrc = arpu.find((p) => /低價方案/.test(p.note ?? ''))?.src;
+
+// ── launches: customer launches × revenue per launch ──
+const lc = driverQ(b, 'launches-customer');
+const li = driverQ(b, 'launches-internal');
+const ss = driverQ(b, 'starship-flights');
+const perLaunch = derivedQ(b, 'revenue-per-customer-launch');
+const perLaunchFc = perLaunch.find((p) => p.forecast)?.value;
+const lcFcA = base?.assumptions.find((a) => a.name.startsWith('客戶發射'));
+const lcFc = Number(/每季 (\d+) 次/.exec(lcFcA?.value ?? '')?.[1] ?? Number.NaN);
+// the third quarters of both years stand out in the space segment (mission mix), shown only when the data say so
+const spaceQ3 = qs.filter((q) => q.period.endsWith('Q3'));
+const spaceOther = qs.filter((q) => !q.period.endsWith('Q3')).map((q) => ex(q, '太空部門營收') ?? 0);
+const q3High = spaceQ3.length >= 2 && spaceQ3.every((q) => (ex(q, '太空部門營收') ?? 0) > Math.max(...spaceOther) * 1.5);
+const ssNote = driverOf(b, 'starship-flights')?.note;
+// the space segment's share of the base scenario's last forecast year (model quarters summed)
+const spaceFc = derivedQ(b, 'segment-revenue-space').filter((p) => p.forecast && fqYear && p.period.startsWith(fqYear));
+const fyRev = fqYear ? forecastOf(m, 'base', fqYear)?.revenue : undefined;
+const spaceShareFc = spaceFc.length === 4 && fyRev ? (spaceFc.reduce((s, p) => s + p.value, 0) / fyRev) * 100 : undefined;
+
+// ── gross margin: segment mix vs margins within segments ──
+const gmLines = [
+  ...SEGMENTS.map((s) => ({ name: s.full, color: s.color, points: line(derivedQ(b, s.gm)) })),
+  {
+    name: '合併',
+    color: 'var(--c-fg-muted)',
+    points: [
+      ...qs.map((q) => ({ x: chartKey(q.period), y: grossMarginOf(q) ?? null })),
+      ...fq.map((f) => ({ x: chartKey(f.period), y: f.grossMargin, forecast: true })),
+    ],
+  },
+];
+const mix = derivedQ(b, 'gross-margin-bridge-mix');
+const within = derivedQ(b, 'gross-margin-bridge-within');
+const gmOf = (p: string) => grossMarginOf(qs.find((q) => q.period === p)) ?? forecastOf(m, 'base', p)?.grossMargin;
+const bridge = within
+  .filter((w) => !w.forecast || w.period === nextP)
+  .map((w) => {
+    const prevP = prevPeriod(w.period);
+    const now = gmOf(w.period);
+    const before = prevP ? gmOf(prevP) : undefined;
+    return {
+      period: w.period,
+      forecast: w.forecast,
+      gm: now,
+      d: now != null && before != null ? now - before : undefined,
+      mix: mix.find((x) => x.period === w.period)?.value,
+      within: w.value,
+      src: qs.find((q) => q.period === w.period)?.src,
+    };
+  });
+function prevPeriod(p: string): string | undefined {
+  const i = qIndex(p) - 1;
+  return [...qs.map((q) => q.period), ...fq.map((f) => f.period)].find((x) => qIndex(x) === i);
+}
+// the last two reported quarters: how much of the margin change came from the AI segment's own margin
+const recent = bridge.filter((r) => !r.forecast).slice(-2);
+const aiWithin = recent.reduce((s, r) => {
+  const q = qs.find((x) => x.period === r.period);
+  const gmNow = derivedAt(b, 'segment-gross-margin-ai', r.period);
+  const gmPrev = derivedAt(b, 'segment-gross-margin-ai', prevPeriod(r.period) ?? '');
+  return q && gmNow != null && gmPrev != null ? s + ((ex(q, 'AI部門營收') ?? 0) / q.revenue) * (gmNow - gmPrev) : s;
+}, 0);
+const recentD = recent.reduce((s, r) => s + (r.d ?? 0), 0);
+const recentMix = recent.reduce((s, r) => s + (r.mix ?? 0), 0);
+const recentWithin = recent.reduce((s, r) => s + (r.within ?? 0), 0);
+const gmFrom = recent[0] ? gmOf(prevPeriod(recent[0].period) ?? '') : undefined;
+const aiGmA = base?.assumptions.find((a) => a.name.startsWith('AI 部門毛利率'));
+const nextGm = nextP ? forecastOf(m, 'base', nextP)?.grossMargin : undefined;
+const signedPp = (v: number | undefined) => (v == null ? '—' : formatNumber(v, { digits: 1, signed: true }));
+---
+
+<h3 class="fc-h3">AI 算力：裝了多少瓦 × 每瓦一年收多少錢</h3>
+<p class="fc-p">
+  AI 部門的營收主要看兩個數字：資料中心裝了多少 GPU（額定算力，以全機功率計，單位 GW），以及每瓦算力一年能收多少錢。額定算力從 {gwFirst ? periodLabel(gwFirst.period) : ''} 的 {n1(gwFirst?.value)} GW 增加到 {periodLabel(P)} 的 {n1(gwLast?.value)} GW{gwLast && <FcCite k={gwLast.src} />}{gwGuide[0] && gwGuide[0].low != null && gwGuide[0].high != null && <>，公司預估 {gwGuide[0].period.slice(0, 4)} 年底達 {n1(gwGuide[0].low)}–{formatNumber(gwGuide[0].high, { digits: 1, trim: true })} GW<FcCite k={gwGuide[0].src} /></>}。每瓦營收有兩種計算方式：<strong>平均值</strong>把所有算力（含 xAI 自己訓練 Grok 的部分）都算進去，{periodLabel(P)} 約 {n1(yAvgNow)} 美元；<strong>邊際值</strong>只看最近一季增加的營收除以增加的算力，約 {n1(yMargNow)} 美元，接近管理層說的出租價格{ppwRange && <FcCite k={ppwRange.src} />}。模型用邊際值推估新增算力的營收，所以這個數字只要差一點，{fqYear ?? ''} 年的預測就差很多。
+</p>
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars
+    title="AI 額定算力（期末）"
+    subtitle={`${span} 為公司公布；${gwGuide[0] ? `${periodLabel(gwGuide[0].period)} 為財測中點` : ''}${gwPath.length ? `${gwGuide[0] ? '，' : ''}${fqYear} 年為基準情境${gwStep != null ? `（每季 +${formatNumber(gwStep, { digits: 2 })} GW）` : ''}` : ''}`}
+    unit="GW"
+    points={gwBars}
+    digits={2}
+    color="var(--chart-2)"
+    legend={[
+      { label: '公司公布', kind: 'bar', color: 'var(--chart-2)' },
+      { label: '財測中點與基準情境（斜線）', kind: 'estimate', color: 'var(--chart-2)' },
+    ]}
+    as="h4"
+    notes={[
+      '額定算力＝已安裝 GPU 數量 × 各自的全機功率，代表已安裝的容量，不是實際用電量或使用率。',
+      gwTarget
+        ? `執行長在法說會的口頭目標是 ${periodLabel(gwTarget.period)} 約 ${formatNumber(gwTarget.value)} GW，不是正式財測；基準情境沒有採用${bullTarget ? '，只有樂觀情境假設年底達到' : ''}。`
+        : null,
+    ]}
+  />
+  <MultiLine
+    title="AI 算力每瓦年營收：平均與邊際"
+    subtitle={`AI 解決方案與基礎設施營收（不含 Cursor）× 4 ÷ 算力；${nextP ? `${periodLabel(nextP)} 起為基準情境（虛線）` : ''}`}
+    unit="美元／瓦／年"
+    badge="本站計算"
+    series={[
+      { name: '邊際（新增的算力）', color: 'var(--chart-2)', points: line(yMarg) },
+      { name: '平均（全部算力）', color: 'var(--chart-1)', points: line(yAvg) },
+    ]}
+    digits={1}
+    height={230}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart"
+    notes={[
+      ppwRange ? `管理層在 ${periodLabel(ppwRange.period)} 法說會估計新算力每瓦約 ${formatNumber(ppwRange.low ?? 0)}–${formatNumber(ppwRange.high ?? 0)} 美元${ppwLater ? `，${periodLabel(ppwLater.period)} 法說會稱目前價格略高於上緣` : ''}；公司沒有說明是每年營收還是合約總值，也不是正式揭露的指標。` : null,
+      P === '2026Q3' && aiSolPrev != null
+        ? '邊際值只由一季的變化估計；2026 Q3 的增量也包含第二季已上線的 Anthropic 合約第一次整季認列，可能高估新算力的變現速度。'
+        : '邊際值只由一季的變化估計，波動很大。',
+    ]}
+  />
+</div>
+<ChartCites keys={[...keysOf(gwHist, gwGuide), ...qKeys, ...(ppwRange ? [ppwRange.src] : []), ...(ppwLater ? [ppwLater.src] : []), gwTarget?.src]} />
+
+<h3 class="fc-h3">合約、客戶與資本支出：算力營收有多少已經簽下</h3>
+<p class="fc-p">
+  {bl0 && bl1 && (
+    <>
+      未完成合約（已簽約、尚待履行的金額）從 {periodLabel(bl0.period)} 的 {yi(bl0.value, 0)}增加到 {periodLabel(bl1.period)} 的 {yi(bl1.value, 0)}
+      {bl12 ? `，其中約 ${formatNumber(bl12.value)}% 預計一年內認列` : ''}
+      <FcCite k={bl1.src} />。不過未完成合約只計不可取消的期間，雲端算力合約多可提前 90 天通知終止，所以實際的合約型營收常比它隱含的金額高。
+    </>
+  )}
+  {fees && feeQ != null && (
+    <>
+      已公開條款的 Anthropic 與 Google 兩份合約，月費合計約 {formatNumber(fees.value / 100, { digits: 1 })} 億美元（本站加總）<FcCite k="sec-424b4" />
+      <FcCite k={fees.src} />，一季約 {formatNumber(feeQ)} 億美元
+      {computeNext != null && nextP ? `，約是基準情境 ${periodLabel(nextP)} 算力營收（${formatNumber(computeNext)} 億美元）的 ${formatNumber((feeQ / computeNext) * 100)}%` : ''}
+      ；基準情境的其餘部分，要靠第三季新簽、為期六個月的 67 億美元合約與其他未具名的新約{contractEvent && <FcCite k={contractEvent.src} />}。
+    </>
+  )}
+  {custB.length > 0 && (
+    <>
+      客戶也很集中：單一 AI 客戶（10-Q 的 Customer B，未具名）占合併營收從 {periodLabel(custB[0]!.period)} 的 {fcPct(custB[0]!.value)} 升到 {periodLabel(custB.at(-1)!.period)} 的 {fcPct(custB.at(-1)!.value)}
+      <FcCite k={custB.at(-1)!.src} />。
+    </>
+  )}
+</p>
+<div class="mem-grid mem-grid--charts">
+  <MultiLine
+    title="合約型營收與未完成合約隱含的下一季認列額"
+    subtitle={`合約型營收＝營收扣除 Starlink 消費者、X 廣告與 Cursor；${nextP ? `${periodLabel(nextP)} 的合約型營收為基準情境（虛線）` : ''}`}
+    unit="億美元"
+    badge="本站計算"
+    series={[
+      { name: '合約型營收', color: 'var(--chart-2)', points: line(ctr, 0.01) },
+      { name: '未完成合約 × 一年內比重 ÷ 4', color: 'var(--chart-7)', points: line(implied, 0.01) },
+    ]}
+    digits={0}
+    height={230}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart"
+    notes={[
+      '未完成合約隱含額＝上一季底未完成合約 × 一年內認列比重 ÷ 4，標在預計認列的季度；只是粗略的平均攤提。',
+      ctrNext && impNext && nextP
+        ? `${periodLabel(nextP)}：基準情境的合約型營收 ${formatNumber(ctrNext.value / 100)} 億美元，高於未完成合約隱含的 ${formatNumber(impNext.value / 100)} 億美元，差額要靠新簽或可提前終止的合約。`
+        : null,
+    ]}
+  />
+  <QuarterBars
+    title="資本支出"
+    subtitle={`現金流量表的購置不動產廠房設備；${capexG[0] ? `${periodLabel(capexG[0].period)} 為財測中點` : ''}`}
+    unit="億美元"
+    points={capexBars}
+    digits={0}
+    color="var(--chart-8)"
+    legend={
+      capexG.length
+        ? [
+            { label: '財報實際', kind: 'bar', color: 'var(--chart-8)' },
+            { label: '財測中點（斜線）', kind: 'estimate', color: 'var(--chart-8)' },
+          ]
+        : undefined
+    }
+    as="h4"
+    notes={[
+      aiCapexShare != null ? `${periodLabel(P)} 資本支出有 ${formatNumber(aiCapexShare)}% 在 AI 部門${capexPerW != null ? `，換算每新增 1 瓦額定算力約 ${formatNumber(capexPerW, { digits: 1 })} 美元（本站計算；建設與預付設備通常早於上線，單季波動大）` : ''}。` : null,
+      leaseEvent
+        ? `以融資租賃取得的 GPU 不計入資本支出（例如 ${leaseEvent.date.slice(0, 4)} 年 ${Number(leaseEvent.date.slice(5, 7))} 月「${leaseEvent.title}」），帳上數字可能低於實際的算力投資。`
+        : null,
+    ]}
+  />
+</div>
+<ChartCites keys={[...keysOf(backlog, custB, capexG), ...qKeys, fees?.src, leaseEvent?.src]} />
+
+<h3 class="fc-h3">Starlink：用戶數 × 每用戶營收</h3>
+<p class="fc-p">
+  Starlink 消費者用戶一年增加 {subsNow && subsYearAgo ? `${formatNumber((subsNow.value - subsYearAgo.value) * 100)} 萬戶（${formatNumber(growth(subsYearAgo.value, subsNow.value) ?? 0)}%）` : '—'}{subsNow && <FcCite k={subsNow.src} />}，但公司公布的每用戶月營收（服務 ARPU）從 {arpuYearAgo ? `${formatNumber(arpuYearAgo.value)} 美元` : '—'}降到 {arpuNow ? `${formatNumber(arpuNow.value)} 美元` : '—'}{arpuNow && <FcCite k={arpuNow.src} />}，主要因為國際市場比重提高與低價方案{arpuReasonSrc && <FcCite k={arpuReasonSrc} />}。用戶增加得比單價下降快，消費者營收仍年增 {consYoy != null ? `${formatNumber(consYoy)}%` : '—'}。模型假設用戶每季淨增約 {subsStep != null ? formatNumber(subsStep * 100) : '—'} 萬戶、含設備的每用戶營收每季 {perSubStep != null ? formatNumber(perSubStep, { digits: 1 }) : '—'}%，所以連網部門的預測相對平穩。
+</p>
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars
+    title="Starlink 消費者用戶（期末）"
+    subtitle={`${span} 為公司公布；${subsFc.length ? `${periodLabel(subsFc[0]!.period)} 起為基準情境` : ''}`}
+    unit="萬戶"
+    points={[
+      ...subs.map((p) => ({ period: p.period, value: Math.round(p.value * 100) })),
+      ...subsFc.map((p) => ({ period: p.period, value: Math.round(p.value * 100), status: 'forecast' as const, note: '基準情境' })),
+    ]}
+    digits={0}
+    color="var(--chart-1)"
+    legend={[
+      { label: '公司公布', kind: 'bar', color: 'var(--chart-1)' },
+      { label: '基準情境（斜線）', kind: 'estimate', color: 'var(--chart-1)' },
+    ]}
+    as="h4"
+    notes={['消費者訂閱線路數（個人與商業方案），不含與業務團隊簽約的企業與政府客戶；同一戶可有多條線路。']}
+  />
+  <MultiLine
+    title="Starlink 每用戶月營收"
+    subtitle={`公司公布的服務 ARPU，與本站以消費者營收計算、含終端設備的每用戶營收；${nextP ? `${periodLabel(nextP)} 起為基準情境（虛線）` : ''}`}
+    unit="美元／月"
+    series={[
+      { name: '含設備（本站計算）', color: 'var(--chart-1)', points: line(perSub) },
+      { name: '服務 ARPU（公司公布）', color: 'var(--chart-4)', points: arpu.map((p) => ({ x: chartKey(p.period), y: p.value })) },
+    ]}
+    height={230}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart"
+    notes={[
+      '含設備的每用戶月營收＝消費者營收 ÷ 期初與期末平均用戶 ÷ 3；與 ARPU 的差額大致是終端設備（kit）營收。公司沒有單獨公布 2025 Q4 的 ARPU。',
+    ]}
+  />
+</div>
+<ChartCites keys={[...keysOf(subs, arpu), ...qKeys]} />
+
+<h3 class="fc-h3">發射：客戶發射次數 × 每次營收</h3>
+<p class="fc-p">
+  太空部門的發射服務營收只來自客戶發射；把 Starlink 衛星送上軌道的內部發射不認列營收，所有 Starship 飛行目前也都算內部發射<FcCite k="sec-424b4" />。客戶發射每季 {lc.length ? `${formatNumber(Math.min(...lc.map((p) => p.value)))}–${formatNumber(Math.max(...lc.map((p) => p.value)))}` : '—'} 次，每次的營收隨任務組合（例如 Dragon 載人、Falcon Heavy）變動很大。{q3High && `${spaceQ3.map((q) => periodLabel(q.period)).join('、')} 的太空部門營收都特別高（${spaceQ3.map((q) => yi(ex(q, '太空部門營收'))).join('、')}，其他季度 ${formatNumber(Math.min(...spaceOther) / 100, { digits: 1 })}–${formatNumber(Math.max(...spaceOther) / 100, { digits: 1 })} 億美元），只有兩年資料，還看不出是不是季節性，模型沒有加入。`}模型假設每季 {Number.isFinite(lcFc) ? formatNumber(lcFc) : '—'} 次客戶發射、每次 {perLaunchFc != null ? `${formatNumber(perLaunchFc * 100)} 萬美元` : '—'}（歷年累計平均）。太空部門 {periodLabel(P)} 占營收 {formatNumber(((ex(last, '太空部門營收') ?? 0) / last.revenue) * 100)}%{spaceShareFc != null && fqYear ? `，基準情境 ${fqYear} 年只占 ${formatNumber(spaceShareFc, { digits: 1 })}%` : ''}，對整體預測的影響小。
+</p>
+<div class="mem-grid mem-grid--charts">
+  <MultiLine
+    title="每季發射次數"
+    subtitle={`${span}，公司公布`}
+    unit="次"
+    series={[
+      { name: '客戶發射', color: 'var(--chart-7)', points: lc.map((p) => ({ x: chartKey(p.period), y: p.value })) },
+      { name: '內部發射', color: 'var(--chart-1)', points: li.map((p) => ({ x: chartKey(p.period), y: p.value })) },
+      { name: '其中 Starship', color: 'var(--chart-4)', points: ss.map((p) => ({ x: chartKey(p.period), y: p.value })) },
+    ]}
+    digits={0}
+    height={230}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart"
+    notes={[
+      '內部發射主要是 Starlink 衛星部署，也包含所有 Starship 飛行與開發測試。',
+      ssNote && /每週/.test(ssNote) ? '執行長在 2026 年 10 月法說會口頭預期 2027 年 Starship 逐步提高到每週飛行一次以上，不是正式財測。' : null,
+    ]}
+  />
+  <QuarterBars
+    title="每次客戶發射的發射服務營收"
+    subtitle={`發射服務營收 ÷ 客戶發射次數；${perLaunch.find((p) => p.forecast) ? `${periodLabel(perLaunch.find((p) => p.forecast)!.period)} 起為基準情境假設` : ''}`}
+    unit="百萬美元／次"
+    points={perLaunch.map((p) => (p.forecast ? { period: p.period, value: p.value, status: 'forecast' as const, note: '基準情境：歷年累計平均' } : { period: p.period, value: p.value }))}
+    digits={0}
+    color="var(--chart-7)"
+    legend={[
+      { label: '本站計算', kind: 'bar', color: 'var(--chart-7)' },
+      { label: '基準情境假設（斜線）', kind: 'estimate', color: 'var(--chart-7)' },
+    ]}
+    as="h4"
+    notes={['發射服務營收也包含 Dragon 載人與貨運等任務，單季受任務組合影響很大。']}
+  />
+</div>
+<ChartCites keys={[...keysOf(lc, li, ss), ...qKeys, ssNote && /每週/.test(ssNote) ? 'tr-q3-2026' : null]} />
+
+<h3 class="fc-h3">毛利率：部門組合，還是部門本身</h3>
+<p class="fc-p">
+  合併毛利率是三個部門毛利率依營收比重的加權平均，變化可以拆成兩部分：營收比重移向毛利率較高或較低的部門（<strong>組合效果</strong>），以及各部門自己的毛利率改變（<strong>部門內效果</strong>）。
+  {recent.length === 2 && gmFrom != null && (
+    <>
+      最近兩季合併毛利率從 {fcPct(gmFrom)} 升到 {fcPct(gmOf(P))}（{fcPp(recentD)}），其中組合效果只有 {fcPp(recentMix)}、部門內效果 {fcPp(recentWithin)}；部門內效果裡約 {formatNumber(aiWithin, { digits: 1 })} 個百分點來自 AI 部門自己的毛利率提高。AI 比重雖然大增，但它的毛利率和連網部門相差不多，組合改變本身影響不大
+      {qs.slice(-3).map((q) => q.src).filter((k, i, a) => a.indexOf(k) === i).map((k) => <FcCite k={k} />)}。
+    </>
+  )}
+  {nextP && nextGm != null && aiGmA && (
+    <>
+      財務長表示 {periodLabel(nextP, 'long')}合併毛利率會回到與第二季相近的水準，模型因此把 AI 部門毛利率下修，基準情境 {periodLabel(nextP)} 為 {fcPct(nextGm)}
+      {aiGmA.src && <FcCite k={aiGmA.src} />}。
+    </>
+  )}
+</p>
+<MultiLine
+  title="各部門與合併毛利率"
+  subtitle={`（營收 − 銷貨成本）÷ 營收；部門毛利率為本站以部門數字計算${nextP ? `，${periodLabel(nextP)} 起為基準情境（虛線）` : ''}`}
+  unit="%"
+  format="percent"
+  digits={1}
+  includeZero={false}
+  height={260}
+  series={gmLines}
+  xTitle="季度"
+  as="h4"
+  class="mem-chart fc-chart-wide"
+  notes={[
+    '太空部門大部分 Starship 開發費用列在研發費用、不在銷貨成本，所以毛利率偏高。',
+    P === '2026Q3' ? '連網部門 2026 Q3 的毛利率含約 3 個百分點的關稅退款等一次性利益，預測期扣除。' : null,
+  ]}
+/>
+<div class="mem-tablewrap mem-tablewrap--cards sx-bridge" tabindex="0" role="region" aria-label="合併毛利率季變化的拆解">
+  <table class="mem-table">
+    <caption class="ch-sr">SpaceX 合併毛利率季變化拆成部門組合效果與部門內毛利率效果（本站計算；最後一列為基準情境）</caption>
+    <thead>
+      <tr>
+        <th scope="col">季度</th>
+        <th scope="col" class="num">合併毛利率</th>
+        <th scope="col" class="num">較上季<small>個百分點</small></th>
+        <th scope="col" class="num">組合效果<small>個百分點</small></th>
+        <th scope="col" class="num">部門內效果<small>個百分點</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        bridge.map((r) => (
+          <tr class:list={[r.forecast && 'fc-row--forecast']}>
+            <th scope="row" data-label="季度">
+              {periodLabel(r.period)}
+              {r.forecast ? <StatusTag status="forecast" /> : r.src && <FcCite k={r.src} />}
+            </th>
+            <td class="num" data-label="合併毛利率">{fcPct(r.gm)}</td>
+            <td class="num" data-label="較上季"><span>{signedPp(r.d)}<span class="sx-pp"> 個百分點</span></span></td>
+            <td class="num" data-label="組合效果"><span>{signedPp(r.mix)}<span class="sx-pp"> 個百分點</span></span></td>
+            <td class="num" data-label="部門內效果"><span>{signedPp(r.within)}<span class="sx-pp"> 個百分點</span></span></td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+<p class="mem-fine">
+  組合效果＝Σ（本季部門營收比重 − 上季比重）× 上季部門毛利率；部門內效果＝Σ 本季部門營收比重 ×（本季 − 上季部門毛利率）；兩者相加等於合併毛利率的季變化（差異來自四捨五入）。本站以各部門營收與銷貨成本計算。
+</p>
+<ChartCites keys={[...qKeys, aiGmA?.src, P === '2026Q3' ? 'tr-q3-2026' : null]} />
+
+<style>
+  .sx-bridge {
+    margin-block-start: var(--space-4);
+  }
+  .sx-bridge th small {
+    display: block;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  .sx-bridge th[scope='row'] :global(.mem-st) {
+    margin-inline-start: 0.4em;
+  }
+  .sx-pp {
+    display: none;
+  }
+  @media (max-width: 47.99rem) {
+    .sx-pp {
+      display: inline;
+      color: var(--c-fg-muted);
+    }
+  }
+</style>

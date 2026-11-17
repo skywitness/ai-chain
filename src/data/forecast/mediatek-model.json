@@ -1,0 +1,4803 @@
+{
+  "company": "mediatek",
+  "generatedBy": "scripts/models/mediatek.ts",
+  "generatedOn": "2026-11-17",
+  "asOf": "2026-11-17",
+  "currency": "TWD",
+  "amountUnit": "million",
+  "periodLabel": "日曆季度（第一季為 1–3 月），新台幣",
+  "train": {
+    "from": "2016Q1",
+    "to": "2024Q4"
+  },
+  "test": {
+    "from": "2025Q1",
+    "to": "2026Q3"
+  },
+  "lastReported": "2026Q3",
+  "summary": "選定模型是「財測校正模型」：以聯發科的營收與毛利率財測中值為起點，加上過去財測偏保守的平均幅度（營收約 +1.6%、毛利率 +0.8 個百分點）與實際匯率的差距。2025Q1–2026Q3 回測營收平均誤差 1.9%（匯率只用財測假設的事前版本為 3.0%）、毛利率 0.74 個百分點；公司財測本身為 4.1%、0.67 個百分點，天真模型為 5.0%、0.68 個百分點，所以本模型只在營收上勝出，毛利率略遜；照 2026Q4 預測的做法（營收依實際匯率換算、營業費用由財測推算）回測，EPS 平均誤差 6.6%（匯率與營業費用都只用財測資訊時為 3.3%）；完全不用財測、以手機出貨拆解的產品線模型營收誤差 6.8%，比天真模型還差。基準情境 2026Q4 營收約 2,246 億元（保守至樂觀 2,141–2,327 億元）、毛利率 45.8%，但 10 月營收只占 25%，要靠 11–12 月資料中心 ASIC 出貨放量。2027 年依公司資料中心 ASIC 目標約 160 億美元推算，營收約 11,684 億元、毛利率 45.0%、EPS 174.6 元（保守至樂觀 EPS 105.0–197.4 元），這是依假設推算的模型結果，不是投資建議。",
+  "candidates": [
+    {
+      "id": "naive",
+      "name": "天真模型（上一季不變）",
+      "description": "假設本季營收與毛利率都和上一季一樣。這是最簡單的對照組：任何模型如果贏不了它，就沒有存在的價值。",
+      "equations": [
+        "營收_t = 營收_t−1",
+        "毛利率_t = 毛利率_t−1"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 7788.63,
+          "bias": -4287.809,
+          "n": 7,
+          "mape": 5.04
+        },
+        "grossMargin": {
+          "mae": 0.682,
+          "bias": 0.316,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 3832.841,
+          "bias": -1549.609,
+          "n": 7,
+          "mape": 15.24
+        },
+        "netIncome": {
+          "mae": 3228.998,
+          "bias": -1303.533,
+          "n": 7,
+          "mape": 12.18
+        },
+        "eps": {
+          "mae": 2.028,
+          "bias": -0.819,
+          "n": 7,
+          "mape": 12.18
+        }
+      },
+      "selected": false,
+      "note": "營業利益、淨利與 EPS 由營收與毛利率換算，營業費用、業外收支、稅率與股數用當季實際值（除公司財測外，所有模型都這樣處理）。"
+    },
+    {
+      "id": "seasonal-naive",
+      "name": "季節性天真模型",
+      "description": "上一季營收乘以過去同一季的平均季增幅度（例如第二季平均比第一季高約 11%），毛利率沿用上一季。用來檢查「只靠季節性」能做到多好。",
+      "equations": [
+        "營收_t = 營收_t−1 × e^(s_q)，s_q 為 2016Q1–2024Q4 同一季的平均對數季增：第一至四季分別約 −5.8%、+11.4%、+9.6%、−4.5%",
+        "毛利率_t = 毛利率_t−1"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 14816.875,
+          "bias": 1473.083,
+          "n": 7,
+          "mape": 9.92
+        },
+        "grossMargin": {
+          "mae": 0.682,
+          "bias": 0.316,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 7315.536,
+          "bias": 1194.277,
+          "n": 7,
+          "mape": 29.62
+        },
+        "netIncome": {
+          "mae": 6220.725,
+          "bias": 987.921,
+          "n": 7,
+          "mape": 24.03
+        },
+        "eps": {
+          "mae": 3.908,
+          "bias": 0.62,
+          "n": 7,
+          "mape": 24.03
+        }
+      },
+      "selected": false,
+      "note": "聯發科的季節性並不穩定（新品發表時間、庫存調整與 2025 年起的關稅提前拉貨都會改變季節型態），所以這個對照組比單純沿用上一季更差。"
+    },
+    {
+      "id": "first-month",
+      "name": "首月營收推估（只預測營收）",
+      "description": "聯發科每月 10 日前公布上月營收。季度第一個月的營收公布後，用過去同一季「第一個月占全季」的平均比重放大成全季營收。財測在季度第一個月月底的法說會發布，首月營收約在 10 天後公布，所以這個做法比財測多一點資訊，但只有營收、沒有毛利率。",
+      "equations": [
+        "營收_t = 第一個月營收 ÷ φ_q，φ_q 為 2016Q1–2024Q4 同一季第一個月的平均占比：第一至四季分別約 32.0%、31.5%、30.3%、33.3%"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 4571.196,
+          "bias": 361.802,
+          "n": 7,
+          "mape": 2.94
+        }
+      },
+      "selected": false,
+      "note": "不參與模型選擇（只預測營收）。用在 2026Q4：10 月營收 550 億元，依第四季首月平均占比 33.3% 放大為約 1,655 億元，遠低於財測區間 2,101–2,218 億元；公司說明資料中心 ASIC 9 月才開始初期出貨、第四季約 25 億美元，出貨集中在 11–12 月時首月比重就不適用，這是本推估在第四季最大的缺點。"
+    },
+    {
+      "id": "guidance",
+      "name": "聯發科財測（對照基準）",
+      "description": "聯發科在上一季法說會公布的本季財測中值：營收區間中值、毛利率中值與營業費用率中值（可換算營業利益）。這不是本站的模型，而是公司在季度開始時的判斷，用來衡量模型的誤差是大是小。",
+      "equations": [
+        "營收 = 財測區間中值",
+        "毛利率 = 財測毛利率中值",
+        "營業利益 = 營收 ×（毛利率 − 財測營業費用率）"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 6259.921,
+          "bias": -5422.37,
+          "n": 7,
+          "mape": 4.06
+        },
+        "grossMargin": {
+          "mae": 0.671,
+          "bias": -0.536,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 1726.74,
+          "bias": -1697.433,
+          "n": 7,
+          "mape": 6.4
+        },
+        "netIncome": {
+          "mae": 1462.803,
+          "bias": -1438.054,
+          "n": 7,
+          "mape": 5.35
+        },
+        "eps": {
+          "mae": 0.919,
+          "bias": -0.903,
+          "n": 7,
+          "mape": 5.35
+        },
+        "revenueTrain": {
+          "mae": 3107.712,
+          "bias": -1916.553,
+          "n": 36,
+          "mape": 3.14
+        },
+        "grossMarginTrain": {
+          "mae": 1.01,
+          "bias": -0.924,
+          "n": 36
+        }
+      },
+      "selected": false,
+      "note": "測試期 7 季中，實際營收落在財測區間內 3 季、高於上緣 4 季、低於下緣 0 季；訓練期 36 季為 26、10、0 季。營收財測中值平均低於實際 3.6%，財測偏保守。淨利與 EPS 由財測的營業利益加上當季實際的業外收支、稅率與股數換算（公司不提供 EPS 財測）。revenueTrain／grossMarginTrain 為 2016Q1–2024Q4 的財測誤差。"
+    },
+    {
+      "id": "guidance-adjusted",
+      "name": "財測校正模型（歷史偏差＋實際匯率）",
+      "description": "以公司財測中值為起點，加上兩個用訓練期資料估計的校正：一是聯發科營收過去平均略高於財測中值（財測偏保守），二是財測假設的匯率與實際匯率的差距。聯發科的營收大多以美元計價，新台幣貶值 1% 時新台幣營收約多 1%。毛利率則加上過去平均高於財測中值的幅度。",
+      "equations": [
+        "營收_t = 財測中值_t × e^β ×（實際匯率_t ÷ 財測假設匯率_t），β = 0.0162（約 +1.63%）",
+        "毛利率_t = 財測毛利率_t + 0.799"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 3041.394,
+          "bias": -2590.432,
+          "n": 7,
+          "mape": 1.92
+        },
+        "grossMargin": {
+          "mae": 0.742,
+          "bias": 0.263,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 2006.413,
+          "bias": -829.079,
+          "n": 7,
+          "mape": 7.77
+        },
+        "netIncome": {
+          "mae": 1697.848,
+          "bias": -687.907,
+          "n": 7,
+          "mape": 6.41
+        },
+        "eps": {
+          "mae": 1.066,
+          "bias": -0.432,
+          "n": 7,
+          "mape": 6.41
+        },
+        "revenueExAnte": {
+          "mae": 4578.132,
+          "bias": -3025.214,
+          "n": 7,
+          "mape": 2.96
+        },
+        "grossMarginExAnte": {
+          "mae": 0.742,
+          "bias": 0.263,
+          "n": 7
+        },
+        "operatingIncomeExAnte": {
+          "mae": 1057.352,
+          "bias": -590.247,
+          "n": 7,
+          "mape": 3.96
+        },
+        "epsExAnte": {
+          "mae": 0.559,
+          "bias": -0.311,
+          "n": 7,
+          "mape": 3.27
+        },
+        "revenueTrain": {
+          "mae": 2671.978,
+          "bias": -7.413,
+          "n": 36,
+          "mape": 2.78
+        },
+        "grossMarginTrain": {
+          "mae": 0.675,
+          "bias": -0.125,
+          "n": 36
+        }
+      },
+      "selected": true,
+      "note": "以 2016Q1–2024Q4 共 36 季估計；訓練期毛利率先扣除公司說明的一次性項目（2024Q1 的成本迴轉約 4.5 個百分點）。匯率對營收的彈性固定為 1（美元計價的會計關係；訓練期以迴歸估計約 0.56，但財測匯率與實際匯率的差距多在 ±3% 內，資料辨識度低）。毛利率不加匯率項：訓練期毛利率偏差對匯率差的迴歸斜率只有每 1% 0.015 個百分點（t 值 0.17），不顯著，所以採較簡單的平均偏差。當季實際匯率要到季末才完全確定，所以營收是「已知匯率」的條件式預測；revenueExAnte／operatingIncomeExAnte／epsExAnte 為事前版本：匯率改用財測假設、營業費用改用財測費用率 × 財測營收 × e^0.0265（訓練期營業費用平均高於財測 2.7%），季度開始時就能算出（grossMarginExAnte 與條件式相同）；事前版本營收 MAPE 2.96%，仍低於公司財測的 4.06%。2026Q4 的預測營收用季初至今的匯率、營業費用用財測推算，這個組合在測試期的 EPS MAPE 為 6.56%，比事前版本大，主要來自匯率與財測假設差距大的季度（例如 2025Q2 新台幣比財測假設升值約 5%）：營收依實際匯率調整，營業費用卻沒有跟著調整，而聯發科也有部分營業費用以外幣支付。選擇規則：在可用來預測的三個模型（財測校正、產品線、產品線＋毛利組合）中，取測試期「營收 MAPE（%）＋ 毛利率 MAE（個百分點）」最小者：本模型 2.66、產品線 7.18、產品線＋毛利組合 7.18；三者都改用事前版本時為 3.7、4.75、4.77，排名不變。對照：公司財測 4.73、天真模型 5.72。本模型的營收誤差最小，但毛利率誤差（0.74 個百分點）略大於公司財測（0.67）與天真模型（0.68）：2025Q4 起毛利率貼近財測中值，訓練期的 +0.8 個百分點偏差在測試期縮小為 +0.26 個百分點。"
+    },
+    {
+      "id": "segment",
+      "name": "產品線模型（手機出貨 × 每支手機營收）",
+      "description": "把營收拆成三條產品線（以美元計）：手機營收 = 全球智慧型手機出貨（IDC 估計）× 每支全球手機帶給聯發科的營收；智慧邊緣平台與電源管理 IC 依訓練期的平均季增率延續；三者加總後乘以當季匯率。毛利率沿用上一季（排除一次性項目）並加上匯率影響。這是用公開的驅動因子拆解營收，不依賴公司財測。",
+      "equations": [
+        "手機營收_t（美元）= IDC 出貨_t × 每支手機營收_t−1 × e^c，c = −0.0022（約 −0.9%／年）",
+        "智慧邊緣平台_t = 智慧邊緣平台_t−1 × e^g，g = 0.0008；電源管理 IC_t = 電源管理 IC_t−1 × e^h，h = −0.004",
+        "營收_t（新台幣）=（手機 + 智慧邊緣平台 + 電源管理 IC）× 美元兌新台幣平均匯率_t",
+        "毛利率_t = 毛利率_t−1（排除一次性項目）− 0.049 × 100 × ln(匯率_t ÷ 匯率_t−1)"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 10482.677,
+          "bias": -7378.304,
+          "n": 7,
+          "mape": 6.81
+        },
+        "grossMargin": {
+          "mae": 0.374,
+          "bias": 0.052,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 5228.021,
+          "bias": -3410.491,
+          "n": 7,
+          "mape": 20.09
+        },
+        "netIncome": {
+          "mae": 4437.214,
+          "bias": -2907.152,
+          "n": 7,
+          "mape": 16.52
+        },
+        "eps": {
+          "mae": 2.787,
+          "bias": -1.826,
+          "n": 7,
+          "mape": 16.52
+        },
+        "revenueExAnte": {
+          "mae": 6620.541,
+          "bias": -5321.494,
+          "n": 7,
+          "mape": 4.31
+        },
+        "grossMarginExAnte": {
+          "mae": 0.443,
+          "bias": 0.068,
+          "n": 7
+        },
+        "revenueDynamic": {
+          "mae": 26163.897,
+          "bias": -26163.897,
+          "n": 7,
+          "mape": 16.93
+        },
+        "grossMarginDynamic": {
+          "mae": 1.819,
+          "bias": 1.713,
+          "n": 7
+        }
+      },
+      "selected": false,
+      "note": "產品線營收 = 公司簡報的整數占比（正規化到 100%）× 美元營收。c 以 2021Q4–2024Q4 共 13 季、g 與 h 以 2021Q2–2024Q4 共 15 季估計，匯率係數以 2016Q2–2024Q4 共 35 季估計（不含截距；公司 2025 年 7 月說明新台幣每升值 1% 毛利率約減 0.2 個百分點，但訓練期資料看不到這個關係）。回測代入當季實際的 IDC 出貨與匯率（條件式）：營收 MAPE 6.81%，比天真模型（5.04%）還差。事前版本（revenueExAnte）改用「出貨沿用最近一季年增率」與財測匯率，營收 MAPE 反而降到 4.31%：聯發科的手機晶片比手機早一季出貨，又受客戶庫存調整放大，同一季的 IDC 出貨對它的解釋力很低。revenueDynamic 為從 2024Q4 出發連續推 7 季、不用實際營收重設的結果（營收 MAPE 16.93%），反映 2026 年智慧邊緣平台（含資料中心 ASIC）大幅成長，而模型只延續訓練期的平均成長。毛利率誤差（0.37 個百分點）是各模型中最小，主要因為把 2025Q2 的一次性項目排除後再沿用。"
+    },
+    {
+      "id": "segment-mix",
+      "name": "產品線＋毛利組合模型",
+      "description": "營收與產品線模型相同；毛利率改用產品組合解釋：手機占比變動與匯率變動對毛利率季變化的迴歸。用來檢驗「手機與智慧邊緣平台毛利率不同，所以產品組合會推動毛利率」這個直覺。",
+      "equations": [
+        "營收：同產品線模型",
+        "毛利率_t = 毛利率_t−1（排除一次性項目）+ 0.0083 ×（預測手機占比_t − 手機占比_t−1）− 0.068 × 100 × ln(匯率_t ÷ 匯率_t−1)"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 10482.677,
+          "bias": -7378.304,
+          "n": 7,
+          "mape": 6.81
+        },
+        "grossMargin": {
+          "mae": 0.366,
+          "bias": 0.047,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 5268.197,
+          "bias": -3416.304,
+          "n": 7,
+          "mape": 20.28
+        },
+        "netIncome": {
+          "mae": 4471.903,
+          "bias": -2912.913,
+          "n": 7,
+          "mape": 16.66
+        },
+        "eps": {
+          "mae": 2.809,
+          "bias": -1.83,
+          "n": 7,
+          "mape": 16.66
+        },
+        "revenueExAnte": {
+          "mae": 6620.541,
+          "bias": -5321.494,
+          "n": 7,
+          "mape": 4.31
+        },
+        "grossMarginExAnte": {
+          "mae": 0.457,
+          "bias": 0.078,
+          "n": 7
+        }
+      },
+      "selected": false,
+      "note": "以 2021Q2–2024Q4 共 15 季估計（不含截距），測試期的手機占比用模型預測值。手機占比每變動 10 個百分點，毛利率只變動 0.08 個百分點，訓練期幾乎看不到組合效果：聯發科長期以全公司毛利率目標（例如 2024 年的 47% ± 1 個百分點）定價，各產品線毛利率接近。因此 2026Q4 起資料中心 ASIC 拉低毛利率是新現象，歷史資料無法估計，預測時改由公司第四季財測推算（見參數）。"
+    }
+  ],
+  "parameters": [
+    {
+      "name": "營收相對財測中值的平均偏差（已扣除匯率差）",
+      "value": 1.63,
+      "unit": "%",
+      "note": "2016Q1–2024Q4 共 36 季的平均；第 10／90 百分位為 −2.0%／+5.3%，用來設定 2026Q4 的保守／樂觀情境。"
+    },
+    {
+      "name": "毛利率相對財測中值的平均偏差（排除一次性項目）",
+      "value": 0.8,
+      "unit": "個百分點",
+      "note": "2016Q1–2024Q4 的平均；毛利率偏差對匯率差的迴歸斜率每 1% 只有 0.015 個百分點（t 值 0.17），不顯著，所以模型不加匯率項。測試期平均偏差為 +0.26 個百分點。第 10／90 百分位為 −0.79 個百分點／+0.69 個百分點。"
+    },
+    {
+      "name": "營業費用相對財測的平均偏差",
+      "value": 2.68,
+      "unit": "%",
+      "note": "實際營業費用 ÷（財測費用率中值 × 財測營收中值）的平均（訓練期）；營收超出財測時，獎金與研發費用通常也跟著增加。"
+    },
+    {
+      "name": "2026Q4 財測：營收中值",
+      "value": 215950,
+      "unit": "百萬元",
+      "note": "2,101–2,218 億元（季增 25%–32%），2026-10-30 發布。"
+    },
+    {
+      "name": "2026Q4 財測：毛利率中值",
+      "value": 45,
+      "unit": "%",
+      "note": "± 1.5 個百分點；公司說明資料中心業務毛利率低於公司平均，所以財測調低 1 個百分點。"
+    },
+    {
+      "name": "2026Q4 財測：營業費用率中值",
+      "value": 26,
+      "unit": "%",
+      "note": "± 2 個百分點。"
+    },
+    {
+      "name": "2026Q4 財測：假設匯率",
+      "value": 31.7,
+      "unit": "新台幣／美元"
+    },
+    {
+      "name": "2026Q4 季初至 11 月 13 日平均匯率",
+      "value": 32.437,
+      "unit": "新台幣／美元",
+      "note": "聯準會 H.10 的 30 個營業日平均；比財測假設弱 2.3%。基準與樂觀情境假設 2026Q4 與 2027 年維持這個水準；保守情境假設其餘 32 個營業日回到財測假設 31.7 元（第四季平均約 32.06 元），2027 年維持 31.7 元。"
+    },
+    {
+      "name": "2026 年 10 月營收",
+      "value": 55025.656,
+      "unit": "百萬元",
+      "note": "約占財測中值的 25.5%、基準情境的 24.5%；2016–2025 年 10 月平均占第四季 33.4%。依首月營收模型（2016Q1–2024Q4 第四季首月平均占比 33.3%）放大只有約 1,655 億元；要達到基準情境，11–12 月平均每月需約 848 億元。"
+    },
+    {
+      "name": "2026Q4 資料中心 ASIC 營收（公司說法）",
+      "value": 2500,
+      "unit": "百萬美元",
+      "note": "2026-10-30 法說會：首款 AI 加速器 ASIC 9 月開始初期出貨，第四季約 25 億美元（2026 年 4 月時說約 20 億美元）。約占第四季財測營收的 36.7%。"
+    },
+    {
+      "name": "第四季財測隱含的 ASIC 毛利率",
+      "value": 42.85,
+      "unit": "%",
+      "note": "假設非 ASIC 產品毛利率維持 2026 年前三季的 46.28%（換算到財測匯率為 46.25%），由財測毛利率 45% 反推：（45 − 46.25 × 0.633）÷ 0.367。財測下緣 43.5% 對應 38.8%（保守情境），財測中值加歷史偏差 45.80% 對應 45.0%（樂觀情境）。這是推算值，公司未揭露 ASIC 毛利率。"
+    },
+    {
+      "name": "每支全球手機營收的趨勢（訓練期）",
+      "value": -0.88,
+      "unit": "%／年",
+      "note": "2021Q4–2024Q4；2026 年前三季為 7.58 美元／支，2025 年同期為 8.23 美元／支（以低階機種為主的 Android 品牌受記憶體漲價衝擊最大）。"
+    },
+    {
+      "name": "IDC 2026 年全球手機出貨（推算）",
+      "value": 1052.8,
+      "unit": "百萬支",
+      "note": "2025 年 IDC 四季合計 1,263.9 百萬支 ×（1 − 16.7%）（IDC 2026 年 8 月預測）；扣除前三季後，第四季約 231.5 百萬支（年減 31.2%）。IDC 的 8 月預測早於第三季年減 22% 的初估，第四季的推算值只用於情境設定。"
+    },
+    {
+      "name": "2027 年營業費用成長率",
+      "value": 10.17,
+      "unit": "%",
+      "note": "2016–2025 年營業費用的年複合成長率，三個情境相同；2026 年前三季年增約 9.2%。"
+    },
+    {
+      "name": "業外收支（每季）",
+      "value": 5248,
+      "unit": "百萬元",
+      "note": "最近四季（2025Q4–2026Q3）平均，主要是利息收入；2026 年 10 月發行 39 億美元海外可轉換公司債，利息與可能的轉換都未納入。"
+    },
+    {
+      "name": "有效稅率",
+      "value": 13.35,
+      "unit": "%",
+      "note": "最近四季所得稅費用 ÷ 稅前淨利。"
+    },
+    {
+      "name": "基本 EPS 股數",
+      "value": 1593.3,
+      "unit": "百萬股",
+      "note": "2026Q3 歸屬母公司淨利 ÷ 基本 EPS 推算，預測期不變；淨利歸屬母公司比例 99.04%（最近四季）。"
+    }
+  ],
+  "derived": [
+    {
+      "id": "guidance-beat",
+      "name": "實際營收相對財測中值",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2016Q1",
+          "value": 1.74,
+          "status": "actual"
+        },
+        {
+          "period": "2016Q2",
+          "value": 1.37,
+          "status": "actual"
+        },
+        {
+          "period": "2016Q3",
+          "value": -3.44,
+          "status": "actual"
+        },
+        {
+          "period": "2016Q4",
+          "value": -1.54,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q1",
+          "value": -0.47,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q2",
+          "value": -0.46,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q3",
+          "value": 3.41,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q4",
+          "value": -2.18,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q1",
+          "value": -2.16,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q2",
+          "value": 5,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q3",
+          "value": 3.6,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q4",
+          "value": -1.23,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q1",
+          "value": 3.07,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q2",
+          "value": -0.22,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q3",
+          "value": -0.78,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q4",
+          "value": 0.32,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q1",
+          "value": 5.66,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q2",
+          "value": 4.81,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q3",
+          "value": 14.17,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q4",
+          "value": 3.22,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q1",
+          "value": 7.76,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q2",
+          "value": 2.03,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q3",
+          "value": 1.77,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q4",
+          "value": 2.23,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q1",
+          "value": 4.67,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q2",
+          "value": 2.45,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q3",
+          "value": -3.91,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q4",
+          "value": -4.84,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q1",
+          "value": -1.74,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q2",
+          "value": 2.6,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q3",
+          "value": 4.36,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q4",
+          "value": 5.08,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q1",
+          "value": 6.17,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q2",
+          "value": -0.14,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q3",
+          "value": 3.02,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q4",
+          "value": 5.78,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q1",
+          "value": 4.79,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": -1.91,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 5.22,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 2.62,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 2.37,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 5.17,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 7.73,
+          "status": "actual"
+        }
+      ],
+      "note": "（實際營收 ÷ 上一季法說會公布的營收財測中值 − 1）× 100。2016Q1–2026Q3 共 43 季，平均 +2.26%；一部分來自匯率與財測假設不同（見 fx-gap）。"
+    },
+    {
+      "id": "guidance-gm-gap",
+      "name": "實際毛利率減財測中值",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "2016Q1",
+          "value": -0.39,
+          "status": "actual"
+        },
+        {
+          "period": "2016Q2",
+          "value": 0.23,
+          "status": "actual"
+        },
+        {
+          "period": "2016Q3",
+          "value": 0.22,
+          "status": "actual"
+        },
+        {
+          "period": "2016Q4",
+          "value": -0.47,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q1",
+          "value": -0.5,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q2",
+          "value": 1,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q3",
+          "value": 0.92,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q4",
+          "value": 1.39,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q1",
+          "value": 1.44,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q2",
+          "value": 0.21,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q3",
+          "value": 0.33,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q4",
+          "value": 0.42,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q1",
+          "value": 1.23,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q2",
+          "value": 1.39,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q3",
+          "value": 0.58,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q4",
+          "value": 0.49,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q1",
+          "value": 1.11,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q2",
+          "value": 1,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q3",
+          "value": 1.23,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q4",
+          "value": 0.96,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q1",
+          "value": 1.41,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q2",
+          "value": 1.19,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q3",
+          "value": 0.7,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q4",
+          "value": 2.11,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q1",
+          "value": 1.3,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q2",
+          "value": 0.29,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q3",
+          "value": 0.31,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q4",
+          "value": -0.2,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q1",
+          "value": 0.5,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q2",
+          "value": 0.53,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q3",
+          "value": 0.41,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q4",
+          "value": 1.33,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q1",
+          "value": 5.38,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q2",
+          "value": 1.82,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q3",
+          "value": 1.82,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q4",
+          "value": 1.54,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q1",
+          "value": 1.14,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": 2.13,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": -0.47,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 0.13,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 0.3,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 0.2,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 0.32,
+          "status": "actual"
+        }
+      ],
+      "note": "財報毛利率減財測毛利率中值（財測區間一律 ±1.5 個百分點）。2024Q1（+5.4）含約 4.5 個百分點的一次性成本迴轉，2025Q2（+2.1）含約 1.9 個百分點與先前長期供貨協議有關的一次性項目。"
+    },
+    {
+      "id": "fx-gap",
+      "name": "實際匯率相對財測假設匯率",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2016Q1",
+          "value": -1.32,
+          "status": "actual"
+        },
+        {
+          "period": "2016Q2",
+          "value": -0.35,
+          "status": "actual"
+        },
+        {
+          "period": "2016Q3",
+          "value": -0.98,
+          "status": "actual"
+        },
+        {
+          "period": "2016Q4",
+          "value": 0.9,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q1",
+          "value": -2.44,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q2",
+          "value": 0.82,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q3",
+          "value": -0.16,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q4",
+          "value": -0.66,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q1",
+          "value": -0.74,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q2",
+          "value": 1.63,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q3",
+          "value": 0.85,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q4",
+          "value": 0.09,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q1",
+          "value": -0.25,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q2",
+          "value": 0.69,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q3",
+          "value": -0.05,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q4",
+          "value": -0.39,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q1",
+          "value": 0.34,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q2",
+          "value": -0.4,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q3",
+          "value": 0.44,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q4",
+          "value": -1.13,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q1",
+          "value": 0.67,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q2",
+          "value": -0.78,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q3",
+          "value": -0.5,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q4",
+          "value": -0.62,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q1",
+          "value": 1.14,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q2",
+          "value": 3.27,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q3",
+          "value": 3.09,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q4",
+          "value": -0.52,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q1",
+          "value": -0.35,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q2",
+          "value": 1.36,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q3",
+          "value": 3.24,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q4",
+          "value": -0.57,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q1",
+          "value": 0.79,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q2",
+          "value": 1.08,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q3",
+          "value": -0.03,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q4",
+          "value": 2,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q1",
+          "value": 1.21,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": -4.99,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 3.26,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 1.38,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 1.38,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 0.33,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": -0.01,
+          "status": "actual"
+        }
+      ],
+      "note": "（當季美元兌新台幣平均匯率 ÷ 財測假設匯率 − 1）× 100；正值代表新台幣比財測假設弱、新台幣營收因此偏高。平均匯率用聯準會 H.10。2026Q4 季初至 11 月 13 日的平均為 32.437 元，比財測假設 31.7 元弱 2.3%。"
+    },
+    {
+      "id": "revenue-usd",
+      "name": "營收（美元）",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2016Q1",
+          "value": 1691,
+          "status": "estimate"
+        },
+        {
+          "period": "2016Q2",
+          "value": 2240,
+          "status": "estimate"
+        },
+        {
+          "period": "2016Q3",
+          "value": 2474,
+          "status": "estimate"
+        },
+        {
+          "period": "2016Q4",
+          "value": 2161,
+          "status": "estimate"
+        },
+        {
+          "period": "2017Q1",
+          "value": 1808,
+          "status": "estimate"
+        },
+        {
+          "period": "2017Q2",
+          "value": 1920,
+          "status": "estimate"
+        },
+        {
+          "period": "2017Q3",
+          "value": 2104,
+          "status": "estimate"
+        },
+        {
+          "period": "2017Q4",
+          "value": 2007,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q1",
+          "value": 1696,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q2",
+          "value": 2031,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q3",
+          "value": 2186,
+          "status": "estimate"
+        },
+        {
+          "period": "2018Q4",
+          "value": 1975,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q1",
+          "value": 1710,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q2",
+          "value": 1979,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q3",
+          "value": 2156,
+          "status": "estimate"
+        },
+        {
+          "period": "2019Q4",
+          "value": 2123,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q1",
+          "value": 2022,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q2",
+          "value": 2262,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q3",
+          "value": 3317,
+          "status": "estimate"
+        },
+        {
+          "period": "2020Q4",
+          "value": 3385,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q1",
+          "value": 3847,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 4491,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 4705,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 4624,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 5094,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 5291,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 4674,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 3453,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 3147,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 3195,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 3474,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 4072,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 4244,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 3935,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 4082,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 4269,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 4661,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 4870,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 4745,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 4841,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 4715,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 4815,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 5252,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 6924,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 7756,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 8624,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 9870,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 9771,
+          "status": "forecast"
+        }
+      ],
+      "note": "新台幣營收 ÷ 聯準會 H.10 季平均匯率（公司簡報的美元營收以公司匯率換算，差距很小）。2026Q4 起為基準情境。"
+    },
+    {
+      "id": "segment-revenue-mobile",
+      "name": "手機營收",
+      "unit": "百萬元",
+      "points": [
+        {
+          "period": "2021Q1",
+          "value": 58927,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 71622,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 73402,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 66900,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 75637,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 84944,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 78189,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 55704,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 44000,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 45142,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 53948,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 82920,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 81409,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 68726,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 71179,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 81445,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 85855,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 77417,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 75311,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 87734,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 73084,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 62395,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 62181,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 53090,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 66049,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 59174,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 63038,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 58541,
+          "status": "forecast"
+        }
+      ],
+      "note": "合併營收 × 公司簡報的手機占比（整數，正規化到 100%）。2026Q4 起為基準情境：第四季的非 ASIC 營收依第三季占比拆分，2027 年為全球手機出貨 × 每支手機營收的年變化。"
+    },
+    {
+      "id": "segment-revenue-smart-edge",
+      "name": "智慧邊緣平台營收（預測期不含資料中心 ASIC）",
+      "unit": "百萬元",
+      "points": [
+        {
+          "period": "2021Q1",
+          "value": 41467,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 45235,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 48497,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 52748,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 55657,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 59775,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 54021,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 44992,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 44956,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 46124,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 48443,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 38869,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 45376,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 50908,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 52725,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 48315,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 59792,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 64018,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 59681,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 55019,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 68609,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 80657,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 97474,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 83223,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 77396,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 91064,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 108699,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 91545,
+          "status": "forecast"
+        }
+      ],
+      "note": "歷史值含公司歸在智慧邊緣平台的資料中心 ASIC（2026 年 9 月開始初期出貨，第三季金額未揭露）；2026Q4 起的預測值不含 ASIC，ASIC 另列於 datacenter-asic-revenue。"
+    },
+    {
+      "id": "segment-revenue-power-ic",
+      "name": "電源管理 IC 營收",
+      "unit": "百萬元",
+      "points": [
+        {
+          "period": "2021Q1",
+          "value": 7639,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 8796,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 9175,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 9006,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 11417,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 11011,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 9951,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 7499,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 6696,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 6869,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 7707,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 7774,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 6673,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 7636,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 7909,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 8283,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 7666,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 8933,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 7105,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 7435,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 7458,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 9131,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 8403,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 7174,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 7576,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 9484,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 8945,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 7901,
+          "status": "forecast"
+        }
+      ],
+      "note": "合併營收 × 公司簡報的電源管理 IC 占比。2027 年假設與手機、智慧邊緣平台的平均成長率相同。"
+    },
+    {
+      "id": "datacenter-asic-revenue",
+      "name": "資料中心 AI 加速器 ASIC 營收（基準情境）",
+      "unit": "百萬元",
+      "points": [
+        {
+          "period": "2026Q4",
+          "value": 81093,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 100555,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 120017,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 139479,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 158941,
+          "status": "forecast"
+        }
+      ],
+      "note": "2026Q4 為公司說法（約 25 億美元），2027 年依公司目標約 160 億美元、由第四季的水準線性爬升（31 億美元、37 億美元、43 億美元、49 億美元），以基準匯率換算新台幣。各季分配是本模型假設，公司只給全年數字。"
+    },
+    {
+      "id": "revenue-per-smartphone",
+      "name": "每支全球手機帶給聯發科的營收",
+      "unit": "美元／支",
+      "points": [
+        {
+          "period": "2021Q3",
+          "value": 7.88,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 6.54,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 8.58,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 10.04,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 8.48,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 5.91,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 5.39,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 5.48,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 5.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 8.04,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 8.62,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 7.27,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 7.01,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 7.66,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 8.64,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 8.41,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 7.68,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 8.41,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 7.98,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 7.15,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 7.61,
+          "status": "estimate"
+        }
+      ],
+      "note": "手機營收（美元）÷ IDC 全球智慧型手機出貨，相當於「聯發科的市占 × 每支手機的晶片價值」。IDC 為第三方估計，且聯發科的晶片比手機早出貨，單季比值會受庫存調整影響（例如 2023 年上半年）。"
+    },
+    {
+      "id": "opex-ratio",
+      "name": "營業費用率",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2016Q1",
+          "value": 30.2,
+          "status": "actual"
+        },
+        {
+          "period": "2016Q2",
+          "value": 25.5,
+          "status": "actual"
+        },
+        {
+          "period": "2016Q3",
+          "value": 25.5,
+          "status": "actual"
+        },
+        {
+          "period": "2016Q4",
+          "value": 28.7,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q1",
+          "value": 31.3,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q2",
+          "value": 30.9,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q3",
+          "value": 28.6,
+          "status": "actual"
+        },
+        {
+          "period": "2017Q4",
+          "value": 35.3,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q1",
+          "value": 34.5,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q2",
+          "value": 31.4,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q3",
+          "value": 29.1,
+          "status": "actual"
+        },
+        {
+          "period": "2018Q4",
+          "value": 32.6,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q1",
+          "value": 34.7,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q2",
+          "value": 31.9,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q3",
+          "value": 31.6,
+          "status": "actual"
+        },
+        {
+          "period": "2019Q4",
+          "value": 32.9,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q1",
+          "value": 33.6,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q2",
+          "value": 32.5,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q3",
+          "value": 29.2,
+          "status": "actual"
+        },
+        {
+          "period": "2020Q4",
+          "value": 28.5,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q1",
+          "value": 26.2,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q2",
+          "value": 23.2,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q3",
+          "value": 24.4,
+          "status": "actual"
+        },
+        {
+          "period": "2021Q4",
+          "value": 26.5,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q1",
+          "value": 24.7,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q2",
+          "value": 24.1,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q3",
+          "value": 26.1,
+          "status": "actual"
+        },
+        {
+          "period": "2022Q4",
+          "value": 31.6,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q1",
+          "value": 33,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q2",
+          "value": 32.5,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q3",
+          "value": 31.1,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q4",
+          "value": 29.2,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q1",
+          "value": 28.3,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q2",
+          "value": 29.2,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q3",
+          "value": 30.7,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q4",
+          "value": 33,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q1",
+          "value": 28.5,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": 29.6,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 30.9,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 31.6,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 31,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 31.2,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 30.2,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q4",
+          "value": 25.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 20.2,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 18.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 17.5,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 20,
+          "status": "forecast"
+        }
+      ],
+      "note": "營業費用 ÷ 營收。2026Q4 的營業費用依財測費用率 26% × 財測營收中值，再乘上訓練期平均高於財測的幅度（+2.7%）；2027 年各季為 2026 年同季 ×（1 + 10.2%）（2016–2025 年營業費用的年複合成長率）。研發費用約占營業費用的八成，主要隨人力與先進製程投入成長，不隨營收同比例變動，所以營收大增時費用率下降。"
+    },
+    {
+      "id": "gm-core-nonasic",
+      "name": "非 ASIC 產品毛利率（基準情境）",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2026Q4",
+          "value": 46.25,
+          "status": "estimate"
+        },
+        {
+          "period": "2027Q1",
+          "value": 46.71,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 46.71,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 46.71,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 46.71,
+          "status": "forecast"
+        }
+      ],
+      "note": "2026 年前三季毛利率 46.28%（平均匯率 31.74 元），再依公司說明的匯率影響（新台幣每貶值 1%，毛利率約 +0.2 個百分點）換算到各期匯率。2026Q4 這一點是以財測假設匯率換算、用來推算 ASIC 毛利率的值。"
+    },
+    {
+      "id": "gm-asic-drag",
+      "name": "資料中心 ASIC 對毛利率的影響（基準情境）",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "2026Q4",
+          "value": -1.25,
+          "status": "guidance"
+        },
+        {
+          "period": "2027Q1",
+          "value": -1.54,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": -1.66,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": -1.68,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": -1.94,
+          "status": "forecast"
+        }
+      ],
+      "note": "合併毛利率 − 非 ASIC 毛利率。2026Q4 為公司財測（45%）隱含的影響：ASIC 約占第四季財測營收 36.7%，推算 ASIC 毛利率約 42.8%。2027 年 ASIC 比重升高，影響隨之擴大。"
+    },
+    {
+      "id": "october-share-of-q4",
+      "name": "10 月營收占第四季營收比重",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2016",
+          "value": 34.7,
+          "status": "actual"
+        },
+        {
+          "period": "2017",
+          "value": 34.8,
+          "status": "actual"
+        },
+        {
+          "period": "2018",
+          "value": 34.2,
+          "status": "actual"
+        },
+        {
+          "period": "2019",
+          "value": 34,
+          "status": "actual"
+        },
+        {
+          "period": "2020",
+          "value": 31.6,
+          "status": "actual"
+        },
+        {
+          "period": "2021",
+          "value": 29.1,
+          "status": "actual"
+        },
+        {
+          "period": "2022",
+          "value": 30.9,
+          "status": "actual"
+        },
+        {
+          "period": "2023",
+          "value": 33,
+          "status": "actual"
+        },
+        {
+          "period": "2024",
+          "value": 37,
+          "status": "actual"
+        },
+        {
+          "period": "2025",
+          "value": 34.6,
+          "status": "actual"
+        },
+        {
+          "period": "2026",
+          "value": 24.5,
+          "status": "forecast"
+        }
+      ],
+      "note": "2016–2025 年平均 33.4%。2026 年為 10 月營收 550 億元 ÷ 基準情境的第四季營收 2,246 億元：要達到基準，11–12 月平均每月需約 848 億元（2026 年單月最高為 8 月的 642 億元）。"
+    },
+    {
+      "id": "dram-contract-index",
+      "name": "DRAM 合約價指數（TrendForce，一般型）",
+      "unit": "指數（2021Q1 = 100）",
+      "points": [
+        {
+          "period": "2021Q1",
+          "value": 100,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q2",
+          "value": 120.5,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q3",
+          "value": 127.1,
+          "status": "estimate"
+        },
+        {
+          "period": "2021Q4",
+          "value": 120.1,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q1",
+          "value": 107.5,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q2",
+          "value": 104.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q3",
+          "value": 91.7,
+          "status": "estimate"
+        },
+        {
+          "period": "2022Q4",
+          "value": 71.1,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q1",
+          "value": 56.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q2",
+          "value": 48.1,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q3",
+          "value": 46.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2023Q4",
+          "value": 54.1,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q1",
+          "value": 64.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q2",
+          "value": 75,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q3",
+          "value": 82.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 78.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 70.1,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 75.4,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 84.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 125,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 244.5,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 392.4,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 453.2,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 509.8,
+          "status": "forecast"
+        }
+      ],
+      "note": "由 TrendForce DRAM 合約價季變化（2024Q3 起為一般型、不含 HBM）連乘，2026Q4 為 TrendForce 9 月預測。記憶體漲價推升手機物料成本、壓抑出貨，也推高聯發科電視晶片（含記憶體）的售價；本模型沒有直接用它預測，只作為解讀背景。"
+    }
+  ],
+  "backtest": [
+    {
+      "period": "2025Q1",
+      "metric": "revenue",
+      "actual": 153312,
+      "predicted": 150483,
+      "candidate": "guidance-adjusted",
+      "benchmark": 146300,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "revenue",
+      "actual": 150369,
+      "predicted": 148023,
+      "candidate": "guidance-adjusted",
+      "benchmark": 153300,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 142097,
+      "predicted": 141728,
+      "candidate": "guidance-adjusted",
+      "benchmark": 135050,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 150188,
+      "predicted": 150796,
+      "candidate": "guidance-adjusted",
+      "benchmark": 146350,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 149151,
+      "predicted": 150120,
+      "candidate": "guidance-adjusted",
+      "benchmark": 145700,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 152183,
+      "predicted": 147544,
+      "candidate": "guidance-adjusted",
+      "benchmark": 144700,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 168058,
+      "predicted": 158528,
+      "candidate": "guidance-adjusted",
+      "benchmark": 156000,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "grossMargin",
+      "actual": 48.14,
+      "predicted": 47.8,
+      "candidate": "guidance-adjusted",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "grossMargin",
+      "actual": 49.13,
+      "predicted": 47.8,
+      "candidate": "guidance-adjusted",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 46.53,
+      "predicted": 47.8,
+      "candidate": "guidance-adjusted",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 46.13,
+      "predicted": 46.8,
+      "candidate": "guidance-adjusted",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 46.3,
+      "predicted": 46.8,
+      "candidate": "guidance-adjusted",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 46.2,
+      "predicted": 46.8,
+      "candidate": "guidance-adjusted",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 46.32,
+      "predicted": 46.8,
+      "candidate": "guidance-adjusted",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "operatingIncome",
+      "actual": 30053,
+      "predicted": 28172,
+      "candidate": "guidance-adjusted",
+      "benchmark": 26334,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "operatingIncome",
+      "actual": 29379,
+      "predicted": 26254,
+      "candidate": "guidance-adjusted",
+      "benchmark": 27594,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "operatingIncome",
+      "actual": 22188,
+      "predicted": 23820,
+      "candidate": "guidance-adjusted",
+      "benchmark": 21608,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "operatingIncome",
+      "actual": 21850,
+      "predicted": 23140,
+      "candidate": "guidance-adjusted",
+      "benchmark": 21953,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "operatingIncome",
+      "actual": 22891,
+      "predicted": 24090,
+      "candidate": "guidance-adjusted",
+      "benchmark": 21855,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "operatingIncome",
+      "actual": 22868,
+      "predicted": 21609,
+      "candidate": "guidance-adjusted",
+      "benchmark": 21705,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "operatingIncome",
+      "actual": 27102,
+      "predicted": 23443,
+      "candidate": "guidance-adjusted",
+      "benchmark": 23400,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "netIncome",
+      "actual": 29325,
+      "predicted": 27729,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "netIncome",
+      "actual": 27848,
+      "predicted": 25229,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "netIncome",
+      "actual": 25221,
+      "predicted": 26595,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "netIncome",
+      "actual": 22925,
+      "predicted": 24014,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "netIncome",
+      "actual": 24154,
+      "predicted": 25226,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "netIncome",
+      "actual": 24335,
+      "predicted": 23239,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "netIncome",
+      "actual": 27882,
+      "predicted": 24843,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "eps",
+      "actual": 18.43,
+      "predicted": 17.43,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "eps",
+      "actual": 17.5,
+      "predicted": 15.85,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "eps",
+      "actual": 15.84,
+      "predicted": 16.7,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "eps",
+      "actual": 14.4,
+      "predicted": 15.08,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "eps",
+      "actual": 15.17,
+      "predicted": 15.84,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "eps",
+      "actual": 15.28,
+      "predicted": 14.59,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "eps",
+      "actual": 17.5,
+      "predicted": 15.59,
+      "candidate": "guidance-adjusted"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "revenue",
+      "actual": 153312,
+      "predicted": 133506,
+      "candidate": "segment",
+      "benchmark": 146300,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "revenue",
+      "actual": 150369,
+      "predicted": 142773,
+      "candidate": "segment",
+      "benchmark": 153300,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 142097,
+      "predicted": 152962,
+      "candidate": "segment",
+      "benchmark": 135050,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 150188,
+      "predicted": 149201,
+      "candidate": "segment",
+      "benchmark": 146350,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 149151,
+      "predicted": 140576,
+      "candidate": "segment",
+      "benchmark": 145700,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 152183,
+      "predicted": 145517,
+      "candidate": "segment",
+      "benchmark": 144700,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 168058,
+      "predicted": 149173,
+      "candidate": "segment",
+      "benchmark": 156000,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "grossMargin",
+      "actual": 48.14,
+      "predicted": 48.45,
+      "candidate": "segment",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "grossMargin",
+      "actual": 49.13,
+      "predicted": 48.45,
+      "candidate": "segment",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 46.53,
+      "predicted": 47.38,
+      "candidate": "segment",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 46.13,
+      "predicted": 46.35,
+      "candidate": "segment",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 46.3,
+      "predicted": 46.04,
+      "candidate": "segment",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 46.2,
+      "predicted": 46.3,
+      "candidate": "segment",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 46.32,
+      "predicted": 46.14,
+      "candidate": "segment",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "operatingIncome",
+      "actual": 30053,
+      "predicted": 20932,
+      "candidate": "segment",
+      "benchmark": 26334,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "operatingIncome",
+      "actual": 29379,
+      "predicted": 24675,
+      "candidate": "segment",
+      "benchmark": 27594,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "operatingIncome",
+      "actual": 22188,
+      "predicted": 28549,
+      "candidate": "segment",
+      "benchmark": 21608,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "operatingIncome",
+      "actual": 21850,
+      "predicted": 21730,
+      "candidate": "segment",
+      "benchmark": 21953,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "operatingIncome",
+      "actual": 22891,
+      "predicted": 18550,
+      "candidate": "segment",
+      "benchmark": 21855,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "operatingIncome",
+      "actual": 22868,
+      "predicted": 19939,
+      "candidate": "segment",
+      "benchmark": 21705,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "operatingIncome",
+      "actual": 27102,
+      "predicted": 18082,
+      "candidate": "segment",
+      "benchmark": 23400,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "netIncome",
+      "actual": 29325,
+      "predicted": 21584,
+      "candidate": "segment"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "netIncome",
+      "actual": 27848,
+      "predicted": 23906,
+      "candidate": "segment"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "netIncome",
+      "actual": 25221,
+      "predicted": 30576,
+      "candidate": "segment"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "netIncome",
+      "actual": 22925,
+      "predicted": 22824,
+      "candidate": "segment"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "netIncome",
+      "actual": 24154,
+      "predicted": 20274,
+      "candidate": "segment"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "netIncome",
+      "actual": 24335,
+      "predicted": 21786,
+      "candidate": "segment"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "netIncome",
+      "actual": 27882,
+      "predicted": 20391,
+      "candidate": "segment"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "eps",
+      "actual": 18.43,
+      "predicted": 13.56,
+      "candidate": "segment"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "eps",
+      "actual": 17.5,
+      "predicted": 15.02,
+      "candidate": "segment"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "eps",
+      "actual": 15.84,
+      "predicted": 19.2,
+      "candidate": "segment"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "eps",
+      "actual": 14.4,
+      "predicted": 14.34,
+      "candidate": "segment"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "eps",
+      "actual": 15.17,
+      "predicted": 12.73,
+      "candidate": "segment"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "eps",
+      "actual": 15.28,
+      "predicted": 13.68,
+      "candidate": "segment"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "eps",
+      "actual": 17.5,
+      "predicted": 12.8,
+      "candidate": "segment"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "revenue",
+      "actual": 153312,
+      "predicted": 133506,
+      "candidate": "segment-mix",
+      "benchmark": 146300,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "revenue",
+      "actual": 150369,
+      "predicted": 142773,
+      "candidate": "segment-mix",
+      "benchmark": 153300,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 142097,
+      "predicted": 152962,
+      "candidate": "segment-mix",
+      "benchmark": 135050,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 150188,
+      "predicted": 149201,
+      "candidate": "segment-mix",
+      "benchmark": 146350,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 149151,
+      "predicted": 140576,
+      "candidate": "segment-mix",
+      "benchmark": 145700,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 152183,
+      "predicted": 145517,
+      "candidate": "segment-mix",
+      "benchmark": 144700,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 168058,
+      "predicted": 149173,
+      "candidate": "segment-mix",
+      "benchmark": 156000,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "grossMargin",
+      "actual": 48.14,
+      "predicted": 48.4,
+      "candidate": "segment-mix",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "grossMargin",
+      "actual": 49.13,
+      "predicted": 48.57,
+      "candidate": "segment-mix",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 46.53,
+      "predicted": 47.46,
+      "candidate": "segment-mix",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 46.13,
+      "predicted": 46.29,
+      "candidate": "segment-mix",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 46.3,
+      "predicted": 45.97,
+      "candidate": "segment-mix",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 46.2,
+      "predicted": 46.29,
+      "candidate": "segment-mix",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 46.32,
+      "predicted": 46.1,
+      "candidate": "segment-mix",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "operatingIncome",
+      "actual": 30053,
+      "predicted": 20864,
+      "candidate": "segment-mix",
+      "benchmark": 26334,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "operatingIncome",
+      "actual": 29379,
+      "predicted": 24848,
+      "candidate": "segment-mix",
+      "benchmark": 27594,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "operatingIncome",
+      "actual": 22188,
+      "predicted": 28669,
+      "candidate": "segment-mix",
+      "benchmark": 21608,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "operatingIncome",
+      "actual": 21850,
+      "predicted": 21634,
+      "candidate": "segment-mix",
+      "benchmark": 21953,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "operatingIncome",
+      "actual": 22891,
+      "predicted": 18454,
+      "candidate": "segment-mix",
+      "benchmark": 21855,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "operatingIncome",
+      "actual": 22868,
+      "predicted": 19927,
+      "candidate": "segment-mix",
+      "benchmark": 21705,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "operatingIncome",
+      "actual": 27102,
+      "predicted": 18021,
+      "candidate": "segment-mix",
+      "benchmark": 23400,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "netIncome",
+      "actual": 29325,
+      "predicted": 21526,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "netIncome",
+      "actual": 27848,
+      "predicted": 24050,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "netIncome",
+      "actual": 25221,
+      "predicted": 30677,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "netIncome",
+      "actual": 22925,
+      "predicted": 22743,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "netIncome",
+      "actual": 24154,
+      "predicted": 20187,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "netIncome",
+      "actual": 24335,
+      "predicted": 21775,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "netIncome",
+      "actual": 27882,
+      "predicted": 20341,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "eps",
+      "actual": 18.43,
+      "predicted": 13.53,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "eps",
+      "actual": 17.5,
+      "predicted": 15.11,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "eps",
+      "actual": 15.84,
+      "predicted": 19.27,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "eps",
+      "actual": 14.4,
+      "predicted": 14.29,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "eps",
+      "actual": 15.17,
+      "predicted": 12.68,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "eps",
+      "actual": 15.28,
+      "predicted": 13.67,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "eps",
+      "actual": 17.5,
+      "predicted": 12.77,
+      "candidate": "segment-mix"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "revenue",
+      "actual": 153312,
+      "predicted": 159823,
+      "candidate": "first-month",
+      "benchmark": 146300,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "revenue",
+      "actual": 150369,
+      "predicted": 154532,
+      "candidate": "first-month",
+      "benchmark": 153300,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 142097,
+      "predicted": 142407,
+      "candidate": "first-month",
+      "benchmark": 135050,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 150188,
+      "predicted": 156469,
+      "candidate": "first-month",
+      "benchmark": 146350,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 149151,
+      "predicted": 146801,
+      "candidate": "first-month",
+      "benchmark": 145700,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 152183,
+      "predicted": 148137,
+      "candidate": "first-month",
+      "benchmark": 144700,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 168058,
+      "predicted": 159721,
+      "candidate": "first-month",
+      "benchmark": 156000,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "revenue",
+      "actual": 153312,
+      "predicted": 130006,
+      "candidate": "seasonal-naive",
+      "benchmark": 146300,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "revenue",
+      "actual": 150369,
+      "predicted": 170744,
+      "candidate": "seasonal-naive",
+      "benchmark": 153300,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 142097,
+      "predicted": 164809,
+      "candidate": "seasonal-naive",
+      "benchmark": 135050,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 150188,
+      "predicted": 135758,
+      "candidate": "seasonal-naive",
+      "benchmark": 146350,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 149151,
+      "predicted": 141444,
+      "candidate": "seasonal-naive",
+      "benchmark": 145700,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 152183,
+      "predicted": 166109,
+      "candidate": "seasonal-naive",
+      "benchmark": 144700,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 168058,
+      "predicted": 166797,
+      "candidate": "seasonal-naive",
+      "benchmark": 156000,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "grossMargin",
+      "actual": 48.14,
+      "predicted": 48.54,
+      "candidate": "seasonal-naive",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "grossMargin",
+      "actual": 49.13,
+      "predicted": 48.14,
+      "candidate": "seasonal-naive",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 46.53,
+      "predicted": 49.13,
+      "candidate": "seasonal-naive",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 46.13,
+      "predicted": 46.53,
+      "candidate": "seasonal-naive",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 46.3,
+      "predicted": 46.13,
+      "candidate": "seasonal-naive",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 46.2,
+      "predicted": 46.3,
+      "candidate": "seasonal-naive",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 46.32,
+      "predicted": 46.2,
+      "candidate": "seasonal-naive",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "operatingIncome",
+      "actual": 30053,
+      "predicted": 19344,
+      "candidate": "seasonal-naive",
+      "benchmark": 26334,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "operatingIncome",
+      "actual": 29379,
+      "predicted": 37703,
+      "candidate": "seasonal-naive",
+      "benchmark": 27594,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "operatingIncome",
+      "actual": 22188,
+      "predicted": 37048,
+      "candidate": "seasonal-naive",
+      "benchmark": 21608,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "operatingIncome",
+      "actual": 21850,
+      "predicted": 15732,
+      "candidate": "seasonal-naive",
+      "benchmark": 21953,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "operatingIncome",
+      "actual": 22891,
+      "predicted": 19083,
+      "candidate": "seasonal-naive",
+      "benchmark": 21855,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "operatingIncome",
+      "actual": 22868,
+      "predicted": 29467,
+      "candidate": "seasonal-naive",
+      "benchmark": 21705,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "operatingIncome",
+      "actual": 27102,
+      "predicted": 26313,
+      "candidate": "seasonal-naive",
+      "benchmark": 23400,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "netIncome",
+      "actual": 29325,
+      "predicted": 20236,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "netIncome",
+      "actual": 27848,
+      "predicted": 34825,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "netIncome",
+      "actual": 25221,
+      "predicted": 37731,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "netIncome",
+      "actual": 22925,
+      "predicted": 17758,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "netIncome",
+      "actual": 24154,
+      "predicted": 20750,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "netIncome",
+      "actual": 24335,
+      "predicted": 30078,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "netIncome",
+      "actual": 27882,
+      "predicted": 27227,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "eps",
+      "actual": 18.43,
+      "predicted": 12.72,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "eps",
+      "actual": 17.5,
+      "predicted": 21.88,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "eps",
+      "actual": 15.84,
+      "predicted": 23.7,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "eps",
+      "actual": 14.4,
+      "predicted": 11.15,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "eps",
+      "actual": 15.17,
+      "predicted": 13.03,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "eps",
+      "actual": 15.28,
+      "predicted": 18.89,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "eps",
+      "actual": 17.5,
+      "predicted": 17.09,
+      "candidate": "seasonal-naive"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "revenue",
+      "actual": 153312,
+      "predicted": 138043,
+      "candidate": "naive",
+      "benchmark": 146300,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "revenue",
+      "actual": 150369,
+      "predicted": 153312,
+      "candidate": "naive",
+      "benchmark": 153300,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 142097,
+      "predicted": 150369,
+      "candidate": "naive",
+      "benchmark": 135050,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 150188,
+      "predicted": 142097,
+      "candidate": "naive",
+      "benchmark": 146350,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 149151,
+      "predicted": 150188,
+      "candidate": "naive",
+      "benchmark": 145700,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 152183,
+      "predicted": 149151,
+      "candidate": "naive",
+      "benchmark": 144700,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 168058,
+      "predicted": 152183,
+      "candidate": "naive",
+      "benchmark": 156000,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "grossMargin",
+      "actual": 48.14,
+      "predicted": 48.54,
+      "candidate": "naive",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "grossMargin",
+      "actual": 49.13,
+      "predicted": 48.14,
+      "candidate": "naive",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 46.53,
+      "predicted": 49.13,
+      "candidate": "naive",
+      "benchmark": 47,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 46.13,
+      "predicted": 46.53,
+      "candidate": "naive",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 46.3,
+      "predicted": 46.13,
+      "candidate": "naive",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 46.2,
+      "predicted": 46.3,
+      "candidate": "naive",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 46.32,
+      "predicted": 46.2,
+      "candidate": "naive",
+      "benchmark": 46,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "operatingIncome",
+      "actual": 30053,
+      "predicted": 23245,
+      "candidate": "naive",
+      "benchmark": 26334,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "operatingIncome",
+      "actual": 29379,
+      "predicted": 29311,
+      "candidate": "naive",
+      "benchmark": 27594,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "operatingIncome",
+      "actual": 22188,
+      "predicted": 29953,
+      "candidate": "naive",
+      "benchmark": 21608,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "operatingIncome",
+      "actual": 21850,
+      "predicted": 18681,
+      "candidate": "naive",
+      "benchmark": 21953,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "operatingIncome",
+      "actual": 22891,
+      "predicted": 23116,
+      "candidate": "naive",
+      "benchmark": 21855,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "operatingIncome",
+      "actual": 22868,
+      "predicted": 21616,
+      "candidate": "naive",
+      "benchmark": 21705,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "operatingIncome",
+      "actual": 27102,
+      "predicted": 19561,
+      "candidate": "naive",
+      "benchmark": 23400,
+      "benchmarkLabel": "聯發科財測中值"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "netIncome",
+      "actual": 29325,
+      "predicted": 23547,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "netIncome",
+      "actual": 27848,
+      "predicted": 27791,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "netIncome",
+      "actual": 25221,
+      "predicted": 31759,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "netIncome",
+      "actual": 22925,
+      "predicted": 20249,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "netIncome",
+      "actual": 24154,
+      "predicted": 24356,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "netIncome",
+      "actual": 24335,
+      "predicted": 23245,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "netIncome",
+      "actual": 27882,
+      "predicted": 21620,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "eps",
+      "actual": 18.43,
+      "predicted": 14.8,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "eps",
+      "actual": 17.5,
+      "predicted": 17.46,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "eps",
+      "actual": 15.84,
+      "predicted": 19.95,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "eps",
+      "actual": 14.4,
+      "predicted": 12.72,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "eps",
+      "actual": 15.17,
+      "predicted": 15.3,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "eps",
+      "actual": 15.28,
+      "predicted": 14.6,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "eps",
+      "actual": 17.5,
+      "predicted": 13.57,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "revenue",
+      "actual": 153312,
+      "predicted": 146300,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "revenue",
+      "actual": 150369,
+      "predicted": 153300,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 142097,
+      "predicted": 135050,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 150188,
+      "predicted": 146350,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 149151,
+      "predicted": 145700,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 152183,
+      "predicted": 144700,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 168058,
+      "predicted": 156000,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "grossMargin",
+      "actual": 48.14,
+      "predicted": 47,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "grossMargin",
+      "actual": 49.13,
+      "predicted": 47,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 46.53,
+      "predicted": 47,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 46.13,
+      "predicted": 46,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 46.3,
+      "predicted": 46,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 46.2,
+      "predicted": 46,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 46.32,
+      "predicted": 46,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "operatingIncome",
+      "actual": 30053,
+      "predicted": 26334,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "operatingIncome",
+      "actual": 29379,
+      "predicted": 27594,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "operatingIncome",
+      "actual": 22188,
+      "predicted": 21608,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "operatingIncome",
+      "actual": 21850,
+      "predicted": 21953,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "operatingIncome",
+      "actual": 22891,
+      "predicted": 21855,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "operatingIncome",
+      "actual": 22868,
+      "predicted": 21705,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "operatingIncome",
+      "actual": 27102,
+      "predicted": 23400,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "netIncome",
+      "actual": 29325,
+      "predicted": 26168,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "netIncome",
+      "actual": 27848,
+      "predicted": 26352,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "netIncome",
+      "actual": 25221,
+      "predicted": 24733,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "netIncome",
+      "actual": 22925,
+      "predicted": 23012,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "netIncome",
+      "actual": 24154,
+      "predicted": 23228,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "netIncome",
+      "actual": 24335,
+      "predicted": 23323,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "netIncome",
+      "actual": 27882,
+      "predicted": 24808,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q1",
+      "metric": "eps",
+      "actual": 18.43,
+      "predicted": 16.45,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q2",
+      "metric": "eps",
+      "actual": 17.5,
+      "predicted": 16.56,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "eps",
+      "actual": 15.84,
+      "predicted": 15.53,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "eps",
+      "actual": 14.4,
+      "predicted": 14.45,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "eps",
+      "actual": 15.17,
+      "predicted": 14.59,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "eps",
+      "actual": 15.28,
+      "predicted": 14.64,
+      "candidate": "guidance"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "eps",
+      "actual": 17.5,
+      "predicted": 15.57,
+      "candidate": "guidance"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "bear",
+      "name": "保守",
+      "assumptions": [
+        {
+          "name": "2026Q4 營收與毛利率",
+          "value": "財測校正模型：營收 = 財測中值 2,160 億元 × 1.0163（歷史偏差）×（32.06 ÷ 31.7）（匯率），毛利率 = 財測 45% 加 0.8 個百分點（歷史偏差），再加上訓練期財測誤差的第 10 百分位（營收 −3.5%、毛利率 −0.79 個百分點）",
+          "src": "ir-3q26-deck"
+        },
+        {
+          "name": "匯率（2026Q4 與 2027 年）",
+          "value": "2026Q4 約 32.06 元：季初至 11 月 13 日的 30 個營業日平均 32.437 元已知，其餘 32 個營業日假設新台幣升值回到第四季財測假設 31.7 元；2027 年 31.7 元",
+          "src": "ir-3q26-deck"
+        },
+        {
+          "name": "全球手機出貨（2027 年）",
+          "value": "2027 年每季維持 2026 年第四季的推算水準約 231.5 百萬支，全年約 926 百萬支（較 2026 年推算值 −12.0%）。IDC 預估 2026 年年減 16.7%、第三季年減 22%，並認為市場到 2027 年仍受記憶體成本壓抑，最快 2028 年復甦（本模型假設）",
+          "src": "idc-3q26"
+        },
+        {
+          "name": "記憶體價格（2026 年第四季）",
+          "value": "TrendForce 預測一般型 DRAM 合約價再漲 10–15%，消費性需求持續承壓",
+          "src": "tf-20260930-13258"
+        },
+        {
+          "name": "記憶體供需（2027 年）",
+          "value": "TrendForce 預期 2027 年 DRAM 供給仍吃緊，手機的記憶體成本壓力延續",
+          "src": "tf-20260730-13158"
+        },
+        {
+          "name": "每支全球手機帶給聯發科的營收（2027 年）",
+          "value": "−8%：延續 2026 年前三季的下滑（較 2025 年同期 −7.8%；以低階機種為主的 Android 品牌受記憶體漲價衝擊最大）（本模型假設）",
+          "src": "idc-2026-02"
+        },
+        {
+          "name": "智慧邊緣平台（不含資料中心 ASIC）",
+          "value": "2027 年持平（公司預期 2026 年雙位數成長，部分來自電視晶片反映 DRAM 成本的售價調升；2027 年為本模型假設）",
+          "src": "ir-1q26-call"
+        },
+        {
+          "name": "電源管理 IC",
+          "value": "與手機、智慧邊緣平台的平均年增率相同（本模型假設）"
+        },
+        {
+          "name": "資料中心 ASIC 營收",
+          "value": "2026Q4 約 25 億美元；2027 年 120 億美元，由第四季水準線性爬升（27 億美元、29 億美元、31 億美元、33 億美元）。公司 2026 年 7 月的目標區間下緣（可服務市場 800 億美元 × 市占 15%）",
+          "src": "ir-2q26-call"
+        },
+        {
+          "name": "資料中心 ASIC 毛利率（2027 年）",
+          "value": "38.8%：由第四季毛利率財測下緣推算（公司表示資料中心業務毛利率低於公司平均）。2026Q4 的毛利率仍由財測校正模型估計，不另套用這個假設",
+          "src": "ir-3q26-call"
+        },
+        {
+          "name": "非 ASIC 產品毛利率",
+          "value": "45.25%：2026 年前三季 46.28%，依公司說明的匯率影響換算，再 −1 個百分點（記憶體與供應鏈成本上升未能完全轉嫁）",
+          "src": "ir-2q25-call"
+        },
+        {
+          "name": "營業費用、業外、稅率與股數",
+          "value": "2026Q4 營業費用 577 億元（財測費用率 × 財測營收 × 歷史偏差），2027 年各季為 2026 年同季 ×（1 + 10.2%）；業外收支每季 52.5 億元、有效稅率 13.4%、股數 1,593 百萬股（最近四季）",
+          "src": "mops-is"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "2026Q4",
+          "revenue": 214073,
+          "grossMargin": 45.01,
+          "operatingIncome": 38700,
+          "netIncome": 37716,
+          "eps": 23.67,
+          "known": [],
+          "note": "10 月營收 550 億元已公布，占本情境的 25.7%（過去十年 10 月平均占第四季 33.4%）。公司財測 2,101–2,218 億元、毛利率 45% ± 1.5 個百分點（假設匯率 31.7 元）；本情境與財測中值相差營收 −0.9%、毛利率 +0.01 個百分點。"
+        },
+        {
+          "period": "2027Q1",
+          "revenue": 214691,
+          "grossMargin": 42.66,
+          "operatingIncome": 40730,
+          "netIncome": 39459,
+          "eps": 24.77,
+          "known": [],
+          "note": "資料中心 ASIC 27 億美元（占營收 40%）、非 ASIC 40.7 億美元；毛利率 = 非 ASIC 45.2% 與 ASIC 38.8% 的加權。"
+        },
+        {
+          "period": "2027Q2",
+          "revenue": 229194,
+          "grossMargin": 42.65,
+          "operatingIncome": 45476,
+          "netIncome": 43532,
+          "eps": 27.32,
+          "known": [],
+          "note": "資料中心 ASIC 29 億美元（占營收 40%）、非 ASIC 43.3 億美元；毛利率 = 非 ASIC 45.2% 與 ASIC 38.8% 的加權。"
+        },
+        {
+          "period": "2027Q3",
+          "revenue": 253878,
+          "grossMargin": 42.74,
+          "operatingIncome": 52591,
+          "netIncome": 49638,
+          "eps": 31.15,
+          "known": [],
+          "note": "資料中心 ASIC 31 億美元（占營收 39%）、非 ASIC 49.1 億美元；毛利率 = 非 ASIC 45.2% 與 ASIC 38.8% 的加權。"
+        },
+        {
+          "period": "2027Q4",
+          "revenue": 232867,
+          "grossMargin": 42.33,
+          "operatingIncome": 35064,
+          "netIncome": 34596,
+          "eps": 21.71,
+          "known": [],
+          "note": "資料中心 ASIC 33 億美元（占營收 45%）、非 ASIC 40.5 億美元；毛利率 = 非 ASIC 45.2% 與 ASIC 38.8% 的加權。"
+        },
+        {
+          "period": "2026",
+          "revenue": 683464,
+          "grossMargin": 45.88,
+          "operatingIncome": 111561,
+          "netIncome": 114087,
+          "eps": 71.62,
+          "known": [],
+          "note": "2026Q1–Q3 為財報實際數，2026Q4 為本情境推估；全年營收較 2025 年 +14.7%（以美元計 +12.3%，公司 2026 年 10 月表示全年以美元計的成長將超過高個位數），EPS 為四季加總。"
+        },
+        {
+          "period": "2027",
+          "revenue": 930629,
+          "grossMargin": 42.6,
+          "operatingIncome": 173861,
+          "netIncome": 167224,
+          "eps": 104.96,
+          "known": [],
+          "note": "四季加總；資料中心 ASIC 120 億美元、占營收約 41%。2027 年沒有公司財測，由產品線結構與情境假設推算；產品線模型逐季回測的營收誤差約 6.8%，從 2024Q4 連續推 7 季時約 16.9%，多季的預測誤差應以後者看待；2027 年的不確定性主要來自 ASIC 營收與毛利率假設。"
+        }
+      ]
+    },
+    {
+      "id": "base",
+      "name": "基準",
+      "assumptions": [
+        {
+          "name": "2026Q4 營收與毛利率",
+          "value": "財測校正模型：營收 = 財測中值 2,160 億元 × 1.0163（歷史偏差）×（32.437 ÷ 31.7）（匯率），毛利率 = 財測 45% 加 0.8 個百分點（歷史偏差）",
+          "src": "ir-3q26-deck"
+        },
+        {
+          "name": "匯率（2026Q4 與 2027 年）",
+          "value": "32.437 元（2026Q4 季初至 11 月 13 日共 30 個營業日的平均，假設之後不變）",
+          "src": "fed-h10-tw"
+        },
+        {
+          "name": "全球手機出貨（2027 年）",
+          "value": "2027 年每季維持 2026 年第三季的 255.3 百萬支，全年約 1,021 百萬支（較 2026 年推算值 −3.0%）。IDC 預估 2026 年年減 16.7%、第三季年減 22%，並認為市場到 2027 年仍受記憶體成本壓抑，最快 2028 年復甦（本模型假設）",
+          "src": "idc-3q26"
+        },
+        {
+          "name": "記憶體價格（2026 年第四季）",
+          "value": "TrendForce 預測一般型 DRAM 合約價再漲 10–15%，消費性需求持續承壓",
+          "src": "tf-20260930-13258"
+        },
+        {
+          "name": "記憶體供需（2027 年）",
+          "value": "TrendForce 預期 2027 年 DRAM 供給仍吃緊，手機的記憶體成本壓力延續",
+          "src": "tf-20260730-13158"
+        },
+        {
+          "name": "每支全球手機帶給聯發科的營收（2027 年）",
+          "value": "持平：公司調漲售價反映供應鏈成本、旗艦市占擴大，抵銷低階機種的流失（本模型假設）",
+          "src": "ir-3q26-call"
+        },
+        {
+          "name": "智慧邊緣平台（不含資料中心 ASIC）",
+          "value": "2027 年年增 +10%（公司預期 2026 年雙位數成長，部分來自電視晶片反映 DRAM 成本的售價調升；2027 年為本模型假設）",
+          "src": "ir-1q26-call"
+        },
+        {
+          "name": "電源管理 IC",
+          "value": "與手機、智慧邊緣平台的平均年增率相同（本模型假設）"
+        },
+        {
+          "name": "資料中心 ASIC 營收",
+          "value": "2026Q4 約 25 億美元；2027 年 160 億美元，由第四季水準線性爬升（31 億美元、37 億美元、43 億美元、49 億美元）。公司 2026 年 10 月的說法：達目標區間上緣、約 160 億美元",
+          "src": "ir-3q26-call"
+        },
+        {
+          "name": "資料中心 ASIC 毛利率（2027 年）",
+          "value": "42.8%：由第四季毛利率財測中值推算（公司表示資料中心業務毛利率低於公司平均）。2026Q4 的毛利率仍由財測校正模型估計，不另套用這個假設",
+          "src": "ir-3q26-call"
+        },
+        {
+          "name": "非 ASIC 產品毛利率",
+          "value": "46.71%：2026 年前三季 46.28%，依公司說明的匯率影響換算",
+          "src": "ir-2q25-call"
+        },
+        {
+          "name": "營業費用、業外、稅率與股數",
+          "value": "2026Q4 營業費用 577 億元（財測費用率 × 財測營收 × 歷史偏差），2027 年各季為 2026 年同季 ×（1 + 10.2%）；業外收支每季 52.5 億元、有效稅率 13.4%、股數 1,593 百萬股（最近四季）",
+          "src": "mops-is"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "2026Q4",
+          "revenue": 224580,
+          "grossMargin": 45.8,
+          "operatingIncome": 45202,
+          "netIncome": 43296,
+          "eps": 27.17,
+          "known": [],
+          "note": "10 月營收 550 億元已公布，占本情境的 24.5%（過去十年 10 月平均占第四季 33.4%）。公司財測 2,101–2,218 億元、毛利率 45% ± 1.5 個百分點（假設匯率 31.7 元）；本情境與財測中值相差營收 +4.0%、毛利率 +0.80 個百分點。財測校正模型的回測營收誤差約 1.9%（匯率已知）至 3.0%（只用財測假設匯率）、毛利率 0.74 個百分點。"
+        },
+        {
+          "period": "2027Q1",
+          "revenue": 251575,
+          "grossMargin": 45.16,
+          "operatingIncome": 62763,
+          "netIncome": 58368,
+          "eps": 36.63,
+          "known": [],
+          "note": "資料中心 ASIC 31 億美元（占營收 40%）、非 ASIC 46.6 億美元；毛利率 = 非 ASIC 46.7% 與 ASIC 42.8% 的加權。"
+        },
+        {
+          "period": "2027Q2",
+          "revenue": 279739,
+          "grossMargin": 45.05,
+          "operatingIncome": 73762,
+          "netIncome": 67806,
+          "eps": 42.56,
+          "known": [],
+          "note": "資料中心 ASIC 37 億美元（占營收 43%）、非 ASIC 49.2 億美元；毛利率 = 非 ASIC 46.7% 與 ASIC 42.8% 的加權。"
+        },
+        {
+          "period": "2027Q3",
+          "revenue": 320161,
+          "grossMargin": 45.03,
+          "operatingIncome": 88248,
+          "netIncome": 80239,
+          "eps": 50.36,
+          "known": [],
+          "note": "資料中心 ASIC 43 億美元（占營收 44%）、非 ASIC 55.7 億美元；毛利率 = 非 ASIC 46.7% 與 ASIC 42.8% 的加權。"
+        },
+        {
+          "period": "2027Q4",
+          "revenue": 316929,
+          "grossMargin": 44.77,
+          "operatingIncome": 78378,
+          "netIncome": 71768,
+          "eps": 45.04,
+          "known": [],
+          "note": "資料中心 ASIC 49 億美元（占營收 50%）、非 ASIC 48.7 億美元；毛利率 = 非 ASIC 46.7% 與 ASIC 42.8% 的加權。"
+        },
+        {
+          "period": "2026",
+          "revenue": 693971,
+          "grossMargin": 46.12,
+          "operatingIncome": 118063,
+          "netIncome": 119667,
+          "eps": 75.12,
+          "known": [],
+          "note": "2026Q1–Q3 為財報實際數，2026Q4 為本情境推估；全年營收較 2025 年 +16.4%（以美元計 +13.5%，公司 2026 年 10 月表示全年以美元計的成長將超過高個位數），EPS 為四季加總。"
+        },
+        {
+          "period": "2027",
+          "revenue": 1168404,
+          "grossMargin": 44.99,
+          "operatingIncome": 303150,
+          "netIncome": 278181,
+          "eps": 174.6,
+          "known": [],
+          "note": "四季加總；資料中心 ASIC 160 億美元、占營收約 44%。2027 年沒有公司財測，由產品線結構與情境假設推算；產品線模型逐季回測的營收誤差約 6.8%，從 2024Q4 連續推 7 季時約 16.9%，多季的預測誤差應以後者看待；2027 年的不確定性主要來自 ASIC 營收與毛利率假設。"
+        }
+      ]
+    },
+    {
+      "id": "bull",
+      "name": "樂觀",
+      "assumptions": [
+        {
+          "name": "2026Q4 營收與毛利率",
+          "value": "財測校正模型：營收 = 財測中值 2,160 億元 × 1.0163（歷史偏差）×（32.437 ÷ 31.7）（匯率），毛利率 = 財測 45% 加 0.8 個百分點（歷史偏差），再加上訓練期財測誤差的第 90 百分位（營收 +3.6%、毛利率 +0.69 個百分點）",
+          "src": "ir-3q26-deck"
+        },
+        {
+          "name": "匯率（2026Q4 與 2027 年）",
+          "value": "32.437 元（2026Q4 季初至 11 月 13 日共 30 個營業日的平均，假設之後不變）",
+          "src": "fed-h10-tw"
+        },
+        {
+          "name": "全球手機出貨（2027 年）",
+          "value": "2027 年回到 2026 年全年水準（每季約 263.2 百萬支），全年約 1,053 百萬支（與 2026 年推算值持平）。IDC 預估 2026 年年減 16.7%、第三季年減 22%，並認為市場到 2027 年仍受記憶體成本壓抑，最快 2028 年復甦（本模型假設）",
+          "src": "idc-3q26"
+        },
+        {
+          "name": "記憶體價格（2026 年第四季）",
+          "value": "TrendForce 預測一般型 DRAM 合約價再漲 10–15%，消費性需求持續承壓",
+          "src": "tf-20260930-13258"
+        },
+        {
+          "name": "記憶體供需（2027 年）",
+          "value": "TrendForce 預期 2027 年 DRAM 供給仍吃緊，手機的記憶體成本壓力延續",
+          "src": "tf-20260730-13158"
+        },
+        {
+          "name": "每支全球手機帶給聯發科的營收（2027 年）",
+          "value": "+5%：公司調漲售價、2 奈米旗艦晶片擴大市占的效果大於低階機種流失（本模型假設）",
+          "src": "ir-3q26-call"
+        },
+        {
+          "name": "智慧邊緣平台（不含資料中心 ASIC）",
+          "value": "2027 年年增 +20%（公司預期 2026 年雙位數成長，部分來自電視晶片反映 DRAM 成本的售價調升；2027 年為本模型假設）",
+          "src": "ir-1q26-call"
+        },
+        {
+          "name": "電源管理 IC",
+          "value": "與手機、智慧邊緣平台的平均年增率相同（本模型假設）"
+        },
+        {
+          "name": "資料中心 ASIC 營收",
+          "value": "2026Q4 約 25 億美元；2027 年 160 億美元，由第四季水準線性爬升（31 億美元、37 億美元、43 億美元、49 億美元）。公司 2026 年 10 月的說法：達目標區間上緣、約 160 億美元",
+          "src": "ir-3q26-call"
+        },
+        {
+          "name": "資料中心 ASIC 毛利率（2027 年）",
+          "value": "45.0%：由第四季毛利率財測中值加上歷史平均偏差推算（公司表示資料中心業務毛利率低於公司平均）。2026Q4 的毛利率仍由財測校正模型估計，不另套用這個假設",
+          "src": "ir-3q26-call"
+        },
+        {
+          "name": "非 ASIC 產品毛利率",
+          "value": "46.71%：2026 年前三季 46.28%，依公司說明的匯率影響換算",
+          "src": "ir-2q25-call"
+        },
+        {
+          "name": "營業費用、業外、稅率與股數",
+          "value": "2026Q4 營業費用 577 億元（財測費用率 × 財測營收 × 歷史偏差），2027 年各季為 2026 年同季 ×（1 + 10.2%）；業外收支每季 52.5 億元、有效稅率 13.4%、股數 1,593 百萬股（最近四季）",
+          "src": "mops-is"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "2026Q4",
+          "revenue": 232739,
+          "grossMargin": 46.49,
+          "operatingIncome": 50539,
+          "netIncome": 47876,
+          "eps": 30.05,
+          "known": [],
+          "note": "10 月營收 550 億元已公布，占本情境的 23.6%（過去十年 10 月平均占第四季 33.4%）。公司財測 2,101–2,218 億元、毛利率 45% ± 1.5 個百分點（假設匯率 31.7 元）；本情境與財測中值相差營收 +7.8%、毛利率 +1.49 個百分點。"
+        },
+        {
+          "period": "2027Q1",
+          "revenue": 264722,
+          "grossMargin": 46.07,
+          "operatingIncome": 71092,
+          "netIncome": 65515,
+          "eps": 41.12,
+          "known": [],
+          "note": "資料中心 ASIC 31 億美元（占營收 38%）、非 ASIC 50.6 億美元；毛利率 = 非 ASIC 46.7% 與 ASIC 45.0% 的加權。"
+        },
+        {
+          "period": "2027Q2",
+          "revenue": 293727,
+          "grossMargin": 46.02,
+          "operatingIncome": 82906,
+          "netIncome": 75655,
+          "eps": 47.48,
+          "known": [],
+          "note": "資料中心 ASIC 37 億美元（占營收 41%）、非 ASIC 53.6 億美元；毛利率 = 非 ASIC 46.7% 與 ASIC 45.0% 的加權。"
+        },
+        {
+          "period": "2027Q3",
+          "revenue": 336022,
+          "grossMargin": 46.01,
+          "operatingIncome": 98691,
+          "netIncome": 89201,
+          "eps": 55.99,
+          "known": [],
+          "note": "資料中心 ASIC 43 億美元（占營收 42%）、非 ASIC 60.6 億美元；毛利率 = 非 ASIC 46.7% 與 ASIC 45.0% 的加權。"
+        },
+        {
+          "period": "2027Q4",
+          "revenue": 340538,
+          "grossMargin": 45.92,
+          "operatingIncome": 92864,
+          "netIncome": 84200,
+          "eps": 52.85,
+          "known": [],
+          "note": "資料中心 ASIC 49 億美元（占營收 47%）、非 ASIC 56 億美元；毛利率 = 非 ASIC 46.7% 與 ASIC 45.0% 的加權。"
+        },
+        {
+          "period": "2026",
+          "revenue": 702130,
+          "grossMargin": 46.34,
+          "operatingIncome": 123399,
+          "netIncome": 124247,
+          "eps": 78,
+          "known": [],
+          "note": "2026Q1–Q3 為財報實際數，2026Q4 為本情境推估；全年營收較 2025 年 +17.8%（以美元計 +14.9%，公司 2026 年 10 月表示全年以美元計的成長將超過高個位數），EPS 為四季加總。"
+        },
+        {
+          "period": "2027",
+          "revenue": 1235009,
+          "grossMargin": 46,
+          "operatingIncome": 345553,
+          "netIncome": 314571,
+          "eps": 197.44,
+          "known": [],
+          "note": "四季加總；資料中心 ASIC 160 億美元、占營收約 42%。2027 年沒有公司財測，由產品線結構與情境假設推算；產品線模型逐季回測的營收誤差約 6.8%，從 2024Q4 連續推 7 季時約 16.9%，多季的預測誤差應以後者看待；2027 年的不確定性主要來自 ASIC 營收與毛利率假設。"
+        }
+      ]
+    }
+  ],
+  "sensitivities": [
+    {
+      "driver": "2027 年資料中心 ASIC 營收",
+      "change": "少 20 億美元（160 → 140 億美元）",
+      "effect": "2027 年營收 −649 億元（−5.6%）、毛利率 +0.13 個百分點、EPS −14.97 元"
+    },
+    {
+      "driver": "資料中心 ASIC 毛利率",
+      "change": "低 5 個百分點",
+      "effect": "2027 年毛利率 −2.22 個百分點、EPS −13.98 元（營收不變）"
+    },
+    {
+      "driver": "非 ASIC 產品毛利率",
+      "change": "低 1 個百分點",
+      "effect": "2027 年毛利率 −0.56 個百分點、EPS −3.50 元（營收不變）"
+    },
+    {
+      "driver": "手機營收（全球手機出貨或每支手機帶給聯發科的營收）",
+      "change": "2027 年少 5%",
+      "effect": "2027 年營收 −131 億元（−1.1%）、毛利率 −0.02 個百分點、EPS −3.30 元（出貨與每支手機營收相乘，兩者各少 5% 的效果相同）"
+    },
+    {
+      "driver": "智慧邊緣平台（不含 ASIC）年增率",
+      "change": "少 10 個百分點",
+      "effect": "2027 年營收 −352 億元（−3.0%）、毛利率 −0.05 個百分點、EPS −8.84 元"
+    },
+    {
+      "driver": "美元兌新台幣匯率（2026Q4 與 2027 年）",
+      "change": "新台幣升值 1 元（32.44 → 31.44）",
+      "effect": "2027 年營收 −360 億元（−3.1%）、毛利率 −0.35 個百分點、EPS −10.85 元；含公司說明的匯率對毛利率影響（每 1% 約 0.2 個百分點）"
+    },
+    {
+      "driver": "營業費用",
+      "change": "2026Q4 與 2027 年各季多 10%",
+      "effect": "2027 年 EPS −11.99 元（營收不變）"
+    },
+    {
+      "driver": "有效稅率",
+      "change": "多 2 個百分點",
+      "effect": "2027 年 EPS −4.03 元（營收不變）"
+    },
+    {
+      "driver": "2026Q4 資料中心 ASIC 營收",
+      "change": "25 億美元 → 20 億美元（公司 2026 年 4 月的說法）",
+      "effect": "2026Q4 營收 −162 億元、EPS −4.00 元（假設其他產品不變、營業費用不變；2027 年 ASIC 由較低的起點爬升到相同的全年目標）"
+    }
+  ],
+  "limitations": [
+    "逐季預測的準確度主要來自公司財測本身：公司掌握訂單與客戶庫存，公開的驅動因子（IDC 手機出貨、匯率）在同一季的解釋力很低。產品線模型代入當季實際 IDC 出貨時營收誤差 6.8%，比天真模型的 5.0% 還差，因為聯發科的晶片比手機早一季出貨，又會被客戶的庫存調整放大（2023 年第一、二季手機營收（美元）年減 46%、49%，同期 IDC 出貨只年減 14.6%、6.8%）。IDC 的歷史出貨採最新修正值，與當時的初估略有不同（例如 2025Q3 初估 322.7 百萬支、修正後 327.3 百萬支）。",
+    "2027 年沒有公司財測，數字主要由情境假設決定：資料中心 ASIC 營收（公司目標約 160 億美元、單一未具名客戶、首款產品，第二款與第二家客戶要到 2028 年）、ASIC 毛利率（由第四季財測反推，公司未揭露）、全球手機出貨與每支手機營收、智慧邊緣平台成長率。ASIC 少 20 億美元或毛利率低 5 個百分點，對 2027 年 EPS 的影響見敏感度。2027 年各季以 2026 年同季為基礎：基準情境的第四季營收扣除約 25 億美元的 ASIC 後，非 ASIC 營收（美元）比第三季全部營收少約 16%，這個低基期與 2026 年每支手機營收逐季下滑的走勢都會延續到 2027 年各季（例如 2027Q1 營收較 2026Q4 +12%），年度合計比單季走勢可靠。",
+    "產品線營收由公司簡報的整數占比換算，每條產品線有約 ±0.5 個百分點的進位誤差；資料中心 ASIC 歸在智慧邊緣平台，2026 年第三季的 ASIC 金額未揭露，本模型把它留在 2026 年的智慧邊緣平台基數中，2027 年第三季可能因此略為重複計算。",
+    "財測校正的偏差是 2016Q1–2024Q4 的平均：測試期毛利率已貼近財測中值，訓練期 +0.8 個百分點的偏差可能不再成立；第四季的財測已含 ASIC 拉低毛利率約 1 個百分點的判斷，模型的毛利率仍以財測為準。10 月營收只占基準情境的 25%，若 ASIC 出貨遞延，第四季營收可能低於保守情境。",
+    "匯率假設維持 2026Q4 季初至今的 32.44 元（保守情境 2026Q4 約 32.06 元、2027 年 31.7 元），新台幣每升值 1%，新台幣營收約減 1%、毛利率約減 0.2 個百分點（公司說法；訓練期資料看不到毛利率的匯率效果，所以 2026Q4 的毛利率沿用財測校正模型、不含匯率項，2027 年的非 ASIC 毛利率才採用公司說法）。業外收支、稅率與股數依最近四季設定；2026 年 10 月發行的 39 億美元可轉換公司債若轉換，會稀釋 EPS，模型未納入。營業費用依 2016–2025 年的平均成長推估，沒有隨 2027 年獲利大增而額外提高；獎金與員工酬勞通常跟著獲利增加，營業費用多 10% 時 2027 年 EPS 約 −11.99 元。",
+    "回測期只有 7 季，模型之間的差距（例如毛利率誤差差 0.1–0.4 個百分點）在統計上不顯著；選擇規則以營收誤差為主，毛利率方面排除一次性項目後沿用上一季（0.37 個百分點）其實比財測校正（0.74）更準。"
+  ],
+  "sourceKeys": [
+    "fed-h10-tw",
+    "idc-1q23",
+    "idc-1q24",
+    "idc-1q25",
+    "idc-1q26",
+    "idc-2026-02",
+    "idc-2026-08",
+    "idc-2q23",
+    "idc-2q24",
+    "idc-2q25",
+    "idc-3q22",
+    "idc-3q23",
+    "idc-3q24",
+    "idc-3q25",
+    "idc-3q26",
+    "idc-4q22",
+    "idc-4q23",
+    "idc-4q24",
+    "idc-4q25",
+    "idc-promo",
+    "ir-1q21-deck",
+    "ir-1q22-deck",
+    "ir-1q23-call",
+    "ir-1q24-call",
+    "ir-1q24-deck",
+    "ir-1q25-deck",
+    "ir-1q26-call",
+    "ir-1q26-deck",
+    "ir-2q20-deck",
+    "ir-2q21-deck",
+    "ir-2q22-deck",
+    "ir-2q23-deck",
+    "ir-2q24-deck",
+    "ir-2q25-call",
+    "ir-2q25-deck",
+    "ir-2q26-call",
+    "ir-2q26-deck",
+    "ir-3q20-deck",
+    "ir-3q21-deck",
+    "ir-3q22-deck",
+    "ir-3q23-deck",
+    "ir-3q24-deck",
+    "ir-3q25-call",
+    "ir-3q25-deck",
+    "ir-3q26-call",
+    "ir-3q26-deck",
+    "ir-3q26-pr",
+    "ir-4q20-deck",
+    "ir-4q21-deck",
+    "ir-4q22-deck",
+    "ir-4q23-deck",
+    "ir-4q24-call",
+    "ir-4q24-deck",
+    "ir-4q25-call",
+    "ir-4q25-deck",
+    "mops-bs",
+    "mops-ir-20160201",
+    "mops-ir-20160429",
+    "mops-ir-20160803",
+    "mops-ir-20161028",
+    "mops-ir-20170126",
+    "mops-ir-20170428",
+    "mops-ir-20170731",
+    "mops-ir-20171031",
+    "mops-ir-20180131",
+    "mops-ir-20180427",
+    "mops-ir-20180731",
+    "mops-ir-20181031",
+    "mops-ir-20190130",
+    "mops-ir-20190430",
+    "mops-ir-20190731",
+    "mops-ir-20191030",
+    "mops-ir-20200207",
+    "mops-ir-20200428",
+    "mops-is",
+    "mops-monthly",
+    "tf-20210713-10858",
+    "tf-20210922-10947",
+    "tf-20211213-11050",
+    "tf-20220328-11175",
+    "tf-20220620-11264",
+    "tf-20221116-11459",
+    "tf-20230109-11533",
+    "tf-20230328-11626",
+    "tf-20230705-11743",
+    "tf-20231013-11880",
+    "tf-20240108-11988",
+    "tf-20240507-12128",
+    "tf-20240815-12254",
+    "tf-20241126-12380",
+    "tf-20241230-12424",
+    "tf-20250417-12551",
+    "tf-20250707-12633",
+    "tf-20250924-12733",
+    "tf-20260226-12937",
+    "tf-20260331-12995",
+    "tf-20260703-13134",
+    "tf-20260730-13158",
+    "tf-20260930-13258"
+  ]
+}

@@ -1,0 +1,134 @@
+---
+/**
+ * The model's derived series (model.derived: 推算的每輛車售價、部門毛利率、每瓦營收…) as one table: the series and
+ * its unit, the value of the latest reported period, the last base-scenario forecast when the series continues into
+ * the forecast, a sparkline over the whole series (forecast points dashed) and the model's note with its citations.
+ * Points the model marks as estimates carry the 「模型推算」 label (an `actual` point, e.g. a reported figure the
+ * series reuses, does not).
+ *   <DerivedTable b={bundle} />
+ *   <DerivedTable b={bundle} ids={['asp-per-vehicle', 'cost-per-vehicle']} />
+ */
+import Sparkline from '../charts/Sparkline.astro';
+import FcText from '../memory/forecast/FcText.astro';
+import { isQuarter, lastReportedOf, qIndex, type FcBundle } from '../../lib/forecast-data';
+import { byPeriod, displayUnit, fmtValue, shortPeriod } from './fct-format';
+
+interface Props {
+  b: FcBundle;
+  /** only these series, in this order (default: all, in model order) */
+  ids?: readonly string[] | undefined;
+}
+const { b, ids } = Astro.props;
+const m = b.model;
+const last = lastReportedOf(m);
+const list = ids ? ids.map((id) => m.derived.find((d) => d.id === id)).filter((d): d is NonNullable<typeof d> => !!d) : m.derived;
+const rows = list
+  .map((d) => {
+    const pts = [...d.points].sort(byPeriod);
+    if (!pts.length) return null;
+    const { unit, scale } = displayUnit(d.unit);
+    const hist = pts.filter((p) => p.status !== 'forecast' && (!isQuarter(p.period) || qIndex(p.period) <= qIndex(last)));
+    const fc = pts.filter((p) => p.status === 'forecast' || (isQuarter(p.period) && qIndex(p.period) > qIndex(last)));
+    const now = hist.at(-1);
+    const end = fc.at(-1);
+    return {
+      d,
+      unit,
+      now: now ? { period: now.period, value: now.value * scale, status: now.status } : undefined,
+      end: end ? { period: end.period, value: end.value * scale } : undefined,
+      spark: pts.map((p) => p.value),
+      dashed: pts.map((p) => fc.includes(p)),
+      from: pts[0]!.period,
+      to: pts.at(-1)!.period,
+    };
+  })
+  .filter((r): r is NonNullable<typeof r> => !!r);
+---
+
+{
+  rows.length > 0 && (
+    <div class="mem-tablewrap mem-tablewrap--cards" tabindex="0" role="region" aria-label="模型推算的序列">
+      <table class="mem-table fct-dtable">
+        <caption class="ch-sr">模型推算的中間序列：最新一期、基準情境的最後一期與走勢</caption>
+        <thead>
+          <tr>
+            <th scope="col">序列</th>
+            <th scope="col" class="num">最新一期</th>
+            <th scope="col" class="num">基準情境</th>
+            <th scope="col">走勢</th>
+            <th scope="col">說明</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr>
+              <th scope="row" data-label="序列">
+                <div class="fct-cell">
+                {r.d.name}
+                <span class="fct-unit">{r.unit}</span>
+                </div>
+              </th>
+              <td class="num" data-label="最新一期">
+                <div class="fct-cell">
+                {r.now ? (
+                  <>
+                    <span class="fct-val">{fmtValue(r.now.value, r.unit)}</span>
+                    <small>
+                      {r.now.status !== 'actual' && <span class="mem-st mem-st--estimate">模型推算</span>}
+                      {shortPeriod(r.now.period)}
+                    </small>
+                  </>
+                ) : (
+                  <span class="mem-na">—</span>
+                )}
+                </div>
+              </td>
+              <td class="num" data-label="基準情境">
+                <div class="fct-cell">
+                {r.end ? (
+                  <>
+                    <span class="fct-val">{fmtValue(r.end.value, r.unit)}</span>
+                    <small>
+                      <span class="mem-st mem-st--forecast">預測</span>
+                      {shortPeriod(r.end.period)}
+                    </small>
+                  </>
+                ) : (
+                  <span class="mem-na">—</span>
+                )}
+                </div>
+              </td>
+              <td class="fct-trend" data-label="走勢">
+                <div class="fct-cell">
+                {r.spark.length >= 3 ? (
+                  <>
+                    <Sparkline
+                      values={r.spark}
+                      estimate={r.dashed}
+                      n={Math.ceil(r.spark.length / 4) + 1}
+                      width={120}
+                      height={30}
+                      label={`${r.d.name}，${shortPeriod(r.from)} 至 ${shortPeriod(r.to)}`}
+                      class="fct-spark"
+                    />
+                    <small>
+                      {shortPeriod(r.from)}–{shortPeriod(r.to)}
+                    </small>
+                  </>
+                ) : (
+                  <span class="mem-na">—</span>
+                )}
+                </div>
+              </td>
+              <td class="mem-table__note" data-label="說明">
+                <div class="fct-cell">
+                {r.d.note ? <FcText b={b} text={r.d.note} /> : <span class="mem-na">—</span>}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}

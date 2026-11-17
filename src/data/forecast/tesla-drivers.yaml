@@ -1,0 +1,630 @@
+# 特斯拉（Tesla）財報模型的驅動因子：交車、生產、租賃、庫存天數、儲能部署、監管積分、FSD 訂閱、推算的每輛車售價與成本、公司彙整的分析師共識。格式見 src/schemas/forecast.ts（companyDrivers）。
+# 由 fc2-data-tesla 整理；財報數字在 tesla-inputs.yaml。
+
+company: "tesla"
+asOf: "2026-11-17"
+series:
+  - id: "deliveries-total"
+    name: "總交車量"
+    category: "交車"
+    kind: "level"
+    unit: "輛"
+    frequency: "quarter"
+    definition: "全球交車輛數（含適用營業租賃會計的交車）；日曆季度。2016Q1–2018Q2 為公司產銷新聞稿數字（經維基百科彙整，2016Q3–Q4 以股東信核對），2018Q3 起為股東信與季度簡報的營運摘要。"
+    points:
+      - { period: "2016Q1", value: 14820, status: "actual", src: "wiki-history" }
+      - { period: "2016Q2", value: 14402, status: "actual", src: "wiki-history" }
+      - { period: "2016Q3", value: 24821, status: "actual", src: "letter-q4-2016" }
+      - { period: "2016Q4", value: 22252, status: "actual", src: "letter-q4-2016" }
+      - { period: "2017Q1", value: 25051, status: "actual", src: "wiki-history" }
+      - { period: "2017Q2", value: 22026, status: "actual", src: "wiki-history" }
+      - { period: "2017Q3", value: 26137, status: "actual", src: "wiki-history" }
+      - { period: "2017Q4", value: 29967, status: "actual", src: "wiki-history" }
+      - { period: "2018Q1", value: 29997, status: "actual", src: "wiki-history" }
+      - { period: "2018Q2", value: 40740, status: "actual", src: "wiki-history" }
+      - { period: "2018Q3", value: 83775, status: "actual", src: "letter-q3-2019", note: "Model S／X 與 Model 3 交車相加" }
+      - { period: "2018Q4", value: 90966, status: "actual", src: "letter-q3-2019", note: "Model S／X 與 Model 3 交車相加" }
+      - { period: "2019Q1", value: 63019, status: "actual", src: "letter-q3-2019", note: "Model S／X 與 Model 3 交車相加" }
+      - { period: "2019Q2", value: 95356, status: "actual", src: "letter-q3-2019", note: "Model S／X 與 Model 3 交車相加" }
+      - { period: "2019Q3", value: 97186, status: "actual", src: "letter-q3-2019", note: "Model S／X 與 Model 3 交車相加" }
+      - { period: "2019Q4", value: 112095, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q1", value: 88496, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q2", value: 90891, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q3", value: 139593, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q4", value: 180667, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q1", value: 184877, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q2", value: 201304, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q3", value: 241391, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q4", value: 308650, status: "actual", src: "deck-q4-2022" }
+      - { period: "2022Q1", value: 310048, status: "actual", src: "deck-q1-2023" }
+      - { period: "2022Q2", value: 254695, status: "actual", src: "deck-q2-2023" }
+      - { period: "2022Q3", value: 343830, status: "actual", src: "deck-q3-2023" }
+      - { period: "2022Q4", value: 405278, status: "actual", src: "deck-q4-2023" }
+      - { period: "2023Q1", value: 422875, status: "actual", src: "deck-q1-2024" }
+      - { period: "2023Q2", value: 466140, status: "actual", src: "deck-q2-2024" }
+      - { period: "2023Q3", value: 435059, status: "actual", src: "deck-q3-2024" }
+      - { period: "2023Q4", value: 484507, status: "actual", src: "deck-q4-2024" }
+      - { period: "2024Q1", value: 386810, status: "actual", src: "deck-q1-2025" }
+      - { period: "2024Q2", value: 443956, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q3", value: 462890, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q4", value: 495570, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q1", value: 336681, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q2", value: 384122, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q3", value: 497099, status: "actual", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 418227, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 358023, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 480126, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 486532, status: "actual", src: "ex-q3-2026" }
+  - id: "deliveries-model3y"
+    name: "Model 3／Y 交車量"
+    category: "交車"
+    kind: "level"
+    unit: "輛"
+    frequency: "quarter"
+    definition: "Model 3（2017Q3 起）與 Model Y（2020Q1 起交車）合計交車輛數；2019Q3 以前只有 Model 3。2017Q3–2018Q2 為產銷新聞稿數字（經維基百科彙整）。"
+    points:
+      - { period: "2017Q3", value: 222, status: "actual", src: "wiki-history" }
+      - { period: "2017Q4", value: 1542, status: "actual", src: "wiki-history" }
+      - { period: "2018Q1", value: 8182, status: "actual", src: "wiki-history" }
+      - { period: "2018Q2", value: 18440, status: "actual", src: "wiki-history" }
+      - { period: "2018Q3", value: 56065, status: "actual", src: "letter-q3-2019" }
+      - { period: "2018Q4", value: 63359, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q1", value: 50928, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q2", value: 77634, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q3", value: 79703, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q4", value: 92620, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q1", value: 76266, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q2", value: 80277, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q3", value: 124318, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q4", value: 161701, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q1", value: 182847, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q2", value: 199409, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q3", value: 232102, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q4", value: 296884, status: "actual", src: "deck-q4-2022" }
+      - { period: "2022Q1", value: 295324, status: "actual", src: "deck-q1-2023" }
+      - { period: "2022Q2", value: 238533, status: "actual", src: "deck-q2-2023" }
+      - { period: "2022Q3", value: 325158, status: "actual", src: "deck-q3-2023" }
+      - { period: "2022Q4", value: 388131, status: "actual", src: "deck-q4-2023" }
+      - { period: "2023Q1", value: 412180, status: "actual", src: "deck-q1-2024" }
+      - { period: "2023Q2", value: 446915, status: "actual", src: "deck-q2-2024" }
+      - { period: "2023Q3", value: 419074, status: "actual", src: "deck-q3-2024" }
+      - { period: "2023Q4", value: 461538, status: "actual", src: "deck-q4-2024" }
+      - { period: "2024Q1", value: 369783, status: "actual", src: "deck-q1-2025" }
+      - { period: "2024Q2", value: 422405, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q3", value: 439975, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q4", value: 471930, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q1", value: 323800, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q2", value: 373728, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q3", value: 481166, status: "actual", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 406585, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 341893, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 467762, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 478237, status: "actual", src: "ex-q3-2026" }
+  - id: "deliveries-other"
+    name: "其他車款交車量（Model S／X、Cybertruck 等）"
+    category: "交車"
+    kind: "level"
+    unit: "輛"
+    frequency: "quarter"
+    definition: "Model 3／Y 以外車款的交車輛數：2023Q3 以前為 Model S／X，2023Q4 起含 Cybertruck（公司稱 Other models）。"
+    points:
+      - { period: "2016Q1", value: 14820, status: "actual", src: "wiki-history", note: "當時只有 Model S／X" }
+      - { period: "2016Q2", value: 14402, status: "actual", src: "wiki-history", note: "當時只有 Model S／X" }
+      - { period: "2016Q3", value: 24821, status: "actual", src: "letter-q4-2016", note: "當時只有 Model S／X" }
+      - { period: "2016Q4", value: 22252, status: "actual", src: "letter-q4-2016", note: "當時只有 Model S／X" }
+      - { period: "2017Q1", value: 25051, status: "actual", src: "wiki-history", note: "當時只有 Model S／X" }
+      - { period: "2017Q2", value: 22026, status: "actual", src: "wiki-history", note: "當時只有 Model S／X" }
+      - { period: "2017Q3", value: 25915, status: "estimate", src: "wiki-history", note: "總交車減 Model 3 推算（新聞稿的 Model S、Model X 個別數字為約數）" }
+      - { period: "2017Q4", value: 28425, status: "estimate", src: "wiki-history", note: "總交車減 Model 3 推算（新聞稿的 Model S、Model X 個別數字為約數）" }
+      - { period: "2018Q1", value: 21815, status: "estimate", src: "wiki-history", note: "總交車減 Model 3 推算（新聞稿的 Model S、Model X 個別數字為約數）" }
+      - { period: "2018Q2", value: 22300, status: "estimate", src: "wiki-history", note: "總交車減 Model 3 推算（新聞稿的 Model S、Model X 個別數字為約數）" }
+      - { period: "2018Q3", value: 27710, status: "actual", src: "letter-q3-2019" }
+      - { period: "2018Q4", value: 27607, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q1", value: 12091, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q2", value: 17722, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q3", value: 17483, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q4", value: 19475, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q1", value: 12230, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q2", value: 10614, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q3", value: 15275, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q4", value: 18966, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q1", value: 2030, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q2", value: 1895, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q3", value: 9289, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q4", value: 11766, status: "actual", src: "deck-q4-2022" }
+      - { period: "2022Q1", value: 14724, status: "actual", src: "deck-q1-2023" }
+      - { period: "2022Q2", value: 16162, status: "actual", src: "deck-q2-2023" }
+      - { period: "2022Q3", value: 18672, status: "actual", src: "deck-q3-2023" }
+      - { period: "2022Q4", value: 17147, status: "actual", src: "deck-q4-2023" }
+      - { period: "2023Q1", value: 10695, status: "actual", src: "deck-q1-2024" }
+      - { period: "2023Q2", value: 19225, status: "actual", src: "deck-q2-2024" }
+      - { period: "2023Q3", value: 15985, status: "actual", src: "deck-q3-2024" }
+      - { period: "2023Q4", value: 22969, status: "actual", src: "deck-q4-2024" }
+      - { period: "2024Q1", value: 17027, status: "actual", src: "deck-q1-2025" }
+      - { period: "2024Q2", value: 21551, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q3", value: 22915, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q4", value: 23640, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q1", value: 12881, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q2", value: 10394, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q3", value: 15933, status: "actual", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 11642, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 16130, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 12364, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 8295, status: "actual", src: "ex-q3-2026" }
+  - id: "deliveries-leased"
+    name: "適用營業租賃會計的交車量"
+    category: "交車"
+    kind: "level"
+    unit: "輛"
+    frequency: "quarter"
+    definition: "當季交車中適用營業租賃會計（營收在租期內認列、列入汽車租賃）的輛數；2019Q2–Q3 為 Model S／X 與 Model 3 的租賃交車相加。計算每輛車售價與成本時要從交車量扣除。"
+    points:
+      - { period: "2018Q3", value: 2560, status: "actual", src: "letter-q3-2019" }
+      - { period: "2018Q4", value: 3639, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q1", value: 1363, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q2", value: 6142, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q3", value: 9086, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q4", value: 8848, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q1", value: 6104, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q2", value: 4716, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q3", value: 10014, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q4", value: 13636, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q1", value: 13602, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q2", value: 14492, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q3", value: 16658, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q4", value: 16160, status: "actual", src: "deck-q4-2022" }
+      - { period: "2022Q1", value: 12167, status: "actual", src: "deck-q1-2023" }
+      - { period: "2022Q2", value: 9227, status: "actual", src: "deck-q2-2023" }
+      - { period: "2022Q3", value: 11004, status: "actual", src: "deck-q3-2023" }
+      - { period: "2022Q4", value: 15184, status: "actual", src: "deck-q4-2023" }
+      - { period: "2023Q1", value: 22357, status: "actual", src: "deck-q1-2024" }
+      - { period: "2023Q2", value: 21883, status: "actual", src: "deck-q2-2024" }
+      - { period: "2023Q3", value: 17423, status: "actual", src: "deck-q3-2024" }
+      - { period: "2023Q4", value: 10563, status: "actual", src: "deck-q4-2024" }
+      - { period: "2024Q1", value: 8365, status: "actual", src: "deck-q1-2025" }
+      - { period: "2024Q2", value: 10227, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q3", value: 14449, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q4", value: 26962, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q1", value: 13721, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q2", value: 6670, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q3", value: 10230, status: "actual", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 10996, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 3430, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 7580, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 6911, status: "actual", src: "ex-q3-2026" }
+  - id: "production-total"
+    name: "總產量"
+    category: "生產"
+    kind: "level"
+    unit: "輛"
+    frequency: "quarter"
+    definition: "全球車輛產量；2016Q1–2018Q2 為產銷新聞稿數字（經維基百科彙整），2018Q3 起為股東信與季度簡報。產量高於交車時庫存與在途車輛增加。"
+    points:
+      - { period: "2016Q1", value: 15510, status: "actual", src: "wiki-history" }
+      - { period: "2016Q2", value: 18345, status: "actual", src: "wiki-history" }
+      - { period: "2016Q3", value: 25185, status: "actual", src: "letter-q4-2016" }
+      - { period: "2016Q4", value: 24882, status: "actual", src: "letter-q4-2016" }
+      - { period: "2017Q1", value: 25418, status: "actual", src: "wiki-history" }
+      - { period: "2017Q2", value: 25708, status: "actual", src: "wiki-history" }
+      - { period: "2017Q3", value: 25336, status: "actual", src: "wiki-history" }
+      - { period: "2017Q4", value: 24565, status: "actual", src: "wiki-history" }
+      - { period: "2018Q1", value: 34494, status: "actual", src: "wiki-history" }
+      - { period: "2018Q2", value: 53339, status: "actual", src: "wiki-history" }
+      - { period: "2018Q3", value: 80142, status: "actual", src: "letter-q3-2019", note: "Model S／X 與 Model 3 產量相加" }
+      - { period: "2018Q4", value: 86555, status: "actual", src: "letter-q3-2019", note: "Model S／X 與 Model 3 產量相加" }
+      - { period: "2019Q1", value: 77138, status: "actual", src: "letter-q3-2019", note: "Model S／X 與 Model 3 產量相加" }
+      - { period: "2019Q2", value: 87048, status: "actual", src: "letter-q3-2019", note: "Model S／X 與 Model 3 產量相加" }
+      - { period: "2019Q3", value: 96155, status: "actual", src: "letter-q3-2019", note: "Model S／X 與 Model 3 產量相加" }
+      - { period: "2019Q4", value: 104891, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q1", value: 102672, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q2", value: 82272, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q3", value: 145036, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q4", value: 179757, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q1", value: 180338, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q2", value: 206421, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q3", value: 237823, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q4", value: 305840, status: "actual", src: "deck-q4-2022" }
+      - { period: "2022Q1", value: 305407, status: "actual", src: "deck-q1-2023" }
+      - { period: "2022Q2", value: 258580, status: "actual", src: "deck-q2-2023" }
+      - { period: "2022Q3", value: 365923, status: "actual", src: "deck-q3-2023" }
+      - { period: "2022Q4", value: 439701, status: "actual", src: "deck-q4-2023" }
+      - { period: "2023Q1", value: 440808, status: "actual", src: "deck-q1-2024" }
+      - { period: "2023Q2", value: 479700, status: "actual", src: "deck-q2-2024" }
+      - { period: "2023Q3", value: 430488, status: "actual", src: "deck-q3-2024" }
+      - { period: "2023Q4", value: 494989, status: "actual", src: "deck-q4-2024" }
+      - { period: "2024Q1", value: 433371, status: "actual", src: "deck-q1-2025" }
+      - { period: "2024Q2", value: 410831, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q3", value: 469796, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q4", value: 459445, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q1", value: 362615, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q2", value: 410244, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q3", value: 447450, status: "actual", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 434358, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 408386, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 451758, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 464391, status: "actual", src: "ex-q3-2026" }
+  - id: "production-model3y"
+    name: "Model 3／Y 產量"
+    category: "生產"
+    kind: "level"
+    unit: "輛"
+    frequency: "quarter"
+    definition: "Model 3 與 Model Y 合計產量（2019Q3 以前只有 Model 3）。"
+    points:
+      - { period: "2018Q3", value: 53239, status: "actual", src: "letter-q3-2019" }
+      - { period: "2018Q4", value: 61394, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q1", value: 62975, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q2", value: 72531, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q3", value: 79837, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q4", value: 86958, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q1", value: 87282, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q2", value: 75946, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q3", value: 128044, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q4", value: 163660, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q1", value: 180338, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q2", value: 204081, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q3", value: 228882, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q4", value: 292731, status: "actual", src: "deck-q4-2022" }
+      - { period: "2022Q1", value: 291189, status: "actual", src: "deck-q1-2023" }
+      - { period: "2022Q2", value: 242169, status: "actual", src: "deck-q2-2023" }
+      - { period: "2022Q3", value: 345988, status: "actual", src: "deck-q3-2023" }
+      - { period: "2022Q4", value: 419088, status: "actual", src: "deck-q4-2023" }
+      - { period: "2023Q1", value: 421371, status: "actual", src: "deck-q1-2024" }
+      - { period: "2023Q2", value: 460211, status: "actual", src: "deck-q2-2024" }
+      - { period: "2023Q3", value: 416800, status: "actual", src: "deck-q3-2024" }
+      - { period: "2023Q4", value: 476777, status: "actual", src: "deck-q4-2024" }
+      - { period: "2024Q1", value: 412376, status: "actual", src: "deck-q1-2025" }
+      - { period: "2024Q2", value: 386576, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q3", value: 443668, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q4", value: 436718, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q1", value: 345454, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q2", value: 396835, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q3", value: 435826, status: "actual", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 422652, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 394611, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 442936, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 457387, status: "actual", src: "ex-q3-2026" }
+  - id: "production-other"
+    name: "其他車款產量"
+    category: "生產"
+    kind: "level"
+    unit: "輛"
+    frequency: "quarter"
+    definition: "Model 3／Y 以外車款產量：2023Q3 以前為 Model S／X，2023Q4 起含 Cybertruck；2021Q1 因 Fremont 改裝產線為 0。"
+    points:
+      - { period: "2018Q3", value: 26903, status: "actual", src: "letter-q3-2019" }
+      - { period: "2018Q4", value: 25161, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q1", value: 14163, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q2", value: 14517, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q3", value: 16318, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q4", value: 17933, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q1", value: 15390, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q2", value: 6326, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q3", value: 16992, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q4", value: 16097, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q1", value: 0, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q2", value: 2340, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q3", value: 8941, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q4", value: 13109, status: "actual", src: "deck-q4-2022" }
+      - { period: "2022Q1", value: 14218, status: "actual", src: "deck-q1-2023" }
+      - { period: "2022Q2", value: 16411, status: "actual", src: "deck-q2-2023" }
+      - { period: "2022Q3", value: 19935, status: "actual", src: "deck-q3-2023" }
+      - { period: "2022Q4", value: 20613, status: "actual", src: "deck-q4-2023" }
+      - { period: "2023Q1", value: 19437, status: "actual", src: "deck-q1-2024" }
+      - { period: "2023Q2", value: 19489, status: "actual", src: "deck-q2-2024" }
+      - { period: "2023Q3", value: 13688, status: "actual", src: "deck-q3-2024" }
+      - { period: "2023Q4", value: 18212, status: "actual", src: "deck-q4-2024" }
+      - { period: "2024Q1", value: 20995, status: "actual", src: "deck-q1-2025" }
+      - { period: "2024Q2", value: 24255, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q3", value: 26128, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q4", value: 22727, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q1", value: 17161, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q2", value: 13409, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q3", value: 11624, status: "actual", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 11706, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 13775, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 8822, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 7004, status: "actual", src: "ex-q3-2026" }
+  - id: "inventory-days"
+    name: "全球車輛庫存天數"
+    category: "交車"
+    kind: "level"
+    unit: "天"
+    frequency: "quarter"
+    definition: "期末新車庫存 ÷ 當季交車，以 75 個交易日換算（公司定義，依 Automotive News）。2018Q3–2019Q1 取自股東信（當時稱 days of sales，2019 年第四季與 2020 年第一季簡報的數字相同）；公司 2020 年第二季簡報起重編，2019Q2、2019Q3 採最新簡報的數字（股東信原列 18 與 17）。"
+    points:
+      - { period: "2018Q3", value: 31, status: "actual", src: "letter-q3-2019" }
+      - { period: "2018Q4", value: 19, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q1", value: 30, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q2", value: 19, status: "actual", src: "ex-q2-2020", note: "2020 年第二季簡報的重編數字；2019 年第三季股東信原列 18（days of sales）" }
+      - { period: "2019Q3", value: 18, status: "actual", src: "deck-q3-2020", note: "2020 年第三季簡報的重編數字；2019 年第三季股東信原列 17（days of sales）" }
+      - { period: "2019Q4", value: 10, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q1", value: 25, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q2", value: 17, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q3", value: 14, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q4", value: 11, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q1", value: 8, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q2", value: 9, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q3", value: 6, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q4", value: 4, status: "actual", src: "deck-q4-2022" }
+      - { period: "2022Q1", value: 3, status: "actual", src: "deck-q1-2023" }
+      - { period: "2022Q2", value: 4, status: "actual", src: "deck-q2-2023" }
+      - { period: "2022Q3", value: 8, status: "actual", src: "deck-q3-2023" }
+      - { period: "2022Q4", value: 13, status: "actual", src: "deck-q4-2023" }
+      - { period: "2023Q1", value: 15, status: "actual", src: "deck-q1-2024" }
+      - { period: "2023Q2", value: 16, status: "actual", src: "deck-q2-2024" }
+      - { period: "2023Q3", value: 16, status: "actual", src: "deck-q3-2024" }
+      - { period: "2023Q4", value: 15, status: "actual", src: "deck-q4-2024" }
+      - { period: "2024Q1", value: 28, status: "actual", src: "deck-q1-2025" }
+      - { period: "2024Q2", value: 18, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q3", value: 19, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q4", value: 12, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q1", value: 22, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q2", value: 24, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q3", value: 10, status: "actual", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 15, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 27, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 15, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 11, status: "actual", src: "ex-q3-2026" }
+  - id: "storage-deployed"
+    name: "儲能部署量"
+    category: "儲能"
+    kind: "level"
+    unit: "GWh"
+    frequency: "quarter"
+    definition: "Megapack 與 Powerwall 合計部署量；公司在 2024 年第一季簡報以前以 MWh 公布（本表換算為 GWh），2024 年第二季簡報起改以 GWh 公布到小數一位。2023Q2–2024Q1 刻意採用 2024 年第一季簡報的 MWh 數字（較新的簡報只有四捨五入到 0.1 GWh 的同一數字），其餘各季採最新一份簡報。2017Q1–2018Q2 未取得季度數字（年度見 storage-deployed-annual）。"
+    points:
+      - { period: "2016Q4", value: 0.098, status: "actual", src: "letter-q4-2016", note: "股東信：98 MWh" }
+      - { period: "2018Q3", value: 0.24, status: "actual", src: "letter-q3-2019", note: "原文 240 MWh" }
+      - { period: "2018Q4", value: 0.225, status: "actual", src: "letter-q3-2019", note: "原文 225 MWh" }
+      - { period: "2019Q1", value: 0.229, status: "actual", src: "letter-q3-2019", note: "原文 229 MWh" }
+      - { period: "2019Q2", value: 0.415, status: "actual", src: "letter-q3-2019", note: "原文 415 MWh" }
+      - { period: "2019Q3", value: 0.477, status: "actual", src: "letter-q3-2019", note: "原文 477 MWh" }
+      - { period: "2019Q4", value: 0.53, status: "actual", src: "deck-q4-2020", note: "原文 530 MWh" }
+      - { period: "2020Q1", value: 0.26, status: "actual", src: "deck-q4-2020", note: "原文 260 MWh" }
+      - { period: "2020Q2", value: 0.419, status: "actual", src: "deck-q4-2020", note: "原文 419 MWh" }
+      - { period: "2020Q3", value: 0.759, status: "actual", src: "deck-q4-2020", note: "原文 759 MWh" }
+      - { period: "2020Q4", value: 1.584, status: "actual", src: "deck-q4-2021", note: "原文 1584 MWh" }
+      - { period: "2021Q1", value: 0.445, status: "actual", src: "deck-q4-2021", note: "原文 445 MWh" }
+      - { period: "2021Q2", value: 1.274, status: "actual", src: "deck-q4-2021", note: "原文 1274 MWh" }
+      - { period: "2021Q3", value: 1.295, status: "actual", src: "deck-q4-2021", note: "原文 1295 MWh" }
+      - { period: "2021Q4", value: 0.978, status: "actual", src: "deck-q4-2022", note: "原文 978 MWh" }
+      - { period: "2022Q1", value: 0.846, status: "actual", src: "deck-q1-2023", note: "原文 846 MWh" }
+      - { period: "2022Q2", value: 1.133, status: "actual", src: "deck-q2-2023", note: "原文 1133 MWh" }
+      - { period: "2022Q3", value: 2.1, status: "actual", src: "deck-q3-2023", note: "原文 2100 MWh" }
+      - { period: "2022Q4", value: 2.462, status: "actual", src: "deck-q4-2023", note: "原文 2462 MWh" }
+      - { period: "2023Q1", value: 3.889, status: "actual", src: "deck-q1-2024", note: "原文 3889 MWh" }
+      - { period: "2023Q2", value: 3.653, status: "actual", src: "deck-q1-2024", note: "原文 3653 MWh" }
+      - { period: "2023Q3", value: 3.98, status: "actual", src: "deck-q1-2024", note: "原文 3980 MWh" }
+      - { period: "2023Q4", value: 3.202, status: "actual", src: "deck-q1-2024", note: "原文 3202 MWh" }
+      - { period: "2024Q1", value: 4.053, status: "actual", src: "deck-q1-2024", note: "原文 4053 MWh" }
+      - { period: "2024Q2", value: 9.4, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q3", value: 6.9, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q4", value: 11.0, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q1", value: 10.4, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q2", value: 9.6, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q3", value: 12.5, status: "actual", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 14.2, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 8.8, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 13.5, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 13.7, status: "actual", src: "ex-q3-2026" }
+  - id: "storage-deployed-annual"
+    name: "儲能部署量（年）"
+    category: "儲能"
+    kind: "level"
+    unit: "GWh"
+    frequency: "year"
+    definition: "全年儲能部署量；2017–2018 年季度數字未取得時的年度合計。"
+    points:
+      - { period: "2017", value: 0.358, status: "actual", src: "letter-q4-2018", note: "原文 358 MWh" }
+      - { period: "2018", value: 1.04, status: "actual", src: "letter-q4-2018", note: "原文 1,040 MWh" }
+  - id: "regulatory-credits"
+    name: "監管積分營收"
+    category: "監管積分"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "出售 ZEV、溫室氣體與 CAFE 等監管積分給其他車廠的營收（幾乎沒有對應成本，直接墊高汽車毛利）；2021Q3 以前列在汽車銷售內，之後在損益表單獨列示。與季度財報資料中的監管積分營收相同。"
+    points:
+      - { period: "2018Q3", value: 189, status: "actual", src: "letter-q3-2019" }
+      - { period: "2018Q4", value: 95, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q1", value: 216, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q2", value: 111, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q3", value: 134, status: "actual", src: "letter-q3-2019" }
+      - { period: "2019Q4", value: 133, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q1", value: 354, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q2", value: 428, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q3", value: 397, status: "actual", src: "deck-q4-2020" }
+      - { period: "2020Q4", value: 401, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q1", value: 518, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q2", value: 354, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q3", value: 279, status: "actual", src: "deck-q4-2021" }
+      - { period: "2021Q4", value: 314, status: "actual", src: "deck-q4-2022" }
+      - { period: "2022Q1", value: 679, status: "actual", src: "deck-q1-2023" }
+      - { period: "2022Q2", value: 344, status: "actual", src: "deck-q2-2023" }
+      - { period: "2022Q3", value: 286, status: "actual", src: "deck-q3-2023" }
+      - { period: "2022Q4", value: 467, status: "actual", src: "deck-q4-2023" }
+      - { period: "2023Q1", value: 521, status: "actual", src: "deck-q1-2024" }
+      - { period: "2023Q2", value: 282, status: "actual", src: "deck-q2-2024" }
+      - { period: "2023Q3", value: 554, status: "actual", src: "deck-q3-2024" }
+      - { period: "2023Q4", value: 433, status: "actual", src: "deck-q4-2024" }
+      - { period: "2024Q1", value: 442, status: "actual", src: "deck-q1-2025" }
+      - { period: "2024Q2", value: 890, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q3", value: 739, status: "actual", src: "deck-q2-2025" }
+      - { period: "2024Q4", value: 692, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q1", value: 595, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q2", value: 439, status: "actual", src: "deck-q2-2025" }
+      - { period: "2025Q3", value: 417, status: "actual", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 542, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 380, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 146, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 113, status: "actual", src: "ex-q3-2026" }
+  - id: "fsd-subscriptions"
+    name: "FSD 有效訂閱數"
+    category: "軟體"
+    kind: "level"
+    unit: "百萬"
+    frequency: "quarter"
+    definition: "期末有效的 FSD（Supervised）用戶數（公司 Active FSD Subscriptions，依 2025 年執行長績效獎酬的定義：含一次買斷與月訂閱，不含免費試用）。公司在 2025 年第四季簡報宣布改為只提供月訂閱；FSD 訂閱收入的成長列為汽車附加銷售（automotive ancillary sales）的增加（ex-q2-2026 的營業利益變動說明）。"
+    points:
+      - { period: "2025Q3", value: 1.04, status: "actual", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 1.1, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 1.28, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 1.48, status: "actual", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 1.74, status: "actual", src: "ex-q3-2026" }
+  - id: "asp-proxy"
+    name: "每輛車平均售價（推算）"
+    category: "價格與成本"
+    kind: "level"
+    unit: "美元／輛"
+    frequency: "quarter"
+    definition: "本站推算：汽車銷售營收（不含監管積分與租賃）÷（總交車－租賃交車）。汽車銷售營收含 FSD 等附加銷售與匯率影響，因此只是平均售價的近似值；營收與交車的出處見各點的來源。"
+    points:
+      - { period: "2018Q3", value: 70049, status: "estimate", src: "letter-q3-2019" }
+      - { period: "2018Q4", value: 68461, status: "estimate", src: "letter-q3-2019" }
+      - { period: "2019Q1", value: 53405, status: "estimate", src: "letter-q3-2019" }
+      - { period: "2019Q2", value: 56684, status: "estimate", src: "letter-q3-2019" }
+      - { period: "2019Q3", value: 56731, status: "estimate", src: "letter-q3-2019" }
+      - { period: "2019Q4", value: 58210, status: "estimate", src: "deck-q4-2020" }
+      - { period: "2020Q1", value: 55090, status: "estimate", src: "deck-q4-2020" }
+      - { period: "2020Q2", value: 52022, status: "estimate", src: "deck-q4-2020" }
+      - { period: "2020Q3", value: 53628, status: "estimate", src: "deck-q4-2020" }
+      - { period: "2020Q4", value: 51685, status: "estimate", src: "deck-q4-2021" }
+      - { period: "2021Q1", value: 47800, status: "estimate", src: "deck-q4-2021" }
+      - { period: "2021Q2", value: 50960, status: "estimate", src: "deck-q4-2021" }
+      - { period: "2021Q3", value: 50696, status: "estimate", src: "deck-q4-2021" }
+      - { period: "2021Q4", value: 51369, status: "estimate", src: "deck-q4-2022" }
+      - { period: "2022Q1", value: 52081, status: "estimate", src: "deck-q1-2023" }
+      - { period: "2022Q2", value: 55690, status: "estimate", src: "deck-q2-2023" }
+      - { period: "2022Q3", value: 53436, status: "estimate", src: "deck-q3-2023" }
+      - { period: "2022Q4", value: 51887, status: "estimate", src: "deck-q4-2023" }
+      - { period: "2023Q1", value: 47134, status: "estimate", src: "deck-q1-2024" }
+      - { period: "2023Q2", value: 45962, status: "estimate", src: "deck-q2-2024" }
+      - { period: "2023Q3", value: 44493, status: "estimate", src: "deck-q3-2024" }
+      - { period: "2023Q4", value: 43528, status: "estimate", src: "deck-q4-2024" }
+      - { period: "2024Q1", value: 43494, status: "estimate", src: "deck-q1-2025" }
+      - { period: "2024Q2", value: 42723, status: "estimate", src: "deck-q2-2025" }
+      - { period: "2024Q3", value: 41992, status: "estimate", src: "deck-q2-2025" }
+      - { period: "2024Q4", value: 39818, status: "estimate", src: "deck-q2-2025" }
+      - { period: "2025Q1", value: 40020, status: "estimate", src: "deck-q2-2025" }
+      - { period: "2025Q2", value: 41825, status: "estimate", src: "deck-q2-2025" }
+      - { period: "2025Q3", value: 41816, status: "estimate", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 41131, status: "estimate", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 43636, status: "estimate", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 42337, status: "estimate", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 41896, status: "estimate", src: "ex-q3-2026" }
+  - id: "cogs-per-vehicle"
+    name: "每輛車銷貨成本（推算）"
+    category: "價格與成本"
+    kind: "level"
+    unit: "美元／輛"
+    frequency: "quarter"
+    definition: "本站依公司定義推算：汽車銷售成本 ÷（總交車－租賃交車）。公司自己公布過 2023Q3 約 37,500 美元（deck-q3-2023）與 2024Q4 低於 35,000 美元（deck-q4-2024），本表推算值為 37,487 與 34,716，一致。"
+    points:
+      - { period: "2018Q3", value: 54251, status: "estimate", src: "letter-q3-2019" }
+      - { period: "2018Q4", value: 53346, status: "estimate", src: "letter-q3-2019" }
+      - { period: "2019Q1", value: 46325, status: "estimate", src: "letter-q3-2019" }
+      - { period: "2019Q2", value: 47683, status: "estimate", src: "letter-q3-2019" }
+      - { period: "2019Q3", value: 45562, status: "estimate", src: "letter-q3-2019" }
+      - { period: "2019Q4", value: 46636, status: "estimate", src: "deck-q4-2020" }
+      - { period: "2020Q1", value: 44895, status: "estimate", src: "deck-q4-2020" }
+      - { period: "2020Q2", value: 43098, status: "estimate", src: "deck-q4-2020" }
+      - { period: "2020Q3", value: 41372, status: "estimate", src: "deck-q4-2020" }
+      - { period: "2020Q4", value: 41441, status: "estimate", src: "deck-q4-2021" }
+      - { period: "2021Q1", value: 37700, status: "estimate", src: "deck-q4-2021" }
+      - { period: "2021Q2", value: 38108, status: "estimate", src: "deck-q4-2021" }
+      - { period: "2021Q3", value: 36265, status: "estimate", src: "deck-q4-2021" }
+      - { period: "2021Q4", value: 36545, status: "estimate", src: "deck-q4-2022" }
+      - { period: "2022Q1", value: 36639, status: "estimate", src: "deck-q1-2023" }
+      - { period: "2022Q2", value: 41362, status: "estimate", src: "deck-q2-2023" }
+      - { period: "2022Q3", value: 39357, status: "estimate", src: "deck-q3-2023" }
+      - { period: "2022Q4", value: 39562, status: "estimate", src: "deck-q4-2023" }
+      - { period: "2023Q1", value: 38505, status: "estimate", src: "deck-q1-2024" }
+      - { period: "2023Q2", value: 37908, status: "estimate", src: "deck-q2-2024" }
+      - { period: "2023Q3", value: 37487, status: "estimate", src: "deck-q3-2024" }
+      - { period: "2023Q4", value: 36295, status: "estimate", src: "deck-q4-2024" }
+      - { period: "2024Q1", value: 36721, status: "estimate", src: "deck-q1-2025" }
+      - { period: "2024Q2", value: 36802, status: "estimate", src: "deck-q2-2025" }
+      - { period: "2024Q3", value: 35106, status: "estimate", src: "deck-q2-2025" }
+      - { period: "2024Q4", value: 34716, status: "estimate", src: "deck-q2-2025" }
+      - { period: "2025Q1", value: 35487, status: "estimate", src: "deck-q2-2025" }
+      - { period: "2025Q2", value: 35944, status: "estimate", src: "deck-q2-2025" }
+      - { period: "2025Q3", value: 35667, status: "estimate", src: "ex-q3-2026" }
+      - { period: "2025Q4", value: 34069, status: "estimate", src: "ex-q3-2026" }
+      - { period: "2026Q1", value: 35579, status: "estimate", src: "ex-q3-2026" }
+      - { period: "2026Q2", value: 35692, status: "estimate", src: "ex-q3-2026" }
+      - { period: "2026Q3", value: 34548, status: "estimate", src: "ex-q3-2026" }
+  - id: "deliveries-consensus"
+    name: "公司彙整的分析師交車共識"
+    category: "分析師共識"
+    kind: "level"
+    unit: "輛"
+    frequency: "quarter"
+    definition: "特斯拉投資人關係網站在季末前公布的賣方分析師交車預估平均（公司彙整、不背書；第三方估計），經媒體轉載。可與實際交車比較。"
+    points:
+      - { period: "2026Q1", value: 365645, status: "estimate", src: "consensus-q1-2026", note: "23 位分析師；中位數 363,371；實際 358,023" }
+      - { period: "2026Q2", value: 406024, status: "estimate", src: "consensus-q2-2026", note: "22 位分析師；中位數 408,609；實際 480,126" }
+      - { period: "2026Q3", value: 461974, status: "estimate", src: "consensus-q3-2026", note: "24 位分析師；中位數 463,406；實際 486,532" }
+  - id: "deliveries-consensus-annual"
+    name: "公司彙整的分析師全年交車共識"
+    category: "分析師共識"
+    kind: "level"
+    unit: "輛"
+    frequency: "year"
+    definition: "同上，全年交車共識（第三方估計）。各點公布日不同，見 note。"
+    points:
+      - { period: "2026", value: 1767255, status: "estimate", src: "consensus-q3-2026", note: "2026-09-29 公布（含上半年實際）；3 月時為 1,689,691（consensus-q1-2026）、6 月時為 1,654,808（consensus-q2-2026）" }
+      - { period: "2027", value: 1920000, status: "estimate", src: "consensus-q3-2026-dtc", note: "2026-09-29 公布，報導寫「1.92 million」（只到萬輛）；2028 年約 210 萬輛。6 月時為 1,824,568（中位數 1,809,297；consensus-q2-2026）、3 月時為 1,880,496（consensus-q1-2026）" }
+  - id: "storage-consensus"
+    name: "公司彙整的分析師儲能部署共識"
+    category: "分析師共識"
+    kind: "level"
+    unit: "GWh"
+    frequency: "quarter"
+    definition: "特斯拉投資人關係網站公布的儲能部署預估平均（第三方估計）。"
+    points:
+      - { period: "2026Q1", value: 14.4, status: "estimate", src: "consensus-q1-2026", note: "實際 8.8" }
+      - { period: "2026Q2", value: 13.8, status: "estimate", src: "consensus-q2-2026", note: "實際 13.5" }
+      - { period: "2026Q3", value: 15.9, status: "estimate", src: "consensus-q3-2026", note: "實際 13.7" }
+  - id: "storage-consensus-annual"
+    name: "公司彙整的分析師全年儲能部署共識"
+    category: "分析師共識"
+    kind: "level"
+    unit: "GWh"
+    frequency: "year"
+    definition: "全年儲能部署共識（第三方估計）。"
+    points:
+      - { period: "2026", value: 56.5, status: "estimate", src: "consensus-q3-2026", note: "2026-09-29 公布；6 月時為 57.9（consensus-q2-2026）、3 月時為 65.2（consensus-q1-2026）" }
+      - { period: "2027", value: 76, status: "estimate", src: "consensus-q3-2026-dtc", note: "2026-09-29 公布；6 月時為 79.8（consensus-q2-2026）、3 月時為 88.1（consensus-q1-2026）" }
+sources:
+  letter-q4-2016: { title: "Tesla Fourth Quarter & Full Year 2016 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000119312517052093/d322970dex991.htm", type: "press-release", lang: "en", published: "2017-02-22", accessed: "2026-11-17", note: "2016 年第四季股東信：第四季淨損與 EPS、生產與交車、ZEV 積分、儲能部署、折舊攤銷、2017 年展望" }
+  letter-q4-2018: { title: "Tesla Fourth Quarter & Full Year 2018 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459019001399/tsla-ex991_6.htm", type: "press-release", lang: "en", published: "2019-01-30", accessed: "2026-11-17", note: "2018 年第四季股東信：2018Q4、2018Q3、2017Q4 三欄損益表與現金流量表（千美元）、全年儲能部署" }
+  letter-q3-2019: { title: "Tesla Third Quarter 2019 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459019037581/tsla-ex991_154.htm", type: "press-release", lang: "en", published: "2019-10-23", accessed: "2026-11-17", note: "2019 年第三季股東信：2018Q3–2019Q3 五季財務摘要（含監管積分）與營運摘要（分車款生產、交車、租賃、庫存天數、儲能部署），2018Q3、2019Q2、2019Q3 損益表與現金流量表" }
+  ex-q3-2026: { title: "Tesla Q3 2026 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000162828026066738/exhibit9914.htm", type: "press-release", lang: "en", published: "2026-10-21", accessed: "2026-11-17", note: "2026 年第三季簡報：2025Q3–2026Q3 五季財務摘要、營運摘要（分車款生產與交車、租賃、FSD 訂閱數、儲能部署、庫存天數）、損益表、資產負債表與現金流量表、展望" }
+  ex-q2-2020: { title: "Tesla Q2 2020 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459020033069/tsla-ex991_63.htm", type: "press-release", lang: "en", published: "2020-07-22", accessed: "2026-11-17", note: "2020 年第二季簡報：2019Q2–2020Q2 營運摘要（含重編後的庫存天數）與財務報表" }
+  deck-q3-2020: { title: "Tesla Q3 2020 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q3-2020-Update.pdf", type: "ir-presentation", lang: "en", published: "2020-10-21", accessed: "2026-11-17", note: "季度簡報：2019Q3–2020Q3 財務摘要、營運摘要（含重編後的庫存天數）與財務報表" }
+  deck-q4-2020: { title: "Tesla Q4 2020 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q4-2020-Update.pdf", type: "ir-presentation", lang: "en", published: "2021-01-27", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q4-2021: { title: "Tesla Q4 2021 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q4-2021-Update.pdf", type: "ir-presentation", lang: "en", published: "2022-01-26", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q4-2022: { title: "Tesla Q4 2022 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q4-2022-Update.pdf", type: "ir-presentation", lang: "en", published: "2023-01-25", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q1-2023: { title: "Tesla Q1 2023 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q1-2023-Update.pdf", type: "ir-presentation", lang: "en", published: "2023-04-19", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q2-2023: { title: "Tesla Q2 2023 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q2-2023-Update.pdf", type: "ir-presentation", lang: "en", published: "2023-07-19", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q3-2023: { title: "Tesla Q3 2023 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q3-2023-Update.pdf", type: "ir-presentation", lang: "en", published: "2023-10-18", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q4-2023: { title: "Tesla Q4 2023 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q4-2023-Update.pdf", type: "ir-presentation", lang: "en", published: "2024-01-24", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q1-2024: { title: "Tesla Q1 2024 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q1-2024-Update.pdf", type: "ir-presentation", lang: "en", published: "2024-04-23", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q2-2024: { title: "Tesla Q2 2024 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q2-2024-Update.pdf", type: "ir-presentation", lang: "en", published: "2024-07-23", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q3-2024: { title: "Tesla Q3 2024 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q3-2024-Update.pdf", type: "ir-presentation", lang: "en", published: "2024-10-23", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q4-2024: { title: "Tesla Q4 2024 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q4-2024-Update.pdf", type: "ir-presentation", lang: "en", published: "2025-01-29", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q1-2025: { title: "Tesla Q1 2025 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q1-2025-Update.pdf", type: "ir-presentation", lang: "en", published: "2025-04-22", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q2-2025: { title: "Tesla Q2 2025 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q2-2025-Update.pdf", type: "ir-presentation", lang: "en", published: "2025-07-23", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  wiki-history: { title: "History of Tesla, Inc. (quarterly production and deliveries table)", publisher: "Wikipedia", url: "https://en.wikipedia.org/wiki/History_of_Tesla,_Inc.", type: "other", lang: "en", accessed: "2026-11-17", note: "維基百科彙整的季度生產與交車表，引用特斯拉各季產銷新聞稿；只用於 2016Q1–2018Q2，2016Q3–Q4 與 letter-q4-2016 核對一致，2018Q3 起改用公司股東信與簡報" }
+  consensus-q1-2026: { title: "Tesla (TSLA) Q1 2026 delivery consensus: 365,000 analyst estimates", publisher: "Electrek", url: "https://electrek.co/2026/03/26/tesla-tsla-q1-2026-delivery-consensus-365000-analyst-estimates/", type: "news", lang: "en", published: "2026-03-26", accessed: "2026-11-17", note: "轉載特斯拉投資人關係網站公布的「公司彙整分析師共識」（Q1 2026 Delivery Consensus，ir.tesla.com/press-release/delivery-consensus-first-quarter-2026；該頁拒絕自動讀取）；特斯拉聲明不背書分析師的資訊與結論" }
+  consensus-q2-2026: { title: "Tesla Q2 2026 delivery consensus: 406,000", publisher: "Electrek", url: "https://electrek.co/2026/06/26/tesla-q2-2026-delivery-consensus-406000/", type: "news", lang: "en", published: "2026-06-26", accessed: "2026-11-17", note: "轉載特斯拉投資人關係網站的 Q2 2026 Delivery Consensus（ir.tesla.com/press-release/delivery-consensus-second-quarter-2026）：季度與 2026–2030 年交車、儲能部署共識" }
+  consensus-q3-2026: { title: "Tesla IR Posts Q3 2026 Delivery Consensus of 461,974 Vehicles", publisher: "Tesla North", url: "https://teslanorth.com/2026/09/29/tesla-ir-q3-2026-delivery-consensus/", type: "news", lang: "en", published: "2026-09-29", accessed: "2026-11-17", note: "轉載特斯拉投資人關係網站 2026-09-29 公布的第三季交車共識（24 位賣方分析師）與 2026 全年交車、儲能部署共識" }
+  consensus-q3-2026-dtc: { title: "Tesla analysts expect Q3 deliveries to decline but energy to grow", publisher: "Drive Tesla", url: "https://driveteslacanada.ca/news/tesla-q3-2026-delivery-consensus-462000/", type: "news", lang: "en", published: "2026-09-29", accessed: "2026-11-17", note: "轉載特斯拉 2026-09-29 公布的公司彙整分析師共識（第三方估計）：第三季交車 461,974 輛；全年交車 2026 年約 177 萬、2027 年約 192 萬、2028 年約 210 萬輛（報導只到萬輛）；儲能部署第三季 15.9 GWh（19 位分析師，中位數 16.2 GWh）、2026 年 56.5 GWh、2027 年 76.0 GWh" }
+lastVerified: "2026-11-17"
+editorial:
+  status: "fact-checked"
+  author: "fc2-data-tesla"
+  checkedBy: "fc2-check-tesla"
+  checkedOn: "2026-11-17"
+  notes: "2026-11-17 模型審查（fc2-model-review-tesla）：2027 年交車與儲能部署的全年共識改用 2026-09-29 公布的數字（consensus-q3-2026-dtc：約 192 萬輛、76.0 GWh），原本 6 月公布的數字（1,824,568 輛、79.8 GWh）寫在 note；6 月的 2027 年數字是在 2026 年共識上修之前公布的。2026-11-17 查核（fc2-check-tesla）：2019Q3–2025Q2 的分車款生產與交車、租賃交車、庫存天數、儲能部署與監管積分，逐格比對各點標示的季度簡報（以 PyMuPDF 依座標還原表格）；2018Q3–2019Q3 比對 2019 年第三季股東信與 2019Q4、2020Q1、2020Q2 簡報；2016Q3–Q4 比對 2016 年第四季股東信；2016Q1–2018Q2 比對維基百科表格；2025Q3–2026Q3（含 FSD 訂閱數）比對 2026 年第三季簡報原文；2017、2018 年儲能與 2016–2018 年監管積分比對股東信與 2020 年第四季簡報年度摘要；分析師共識 13 個數字逐一比對三篇轉載報導。每輛車售價與成本由 tesla-inputs.yaml 重算一致（差 2 美元以內；2018Q4、2019Q1 用千元數字，差 6 美元以內）；交車與產量的分車款加總等於總數。修正：庫存天數 2019Q2、2019Q3 改用較新簡報的重編數字 19 與 18（新增來源 ex-q2-2020、deck-q3-2020）；儲能部署與 FSD 訂閱數的定義依原文改正（MWh 改 GWh 的時點、Active FSD Subscriptions 含一次買斷）；共識的註記補上各歷史數字的出處。建立時（fc2-data-tesla）：交車、生產、租賃、庫存天數與儲能部署 2018Q3 起取自公司股東信與季度簡報的營運摘要（同一季取最新一份），2016Q1–2018Q2 交車與產量取自維基百科彙整的產銷新聞稿數字（2016Q3–Q4 以股東信核對）；2025Q3–2026Q3 取自 2026 年第三季簡報，並與維基百科表格核對一致。每輛車售價與成本為本站推算（status: estimate），其中成本推算值與公司公布的 2023Q3、2024Q4 數字一致。分析師共識為特斯拉公司彙整、經媒體轉載的第三方估計。"

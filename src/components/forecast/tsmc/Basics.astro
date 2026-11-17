@@ -1,0 +1,181 @@
+---
+/**
+ * 一分鐘看懂（台積電）: a foundry paid per wafer in US dollars, whose costs are mostly in NT dollars — so revenue
+ * follows wafer shipments × the node mix, and the gross margin follows scale, the exchange rate and the dilution of
+ * new nodes and overseas fabs. Key figures of the latest quarter and the company's guidance for the next one.
+ *   <Basics b={bundle} />
+ */
+import FlowSteps from '../../content/FlowSteps.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import { actualGrossMargin, fcPct, lastReportedOf, nextQuarter, periodLabel, quarterOf, type FcBundle } from '../../../lib/forecast-data';
+import { formatMoney, formatNumber } from '../../../lib/format';
+import { driverMap, guidanceRanges, param } from './tsmc-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m, meta } = b;
+const last = lastReportedOf(m);
+const q = quarterOf(inputs, last)!;
+const ago = `${Number(last.slice(0, 4)) - 1}${last.slice(4)}`;
+const q0 = quarterOf(inputs, ago);
+const at = (id: string, p: string) => driverMap(b, id).get(p);
+const usd = at('revenue-usd', last);
+const usd0 = at('revenue-usd', ago);
+const fx = at('fx-usd-ntd-avg', last);
+const gm = actualGrossMargin(b.company, q);
+const gm0 = q0 ? actualGrossMargin(b.company, q0) : undefined;
+const adv = at('node-advanced-share', last);
+const hpc = at('platform-hpc-share', last);
+const phone = at('platform-smartphone-share', last);
+const wafers = at('wafer-shipments', last);
+// the start of the page window, for 「出貨片數成長為 X 倍，美元營收成長為 Y 倍」
+const from = meta.historyFrom;
+const wafers0 = at('wafer-shipments', from);
+const usdFrom = at('revenue-usd', from);
+const waferMult = wafers && wafers0 ? wafers.value / wafers0.value : undefined;
+const usdMult = usd && usdFrom ? usd.value / usdFrom.value : undefined;
+
+const kappa = param(b, /^成本對美元營收的彈性/);
+const gamma = param(b, /^製程世代價差/);
+const costUp10 = kappa ? (1.1 ** kappa.value - 1) * 100 : undefined;
+const genUp = gamma ? (Math.exp(gamma.value) - 1) * 100 : undefined;
+
+// company statements (events of the inputs file)
+const evFx = inputs.events.find((e) => /75% 的銷貨成本以新台幣計價/.test(e.detail));
+const ntdCost = evFx ? '約 75% 以新台幣計價' : '大多以新台幣計價';
+const n2 = [...(b.drivers?.series.find((s) => s.id === 'new-node-gm-dilution')?.points ?? [])].reverse().find((p) => p.low != null && p.high != null);
+const overseas = [...(b.drivers?.series.find((s) => s.id === 'overseas-fab-gm-dilution')?.points ?? [])].at(-1);
+
+// guidance for the next quarter (drivers: guidance-* series)
+const next = nextQuarter(last);
+const gRev = at('guidance-revenue-usd', next);
+const gGm = at('guidance-gross-margin', next);
+const gFx = at('fx-guidance', next);
+const beats = guidanceRanges(b);
+const sorted = beats.map((r) => r.beat).sort((x, y) => x - y);
+const median = sorted.length ? (sorted.length % 2 ? sorted[(sorted.length - 1) / 2]! : (sorted[sorted.length / 2 - 1]! + sorted[sorted.length / 2]!) / 2) : undefined;
+const aboveMid = beats.filter((r) => r.beat > 0).length;
+
+const usdText = (v: number) => formatMoney(v, 'USD', { unit: '億' });
+const yi = (v: number) => formatNumber(v / 100, { digits: v / 100 < 100 ? 1 : 0 });
+const range = (lo?: number, hi?: number, digits = 0) => (lo != null && hi != null ? `${formatNumber(lo, { digits })}–${formatNumber(hi, { digits })}` : '');
+/** 「約 3–4」「接近 2」 (the qualifier follows the statement's wording in the note) */
+const pp = (p: { value: number; low?: number | undefined; high?: number | undefined; note?: string | undefined }) =>
+  p.low != null && p.high != null
+    ? `約 ${formatNumber(p.low, { digits: 0 })}–${formatNumber(p.high, { digits: 0 })}`
+    : `${/接近/.test(p.note ?? '') ? '接近' : /略高於/.test(p.note ?? '') ? '略高於' : '約'} ${formatNumber(p.value, { digits: 1, trim: true })}`;
+/** 「2026 年下半年」 when the statement covers a half year, else 「2026 年第四季」 */
+const when = (p: { period: string; note?: string | undefined }) => (/下半年/.test(p.note ?? '') ? `${p.period.slice(0, 4)} 年下半年` : periodLabel(p.period, 'long'));
+const yoy = usd && usd0 ? (usd.value / usd0.value - 1) * 100 : undefined;
+---
+
+<div class="mem-basics__grid">
+  <div class="prose mem-basics__prose">
+    <p>
+      {meta.nameFull}是專業晶圓代工廠：不賣自己品牌的晶片，而是替設計晶片的客戶把晶片製造出來，主要按晶圓收費。{periodLabel(last, 'long')}營收{formatMoney(q.revenue, 'TWD')}<FcCite k={q.src} />，換成美元是 {usd ? usdText(usd.value) : '—'}{fx && `（當季平均匯率 ${formatNumber(fx.value, { digits: 2 })}）`}{usd && <FcCite k={usd.src} />}；{hpc && `高效能運算（HPC，含 AI 加速器、CPU 等）占營收 ${formatNumber(hpc.value)}%`}{phone && `、智慧型手機占 ${formatNumber(phone.value)}%`}{hpc && <FcCite k={hpc.src} />}。
+    </p>
+    <p>
+      <strong>營收看「出貨片數 × 每片價格」。</strong>{wafers && `${periodLabel(last)} 出貨約 ${formatNumber(wafers.value / 10)} 萬片 12 吋約當晶圓`}{wafers && <FcCite k={wafers.src} />}{adv && `，7 奈米及以下的先進製程占晶圓營收 ${formatNumber(adv.value)}%`}{adv && <FcCite k={adv.src} />}。越先進的製程每片越貴{genUp != null && `：模型由各製程的營收比重與出貨反推，每升一個世代每片約貴 ${formatNumber(genUp, { digits: 0 })}%（統計估計，不是公司公布的價格）`}。{waferMult != null && usdMult != null && `所以從 ${periodLabel(from)} 到 ${periodLabel(last)}，出貨片數成長為 ${formatNumber(waferMult, { digits: 1 })} 倍，美元營收卻成長為 ${formatNumber(usdMult, { digits: 1 })} 倍`}{wafers0 && <FcCite k={wafers0.src} />}{usdFrom && <FcCite k={usdFrom.src} />}。
+    </p>
+    <p>
+      <strong>毛利率看規模、匯率與新廠。</strong>營收幾乎都以美元計價，銷貨成本卻{ntdCost}{evFx && <FcCite k={evFx.src} />}，因此：
+    </p>
+    <ul>
+      <li>
+        <strong>規模</strong>：廠房與設備的成本不會跟著營收等比例增加，美元營收變多，毛利率就上升{costUp10 != null && `（模型估計匯率不變時，美元營收多 10%，銷貨成本約多 ${formatNumber(costUp10, { digits: 1 })}%，不計成本趨勢）`}。
+      </li>
+      <li>
+        <strong>匯率</strong>：{evFx ? <>新台幣每貶值 1%，毛利率約增加 0.4 個百分點；升值則相反<FcCite k={evFx.src} /></> : '新台幣貶值時毛利率上升，升值時下降'}。
+      </li>
+      <li>
+        <strong>新製程與海外廠</strong>：量產初期良率與規模還不夠，會稀釋毛利率。{n2 && `公司預估${/2 奈米/.test(n2.note ?? '') ? ' 2 奈米' : '新製程'}使 ${when(n2)}毛利率減少${pp(n2)} 個百分點`}{n2 && <FcCite k={n2.src} />}{overseas && `，海外廠 ${overseas.period} 年稀釋${pp(overseas)} 個百分點`}{overseas && <FcCite k={overseas.src} />}。
+      </li>
+    </ul>
+    <p>
+      台積電每季在法說會公布下一季的美元營收、毛利率與營業利益率區間（財測），並附上匯率假設。{median != null && `${periodLabel(beats[0]!.period)} 以來 ${beats.length} 季中，有 ${aboveMid} 季的實際美元營收高於財測中值，中位數高 ${formatNumber(median, { digits: 1 })}%（本頁由各季財測與財報計算）`}。本頁的近一季情境以財測加上這段歷史偏差設定；2027 年公司沒有財測，各季數字是本模型的情境假設。
+    </p>
+  </div>
+  <aside class="mem-basics__aside fc-figs" aria-label="關鍵數字">
+    <p class="fc-figs__title">關鍵數字</p>
+    <ul class="fc-figs__list" role="list">
+      {
+        usd && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">{periodLabel(last)} 美元營收</p>
+            <p class="mem-fig__value">
+              <strong>{yi(usd.value)}</strong>
+              <span class="mem-fig__unit">億美元</span>
+            </p>
+            <p class="mem-fig__meta">
+              財報{yoy != null && `；年增 ${formatNumber(yoy, { digits: 0 })}%`}
+              <FcCite k={usd.src} />
+              {usd0 && usd0.src !== usd.src && <FcCite k={usd0.src} />}
+            </p>
+          </li>
+        )
+      }
+      {
+        gm != null && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">
+              {periodLabel(last)} {meta.gmLabel}
+            </p>
+            <p class="mem-fig__value">
+              <strong>{fcPct(gm)}</strong>
+            </p>
+            <p class="mem-fig__meta">
+              財報{gm0 != null && `；一年前 ${fcPct(gm0)}`}
+              <FcCite k={q.src} />
+              {q0 && <FcCite k={q0.src} />}
+            </p>
+          </li>
+        )
+      }
+      {
+        adv && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">先進製程（7 奈米及以下）</p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(adv.value)}%</strong>
+            </p>
+            <p class="mem-fig__meta">
+              {periodLabel(last)} 占晶圓營收
+              <FcCite k={adv.src} />
+            </p>
+          </li>
+        )
+      }
+      {
+        gRev && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">
+              {periodLabel(next)} 營收<span class="fc-tag fc-tag--guidance">財測</span>
+            </p>
+            <p class="mem-fig__value">
+              <strong>{gRev.low != null && gRev.high != null ? range(gRev.low / 100, gRev.high / 100) : yi(gRev.value)}</strong>
+              <span class="mem-fig__unit">億美元</span>
+            </p>
+            <p class="mem-fig__meta">
+              {gGm && `毛利率 ${gGm.low != null && gGm.high != null ? `${range(gGm.low, gGm.high)}%` : fcPct(gGm.value)}`}
+              {gFx && `；匯率假設 ${formatNumber(gFx.value, { digits: 1, trim: true })}`}
+              <FcCite k={gRev.src} />
+            </p>
+          </li>
+        )
+      }
+    </ul>
+  </aside>
+</div>
+<FlowSteps
+  class="fc-flow"
+  title="從晶圓到毛利率"
+  steps={[
+    { title: '晶圓出貨', detail: wafers ? `${periodLabel(last)} 約 ${formatNumber(wafers.value / 10)} 萬片（12 吋約當）` : '以 12 吋約當片數計' },
+    { title: '每片營收', detail: adv ? `先進製程比重越高越貴；目前 ${formatNumber(adv.value)}%` : '先進製程比重越高越貴' },
+    { title: '美元營收', detail: '出貨 × 每片營收，再乘匯率換成新台幣' },
+    { title: '銷貨成本', detail: `${ntdCost}，成長得比營收慢` },
+    { title: '毛利率', detail: '規模、匯率、新製程與海外廠稀釋' },
+  ]}
+/>

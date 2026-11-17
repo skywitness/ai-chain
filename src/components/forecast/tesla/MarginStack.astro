@@ -1,0 +1,144 @@
+---
+/**
+ * Gross margin of each quarter split into the percentage points each segment contributes (segment gross profit ÷
+ * total revenue; the pieces add up to the total gross margin), one horizontal stacked bar per quarter on a shared
+ * axis. Forecast rows are hatched; the data table lists every row. Built on ChartFrame and the shared horizontal-bar
+ * styles (charts.css: ch-hb, ch-stk); used by the 特斯拉 Drivers section with the model's gm-contrib-* series.
+ *   <MarginStack title="…" rows={[{ period: '2026Q3', status: 'estimate', items: [{ key: 'auto', name: '汽車銷售', value: 12.6, color: 'var(--chart-1)' }] }]} />
+ */
+import '../../charts/charts.css';
+import ChartFrame from '../../charts/ChartFrame.astro';
+import { axisStep, fmtTick, niceTicks, pct, round, tickDigits, tip, vars } from '../../charts/chart-utils';
+import type { LegendItem, TableSpec } from '../../charts/types';
+import { periodLabel } from '../../../lib/forecast-data';
+import { formatNumber } from '../../../lib/format';
+
+export interface StackPiece {
+  key: string;
+  name: string;
+  /** percentage points */
+  value: number;
+  color: string;
+}
+export interface StackQuarter {
+  period: string;
+  status: 'actual' | 'estimate' | 'forecast';
+  items: StackPiece[];
+}
+interface Props {
+  title: string;
+  rows: StackQuarter[];
+  subtitle?: string | undefined;
+  notes?: Array<string | null | undefined> | undefined;
+  badge?: string | undefined;
+  /** small text under a forecast row's label */
+  forecastLabel?: string | undefined;
+  as?: 'h3' | 'h4' | 'p' | undefined;
+  class?: string | undefined;
+}
+const { title, rows, subtitle, notes = [], badge, forecastLabel = '預測', as = 'h4', class: className } = Astro.props;
+const pp = (v: number) => formatNumber(v, { digits: 1 });
+const total = (r: StackQuarter) => r.items.reduce((s, it) => s + it.value, 0);
+// negative pieces cannot be stacked: they are drawn as 0 and named in a note (the table keeps the value)
+const negatives = rows.flatMap((r) => r.items.filter((it) => it.value < 0).map((it) => `${periodLabel(r.period)} ${it.name} ${pp(it.value)}`));
+const max = Math.max(1, ...rows.map((r) => r.items.reduce((s, it) => s + Math.max(0, it.value), 0)));
+const ticks = niceTicks(0, max, 5);
+const tDigits = tickDigits(ticks.ticks);
+const keys: StackPiece[] = [];
+for (const r of rows) for (const it of r.items) if (!keys.some((k) => k.key === it.key)) keys.push(it);
+const anyFc = rows.some((r) => r.status === 'forecast');
+const legend: LegendItem[] = [
+  ...keys.map((k) => ({ label: k.name, kind: 'bar' as const, color: k.color })),
+  ...(anyFc ? [{ label: `${forecastLabel}（斜線）`, kind: 'estimate' as const }] : []),
+];
+const rowName = (r: StackQuarter) => `${periodLabel(r.period)}${r.status === 'forecast' ? `（${forecastLabel}）` : ''}`;
+const aria =
+  `${title}，共 ${rows.length} 季，單位為個百分點。` +
+  rows.map((r) => `${rowName(r)}合計 ${pp(total(r))}：${r.items.map((it) => `${it.name} ${pp(it.value)}`).join('、')}`).join('；') +
+  '。';
+const table: TableSpec = {
+  columns: [{ key: 'p', label: '季度' }, ...keys.map((k) => ({ key: k.key, label: k.name, numeric: true })), { key: 'sum', label: '合計（毛利率）', numeric: true }],
+  rows: rows.map((r) => {
+    const row: Record<string, string> = { p: rowName(r), sum: `${pp(total(r))}%` };
+    for (const k of keys) {
+      const v = r.items.find((it) => it.key === k.key)?.value;
+      row[k.key] = v == null ? '' : pp(v);
+    }
+    return row;
+  }),
+};
+---
+
+<ChartFrame
+  title={title}
+  as={as}
+  subtitle={subtitle}
+  badge={badge}
+  unit="個百分點（各段毛利 ÷ 總營收）"
+  legend={legend}
+  notes={[...notes, negatives.length ? `負值無法堆疊，圖中以 0 畫出：${negatives.join('、')}。` : null]}
+  table={table}
+  empty={rows.length === 0}
+  class:list={['mem-chart', 'tsl-stack', className]}
+>
+  <div class="ch-hb" role="img" aria-label={aria}>
+    {
+      rows.map((r) => {
+        const sum = total(r);
+        const pos = r.items.reduce((s, it) => s + Math.max(0, it.value), 0);
+        return (
+          <div class="ch-hb__row">
+            <span class="ch-hb__label" aria-hidden="true">
+              {periodLabel(r.period)}
+              {r.status === 'forecast' && <small>{forecastLabel}</small>}
+            </span>
+            <span class="ch-hb__track" aria-hidden="true">
+              {ticks.ticks.map((t) => (
+                <i class:list={['ch-hb__tick', t === 0 && 'ch-hb__tick--base']} style={`--x:${pct(t, ticks.domain)}%`} />
+              ))}
+              <span class:list={['ch-stk', 'tsl-stk', r.status === 'forecast' && 'tsl-stk--fc']} style={vars({ '--len': `${round(pct(pos, ticks.domain), 3)}%` })}>
+                {r.items.map((it) =>
+                  it.value > 0 ? (
+                    <span
+                      class="ch-stk__seg"
+                      style={vars({ '--f': round((it.value / pos) * 100, 3), '--k': it.color })}
+                      data-tip={tip(`${rowName(r)}・${it.name}`, [
+                        ['貢獻', `${pp(it.value)} 個百分點`],
+                        ['合計毛利率', `${pp(sum)}%`],
+                      ])}
+                    />
+                  ) : null,
+                )}
+              </span>
+            </span>
+            <span class="ch-hb__val" aria-hidden="true">
+              {pp(sum)}%
+            </span>
+          </div>
+        );
+      })
+    }
+    <div class="ch-hb__axis" aria-hidden="true">
+      {
+        ticks.ticks.map((t, k) => (
+          <span style={`--x:${pct(t, ticks.domain)}%`} hidden={k % axisStep(ticks.ticks.length) !== 0 ? true : undefined}>
+            {fmtTick(t, { digits: tDigits })}
+          </span>
+        ))
+      }
+    </div>
+  </div>
+</ChartFrame>
+
+<style>
+  .tsl-stk {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0;
+    height: 18px;
+    translate: 0 -50%;
+  }
+  .tsl-stk--fc .ch-stk__seg {
+    background: repeating-linear-gradient(135deg, var(--k) 0 3px, color-mix(in srgb, var(--k) 45%, var(--c-bg-elev)) 3px 6px);
+  }
+</style>

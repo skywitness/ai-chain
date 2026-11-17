@@ -32,7 +32,7 @@ import {
   type FcBundle,
   type Forecast,
 } from '../../../lib/forecast-data';
-import { formatDate, formatMoney, formatMoneyRange, formatNumber } from '../../../lib/format';
+import { formatDate, formatMoney, formatMoneyRange, formatNumber, zhConcat } from '../../../lib/format';
 
 interface Props {
   b: FcBundle;
@@ -109,7 +109,7 @@ const cards = forecast
       let g: string | null = null;
       if (guide && guide.period === p) {
         if (f === 'revenue')
-          g = `${fcMoney(guide.revenue, cur)}${guide.revenueLow != null && guide.revenueHigh != null ? `（${formatMoneyRange(guide.revenueLow, guide.revenueHigh, cur, { unit: '億' })}）` : ''}`;
+          g = `${fcMoney(guide.revenue, cur)}${guide.revenueLow != null && guide.revenueHigh != null ? `（${formatMoneyRange(guide.revenueLow, guide.revenueHigh, cur, { unit: '億' })}）` : ''}${guide.basis ? `；${guide.basis}` : ''}`;
         if (f === 'grossMargin' && guide.grossMargin != null) g = `約 ${fcPctExact(guide.grossMargin)}`;
         if (f === 'eps' && guide.eps != null) g = `${fcEps(guide.eps, meta.epsUnit)}${guide.epsRange != null ? `（± ${formatNumber(guide.epsRange, { digits: 2 })}）` : ''}`;
       }
@@ -145,7 +145,7 @@ const n = cards.length + (actualCard ? 1 : 0);
         <div class="fc-sum__head">
           <h3 class="fc-sum__period">
             {periodLabel(actualCard.p, 'long')}
-            <small>{calendarHint(actualCard.p)}</small>
+            <small>{calendarHint(actualCard.p, meta.fyStartMonth)}</small>
           </h3>
           <span class="fc-tag fc-tag--known">已公布</span>
         </div>
@@ -180,7 +180,7 @@ const n = cards.length + (actualCard ? 1 : 0);
           <h3 class="fc-sum__period">
             {periodLabel(c.p, 'long')}
             <small>
-              {calendarHint(c.p)}
+              {calendarHint(c.p, meta.fyStartMonth)}
               {c.nRep > 0 && `，前 ${c.nRep} 季為財報實際數`}
             </small>
           </h3>
@@ -216,7 +216,7 @@ const n = cards.length + (actualCard ? 1 : 0);
                 )}
                 {r.guide && (
                   <span class="fc-sum__guide">
-                    <span class="fc-tag fc-tag--guidance">美光財測</span> {r.guide}
+                    <span class="fc-tag fc-tag--guidance">{zhConcat(meta.name, '財測')}</span> {r.guide}
                     {guide?.src && <FcCite k={guide.src} />}
                   </span>
                 )}

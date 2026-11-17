@@ -1,0 +1,199 @@
+---
+/**
+ * 一分鐘看懂（聯發科）: a fabless chip designer whose next quarter is best read from its own guidance (plus the
+ * historical beat and the FX the quarter actually gets), and whose 2027 depends on how fast the data-center ASIC
+ * grows and how much it dilutes the gross margin. Slot `Basics` of /forecast/mediatek/ (src/components/forecast/registry.ts).
+ *   <Basics b={bundle} />
+ */
+import FlowSteps from '../../content/FlowSteps.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import { fcPct, nextGuidance, paramStarting, periodLabel, spanLabel, type FcBundle } from '../../../lib/forecast-data';
+import { formatMoney, formatMoneyRange, formatNumber } from '../../../lib/format';
+import { asicFacts, driverAt, guidanceRecord, quarterBack } from './mtk';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m, meta } = b;
+const money = (v: number) => formatMoney(v, meta.currency, { unit: '億' });
+const pct0 = (v: number | undefined) => (v == null ? '—' : `${formatNumber(v, { digits: 0 })}%`);
+
+const last = inputs.quarters.at(-1)!;
+const ya = quarterBack(last.period, 4);
+const yearAgo = inputs.quarters.find((q) => q.period === ya);
+const yoy = yearAgo ? (last.revenue / yearAgo.revenue - 1) * 100 : undefined;
+const gm = last.grossProfit != null ? (last.grossProfit / last.revenue) * 100 : undefined;
+const share = (line: string, p: string) => driverAt(b, `revenue-share-${line}`, p);
+const sMob = share('mobile', last.period);
+const sEdge = share('smart-edge', last.period);
+const sPmic = share('power-ic', last.period);
+const sMob0 = share('mobile', ya);
+
+const g = nextGuidance(b);
+const gPrevGm = g ? driverAt(b, 'guidance-gross-margin', last.period) : undefined;
+const qoqLo = g?.revenueLow != null ? (g.revenueLow / last.revenue - 1) * 100 : undefined;
+const qoqHi = g?.revenueHigh != null ? (g.revenueHigh / last.revenue - 1) * 100 : undefined;
+const rec = guidanceRecord(b);
+const revBias = paramStarting(m, '營收相對財測中值的平均偏差');
+const gmBias = paramStarting(m, '毛利率相對財測中值的平均偏差');
+const trainSpan = spanLabel(m.train.from, m.train.to);
+const asic = asicFacts(b);
+const idcNow = driverAt(b, 'smartphone-shipments-idc', last.period);
+const idcYa = driverAt(b, 'smartphone-shipments-idc', ya);
+const idcYoy = idcNow && idcYa ? (idcNow.value / idcYa.value - 1) * 100 : undefined;
+const mobYoy = driverAt(b, 'revenue-yoy-mobile', last.period);
+const memEvent = inputs.events.find((e) => e.src === idcNow?.src) ?? inputs.events.find((e) => /記憶體/.test(e.title) && /IDC/.test(e.title));
+const fxEvent = inputs.events.find((e) => /匯率|新台幣/.test(e.title) && /毛利率/.test(e.title));
+const fxGm = /每升值 1%，毛利率約減少 ([\d.]+) 個百分點/.exec(fxEvent?.detail ?? '')?.[1];
+const rd = last.extra?.['研究發展費用'];
+const rdShare = rd != null && last.operatingExpenses ? (rd / last.operatingExpenses) * 100 : undefined;
+---
+
+<div class="mem-basics__grid fct-basics">
+  <div class="prose mem-basics__prose">
+    <p>
+      {`${meta.nameFull}是 IC 設計公司：自己設計晶片、委託晶圓代工廠生產，再賣給手機、電視、網通設備與筆電等品牌。`}{periodLabel(last.period, 'long')}營收{money(last.revenue)}{sMob && sEdge && sPmic && (
+        <>
+          ，手機晶片占 {pct0(sMob.value)}、智慧邊緣平台占 {pct0(sEdge.value)}、電源管理 IC 占 {pct0(sPmic.value)}<FcCite k={sMob.src!} />
+        </>
+      )}{sMob0 && (
+        <>
+          ；一年前手機還占 {pct0(sMob0.value)}<FcCite k={sMob0.src!} />
+        </>
+      )}。智慧邊緣平台包含網通、電視、筆電與平板、車用與客製化晶片，2026 年 9 月開始出貨的資料中心 ASIC 也歸在這裡{asic.targetSrc && <FcCite k={asic.targetSrc} />}。
+    </p>
+    {
+      rec.n > 0 && (
+        <p>
+          聯發科每季在法說會公布下一季的營收區間、毛利率、營業費用率與假設匯率。公司掌握客戶訂單與庫存，這些資訊外界看不到，所以<strong>公司財測是推估下一季最好的起點</strong>：{spanLabel(rec.from!, rec.to!)}共 {rec.n} 季，實際營收落在財測區間內 {rec.inside} 季、高於上緣 {rec.above} 季{rec.below > 0 ? `、低於下緣 ${rec.below} 季` : '，沒有一季低於下緣'}，平均比財測中值高 {formatNumber(rec.mean, { digits: 1 })}%
+          <FcCite k={last.src} />（逐季對照見<a href="#drivers">驅動因子</a>）。
+          {revBias && gmBias
+            ? `模型以財測中值為起點，加上 ${trainSpan}扣除匯率差後的平均偏差（營收 ${formatNumber(revBias.value, { digits: 1, signed: true })}%、毛利率 ${formatNumber(gmBias.value, { digits: 1, signed: true })} 個百分點），再把營收換算成當季實際的匯率：聯發科的產品以美元計價、財報以新台幣表示，新台幣比財測假設弱時，換算後的營收就偏高。`
+            : ''}
+        </p>
+      )
+    }
+    {
+      g && asic.quarterUsd != null && (
+        <p>
+          {periodLabel(g.period, 'long')}多了一個新變數：首款資料中心 AI 加速器 ASIC（替一家未具名的美國大型雲端業者客製的 AI 晶片）9 月開始初期出貨，公司預期這一季貢獻約 {formatNumber(asic.quarterUsd / 100)} 億美元
+          {asic.share != null && `，約占營收財測中值的 ${formatNumber(asic.share, { digits: 0 })}%`}
+          {asic.targetSrc && <FcCite k={asic.targetSrc} />}。所以營收財測{qoqLo != null && qoqHi != null ? `季增 ${formatNumber(qoqLo, { digits: 0 })}%–${formatNumber(qoqHi, { digits: 0 })}%` : '大增'}
+          ，毛利率財測卻{gPrevGm && g.grossMargin != null ? `從 ${fcPct(gPrevGm.value, 0)} 調低到 ${fcPct(g.grossMargin, 0)}` : '調低'}
+          {g.src && <FcCite k={g.src} />}：公司表示資料中心業務的毛利率低於公司平均
+          {asic.targetSrc && <FcCite k={asic.targetSrc} />}。
+          {asic.target && (
+            <>
+              公司對 {asic.target.period} 年的 ASIC 營收目標約 {formatNumber(asic.target.value / 100)} 億美元
+              <FcCite k={asic.target.src!} />
+              ；{asic.target.period} 年沒有財測，模型改用產品線相加：手機、智慧邊緣平台、電源管理 IC 與 ASIC 分別推估，毛利率依產品組合加權。
+            </>
+          )}
+        </p>
+      )
+    }
+    {
+      idcNow && idcYoy != null && (
+        <p>
+          {idcYoy < 0 ? '手機晶片則受記憶體漲價拖累：記憶體成本推高手機售價、壓抑需求，' : '手機晶片看全球手機市場：'}IDC 估計 {periodLabel(idcNow.period, 'long')}全球智慧型手機出貨 {formatNumber(idcNow.value / 100, { digits: 2 })} 億支、{idcYoy < 0 ? '年減' : '年增'} {formatNumber(Math.abs(idcYoy), { digits: 1 })}%（第三方估計）
+          <FcCite k={idcNow.src!} />
+          {memEvent && memEvent.src !== idcNow.src && <FcCite k={memEvent.src} />}
+          {mobYoy && (
+            <>
+              ；聯發科同一季的手機營收（新台幣）{mobYoy.value < 0 ? '年減' : '年增'} {formatNumber(Math.abs(mobYoy.value))}%
+              <FcCite k={mobYoy.src!} />
+            </>
+          )}
+          。{fxEvent && fxGm && (
+            <>
+              匯率也直接影響毛利率：公司說明新台幣每升值 1%，毛利率約減少 {fxGm} 個百分點
+              <FcCite k={fxEvent.src} />。
+            </>
+          )}
+        </p>
+      )
+    }
+  </div>
+  <aside class="mem-basics__aside fc-figs" aria-label="關鍵數字">
+    <p class="fc-figs__title">關鍵數字</p>
+    <ul class="fc-figs__list" role="list">
+      <li class="mem-fig">
+        <p class="mem-fig__label">{periodLabel(last.period)} 營收</p>
+        <p class="mem-fig__value"><strong>{formatNumber(last.revenue / 100)}</strong><span class="mem-fig__unit">億元</span></p>
+        <p class="mem-fig__meta">
+          財報{yoy != null ? `；${yoy >= 0 ? '年增' : '年減'} ${formatNumber(Math.abs(yoy), { digits: 1 })}%` : ''}{gm != null ? `；毛利率 ${fcPct(gm)}` : ''}
+          <FcCite k={last.src} />
+        </p>
+      </li>
+      {
+        sMob && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">{periodLabel(last.period)} 手機占營收</p>
+            <p class="mem-fig__value">
+              <strong>{pct0(sMob.value)}</strong>
+            </p>
+            <p class="mem-fig__meta">
+              {sMob0 ? `一年前 ${pct0(sMob0.value)}` : '公司簡報'}
+              <FcCite k={sMob.src!} />
+            </p>
+          </li>
+        )
+      }
+      {
+        g && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">
+              {periodLabel(g.period)} 營收財測<span class="fc-tag fc-tag--guidance">財測</span>
+            </p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(g.revenue / 100)}</strong>
+              <span class="mem-fig__unit">億元</span>
+            </p>
+            <p class="mem-fig__meta">
+              中值{g.revenueLow != null && g.revenueHigh != null ? `；區間 ${formatMoneyRange(g.revenueLow, g.revenueHigh, meta.currency, { unit: '億' }).replace(/^新台幣 /, '')}` : ''}
+              {g.grossMargin != null ? `；毛利率 ${fcPct(g.grossMargin, 0)}` : ''}
+              {g.src && <FcCite k={g.src} />}
+            </p>
+          </li>
+        )
+      }
+      {
+        asic.quarterUsd != null && asic.period && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">
+              {periodLabel(asic.period)} 資料中心 ASIC<span class="fc-tag fc-tag--guidance">公司說法</span>
+            </p>
+            <p class="mem-fig__value">
+              <strong>約 {formatNumber(asic.quarterUsd / 100)}</strong>
+              <span class="mem-fig__unit">億美元</span>
+            </p>
+            <p class="mem-fig__meta">
+              {asic.target ? `${asic.target.period} 年目標約 ${formatNumber(asic.target.value / 100)} 億美元` : '單季'}
+              {asic.targetSrc && <FcCite k={asic.targetSrc} />}
+            </p>
+          </li>
+        )
+      }
+    </ul>
+  </aside>
+</div>
+<FlowSteps
+  class="fc-flow"
+  title="從財測到每股盈餘：模型的兩段做法"
+  steps={[
+    { title: '公司財測', detail: '季初公布營收區間、毛利率、費用率與假設匯率' },
+    { title: '偏差與匯率', detail: '加上歷史平均偏差，換算成當季實際匯率' },
+    { title: '產品線相加', detail: `${asic.target ? `${asic.target.period} 年` : '之後'}沒有財測：手機出貨 × 每支營收、智慧邊緣平台、ASIC` },
+    { title: '毛利率看組合', detail: 'ASIC 毛利率較低，比重越高、合併毛利率越低' },
+    { title: '費用與 EPS', detail: `${rdShare != null ? `研發約占營業費用 ${formatNumber(rdShare, { digits: 0 })}%；` : ''}加業外、扣稅後除以股數` },
+  ]}
+/>
+{
+  rdShare != null && (
+    <p class="mem-fine fct-mtk-flowcite">
+      研發費用占比為 {periodLabel(last.period)} 財報數字
+      <FcCite k={last.src} />。
+    </p>
+  )
+}

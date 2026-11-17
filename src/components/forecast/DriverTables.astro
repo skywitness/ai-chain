@@ -1,0 +1,169 @@
+---
+/**
+ * Every driver series of <id>-drivers.yaml, grouped by `category` (file order), one table per category: the series
+ * (name, unit, frequency, definition behind a disclosure), the latest actual value, a later estimate／forecast／
+ * guidance when the series has one, the same period a year earlier with the change, and a sparkline of the points
+ * from FC_META.historyFrom on (non-actual points dashed). Each figure cites its point's source.
+ *   <DriverTables b={bundle} />
+ *   <DriverTables b={bundle} categories={['製程']} headingLevel="h4" />
+ */
+import Sparkline from '../charts/Sparkline.astro';
+import FcCite from '../memory/forecast/FcCite.astro';
+import FcText from '../memory/forecast/FcText.astro';
+import Icon from '../ui/Icon.astro';
+import { driverGroups, type FcBundle } from '../../lib/forecast-data';
+import { STATUS_ZH, byPeriod, changeText, displayUnit, fmtValue, shortPeriod, yearEarlier, type PointStatus } from './fct-format';
+
+interface Props {
+  b: FcBundle;
+  /** only these categories (default: all) */
+  categories?: readonly string[] | undefined;
+  headingLevel?: 'h3' | 'h4' | undefined;
+}
+const { b, categories, headingLevel = 'h3' } = Astro.props;
+const H = headingLevel;
+const FREQ: Record<string, string> = { quarter: '季', month: '月', year: '年' };
+
+const groups = driverGroups(b)
+  .filter((g) => !categories || categories.includes(g.category))
+  .map((g) => ({
+    category: g.category,
+    rows: g.series.map((s) => {
+      const pts = [...s.shown].sort(byPeriod);
+      const { unit, scale } = displayUnit(s.unit);
+      const st = (p: (typeof pts)[number]) => (p.status ?? 'actual') as PointStatus;
+      const lastActual = [...pts].reverse().find((p) => st(p) === 'actual');
+      const main = lastActual ?? pts.at(-1)!;
+      const later = pts.at(-1) !== main ? pts.at(-1) : undefined;
+      const prevId = yearEarlier(main.period);
+      // only points inside the page window (their sources are in the page's list)
+      const prev = prevId ? pts.find((p) => p.period === prevId) : undefined;
+      const change = prev && s.kind !== 'qoq-change' && s.kind !== 'yoy-change' ? changeText(s.kind, main.value, prev.value, s.unit) : null;
+      return {
+        s,
+        unit,
+        main: { ...main, value: main.value * scale, status: st(main) },
+        later: later ? { ...later, value: later.value * scale, status: st(later) } : undefined,
+        prev: prev ? { ...prev, value: prev.value * scale } : undefined,
+        change,
+        spark: pts.map((p) => p.value),
+        dashed: pts.map((p) => st(p) !== 'actual'),
+        from: pts[0]!.period,
+        to: pts.at(-1)!.period,
+      };
+    }),
+  }));
+const tag = (s: PointStatus) =>
+  s === 'actual' ? null : s === 'guidance' ? { cls: 'fc-tag fc-tag--guidance', label: STATUS_ZH[s] } : { cls: `mem-st mem-st--${s}`, label: STATUS_ZH[s] };
+---
+
+{
+  groups.map((g) => (
+    <section class="fct-group" aria-label={`${g.category}的驅動因子`}>
+      <H class="fc-h3 fct-group__h">
+        {g.category}
+        <span class="fct-group__n">{g.rows.length} 個序列</span>
+      </H>
+      <div class="mem-tablewrap mem-tablewrap--cards" tabindex="0" role="region" aria-label={`${g.category}的驅動因子表`}>
+        <table class="mem-table fct-dtable">
+          <caption class="ch-sr">{g.category}：各序列的最新數值、一年前與走勢</caption>
+          <thead>
+            <tr>
+              <th scope="col">序列</th>
+              <th scope="col" class="num">最新</th>
+              <th scope="col" class="num">一年前</th>
+              <th scope="col">走勢</th>
+            </tr>
+          </thead>
+          <tbody>
+            {g.rows.map((r) => {
+              const t = tag(r.main.status);
+              const tl = r.later ? tag(r.later.status) : null;
+              return (
+                <tr>
+                  <th scope="row" data-label="序列">
+                    <div class="fct-cell">
+                    {r.s.name}
+                    <span class="fct-unit">
+                      {r.unit}・每{FREQ[r.s.frequency] ?? r.s.frequency}
+                    </span>
+                    <details class="fct-def">
+                      <summary>
+                        定義
+                        <Icon name="chevron-down" size="1em" />
+                      </summary>
+                      <p>
+                        <FcText b={b} text={r.s.definition} />
+                      </p>
+                      {r.s.note && (
+                        <p>
+                          <FcText b={b} text={r.s.note} />
+                        </p>
+                      )}
+                    </details>
+                    </div>
+                  </th>
+                  <td class="num" data-label="最新">
+                    <div class="fct-cell">
+                    <span class="fct-val">{fmtValue(r.main.value, r.unit)}</span>
+                    <small>
+                      {t && <span class={t.cls}>{t.label}</span>}
+                      {shortPeriod(r.main.period)}
+                      <FcCite k={r.main.src} />
+                    </small>
+                    {r.later && (
+                      <small>
+                        {tl && <span class={tl.cls}>{tl.label}</span>}
+                        {shortPeriod(r.later.period)} {fmtValue(r.later.value, r.unit)}
+                        <FcCite k={r.later.src} />
+                      </small>
+                    )}
+                    </div>
+                  </td>
+                  <td class="num" data-label="一年前">
+                    <div class="fct-cell">
+                    {r.prev ? (
+                      <>
+                        {fmtValue(r.prev.value, r.unit)}
+                        <small>
+                          {shortPeriod(r.prev.period)}
+                          {r.prev.src !== r.main.src && <FcCite k={r.prev.src} />}
+                        </small>
+                        {r.change && <small>{r.change}</small>}
+                      </>
+                    ) : (
+                      <span class="mem-na">—</span>
+                    )}
+                    </div>
+                  </td>
+                  <td class="fct-trend" data-label="走勢">
+                    <div class="fct-cell">
+                    {r.spark.length >= 3 ? (
+                      <>
+                        <Sparkline
+                          values={r.spark}
+                          estimate={r.dashed}
+                          n={Math.ceil(r.spark.length / 4) + 1}
+                          width={120}
+                          height={30}
+                          label={`${r.s.name}，${shortPeriod(r.from)} 至 ${shortPeriod(r.to)}`}
+                          class="fct-spark"
+                        />
+                        <small>
+                          {shortPeriod(r.from)}–{shortPeriod(r.to)}
+                        </small>
+                      </>
+                    ) : (
+                      <span class="mem-na">—</span>
+                    )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  ))
+}

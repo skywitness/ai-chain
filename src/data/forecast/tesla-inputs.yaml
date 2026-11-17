@@ -1,0 +1,915 @@
+# 特斯拉（Tesla）財報模型的輸入資料：季損益、營收與成本分項、監管積分、存貨、折舊攤銷、資本支出、事件。格式見 src/schemas/forecast.ts（companyInputs）。
+# 由 fc2-data-tesla 整理；交車、生產、儲能部署等驅動因子在 tesla-drivers.yaml；模型輸出見 tesla-model.json（由 scripts/models/tesla.ts 產生）。
+
+company: "tesla"
+currency: "USD"
+amountUnit: "million"
+periodNote: "特斯拉會計年度與日曆年相同，季度為日曆季度（2026Q3＝2026-07-01 至 2026-09-30）。金額單位為百萬美元（US GAAP）。revenue、grossProfit、operatingExpenses、operatingIncome、pretaxIncome、netIncome（歸屬普通股股東）以公司當季文件為準，並與 SEC XBRL（sec-companyfacts）逐季核對，差異都在四捨五入的 1 百萬美元以內；2016Q1–2019Q3 取自 10-Q／10-K 損益表（SEC 互動式報表 R 頁）與當時的股東信（2016Q4 以 2017 年 10-K 的 2016 全年減前三季累計求得）；2019Q4–2025Q2 取自各季簡報（Update）的損益表，同一季出現在多份簡報時採用最新一份（含重編）；2025Q3–2026Q3 取自 2026 年第三季簡報（ex-q3-2026）。nonOperating＝pretaxIncome－operatingIncome（利息收支、匯兌與其他，2024 年起含數位資產公允價值變動）。2024 年第四季公司採用加密資產公允價值會計（ASU 2023-08）並自 2024-01-01 追溯，2024 年各季淨利、EPS 為重編後數字（例如 2024Q1 淨利 1,390，原公布 1,129）。2023Q4 淨利含遞延所得稅資產評價準備迴轉約 59 億美元的一次性利益。eps 為 GAAP 稀釋每股盈餘、sharesDiluted 為稀釋加權平均股數（百萬股），一律換算為 2022 年 8 月 3 比 1 分割後的股數基礎：2020 年 8 月 5 比 1 分割前公布的數字除以 15（股數乘以 15），2020 年 8 月至 2022 年 8 月間公布的數字除以 3（股數乘以 3）；原始數字寫在各季 note。inventory 為期末存貨（SEC XBRL InventoryNet）；depreciation 為現金流量表的「折舊、攤銷與減損」（2016–2018 年 10-Q 只有「折舊與攤銷」）；capex 為現金流量表的資本支出（SEC XBRL PaymentsToAcquirePropertyPlantAndEquipment，取最新申報值；公司自 2025 年第一季起把太陽能系統購置併入資本支出並重編 2024 年，2023 年以前不含太陽能系統購置，每季差額多在數千萬美元以內）。extra 的鍵：汽車營收＝汽車銷售＋監管積分＋汽車租賃；汽車銷售營收不含監管積分與租賃（2021Q3 以前公司把積分列在汽車銷售內，本表已扣除；2016Q1–2018Q2 積分金額未逐季揭露，故不填）；監管積分營收為公司揭露的全部監管積分（含 ZEV、溫室氣體與 CAFE 積分，2018Q3 起）；汽車銷售成本、汽車租賃成本、能源營業成本、服務及其他營業成本取自損益表；汽車毛利率＝（汽車營收－汽車營業成本）÷ 汽車營收；汽車毛利率不含積分＝（汽車毛利－監管積分）÷（汽車營收－監管積分），與公司非 GAAP 定義相同；能源毛利率、服務及其他毛利率同理（%，四捨五入到 0.1）。2016 年起的「服務及其他」為 2017 年 10-Q 重分類後的口徑；2016 年 11 月 21 日併購 SolarCity 前的能源營收只含儲能。特斯拉不提供營收、毛利率或 EPS 財測，因此 guidance 欄位全部留空；公司對交車量、儲能部署的定性說法寫在 events。"
+asOf: "2026-11-17"
+quarters:
+  - period: "2016Q1"
+    start: "2016-01-01"
+    end: "2016-03-31"
+    status: "actual"
+    revenue: 1147
+    grossProfit: 252
+    operatingExpenses: 501
+    operatingIncome: -248
+    nonOperating: -30
+    pretaxIncome: -278
+    netIncome: -282
+    eps: -0.142
+    sharesDiluted: 1990
+    inventory: 1302
+    depreciation: 156
+    capex: 217
+    extra: { 汽車營收: 1026, 汽車租賃營收: 124, 能源營收: 23, 服務及其他營收: 98, 汽車銷售成本: 713, 汽車租賃成本: 66, 能源營業成本: 18, 服務及其他營業成本: 97, 研發費用: 182, 銷管費用: 318, 汽車毛利率: 24, 能源毛利率: 20.3, 服務及其他毛利率: 1.1 }
+    note: "來源：損益與營收、成本分項取自 sec-10q-2017q1-is（2017 年第一季 10-Q 損益表的 2016 比較欄（已依 2017 年口徑重分類服務及其他）），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 -2.13 美元、稀釋股數 132.7 百萬股（sec-10q-2017q1-is），已除以 15 換算；折舊攤銷：sec-10q-2017q1-cf 的 2016 比較欄；存貨與資本支出：sec-companyfacts。本季監管積分總額未逐季揭露（年度合計見 annual）。"
+    src: "sec-10q-2017q1-is"
+  - period: "2016Q2"
+    start: "2016-04-01"
+    end: "2016-06-30"
+    status: "actual"
+    revenue: 1270
+    grossProfit: 275
+    operatingExpenses: 513
+    operatingIncome: -238
+    nonOperating: -52
+    pretaxIncome: -290
+    netIncome: -293
+    eps: -0.139
+    sharesDiluted: 2100
+    inventory: 1610
+    depreciation: 183
+    capex: 295
+    extra: { 汽車營收: 1182, 汽車租賃營收: 152, 能源營收: 4, 服務及其他營收: 84, 汽車銷售成本: 827, 汽車租賃成本: 82, 能源營業成本: 8, 服務及其他營業成本: 78, 研發費用: 192, 銷管費用: 321, 汽車毛利率: 23.1, 能源毛利率: -106.7, 服務及其他毛利率: 7.6 }
+    note: "來源：損益與營收、成本分項取自 sec-10q-2017q2-is（2017 年第二季 10-Q 損益表的 2016 比較欄），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 -2.09 美元、稀釋股數 140.0 百萬股（sec-10q-2017q2-is），已除以 15 換算；折舊攤銷：sec-10q-2017q2-cf 的 2016 上半年累計減第一季；存貨與資本支出：sec-companyfacts。本季監管積分總額未逐季揭露（年度合計見 annual）。"
+    src: "sec-10q-2017q2-is"
+  - period: "2016Q3"
+    start: "2016-07-01"
+    end: "2016-09-30"
+    status: "actual"
+    revenue: 2298
+    grossProfit: 637
+    operatingExpenses: 551
+    operatingIncome: 86
+    nonOperating: -56
+    pretaxIncome: 30
+    netIncome: 22
+    eps: 0.009
+    sharesDiluted: 2354
+    inventory: 1605
+    depreciation: 280
+    capex: 248
+    extra: { 汽車營收: 2149, 汽車租賃營收: 231, 能源營收: 23, 服務及其他營收: 126, 汽車銷售成本: 1355, 汽車租賃成本: 162, 能源營業成本: 24, 服務及其他營業成本: 120, 研發費用: 214, 銷管費用: 337, 汽車毛利率: 29.4, 能源毛利率: -4.1, 服務及其他毛利率: 4.8 }
+    note: "來源：損益與營收、成本分項取自 sec-10q-2017q3-is（2017 年第三季 10-Q 損益表的 2016 比較欄），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 0.14 美元、稀釋股數 156.9 百萬股（sec-10q-2017q3-is），已除以 15 換算；折舊攤銷：letter-q4-2016（等於 sec-10q-2017q3-cf 前三季累計減上半年）；存貨與資本支出：sec-companyfacts。本季監管積分總額未逐季揭露（年度合計見 annual）。"
+    src: "sec-10q-2017q3-is"
+  - period: "2016Q4"
+    start: "2016-10-01"
+    end: "2016-12-31"
+    status: "actual"
+    revenue: 2285
+    grossProfit: 435
+    operatingExpenses: 702
+    operatingIncome: -267
+    nonOperating: 59
+    pretaxIncome: -208
+    netIncome: -121
+    eps: -0.052
+    sharesDiluted: 2325
+    inventory: 2067
+    depreciation: 327
+    capex: 522
+    extra: { 汽車營收: 1994, 汽車租賃營收: 255, 能源營收: 131, 服務及其他營收: 159, 汽車銷售成本: 1373, 汽車租賃成本: 172, 能源營業成本: 128, 服務及其他營業成本: 177, 研發費用: 246, 銷管費用: 456, 汽車毛利率: 22.6, 能源毛利率: 2.7, 服務及其他毛利率: -11.3 }
+    note: "來源：損益與營收、成本分項取自 sec-10k-2017-is（2017 年 10-K 損益表的 2016 全年減 sec-10q-2017q3-is 的 2016 前三季累計），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 -0.78 美元、稀釋股數 155.0 百萬股（letter-q4-2016），已除以 15 換算；折舊攤銷：letter-q4-2016；存貨與資本支出：sec-companyfacts。本季監管積分總額未逐季揭露（年度合計見 annual）。本季含 2016-11-21 起併入的 SolarCity。"
+    src: "sec-10k-2017-is"
+  - period: "2017Q1"
+    start: "2017-01-01"
+    end: "2017-03-31"
+    status: "actual"
+    revenue: 2696
+    grossProfit: 668
+    operatingExpenses: 925
+    operatingIncome: -258
+    nonOperating: -114
+    pretaxIncome: -372
+    netIncome: -330
+    eps: -0.136
+    sharesDiluted: 2432
+    inventory: 2220
+    depreciation: 377
+    capex: 553
+    extra: { 汽車營收: 2290, 汽車租賃營收: 255, 能源營收: 214, 服務及其他營收: 193, 汽車銷售成本: 1497, 汽車租賃成本: 166, 能源營業成本: 152, 服務及其他營業成本: 214, 研發費用: 322, 銷管費用: 603, 汽車毛利率: 27.4, 能源毛利率: 29.1, 服務及其他毛利率: -11 }
+    note: "來源：損益與營收、成本分項取自 sec-10q-2017q1-is（2017 年第一季 10-Q 損益表的比較欄（2018 年 10-Q 比較欄數字相同）），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 -2.04 美元、稀釋股數 162.1 百萬股（sec-10q-2017q1-is），已除以 15 換算；折舊攤銷：sec-10q-2017q1-cf；存貨與資本支出：sec-companyfacts。本季監管積分總額未逐季揭露（年度合計見 annual）。"
+    src: "sec-10q-2017q1-is"
+  - period: "2017Q2"
+    start: "2017-04-01"
+    end: "2017-06-30"
+    status: "actual"
+    revenue: 2790
+    grossProfit: 667
+    operatingExpenses: 908
+    operatingIncome: -241
+    nonOperating: -145
+    pretaxIncome: -386
+    netIncome: -336
+    eps: -0.136
+    sharesDiluted: 2478
+    inventory: 2438
+    depreciation: 389
+    capex: 959
+    extra: { 汽車營收: 2287, 汽車租賃營收: 273, 能源營收: 287, 服務及其他營收: 216, 汽車銷售成本: 1473, 汽車租賃成本: 175, 能源營業成本: 204, 服務及其他營業成本: 271, 研發費用: 370, 銷管費用: 538, 汽車毛利率: 27.9, 能源毛利率: 28.9, 服務及其他毛利率: -25.4 }
+    note: "來源：損益與營收、成本分項取自 sec-10q-2017q2-is（2017 年第二季 10-Q 損益表（2018 年 10-Q 比較欄數字相同）），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 -2.04 美元、稀釋股數 165.2 百萬股（sec-10q-2017q2-is），已除以 15 換算；折舊攤銷：sec-10q-2017q2-cf 上半年累計減第一季；存貨與資本支出：sec-companyfacts。本季監管積分總額未逐季揭露（年度合計見 annual）。"
+    src: "sec-10q-2017q2-is"
+  - period: "2017Q3"
+    start: "2017-07-01"
+    end: "2017-09-30"
+    status: "actual"
+    revenue: 2985
+    grossProfit: 449
+    operatingExpenses: 985
+    operatingIncome: -535
+    nonOperating: -136
+    pretaxIncome: -671
+    netIncome: -619
+    eps: -0.247
+    sharesDiluted: 2509
+    inventory: 2471
+    depreciation: 401
+    capex: 1116
+    extra: { 汽車營收: 2363, 汽車租賃營收: 286, 能源營收: 318, 服務及其他營收: 304, 汽車銷售成本: 1756, 汽車租賃成本: 175, 能源營業成本: 237, 服務及其他營業成本: 367, 研發費用: 332, 銷管費用: 653, 汽車毛利率: 18.3, 能源毛利率: 25.3, 服務及其他毛利率: -20.7 }
+    note: "來源：損益與營收、成本分項取自 sec-10q-2017q3-is（2017 年第三季 10-Q 損益表），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 -3.70 美元、稀釋股數 167.3 百萬股（sec-10q-2017q3-is），已除以 15 換算；折舊攤銷：sec-10q-2017q3-cf 前三季累計減上半年；存貨與資本支出：sec-companyfacts。本季監管積分總額未逐季揭露（年度合計見 annual）。"
+    src: "sec-10q-2017q3-is"
+  - period: "2017Q4"
+    start: "2017-10-01"
+    end: "2017-12-31"
+    status: "actual"
+    revenue: 3288
+    grossProfit: 439
+    operatingExpenses: 1037
+    operatingIncome: -598
+    nonOperating: -182
+    pretaxIncome: -780
+    netIncome: -675
+    eps: -0.267
+    sharesDiluted: 2525
+    inventory: 2264
+    depreciation: 470
+    capex: 787
+    extra: { 汽車營收: 2702, 汽車租賃營收: 293, 能源營收: 298, 服務及其他營收: 288, 汽車銷售成本: 2000, 汽車租賃成本: 192, 能源營業成本: 282, 服務及其他營業成本: 377, 研發費用: 355, 銷管費用: 682, 汽車毛利率: 18.9, 能源毛利率: 5.5, 服務及其他毛利率: -30.7 }
+    note: "來源：損益與營收、成本分項取自 letter-q4-2018（2018 年第四季股東信（ex99.1）的損益表（等於 sec-10k-2017-is 全年減 sec-10q-2017q3-is 前三季累計）），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 -4.01 美元、稀釋股數 168.3 百萬股（letter-q4-2018），已除以 15 換算；折舊攤銷：letter-q4-2018；存貨與資本支出：sec-companyfacts。本季監管積分總額未逐季揭露（年度合計見 annual）。"
+    src: "letter-q4-2018"
+  - period: "2018Q1"
+    start: "2018-01-01"
+    end: "2018-03-31"
+    status: "actual"
+    revenue: 3409
+    grossProfit: 457
+    operatingExpenses: 1054
+    operatingIncome: -597
+    nonOperating: -182
+    pretaxIncome: -779
+    netIncome: -710
+    eps: -0.279
+    sharesDiluted: 2537
+    inventory: 2566
+    depreciation: 416
+    capex: 656
+    extra: { 汽車營收: 2735, 汽車租賃營收: 173, 能源營收: 410, 服務及其他營收: 263, 汽車銷售成本: 2091, 汽車租賃成本: 104, 能源營業成本: 375, 服務及其他營業成本: 381, 研發費用: 367, 銷管費用: 686, 汽車毛利率: 19.7, 能源毛利率: 8.5, 服務及其他毛利率: -44.6 }
+    note: "來源：損益與營收、成本分項取自 sec-10q-2018q1-is（2018 年第一季 10-Q 損益表），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 -4.19 美元、稀釋股數 169.1 百萬股（sec-10q-2018q1-is），已除以 15 換算；折舊攤銷：sec-10q-2018q1-cf；存貨與資本支出：sec-companyfacts。本季監管積分總額未逐季揭露（年度合計見 annual）。"
+    src: "sec-10q-2018q1-is"
+  - period: "2018Q2"
+    start: "2018-04-01"
+    end: "2018-06-30"
+    status: "actual"
+    revenue: 4002
+    grossProfit: 619
+    operatingExpenses: 1240
+    operatingIncome: -621
+    nonOperating: -108
+    pretaxIncome: -729
+    netIncome: -718
+    eps: -0.281
+    sharesDiluted: 2550
+    inventory: 3325
+    depreciation: 485
+    capex: 610
+    extra: { 汽車營收: 3358, 汽車租賃營收: 240, 能源營收: 374, 服務及其他營收: 270, 汽車銷售成本: 2530, 汽車租賃成本: 137, 能源營業成本: 330, 服務及其他營業成本: 386, 研發費用: 386, 銷管費用: 751, 重組及其他費用: 103, 汽車毛利率: 20.6, 能源毛利率: 11.8, 服務及其他毛利率: -43 }
+    note: "來源：損益與營收、成本分項取自 sec-10q-2018q2-is（2018 年第二季 10-Q 損益表），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 -4.22 美元、稀釋股數 170.0 百萬股（sec-10q-2018q2-is），已除以 15 換算；折舊攤銷：letter-q4-2018 的 2018 全年 1,901 減第四季、第三季與 sec-10q-2018q1-cf 的第一季；存貨與資本支出：sec-companyfacts。本季監管積分總額未逐季揭露（年度合計見 annual）。"
+    src: "sec-10q-2018q2-is"
+  - period: "2018Q3"
+    start: "2018-07-01"
+    end: "2018-09-30"
+    status: "actual"
+    revenue: 6824
+    grossProfit: 1524
+    operatingExpenses: 1108
+    operatingIncome: 416
+    nonOperating: -145
+    pretaxIncome: 271
+    netIncome: 311
+    eps: 0.117
+    sharesDiluted: 2673
+    inventory: 3314
+    depreciation: 503
+    capex: 511
+    extra: { 汽車營收: 6099, 汽車銷售營收: 5689, 監管積分營收: 189, 汽車租賃營收: 221, 能源營收: 399, 服務及其他營收: 327, 汽車銷售成本: 4406, 汽車租賃成本: 119, 能源營業成本: 330, 服務及其他營業成本: 445, 研發費用: 351, 銷管費用: 730, 重組及其他費用: 27, 汽車毛利率: 25.8, 汽車毛利率不含積分: 23.4, 能源毛利率: 17.3, 服務及其他毛利率: -36.1 }
+    note: "來源：損益與營收、成本分項取自 letter-q3-2019（2019 年第三季股東信（ex99.1）的損益表與財務摘要），並與 sec-companyfacts 核對一致；營業費用、研發、銷管與重組採 letter-q3-2019 的重編口徑（letter-q4-2018 原列營業費用 1,106.9、營業利益 416.8、服務及其他營收 326.3）；稀釋 EPS 原始公布 1.75 美元、稀釋股數 178.2 百萬股（letter-q4-2018），已除以 15 換算；折舊攤銷：letter-q4-2018；存貨與資本支出：sec-companyfacts。監管積分：letter-q3-2019 財務摘要「of which regulatory credits」。"
+    src: "letter-q3-2019"
+  - period: "2018Q4"
+    start: "2018-10-01"
+    end: "2018-12-31"
+    status: "actual"
+    revenue: 7226
+    grossProfit: 1443
+    operatingExpenses: 1029
+    operatingIncome: 414
+    nonOperating: -182
+    pretaxIncome: 232
+    netIncome: 139
+    eps: 0.052
+    sharesDiluted: 2685
+    inventory: 3113
+    depreciation: 497
+    capex: 325
+    extra: { 汽車營收: 6323, 汽車銷售營收: 5978, 監管積分營收: 95, 汽車租賃營收: 250, 能源營收: 371, 服務及其他營收: 531, 汽車銷售成本: 4659, 汽車租賃成本: 128, 能源營業成本: 329, 服務及其他營業成本: 668, 研發費用: 356, 銷管費用: 667, 重組及其他費用: 6, 汽車毛利率: 24.3, 汽車毛利率不含積分: 23.2, 能源毛利率: 11.5, 服務及其他毛利率: -25.8 }
+    note: "來源：損益與營收、成本分項取自 letter-q4-2018（2018 年第四季股東信（ex99.1）的損益表），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 0.78 美元、稀釋股數 179.0 百萬股（letter-q4-2018），已除以 15 換算；折舊攤銷：letter-q4-2018；存貨與資本支出：sec-companyfacts。監管積分：letter-q3-2019 財務摘要「of which regulatory credits」。"
+    src: "letter-q4-2018"
+  - period: "2019Q1"
+    start: "2019-01-01"
+    end: "2019-03-31"
+    status: "actual"
+    revenue: 4541
+    grossProfit: 566
+    operatingExpenses: 1088
+    operatingIncome: -522
+    nonOperating: -123
+    pretaxIncome: -645
+    netIncome: -702
+    eps: -0.273
+    sharesDiluted: 2595
+    inventory: 3837
+    depreciation: 468
+    capex: 280
+    extra: { 汽車營收: 3724, 汽車銷售營收: 3293, 監管積分營收: 216, 汽車租賃營收: 215, 能源營收: 325, 服務及其他營收: 493, 汽車銷售成本: 2856, 汽車租賃成本: 117, 能源營業成本: 317, 服務及其他營業成本: 686, 研發費用: 340, 銷管費用: 704, 重組及其他費用: 43, 汽車毛利率: 20.2, 汽車毛利率不含積分: 15.2, 能源毛利率: 2.4, 服務及其他毛利率: -39.1 }
+    note: "來源：損益與營收、成本分項取自 sec-10q-2019q1-is（2019 年第一季 10-Q 損益表（含汽車銷售與能源分項）），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 -4.10 美元、稀釋股數 173.0 百萬股（sec-10q-2019q1-is），已除以 15 換算；折舊攤銷：letter-q3-2019 的前三季累計 1,577 減第二季與第三季（以百萬元計）；存貨與資本支出：sec-companyfacts。監管積分：letter-q3-2019 財務摘要「of which regulatory credits」。"
+    src: "sec-10q-2019q1-is"
+  - period: "2019Q2"
+    start: "2019-04-01"
+    end: "2019-06-30"
+    status: "actual"
+    revenue: 6350
+    grossProfit: 921
+    operatingExpenses: 1088
+    operatingIncome: -167
+    nonOperating: -203
+    pretaxIncome: -370
+    netIncome: -408
+    eps: -0.154
+    sharesDiluted: 2655
+    inventory: 3382
+    depreciation: 579
+    capex: 250
+    extra: { 汽車營收: 5376, 汽車銷售營收: 5057, 監管積分營收: 111, 汽車租賃營收: 208, 能源營收: 369, 服務及其他營收: 605, 汽車銷售成本: 4254, 汽車租賃成本: 106, 能源營業成本: 326, 服務及其他營業成本: 743, 研發費用: 324, 銷管費用: 647, 重組及其他費用: 117, 汽車毛利率: 18.9, 汽車毛利率不含積分: 17.2, 能源毛利率: 11.7, 服務及其他毛利率: -22.8 }
+    note: "來源：損益與營收、成本分項取自 letter-q3-2019（2019 年第三季股東信（ex99.1）的損益表與財務摘要），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 -2.31 美元、稀釋股數 177.0 百萬股（letter-q3-2019），已除以 15 換算；折舊攤銷：letter-q3-2019；存貨與資本支出：sec-companyfacts。監管積分：letter-q3-2019 財務摘要「of which regulatory credits」。"
+    src: "letter-q3-2019"
+  - period: "2019Q3"
+    start: "2019-07-01"
+    end: "2019-09-30"
+    status: "actual"
+    revenue: 6303
+    grossProfit: 1191
+    operatingExpenses: 930
+    operatingIncome: 261
+    nonOperating: -85
+    pretaxIncome: 176
+    netIncome: 143
+    eps: 0.052
+    sharesDiluted: 2760
+    inventory: 3581
+    depreciation: 530
+    capex: 385
+    extra: { 汽車營收: 5353, 汽車銷售營收: 4998, 監管積分營收: 134, 汽車租賃營收: 221, 能源營收: 402, 服務及其他營收: 548, 汽車銷售成本: 4014, 汽車租賃成本: 117, 能源營業成本: 314, 服務及其他營業成本: 667, 研發費用: 334, 銷管費用: 596, 汽車毛利率: 22.8, 汽車毛利率不含積分: 20.8, 能源毛利率: 21.9, 服務及其他毛利率: -21.7 }
+    note: "來源：損益與營收、成本分項取自 letter-q3-2019（2019 年第三季股東信（ex99.1）的損益表與財務摘要），並與 sec-companyfacts 核對一致；稀釋 EPS 原始公布 0.78 美元、稀釋股數 184.0 百萬股（letter-q3-2019），已除以 15 換算；折舊攤銷：letter-q3-2019；存貨與資本支出：sec-companyfacts。監管積分：letter-q3-2019 財務摘要「of which regulatory credits」。"
+    src: "letter-q3-2019"
+  - period: "2019Q4"
+    start: "2019-10-01"
+    end: "2019-12-31"
+    status: "actual"
+    revenue: 7384
+    grossProfit: 1391
+    operatingExpenses: 1032
+    operatingIncome: 359
+    nonOperating: -185
+    pretaxIncome: 174
+    netIncome: 105
+    eps: 0.037
+    sharesDiluted: 2805
+    inventory: 3552
+    depreciation: 577
+    capex: 412
+    extra: { 汽車營收: 6368, 汽車銷售營收: 6010, 監管積分營收: 133, 汽車租賃營收: 225, 能源營收: 436, 服務及其他營收: 580, 汽車銷售成本: 4815, 汽車租賃成本: 119, 能源營業成本: 385, 服務及其他營業成本: 674, 研發費用: 345, 銷管費用: 699, 重組及其他費用: -12, 汽車毛利率: 22.5, 汽車毛利率不含積分: 20.9, 能源毛利率: 11.7, 服務及其他毛利率: -16.2 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q4-2020（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q4-2020 的現金流量表；存貨與資本支出：sec-companyfacts。稀釋 EPS 原始公布 0.11 美元、稀釋股數 935 百萬股（5 比 1 分割後口徑），已除以 3 換算；監管積分取自 deck-q4-2020 財務摘要「of which regulatory credits」（當時列在汽車銷售內，extra.汽車銷售營收已扣除）。損益表「Restructuring and other」為 -12（負值為利益；研發＋銷管－12＝營業費用 1,032，deck-q4-2020）。"
+    src: "deck-q4-2020"
+  - period: "2020Q1"
+    start: "2020-01-01"
+    end: "2020-03-31"
+    status: "actual"
+    revenue: 5985
+    grossProfit: 1234
+    operatingExpenses: 951
+    operatingIncome: 283
+    nonOperating: -213
+    pretaxIncome: 70
+    netIncome: 16
+    eps: 0.007
+    sharesDiluted: 2982
+    inventory: 4494
+    depreciation: 553
+    capex: 455
+    extra: { 汽車營收: 5132, 汽車銷售營收: 4539, 監管積分營收: 354, 汽車租賃營收: 239, 能源營收: 293, 服務及其他營收: 560, 汽車銷售成本: 3699, 汽車租賃成本: 122, 能源營業成本: 282, 服務及其他營業成本: 648, 研發費用: 324, 銷管費用: 627, 汽車毛利率: 25.5, 汽車毛利率不含積分: 20, 能源毛利率: 3.8, 服務及其他毛利率: -15.7 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q4-2020（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q4-2020 的現金流量表；存貨與資本支出：sec-companyfacts。稀釋 EPS 原始公布 0.02 美元、稀釋股數 994 百萬股（5 比 1 分割後口徑），已除以 3 換算；監管積分取自 deck-q4-2020 財務摘要「of which regulatory credits」（當時列在汽車銷售內，extra.汽車銷售營收已扣除）。"
+    src: "deck-q4-2020"
+  - period: "2020Q2"
+    start: "2020-04-01"
+    end: "2020-06-30"
+    status: "actual"
+    revenue: 6036
+    grossProfit: 1267
+    operatingExpenses: 940
+    operatingIncome: 327
+    nonOperating: -177
+    pretaxIncome: 150
+    netIncome: 104
+    eps: 0.033
+    sharesDiluted: 3108
+    inventory: 4018
+    depreciation: 567
+    capex: 546
+    extra: { 汽車營收: 5179, 汽車銷售營收: 4483, 監管積分營收: 428, 汽車租賃營收: 268, 能源營收: 370, 服務及其他營收: 487, 汽車銷售成本: 3714, 汽車租賃成本: 148, 能源營業成本: 349, 服務及其他營業成本: 558, 研發費用: 279, 銷管費用: 661, 汽車毛利率: 25.4, 汽車毛利率不含積分: 18.7, 能源毛利率: 5.7, 服務及其他毛利率: -14.6 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q4-2020（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q4-2020 的現金流量表；存貨與資本支出：sec-companyfacts。稀釋 EPS 原始公布 0.10 美元、稀釋股數 1036 百萬股（5 比 1 分割後口徑），已除以 3 換算；監管積分取自 deck-q4-2020 財務摘要「of which regulatory credits」（當時列在汽車銷售內，extra.汽車銷售營收已扣除）。"
+    src: "deck-q4-2020"
+  - period: "2020Q3"
+    start: "2020-07-01"
+    end: "2020-09-30"
+    status: "actual"
+    revenue: 8771
+    grossProfit: 2063
+    operatingExpenses: 1254
+    operatingIncome: 809
+    nonOperating: -254
+    pretaxIncome: 555
+    netIncome: 331
+    eps: 0.09
+    sharesDiluted: 3315
+    inventory: 4218
+    depreciation: 584
+    capex: 1005
+    extra: { 汽車營收: 7611, 汽車銷售營收: 6949, 監管積分營收: 397, 汽車租賃營收: 265, 能源營收: 579, 服務及其他營收: 581, 汽車銷售成本: 5361, 汽車租賃成本: 145, 能源營業成本: 558, 服務及其他營業成本: 644, 研發費用: 366, 銷管費用: 888, 汽車毛利率: 27.7, 汽車毛利率不含積分: 23.7, 能源毛利率: 3.6, 服務及其他毛利率: -10.8 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q4-2020（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q4-2020 的現金流量表；存貨與資本支出：sec-companyfacts。稀釋 EPS 原始公布 0.27 美元、稀釋股數 1105 百萬股（5 比 1 分割後口徑），已除以 3 換算；監管積分取自 deck-q4-2020 財務摘要「of which regulatory credits」（當時列在汽車銷售內，extra.汽車銷售營收已扣除）。"
+    src: "deck-q4-2020"
+  - period: "2020Q4"
+    start: "2020-10-01"
+    end: "2020-12-31"
+    status: "actual"
+    revenue: 10744
+    grossProfit: 2066
+    operatingExpenses: 1491
+    operatingIncome: 575
+    nonOperating: -196
+    pretaxIncome: 379
+    netIncome: 270
+    eps: 0.08
+    sharesDiluted: 3372
+    inventory: 4101
+    depreciation: 618
+    capex: 1151
+    extra: { 汽車營收: 9314, 汽車銷售營收: 8633, 監管積分營收: 401, 汽車租賃營收: 280, 能源營收: 752, 服務及其他營收: 678, 汽車銷售成本: 6922, 汽車租賃成本: 148, 能源營業成本: 787, 服務及其他營業成本: 821, 研發費用: 522, 銷管費用: 969, 汽車毛利率: 24.1, 汽車毛利率不含積分: 20.7, 能源毛利率: -4.7, 服務及其他毛利率: -21.1 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q4-2021（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q4-2021 的現金流量表；存貨與資本支出：sec-companyfacts。稀釋 EPS 原始公布 0.24 美元、稀釋股數 1124 百萬股（5 比 1 分割後口徑），已除以 3 換算；監管積分取自 deck-q4-2021 財務摘要「of which regulatory credits」（當時列在汽車銷售內，extra.汽車銷售營收已扣除）。"
+    src: "deck-q4-2021"
+  - period: "2021Q1"
+    start: "2021-01-01"
+    end: "2021-03-31"
+    status: "actual"
+    revenue: 10389
+    grossProfit: 2215
+    operatingExpenses: 1621
+    operatingIncome: 594
+    nonOperating: -61
+    pretaxIncome: 533
+    netIncome: 438
+    eps: 0.13
+    sharesDiluted: 3399
+    inventory: 4132
+    depreciation: 621
+    capex: 1348
+    extra: { 汽車營收: 9002, 汽車銷售營收: 8187, 監管積分營收: 518, 汽車租賃營收: 297, 能源營收: 494, 服務及其他營收: 893, 汽車銷售成本: 6457, 汽車租賃成本: 160, 能源營業成本: 595, 服務及其他營業成本: 962, 研發費用: 666, 銷管費用: 1056, 重組及其他費用: -101, 汽車毛利率: 26.5, 汽車毛利率不含積分: 22, 能源毛利率: -20.4, 服務及其他毛利率: -7.7 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q4-2021（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q4-2021 的現金流量表；存貨與資本支出：sec-companyfacts。稀釋 EPS 原始公布 0.39 美元、稀釋股數 1133 百萬股（5 比 1 分割後口徑），已除以 3 換算；監管積分取自 deck-q4-2021 財務摘要「of which regulatory credits」（當時列在汽車銷售內，extra.汽車銷售營收已扣除）。損益表「Restructuring and other」為 -101（負值為利益；研發＋銷管－101＝營業費用 1,621，deck-q4-2021）。"
+    src: "deck-q4-2021"
+  - period: "2021Q2"
+    start: "2021-04-01"
+    end: "2021-06-30"
+    status: "actual"
+    revenue: 11958
+    grossProfit: 2884
+    operatingExpenses: 1572
+    operatingIncome: 1312
+    nonOperating: -19
+    pretaxIncome: 1293
+    netIncome: 1142
+    eps: 0.34
+    sharesDiluted: 3357
+    inventory: 4733
+    depreciation: 681
+    capex: 1505
+    extra: { 汽車營收: 10206, 汽車銷售營收: 9520, 監管積分營收: 354, 汽車租賃營收: 332, 能源營收: 801, 服務及其他營收: 951, 汽車銷售成本: 7119, 汽車租賃成本: 188, 能源營業成本: 781, 服務及其他營業成本: 986, 研發費用: 576, 銷管費用: 973, 重組及其他費用: 23, 汽車毛利率: 28.4, 汽車毛利率不含積分: 25.8, 能源毛利率: 2.5, 服務及其他毛利率: -3.7 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q4-2021（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q4-2021 的現金流量表；存貨與資本支出：sec-companyfacts。稀釋 EPS 原始公布 1.02 美元、稀釋股數 1119 百萬股（5 比 1 分割後口徑），已除以 3 換算；監管積分取自 deck-q4-2021 財務摘要「of which regulatory credits」（當時列在汽車銷售內，extra.汽車銷售營收已扣除）。損益表「Restructuring and other」為 23（deck-q4-2021）。"
+    src: "deck-q4-2021"
+  - period: "2021Q3"
+    start: "2021-07-01"
+    end: "2021-09-30"
+    status: "actual"
+    revenue: 13757
+    grossProfit: 3660
+    operatingExpenses: 1656
+    operatingIncome: 2004
+    nonOperating: -122
+    pretaxIncome: 1882
+    netIncome: 1618
+    eps: 0.48
+    sharesDiluted: 3369
+    inventory: 5199
+    depreciation: 761
+    capex: 1819
+    extra: { 汽車營收: 12057, 汽車銷售營收: 11393, 監管積分營收: 279, 汽車租賃營收: 385, 能源營收: 806, 服務及其他營收: 894, 汽車銷售成本: 8150, 汽車租賃成本: 234, 能源營業成本: 803, 服務及其他營業成本: 910, 研發費用: 611, 銷管費用: 994, 重組及其他費用: 51, 汽車毛利率: 30.5, 汽車毛利率不含積分: 28.8, 能源毛利率: 0.4, 服務及其他毛利率: -1.8 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q4-2021（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q4-2021 的現金流量表；存貨與資本支出：sec-companyfacts。稀釋 EPS 原始公布 1.44 美元、稀釋股數 1123 百萬股（5 比 1 分割後口徑），已除以 3 換算；監管積分取自 deck-q4-2021 財務摘要「of which regulatory credits」（當時列在汽車銷售內，extra.汽車銷售營收已扣除）。損益表「Restructuring and other」為 51（deck-q4-2021）。"
+    src: "deck-q4-2021"
+  - period: "2021Q4"
+    start: "2021-10-01"
+    end: "2021-12-31"
+    status: "actual"
+    revenue: 17719
+    grossProfit: 4847
+    operatingExpenses: 2234
+    operatingIncome: 2613
+    nonOperating: 22
+    pretaxIncome: 2635
+    netIncome: 2321
+    eps: 0.68
+    sharesDiluted: 3406
+    inventory: 5757
+    depreciation: 848
+    capex: 1810
+    extra: { 汽車營收: 15967, 汽車銷售營收: 15025, 監管積分營收: 314, 汽車租賃營收: 628, 能源營收: 688, 服務及其他營收: 1064, 汽車銷售成本: 10689, 汽車租賃成本: 396, 能源營業成本: 739, 服務及其他營業成本: 1048, 研發費用: 740, 銷管費用: 1494, 汽車毛利率: 30.6, 汽車毛利率不含積分: 29.2, 能源毛利率: -7.4, 服務及其他毛利率: 1.5 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q4-2022（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q4-2022 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q4-2022 損益表「Automotive regulatory credits」。"
+    src: "deck-q4-2022"
+  - period: "2022Q1"
+    start: "2022-01-01"
+    end: "2022-03-31"
+    status: "actual"
+    revenue: 18756
+    grossProfit: 5460
+    operatingExpenses: 1857
+    operatingIncome: 3603
+    nonOperating: 23
+    pretaxIncome: 3626
+    netIncome: 3318
+    eps: 0.95
+    sharesDiluted: 3472
+    inventory: 6691
+    depreciation: 880
+    capex: 1767
+    extra: { 汽車營收: 16861, 汽車銷售營收: 15514, 監管積分營收: 679, 汽車租賃營收: 668, 能源營收: 616, 服務及其他營收: 1279, 汽車銷售成本: 10914, 汽車租賃成本: 408, 能源營業成本: 688, 服務及其他營業成本: 1286, 研發費用: 865, 銷管費用: 992, 汽車毛利率: 32.9, 汽車毛利率不含積分: 30, 能源毛利率: -11.7, 服務及其他毛利率: -0.5 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q1-2023（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q1-2023 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q1-2023 損益表「Automotive regulatory credits」。"
+    src: "deck-q1-2023"
+  - period: "2022Q2"
+    start: "2022-04-01"
+    end: "2022-06-30"
+    status: "actual"
+    revenue: 16934
+    grossProfit: 4234
+    operatingExpenses: 1770
+    operatingIncome: 2464
+    nonOperating: 10
+    pretaxIncome: 2474
+    netIncome: 2259
+    eps: 0.65
+    sharesDiluted: 3464
+    inventory: 8108
+    depreciation: 922
+    capex: 1730
+    extra: { 汽車營收: 14602, 汽車銷售營收: 13670, 監管積分營收: 344, 汽車租賃營收: 588, 能源營收: 866, 服務及其他營收: 1466, 汽車銷售成本: 10153, 汽車租賃成本: 368, 能源營業成本: 769, 服務及其他營業成本: 1410, 研發費用: 667, 銷管費用: 961, 重組及其他費用: 142, 汽車毛利率: 27.9, 汽車毛利率不含積分: 26.2, 能源毛利率: 11.2, 服務及其他毛利率: 3.8 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q2-2023（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q2-2023 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q2-2023 損益表「Automotive regulatory credits」。"
+    src: "deck-q2-2023"
+  - period: "2022Q3"
+    start: "2022-07-01"
+    end: "2022-09-30"
+    status: "actual"
+    revenue: 21454
+    grossProfit: 5382
+    operatingExpenses: 1694
+    operatingIncome: 3688
+    nonOperating: -52
+    pretaxIncome: 3636
+    netIncome: 3292
+    eps: 0.95
+    sharesDiluted: 3468
+    inventory: 10327
+    depreciation: 956
+    capex: 1803
+    extra: { 汽車營收: 18692, 汽車銷售營收: 17785, 監管積分營收: 286, 汽車租賃營收: 621, 能源營收: 1117, 服務及其他營收: 1645, 汽車銷售成本: 13099, 汽車租賃成本: 381, 能源營業成本: 1013, 服務及其他營業成本: 1579, 研發費用: 733, 銷管費用: 961, 汽車毛利率: 27.9, 汽車毛利率不含積分: 26.8, 能源毛利率: 9.3, 服務及其他毛利率: 4 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q3-2023（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q3-2023 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q3-2023 損益表「Automotive regulatory credits」。"
+    src: "deck-q3-2023"
+  - period: "2022Q4"
+    start: "2022-10-01"
+    end: "2022-12-31"
+    status: "actual"
+    revenue: 24318
+    grossProfit: 5777
+    operatingExpenses: 1876
+    operatingIncome: 3901
+    nonOperating: 82
+    pretaxIncome: 3983
+    netIncome: 3687
+    eps: 1.07
+    sharesDiluted: 3471
+    inventory: 12839
+    depreciation: 989
+    capex: 1858
+    extra: { 汽車營收: 21307, 汽車銷售營收: 20241, 監管積分營收: 467, 汽車租賃營收: 599, 能源營收: 1310, 服務及其他營收: 1701, 汽車銷售成本: 15433, 汽車租賃成本: 352, 能源營業成本: 1151, 服務及其他營業成本: 1605, 研發費用: 810, 銷管費用: 1032, 重組及其他費用: 34, 汽車毛利率: 25.9, 汽車毛利率不含積分: 24.3, 能源毛利率: 12.1, 服務及其他毛利率: 5.6 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q4-2023（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q4-2023 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q4-2023 損益表「Automotive regulatory credits」。汽車銷售營收含 FSD Beta 在美國與加拿大廣泛釋出而認列的 3.24 億美元。"
+    src: "deck-q4-2023"
+  - period: "2023Q1"
+    start: "2023-01-01"
+    end: "2023-03-31"
+    status: "actual"
+    revenue: 23329
+    grossProfit: 4511
+    operatingExpenses: 1847
+    operatingIncome: 2664
+    nonOperating: 136
+    pretaxIncome: 2800
+    netIncome: 2513
+    eps: 0.73
+    sharesDiluted: 3468
+    inventory: 14375
+    depreciation: 1046
+    capex: 2072
+    extra: { 汽車營收: 19963, 汽車銷售營收: 18878, 監管積分營收: 521, 汽車租賃營收: 564, 能源營收: 1529, 服務及其他營收: 1837, 汽車銷售成本: 15422, 汽車租賃成本: 333, 能源營業成本: 1361, 服務及其他營業成本: 1702, 研發費用: 771, 銷管費用: 1076, 汽車毛利率: 21.1, 汽車毛利率不含積分: 19, 能源毛利率: 11, 服務及其他毛利率: 7.3 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q1-2024（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q1-2024 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q1-2024 損益表「Automotive regulatory credits」。"
+    src: "deck-q1-2024"
+  - period: "2023Q2"
+    start: "2023-04-01"
+    end: "2023-06-30"
+    status: "actual"
+    revenue: 24927
+    grossProfit: 4533
+    operatingExpenses: 2134
+    operatingIncome: 2399
+    nonOperating: 538
+    pretaxIncome: 2937
+    netIncome: 2703
+    eps: 0.78
+    sharesDiluted: 3478
+    inventory: 14356
+    depreciation: 1154
+    capex: 2060
+    extra: { 汽車營收: 21268, 汽車銷售營收: 20419, 監管積分營收: 282, 汽車租賃營收: 567, 能源營收: 1509, 服務及其他營收: 2150, 汽車銷售成本: 16841, 汽車租賃成本: 338, 能源營業成本: 1231, 服務及其他營業成本: 1984, 研發費用: 943, 銷管費用: 1191, 汽車毛利率: 19.2, 汽車毛利率不含積分: 18.1, 能源毛利率: 18.4, 服務及其他毛利率: 7.7 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q2-2024（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q2-2024 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q2-2024 損益表「Automotive regulatory credits」。"
+    src: "deck-q2-2024"
+  - period: "2023Q3"
+    start: "2023-07-01"
+    end: "2023-09-30"
+    status: "actual"
+    revenue: 23350
+    grossProfit: 4178
+    operatingExpenses: 2414
+    operatingIncome: 1764
+    nonOperating: 281
+    pretaxIncome: 2045
+    netIncome: 1853
+    eps: 0.53
+    sharesDiluted: 3493
+    inventory: 13721
+    depreciation: 1235
+    capex: 2460
+    extra: { 汽車營收: 19625, 汽車銷售營收: 18582, 監管積分營收: 554, 汽車租賃營收: 489, 能源營收: 1559, 服務及其他營收: 2166, 汽車銷售成本: 15656, 汽車租賃成本: 301, 能源營業成本: 1178, 服務及其他營業成本: 2037, 研發費用: 1161, 銷管費用: 1253, 汽車毛利率: 18.7, 汽車毛利率不含積分: 16.3, 能源毛利率: 24.4, 服務及其他毛利率: 6 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q3-2024（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q3-2024 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q3-2024 損益表「Automotive regulatory credits」。"
+    src: "deck-q3-2024"
+  - period: "2023Q4"
+    start: "2023-10-01"
+    end: "2023-12-31"
+    status: "actual"
+    revenue: 25167
+    grossProfit: 4438
+    operatingExpenses: 2374
+    operatingIncome: 2064
+    nonOperating: 127
+    pretaxIncome: 2191
+    netIncome: 7928
+    eps: 2.27
+    sharesDiluted: 3492
+    inventory: 13626
+    depreciation: 1232
+    capex: 2307
+    extra: { 汽車營收: 21563, 汽車銷售營收: 20630, 監管積分營收: 433, 汽車租賃營收: 500, 能源營收: 1438, 服務及其他營收: 2166, 汽車銷售成本: 17202, 汽車租賃成本: 296, 能源營業成本: 1124, 服務及其他營業成本: 2107, 研發費用: 1094, 銷管費用: 1280, 汽車毛利率: 18.9, 汽車毛利率不含積分: 17.2, 能源毛利率: 21.8, 服務及其他毛利率: 2.7 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q4-2024（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q4-2024 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q4-2024 損益表「Automotive regulatory credits」。淨利含遞延所得稅資產評價準備迴轉的一次性利益（所得稅費用為 -5,752）。"
+    src: "deck-q4-2024"
+  - period: "2024Q1"
+    start: "2024-01-01"
+    end: "2024-03-31"
+    status: "actual"
+    revenue: 21301
+    grossProfit: 3696
+    operatingExpenses: 2525
+    operatingIncome: 1171
+    nonOperating: 717
+    pretaxIncome: 1888
+    netIncome: 1390
+    eps: 0.41
+    sharesDiluted: 3484
+    inventory: 16033
+    depreciation: 1246
+    capex: 2777
+    extra: { 汽車營收: 17378, 汽車銷售營收: 16460, 監管積分營收: 442, 汽車租賃營收: 476, 能源營收: 1635, 服務及其他營收: 2288, 汽車銷售成本: 13897, 汽車租賃成本: 269, 能源營業成本: 1232, 服務及其他營業成本: 2207, 研發費用: 1151, 銷管費用: 1374, 汽車毛利率: 18.5, 汽車毛利率不含積分: 16.4, 能源毛利率: 24.6, 服務及其他毛利率: 3.5 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q1-2025（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q1-2025 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q1-2025 損益表「Automotive regulatory credits」。淨利與 EPS 為 2025 年簡報的重編數字（ASU 2023-08 追溯）。"
+    src: "deck-q1-2025"
+  - period: "2024Q2"
+    start: "2024-04-01"
+    end: "2024-06-30"
+    status: "actual"
+    revenue: 25500
+    grossProfit: 4578
+    operatingExpenses: 2973
+    operatingIncome: 1605
+    nonOperating: 182
+    pretaxIncome: 1787
+    netIncome: 1400
+    eps: 0.4
+    sharesDiluted: 3481
+    inventory: 14195
+    depreciation: 1278
+    capex: 2272
+    extra: { 汽車營收: 19878, 汽車銷售營收: 18530, 監管積分營收: 890, 汽車租賃營收: 458, 能源營收: 3014, 服務及其他營收: 2608, 汽車銷售成本: 15962, 汽車租賃成本: 245, 能源營業成本: 2274, 服務及其他營業成本: 2441, 研發費用: 1074, 銷管費用: 1277, 重組及其他費用: 622, 汽車毛利率: 18.5, 汽車毛利率不含積分: 14.6, 能源毛利率: 24.6, 服務及其他毛利率: 6.4 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q2-2025（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q2-2025 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q2-2025 損益表「Automotive regulatory credits」。淨利與 EPS 為 2025 年簡報的重編數字（ASU 2023-08 追溯）。"
+    src: "deck-q2-2025"
+  - period: "2024Q3"
+    start: "2024-07-01"
+    end: "2024-09-30"
+    status: "actual"
+    revenue: 25182
+    grossProfit: 4997
+    operatingExpenses: 2280
+    operatingIncome: 2717
+    nonOperating: 74
+    pretaxIncome: 2791
+    netIncome: 2173
+    eps: 0.62
+    sharesDiluted: 3497
+    inventory: 14530
+    depreciation: 1348
+    capex: 3513
+    extra: { 汽車營收: 20016, 汽車銷售營收: 18831, 監管積分營收: 739, 汽車租賃營收: 446, 能源營收: 2376, 服務及其他營收: 2790, 汽車銷售成本: 15743, 汽車租賃成本: 247, 能源營業成本: 1651, 服務及其他營業成本: 2544, 研發費用: 1039, 銷管費用: 1186, 重組及其他費用: 55, 汽車毛利率: 20.1, 汽車毛利率不含積分: 17.1, 能源毛利率: 30.5, 服務及其他毛利率: 8.8 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q2-2025（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q2-2025 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q2-2025 損益表「Automotive regulatory credits」。淨利與 EPS 為 2025 年簡報的重編數字（ASU 2023-08 追溯）。"
+    src: "deck-q2-2025"
+  - period: "2024Q4"
+    start: "2024-10-01"
+    end: "2024-12-31"
+    status: "actual"
+    revenue: 25707
+    grossProfit: 4179
+    operatingExpenses: 2596
+    operatingIncome: 1583
+    nonOperating: 941
+    pretaxIncome: 2524
+    netIncome: 2128
+    eps: 0.6
+    sharesDiluted: 3517
+    inventory: 12017
+    depreciation: 1496
+    capex: 2780
+    extra: { 汽車營收: 19798, 汽車銷售營收: 18659, 監管積分營收: 692, 汽車租賃營收: 447, 能源營收: 3061, 服務及其他營收: 2848, 汽車銷售成本: 16268, 汽車租賃成本: 242, 能源營業成本: 2289, 服務及其他營業成本: 2729, 研發費用: 1276, 銷管費用: 1313, 重組及其他費用: 7, 汽車毛利率: 16.6, 汽車毛利率不含積分: 13.6, 能源毛利率: 25.2, 服務及其他毛利率: 4.2 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q2-2025（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q2-2025 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q2-2025 損益表「Automotive regulatory credits」。淨利與 EPS 為 2025 年簡報的重編數字（ASU 2023-08 追溯）。"
+    src: "deck-q2-2025"
+  - period: "2025Q1"
+    start: "2025-01-01"
+    end: "2025-03-31"
+    status: "actual"
+    revenue: 19335
+    grossProfit: 3153
+    operatingExpenses: 2754
+    operatingIncome: 399
+    nonOperating: 190
+    pretaxIncome: 589
+    netIncome: 409
+    eps: 0.12
+    sharesDiluted: 3521
+    inventory: 13706
+    depreciation: 1447
+    capex: 1492
+    extra: { 汽車營收: 13967, 汽車銷售營收: 12925, 監管積分營收: 595, 汽車租賃營收: 447, 能源營收: 2730, 服務及其他營收: 2638, 汽車銷售成本: 11461, 汽車租賃成本: 239, 能源營業成本: 1945, 服務及其他營業成本: 2537, 研發費用: 1409, 銷管費用: 1251, 重組及其他費用: 94, 汽車毛利率: 16.2, 汽車毛利率不含積分: 12.5, 能源毛利率: 28.8, 服務及其他毛利率: 3.8 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q2-2025（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q2-2025 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q2-2025 損益表「Automotive regulatory credits」。損益表「Restructuring and other」為 94（deck-q2-2025；研發＋銷管＋94＝營業費用 2,754）。"
+    src: "deck-q2-2025"
+  - period: "2025Q2"
+    start: "2025-04-01"
+    end: "2025-06-30"
+    status: "actual"
+    revenue: 22496
+    grossProfit: 3878
+    operatingExpenses: 2955
+    operatingIncome: 923
+    nonOperating: 626
+    pretaxIncome: 1549
+    netIncome: 1172
+    eps: 0.33
+    sharesDiluted: 3519
+    inventory: 14570
+    depreciation: 1433
+    capex: 2394
+    extra: { 汽車營收: 16661, 汽車銷售營收: 15787, 監管積分營收: 439, 汽車租賃營收: 435, 能源營收: 2789, 服務及其他營收: 3046, 汽車銷售成本: 13567, 汽車租賃成本: 228, 能源營業成本: 1943, 服務及其他營業成本: 2880, 研發費用: 1589, 銷管費用: 1366, 汽車毛利率: 17.2, 汽車毛利率不含積分: 15, 能源毛利率: 30.3, 服務及其他毛利率: 5.4 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數取自 deck-q2-2025（涵蓋此季的最新一份簡報的五季損益表），並與 sec-companyfacts 核對一致；折舊攤銷：deck-q2-2025 的現金流量表；存貨與資本支出：sec-companyfacts。監管積分取自 deck-q2-2025 損益表「Automotive regulatory credits」。"
+    src: "deck-q2-2025"
+  - period: "2025Q3"
+    start: "2025-07-01"
+    end: "2025-09-30"
+    status: "actual"
+    revenue: 28095
+    grossProfit: 5054
+    operatingExpenses: 3430
+    operatingIncome: 1624
+    nonOperating: 335
+    pretaxIncome: 1959
+    netIncome: 1373
+    eps: 0.39
+    sharesDiluted: 3526
+    inventory: 12276
+    depreciation: 1625
+    capex: 2248
+    extra: { 汽車營收: 21205, 汽車銷售營收: 20359, 監管積分營收: 417, 汽車租賃營收: 429, 能源營收: 3415, 服務及其他營收: 3475, 汽車銷售成本: 17365, 汽車租賃成本: 225, 能源營業成本: 2342, 服務及其他營業成本: 3109, 研發費用: 1630, 銷管費用: 1562, 重組及其他費用: 238, 汽車毛利率: 17, 汽車毛利率不含積分: 15.4, 能源毛利率: 31.4, 服務及其他毛利率: 10.5 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數、折舊攤銷取自 ex-q3-2026（2026 年第三季簡報的五季損益表與現金流量表），並與 sec-companyfacts 核對一致；存貨與資本支出：sec-companyfacts（與簡報數字相同）。"
+    src: "ex-q3-2026"
+  - period: "2025Q4"
+    start: "2025-10-01"
+    end: "2025-12-31"
+    status: "actual"
+    revenue: 24901
+    grossProfit: 5009
+    operatingExpenses: 3600
+    operatingIncome: 1409
+    nonOperating: -228
+    pretaxIncome: 1181
+    netIncome: 840
+    eps: 0.24
+    sharesDiluted: 3539
+    inventory: 12392
+    depreciation: 1643
+    capex: 2393
+    extra: { 汽車營收: 17693, 汽車銷售營收: 16750, 監管積分營收: 542, 汽車租賃營收: 401, 能源營收: 3837, 服務及其他營收: 3371, 汽車銷售成本: 13874, 汽車租賃成本: 206, 能源營業成本: 2739, 服務及其他營業成本: 3073, 研發費用: 1783, 銷管費用: 1655, 重組及其他費用: 162, 汽車毛利率: 20.4, 汽車毛利率不含積分: 17.9, 能源毛利率: 28.6, 服務及其他毛利率: 8.8 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數、折舊攤銷取自 ex-q3-2026（2026 年第三季簡報的五季損益表與現金流量表），並與 sec-companyfacts 核對一致；存貨與資本支出：sec-companyfacts（與簡報數字相同）。第四季 EPS 與股數取自簡報（XBRL 只有全年）。"
+    src: "ex-q3-2026"
+  - period: "2026Q1"
+    start: "2026-01-01"
+    end: "2026-03-31"
+    status: "actual"
+    revenue: 22387
+    grossProfit: 4720
+    operatingExpenses: 3779
+    operatingIncome: 941
+    nonOperating: -193
+    pretaxIncome: 748
+    netIncome: 477
+    eps: 0.13
+    sharesDiluted: 3538
+    inventory: 14434
+    depreciation: 1590
+    capex: 2493
+    extra: { 汽車營收: 16234, 汽車銷售營收: 15473, 監管積分營收: 380, 汽車租賃營收: 381, 能源營收: 2408, 服務及其他營收: 3745, 汽車銷售成本: 12616, 汽車租賃成本: 196, 能源營業成本: 1456, 服務及其他營業成本: 3399, 研發費用: 1946, 銷管費用: 1833, 汽車毛利率: 21.1, 汽車毛利率不含積分: 19.2, 能源毛利率: 39.5, 服務及其他毛利率: 9.2 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數、折舊攤銷取自 ex-q3-2026（2026 年第三季簡報的五季損益表與現金流量表），並與 sec-companyfacts 核對一致；存貨與資本支出：sec-companyfacts（與簡報數字相同）。本季沒有重組費用。"
+    src: "ex-q3-2026"
+  - period: "2026Q2"
+    start: "2026-04-01"
+    end: "2026-06-30"
+    status: "actual"
+    revenue: 28236
+    grossProfit: 4751
+    operatingExpenses: 4353
+    operatingIncome: 398
+    nonOperating: 931
+    pretaxIncome: 1329
+    netIncome: 1114
+    eps: 0.32
+    sharesDiluted: 3540
+    inventory: 13752
+    depreciation: 1619
+    capex: 5789
+    extra: { 汽車營收: 20516, 汽車銷售營收: 20006, 監管積分營收: 146, 汽車租賃營收: 364, 能源營收: 3139, 服務及其他營收: 4581, 汽車銷售成本: 16866, 汽車租賃成本: 187, 能源營業成本: 2499, 服務及其他營業成本: 3933, 研發費用: 2371, 銷管費用: 1982, 汽車毛利率: 16.9, 汽車毛利率不含積分: 16.3, 能源毛利率: 20.4, 服務及其他毛利率: 14.1 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數、折舊攤銷取自 ex-q3-2026（2026 年第三季簡報的五季損益表與現金流量表），並與 sec-companyfacts 核對一致；存貨與資本支出：sec-companyfacts（與簡報數字相同）。本季沒有重組費用。歸屬普通股股東淨利 1,114；計算 EPS 用的淨利為 1,116（加回少數股權買回 2）。"
+    src: "ex-q3-2026"
+  - period: "2026Q3"
+    start: "2026-07-01"
+    end: "2026-09-30"
+    status: "actual"
+    revenue: 28046
+    grossProfit: 5494
+    operatingExpenses: 4776
+    operatingIncome: 718
+    nonOperating: 238
+    pretaxIncome: 956
+    netIncome: 787
+    eps: 0.22
+    sharesDiluted: 3541
+    inventory: 14092
+    depreciation: 1852
+    capex: 4732
+    extra: { 汽車營收: 20560, 汽車銷售營收: 20094, 監管積分營收: 113, 汽車租賃營收: 353, 能源營收: 2881, 服務及其他營收: 4605, 汽車銷售成本: 16570, 汽車租賃成本: 184, 能源營業成本: 1927, 服務及其他營業成本: 3871, 研發費用: 2761, 銷管費用: 2015, 汽車毛利率: 18.5, 汽車毛利率不含積分: 18.1, 能源毛利率: 33.1, 服務及其他毛利率: 15.9 }
+    note: "來源：損益表、營收與成本分項、稀釋 EPS 與股數、折舊攤銷取自 ex-q3-2026（2026 年第三季簡報的五季損益表與現金流量表），並與 sec-companyfacts 核對一致；存貨與資本支出：sec-companyfacts（與簡報數字相同）。本季沒有重組費用。"
+    src: "ex-q3-2026"
+monthly: []
+annual:
+  - year: "2016"
+    sales: []
+    purchases: []
+    extra: { 監管積分營收: 302 }
+    note: "全年監管積分營收（含 ZEV、溫室氣體與 CAFE 積分），取自 deck-q4-2020 年度財務摘要「of which regulatory credits」；當年各季總額未揭露（2016 年股東信只揭露 ZEV 積分：全年 215.4 百萬美元，letter-q4-2016）。"
+    src: "deck-q4-2020"
+  - year: "2017"
+    sales: []
+    purchases: []
+    extra: { 監管積分營收: 360 }
+    note: "全年監管積分營收（含 ZEV、溫室氣體與 CAFE 積分），取自 deck-q4-2020 年度財務摘要「of which regulatory credits」；當年各季總額未揭露。"
+    src: "deck-q4-2020"
+  - year: "2018"
+    sales: []
+    purchases: []
+    extra: { 監管積分營收: 419 }
+    note: "全年監管積分營收（含 ZEV、溫室氣體與 CAFE 積分），取自 deck-q4-2020 年度財務摘要「of which regulatory credits」；上半年各季未揭露；第三季 189、第四季 95 見 quarters（letter-q3-2019），故上半年合計 135。"
+    src: "deck-q4-2020"
+events:
+  - { date: "2016-11-21", title: "完成併購 SolarCity", detail: "併入太陽能公司 SolarCity，能源發電與儲能營收自此包含太陽能系統；公司分為汽車、能源發電與儲能兩個營運部門。2016Q4 能源營收由前一季的 23 跳升到 131 百萬美元。", src: "sec-2017q1-note1" }
+  - { date: "2017-02-22", title: "預告 Model 3 於 7 月開始少量生產", detail: "2016 年第四季股東信預估 2017 上半年 Model S／X 交車 47,000–50,000 輛，Model 3 預計 7 月開始少量生產，並在量產前投入 20–25 億美元資本支出。", src: "letter-q4-2016" }
+  - { date: "2019-10-23", title: "Model 3 成為交車主力", detail: "2019 年第三季 Model 3 交車 79,703 輛、Model S／X 17,483 輛；Model 3 交車占比由 2018Q3 的 67% 升到 82%，汽車毛利率由 2019Q2 的 18.9% 回升到 22.8%。", src: "letter-q3-2019" }
+  - { date: "2021-01-27", title: "上海廠開始生產 Model Y，Fremont 改裝 Model S／X 產線", detail: "上海超級工廠 2020 年 12 月開始生產 Model Y；Fremont 工廠為新款 Model S／X 改裝產線（2021Q1 Model S／X 產量為 0）。公司說明 2020 年第四季平均售價年減 11%，原因是產品組合轉向 Model 3／Y，以及中國製 Model 3 與 Model S／X 降價。", src: "deck-q4-2020" }
+  - { date: "2022-01-26", title: "供應鏈成為主要限制", detail: "公司表示自家工廠已連續數季低於產能運轉，供應鏈是主要限制，可能延續整個 2022 年；原物料、大宗商品、物流與加急成本上升拉低獲利。", src: "deck-q4-2021" }
+  - { date: "2023-01-25", title: "FSD Beta 廣泛釋出，一次認列 3.24 億美元", detail: "2022Q4 因 FSD Beta 在美國與加拿大廣泛釋出，於汽車銷售認列 3.24 億美元 FSD 營收，另有近 10 億美元遞延營收將隨時間認列；公司提到利率上升與「車價通縮」，2023 年目標約 180 萬輛。", src: "deck-q4-2022" }
+  - { date: "2023-04-19", title: "多款車型在各地區降價", detail: "2023 年第一季在多個地區調降多款車型售價，公司表示營業利益率下降幅度「可控」，未來定價可能上調或下調；營收年增但平均售價（不含匯率）年減。", src: "deck-q1-2023" }
+  - { date: "2023-07-19", title: "降價後營業利益率約 10%", detail: "第一季與第二季初的降價之後，第二季營業利益率仍約 10%；每輛車成本下降，包含原物料成本降低與美國《降低通膨法案》（IRA）生產抵減。", src: "deck-q2-2023" }
+  - { date: "2023-10-18", title: "每輛車銷貨成本降至約 37,500 美元", detail: "第三季每輛車銷貨成本（汽車銷售成本 ÷ 非租賃交車）約 37,500 美元；平均售價因降價與產品組合下滑；Cybertruck 預計 2023 年 11 月開始交車。", src: "deck-q3-2023" }
+  - { date: "2024-01-24", title: "處於兩波成長之間，2024 年交車成長可能明顯放緩", detail: "公司表示 2024 年車輛成長率可能明顯低於 2023 年，團隊正準備下一代車款；儲能部署與能源營收成長預計快於汽車業務。Cybertruck 已開始生產並交付首批客戶。", src: "deck-q4-2023" }
+  - { date: "2024-04-23", title: "加速推出含平價車款的新車", detail: "公司把新車款（含較平價車款）提前到 2025 下半年之前推出，沿用現有產線，成本下降幅度會小於原先預期；現有產能接近 300 萬輛。FSD 營收因 Autopark 功能釋出而年增。", src: "deck-q1-2024" }
+  - { date: "2024-07-23", title: "監管積分創新高、FSD 降價", detail: "第二季監管積分營收 8.90 億美元創新高，公司說明其他車廠仍未達排放規定；北美 FSD（Supervised）降價並提供免費試用；本季重組費用 6.22 億美元；AI 基礎設施資本支出 6 億美元。", src: "deck-q2-2024" }
+  - { date: "2024-10-23", title: "預估 2024 年交車小幅成長、儲能部署倍增", detail: "公司預估 2024 年交車小幅成長、儲能部署年增超過一倍；本季 FSD 營收因 Cybertruck 與 Actually Smart Summon 功能釋出而增加。", src: "deck-q3-2024" }
+  - { date: "2025-01-29", title: "每輛車銷貨成本降到 35,000 美元以下", detail: "第四季每輛車銷貨成本降到 35,000 美元以下的歷史低點，主因原物料成本下降；公司預期 2025 年汽車業務回到成長、儲能部署年增至少 50%；新款 Model Y 上市，平價車款預計 2025 上半年生產，Cybercab 預計 2026 年量產。", src: "deck-q4-2024" }
+  - { date: "2025-04-22", title: "關稅與貿易政策不確定，暫緩 2025 年展望", detail: "公司表示難以衡量貿易政策對供應鏈、成本與需求的影響，對能源業務的影響相對較大，將在第二季簡報再檢視 2025 年展望；平均售價因產品組合與銷售優惠下滑；推出符合 IRA 規定的 4680 電池，使 Cybertruck 適用 7,500 美元消費者抵減。", src: "deck-q1-2025" }
+  - { date: "2025-07-23", title: "Robotaxi 在奧斯汀上線、平價車款試產", detail: "6 月在奧斯汀推出 Robotaxi 服務（有安全員隨車）；6 月試產較平價車款，量產排在 2025 下半年；Semi 與 Cybercab 預計 2026 年量產。關稅增加每輛車成本，監管積分營收年減。展望未提供交車成長數字。", src: "deck-q2-2025" }
+  - { date: "2025-10-22", title: "美國電動車抵減到期，推出 Standard 車款", detail: "美國聯邦電動車租稅抵減已到期，公司 10 月推出 Model 3 Standard（36,990 美元起）與 Model Y Standard（39,990 美元起）。Cybercab、Semi 與 Megapack 3 預計 2026 年量產；關稅與固定成本分攤使每輛車成本上升；監管積分營收 4.17 億美元（前一年同季 7.39 億美元）。", src: "ex-q3-2025" }
+  - { date: "2025-12-09", title: "BNEF：電池包均價降到每 kWh 108 美元", detail: "BloombergNEF 年度調查（第三方估計）：2025 年鋰電池包平均價格年減 8% 至每 kWh 108 美元，儲能用電池包降 45% 至 70 美元，電動車電池包 99 美元；BNEF 預期 2026 年續降。", src: "bnef-2025" }
+  - { date: "2026-01-28", title: "FSD 改為只提供訂閱", detail: "公司宣布 FSD（Supervised）停售一次買斷、改為只提供月訂閱；有效 FSD 訂閱數 110 萬（年增 38%；公司口徑含一次買斷與月訂閱、不含免費試用）；奧斯汀開始在部分 Robotaxi 行程移除安全員；Cybercab 預計 2026 上半年開始爬坡，Optimus 第三代預計 2026 年底前開始生產；同意投資 xAI 約 20 億美元；關稅與固定成本分攤使每輛車成本上升。", src: "ex-q4-2025" }
+  - { date: "2026-04-22", title: "電池包產能成為交車成長瓶頸", detail: "公司表示電池包產能是全球車輛增產的限制；第一季汽車與能源有保固及關稅相關的一次性利益，材料成本下降使每輛車成本降低；監管積分營收 3.80 億美元（前一年同季 5.95 億美元）；FSD 訂閱 128 萬；Fremont 的 Model S／X 產線將改為 Optimus 產線。", src: "ex-q1-2026" }
+  - { date: "2026-07-22", title: "Cybercab 在德州開始生產，Model S／X 產線停用", detail: "Cybercab 在德州超級工廠開始生產；Fremont 的 Model S／X 產線停用並改建 Optimus 產線；進口關稅降低使每輛車成本下降，但能源業務因供應商電芯問題提列保固費用；監管積分營收降到 1.46 億美元；FSD 訂閱 148 萬、北美新車搭載率超過 55%；公司提到德州晶圓廠要確保邏輯晶片與記憶體晶片的長期供應（未提記憶體成本影響）。", src: "ex-q2-2026" }
+  - { date: "2026-09-29", title: "公司彙整第三季交車共識 461,974 輛", detail: "特斯拉投資人關係網站公布 24 位分析師的第三季交車共識 461,974 輛、儲能部署 15.9 GWh，2026 全年交車共識 1,767,255 輛（第三方估計，公司不背書）。實際第三季交車 486,532 輛、儲能 13.7 GWh。", src: "consensus-q3-2026" }
+  - { date: "2026-10-21", title: "Semi 與 Optimus 開始生產，監管積分降到 1.13 億美元", detail: "Cybercab 9 月 3 日起在奧斯汀載客；Semi 在內華達量產線開始生產，Optimus 在 Fremont 開始生產；德州 Megafactory 開始生產（規劃 50 GWh）。能源營收部分受關稅相關的客戶退款影響；監管積分營收 1.13 億美元（前一年同季 4.17 億美元）；營業費用增加來自公司稱為 SI（超級智慧）的研發與其他研發專案、股份基礎給付（含 2025 年執行長績效獎酬）與銷管費用；公司計畫年底前把 SI 訓練運算擴大到 400 MW。展望仍無數字財測。", src: "ex-q3-2026" }
+pastForecasts: []
+sources:
+  sec-companyfacts: { title: "Tesla, Inc. XBRL company facts (10-Q / 10-K financial data)", publisher: "U.S. Securities and Exchange Commission (EDGAR)", url: "https://data.sec.gov/api/xbrl/companyfacts/CIK0001318605.json", type: "filing", lang: "en", accessed: "2026-11-17", note: "特斯拉向 SEC 申報的 10-Q／10-K 結構化資料：營收、毛利、營業費用、營業利益、稅前淨利、歸屬普通股股東淨利、稀釋 EPS 與股數、存貨、資本支出；同一期間取最新申報值，第四季以全年減前三季求得，現金流量項目以年初至今累計值相減" }
+  sec-10q-2017q1-is: { title: "Tesla Form 10-Q for the quarter ended 2017-03-31: Consolidated Statements of Operations", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459017009968/R4.htm", type: "filing", lang: "en", published: "2017-05-10", accessed: "2026-11-17", note: "SEC 互動式財報頁（XBRL 轉換的報表），金額單位為千美元" }
+  sec-10q-2017q1-cf: { title: "Tesla Form 10-Q for the quarter ended 2017-03-31: Consolidated Statements of Cash Flows", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459017009968/R6.htm", type: "filing", lang: "en", published: "2017-05-10", accessed: "2026-11-17", note: "SEC 互動式財報頁（XBRL 轉換的報表），金額單位為千美元" }
+  sec-2017q1-note1: { title: "Tesla Form 10-Q for the quarter ended 2017-03-31: Note 1 - Overview", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459017009968/R7.htm", type: "filing", lang: "en", published: "2017-05-10", accessed: "2026-11-17", note: "SEC 互動式財報頁（XBRL 轉換的報表），金額單位為千美元" }
+  sec-10q-2017q2-is: { title: "Tesla Form 10-Q for the quarter ended 2017-06-30: Consolidated Statements of Operations", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459017015705/R4.htm", type: "filing", lang: "en", published: "2017-08-04", accessed: "2026-11-17", note: "SEC 互動式財報頁（XBRL 轉換的報表），金額單位為千美元" }
+  sec-10q-2017q2-cf: { title: "Tesla Form 10-Q for the quarter ended 2017-06-30: Consolidated Statements of Cash Flows", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459017015705/R6.htm", type: "filing", lang: "en", published: "2017-08-04", accessed: "2026-11-17", note: "SEC 互動式財報頁（XBRL 轉換的報表），金額單位為千美元" }
+  sec-10q-2017q3-is: { title: "Tesla Form 10-Q for the quarter ended 2017-09-30: Consolidated Statements of Operations", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459017021343/R4.htm", type: "filing", lang: "en", published: "2017-11-03", accessed: "2026-11-17", note: "SEC 互動式財報頁（XBRL 轉換的報表），金額單位為千美元" }
+  sec-10q-2017q3-cf: { title: "Tesla Form 10-Q for the quarter ended 2017-09-30: Consolidated Statements of Cash Flows", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459017021343/R6.htm", type: "filing", lang: "en", published: "2017-11-03", accessed: "2026-11-17", note: "SEC 互動式財報頁（XBRL 轉換的報表），金額單位為千美元" }
+  sec-10k-2017-is: { title: "Tesla Form 10-K for the year ended 2017-12-31: Consolidated Statements of Operations", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459018002956/R4.htm", type: "filing", lang: "en", published: "2018-02-23", accessed: "2026-11-17", note: "SEC 互動式財報頁（XBRL 轉換的報表），金額單位為千美元" }
+  sec-10q-2018q1-is: { title: "Tesla Form 10-Q for the quarter ended 2018-03-31: Consolidated Statements of Operations", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459018011086/R4.htm", type: "filing", lang: "en", published: "2018-05-07", accessed: "2026-11-17", note: "SEC 互動式財報頁（XBRL 轉換的報表），金額單位為千美元" }
+  sec-10q-2018q1-cf: { title: "Tesla Form 10-Q for the quarter ended 2018-03-31: Consolidated Statements of Cash Flows", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459018011086/R6.htm", type: "filing", lang: "en", published: "2018-05-07", accessed: "2026-11-17", note: "SEC 互動式財報頁（XBRL 轉換的報表），金額單位為千美元" }
+  sec-10q-2018q2-is: { title: "Tesla Form 10-Q for the quarter ended 2018-06-30: Consolidated Statements of Operations", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459018019254/R4.htm", type: "filing", lang: "en", published: "2018-08-06", accessed: "2026-11-17", note: "SEC 互動式財報頁（XBRL 轉換的報表），金額單位為千美元" }
+  sec-10q-2019q1-is: { title: "Tesla Form 10-Q for the quarter ended 2019-03-31: Consolidated Statements of Operations", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459019013462/R4.htm", type: "filing", lang: "en", published: "2019-04-29", accessed: "2026-11-17", note: "SEC 互動式財報頁（XBRL 轉換的報表），金額單位為千美元" }
+  letter-q4-2016: { title: "Tesla Fourth Quarter & Full Year 2016 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000119312517052093/d322970dex991.htm", type: "press-release", lang: "en", published: "2017-02-22", accessed: "2026-11-17", note: "2016 年第四季股東信：第四季淨損與 EPS、生產與交車、ZEV 積分、儲能部署、折舊攤銷、2017 年展望" }
+  letter-q4-2018: { title: "Tesla Fourth Quarter & Full Year 2018 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459019001399/tsla-ex991_6.htm", type: "press-release", lang: "en", published: "2019-01-30", accessed: "2026-11-17", note: "2018 年第四季股東信：2018Q4、2018Q3、2017Q4 三欄損益表與現金流量表（千美元）、全年儲能部署" }
+  letter-q3-2019: { title: "Tesla Third Quarter 2019 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000156459019037581/tsla-ex991_154.htm", type: "press-release", lang: "en", published: "2019-10-23", accessed: "2026-11-17", note: "2019 年第三季股東信：2018Q3–2019Q3 五季財務摘要（含監管積分）與營運摘要（分車款生產、交車、租賃、庫存天數、儲能部署），2018Q3、2019Q2、2019Q3 損益表與現金流量表" }
+  ex-q3-2025: { title: "Tesla Q3 2025 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000162828025045861/exhibit991.htm", type: "press-release", lang: "en", published: "2025-10-22", accessed: "2026-11-17", note: "2025 年第三季簡報：展望、Standard 車款上市、2026 年量產時程、關稅與成本說明" }
+  ex-q4-2025: { title: "Tesla Q4 and FY 2025 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000162828026003837/exhibit991.htm", type: "press-release", lang: "en", published: "2026-01-28", accessed: "2026-11-17", note: "2025 年第四季簡報：FSD 訂閱、Robotaxi、Cybercab、Optimus、xAI 投資與展望" }
+  ex-q1-2026: { title: "Tesla Q1 2026 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000162828026026551/exhibit991.htm", type: "press-release", lang: "en", published: "2026-04-22", accessed: "2026-11-17", note: "2026 年第一季簡報：電池產能限制、一次性關稅與保固利益、Robotaxi 城市" }
+  ex-q2-2026: { title: "Tesla Q2 2026 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000162828026049213/exhibit991.htm", type: "press-release", lang: "en", published: "2026-07-22", accessed: "2026-11-17", note: "2026 年第二季簡報：Cybercab 開始生產、Model S／X 產線停用、德州晶圓廠" }
+  ex-q3-2026: { title: "Tesla Q3 2026 Update (8-K Exhibit 99.1)", publisher: "Tesla（SEC EDGAR）", url: "https://www.sec.gov/Archives/edgar/data/1318605/000162828026066738/exhibit9914.htm", type: "press-release", lang: "en", published: "2026-10-21", accessed: "2026-11-17", note: "2026 年第三季簡報：2025Q3–2026Q3 五季財務摘要、營運摘要（分車款生產與交車、租賃、FSD 訂閱數、儲能部署、庫存天數）、損益表、資產負債表與現金流量表、展望" }
+  deck-q4-2020: { title: "Tesla Q4 2020 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q4-2020-Update.pdf", type: "ir-presentation", lang: "en", published: "2021-01-27", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q4-2021: { title: "Tesla Q4 2021 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q4-2021-Update.pdf", type: "ir-presentation", lang: "en", published: "2022-01-26", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q4-2022: { title: "Tesla Q4 2022 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q4-2022-Update.pdf", type: "ir-presentation", lang: "en", published: "2023-01-25", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q1-2023: { title: "Tesla Q1 2023 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q1-2023-Update.pdf", type: "ir-presentation", lang: "en", published: "2023-04-19", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q2-2023: { title: "Tesla Q2 2023 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q2-2023-Update.pdf", type: "ir-presentation", lang: "en", published: "2023-07-19", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q3-2023: { title: "Tesla Q3 2023 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q3-2023-Update.pdf", type: "ir-presentation", lang: "en", published: "2023-10-18", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q4-2023: { title: "Tesla Q4 2023 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q4-2023-Update.pdf", type: "ir-presentation", lang: "en", published: "2024-01-24", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q1-2024: { title: "Tesla Q1 2024 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q1-2024-Update.pdf", type: "ir-presentation", lang: "en", published: "2024-04-23", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q2-2024: { title: "Tesla Q2 2024 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q2-2024-Update.pdf", type: "ir-presentation", lang: "en", published: "2024-07-23", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q3-2024: { title: "Tesla Q3 2024 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q3-2024-Update.pdf", type: "ir-presentation", lang: "en", published: "2024-10-23", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q4-2024: { title: "Tesla Q4 2024 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q4-2024-Update.pdf", type: "ir-presentation", lang: "en", published: "2025-01-29", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q1-2025: { title: "Tesla Q1 2025 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q1-2025-Update.pdf", type: "ir-presentation", lang: "en", published: "2025-04-22", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  deck-q2-2025: { title: "Tesla Q2 2025 Update", publisher: "Tesla", url: "https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q2-2025-Update.pdf", type: "ir-presentation", lang: "en", published: "2025-07-23", accessed: "2026-11-17", note: "季度簡報（亦以 8-K 附件 99.1 申報）：五季財務摘要、營運摘要（分車款生產與交車、租賃、庫存天數、儲能部署）、損益表、資產負債表、現金流量表與展望" }
+  consensus-q3-2026: { title: "Tesla IR Posts Q3 2026 Delivery Consensus of 461,974 Vehicles", publisher: "Tesla North", url: "https://teslanorth.com/2026/09/29/tesla-ir-q3-2026-delivery-consensus/", type: "news", lang: "en", published: "2026-09-29", accessed: "2026-11-17", note: "轉載特斯拉投資人關係網站 2026-09-29 公布的第三季交車共識（24 位賣方分析師）與 2026 全年交車、儲能部署共識" }
+  bnef-2025: { title: "Lithium-Ion Battery Pack Prices Fall to $108 per Kilowatt-Hour, Despite Rising Metal Prices", publisher: "BloombergNEF", url: "https://about.bnef.com/insights/commodities/lithium-ion-battery-pack-prices-fall-to-108-per-kilowatt-hour-despite-rising-metal-prices/", type: "analyst", lang: "en", published: "2025-12-09", accessed: "2026-11-17", note: "BNEF 年度電池價格調查（第三方估計）" }
+lastVerified: "2026-11-17"
+editorial:
+  status: "fact-checked"
+  author: "fc2-data-tesla"
+  checkedBy: "fc2-check-tesla"
+  checkedOn: "2026-11-17"
+  notes: "2026-11-17 查核（fc2-check-tesla）：以程式重抓 SEC XBRL company facts（data.sec.gov），43 季的營收、毛利、營業費用、營業利益、稅前淨利、歸屬普通股股東淨利、研發、銷管、銷貨成本合計、存貨、資本支出、稀釋 EPS 與股數（依 1／3／15 倍分割換算）逐季比對，全數在四捨五入 1 百萬美元以內一致；2016–2018 年折舊攤銷與 2016–2020 年汽車租賃營收另比對 XBRL。以 PyMuPDF 依座標還原 2020Q3–2025Q2 共 14 份季度簡報的損益表、財務摘要、營運摘要與現金流量表，逐格比對各季標示的來源簡報（758 格），2016–2019 年分項比對 10-Q／10-K 損益表（R4 頁）與股東信，2025Q3–2026Q3 比對 2026 年第三季簡報原文，全數一致。修正：2019Q4（-12）、2021Q1（-101）、2021Q2（23）、2021Q3（51）、2025Q1（94）漏填 extra.重組及其他費用（原本研發＋銷管≠營業費用）；2017、2018 年度註記改正；2026-10-21 與 2026-01-28 事件依簡報原文修正措辭（SI 研發、FSD 訂閱口徑）。research/fin/tesla.json（stockanalysis）與本檔的營業利益差異大多來自該站把重組及其他費用移出營業利益（2024Q2、2025Q4 等季另有無法對應的差異），該站 2026Q3 毛利 6,280 也與 SEC XBRL 及公司簡報的 5,494 不符，本檔不採用該站數字。2018Q4 部分分項（租賃 250、能源 371、銷管 667、租賃成本 128）採 2018 年第四季股東信千元數字四捨五入，與 2019 年第四季簡報的百萬元數字差 1。建立時（fc2-data-tesla）：2016Q1–2026Q3 共 43 季。損益數字逐季與 SEC XBRL（sec-companyfacts）核對，差異都在四捨五入的 1 百萬美元以內；營收與成本分項逐季檢查加總（汽車銷售＋積分＋租賃＝汽車營收、三個分部合計＝總營收、營收－成本＝毛利、毛利－營業費用＝營業利益）。2022Q3–2026Q2 的營收、毛利率與營業利益率另與 src/content/financials/tesla.json（已查核）核對一致。research/fin/tesla.json（stockanalysis，2026-11-13 擷取）的部分季度毛利與營業利益與公司數字不同（例如 2026Q3 毛利 6,280、營業利益 1,504，公司為 5,494 與 718；2025Q3 營業利益 1,862，公司為 1,624），本檔一律採用公司文件與 SEC XBRL。"

@@ -5,6 +5,7 @@
  *   <EventTimeline b={bundle} />
  */
 import FcCite from './FcCite.astro';
+import FcText from './FcText.astro';
 import Icon from '../../ui/Icon.astro';
 import { formatDate } from '../../../lib/format';
 import type { FcBundle } from '../../../lib/forecast-data';
@@ -21,6 +22,9 @@ const years = [...new Set(events.map((e) => Number(e.date.slice(0, 4))))];
 const recent = years.filter((y) => y >= openFrom);
 const older = years.filter((y) => y < openFrom);
 const byYear = (y: number) => events.filter((e) => Number(e.date.slice(0, 4)) === y);
+// /forecast/ pages: a source key inside the text (「管理報告（mr-2026q2）說明…」) becomes a citation marker; the memory
+// pages keep their text as written
+const inline = b.meta.topic === 'forecast';
 ---
 
 <div class="fc-tl">
@@ -35,8 +39,14 @@ const byYear = (y: number) => events.filter((e) => Number(e.date.slice(0, 4)) ==
               <div>
                 <p class="fc-tl__title">{e.title}</p>
                 <p class="fc-tl__detail">
-                  {e.detail}
-                  <FcCite k={e.src} />
+                  {inline ? (
+                    <FcText b={b} text={e.detail} src={e.src} />
+                  ) : (
+                    <>
+                      {e.detail}
+                      <FcCite k={e.src} />
+                    </>
+                  )}
                 </p>
               </div>
             </li>
@@ -62,8 +72,14 @@ const byYear = (y: number) => events.filter((e) => Number(e.date.slice(0, 4)) ==
                   <div>
                     <p class="fc-tl__title">{e.title}</p>
                     <p class="fc-tl__detail">
-                      {e.detail}
-                      <FcCite k={e.src} />
+                      {inline ? (
+                        <FcText b={b} text={e.detail} src={e.src} />
+                      ) : (
+                        <>
+                          {e.detail}
+                          <FcCite k={e.src} />
+                        </>
+                      )}
                     </p>
                   </div>
                 </li>

@@ -1,8 +1,8 @@
 ---
 /**
  * 回測: one tab per target (營收、毛利率、營業利益、淨利、EPS) with a chart of actual vs the selected model vs the
- * benchmark (the naive model, or Micron's own guidance; for Micron also the model fed with TrendForce's
- * start-of-quarter forecasts) and the quarter-by-quarter table with errors. The tabs are radio buttons styled with
+ * benchmark (the naive model, or the company's own guidance; also the same model fed with start-of-quarter
+ * forecasts of its drivers, the *-ex-ante candidate, when there is one) and the quarter-by-quarter table with errors. The tabs are radio buttons styled with
  * :has(), so the page works without JavaScript (all panels show when :has is unsupported).
  *   <BacktestTabs b={bundle} />
  */
@@ -38,7 +38,7 @@ const tabs = TARGETS.map((t) => {
   }
   if (exAnte) {
     const er = backtestOf(m, exAnte.id, t);
-    if (er.length) lines.push({ key: 'exante', name: '同一模型改用季初預測價', rows: new Map(er.map((r) => [r.period, r.predicted])) });
+    if (er.length) lines.push({ key: 'exante', name: b.meta.backtest.exAnteLine, rows: new Map(er.map((r) => [r.period, r.predicted])) });
   }
   return { t, rows, lines, label: targetLabel(b, t) };
 }).filter((x): x is NonNullable<typeof x> => !!x);
@@ -51,7 +51,7 @@ const yiOf = (x: (typeof tabs)[number]) => {
   const all = [...x.rows.map((r) => r.actual), ...x.lines.flatMap((l) => [...l.rows.values()])].filter((v) => Number.isFinite(v));
   return all.length ? Math.max(...all.map((v) => yiDigits(v))) : undefined;
 };
-const short: Record<Line['key'], string> = { model: '選定模型', bench: '對照', exante: '季初預測價' };
+const short: Record<Line['key'], string> = { model: '選定模型', bench: '對照', exante: b.meta.backtest.exAnteShort };
 ---
 
 <div class="fc-tabs" data-tabs="bt">
@@ -78,7 +78,7 @@ const short: Record<Line['key'], string> = { model: '選定模型', bench: '對�
         <section class="fc-tabs__panel" data-panel={`fc-bt-${t}`} aria-label={`${x.label}的回測`}>
           <MultiLine
             title={`${x.label}：實際與回測預測`}
-            subtitle={`${periodLabel(m.test.from)}–${periodLabel(m.test.to)}；每一季只用上一季以前的財報，加上當季實際的合約價${b.company === 'micron' ? '與位元出貨' : '與月營收'}${extra.length ? `；${extra.map((r) => periodLabel(r.period)).join('、')} 以月營收合計對照（不計入回測誤差）` : ''}`}
+            subtitle={`${periodLabel(m.test.from)}–${periodLabel(m.test.to)}；每一季只用上一季以前的財報，加上${b.meta.backtest.knownShort ?? b.meta.backtest.known}${extra.length ? `；${extra.map((r) => periodLabel(r.period)).join('、')} 以月營收合計對照（不計入回測誤差）` : ''}`}
             unit={unitOf(b, t)}
             format={pct ? 'percent' : 'number'}
             digits={t === 'eps' ? 2 : pct ? 1 : undefined}

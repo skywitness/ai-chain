@@ -1,0 +1,157 @@
+---
+/**
+ * 數量與營收（台積電）: revenue = wafer shipments × revenue per wafer × the exchange rate. Quarterly shipments and
+ * US-dollar revenue from FC_META.historyFrom, the gross and operating margins with the base scenario, and the
+ * arithmetic of the last five reported quarters (shipments × revenue per wafer = USD revenue × rate = NT$ revenue).
+ *   <Volume b={bundle} />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import QuarterBars from '../../memory/forecast/QuarterBars.astro';
+import ChartCites from '../../memory/forecast/ChartCites.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import { actualGrossMargin, chartKey, fcPct, forecastQuarters, lastReportedOf, periodLabel, quarterOf, quartersFrom, scenarioOf, type FcBundle } from '../../../lib/forecast-data';
+import { formatNumber } from '../../../lib/format';
+import { derivedMap, driverMap, quarters } from './tsmc-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m, meta } = b;
+const from = meta.historyFrom;
+const last = lastReportedOf(m);
+const qs = quarters(from, last);
+const wafers = driverMap(b, 'wafer-shipments');
+const usd = driverMap(b, 'revenue-usd');
+const fx = driverMap(b, 'fx-usd-ntd-avg');
+const ppw = derivedMap(b, 'usd-per-wafer');
+const ago = `${Number(last.slice(0, 4)) - 1}${last.slice(4)}`;
+const mult = (mp: Map<string, { value: number }>, a: string, z: string) => {
+  const x = mp.get(a)?.value;
+  const y = mp.get(z)?.value;
+  return x && y ? y / x : undefined;
+};
+const wM = mult(wafers, from, last);
+const pM = mult(ppw, from, last);
+const uM = mult(usd, from, last);
+const wY = mult(wafers, ago, last);
+const pY = mult(ppw, ago, last);
+const x1 = (v: number) => formatNumber(v, { digits: 1 });
+const pctOf = (v: number) => `${formatNumber((v - 1) * 100, { digits: 0, signed: true })}%`;
+
+// margins: reported quarters, then the base scenario (dashed)
+const hist = quartersFrom(inputs, from);
+const base = forecastQuarters(scenarioOf(m, 'base'));
+const gmPts = [
+  ...hist.map((q) => ({ x: chartKey(q.period), y: actualGrossMargin(b.company, q) ?? null })),
+  ...base.map((f) => ({ x: chartKey(f.period), y: f.grossMargin, forecast: true })),
+];
+const omPts = [
+  ...hist.map((q) => ({ x: chartKey(q.period), y: q.operatingIncome != null ? (q.operatingIncome / q.revenue) * 100 : null })),
+  ...base.map((f) => ({ x: chartKey(f.period), y: f.operatingIncome != null ? (f.operatingIncome / f.revenue) * 100 : null, forecast: true })),
+];
+const fcSpan = base.length ? `${periodLabel(base[0]!.period)}–${periodLabel(base.at(-1)!.period)}` : '';
+
+// the last five reported quarters
+const recent = qs.slice(-5).map((p) => {
+  const q = quarterOf(inputs, p);
+  return { p, q, w: wafers.get(p), u: usd.get(p), f: fx.get(p), ppw: ppw.get(p)?.value, gm: q ? actualGrossMargin(b.company, q) : undefined };
+});
+const keysOf = (mp: Map<string, { src: string }>) => qs.map((p) => mp.get(p)?.src);
+---
+
+<p class="fc-p">
+  台積電的新台幣營收＝晶圓出貨 × 每片晶圓營收 × 匯率。{wM != null && pM != null && uM != null && `${periodLabel(from)} 到 ${periodLabel(last)}，晶圓出貨成長為 ${x1(wM)} 倍、每片晶圓平均營收成長為 ${x1(pM)} 倍，美元營收因此成長為 ${x1(uM)} 倍。`}{wY != null && pY != null && `最近一年（${periodLabel(ago)} 到 ${periodLabel(last)}）出貨 ${pctOf(wY)}、每片營收 ${pctOf(pY)}。`}每片晶圓平均營收是美元營收 ÷ 出貨片數的推算值，包含先進封裝與光罩等非晶圓營收。
+</p>
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars
+    title="晶圓出貨"
+    subtitle={`${periodLabel(from)}–${periodLabel(last)}，管理報告的 12 吋約當片數`}
+    unit="萬片（12 吋約當）"
+    valueName="出貨"
+    points={qs.map((p) => ({ period: p, value: wafers.has(p) ? wafers.get(p)!.value / 10 : null }))}
+    digits={0}
+    as="h3"
+  />
+  <QuarterBars
+    title="美元營收"
+    subtitle={`${periodLabel(from)}–${periodLabel(last)}，財報附註的美元營收`}
+    unit="億美元"
+    valueName="美元營收"
+    points={qs.map((p) => ({ period: p, value: usd.has(p) ? usd.get(p)!.value / 100 : null }))}
+    digits={0}
+    as="h3"
+  />
+</div>
+<ChartCites label="晶圓出貨" keys={keysOf(wafers)} />
+<ChartCites label="美元營收" keys={keysOf(usd)} />
+
+<h3 class="fc-h3">從晶圓到營收：最近五季</h3>
+<div class="mem-tablewrap mem-tablewrap--cards" tabindex="0" role="region" aria-label="最近五季的出貨、每片營收、匯率與營收">
+  <table class="mem-table tsmc-vol">
+    <caption class="ch-sr">台積電最近五季：晶圓出貨 × 每片晶圓平均營收＝美元營收，美元營收 × 平均匯率＝新台幣營收</caption>
+    <thead>
+      <tr>
+        <th scope="col">季度</th>
+        <th scope="col" class="num">晶圓出貨<small>萬片</small></th>
+        <th scope="col" class="num">每片營收<small>美元，推算</small></th>
+        <th scope="col" class="num">美元營收<small>億美元</small></th>
+        <th scope="col" class="num">平均匯率<small>新台幣／美元</small></th>
+        <th scope="col" class="num">營收<small>新台幣億元</small></th>
+        <th scope="col" class="num">{meta.gmLabel}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        recent.map((r) => (
+          <tr>
+            <th scope="row" data-label="季度">
+              <div class="fct-cell">
+                {periodLabel(r.p)}
+                {r.w && <FcCite k={r.w.src} />}
+                {r.q && <FcCite k={r.q.src} />}
+              </div>
+            </th>
+            <td class="num" data-label="晶圓出貨（萬片）">{r.w ? x1(r.w.value / 10) : '—'}</td>
+            <td class="num" data-label="每片營收（美元）">{r.ppw != null ? formatNumber(r.ppw) : '—'}</td>
+            <td class="num" data-label="美元營收（億美元）">{r.u ? x1(r.u.value / 100) : '—'}</td>
+            <td class="num" data-label="平均匯率">{r.f ? formatNumber(r.f.value, { digits: 2 }) : '—'}</td>
+            <td class="num" data-label="營收（新台幣億元）">{r.q ? formatNumber(r.q.revenue / 100) : '—'}</td>
+            <td class="num" data-label={meta.gmLabel}>{fcPct(r.gm)}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+<p class="mem-fine">美元營收是財報附註以當季加權平均匯率換算的金額，乘上平均匯率即為新台幣營收；每片營收＝美元營收 ÷ 出貨片數，不是公司公布的單價。</p>
+
+<MultiLine
+  title="毛利率與營業利益率"
+  subtitle={`${periodLabel(from)}–${periodLabel(last)} 為財報實際值${fcSpan ? `；${fcSpan} 為基準情境（虛線）` : ''}`}
+  unit="%"
+  format="percent"
+  digits={1}
+  includeZero={false}
+  height={230}
+  series={[
+    { name: meta.gmLabel, color: 'var(--chart-2)', points: gmPts },
+    { name: '營業利益率', color: 'var(--chart-7)', points: omPts },
+  ]}
+  xTitle="季度"
+  as="h3"
+  class="mem-chart fc-chart-wide fc-years"
+/>
+<ChartCites label="各季財報" keys={hist.map((q) => q.src)} />
+
+<style>
+  .tsmc-vol th[scope='row'] {
+    white-space: nowrap;
+  }
+  /* phone cards: the labels carry their unit (「營收（新台幣億元）」), so the label column is wider */
+  @media (max-width: 47.99rem) {
+    .mem-tablewrap--cards .tsmc-vol.mem-table tbody tr > * {
+      grid-template-columns: 9.5em minmax(0, 1fr);
+    }
+  }
+</style>

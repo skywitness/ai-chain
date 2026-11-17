@@ -1,0 +1,65 @@
+---
+/**
+ * Generic 「數量與營收」 lead of a /forecast/ page: quarterly revenue (bars, in 億) and the gross and operating margins
+ * (lines) from FC_META.historyFrom to the latest reported quarter, with the quarters' sources. A company's
+ * Volume.astro section replaces it (src/components/forecast/registry.ts).
+ *   <HistoryCharts b={bundle} />
+ */
+import MultiLine from '../charts/MultiLine.astro';
+import QuarterBars from '../memory/forecast/QuarterBars.astro';
+import ChartCites from '../memory/forecast/ChartCites.astro';
+import { actualGrossMargin, chartKey, fcYiUnit, periodLabel, quartersFrom, type FcBundle } from '../../lib/forecast-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, meta } = b;
+const qs = quartersFrom(inputs, meta.historyFrom);
+const unit = fcYiUnit(meta.currency);
+const margins = [
+  {
+    name: meta.gmLabel,
+    color: 'var(--chart-2)',
+    points: qs.map((q) => ({ x: chartKey(q.period), y: actualGrossMargin(b.company, q) ?? null })),
+  },
+  {
+    name: '營業利益率',
+    color: 'var(--chart-7)',
+    points: qs.map((q) => ({ x: chartKey(q.period), y: q.operatingIncome != null ? (q.operatingIncome / q.revenue) * 100 : null })),
+  },
+].filter((s) => s.points.some((p) => p.y != null));
+const span = qs.length ? `${periodLabel(qs[0]!.period)}–${periodLabel(qs.at(-1)!.period)}` : '';
+---
+
+{
+  qs.length > 0 && (
+    <>
+      <div class="mem-grid mem-grid--charts">
+        <QuarterBars
+          title="每季營收"
+          subtitle={`${span}，財報實際值`}
+          unit={unit}
+          points={qs.map((q) => ({ period: q.period, value: q.revenue / 100 }))}
+          as="h3"
+        />
+        {margins.length > 0 && (
+          <MultiLine
+            title="毛利率與營業利益率"
+            subtitle={`${span}，財報實際值`}
+            unit="%"
+            format="percent"
+            digits={1}
+            includeZero={false}
+            height={210}
+            series={margins}
+            xTitle="季度"
+            as="h3"
+            class:list={['mem-chart', qs.length > 16 && 'fc-years']}
+          />
+        )}
+      </div>
+      <ChartCites keys={qs.map((q) => q.src)} label="各季財報出處" />
+    </>
+  )
+}

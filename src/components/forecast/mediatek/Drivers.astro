@@ -1,0 +1,473 @@
+---
+/**
+ * 驅動因子（聯發科）: the four things that move the results — the company's own guidance and the FX it assumes, the
+ * product-line mix, the smartphone market (IDC shipments × revenue per phone) and the data-center ASIC with its gross
+ * margin dilution. Slot `Drivers` of /forecast/mediatek/; the generic tables of every series follow in a disclosure.
+ *   <Drivers b={bundle} />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import QuarterBars from '../../memory/forecast/QuarterBars.astro';
+import ChartCites from '../../memory/forecast/ChartCites.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import StatusTag from '../../memory/StatusTag.astro';
+import {
+  derivedOf,
+  fcPct,
+  forecastOf,
+  inWindow,
+  isQuarter,
+  lastReportedOf,
+  periodLabel,
+  qIndex,
+  type FcBundle,
+  spanLabel,
+  type ScenarioId,
+} from '../../../lib/forecast-data';
+import { formatDate, formatNumber } from '../../../lib/format';
+import {
+  ASIC_COLOR,
+  LINES,
+  asicFacts,
+  assumptionOf,
+  correlation,
+  derivedAt,
+  driverAt,
+  driverWindow,
+  numberIn,
+  quarterBack,
+  uniq,
+  type Pt,
+} from './mtk';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m, inputs, meta } = b;
+const lastQ = lastReportedOf(m);
+const inWin = (p: { period: string }) => inWindow(meta, p.period);
+const hist = (p: { period: string }) => !isQuarter(p.period) || qIndex(p.period) <= qIndex(lastQ);
+const span = (pts: Pt[]) => (pts.length ? `${periodLabel(pts[0]!.period)}–${periodLabel(pts.at(-1)!.period)}` : '');
+
+// ── A. guidance, FX and the reported revenue ──
+const beat = (derivedOf(m, 'guidance-beat')?.points ?? []).filter(inWin);
+const fxGap = (derivedOf(m, 'fx-gap')?.points ?? []).filter(inWin);
+const paired = beat.filter((p) => fxGap.some((f) => f.period === p.period));
+const r = correlation(
+  paired.map((p) => p.value),
+  paired.map((p) => fxGap.find((f) => f.period === p.period)!.value),
+);
+const meanBeat = beat.length ? beat.reduce((s, p) => s + p.value, 0) / beat.length : Number.NaN;
+const meanFx = fxGap.length ? fxGap.reduce((s, p) => s + p.value, 0) / fxGap.length : Number.NaN;
+const strongest = [...fxGap].sort((x, y) => x.value - y.value)[0];
+const strongestBeat = strongest ? beat.find((p) => p.period === strongest.period) : undefined;
+const fxH10 = driverWindow(b, 'usd-ntd-avg-fed');
+const fxGuide = driverWindow(b, 'guidance-fx');
+const fxNow = fxH10.at(-1)?.status === 'estimate' ? fxH10.at(-1) : undefined;
+const fxNowGuide = fxNow ? fxGuide.find((p) => p.period === fxNow.period) : undefined;
+const fxNowGap = fxNow && fxNowGuide ? (fxNow.value / fxNowGuide.value - 1) * 100 : undefined;
+const fxNowDate = /截至 (\d{4}-\d{2}-\d{2})/.exec(fxNow?.note ?? '')?.[1];
+const guideKeys = uniq([...driverWindow(b, 'guidance-revenue'), ...fxGuide].map((p) => p.src));
+const fxKeys = uniq(fxH10.map((p) => p.src));
+const resultKeys = uniq(inputs.quarters.filter(inWin).map((q) => q.src));
+
+// ── B. product lines ──
+const shares = LINES.map((l) => ({ ...l, pts: driverWindow(b, `revenue-share-${l.id}`) }));
+const lineRev = LINES.map((l) => ({ ...l, pts: (derivedOf(m, `segment-revenue-${l.id}`)?.points ?? []).filter(hist) }));
+const mob = shares[0]!.pts;
+const mobNow = mob.at(-1);
+const mobLow = mobNow && mob.every((p) => p.value >= mobNow.value);
+const edgeNow = shares[1]!.pts.at(-1);
+const edgeYoy = edgeNow ? driverAt(b, 'revenue-yoy-smart-edge', edgeNow.period) : undefined;
+const shareKeys = uniq(shares.flatMap((s) => s.pts.map((p) => p.src)));
+
+// ── C. smartphone market ──
+const idc = driverWindow(b, 'smartphone-shipments-idc');
+const rps = (derivedOf(m, 'revenue-per-smartphone')?.points ?? []).filter(hist);
+const idcAt = (p: string) => idc.find((x) => x.period === p);
+// revenue per phone over the reported quarters of the latest year against the same quarters a year earlier (weighted
+// by shipments: Σ revenue ÷ Σ phones)
+const lastYear = lastQ.slice(0, 4);
+const ZH_N = ['', '一', '兩', '三', '四'];
+const ytd = (y: string) => {
+  const qs = [1, 2, 3, 4].filter((n) => n <= Number(lastQ.slice(5))).map((n) => `${y}Q${n}`);
+  const w = qs.map((p) => ({ rev: derivedAt(b, 'segment-revenue-mobile', p)?.value, fx: driverAt(b, 'usd-ntd-avg-fed', p)?.value, n: idcAt(p)?.value }));
+  if (!w.every((x) => x.rev != null && x.fx != null && x.n != null)) return undefined;
+  const usd = w.reduce((s, x) => s + (x.rev ?? 0) / (x.fx ?? 1), 0);
+  const n = w.reduce((s, x) => s + (x.n ?? 0), 0);
+  return n > 0 ? { v: usd / n, q: qs.length } : undefined;
+};
+const rpsNow = ytd(lastYear);
+const rpsPrev = ytd(String(Number(lastYear) - 1));
+// the quarters where the company's phone revenue swung furthest from the IDC shipments (both year on year)
+const swings = idc
+  .map((p) => {
+    const ya = idcAt(quarterBack(p.period, 4));
+    const mob = driverAt(b, 'revenue-yoy-mobile', p.period);
+    return ya && mob ? { period: p.period, idc: (p.value / ya.value - 1) * 100, mob: mob.value, src: [p.src, ya.src, mob.src] } : undefined;
+  })
+  .filter((x): x is NonNullable<typeof x> => !!x);
+const swingDown = [...swings].sort((x, y) => x.mob - y.mob)[0];
+const swingUp = [...swings].sort((x, y) => y.mob - x.mob)[0];
+const idcKeys = uniq(idc.map((p) => p.src));
+
+// ── D. data-center ASIC ──
+const asic = asicFacts(b);
+const asicEvents = inputs.events.filter((e) => /ASIC/.test(e.title)).sort((x, y) => x.date.localeCompare(y.date));
+const asicRev = derivedOf(m, 'datacenter-asic-revenue')?.points ?? [];
+const nonAsic = derivedOf(m, 'gm-core-nonasic');
+const drag = derivedOf(m, 'gm-asic-drag');
+const bridge = asicRev.map((p) => {
+  const guided = drag?.points.find((x) => x.period === p.period)?.status === 'guidance';
+  const total = guided && asic.period === p.period ? undefined : forecastOf(m, 'base', p.period);
+  const rev = guided ? undefined : total?.revenue;
+  return {
+    period: p.period,
+    guided,
+    share: guided ? asic.share : rev ? (p.value / rev) * 100 : undefined,
+    non: derivedAt(b, 'gm-core-nonasic', p.period)?.value,
+    drag: derivedAt(b, 'gm-asic-drag', p.period)?.value,
+    gm: guided ? (derivedAt(b, 'gm-core-nonasic', p.period)?.value ?? 0) + (derivedAt(b, 'gm-asic-drag', p.period)?.value ?? 0) : total?.grossMargin,
+  };
+});
+const SC: Array<{ id: ScenarioId; name: string }> = [
+  { id: 'bear', name: '保守' },
+  { id: 'base', name: '基準' },
+  { id: 'bull', name: '樂觀' },
+];
+const nextYear = asic.target?.period;
+const scen = SC.map((s) => {
+  const rev = assumptionOf(b, s.id, '資料中心 ASIC 營收');
+  const gm = assumptionOf(b, s.id, '資料中心 ASIC 毛利率');
+  return {
+    ...s,
+    usd: numberIn(rev?.value, new RegExp(`${nextYear ?? '\\d{4}'} 年 ([\\d,.]+) 億美元`)),
+    gm: numberIn(gm?.value, /^([\d.]+)%/),
+    yearGm: nextYear ? forecastOf(m, s.id, nextYear)?.grossMargin : undefined,
+    src: uniq([rev?.src, gm?.src]),
+  };
+}).filter((s) => s.usd != null && s.gm != null);
+const sensGm = m.sensitivities.find((s) => /ASIC 毛利率/.test(s.driver));
+const sensRev = m.sensitivities.find((s) => /ASIC 營收/.test(s.driver) && (!nextYear || s.driver.startsWith(nextYear)));
+---
+
+<h3 class="fc-h3">財測、匯率與實際營收</h3>
+{
+  beat.length > 0 && (
+    <p class="fc-p">
+      {`${spanLabel(beat[0]!.period, beat.at(-1)!.period)}共 ${beat.length} 季，實際營收平均比財測中值高 ${formatNumber(meanBeat, { digits: 1 })}%，同期實際匯率平均只比財測假設弱 ${formatNumber(meanFx, { digits: 1 })}%，兩者的相關係數 ${formatNumber(r, { digits: 2 })}：匯率能解釋的部分不大，多數季度是實際營收本來就高於財測中值。`}
+      {strongest && strongestBeat && strongest.value < -2
+        ? `匯率差最大的是 ${periodLabel(strongest.period, 'long')}：新台幣比財測假設強 ${formatNumber(Math.abs(strongest.value), { digits: 1 })}%，營收${strongestBeat.value < 0 ? `低於財測中值 ${formatNumber(Math.abs(strongestBeat.value), { digits: 1 })}%` : `仍高於財測中值 ${formatNumber(strongestBeat.value, { digits: 1 })}%`}。`
+        : ''}
+      {fxNow && fxNowGuide && fxNowGap != null && (
+        <>
+          {periodLabel(fxNow.period, 'long')}季初至{fxNowDate ? ` ${formatDate(fxNowDate)}` : '今'}的平均匯率 {formatNumber(fxNow.value, { digits: 2 })} 元，比財測假設的 {formatNumber(fxNowGuide.value, { digits: 1 })} 元弱 {formatNumber(fxNowGap, { digits: 1 })}%
+          <FcCite k={fxNow.src!} />
+          <FcCite k={fxNowGuide.src!} />
+          ，所以基準情境的營收高於財測中值。
+        </>
+      )}
+    </p>
+  )
+}
+<div class="mem-grid mem-grid--charts">
+  {
+    beat.length > 0 && (
+      <MultiLine
+        title="實際營收相對財測中值，與匯率差"
+        subtitle={`${span(beat)}，每季；正值代表實際營收高於財測中值、實際匯率比財測假設弱（新台幣較弱）`}
+        unit="%"
+        format="percent"
+        digits={1}
+        series={[
+          { name: '營收相對財測中值', color: 'var(--chart-1)', points: beat.map((p) => ({ x: p.period, y: p.value })) },
+          { name: '匯率相對財測假設', color: 'var(--chart-7)', points: fxGap.map((p) => ({ x: p.period, y: p.value })) },
+        ]}
+        height={230}
+        notes={['營收：實際營收 ÷ 上一季法說會公布的營收財測中值 − 1。匯率：聯準會 H.10 當季平均 ÷ 財測假設匯率 − 1。由本站依財報與財測計算。']}
+        xTitle="季度"
+        as="h4"
+        class="mem-chart fc-years"
+      />
+    )
+  }
+  {
+    fxH10.length > 0 && (
+      <MultiLine
+        title="美元兌新台幣：當季平均與財測假設"
+        subtitle={`${span(fxH10)}，每季平均（新台幣／美元，數字越大代表新台幣越弱）`}
+        unit="新台幣／美元"
+        digits={2}
+        includeZero={false}
+        series={[
+          {
+            name: '當季平均（聯準會 H.10）',
+            color: 'var(--chart-7)',
+            points: fxH10.map((p) => ({ x: p.period, y: p.value, estimate: p.status === 'estimate' })),
+          },
+          { name: '財測假設匯率', color: 'var(--chart-4)', points: fxGuide.map((p) => ({ x: p.period, y: p.value })) },
+        ]}
+        height={230}
+        notes={[
+          fxNow ? `${periodLabel(fxNow.period)} 是季初至${fxNowDate ? ` ${formatDate(fxNowDate, 'md')} ` : '今'}的平均（季度尚未結束，虛線）。` : null,
+          '公司簡報的平均匯率與 H.10 季平均的差距多在 0.05 元以內。',
+        ]}
+        xTitle="季度"
+        as="h4"
+        class="mem-chart fc-years"
+      />
+    )
+  }
+</div>
+<ChartCites keys={guideKeys} label="各季財測出處" />
+<ChartCites keys={[...resultKeys, ...fxKeys]} label="財報與匯率" />
+
+<h3 class="fc-h3">產品線：手機比重下滑，智慧邊緣平台上升</h3>
+{
+  mobNow && edgeNow && (
+    <p class="fc-p">
+      聯發科每季公布三大產品線占營收的比重（整數百分比）。{periodLabel(mobNow.period, 'long')}手機占 {formatNumber(mobNow.value)}%{mobLow ? `，是 ${periodLabel(mob[0]!.period, 'long')}有揭露以來最低` : ''}；智慧邊緣平台占 {formatNumber(edgeNow.value)}%
+      {edgeYoy && `，營收（新台幣）${edgeYoy.value >= 0 ? '年增' : '年減'} ${formatNumber(Math.abs(edgeYoy.value))}%`}
+      <FcCite k={edgeNow.src!} />
+      ；2026 年第三季起，智慧邊緣平台也包含 9 月開始初期出貨的資料中心 ASIC（公司未揭露金額）{asic.targetSrc && <FcCite k={asic.targetSrc} />}。第二張圖把比重乘上合併營收換算成金額，因為比重只到整數，每條產品線約有 ±0.5 個百分點的進位誤差，所以標為估計。
+    </p>
+  )
+}
+<div class="mem-grid mem-grid--charts">
+  {
+    mob.length > 0 && (
+      <MultiLine
+        title="產品線營收占比"
+        subtitle={`${span(mob)}，每季，公司簡報`}
+        unit="%"
+        format="percent"
+        digits={0}
+        series={shares.map((s) => ({ name: s.name, color: s.color, points: s.pts.map((p) => ({ x: p.period, y: p.value })) }))}
+        height={230}
+        notes={['2021 年的「物聯網、運算與 ASIC」與「智慧家庭」合併為智慧邊緣平台（2022 年起的分類）。']}
+        xTitle="季度"
+        as="h4"
+        class="mem-chart fc-years"
+      />
+    )
+  }
+  {
+    lineRev[0]!.pts.length > 0 && (
+      <MultiLine
+        title="產品線營收（由占比換算）"
+        subtitle={`${span(lineRev[0]!.pts)}，每季；占比 × 合併營收`}
+        unit="新台幣億元"
+        digits={0}
+        series={lineRev.map((s) => ({ name: s.name, color: s.color, points: s.pts.map((p) => ({ x: p.period, y: p.value / 100, estimate: true })) }))}
+        height={230}
+        xTitle="季度"
+        as="h4"
+        class="mem-chart fc-years"
+      />
+    )
+  }
+</div>
+<ChartCites keys={[...shareKeys, ...resultKeys]} />
+
+<h3 class="fc-h3">手機市場：出貨量 × 每支手機帶給聯發科的營收</h3>
+<p class="fc-p">
+  手機營收可以拆成兩個數字相乘：全球智慧型手機出貨量（IDC 的估計），以及每支手機平均帶給聯發科多少營收（手機營收換算成美元 ÷ 出貨量，相當於聯發科的市占 × 每支手機的晶片價值）。{
+    rpsNow && rpsPrev
+      ? `${lastYear} 年${rpsNow.q === 1 ? '第一季' : `前${ZH_N[rpsNow.q]}季`}平均每支 ${formatNumber(rpsNow.v, { digits: 2 })} 美元，${Number(lastYear) - 1} 年同期 ${formatNumber(rpsPrev.v, { digits: 2 })} 美元。`
+      : ''
+  }
+  {
+    swingDown && swingUp && (
+      <>
+        但這兩個數字只說明長期方向，單季的解釋力很低：聯發科的晶片比手機早出貨，客戶調整庫存時會放大波動。{periodLabel(swingDown.period, 'long')} IDC 出貨{swingDown.idc < 0 ? '年減' : '年增'} {formatNumber(Math.abs(swingDown.idc), { digits: 1 })}%，聯發科手機營收（新台幣）{swingDown.mob < 0 ? '年減' : '年增'} {formatNumber(Math.abs(swingDown.mob))}%
+        {uniq(swingDown.src).map((k) => <FcCite k={k} />)}
+        ；{periodLabel(swingUp.period, 'long')}出貨{swingUp.idc < 0 ? '年減' : '年增'} {formatNumber(Math.abs(swingUp.idc), { digits: 1 })}%，手機營收{swingUp.mob < 0 ? '年減' : '年增'} {formatNumber(Math.abs(swingUp.mob))}%
+        {uniq(swingUp.src).map((k) => <FcCite k={k} />)}。
+      </>
+    )
+  }
+  所以{asic.period ? ` ${periodLabel(asic.period, 'long')}` : '下一季'}模型以公司財測為準，{nextYear ? `${nextYear} 年` : '之後'}才用出貨 × 每支營收推估手機營收；三個情境的假設見<a href="#scenarios">情境預測</a>。
+</p>
+<div class="mem-grid mem-grid--charts">
+  {
+    idc.length > 0 && (
+      <QuarterBars
+        title="全球智慧型手機出貨（IDC 估計）"
+        subtitle={`${span(idc)}，每季；第三方估計，取 IDC 最新修正值`}
+        unit="百萬支"
+        digits={1}
+        points={idc.map((p) => ({ period: p.period, value: p.value, status: 'estimate' }))}
+        valueLabels={false}
+        legend={[{ label: 'IDC 估計（斜線）', kind: 'estimate', color: 'var(--chart-1)' }]}
+        as="h4"
+      />
+    )
+  }
+  {
+    rps.length > 0 && (
+      <MultiLine
+        title="每支全球手機帶給聯發科的營收"
+        subtitle={`${span(rps)}，每季；手機營收（美元）÷ IDC 出貨，由本站推算`}
+        unit="美元／支"
+        digits={2}
+        includeZero={false}
+        series={[{ name: '每支手機營收', color: 'var(--chart-1)', points: rps.map((p) => ({ x: p.period, y: p.value, estimate: true })) }]}
+        area={false}
+        height={210}
+        notes={['IDC 為第三方估計；聯發科的晶片比手機早出貨，單季比值會受客戶庫存調整影響（例如 2023 年上半年）。']}
+        xTitle="季度"
+        as="h4"
+        class="mem-chart fc-years"
+      />
+    )
+  }
+</div>
+<ChartCites keys={[...idcKeys, ...shareKeys]} />
+
+<h3 class="fc-h3">資料中心 ASIC：營收放大，毛利率被稀釋</h3>
+<p class="fc-p">
+  資料中心 AI 加速器 ASIC 是替單一雲端客戶客製的 AI 晶片，公司歸在智慧邊緣平台，不另外揭露營收。公司的說法逐步上調：
+</p>
+{
+  asicEvents.length > 0 && (
+    <ol class="fct-mtk-events" role="list">
+      {asicEvents.map((e) => (
+        <li>
+          <time datetime={e.date}>{formatDate(e.date, 'iso')}</time>
+          <span>
+            {e.title}
+            <FcCite k={e.src} />
+          </span>
+        </li>
+      ))}
+    </ol>
+  )
+}
+<div class="mem-grid mem-grid--charts">
+  {
+    asicRev.length > 0 && (
+      <QuarterBars
+        title="資料中心 ASIC 營收（基準情境）"
+        subtitle={`${periodLabel(asicRev[0]!.period)} 為公司說法、之後為模型假設；以基準情境匯率換算新台幣`}
+        unit="新台幣億元"
+        digits={0}
+        points={asicRev.map((p, i) => ({
+          period: p.period,
+          value: p.value / 100,
+          status: i === 0 && p.period === asic.period ? 'guidance' : 'forecast',
+          note:
+            i === 0 && p.period === asic.period
+              ? `公司預期約 ${asic.quarterUsd != null ? formatNumber(asic.quarterUsd / 100) : '—'} 億美元`
+              : '公司只給全年目標，各季分配是模型假設',
+        }))}
+        color={ASIC_COLOR}
+        legend={[
+          { label: '公司說法或模型假設（斜線）', kind: 'estimate', color: ASIC_COLOR },
+        ]}
+        as="h4"
+      />
+    )
+  }
+  {
+    bridge.length > 0 && nonAsic && drag && (
+      <div class="fct-mtk-bridge">
+        <h4 class="fc-h4">毛利率＝非 ASIC 產品與 ASIC 的加權</h4>
+        <p class="mem-fine">合併毛利率 = 非 ASIC 產品毛利率 + ASIC 拉低的幅度；ASIC 毛利率是由財測反推的推算值，公司未揭露。</p>
+        <div class="mem-tablewrap mem-tablewrap--cards" tabindex="0" role="region" aria-label="毛利率拆解">
+          <table class="mem-table">
+            <caption class="ch-sr">聯發科毛利率拆解：資料中心 ASIC 占營收、非 ASIC 產品毛利率、ASIC 的影響與合併毛利率（基準情境）</caption>
+            <thead>
+              <tr>
+                <th scope="col">季度</th>
+                <th scope="col" class="num">ASIC 占營收</th>
+                <th scope="col" class="num">非 ASIC 毛利率</th>
+                <th scope="col" class="num">ASIC 的影響</th>
+                <th scope="col" class="num">合併毛利率</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bridge.map((row) => (
+                <tr class:list={[!row.guided && 'fc-row--forecast']}>
+                  <th scope="row" data-label="季度">
+                    {periodLabel(row.period)}
+                    {row.guided ? <span class="fc-tag fc-tag--guidance">財測隱含</span> : <StatusTag status="forecast" />}
+                  </th>
+                  <td class="num" data-label="ASIC 占營收">{row.share != null ? fcPct(row.share, 0) : <span class="mem-na">—</span>}</td>
+                  <td class="num" data-label="非 ASIC 毛利率">{fcPct(row.non)}</td>
+                  <td class="num" data-label="ASIC 的影響">{row.drag != null ? `${formatNumber(row.drag, { digits: 1, signed: true })} 個百分點` : '—'}</td>
+                  <td class="num" data-label="合併毛利率">{fcPct(row.gm)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="mem-fine">
+          數字四捨五入到 0.1，相加可能差 0.1 個百分點。
+          {bridge[0]?.guided
+            ? `${periodLabel(bridge[0].period)} 是公司財測 ${fcPct(bridge[0].gm)} 隱含的拆解（ASIC 占財測營收中值的比重）；本站基準情境另加上歷史偏差，見預測摘要。`
+            : ''}
+          之後各季為基準情境。
+        </p>
+      </div>
+    )
+  }
+</div>
+{
+  scen.length > 0 && (
+    <p class="fc-p fct-mtk-scen">
+      {nextYear} 年三個情境的 ASIC 假設：
+      {scen.map((s, i) => (
+        <>
+          {i > 0 && '；'}
+          {s.name} {formatNumber(s.usd!)} 億美元、毛利率 {fcPct(s.gm!)}
+          {s.yearGm != null && `（全年合併毛利率 ${fcPct(s.yearGm)}）`}
+          {s.src.map((k) => (
+            <FcCite k={k} />
+          ))}
+        </>
+      ))}
+      。{sensGm && `敏感度：ASIC 毛利率${sensGm.change}，${sensGm.effect}`}{sensGm && sensRev ? '；' : sensGm ? '。' : ''}{sensRev && `ASIC 營收${sensRev.change}，${sensRev.effect}。`}
+    </p>
+  )
+}
+
+<style>
+  .fct-mtk-events {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-5);
+    padding: 0;
+    list-style: none;
+    max-inline-size: 48em;
+    font-size: var(--fs-s);
+  }
+  .fct-mtk-events li {
+    display: grid;
+    grid-template-columns: 6.5em minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: baseline;
+    padding-block: var(--space-1);
+    border-block-end: 1px solid var(--c-border);
+  }
+  .fct-mtk-events time {
+    font-variant-numeric: tabular-nums;
+    color: var(--c-fg-subtle);
+    font-size: var(--fs-xs);
+  }
+  .fct-mtk-bridge {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+    min-width: 0;
+  }
+  .fct-mtk-bridge .mem-fine {
+    margin: 0;
+  }
+  .fct-mtk-bridge .fc-tag,
+  .fct-mtk-bridge th .mem-st {
+    margin-inline-start: 0.4em;
+  }
+  .fct-mtk-scen {
+    margin-block-start: var(--space-4);
+  }
+</style>

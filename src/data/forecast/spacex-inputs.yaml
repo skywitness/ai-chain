@@ -1,0 +1,214 @@
+# SpaceX 財報模型的輸入資料：日曆季度損益、三個營運部門（太空、連網、AI／SI）的營收與損益、資本支出、折舊、財測與事件。格式見 src/schemas/forecast.ts（companyInputs）。
+# 由 fc2-data-spacex 整理；驅動因子（Starlink 用戶、ARPU、發射次數、算力 GW、未完成合約…）在 spacex-drivers.yaml；模型輸出 spacex-model.json 由 scripts/models/spacex.ts 產生。
+
+company: "spacex"
+currency: "USD"
+amountUnit: "million"
+periodNote: "會計年度與曆年相同，季度為日曆季度（2025Q1＝2025-01-01 至 2025-03-31）。SpaceX 在 2026-06-12 於 Nasdaq 與 Nasdaq Texas 掛牌（代號 SPCX），上市前是私人公司，招股書（sec-424b4）只揭露 2023–2025 年度與 2025、2026 年第一季財報，沒有 2024 年以前的單季數字，因此季資料只有 2025Q1–2026Q3 共 7 季。2026-02-02 併購 xAI（xAI 在 2025-03-28 併入 X Holdings）屬共同控制下的合併，所有期間都追溯合併 xAI 與 X（前 Twitter）。季度數字的取得方式：2025Q2、2026Q2 取自第二季財報新聞稿與 10-Q；2025Q3、2026Q3 取自第三季財報新聞稿與 10-Q；2026Q1 取自招股書（與第二季新聞稿的比較欄一致）；2025Q1 的部門數字以第二季新聞稿的上半年數減第二季推算（若改用第三季新聞稿的前九個月數減第二、三季，消費者、企業與政府、廣告、AI 解決方案、連網營業利益、太空與 AI 調整後 EBITDA 等幾項會差 100–200 萬美元；招股書原列連網 2,475、AI 727，差 100 萬美元屬四捨五入或重分類），合併損益與招股書相同；2025Q4 以招股書的 2025 全年減第三季 10-Q 的前九個月推算。各季相加與年度或前九個月的公布數可能因各份報告四捨五入或小幅重分類相差 100–200 萬美元（例如 2025 年資本支出四季相加 20,736，年度公布 20,737）。金額單位為百萬美元。grossProfit＝營收－銷貨成本（cost of revenue）；operatingExpenses＝研發＋管銷＋重組費用＋減損；operatingIncome 為 GAAP 營業損益（已扣股份基礎給付、重組與減損）；nonOperating＝利息收入－利息費用＋其他收支淨額，等於 pretaxIncome－operatingIncome；netIncome 為合併淨利（2026Q1 歸屬普通股股東的淨損另含特別股視同股利 6.71 億美元，見 extra）；eps 為 GAAP 稀釋每股盈餘（美元），sharesDiluted 為稀釋加權平均股數（百萬股）；depreciation 為折舊攤銷（調整後 EBITDA 調節表）；capex 為現金流量表的購置不動產廠房設備支出，等於公司「Capex」表；inventory 為期末存貨（2025 年前三季資產負債表未揭露）。extra（百萬美元，另註明者除外）：三個部門的營收、營業損益、調整後 EBITDA（非 GAAP）、資本支出、折舊攤銷與銷貨成本；營收細項（發射服務、發射與開發、消費者、企業與政府、廣告、AI 解決方案與基礎設施）；研發、管銷、重組、減損、股份基礎給付；利息費用（正值）、利息收入、其他收支淨額、所得稅（負值為所得稅利益）；營業活動現金流（第二至四季為年初至今累計值相減）；不動產廠房設備淨額（期末）。AI 部門自 2026 年第三季起改稱 SI（Super Intelligence）部門，範圍不變（pr-q3-2026 Note 2）；本檔沿用「AI部門」鍵名。Stock Analysis 的營業利益（sa-q）排除併購相關股份基礎給付與重組費用，與本檔的 GAAP 口徑不同。"
+asOf: "2026-11-17"
+quarters:
+  - period: "2025Q1"
+    start: "2025-01-01"
+    end: "2025-03-31"
+    status: "actual"
+    revenue: 4067
+    grossProfit: 2105
+    operatingExpenses: 2078
+    operatingIncome: 27
+    nonOperating: -541
+    pretaxIncome: -514
+    netIncome: -528
+    eps: -0.18
+    sharesDiluted: 2875
+    depreciation: 1444
+    capex: 4140
+    extra: { 太空部門營收: 865, 連網部門營收: 2474, AI部門營收: 728, 發射服務營收: 566, 發射與開發營收: 299, 消費者營收: 1492, 企業與政府營收: 982, 廣告營收: 444, AI解決方案與基礎設施營收: 284, 太空部門營業利益: -70, 連網部門營業利益: 1033, AI部門營業利益: -936, 太空部門調整後EBITDA: 224, 連網部門調整後EBITDA: 1617, AI部門調整後EBITDA: -111, 調整後EBITDA: 1730, 太空部門資本支出: 759, 連網部門資本支出: 814, AI部門資本支出: 2567, 太空部門折舊攤銷: 162, 連網部門折舊攤銷: 509, AI部門折舊攤銷: 773, 太空部門銷貨成本: 297, 連網部門銷貨成本: 1214, AI部門銷貨成本: 451, 研發費用: 1557, 管銷費用: 493, 重組費用: 4, 減損: 24, 股份基礎給付: 231, 利息費用: 447, 利息收入: 117, 其他收支淨額: -211, 所得稅: 14, 營業活動現金流: 727 }
+    note: "合併損益、EPS 與股數取自 sec-424b4 第一季財報（與 pr-q2-2026 上半年減第二季一致）；部門數字、折舊攤銷與股份基礎給付以 pr-q2-2026 的上半年減第二季推算，招股書原列折舊攤銷 1,443、股份基礎給付 232、連網營收 2,475、AI 營收 727、企業與政府營收 983、廣告營收 443、連網調整後 EBITDA 1,618、AI 調整後 EBITDA −112（差 100 萬美元）；營業活動現金流 727 取自 sec-424b4。X Holdings 在 2025-03-28 才由 xAI 併購，但依共同控制原則整季合併。"
+    src: "pr-q2-2026"
+  - period: "2025Q2"
+    start: "2025-04-01"
+    end: "2025-06-30"
+    status: "actual"
+    revenue: 4071
+    grossProfit: 1789
+    operatingExpenses: 2759
+    operatingIncome: -970
+    nonOperating: 100
+    pretaxIncome: -870
+    netIncome: -1008
+    eps: -0.34
+    sharesDiluted: 2929
+    depreciation: 1526
+    capex: 2825
+    extra: { 太空部門營收: 746, 連網部門營收: 2588, AI部門營收: 737, 發射服務營收: 490, 發射與開發營收: 256, 消費者營收: 1721, 企業與政府營收: 867, 廣告營收: 426, AI解決方案與基礎設施營收: 311, 太空部門營業利益: -369, 連網部門營業利益: 923, AI部門營業利益: -1524, 太空部門調整後EBITDA: -93, 連網部門調整後EBITDA: 1583, AI部門調整後EBITDA: -276, 調整後EBITDA: 1214, 太空部門資本支出: 946, 連網部門資本支出: 1130, AI部門資本支出: 749, 太空部門折舊攤銷: 146, 連網部門折舊攤銷: 569, AI部門折舊攤銷: 811, 太空部門銷貨成本: 330, 連網部門銷貨成本: 1401, AI部門銷貨成本: 551, 研發費用: 1958, 管銷費用: 606, 重組費用: 190, 減損: 5, 股份基礎給付: 463, 利息費用: 411, 利息收入: 98, 其他收支淨額: 413, 所得稅: 138, 營業活動現金流: -376 }
+    note: "取自 pr-q2-2026 的 2025 年第二季比較欄（10-Q 同）；重組費用 1.9 億美元主要是前 Twitter 員工的組織調整；營業活動現金流以 pr-q2-2026 上半年 351 減 sec-424b4 第一季 727 推算。"
+    src: "pr-q2-2026"
+  - period: "2025Q3"
+    start: "2025-07-01"
+    end: "2025-09-30"
+    status: "actual"
+    revenue: 5576
+    grossProfit: 2871
+    operatingExpenses: 3144
+    operatingIncome: -273
+    nonOperating: -219
+    pretaxIncome: -492
+    netIncome: -1054
+    eps: -0.36
+    sharesDiluted: 2941
+    depreciation: 1814
+    capex: 6880
+    extra: { 太空部門營收: 1666, 連網部門營收: 3097, AI部門營收: 813, 發射服務營收: 1000, 發射與開發營收: 666, 消費者營收: 1986, 企業與政府營收: 1111, 廣告營收: 454, AI解決方案與基礎設施營收: 359, 太空部門營業利益: 259, 連網部門營業利益: 1190, AI部門營業利益: -1722, 太空部門調整後EBITDA: 674, 連網部門調整後EBITDA: 1923, AI部門調整後EBITDA: -428, 調整後EBITDA: 2169, 太空部門資本支出: 1113, 連網部門資本支出: 1007, AI部門資本支出: 4760, 太空部門折舊攤銷: 264, 連網部門折舊攤銷: 628, AI部門折舊攤銷: 922, 太空部門銷貨成本: 477, 連網部門銷貨成本: 1657, AI部門銷貨成本: 571, 研發費用: 2291, 管銷費用: 575, 重組費用: 278, 減損: 0, 股份基礎給付: 350, 利息費用: 514, 利息收入: 155, 其他收支淨額: 140, 所得稅: 562, 營業活動現金流: 3769 }
+    note: "取自 pr-q3-2026 的 2025 年第三季比較欄（sec-10q-q3-2026 同）；資本支出採公司 Capex 表的 6,880（前九個月 13,846 減上半年 6,965 為 6,881，差 100 萬美元屬四捨五入）；營業活動現金流以前九個月 4,120 減上半年 351 推算。"
+    src: "pr-q3-2026"
+  - period: "2025Q4"
+    start: "2025-10-01"
+    end: "2025-12-31"
+    status: "actual"
+    revenue: 4960
+    grossProfit: 2458
+    operatingExpenses: 3831
+    operatingIncome: -1373
+    nonOperating: -970
+    pretaxIncome: -2343
+    netIncome: -2347
+    depreciation: 1917
+    capex: 6891
+    inventory: 2416
+    extra: { 太空部門營收: 809, 連網部門營收: 3228, AI部門營收: 923, 發射服務營收: 520, 發射與開發營收: 289, 消費者營收: 2010, 企業與政府營收: 1218, 廣告營收: 521, AI解決方案與基礎設施營收: 402, 太空部門營業利益: -476, 連網部門營業利益: 1276, AI部門營業利益: -2173, 太空部門調整後EBITDA: -150, 連網部門調整後EBITDA: 2045, AI部門調整後EBITDA: -424, 調整後EBITDA: 1471, 太空部門資本支出: 1014, 連網部門資本支出: 1227, AI部門資本支出: 4650, 太空部門折舊攤銷: 185, 連網部門折舊攤銷: 670, AI部門折舊攤銷: 1062, 太空部門銷貨成本: 248, 連網部門銷貨成本: 1650, AI部門銷貨成本: 604, 研發費用: 2837, 管銷費用: 970, 重組費用: 15, 減損: 9, 股份基礎給付: 903, 利息費用: 573, 利息收入: 122, 其他收支淨額: -519, 所得稅: 4, 營業活動現金流: 2665, 不動產廠房設備淨額: 42602 }
+    note: "公司未單獨公布第四季：所有數字以 sec-424b4 的 2025 全年（經會計師查核）減 pr-q3-2026／sec-10q-q3-2026 的前九個月推算，部門數字同法（全年部門營收、成本、營業損益、折舊與資本支出取自招股書 Note 19 與非 GAAP 調節表）。季 EPS 無法由全年與九個月推算（股數不同），故省略。營收比第三季少 6.16 億美元，主要是太空（−8.57 億美元：發射服務 520 對第三季 1,000）。"
+    src: "sec-424b4"
+  - period: "2026Q1"
+    start: "2026-01-01"
+    end: "2026-03-31"
+    status: "actual"
+    revenue: 4694
+    grossProfit: 2306
+    operatingExpenses: 4249
+    operatingIncome: -1943
+    nonOperating: -2327
+    pretaxIncome: -4270
+    netIncome: -4276
+    eps: -1.27
+    sharesDiluted: 3884
+    inventory: 2588
+    depreciation: 2442
+    capex: 10107
+    extra: { 太空部門營收: 619, 連網部門營收: 3257, AI部門營收: 818, 發射服務營收: 330, 發射與開發營收: 289, 消費者營收: 2148, 企業與政府營收: 1109, 廣告營收: 343, AI解決方案與基礎設施營收: 475, 太空部門營業利益: -662, 連網部門營業利益: 1188, AI部門營業利益: -2469, 太空部門調整後EBITDA: -351, 連網部門調整後EBITDA: 2087, AI部門調整後EBITDA: -609, 調整後EBITDA: 1127, 太空部門資本支出: 1052, 連網部門資本支出: 1332, AI部門資本支出: 7723, 太空部門折舊攤銷: 166, 連網部門折舊攤銷: 783, AI部門折舊攤銷: 1493, 太空部門銷貨成本: 281, 連網部門銷貨成本: 1651, AI部門銷貨成本: 456, 研發費用: 3514, 管銷費用: 746, 重組費用: -11, 減損: 0, 股份基礎給付: 639, 利息費用: 664, 利息收入: 213, 其他收支淨額: -1876, 所得稅: 6, 營業活動現金流: 1047, 不動產廠房設備淨額: 53879, 歸屬普通股股東淨利: -4947 }
+    note: "取自 sec-424b4 的 2026 年第一季財報（未經查核），部門數字與 pr-q2-2026 的第一季比較欄一致。其他費用 18.76 億美元主要是債務提前清償損失約 15.3 億美元（sec-companyfacts）；歸屬普通股股東淨損 −49.47 億美元另含特別股視同股利 6.71 億美元，EPS 以此計算；Stock Analysis（sa-q）列的淨利 −49.47 億美元即此口徑。"
+    src: "sec-424b4"
+  - period: "2026Q2"
+    start: "2026-04-01"
+    end: "2026-06-30"
+    status: "actual"
+    revenue: 7814
+    grossProfit: 4319
+    operatingExpenses: 4462
+    operatingIncome: -143
+    nonOperating: -375
+    pretaxIncome: -518
+    netIncome: -541
+    eps: -0.09
+    sharesDiluted: 5864
+    inventory: 2718
+    depreciation: 2848
+    capex: 18369
+    extra: { 太空部門營收: 962, 連網部門營收: 4291, AI部門營收: 2561, 發射服務營收: 648, 發射與開發營收: 314, 消費者營收: 2485, 企業與政府營收: 1806, 廣告營收: 367, AI解決方案與基礎設施營收: 2194, 太空部門營業利益: -542, 連網部門營業利益: 1656, AI部門營業利益: -1257, 太空部門調整後EBITDA: -205, 連網部門調整後EBITDA: 2597, AI部門調整後EBITDA: 1146, 調整後EBITDA: 3538, 太空部門資本支出: 1174, 連網部門資本支出: 1367, AI部門資本支出: 15828, 太空部門折舊攤銷: 158, 連網部門折舊攤銷: 805, AI部門折舊攤銷: 1885, 太空部門銷貨成本: 329, 連網部門銷貨成本: 2060, AI部門銷貨成本: 1106, 研發費用: 3548, 管銷費用: 912, 重組費用: 2, 減損: 0, 股份基礎給付: 831, 利息費用: 629, 利息收入: 340, 其他收支淨額: -86, 所得稅: 23, 營業活動現金流: 2419, 不動產廠房設備淨額: 65736 }
+    note: "取自 pr-q2-2026（上市後第一份季報，sec-10q-q2-2026 同）。AI 部門營收季增 213%，主要是 5 月起與 Anthropic 等客戶的雲端服務合約（Cloud Services Agreements）帶來約 16 億美元增量；第二季新簽算力合約金額 141 億美元（只計不可取消期間）。單一 AI 客戶（10-Q 的 Customer B）占當季營收 19.5%。營業活動現金流以上半年 3,466 減第一季 1,047 推算。本季沒有公司事前財測。"
+    src: "pr-q2-2026"
+  - period: "2026Q3"
+    start: "2026-07-01"
+    end: "2026-09-30"
+    status: "actual"
+    revenue: 14575
+    grossProfit: 9097
+    operatingExpenses: 6306
+    operatingIncome: 2791
+    nonOperating: 1223
+    pretaxIncome: 4014
+    netIncome: 4404
+    eps: 0.35
+    sharesDiluted: 12475
+    inventory: 2891
+    depreciation: 3644
+    capex: 19593
+    extra: { 太空部門營收: 1767, 連網部門營收: 5248, AI部門營收: 7560, 發射服務營收: 1130, 發射與開發營收: 637, 消費者營收: 3121, 企業與政府營收: 2127, 廣告營收: 538, AI解決方案與基礎設施營收: 7022, Cursor營收: 608, 太空部門營業利益: -7, 連網部門營業利益: 2367, AI部門營業利益: 431, 太空部門調整後EBITDA: 357, 連網部門調整後EBITDA: 3499, AI部門調整後EBITDA: 4953, 調整後EBITDA: 8809, 太空部門資本支出: 1606, 連網部門資本支出: 1543, AI部門資本支出: 16444, 太空部門折舊攤銷: 185, 連網部門折舊攤銷: 986, AI部門折舊攤銷: 2473, 太空部門銷貨成本: 435, 連網部門銷貨成本: 2368, AI部門銷貨成本: 2675, 研發費用: 4596, 管銷費用: 1707, 重組費用: 3, 減損: 0, 股份基礎給付: 2363, 併購相關股份基礎給付: 1217, 利息費用: 675, 利息收入: 873, 其他收支淨額: 1025, 所得稅: -390, 營業活動現金流: 9631, 不動產廠房設備淨額: 89483 }
+    note: "取自 pr-q3-2026（2026-10-20 公布，sec-10q-q3-2026 同）。AI 部門自本季改稱 SI 部門；SI 營收季增 195%，主要是雲端服務合約整季認列與新簽合約，另含 8 月 14 日完成併購的 Cursor 營收 6.08 億美元；SI 營業利益已扣除 Cursor 併購相關股份基礎給付 12.17 億美元。單一 SI 客戶（Customer B）占當季營收 34.5%。連網部門毛利率約 55%，其中約 3 個百分點是關稅退款等一次性利益（tr-q3-2026）。其他收入 10.25 億美元含對關係人 The Boring Company 投資的公允價值利益 5.61 億美元，並認列所得稅利益 3.90 億美元；基本 EPS 0.37 美元、基本股數 11,942 百萬股。股份基礎給付 2,363＝一般 1,146＋併購相關 1,217。營業活動現金流以前九個月 13,097 減上半年 3,466 推算。上一季法說會沒有給本季營收財測，只表示下兩季資本支出與第二季相近（tr-q2-2026）。"
+    src: "pr-q3-2026"
+monthly: []
+annual:
+  - year: "2023"
+    sales:
+      - { product: "發射服務", value: 1964, units: 33, unitLabel: "次客戶發射（Falcon）", note: "units 為當年 Falcon 客戶發射次數，僅供對照；發射服務營收也含 Dragon 等任務" }
+      - { product: "發射與開發", value: 1593 }
+      - { product: "Starlink 消費者", value: 2817 }
+      - { product: "企業與政府（含 Starshield、航空、海事、Starlink Mobile）", value: 1052 }
+      - { product: "X 廣告", value: 2323 }
+      - { product: "AI 解決方案與基礎設施", value: 638 }
+    extra: { 營收: 10387, 毛利: 4277, 營業利益: -3505, 淨利: -4628, 研發費用: 2105, 管銷費用: 1665, 重組費用: 237, 減損: 3775, 折舊攤銷: 2635, 股份基礎給付: 679, 調整後EBITDA: 3821, 資本支出: 4415, 營業活動現金流: 4520, 太空部門營收: 3557, 連網部門營收: 3869, AI部門營收: 2961, 太空部門營業利益: -1, 連網部門營業利益: 469, AI部門營業利益: -3973, 太空部門調整後EBITDA: 997, 連網部門調整後EBITDA: 1602, AI部門調整後EBITDA: 1222, 太空部門資本支出: 1497, 連網部門資本支出: 2455, AI部門資本支出: 463, 太空部門折舊攤銷: 571, 連網部門折舊攤銷: 884, AI部門折舊攤銷: 1180, 太空部門銷貨成本: 1669, 連網部門銷貨成本: 2786, AI部門銷貨成本: 1655, 最大客戶營收占比: 25.2 }
+    note: "取自 sec-424b4 經查核的 2023 年財報（Note 3 營收拆分、Note 19 部門資訊與非 GAAP 調節表），追溯合併 xAI 與 X。AI 部門認列無形資產減損 37.75 億美元。最大客戶營收占比為百分比（Customer A，營收來自三個部門）。"
+    src: "sec-424b4"
+  - year: "2024"
+    sales:
+      - { product: "發射服務", value: 2584, units: 45, unitLabel: "次客戶發射（Falcon）", note: "units 為當年 Falcon 客戶發射次數，僅供對照" }
+      - { product: "發射與開發", value: 1212 }
+      - { product: "Starlink 消費者", value: 4830 }
+      - { product: "企業與政府（含 Starshield、航空、海事、Starlink Mobile）", value: 2769 }
+      - { product: "X 廣告", value: 1728 }
+      - { product: "AI 解決方案與基礎設施", value: 892 }
+    extra: { 營收: 14015, 毛利: 6019, 營業利益: 466, 淨利: 791, 研發費用: 3464, 管銷費用: 1813, 重組費用: 213, 減損: 63, 折舊攤銷: 3824, 股份基礎給付: 784, 調整後EBITDA: 5350, 資本支出: 11163, 營業活動現金流: 5776, 太空部門營收: 3796, 連網部門營收: 7599, AI部門營收: 2620, 太空部門營業利益: 21, 連網部門營業利益: 2006, AI部門營業利益: -1561, 太空部門調整後EBITDA: 1154, 連網部門調整後EBITDA: 3849, AI部門調整後EBITDA: 347, 太空部門資本支出: 2032, 連網部門資本支出: 3498, AI部門資本支出: 5633, 太空部門折舊攤銷: 637, 連網部門折舊攤銷: 1508, AI部門折舊攤銷: 1679, 太空部門銷貨成本: 1541, 連網部門銷貨成本: 4768, AI部門銷貨成本: 1687, 最大客戶營收占比: 24.2 }
+    note: "取自 sec-424b4 經查核的 2024 年財報。淨利 7.91 億美元含所得稅利益 5.49 億美元與其他收入 9.85 億美元（主要是數位資產未實現利益 9.55 億美元）；歸屬普通股股東的基本淨利只有 1,800 萬美元。"
+    src: "sec-424b4"
+  - year: "2025"
+    sales:
+      - { product: "發射服務", value: 2576, units: 43, unitLabel: "次客戶發射（Falcon）", note: "units 為當年 Falcon 客戶發射次數，僅供對照" }
+      - { product: "發射與開發", value: 1510 }
+      - { product: "Starlink 消費者", value: 7208 }
+      - { product: "企業與政府（含 Starshield、航空、海事、Starlink Mobile）", value: 4179 }
+      - { product: "X 廣告", value: 1844 }
+      - { product: "AI 解決方案與基礎設施", value: 1357 }
+    extra: { 營收: 18674, 毛利: 9223, 營業利益: -2589, 淨利: -4937, 研發費用: 8643, 管銷費用: 2644, 重組費用: 487, 減損: 38, 折舊攤銷: 6701, 股份基礎給付: 1947, 調整後EBITDA: 6584, 資本支出: 20737, 營業活動現金流: 6785, 太空部門營收: 4086, 連網部門營收: 11387, AI部門營收: 3201, 太空部門營業利益: -657, 連網部門營業利益: 4423, AI部門營業利益: -6355, 太空部門調整後EBITDA: 653, 連網部門調整後EBITDA: 7168, AI部門調整後EBITDA: -1237, 太空部門資本支出: 3832, 連網部門資本支出: 4178, AI部門資本支出: 12727, 太空部門折舊攤銷: 757, 連網部門折舊攤銷: 2376, AI部門折舊攤銷: 3568, 太空部門銷貨成本: 1352, 連網部門銷貨成本: 5921, AI部門銷貨成本: 2178, 最大客戶營收占比: 20.9, 未完成合約: 28377 }
+    note: "取自 sec-424b4 經查核的 2025 年財報。未完成合約（backlog）283.77 億美元，約 32% 預計一年內認列。2025Q4 的季資料由本年度數字減前九個月推算。"
+    src: "sec-424b4"
+events:
+  - { date: "2025-03-28", title: "xAI 以全股票併購 X Holdings", detail: "X（前 Twitter）併入 xAI；因與 SpaceX 同受馬斯克控制，SpaceX 的財報追溯合併 X 與 xAI 的歷史數字，AI 部門營收因此包含 X 的廣告與訂閱收入。", src: "sec-424b4" }
+  - { date: "2025-09-07", title: "簽約收購 EchoStar 頻譜", detail: "與 EchoStar 簽訂頻譜執照購買協議（AWS-4 與 H-Block 共 50 MHz，2025-11 再加入最多 15 MHz 的 AWS-3），供 Starlink Mobile 直連手機服務使用；FCC 在 2026-05-12 核准，執照 5 月 22 日先移轉至信託，待後續完成收購。", src: "sec-10q-q3-2026" }
+  - { date: "2026-02-02", title: "SpaceX 併購 xAI", detail: "以全股票併購 xAI，屬共同控制下的合併，財報追溯合併；自 2026 年第一季起改為太空、連網、AI 三個營運部門。", src: "sec-424b4" }
+  - { date: "2026-05-06", title: "與 Anthropic 簽訂雲端服務合約", detail: "招股書：2026 年 5 月與 Anthropic 簽訂雲端服務合約，Anthropic 使用 Colossus 與 Colossus II 約 32.5 萬顆 NVIDIA GPU 的算力，每月付費 12.5 億美元至 2029 年 5 月，5、6 月爬坡期間費用較低；最初三個月後任一方可提前 90 天通知終止。日期為雙方公布合作的日期（Tech Wire Asia 2026-05-08 報導）。", src: "sec-424b4" }
+  - { date: "2026-05-22", title: "Starship 第 12 次試飛（首次 V3）", detail: "新一代 Starship V3 與 Super Heavy 首飛，屬次軌道試飛；上層級部署 20 顆模擬衛星與 2 顆改裝的 Starlink 衛星（測試 V3 硬體）後在印度洋受控濺落，助推器回收失敗。", src: "wiki-starship-launches" }
+  - { date: "2026-06-05", title: "Google 簽約使用 SpaceX 算力", detail: "Google 自 2026 年 10 月至 2029 年 6 月每月支付 9.2 億美元，使用約 11 萬顆 NVIDIA GPU 與相關運算設備，9 月前爬坡期間費用較低；若 SpaceX 未在 9 月底前交付約定的 GPU，Google 可終止或按比例減費；2026 年底後任一方可提前 90 天通知終止。", src: "sec-fwp-google" }
+  - { date: "2026-06-12", title: "於 Nasdaq 掛牌（代號 SPCX）", detail: "每股發行價 135 美元，在 Nasdaq Global Select Market 與 Nasdaq Texas 掛牌；6 月 15 日完成發行共 638,888,888 股 A 類普通股（含超額配售），淨募資約 857 億美元（第二季財報新聞稿）。", src: "sec-8k-ipo" }
+  - { date: "2026-06-26", title: "發行 250 億美元投資等級公司債", detail: "分五個年期（2031–2056 年到期），年利率 5.35%–6.65%，加權平均 5.855%。", src: "pr-q2-2026" }
+  - { date: "2026-07-24", title: "Starship 第 13 次試飛", detail: "部署 20 顆量產型 Starlink V3 衛星；第二季財報新聞稿（pr-q2-2026）另指出本次示範了太空中重新點燃 Raptor 引擎。", src: "wiki-starship-launches" }
+  - { date: "2026-08-04", title: "首份季報與年底 1,000 億美元年化營收目標", detail: "第二季營收 78.1 億美元、年增 92%。財務長表示第三季初已再簽約 67 億美元、為期六個月、10 月起爬坡的雲端服務營收，加上 Cursor，可望在 2026 年 12 月達到 1,000 億美元的年化營收（以 12 月單月營收計）；年底算力預估超過 2 GW；下兩季資本支出與第二季（183.7 億美元）相近。", src: "tr-q2-2026" }
+  - { date: "2026-08-14", title: "完成併購 Cursor", detail: "隱含股權價值 600 億美元；GAAP 收購對價 425 億美元，另有 234 億美元的股權獎酬歸屬於併購後服務，會在員工後續服務期間陸續認列為股份基礎給付。8 月 14 日至 9 月底 Cursor 貢獻營收 6.08 億美元。", src: "pr-q3-2026" }
+  - { date: "2026-09-28", title: "Starship 第 14 次飛行首度進入軌道", detail: "第一次進入軌道，部署 26 顆可運作的 Starlink V3 衛星；第三季財報新聞稿（pr-q3-2026）稱新增下行容量約為一次 Falcon 9 Starlink 發射的 10 倍。", src: "wiki-starship-launches" }
+  - { date: "2026-10-08", title: "簽約收購 800 MHz 頻譜", detail: "取得全美最多 14 MHz 成對的 800 MHz 低頻段頻譜執照，推進 Starlink Mobile 直連手機策略，預計 2027 上半年完成。", src: "pr-q3-2026" }
+  - { date: "2026-10-20", title: "第三季財報與第四季、2027 年第一季財測", detail: "第三季營收 145.8 億美元、年增 161%。財務長預估第四季資本支出 350–400 億美元，第四季整體毛利率回到與第二季（55.3%）相近的水準（第三季有一次性利益與客戶組合因素），2027 年第一季營收 330–370 億美元；重申 12 月年化營收 1,000 億美元目標；算力 10 月底接近 2 GW、年底 2.5–3 GW；算力租賃價格略高於先前所說每瓦 30–50 美元區間的上緣，新部署回收期不到一年。未完成合約 630 億美元，約 420 億美元預計一年內認列。", src: "tr-q3-2026" }
+  - { date: "2026-10-20", title: "馬斯克：2027 年再增加 10 GW 算力", detail: "馬斯克表示有把握在 2027 年再增加 10 GW 算力，年底合計約 13 GW，並以增加 20 GW 電力與冷卻為目標；每月可上線約 20 萬顆 GB300，2027 年以 Vera Rubin 為主。這是執行長的口頭目標，不是正式財測。", src: "tr-q3-2026" }
+  - { date: "2026-10-20", title: "成立特別委員會評估與 Tesla 合併", detail: "SpaceX 與 Tesla 的董事會各自成立特別委員會，評估兩家公司的潛在合併；尚未做出任何決定，也不保證會達成協議。", src: "sec-10q-q3-2026" }
+  - { date: "2026-10-24", title: "與 Apollo 簽訂約 400 億美元的 GPU 融資租賃承諾", detail: "由 Apollo 管理的實體購入 GPU 機櫃與相關設備再出租給 SpaceX，分批交貨、每批租期約 5–5.25 年，本金合計約 400 億美元，租約預計年底前簽訂、2027 上半年起租。本站說明：以融資租賃取得的設備不計入現金流量表的購置不動產廠房設備支出，可能使帳上資本支出低於實際算力投資。", src: "sec-8k-apollo" }
+  - { date: "2026-11-13", title: "Starship 第 15 次飛行首度以發射塔接住上層級", detail: "部署 26 顆 Starlink 衛星，上層級飛行約 22 小時後返回星際基地由發射塔接住，是 Starship 上層級首次被接住；助推器因燃料不足改在外海濺落。", src: "wiki-starship-launches" }
+pastForecasts: []
+sources:
+  sec-424b4: { title: "Prospectus (Rule 424(b)(4)) - Class A Common Stock initial public offering", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026042639/spaceexplorationtechnologi.htm", type: "filing", lang: "en", published: "2026-06-12", accessed: "2026-11-17", note: "IPO 招股書：2023–2025 年度經查核財報（損益表、現金流量表、Note 3 營收拆分、Note 19 部門資訊）、2025 與 2026 年第一季未經查核財報、非 GAAP 調節表與關鍵營運指標；Anthropic 雲端服務合約條款" }
+  pr-q2-2026: { title: "SpaceX Reports Second Quarter 2026 Results (Exhibit 99.1 to Form 8-K)", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026052515/earningsreleaseq22608042.htm", type: "press-release", lang: "en", published: "2026-08-04", accessed: "2026-11-17", note: "第二季財報新聞稿：2026Q2、2026Q1、2025Q2 與上半年的部門營收、營業損益、調整後 EBITDA、資本支出、營收細項、發射與 Starlink 指標" }
+  pr-q3-2026: { title: "SpaceX Reports Third Quarter 2026 Results (Exhibit 99.1 to Form 8-K)", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026066482/spaceexplorationtechnologi.htm", type: "press-release", lang: "en", published: "2026-10-20", accessed: "2026-11-17", note: "第三季財報新聞稿：2026Q3、2026Q2、2025Q3 與前九個月的部門數字、營運指標、合併損益表、資產負債表與現金流量表" }
+  sec-10q-q2-2026: { title: "Form 10-Q for the quarterly period ended June 30, 2026", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026052535/spcx-20260630.htm", type: "filing", lang: "en", published: "2026-08-04", accessed: "2026-11-17", note: "未完成合約、客戶集中度、存貨與 Cursor 收購選擇權" }
+  sec-10q-q3-2026: { title: "Form 10-Q for the quarterly period ended September 30, 2026", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026066880/spcx-20260930.htm", type: "filing", lang: "en", published: "2026-10-22", accessed: "2026-11-17", note: "營收拆分、未完成合約（629.59 億美元）、客戶集中度、雲端服務合約會計政策、EchoStar 頻譜、Tesla 合併評估與關係人交易" }
+  sec-companyfacts: { title: "Space Exploration Technologies Corp. XBRL company facts", publisher: "U.S. Securities and Exchange Commission (EDGAR)", url: "https://data.sec.gov/api/xbrl/companyfacts/CIK0001181412.json", type: "filing", lang: "en", accessed: "2026-11-17", note: "兩份 10-Q 的結構化資料，用來核對營收、成本、營業損益、淨利、EPS、股數、折舊、資本支出與債務清償損失" }
+  tr-q2-2026: { title: "SpaceX Q2 2026 Earnings Webcast Transcript", publisher: "Space Exploration Technologies Corp. (Investor Relations)", url: "https://s21.q4cdn.com/184289198/files/doc_financials/2026/q2/SpaceX-Q2-2026-Earnings_Transcript-FINAL.pdf", type: "earnings-call", lang: "en", accessed: "2026-11-17", note: "2026-08-04 法說會（講稿於隔日公布於投資人網站）：年底 1,000 億美元年化營收目標、67 億美元新簽雲端合約、年底逾 2 GW 算力、下兩季資本支出與第二季相近、每瓦 30–50 美元的算力變現估計" }
+  tr-q3-2026: { title: "SpaceX Third Quarter 2026 Webcast Transcript", publisher: "Space Exploration Technologies Corp. (Investor Relations)", url: "https://s21.q4cdn.com/184289198/files/content_files/SpaceX-Third-Quarter-2026-Webcast-Transcript.pdf", type: "earnings-call", lang: "en", accessed: "2026-11-17", note: "2026-10-20 法說會講稿（投資人網站）：第四季資本支出 350–400 億美元、第四季毛利率與第二季相近、2027 年第一季營收 330–370 億美元、年底算力 2.5–3 GW、2027 年再增 10 GW、Starlink 與 Starship 進度" }
+  sec-8k-apollo: { title: "Form 8-K (Item 8.01 Other Events) - GPU equipment master finance lease commitment", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000110465926118614/tm2628247d1_8k.htm", type: "filing", lang: "en", published: "2026-10-26", accessed: "2026-11-17" }
+  sec-fwp-google: { title: "Free Writing Prospectus (Form FWP) - Cloud Service Agreement with Google LLC", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026041150/spacexagreementfwp.htm", type: "filing", lang: "en", published: "2026-06-05", accessed: "2026-11-17", note: "2026-06-05 與 Google 簽訂的雲端服務合約：約 11 萬顆 NVIDIA GPU、2026-10 至 2029-06 每月 9.2 億美元、9 月前爬坡、2026-12-31 後任一方可提前 90 天通知終止" }
+  sec-8k-ipo: { title: "Form 8-K (Item 8.01) - Completion of initial public offering", publisher: "Space Exploration Technologies Corp. (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1181412/000162828026043288/0001628280-26-043288-index.htm", type: "filing", lang: "en", published: "2026-06-15", accessed: "2026-11-17", note: "6 月 15 日完成發行 638,888,888 股 A 類普通股、每股 135 美元（含承銷商全額行使 83,333,333 股超額配售）" }
+  news-anthropic-colossus: { title: "Anthropic to use SpaceXAI's Colossus 1 for Claude compute", publisher: "Tech Wire Asia", url: "https://techwireasia.com/2026/05/anthropic-spacexai-colossus-1-claude-compute/", type: "news", lang: "en", published: "2026-05-08", accessed: "2026-11-17", note: "媒體報導：雙方在 5 月 6 日（週三）公布合作；招股書的合約內容以 sec-424b4 為準" }
+  wiki-starship-launches: { title: "List of Starship launches", publisher: "Wikipedia", url: "https://en.wikipedia.org/wiki/List_of_Starship_launches", type: "other", lang: "en", accessed: "2026-11-17", note: "次要來源：Starship 各次飛行日期與結果（2026-11-14 更新）" }
+  sa-q: { title: "SpaceX (SPCX) quarterly income statement", publisher: "Stock Analysis", url: "https://stockanalysis.com/stocks/spcx/financials/?p=quarterly", type: "dataset", lang: "en", accessed: "2026-11-13", note: "彙整資料，僅用來交叉核對（research/fin/spacex.json，2026-11-13 擷取）；營業利益與 2026Q1 淨利口徑不同，見 periodNote" }
+lastVerified: "2026-11-17"
+editorial:
+  status: "fact-checked"
+  author: "fc2-data-spacex"
+  checkedBy: "fc2-check-spacex"
+  checkedOn: "2026-11-17"
+  notes: "合併損益逐季比對 SEC XBRL（sec-companyfacts）與兩份財報新聞稿；部門數字三個部門相加等於合併數（每季營收、營業損益、資本支出、折舊、銷貨成本都已驗算）；2025Q4 以全年減前九個月推算，與招股書全年數一致；與 src/content/financials/spacex.json 的 2025Q1、2025Q2、2026Q1、2026Q2 營收、毛利率、營業利益、淨利、資本支出與部門營收逐項一致（該檔 2026Q1 淨利 −4,276 為合併淨利，本檔同）。新增 2025Q3、2025Q4、2026Q3。2024 年以前沒有單季資料，只有 2023–2025 年度數。查核（fc2-check-spacex，2026-11-17）：以 research/tmp 腳本逐項比對 732 個數值，來源為 SEC XBRL（兩份 10-Q）、招股書與第三季 8-K 的 EDGAR Online 表格擷取、第二季新聞稿上半年欄與 10-Q 營運指標表，結果全部吻合；2025Q4 以招股書全年減前九個月重算一致。修正：Anthropic 事件日期改為公布日 2026-05-06；Google 合約改引一手 FWP；IPO 價格改引 8-K；Starship 第 12、14 次飛行、Cursor 股權獎酬認列期間、EchoStar 執照移轉、800 MHz 說法依原文修正；periodNote 中 2025Q1 推算方式的說明更正。"

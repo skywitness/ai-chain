@@ -1,0 +1,193 @@
+---
+/**
+ * 一分鐘看懂（特斯拉）: how Tesla makes money — deliveries × price per vehicle minus cost per vehicle, regulatory
+ * credits that are almost pure gross profit, energy and services with higher margins, and operating expenses that
+ * now leave a thin operating margin — then the key figures of the latest quarter and the chain to EPS.
+ * Every figure is read from src/data/forecast/tesla-{inputs,drivers}.yaml and tesla-model.json (the page renders the
+ * H2, FC_META.basicsTitle).
+ *   <Basics b={bundle} />
+ */
+import FlowSteps from '../../content/FlowSteps.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import StatusTag from '../../memory/StatusTag.astro';
+import { actualGrossMargin, fcMoney, fcPct, forecastOf, periodLabel, selectedCandidate, type FcBundle } from '../../../lib/forecast-data';
+import { formatMoneyRange, formatNumber } from '../../../lib/format';
+import { derivedAt, driverAt, driverPts, extraOf, scenarioQuarters, yearAgoOf, yoyText } from './tesla';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m, meta } = b;
+const last = inputs.quarters.at(-1)!;
+const P = last.period;
+const PL = periodLabel(P, 'long');
+const ya = yearAgoOf(b, P);
+const n0 = (v: number | undefined) => (v == null ? '—' : formatNumber(v));
+const usd = (v: number | undefined) => (v == null ? '—' : `${formatNumber(v)} 美元`);
+
+// revenue split
+const autoRev = extraOf(last, '汽車營收');
+const energyRev = extraOf(last, '能源營收');
+const svcRev = extraOf(last, '服務及其他營收');
+const shareOf = (v: number | undefined) => (v != null ? (v / last.revenue) * 100 : undefined);
+
+// deliveries and the consensus published before the quarter ended
+const del = driverAt(b, 'deliveries-total', P);
+const leased = driverAt(b, 'deliveries-leased', P);
+const cons = driverAt(b, 'deliveries-consensus', P);
+const beat = del && cons ? (del.value / cons.value - 1) * 100 : undefined;
+const delYa = ya ? driverAt(b, 'deliveries-total', ya.period) : undefined;
+
+// price and cost per vehicle (the site's arithmetic on the reported automotive sales revenue and cost)
+const asp = derivedAt(b, 'asp-per-vehicle', P);
+const cost = derivedAt(b, 'cost-per-vehicle', P);
+const perVehicle = asp != null && cost != null ? asp - cost : undefined;
+const autoSalesMargin = derivedAt(b, 'auto-sales-margin', P);
+/** percentage points of automotive sales margin per 1% change in price: d(1 − c/p) = c/p × 1% */
+const ppPer1 = asp && cost ? cost / asp : undefined;
+const aspSrc = driverAt(b, 'asp-proxy', P)?.src;
+
+// regulatory credits
+const credits = driverPts(b, 'regulatory-credits', meta.historyFrom);
+const peak = credits.length ? credits.reduce((x, y) => (y.value > x.value ? y : x)) : undefined;
+const creditsNow = credits.find((p) => p.period === P);
+const ccFrom = derivedAt(b, 'gm-contrib-credits', m.test.from);
+const ccNow = derivedAt(b, 'gm-contrib-credits', P);
+
+// segment margins and their share of gross profit
+const autoGmEx = extraOf(last, '汽車毛利率不含積分');
+const energyGm = extraOf(last, '能源毛利率');
+const svcGm = extraOf(last, '服務及其他毛利率');
+const energyCost = extraOf(last, '能源營業成本');
+const svcCost = extraOf(last, '服務及其他營業成本');
+const gp = last.grossProfit;
+const nonAutoGp = energyRev != null && svcRev != null && energyCost != null && svcCost != null && gp ? ((energyRev - energyCost + svcRev - svcCost) / gp) * 100 : undefined;
+
+// operating expenses and the thin operating margin
+const opex = last.operatingExpenses;
+const rd = extraOf(last, '研發費用');
+const oi = last.operatingIncome;
+const onePp = last.revenue / 100;
+const opexWhy = inputs.events.find((e) => e.src === last.src && /營業費用增加/.test(e.detail));
+const gm = actualGrossMargin(b.company, last);
+const gmYa = ya ? actualGrossMargin(b.company, ya) : undefined;
+
+// first forecast quarter
+const first = scenarioQuarters(b, 'base')[0];
+const lo = first ? forecastOf(m, 'bear', first.period) : undefined;
+const hi = first ? forecastOf(m, 'bull', first.period) : undefined;
+const sel = selectedCandidate(m);
+const consAnnual = driverAt(b, 'deliveries-consensus-annual', String(Number(P.slice(0, 4)) + 1));
+---
+
+<div class="mem-basics__grid">
+  <div class="prose mem-basics__prose">
+    <p>
+      特斯拉（Tesla）的營收分成三塊：汽車（賣車、出售監管積分與汽車租賃）、能源發電與儲能（Megapack、Powerwall 與太陽能），以及服務及其他（二手車、維修、付費超級充電與保險等）。{PL}營收 {fcMoney(last.revenue, 'USD')}，汽車占 {fcPct(shareOf(autoRev), 0)}、能源占 {fcPct(shareOf(energyRev), 0)}、服務及其他占 {fcPct(shareOf(svcRev), 0)}<FcCite k={last.src} />。
+    </p>
+    <p>
+      汽車營收的核心是<strong>交車量 × 每輛車售價</strong>。特斯拉每季結束後先公布交車量，幾週後才公布財報；{PL}交車 {n0(del?.value)} 輛{del && <FcCite k={del.src} />}{
+        cons && beat != null && (
+          <>
+            ，比季末前公司彙整的分析師共識（{n0(cons.value)} 輛，第三方估計）{beat >= 0 ? '多' : '少'} {formatNumber(Math.abs(beat), { digits: 1 })}%<FcCite k={cons.src} />
+          </>
+        )
+      }。扣掉適用營業租賃會計、營收在租期內分期認列的 {n0(leased?.value)} 輛，用財報的汽車銷售營收與成本推算，每輛車平均售價約 {usd(asp)}、銷貨成本約 {usd(cost)}{aspSrc && <FcCite k={aspSrc} />}，每賣一輛車的毛利約 {usd(perVehicle)}（汽車銷售毛利率約 {fcPct(autoSalesMargin)}）。售價和成本差距不大，所以售價只要變動 1%，汽車銷售毛利率就會變動約 {ppPer1 != null ? formatNumber(ppPer1, { digits: 1 }) : '—'} 個百分點。
+    </p>
+    <p>
+      <strong>監管積分</strong>是另一個關鍵：特斯拉把用不到的排放與燃油效率積分賣給其他車廠，幾乎沒有對應成本，整筆計入毛利。積分營收在 {peak ? periodLabel(peak.period, 'long') : '—'}達到 {peak ? fcMoney(peak.value, 'USD') : '—'}{peak && <FcCite k={peak.src} />}，{PL}只剩 {creditsNow ? fcMoney(creditsNow.value, 'USD') : '—'}{creditsNow && <FcCite k={creditsNow.src} />}；本站由財報推算，積分對總毛利率的貢獻從 {periodLabel(m.test.from, 'long')}的 {ccFrom != null ? formatNumber(ccFrom, { digits: 1 }) : '—'} 個百分點降到 {ccNow != null ? formatNumber(ccNow, { digits: 1 }) : '—'} 個百分點。能源與服務的毛利率較高：{PL}能源 {fcPct(energyGm)}、服務及其他 {fcPct(svcGm)}，汽車（不含積分）{fcPct(autoGmEx)}；兩者合計占營收 {fcPct((shareOf(energyRev) ?? 0) + (shareOf(svcRev) ?? 0), 0)}，卻貢獻了 {fcPct(nonAutoGp, 0)} 的毛利<FcCite k={last.src} />。
+    </p>
+    <p>
+      毛利之後是<strong>營業費用</strong>。{PL}營業費用 {fcMoney(opex, 'USD')}{ya && `，${yoyText(opex, ya.operatingExpenses)}`}，研發費用占營收 {rd != null ? fcPct((rd / last.revenue) * 100) : '—'}<FcCite k={last.src} />{
+        opexWhy && (
+          <>
+            ；特斯拉說明費用增加來自它稱為 SI（超級智慧）的研發與其他研發專案、股份基礎給付與銷管費用<FcCite k={opexWhy.src} />
+          </>
+        )
+      }。營業利益只剩 {fcMoney(oi, 'USD')}（營業利益率 {oi != null ? fcPct((oi / last.revenue) * 100) : '—'}），所以毛利率每差 1 個百分點，營業利益就差約 {fcMoney(onePp, 'USD')}，約是這一季營業利益的 {oi ? fcPct((onePp / oi) * 100, 0) : '—'}。
+    </p>
+    <p>
+      特斯拉不提供營收、毛利率或 EPS 財測，所以本頁沒有公司財測可以對照。選定的「{sel.name}」把營收拆成汽車銷售、監管積分、租賃、能源與服務五段，代入已公布的交車與儲能部署來推估；預測未來時，交車量的基準情境採特斯拉投資人關係網站彙整的分析師共識（第三方估計，公司不背書）{
+        consAnnual && (
+          <>
+            ，例如 {consAnnual.period} 年約 {formatNumber(consAnnual.value / 10000)} 萬輛<FcCite k={consAnnual.src} />
+          </>
+        )
+      }，營業費用則照近八季的平均增幅延續。
+    </p>
+  </div>
+  <aside class="mem-basics__aside fc-figs" aria-label="關鍵數字">
+    <p class="fc-figs__title">關鍵數字</p>
+    <ul class="fc-figs__list" role="list">
+      {
+        del && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">{periodLabel(P)} 交車</p>
+            <p class="mem-fig__value">
+              <strong>{n0(del.value)}</strong>
+              <span class="mem-fig__unit">輛</span>
+            </p>
+            <p class="mem-fig__meta">
+              公司公布{delYa ? `；${yoyText(del.value, delYa.value)}` : ''}
+              <FcCite k={del.src} />
+              {delYa && delYa.src !== del.src && <FcCite k={delYa.src} />}
+            </p>
+          </li>
+        )
+      }
+      {
+        perVehicle != null && (
+          <li class="mem-fig" data-status="estimate">
+            <p class="mem-fig__label">
+              每輛車毛利<StatusTag status="estimate" />
+            </p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(perVehicle)}</strong>
+              <span class="mem-fig__unit">美元</span>
+            </p>
+            <p class="mem-fig__meta">
+              本站推算：售價約 {n0(asp)} − 成本約 {n0(cost)} 美元
+              {aspSrc && <FcCite k={aspSrc} />}
+            </p>
+          </li>
+        )
+      }
+      <li class="mem-fig">
+        <p class="mem-fig__label">{periodLabel(P)} {meta.gmLabel}</p>
+        <p class="mem-fig__value"><strong>{fcPct(gm)}</strong></p>
+        <p class="mem-fig__meta">
+          財報{gmYa != null ? `；一年前 ${fcPct(gmYa)}` : ''}
+          <FcCite k={last.src} />
+        </p>
+      </li>
+      {
+        first && (
+          <li class="mem-fig" data-status="forecast">
+            <p class="mem-fig__label">
+              {periodLabel(first.period)} 營收<StatusTag status="forecast" />
+            </p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(first.revenue / 100)}</strong>
+              <span class="mem-fig__unit">億美元</span>
+            </p>
+            <p class="mem-fig__meta">
+              基準情境{lo && hi ? `；保守到樂觀 ${formatMoneyRange(Math.min(lo.revenue, hi.revenue), Math.max(lo.revenue, hi.revenue), 'USD', { unit: '億' })}` : ''}；毛利率 {fcPct(first.grossMargin)}
+            </p>
+          </li>
+        )
+      }
+    </ul>
+  </aside>
+</div>
+<FlowSteps
+  class="fc-flow"
+  title="從交車到每股盈餘"
+  steps={[
+    { title: '交車量', detail: '季末後先公布；扣掉租賃交車' },
+    { title: '汽車營收', detail: '非租賃交車 × 每輛車售價，加監管積分與租賃' },
+    { title: '毛利', detail: '售價減成本；積分幾乎全是毛利；再加能源與服務' },
+    { title: '營業利益', detail: '減去研發（含 SI）與銷管費用' },
+    { title: 'EPS', detail: '加業外收支、扣稅後除以股數' },
+  ]}
+/>

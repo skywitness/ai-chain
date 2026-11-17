@@ -5,20 +5,19 @@ import { formatNumber } from '../../../lib/format';
 export type Target = 'revenue' | 'grossMargin' | 'operatingIncome' | 'netIncome' | 'eps';
 export const TARGETS: readonly Target[] = ['revenue', 'grossMargin', 'operatingIncome', 'netIncome', 'eps'];
 
-/** Name of a target, with the accounting basis where the model mixes them (Micron: non-GAAP margin and EPS). */
+/** Name of a target, with its accounting basis (FC_META labels: 美光 non-GAAP margin and EPS, 群聯 basic EPS…). */
 export function targetLabel(b: FcBundle, t: Target): string {
-  const mu = b.company === 'micron';
   switch (t) {
     case 'revenue':
       return '營收';
     case 'grossMargin':
-      return mu ? '毛利率（非 GAAP）' : '毛利率';
+      return b.meta.gmLabel;
     case 'operatingIncome':
-      return mu ? '營業利益（GAAP）' : '營業利益';
+      return b.meta.oiLabel;
     case 'netIncome':
-      return mu ? '淨利（GAAP）' : '淨利（歸屬母公司）';
+      return b.meta.niLabel;
     default:
-      return mu ? 'EPS（非 GAAP）' : 'EPS（基本）';
+      return b.meta.epsLabel;
   }
 }
 export const TARGET_SHORT: Record<Target, string> = { revenue: '營收', grossMargin: '毛利率', operatingIncome: '營業利益', netIncome: '淨利', eps: 'EPS' };
@@ -70,11 +69,9 @@ export function metricKeyLabel(b: FcBundle, key: string): { target: Target | nul
   const v = m[2];
   const variant =
     v === 'ExAnte'
-      ? '事前：改用季初預測價、不知當季月營收'
+      ? b.meta.backtest.exAnte
       : v === 'Dynamic'
-        ? b.company === 'micron'
-          ? `連續預測：從 ${b.model.train.to} 出發推 8 季、不用實際值重設`
-          : `連續預測：從 ${b.model.train.to} 出發推 6 季、不用新財報`
+        ? b.meta.backtest.dynamic.replace('{from}', b.model.train.to)
         : v === 'Train'
           ? `訓練期樣本內（${b.model.train.from}–${b.model.train.to}）`
           : '逐季（每季用上一季財報與當季價格）';

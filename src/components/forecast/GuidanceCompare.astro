@@ -1,0 +1,200 @@
+---
+/**
+ * The company's own guidance against the reported results and the selected model, quarter by quarter from the start
+ * of the backtest window to the latest reported quarter (inputs.quarters[].guidance, issued the quarter before):
+ * revenue midpoint and range, gross-margin midpoint, the reported figures, whether revenue landed inside the range,
+ * and the selected model's one-step backtest prediction for the same quarter. Renders nothing without guidance.
+ *   <GuidanceCompare b={bundle} />
+ */
+import FcCite from '../memory/forecast/FcCite.astro';
+import {
+  actualGrossMargin,
+  backtestOf,
+  fcYi,
+  fcYiUnit,
+  lastReportedOf,
+  periodLabel,
+  qIndex,
+  selectedCandidate,
+  type FcBundle,
+} from '../../lib/forecast-data';
+import { formatNumber, zhConcat } from '../../lib/format';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m, inputs, meta } = b;
+const sel = selectedCandidate(m);
+const from = qIndex(m.test.from);
+const to = qIndex(lastReportedOf(m));
+const btRev = new Map(backtestOf(m, sel.id, 'revenue').map((r) => [r.period, r.predicted]));
+const btGm = new Map(backtestOf(m, sel.id, 'grossMargin').map((r) => [r.period, r.predicted]));
+const rows = inputs.quarters
+  .filter((q) => q.guidance && qIndex(q.period) >= from && qIndex(q.period) <= to)
+  .map((q) => {
+    const g = q.guidance!;
+    const mid = g.revenue ?? (g.revenueLow != null && g.revenueHigh != null ? (g.revenueLow + g.revenueHigh) / 2 : undefined);
+    const gm = actualGrossMargin(b.company, q);
+    return {
+      q,
+      g,
+      mid,
+      inside: g.revenueLow != null && g.revenueHigh != null ? q.revenue >= g.revenueLow && q.revenue <= g.revenueHigh : undefined,
+      revErr: mid != null ? ((mid - q.revenue) / q.revenue) * 100 : undefined,
+      gm,
+      gmErr: g.grossMargin != null && gm != null ? g.grossMargin - gm : undefined,
+      modelRev: btRev.get(q.period),
+      modelGm: btGm.get(q.period),
+    };
+  });
+const mean = (xs: Array<number | undefined>) => {
+  const v = xs.filter((x): x is number => x != null && Number.isFinite(x));
+  return v.length ? { v: v.reduce((s, x) => s + Math.abs(x), 0) / v.length, n: v.length } : undefined;
+};
+const both = rows.filter((r) => r.revErr != null && r.modelRev != null);
+const guideRev = mean(both.map((r) => r.revErr));
+const modelRev = mean(both.map((r) => ((r.modelRev! - r.q.revenue) / r.q.revenue) * 100));
+const bothGm = rows.filter((r) => r.gmErr != null && r.modelGm != null && r.gm != null);
+const guideGm = mean(bothGm.map((r) => r.gmErr));
+const modelGm = mean(bothGm.map((r) => r.modelGm! - r.gm!));
+const ranged = rows.filter((r) => r.inside != null);
+const insideN = ranged.filter((r) => r.inside).length;
+const aboveN = ranged.filter((r) => r.g.revenueHigh != null && r.q.revenue > r.g.revenueHigh).length;
+const belowN = ranged.filter((r) => r.g.revenueLow != null && r.q.revenue < r.g.revenueLow).length;
+const unit = fcYiUnit(meta.currency);
+const signed = (v: number | undefined, digits = 1, suffix = '%') => (v == null ? '—' : `${formatNumber(v, { digits, signed: true })}${suffix}`);
+---
+
+{
+  rows.length > 0 && (
+    <div class="fct-guide">
+      <ul class="fct-guide-sum" role="list">
+        {guideRev && (
+          <li>
+            <p>營收財測中值的平均誤差（{guideRev.n} 季）</p>
+            <p class="fct-guide-sum__v">{formatNumber(guideRev.v, { digits: 1 })}%</p>
+            <p>同期選定模型 {modelRev ? `${formatNumber(modelRev.v, { digits: 1 })}%` : '—'}</p>
+          </li>
+        )}
+        {ranged.length > 0 && (
+          <li>
+            <p>實際營收落在財測區間內</p>
+            <p class="fct-guide-sum__v">
+              {insideN} / {ranged.length} 季
+            </p>
+            <p>{aboveN + belowN > 0 ? `高於上緣 ${aboveN} 季、低於下緣 ${belowN} 季` : '每一季都在區間內'}</p>
+          </li>
+        )}
+        {guideGm && (
+          <li>
+            <p>毛利率財測中值的平均誤差（{guideGm.n} 季）</p>
+            <p class="fct-guide-sum__v">{formatNumber(guideGm.v, { digits: 2 })} 個百分點</p>
+            <p>同期選定模型 {modelGm ? `${formatNumber(modelGm.v, { digits: 2 })} 個百分點` : '—'}</p>
+          </li>
+        )}
+      </ul>
+      <div class="mem-tablewrap mem-tablewrap--cards" tabindex="0" role="region" aria-label={zhConcat(meta.name, '財測與實際')}>
+        <table class="mem-table fct-dtable">
+          <caption class="ch-sr">
+            {zhConcat(meta.name, '的財測、實際財報與選定模型')}（營收單位：{unit}；毛利率：%）
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">季度</th>
+              <th scope="col" class="num">
+                營收財測<small>{unit}</small>
+              </th>
+              <th scope="col" class="num">
+                實際營收<small>財測誤差</small>
+              </th>
+              <th scope="col" class="num">
+                選定模型<small>營收／誤差</small>
+              </th>
+              <th scope="col" class="num">
+                毛利率財測<small>%</small>
+              </th>
+              <th scope="col" class="num">
+                實際毛利率<small>財測誤差</small>
+              </th>
+              <th scope="col" class="num">
+                選定模型<small>毛利率／誤差</small>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr>
+                <th scope="row" data-label="季度">
+                  <div class="fct-cell">
+                  {periodLabel(r.q.period)}
+                  {r.g.issued && <small>{r.g.issued} 公布</small>}
+                  </div>
+                </th>
+                <td class="num" data-label="營收財測">
+                  <div class="fct-cell">
+                  {r.mid != null ? fcYi(r.mid) : <span class="mem-na">—</span>}
+                  {r.g.revenueLow != null && r.g.revenueHigh != null && (
+                    <small>
+                      {fcYi(r.g.revenueLow)}–{fcYi(r.g.revenueHigh)}
+                    </small>
+                  )}
+                  <FcCite k={r.g.src} />
+                  </div>
+                </td>
+                <td class="num" data-label="實際營收">
+                  <div class="fct-cell">
+                  {fcYi(r.q.revenue)}
+                  <FcCite k={r.q.src} />
+                  <small class:list={[r.inside === true && 'fct-in', r.inside === false && 'fct-out']}>
+                    {signed(r.revErr)}
+                    {r.inside != null && (r.inside ? '・區間內' : '・區間外')}
+                  </small>
+                  </div>
+                </td>
+                <td class="num" data-label="選定模型營收">
+                  <div class="fct-cell">
+                  {r.modelRev != null ? (
+                    <>
+                      {fcYi(r.modelRev)}
+                      <small>{signed(((r.modelRev - r.q.revenue) / r.q.revenue) * 100)}</small>
+                    </>
+                  ) : (
+                    <span class="mem-na">—</span>
+                  )}
+                  </div>
+                </td>
+                <td class="num" data-label="毛利率財測">
+                  <div class="fct-cell">
+                  {r.g.grossMargin != null ? formatNumber(r.g.grossMargin, { digits: 2, trim: true }) : <span class="mem-na">—</span>}
+                  </div>
+                </td>
+                <td class="num" data-label="實際毛利率">
+                  <div class="fct-cell">
+                  {r.gm != null ? formatNumber(r.gm, { digits: 1 }) : <span class="mem-na">—</span>}
+                  {r.gmErr != null && <small>{signed(r.gmErr, 1, ' 個百分點')}</small>}
+                  </div>
+                </td>
+                <td class="num" data-label="選定模型毛利率">
+                  <div class="fct-cell">
+                  {r.modelGm != null && r.gm != null ? (
+                    <>
+                      {formatNumber(r.modelGm, { digits: 1 })}
+                      <small>{signed(r.modelGm - r.gm, 1, ' 個百分點')}</small>
+                    </>
+                  ) : (
+                    <span class="mem-na">—</span>
+                  )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="mem-fine">
+        {zhConcat('財測是', meta.name, '在上一季法說會公布、針對該季的預估')}（中值與區間）；誤差為財測或模型減實際，營收再除以實際值。選定模型是回測時逐季的預測{sel.metrics.revenue ? '' : '（只預測毛利率）'}。
+      </p>
+    </div>
+  )
+}

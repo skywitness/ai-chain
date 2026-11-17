@@ -1,0 +1,171 @@
+---
+/**
+ * 數量與營收（特斯拉）: quarterly revenue and its three segments, gross and operating margin, and a table from
+ * deliveries and storage deployments to revenue for the backtest window (reported) and the base scenario (model).
+ * Replaces the generic HistoryCharts; the model's derived series follow in a disclosure (the page).
+ *   <Volume b={bundle} />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import QuarterBars from '../../memory/forecast/QuarterBars.astro';
+import ChartCites from '../../memory/forecast/ChartCites.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import StatusTag from '../../memory/StatusTag.astro';
+import { actualGrossMargin, chartKey, fcMoney, fcPct, periodLabel, quartersFrom, type FcBundle } from '../../../lib/forecast-data';
+import { formatNumber } from '../../../lib/format';
+import { derivedAt, driverAt, extraOf, scenarioQuarters } from './tesla';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m, meta } = b;
+const qs = quartersFrom(inputs, meta.historyFrom);
+const last = inputs.quarters.at(-1)!;
+const span = `${periodLabel(meta.historyFrom)}–${periodLabel(last.period)}`;
+const srcs = [...new Set(qs.map((q) => q.src))];
+const yi = (v: number | undefined | null) => (v == null ? null : v / 100);
+const pt = (q: (typeof qs)[number], v: number | null) => ({ x: chartKey(q.period), y: v });
+const restr = qs
+  .filter((q) => (extraOf(q, '重組及其他費用') ?? 0) > 0)
+  .reduce<(typeof qs)[number] | undefined>((x, q) => (!x || extraOf(q, '重組及其他費用')! > extraOf(x, '重組及其他費用')! ? q : x), undefined);
+
+// backtest window (reported) followed by the base scenario
+const test = quartersFrom(inputs, m.test.from);
+const base = scenarioQuarters(b, 'base');
+type Row = {
+  period: string;
+  status: 'actual' | 'forecast';
+  deliveries?: number | undefined;
+  asp?: number | undefined;
+  auto?: number | undefined;
+  storage?: number | undefined;
+  energy?: number | undefined;
+  services?: number | undefined;
+  revenue: number;
+  gm?: number | undefined;
+  src?: string | undefined;
+  dSrc?: string | undefined;
+};
+const rows: Row[] = [
+  ...test.map((q) => ({
+    period: q.period,
+    status: 'actual' as const,
+    deliveries: driverAt(b, 'deliveries-total', q.period)?.value,
+    asp: derivedAt(b, 'asp-per-vehicle', q.period),
+    auto: extraOf(q, '汽車營收'),
+    storage: driverAt(b, 'storage-deployed', q.period)?.value,
+    energy: extraOf(q, '能源營收'),
+    services: extraOf(q, '服務及其他營收'),
+    revenue: q.revenue,
+    gm: actualGrossMargin(b.company, q),
+    src: q.src,
+    dSrc: driverAt(b, 'deliveries-total', q.period)?.src,
+  })),
+  ...base.map((f) => ({
+    period: f.period,
+    status: 'forecast' as const,
+    deliveries: f.fig.deliveries,
+    asp: f.fig.asp,
+    auto: f.fig.autoRevenue,
+    storage: f.fig.storage,
+    energy: f.fig.energyRevenue,
+    services: f.fig.servicesRevenue,
+    revenue: f.revenue,
+    gm: f.grossMargin ?? undefined,
+  })),
+];
+const fmt = (v: number | undefined | null, d = 0) => (v == null || !Number.isFinite(v) ? '—' : formatNumber(v, { digits: d }));
+// reported segments in 億美元 with one decimal; the model's notes round them to whole 億美元
+const seg = (r: Row, v: number | undefined) => fmt(v != null ? v / 100 : undefined, r.status === 'forecast' ? 0 : 1);
+---
+
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars title="每季營收" subtitle={`${span}，財報實際值`} unit="億美元" valueName="營收" points={qs.map((q) => ({ period: q.period, value: q.revenue / 100 }))} as="h3" />
+  <MultiLine
+    title="營收依業務"
+    subtitle={`${span}，財報實際值`}
+    unit="億美元"
+    valueSuffix=" 億美元"
+    digits={1}
+    height={210}
+    series={[
+      { name: '汽車（含積分與租賃）', color: 'var(--chart-1)', points: qs.map((q) => pt(q, yi(extraOf(q, '汽車營收')))) },
+      { name: '能源發電與儲能', color: 'var(--chart-3)', points: qs.map((q) => pt(q, yi(extraOf(q, '能源營收')))) },
+      { name: '服務及其他', color: 'var(--chart-7)', points: qs.map((q) => pt(q, yi(extraOf(q, '服務及其他營收')))) },
+    ]}
+    xTitle="季度"
+    as="h3"
+    class="mem-chart fc-years"
+  />
+</div>
+<MultiLine
+  title="毛利率與營業利益率"
+  subtitle={`${span}，財報實際值`}
+  unit="%"
+  format="percent"
+  digits={1}
+  includeZero={false}
+  height={220}
+  series={[
+    { name: meta.gmLabel, color: 'var(--chart-2)', points: qs.map((q) => pt(q, actualGrossMargin(b.company, q) ?? null)) },
+    { name: '營業利益率', color: 'var(--chart-7)', points: qs.map((q) => pt(q, q.operatingIncome != null ? (q.operatingIncome / q.revenue) * 100 : null)) },
+  ]}
+  notes={[restr ? `營業利益已扣除重組及其他費用，金額最大的是 ${periodLabel(restr.period)} 的 ${fcMoney(extraOf(restr, '重組及其他費用'), 'USD')}。` : null]}
+  xTitle="季度"
+  as="h3"
+  class="mem-chart fc-chart-wide fc-years"
+/>
+<ChartCites keys={srcs} label="各季財報出處" />
+
+<h3 class="fc-h3">從交車到營收：回測期與基準情境</h3>
+<p class="fc-p">
+  {periodLabel(m.test.from)}–{periodLabel(last.period)} 是財報實際值，{base[0] ? periodLabel(base[0].period) : ''} 起是選定模型在基準情境下的推估；交車量與儲能部署是模型的輸入，每輛車售價與各段營收是模型的輸出。
+</p>
+<div class="mem-tablewrap mem-tablewrap--cards fc-bits" tabindex="0" role="region" aria-label="交車、儲能部署與營收">
+  <table class="mem-table">
+    <caption class="ch-sr">特斯拉各季交車、每輛車售價、儲能部署與分段營收：回測期為公司公布的財報與交車實際值，之後為基準情境的模型推估</caption>
+    <thead>
+      <tr>
+        <th scope="col">季度</th>
+        <th scope="col" class="num">交車<small>輛</small></th>
+        <th scope="col" class="num">每輛車售價<small>美元</small></th>
+        <th scope="col" class="num">汽車營收<small>億美元</small></th>
+        <th scope="col" class="num">儲能部署<small>GWh</small></th>
+        <th scope="col" class="num">能源營收<small>億美元</small></th>
+        <th scope="col" class="num">服務及其他<small>億美元</small></th>
+        <th scope="col" class="num">總營收<small>億美元</small></th>
+        <th scope="col" class="num">毛利率</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((r) => (
+          <tr class:list={[r.status === 'forecast' && 'fc-row--forecast']}>
+            <th scope="row" data-label="季度">
+              {periodLabel(r.period)}
+              {r.status === 'forecast' ? (
+                <StatusTag status="forecast" />
+              ) : (
+                <>
+                  {r.src && <FcCite k={r.src} />}
+                  {r.dSrc && r.dSrc !== r.src && <FcCite k={r.dSrc} />}
+                </>
+              )}
+            </th>
+            <td class="num" data-label="交車（輛）">{fmt(r.deliveries)}</td>
+            <td class="num" data-label="每輛車售價（美元）">{fmt(r.asp)}</td>
+            <td class="num" data-label="汽車營收（億美元）">{seg(r, r.auto)}</td>
+            <td class="num" data-label="儲能部署（GWh）">{fmt(r.storage, 1)}</td>
+            <td class="num" data-label="能源營收（億美元）">{seg(r, r.energy)}</td>
+            <td class="num" data-label="服務及其他（億美元）">{seg(r, r.services)}</td>
+            <td class="num" data-label="總營收（億美元）">{fmt(r.revenue / 100, 1)}</td>
+            <td class="num" data-label="毛利率">{fcPct(r.gm)}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+<p class="mem-fine">
+  每輛車售價是本站推算（汽車銷售營收 ÷ 非租賃交車，不含監管積分與租賃）。預測列的分段營收取自模型註記，四捨五入到億美元，相加可能和總營收差 1 億美元左右。
+</p>

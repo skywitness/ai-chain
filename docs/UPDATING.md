@@ -143,39 +143,68 @@ node scripts/plan/make-update-args.mjs --type refresh --collection companies --a
 
 注意：各檔案的來源會合併成頁末的一份清單（同一網址只列一次），所以同一個 key 在不同檔案中應指向同一網址；公司只能用名冊中的 id（名冊外用 `other`）。
 
-### 2.9 記憶體專題的財報模型（`/memory/phison/`、`/memory/micron/`）
+### 2.9 財報模型（`/forecast/`、`/memory/phison/`、`/memory/micron/`）
 
-兩個子頁用記憶體價格推估公司財報：群聯（用 NAND 合約價推估進貨成本與庫存時間差）與美光（價格、每位元成本、折舊與 HBM）。數字全部來自 `src/data/memory/forecast/`，頁面只負責呈現：
+財報模型頁用公開財報與「驅動因子」推估公司的營收、毛利率與 EPS：先比較幾個候選模型在 2025–2026 年的回測誤差（每季只用當時已知的資料），依頁面寫明的規則選一個模型，再以保守、基準、樂觀三種情境推估接下來幾季與全年，並和公司自己的財測對照。頁面只負責呈現，數字全部來自資料檔與模型程式。
+
+- **財報模型專題** `/forecast/`（`src/pages/forecast/index.astro`）：說明做法與「是／不是」，依產業鏈列出所有模型頁的卡片（下一季基準情境與區間、選定模型與回測誤差、資料日期）。卡片只會出現在模型檔存在的公司，新公司的模型完成後會自動出現。
+- **公司頁** `/forecast/<公司>/`（`src/pages/forecast/[company].astro`，台積電、聯發科、輝達、SpaceX、特斯拉）與記憶體專題的兩個子頁 `/memory/phison/`、`/memory/micron/`（`src/pages/memory/[company].astro`）。
+- **公司設定**（名稱、標題、H1、摘要期間、幣別與 EPS 口徑、頁面路徑、環節、回測說明文字）集中在 `src/lib/forecast-config.ts` 的 `FC_META`；讀取與驗證在 `src/lib/forecast-data.ts`。
+- `/memory/` 的「財報模型」段落、各公司檔案頁 `/companies/<公司>/` 的財報模型卡片會自動連到有模型的頁面。
 
 | 檔案 | 內容 | 誰來改 |
 |---|---|---|
-| `market-prices.yaml` | TrendForce 的 NAND／DRAM 合約價季變化（含季初預測與區間）、現貨價、產業營收，兩家模型共用 | 手動（附來源） |
-| `phison-inputs.yaml` | 群聯季財報、月營收、年報產銷量值與進貨、事件 | 手動（附來源） |
-| `micron-inputs.yaml` | 美光會計季度財報、DRAM／NAND 拆分、位元與售價季變化、財測、事件 | 手動（附來源） |
-| `phison-model.json`、`micron-model.json` | 候選模型、參數、回測、三種情境、敏感度與限制 | **只能由模型程式產生，不要手改** |
+| `src/data/memory/forecast/market-prices.yaml` | TrendForce 的 NAND／DRAM 合約價季變化（含季初預測與區間）、現貨價、產業營收；記憶體相關模型共用 | 手動（附來源） |
+| `src/data/memory/forecast/phison-inputs.yaml`、`micron-inputs.yaml` | 群聯、美光的季財報、月營收、年報、財測、事件（`companyInputs`） | 手動（附來源） |
+| `src/data/forecast/<公司>-inputs.yaml` | 台積電、聯發科、輝達、SpaceX、特斯拉的季財報、月營收、財測（`quarters[].guidance`）、事件（`companyInputs`） | 手動（附來源） |
+| `src/data/forecast/<公司>-drivers.yaml` | 公司特有的驅動因子序列：製程與平台比重、交車量、用戶、算力、匯率、財測序列……（`companyDrivers`，`category` 用來分組顯示） | 手動（附來源） |
+| `<公司>-model.json`（兩個資料夾） | 候選模型、參數、回測、三種情境、敏感度與限制（`modelOutput`） | **只能由 `scripts/models/<公司>.ts` 產生，不要手改** |
 
-格式在 `src/schemas/forecast.ts`（strictObject）；模型程式在 `scripts/models/phison.ts`、`scripts/models/micron.ts`（共用函式 `scripts/models/lib.ts` 不要改，公司專用的放在 `phison-lib.ts`、`micron-lib.ts`）。頁面路由是 `src/pages/memory/[company].astro`，讀取與驗證在 `src/lib/forecast-data.ts`，元件在 `src/components/memory/forecast/`（公司專屬段落在 `phison/`、`micron/` 子目錄）。
+格式在 `src/schemas/forecast.ts`（strictObject，不允許多餘欄位）；模型程式是 `scripts/models/<公司>.ts`（匯出 `buildModel(inputs, prices, drivers)`；共用函式 `scripts/models/lib.ts` 不要改，公司專用的放在 `<公司>-lib.ts`）。共用元件在 `src/components/memory/forecast/`（摘要卡、回測、情境表…）與 `src/components/forecast/`（驅動因子表、推算序列表、財測對照、通用的「一分鐘看懂」）；公司專屬段落放在 `src/components/forecast/<公司>/`（見下方「公司專屬段落」），群聯與美光的在 `src/components/memory/forecast/phison/`、`micron/`。
 
-什麼時候更新：群聯每月 10 日前後公布月營收、每季財報（約 3、5、8、11 月）；美光每季法說會（約 3、6、9、12 月）會給上一季財報與下一季財測；TrendForce 每季季末公布合約價的估計與下一季預測。
+什麼時候更新：每季財報與法說會（台積電、聯發科約 1、4、7、10 月；輝達約 2、5、8、11 月；特斯拉、SpaceX 約 1、4、7、10 月；群聯約 3、5、8、11 月；美光約 3、6、9、12 月）；台股每月 10 日前後公布月營收；特斯拉每季初公布交車與儲能部署；TrendForce 每季季末公布合約價的估計與下一季預測。
 
-更新步驟：
+更新步驟（每家公司都一樣）：
 
-1. 把五個檔案複製到暫存區 `research/staging/memory/forecast/`，在暫存區修改輸入檔：新增季度（`quarters` 要連續、不跳季）、月營收、價格點（季末估計標 `status: estimate`、事前預測標 `forecast`，區間寫在 `low`／`high`）、事件與 `sources`；每個數字都要有 `src` 與存取日期（`docs/CONTENT-GUIDE.md` §1–2）。更新 `asOf` 與 `lastVerified`。
+1. 把該公司的檔案複製到暫存區（例如 `research/staging/data/forecast/`；群聯、美光連同 `market-prices.yaml` 複製到 `research/staging/memory/forecast/`），在暫存區修改輸入檔：新增季度（`quarters` 要連續、不跳季）、月營收、驅動因子的新資料點（估計標 `status: estimate`、預測 `forecast`、公司財測 `guidance`，區間寫在 `low`／`high`）、事件與 `sources`；每個數字都要有 `src` 與存取日期（`docs/CONTENT-GUIDE.md` §1–2）。更新 `asOf` 與 `lastVerified`。
 2. 在暫存區重跑模型，再驗證：
    ```bash
-   npx tsx scripts/models/phison.ts --dir research/staging/memory/forecast
-   npx tsx scripts/models/micron.ts --dir research/staging/memory/forecast
-   npx tsx scripts/check-forecast.ts --dir research/staging/memory/forecast
-   npx tsx scripts/check-zh.ts research/staging/memory/forecast/*
+   npx tsx scripts/models/<公司>.ts --dir research/staging/data/forecast
+   npx tsx scripts/check-forecast.ts --dir research/staging/data/forecast
+   npx tsx scripts/check-zh.ts research/staging/data/forecast/*
    ```
-   預測期移動時（例如群聯 2026Q3 財報公布），模型程式裡的回測期、預測期與情境假設也要跟著改（`TRAIN`、`TEST` 與各情境的價格路徑），並重新檢查選模結果與 `summary`、`limitations` 的文字。
-3. 通過後用 `mv` 覆蓋 `src/data/memory/forecast/` 的檔案，對正式檔再跑一次：
+   （群聯、美光把 `--dir` 換成 `research/staging/memory/forecast`。）預測期移動時（新一季財報公布），模型程式裡的回測期、預測期與情境假設也要跟著改（`TRAIN`、`TEST` 與各情境的路徑），並重新檢查選模結果與 `summary`、`limitations` 的文字。
+3. 通過後用 `mv` 覆蓋正式檔（`src/data/forecast/` 或 `src/data/memory/forecast/`），對正式檔再跑一次：
    ```bash
-   npx tsx scripts/check-forecast.ts        # schema、來源 key、季度連續，並重跑模型確認 JSON 可重現
+   npx tsx scripts/check-forecast.ts        # 所有公司：schema、來源 key、季度連續，並重跑模型確認 JSON 可重現
    npx astro check
    ```
-4. 檢查頁面文字：大部分文字由資料計算，但有幾處跟期間有關，預測期移動時要一併更新：`src/lib/forecast-data.ts` 的 `FC_META`（`summaryPeriods` 預測摘要的期間、`historyFrom`、`description`）、`src/components/memory/forecast/micron/MicronPriceCost.astro`（財測隱含的成本墊高說明）、`micron/MicronCapacity.astro`（資本支出展望）、`micron/MicronVolume.astro`（週數說明）。可用 `grep -rn "FY202\|202[5-8]" src/components/memory/forecast src/pages/memory` 找出來。
-5. 開啟 `/memory/phison/`、`/memory/micron/` 檢查預測摘要、圖表與表格；建置時若有 `[forecast] … citation … is not in the page's source list` 的警告，表示元件引用了 `pageSourceKeys()` 沒有收集的來源，要在 `src/lib/forecast-data.ts` 補上。`/memory/` 的「財報模型」卡片與 `/companies/phison/`、`/companies/micron/` 的連結卡片會自動改用新的模型數字。
+4. 檢查頁面文字：大部分文字由資料計算，跟期間有關的設定在 `src/lib/forecast-config.ts` 的 `FC_META`（`summaryQuarters` 預測摘要的季數、`historyFrom` 歷史圖表與驅動因子表的起點、`backtest.known` 回測代入了什麼）。群聯、美光另有幾處寫在元件裡：`src/components/memory/forecast/micron/MicronPriceCost.astro`（財測隱含的成本墊高說明）、`micron/MicronCapacity.astro`（資本支出展望）、`micron/MicronVolume.astro`（週數說明）；可用 `grep -rn "FY202\|202[5-8]" src/components/memory/forecast src/components/forecast src/pages/memory src/pages/forecast` 找出來。
+5. 開啟 `/forecast/`、該公司的頁面與 `/companies/<公司>/` 檢查預測摘要、圖表與表格。建置時若有 `[forecast] … citation … is not in the page's source list` 的警告，表示元件引用了 `pageSourceKeys()` 沒有收集的來源：通用來源（模型的 `sourceKeys`、模型文字裡的 key、`historyFrom` 之後的季度與財測、頁面區間內的驅動因子點）在 `src/lib/forecast-data.ts` 補；公司段落額外引用的 key 寫在 `src/components/forecast/<公司>/sources.ts`。
+
+公司的財測要出現在「預測摘要」與「各期預測」，模型程式要把它寫進 `parameters`，名稱以期間開頭：`2026Q4 財測：營收中值`（或 `2027Q1 營收財測中值`，數值為百萬；`note` 寫區間「2,101–2,218 億元」或「± 3 億美元」，以及全形括號內的來源 key「（tr-q3-2026）」）、`2026Q4 財測：毛利率中值`、`2026Q4 財測：EPS…`（美光是 `財測：非 GAAP 毛利率`、`財測：非 GAAP EPS`）。過去各季的財測寫在 `quarters[].guidance`，回測段落會自動列出「和公司自己的財測比較」。模型參數裡沒有財測時，`nextGuidance()` 會改讀驅動因子檔的 `guidance-revenue`（或 `guidance-revenue-usd` 乘上 `fx-guidance`，例如台積電以美元給財測）與 `guidance-gross-margin` 序列在該期的點，頁面會註明換算方式。
+
+#### 新增一家公司的財報模型
+
+1. 名冊（`src/data/roster/`）裡要已有這家公司；在 `src/schemas/forecast.ts` 的 `FORECAST_COMPANIES` 加上它的 id。
+2. 在 `src/lib/forecast-config.ts` 的 `FC_META` 加一筆（`topic: 'forecast'`、`path: '/forecast/<id>/'`、`segment`、名稱與標題、幣別、`summaryQuarters`、`historyFrom`、各指標的口徑標籤、`backtest` 的說明文字、`basicsTitle`、`descLead`；會計年度不是日曆年的公司加 `fyStartMonth`，例如輝達 2）。
+3. 依上面的步驟在暫存區建立 `<id>-inputs.yaml`、`<id>-drivers.yaml`，寫 `scripts/models/<id>.ts`（匯出 `buildModel(inputs, prices, drivers)`，用 `--dir` 讀暫存區、寫出 `<id>-model.json`），以 `npx tsx scripts/check-forecast.ts --dir research/staging/data/forecast` 驗證後 `mv` 進 `src/data/forecast/`。
+4. 模型檔一存在，`/forecast/<id>/` 頁面、專題卡片與公司檔案頁的連結就會自動出現；沒有公司專屬段落時，頁面會用通用內容（模型摘要、驅動因子表、營收與利潤率圖、推算序列表）。
+5. 需要時加上公司專屬段落（下一節），再跑 `npx astro check`、`npx tsx scripts/check-forecast.ts`、`npx tsx scripts/check-zh.ts` 並在開發伺服器檢查桌機與手機、淺色與深色。
+
+#### 公司專屬段落（`src/components/forecast/<id>/`）
+
+檔名就是登記方式（`src/components/forecast/registry.ts` 以 glob 自動載入），沒有的檔案不會顯示任何東西，頁面改用通用內容：
+
+| 檔案 | 位置 | 說明 |
+|---|---|---|
+| `Basics.astro` | 「一分鐘看懂」 | 頁面已有 H2（`FC_META.basicsTitle`），元件放下面的內容；取代通用的模型摘要 |
+| `Drivers.astro` | 「驅動因子」最上面 | 最能說明問題的圖表；有這個檔案時，通用的全部驅動因子表會收進下方的「全部驅動因子序列」折疊區 |
+| `Volume.astro` | 「數量與營收」最上面 | 取代通用的營收與利潤率圖；模型推算序列表移到折疊區 |
+| `Method.astro`、`Backtest.astro`、`Scenarios.astro` | 各段落的末尾（`Method` 在參數表之前） | 補充說明 |
+| `sources.ts` | — | `export function sourceKeys(b: FcBundle): string[]`：段落額外引用、預設來源清單沒有的 key |
+
+每個元件只收一個 prop `b`（`FcBundle`：`b.inputs`、`b.drivers`、`b.model`、`b.meta`、`b.sourceByKey`），標題從 h3 開始，引用用 `src/components/memory/forecast/FcCite.astro`，圖表用 `src/components/charts/` 與 `src/components/memory/forecast/QuarterBars.astro`；估計、預測與財測要標示清楚，不寫目標價或買賣建議。
 
 ---
 
@@ -192,6 +221,8 @@ node scripts/plan/make-update-args.mjs --type refresh --collection companies --a
 > 請依 `docs/UPDATING.md` §2.8 把記憶體與儲存專題的資料（`src/data/memory/*.yaml`）更新到 2027-01-31，跑 `scripts/check-memory.ts` 後檢查 `/memory/` 頁面並回報。
 
 > 請依 `docs/UPDATING.md` §2.9 把群聯與美光財報模型的輸入（`src/data/memory/forecast/`）更新到最新一季財報與 TrendForce 合約價，經暫存區重跑 `scripts/models/phison.ts`、`scripts/models/micron.ts` 與 `scripts/check-forecast.ts`，再檢查 `/memory/phison/`、`/memory/micron/` 並回報回測誤差的變化。
+
+> 請依 `docs/UPDATING.md` §2.9 把台積電的財報模型（`src/data/forecast/tsmc-*`）更新到最新一季財報、月營收與下一季財測，經暫存區重跑 `scripts/models/tsmc.ts` 與 `scripts/check-forecast.ts`，再檢查 `/forecast/tsmc/` 與 `/forecast/` 並回報回測誤差與預測的變化。
 
 ---
 

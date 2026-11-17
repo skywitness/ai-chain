@@ -1,0 +1,454 @@
+---
+/**
+ * 一分鐘看懂（SpaceX）: the three operating segments and the volume × price behind each — Starlink subscribers ×
+ * revenue per subscriber, customer launches × revenue per launch, AI nameplate compute (GW) × annual revenue per
+ * watt — checked against the latest reported quarter, the model's revenue sensitivities (which driver moves the
+ * forecast) and the chain from drivers to EPS. Every figure is read from src/data/forecast/spacex-*.
+ *   <Basics b={bundle} />
+ */
+import FlowSteps from '../../content/FlowSteps.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import StatusTag from '../../memory/StatusTag.astro';
+import { fcPct, nextGuidance, periodLabel, qIndex, selectedCandidate, type FcBundle } from '../../../lib/forecast-data';
+import { formatNumber } from '../../../lib/format';
+import { SEGMENTS, derivedAt, driverAt, ex, growth, revenueSensitivities, shareOf } from './sx-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m } = b;
+const last = inputs.quarters.at(-1)!;
+const P = last.period;
+const prev = inputs.quarters.find((q) => qIndex(q.period) === qIndex(P) - 1);
+const yearAgo = inputs.quarters.find((q) => qIndex(q.period) === qIndex(P) - 4);
+const first = inputs.quarters[0]!;
+
+/** 「145.8 億美元」, 「6.08 億美元」, 「−700 萬美元」 */
+const usd = (millions: number | undefined): string => {
+  if (millions == null || !Number.isFinite(millions)) return '—';
+  const a = Math.abs(millions);
+  if (a < 100) return `${formatNumber(millions * 100)} 萬美元`;
+  return `${formatNumber(millions / 100, { digits: a < 1000 ? 2 : a < 100000 ? 1 : 0 })} 億美元`;
+};
+const pct0 = (v: number | undefined) => (v == null ? '—' : `${formatNumber(v, { digits: 0 })}%`);
+
+// segments of the latest quarter
+const segRev = (k: string, q = last) => ex(q, k);
+const segShare = (k: string, q = last) => shareOf(ex(q, k), q.revenue);
+const aiShareNow = segShare('AI部門營收');
+const aiShareYearAgo = yearAgo ? segShare('AI部門營收', yearAgo) : undefined;
+const yoy = growth(yearAgo?.revenue, last.revenue);
+const mixText = [...SEGMENTS]
+  .sort((a, c) => (segShare(c.rev) ?? 0) - (segShare(a.rev) ?? 0))
+  .map((s) => `${s.name} ${pct0(segShare(s.rev))}`)
+  .join('、');
+// how much of the year-on-year revenue increase came from the AI segment
+const yoyAdd = yearAgo ? last.revenue - yearAgo.revenue : undefined;
+const aiAdd = yearAgo ? (ex(last, 'AI部門營收') ?? 0) - (ex(yearAgo, 'AI部門營收') ?? 0) : undefined;
+
+// AI: compute revenue (AI solutions & infrastructure without Cursor), Cursor, X advertising
+const aiSol = ex(last, 'AI解決方案與基礎設施營收');
+const cursor = ex(last, 'Cursor營收') ?? 0;
+const compute = aiSol != null ? aiSol - cursor : undefined;
+const computeFirst = ex(first, 'AI解決方案與基礎設施營收');
+const custB = driverAt(b, 'customer-b-share', P);
+const gwEnd = driverAt(b, 'nameplate-compute', P);
+const gwPrev = prev ? driverAt(b, 'nameplate-compute', prev.period) : undefined;
+const gwAvg = gwEnd && gwPrev ? (gwEnd.value + gwPrev.value) / 2 : undefined;
+const yieldAvg = derivedAt(b, 'ai-revenue-per-watt-average', P);
+const yieldMarg = derivedAt(b, 'ai-revenue-per-watt-marginal', P);
+const gwYearEnd = driverAt(b, 'nameplate-compute', `${P.slice(0, 4)}Q4`);
+const gwYearEndG = gwYearEnd?.status === 'guidance' ? gwYearEnd : undefined;
+
+// Starlink: subscribers × revenue per subscriber
+const subs = driverAt(b, 'starlink-subscribers', P);
+const subsPrev = prev ? driverAt(b, 'starlink-subscribers', prev.period) : undefined;
+const subsAvg = subs && subsPrev ? (subs.value + subsPrev.value) / 2 : undefined;
+const perSub = derivedAt(b, 'starlink-revenue-per-subscriber', P);
+const arpu = driverAt(b, 'starlink-arpu', P);
+
+// launches: customer launches × revenue per launch
+const custLaunch = driverAt(b, 'launches-customer', P);
+const perLaunch = derivedAt(b, 'revenue-per-customer-launch', P);
+
+const g = nextGuidance(b);
+const sel = selectedCandidate(m);
+const sens = revenueSensitivities(b);
+const sensYear = /(\d{4}) 年營收/.exec(sens[0]?.effect ?? '')?.[1];
+const sensMax = Math.max(...sens.map((s) => Math.abs(s.pct)), 1);
+const aiSens = sens.filter((s) => /算力/.test(s.driver));
+const otherSens = sens.filter((s) => !/算力/.test(s.driver));
+const otherMax = otherSens.length ? Math.max(...otherSens.map((s) => Math.abs(s.pct))) : undefined;
+
+const cards = [
+  {
+    seg: SEGMENTS[0],
+    eq: [
+      { k: '消費者用戶（季內平均）', v: subsAvg != null ? `${formatNumber(subsAvg * 100)} 萬戶` : '—' },
+      { op: '×' },
+      { k: '每用戶月營收（含設備）', v: perSub != null ? `${formatNumber(perSub, { digits: 1 })} 美元` : '—' },
+      { op: '× 3 個月' },
+    ],
+    res: { k: 'Starlink 消費者營收', v: usd(ex(last, '消費者營收')) },
+    plus: [`企業與政府（航空、海事、Starshield 等）${usd(ex(last, '企業與政府營收'))}`],
+  },
+  {
+    seg: SEGMENTS[1],
+    eq: [
+      { k: '平均額定算力', v: gwAvg != null ? `${formatNumber(gwAvg, { digits: 2 })} GW` : '—' },
+      { op: '×' },
+      { k: '平均每瓦年營收', v: yieldAvg != null ? `${formatNumber(yieldAvg, { digits: 1 })} 美元` : '—' },
+      { op: '÷ 4 季' },
+    ],
+    res: { k: '算力與 Grok 等', v: usd(compute) },
+    plus: [...(cursor ? [`Cursor ${usd(cursor)}`] : []), `X 廣告 ${usd(ex(last, '廣告營收'))}`],
+  },
+  {
+    seg: SEGMENTS[2],
+    eq: [
+      { k: '客戶發射', v: custLaunch ? `${formatNumber(custLaunch.value)} 次` : '—' },
+      { op: '×' },
+      { k: '每次發射服務營收', v: perLaunch != null ? `${formatNumber(perLaunch * 100)} 萬美元` : '—' },
+    ],
+    res: { k: '發射服務營收', v: usd(ex(last, '發射服務營收')) },
+    plus: [`發射與開發 ${usd(ex(last, '發射與開發營收'))}`],
+  },
+];
+const cardKeys = [last.src, subs?.src, arpu?.src, gwEnd?.src, custLaunch?.src].filter((k): k is string => !!k);
+const steps = [
+  { title: '數量', detail: 'Starlink 用戶、客戶發射次數、AI 額定算力（GW）' },
+  { title: '單價', detail: '每用戶月營收、每次發射營收、每瓦年營收' },
+  { title: '部門毛利率', detail: '三個部門依營收比重加權成合併毛利率' },
+  { title: '營業費用', detail: '研發（含大部分 Starship 開發）、管銷與併購相關股份基礎給付' },
+  { title: 'EPS', detail: `加業外收支、扣稅後除以約 ${last.sharesDiluted != null ? formatNumber(last.sharesDiluted / 100, { digits: 0 }) : '—'} 億股` },
+];
+---
+
+<div class="mem-basics__grid">
+  <div class="prose mem-basics__prose">
+    <p>
+      SpaceX（Space Exploration Technologies）在 2026 年 6 月上市<FcCite k="sec-8k-ipo" />，財報分成三個營運部門：<strong>太空</strong>（Falcon 火箭與 Dragon 太空船的發射服務等）、<strong>連網</strong>（Starlink 衛星網路的消費者訂閱與設備，以及企業與政府方案），和 2026 年 2 月併入 xAI 後的 <strong>AI</strong>（第三季起改稱 SI：資料中心算力、Grok、X 的廣告，以及 8 月併購的 Cursor）<FcCite k="sec-424b4" /><FcCite k="pr-q3-2026" />。{periodLabel(P, 'long')}營收 {usd(last.revenue)}{yoy != null ? `、年增 ${pct0(yoy)}` : ''}，其中 {mixText}<FcCite k={last.src} />。
+    </p>
+    <p>
+      一年前 AI 部門只占營收 {pct0(aiShareYearAgo)}{yearAgo && <FcCite k={yearAgo.src} />}。2026 年 5 月與 Anthropic、6 月與 Google 簽下雲端服務合約後<FcCite k="sec-424b4" /><FcCite k="sec-fwp-google" />，SpaceX 把資料中心的 GPU 算力按月出租給其他 AI 公司：AI 解決方案與基礎設施營收從 {periodLabel(first.period)} 的 {usd(computeFirst)}增加到 {periodLabel(P)} 的 {usd(aiSol)}{cursor ? `（含 Cursor ${usd(cursor)}）` : ''}{custB && (<>，單一 AI 客戶就占當季合併營收 {fcPct(custB.value)}<FcCite k={custB.src} /></>)}。AI 部門占比從 {pct0(aiShareYearAgo)} 升到 {pct0(aiShareNow)}{yoyAdd != null && aiAdd != null && yoyAdd > 0 ? `；營收一年增加的 ${usd(yoyAdd)}中，${usd(aiAdd)}來自 AI 部門` : ''}。
+    </p>
+    <p>
+      所以本頁的模型把營收拆成三組「數量 × 單價」：Starlink 消費者用戶 × 每用戶月營收、客戶發射次數 × 每次營收，以及 AI 額定算力（已安裝 GPU 的全機功率，單位 GW）× 每瓦年營收；毛利率是三個部門的毛利率依營收比重加權。下面三張卡片用 {periodLabel(P, 'long')}的財報驗算這三組乘法。
+    </p>
+  </div>
+  <aside class="mem-basics__aside fc-figs" aria-label="關鍵數字">
+    <p class="fc-figs__title">關鍵數字</p>
+    <ul class="fc-figs__list" role="list">
+      <li class="mem-fig">
+        <p class="mem-fig__label">{periodLabel(P)} 營收</p>
+        <p class="mem-fig__value"><strong>{formatNumber(last.revenue / 100, { digits: 1 })}</strong><span class="mem-fig__unit">億美元</span></p>
+        <p class="mem-fig__meta">
+          財報{yoy != null ? `；年增 ${pct0(yoy)}` : ''}<FcCite k={last.src} />
+        </p>
+      </li>
+      {
+        subs && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">Starlink 消費者用戶（{periodLabel(P)} 底）</p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(subs.value * 100)}</strong>
+              <span class="mem-fig__unit">萬戶</span>
+            </p>
+            <p class="mem-fig__meta">
+              {subsPrev ? `季增 ${formatNumber((subs.value - subsPrev.value) * 100)} 萬戶` : '公司公布'}
+              {arpu ? `；服務 ARPU ${formatNumber(arpu.value)} 美元／月` : ''}
+              <FcCite k={subs.src} />
+            </p>
+          </li>
+        )
+      }
+      {
+        gwEnd && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">AI 額定算力（{periodLabel(P)} 底）</p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(gwEnd.value, { digits: 1 })}</strong>
+              <span class="mem-fig__unit">GW</span>
+            </p>
+            <p class="mem-fig__meta">
+              公司公布<FcCite k={gwEnd.src} />
+              {gwYearEndG && gwYearEndG.low != null && gwYearEndG.high != null && (
+                <>
+                  ；{gwYearEndG.period.slice(0, 4)} 年底財測 {formatNumber(gwYearEndG.low, { digits: 1, trim: true })}–{formatNumber(gwYearEndG.high, { digits: 1, trim: true })} GW
+                  <FcCite k={gwYearEndG.src} />
+                </>
+              )}
+            </p>
+          </li>
+        )
+      }
+      {
+        g && g.revenueLow != null && g.revenueHigh != null && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">{periodLabel(g.period)} 營收財測</p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(g.revenueLow / 100)}–{formatNumber(g.revenueHigh / 100)}</strong>
+              <span class="mem-fig__unit">億美元</span>
+            </p>
+            <p class="mem-fig__meta">
+              公司在 {periodLabel(P)} 財報法說會給出{g.src && <FcCite k={g.src} />}
+            </p>
+          </li>
+        )
+      }
+    </ul>
+  </aside>
+</div>
+
+<h3 class="fc-h3">三個部門的「數量 × 單價」：{periodLabel(P, 'long')}驗算</h3>
+<ul class="sx-units" role="list">
+  {
+    cards.map((c) => {
+      const gm = derivedAt(b, c.seg.gm, P);
+      const oi = ex(last, c.seg.oi);
+      return (
+        <li class="sx-unit" style={`--k: ${c.seg.color}`}>
+          <p class="sx-unit__seg">{c.seg.full}</p>
+          <p class="sx-unit__rev">
+            <strong>{usd(segRev(c.seg.rev))}</strong>
+            <span>占營收 {pct0(segShare(c.seg.rev))}</span>
+          </p>
+          <div class="sx-unit__eq">
+            <p class="sx-unit__lhs">
+              {c.eq.map((t) =>
+                'op' in t ? (
+                  <span class="sx-unit__op">{t.op}</span>
+                ) : (
+                  <span class="sx-unit__term">
+                    <small>{t.k}</small>
+                    <b>{t.v}</b>
+                  </span>
+                ),
+              )}
+            </p>
+            <p class="sx-unit__res">
+              <span class="sx-unit__op">≈</span>
+              <span class="sx-unit__term">
+                <small>{c.res.k}</small>
+                <b>{c.res.v}</b>
+              </span>
+            </p>
+          </div>
+          <dl class="sx-unit__more">
+            <div>
+              <dt>另加</dt>
+              <dd>{c.plus.join('、')}</dd>
+            </div>
+            <div>
+              <dt>毛利率</dt>
+              <dd>{fcPct(gm)}</dd>
+            </div>
+            <div>
+              <dt>營業損益</dt>
+              <dd>{usd(oi)}</dd>
+            </div>
+          </dl>
+        </li>
+      );
+    })
+  }
+</ul>
+<p class="mem-fine sx-fine">
+  每用戶、每次發射與每瓦營收是本站以財報與公司公布的營運數字計算（期初與期末的平均用戶、平均算力），部門毛利率也是本站以部門營收與銷貨成本計算；乘出的結果與財報數字的差異來自四捨五入。每用戶月營收含終端設備，比公司公布、只計服務的 ARPU{arpu ? `（${formatNumber(arpu.value)} 美元）` : ''}高。額定算力也包含 xAI 自己訓練 Grok 用的部分，所以平均每瓦營收低於新出租算力的價格{yieldMarg != null ? `（本站由最近一季的增量估計約每瓦每年 ${formatNumber(yieldMarg, { digits: 1 })} 美元）` : ''}。{P === '2026Q3' && '連網第三季毛利率含約 3 個百分點的關稅退款等一次性利益；太空部門大部分 Starship 開發費用列在研發費用，不在銷貨成本，所以毛利率偏高。'}
+  {[...new Set(cardKeys)].map((k) => <FcCite k={k} />)}
+  {P === '2026Q3' && <FcCite k="tr-q3-2026" />}
+</p>
+
+{
+  sens.length > 1 && (
+    <>
+      <h3 class="fc-h3">哪個假設最能移動{sensYear ? ` ${sensYear} 年` : ''}營收</h3>
+      <p class="fc-p">
+        只改一項假設、其他維持基準情境時，模型推估的{sensYear ? ` ${sensYear} 年` : ''}營收變動多少。
+        {aiSens.length > 0 && otherMax != null
+          ? `AI 算力的${aiSens.length === 2 ? '兩個' : ''}假設（每季新增多少 GW、每瓦能收多少錢）各自就能讓營收變動 ${aiSens.map((s) => fcPct(Math.abs(s.pct))).join('、')}，Starlink 與發射的假設都在 ${formatNumber(Math.ceil(otherMax), { digits: 0 })}% 以內：預測區間的寬窄幾乎由 AI 部門決定。`
+          : ''}
+      </p>
+      <ol class="sx-sens" role="list" aria-label={`${sensYear ?? ''} 年營收對各項假設的敏感度（模型推估）`}>
+        {sens.map((s) => (
+          <li class="sx-sens__row">
+            <span class="sx-sens__name">
+              {s.driver}
+              <small>{s.change}</small>
+            </span>
+            <span class="sx-sens__track" aria-hidden="true">
+              <i style={`--f: ${Math.max(0.6, (Math.abs(s.pct) / sensMax) * 100).toFixed(1)}%`} />
+            </span>
+            <b class="sx-sens__val">{formatNumber(s.pct, { digits: 1, signed: true })}%</b>
+          </li>
+        ))}
+      </ol>
+      <p class="mem-fine">
+        <StatusTag status="forecast" /> 本站模型「{sel.name}」的敏感度分析，不是公司數字；完整列表（含毛利率、營業費用）見「情境預測」的敏感度表。
+      </p>
+    </>
+  )
+}
+
+<FlowSteps class="fc-flow" title="從驅動因子到每股盈餘" steps={steps} />
+
+<style>
+  .sx-units {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .sx-unit {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-inline-size: 0;
+    margin: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-block-start: 4px solid var(--k);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .sx-unit__seg {
+    margin: 0;
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .sx-unit__rev {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--space-2);
+    margin: 0;
+  }
+  .sx-unit__rev strong {
+    font-size: var(--fs-xl);
+    font-variant-numeric: tabular-nums;
+  }
+  .sx-unit__rev span {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .sx-unit__eq {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-sunken);
+  }
+  .sx-unit__lhs,
+  .sx-unit__res {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-1) var(--space-2);
+    margin: 0;
+  }
+  .sx-unit__res {
+    padding-block-start: var(--space-2);
+    border-block-start: 1px dashed var(--c-border);
+  }
+  .sx-unit__term {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+  .sx-unit__term small {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    line-height: 1.5;
+  }
+  .sx-unit__term b {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .sx-unit__res b {
+    font-size: var(--fs-l);
+  }
+  .sx-unit__op {
+    font-size: var(--fs-s);
+    color: var(--c-fg-subtle);
+    white-space: nowrap;
+  }
+  .sx-unit__more {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    font-size: var(--fs-s);
+  }
+  .sx-unit__more > div {
+    display: grid;
+    grid-template-columns: 4.5em minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+  .sx-unit__more dt {
+    font-size: var(--fs-xs);
+    line-height: 1.9;
+    color: var(--c-fg-subtle);
+  }
+  .sx-unit__more dd {
+    margin: 0;
+    min-inline-size: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .sx-fine {
+    margin-block-start: var(--space-2);
+  }
+  .sx-sens {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-2);
+    padding: 0;
+    list-style: none;
+  }
+  .sx-sens__row {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(4rem, 1fr) 4.5em;
+    align-items: center;
+    gap: var(--space-3);
+    margin: 0;
+  }
+  .sx-sens__name {
+    display: flex;
+    flex-direction: column;
+    font-size: var(--fs-s);
+    line-height: 1.5;
+  }
+  .sx-sens__name small {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .sx-sens__track {
+    position: relative;
+    block-size: 0.9rem;
+    border-radius: 3px;
+    background: var(--c-bg-sunken);
+  }
+  .sx-sens__track i {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: var(--f);
+    border: 1.5px dashed var(--fc-seg, var(--c-accent));
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--fc-seg, var(--c-accent)) 30%, transparent);
+  }
+  .sx-sens__val {
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+  @media (width < 36rem) {
+    .sx-sens__row {
+      grid-template-columns: minmax(0, 1fr) 4.5em;
+    }
+    .sx-sens__name {
+      grid-column: 1 / -1;
+    }
+  }
+</style>
