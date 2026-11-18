@@ -1,0 +1,527 @@
+---
+/**
+ * 一分鐘看懂（Anthropic）: how Anthropic makes money — usage-based (API, Claude Code) and subscription revenue, sold
+ * directly and through the cloud marketplaces — why the run-rate the company states is the closest real-time driver,
+ * where the compute and infrastructure expense lands in the functional income statement (cost of revenue vs R&D and
+ * sales & marketing), and why GAAP net loss is not modelled. Three identities checked on the latest reported quarter
+ * (run-rate → revenue, compute → gross margin, compute → operating margin), the model's operating-income
+ * sensitivities and the chain from drivers to results. Every figure is read from src/data/forecast/anthropic-*.
+ *   <Basics b={bundle} />
+ */
+import FlowSteps from '../../content/FlowSteps.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import StatusTag from '../../memory/StatusTag.astro';
+import { fcPct, forecastOf, paramStarting, periodLabel, selectedCandidate, type FcBundle } from '../../../lib/forecast-data';
+import { formatMoneyRange, formatNumber } from '../../../lib/format';
+import {
+  costByNature,
+  derivedAt,
+  driverAt,
+  events,
+  ex,
+  forecastYear,
+  grossMarginOf,
+  growth,
+  lastQuarters,
+  oiSensitivities,
+  quarterOiEffect,
+  runRateStatements,
+  scenarioQuarters,
+  shareOf,
+} from './an-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m } = b;
+const { P, last, prev, yearAgo } = lastQuarters(b);
+const PL = periodLabel(P, 'long');
+
+/** 「169.6 億美元」「3.76 億美元」「−5.67 億美元」; trim drops trailing zeros (round statements: 「810 億美元」) */
+const usd = (millions: number | undefined, trim = false): string => {
+  if (millions == null || !Number.isFinite(millions)) return '—';
+  const a = Math.abs(millions);
+  if (a < 100) return `${formatNumber(millions * 100)} 萬美元`;
+  return `${formatNumber(millions / 100, { digits: a < 1000 ? 2 : a < 100000 ? 1 : 0, trim })} 億美元`;
+};
+const pct0 = (v: number | undefined) => (v == null ? '—' : `${formatNumber(v, { digits: 0 })}%`);
+const x2 = (v: number | undefined) => (v == null ? '—' : formatNumber(v, { digits: 2 }));
+const dateZh = (iso: string) => {
+  const [y, mo, d] = iso.split('-').map(Number) as [number, number, number];
+  return `${y} 年 ${mo} 月 ${d} 日`;
+};
+const monthEnd = (iso: string) => {
+  const [y, mo, d] = iso.split('-').map(Number) as [number, number, number];
+  return d === new Date(Date.UTC(y, mo, 0)).getUTCDate() ? `${mo} 月底` : dateZh(iso);
+};
+/** 「2026 年 10 月底」 or 「2026 年 5 月 15 日」 (zh dates outside tables, docs/STYLE-zh-TW.md) */
+const dayZh = (iso: string) => (/月底$/.test(monthEnd(iso)) ? `${iso.slice(0, 4)} 年 ${monthEnd(iso)}` : dateZh(iso));
+
+// revenue: usage vs subscription, international, cloud marketplaces
+const usage = ex(last, '用量計費營收');
+const sub = ex(last, '訂閱營收');
+const intl = ex(last, '美國以外營收');
+const yoy = growth(yearAgo?.revenue, last.revenue);
+const csp = driverAt(b, 'csp-marketplace-share-quarter', P);
+const fnSrc = driverAt(b, 'cost-of-revenue-share', P)?.src;
+
+// run-rate: the company's latest statements on the prospectus basis
+const rr = runRateStatements(b).filter((s) => s.status === 'actual');
+const rrLast = rr.at(-1);
+const rrPrev = rr.at(-2);
+const s1 = events(b, /公開遞交 S-1/)[0];
+
+// compute and the functional split
+const { compute, other, donation, bartz } = costByNature(last);
+const cogs = ex(last, '銷貨成本');
+const gm = grossMarginOf(last);
+const gmYa = grossMarginOf(yearAgo);
+const computeShare = shareOf(compute, last.revenue);
+const effNow = compute ? last.revenue / compute : undefined;
+const effPt = driverAt(b, 'compute-efficiency', P);
+const effPrev = prev ? driverAt(b, 'compute-efficiency', prev.period) : undefined;
+const effLower = effNow != null && effPrev != null && effNow < effPrev.value;
+const cogsToCompute = cogs != null && compute ? (cogs / compute) * 100 : undefined;
+const shortTerm = driverAt(b, 'short-term-compute', P);
+const computeSrc = driverAt(b, 'compute-infra-expense', P)?.src ?? last.src;
+
+// operating and net results
+const oi = last.operatingIncome;
+const adjOi = ex(last, '調整後營業利益');
+const fv = ex(last, '可轉換票據等公允價值變動');
+const ni = last.netIncome;
+
+// the three identities of the latest quarter
+const implied = derivedAt(b, 'run-rate-implied-revenue', P);
+const k = derivedAt(b, 'revenue-to-run-rate', P);
+const kDef = paramStarting(m, `${P} 依定義換算的倍數`)?.value;
+const otherShare = shareOf(other, last.revenue);
+const donShare = shareOf(donation, last.revenue);
+const bartzShare = bartz ? shareOf(bartz, last.revenue) : undefined;
+const oiMargin = oi != null ? shareOf(oi, last.revenue) : undefined;
+
+// first forecast quarter and the forecast year
+const f1 = scenarioQuarters(b, 'base')[0];
+const lo = f1 ? forecastOf(m, 'bear', f1.period) : undefined;
+const hi = f1 ? forecastOf(m, 'bull', f1.period) : undefined;
+const sel = selectedCandidate(m);
+const Y = forecastYear(b);
+const sens = Y ? oiSensitivities(b, Y) : [];
+const sensMain = sens.filter((s) => !s.stress).sort((a, c) => Math.abs(c.value) - Math.abs(a.value));
+const sensStress = sens.filter((s) => s.stress);
+const sensMax = Math.max(1, ...sensMain.map((s) => Math.abs(s.value)));
+const q4Compute = quarterOiEffect(b, /算力與基礎設施費用/);
+// what the ranking says, only when the data say so
+const topCompute = sensMain.length >= 2 && sensMain.slice(0, 2).every((s) => /算力/.test(s.driver));
+const convRows = sensMain.filter((s) => /換算|年化營收/.test(s.driver));
+const convSmall = convRows.length > 0 && convRows.every((s) => Math.abs(s.value) <= sensMax / 2);
+const oiBase = Y ? forecastOf(m, 'base', Y)?.operatingIncome : undefined;
+
+type Term = { k: string; v: string } | { op: string };
+const cards: Array<{ title: string; eq: Term[]; res: { k: string; v: string }; note: string }> = [
+  {
+    title: '年化營收 → 營收',
+    eq: [{ k: 'Σ 每日年化營收 ÷ 364', v: usd(implied) }, { op: '×' }, { k: '換算倍數', v: k != null ? formatNumber(k, { digits: 3 }) : '—' }],
+    res: { k: '當季營收', v: usd(last.revenue) },
+    note: `年化營收是過去 28 天的用量計費營收 × 13 加上月訂閱費 × 12，加總一季的每日值再除以 364 就接近當季營收。${kDef != null ? `把用量計費部分依定義往後挪 14 天再算，倍數是 ${formatNumber(kDef, { digits: 3 })}。` : ''}`,
+  },
+  {
+    title: '算力 → 毛利率',
+    eq: [{ op: '1 −' }, { k: '銷貨成本 ÷ 算力費用', v: fcPct(cogsToCompute) }, { op: '÷' }, { k: '算力效率', v: effNow != null ? `${x2(effNow)} 倍` : '—' }],
+    res: { k: '毛利率', v: fcPct(gm) },
+    note: '算力效率越高、或算力中列入銷貨成本的比例越低，毛利率就越高；訓練與研究的算力不影響毛利率，只影響營業損益。',
+  },
+  {
+    title: '算力 → 營業利益率',
+    eq: [
+      { op: '100% −' },
+      { k: '算力費用 ÷ 營收', v: fcPct(computeShare) },
+      { op: '−' },
+      { k: '其他營業費用 ÷ 營收', v: fcPct(otherShare) },
+      { op: '−' },
+      { k: '非現金捐贈 ÷ 營收', v: fcPct(donShare) },
+      ...(bartzShare ? ([{ op: '−' }, { k: 'Bartz 和解 ÷ 營收', v: fcPct(bartzShare) }] as Term[]) : []),
+    ],
+    res: { k: 'GAAP 營業利益率', v: fcPct(oiMargin) },
+    note: '算力費用 ÷ 營收就是 1 ÷ 算力效率：營收追不上已承諾的算力時，這一項會直接吃掉營業利益。',
+  },
+];
+
+/** operators kept with the term that follows them, so a line never ends on 「−」 */
+function grouped(eq: Term[]): Array<{ op?: string | undefined; k: string; v: string }> {
+  const out: Array<{ op?: string | undefined; k: string; v: string }> = [];
+  let op: string | undefined;
+  for (const t of eq) {
+    if ('op' in t) op = op ? `${op} ${t.op}` : t.op;
+    else {
+      out.push({ op, k: t.k, v: t.v });
+      op = undefined;
+    }
+  }
+  return out;
+}
+
+const steps = [
+  { title: '年化營收', detail: '公司說法；每日值加總 ÷ 364 換算當季營收' },
+  { title: '算力費用', detail: '事先簽約承諾，近期大多是固定費用' },
+  { title: '毛利', detail: '營收減服務付費客戶的算力（銷貨成本）' },
+  { title: '營業損益', detail: '再減訓練與研究算力、人事、通路費用與捐贈' },
+  { title: '淨損益', detail: '金融工具的公允價值變動等；本模型不預測' },
+];
+const fmtYi = (v: number) => (v === 0 ? '不變' : `${formatNumber(v, { digits: 0, signed: true })} 億美元`);
+---
+
+<div class="mem-basics__grid">
+  <div class="prose mem-basics__prose">
+    <p>
+      Anthropic（Anthropic, PBC）開發 Claude 系列大型語言模型，營收分成兩種：<strong>用量計費</strong>（API、Claude Code 等依 token 用量計價，客戶可以直接向 Anthropic 購買，也可以經 AWS、Google Cloud、Microsoft Azure 的雲端市集購買）與<strong>訂閱</strong>（Pro、Max、Team、Enterprise 等方案，按期間認列）<FcCite k={fnSrc ?? last.src} />。{PL}營收 {usd(last.revenue)}{yoy != null ? `、年增 ${formatNumber(yoy, { digits: 0 })}%` : ''}<FcCite k={last.src} />，其中用量計費占 {pct0(shareOf(usage, last.revenue))}、訂閱占 {pct0(shareOf(sub, last.revenue))}，美國以外的客戶占 {pct0(shareOf(intl, last.revenue))}{fnSrc && <FcCite k={fnSrc} />}{
+        csp && (
+          <>
+            ；經雲端業者市集銷售的約占 {pct0(csp.value)}
+            {csp.status === 'estimate' ? '（本站由累計數推算）' : ''}
+            <FcCite k={csp.src} />
+          </>
+        )
+      }。
+    </p>
+    <p>
+      {s1 && (
+        <>
+          公司在 {dateZh(s1.date)}公開遞交上市申請（S-1），截至 {dateZh(b.inputs.asOf)}還沒有掛牌，也沒有公布營收或毛利率財測
+          <FcCite k={s1.src} />。
+        </>
+      )}
+      最接近即時的數字是公司自己說的<strong>年化營收</strong>（run-rate）：招股書定義為過去 28 天的用量計費營收 × 13，加上當天的每月訂閱費 × 12<FcCite k="sec-fwp-ipo-site" />
+      {
+        rrLast && (
+          <>
+            ；{dateZh(rrLast.date)}約 {usd(rrLast.value, true)}
+            {rrPrev && rrPrev.date.slice(0, 4) === rrLast.date.slice(0, 4) ? `，比 ${monthEnd(rrPrev.date)}增加 ${usd(rrLast.value - rrPrev.value, true)}` : ''}
+            <FcCite k={rrLast.src} />
+          </>
+        )
+      }。年化營收不是 GAAP 營收，但幾乎就是營收本身的年化，所以本頁的模型把公司各次說法連成每日路徑、加總後除以 364 換算成當季營收；{f1 ? `${periodLabel(f1.period, 'long')}的第一個月因此已大致可知，` : ''}{Y ? `${Y} 年則沒有年化營收可用，改用算力的假設推估。` : ''}
+    </p>
+    <p>
+      最大的成本是<strong>算力與基礎設施</strong>：向雲端業者承諾或隨需租用的運算、儲存、網路、機房與電力，公司通常提前 12–18 個月採購，近期大多是固定費用<FcCite k={computeSrc} />。{PL}這項費用 {usd(compute)}，等於營收的 {fcPct(computeShare)}。財報依功能把算力分到三個地方：服務付費客戶的列入銷貨成本，模型開發、研究與內部使用的列入研發，提供給免費使用者的列入銷售與行銷{fnSrc && <FcCite k={fnSrc} />}。銷貨成本只占算力費用的 {fcPct(cogsToCompute)}，所以毛利率高達 {fcPct(gm)}{gmYa != null ? `（一年前 ${fcPct(gmYa)}）` : ''}，遠高於「營收減全部算力費用」的 {computeShare != null ? fcPct(100 - computeShare) : '—'}。公司把營收 ÷ 算力費用稱為<strong>算力效率</strong>：{PL} {effPt ? formatNumber(effPt.value, { digits: 2 }) : x2(effNow)} 倍{effPrev ? `，${effLower ? '低於' : '高於'}上一季的 ${formatNumber(effPrev.value, { digits: 2 })} 倍` : ''}{effPt && <FcCite k={effPt.src} />}{
+        shortTerm && effPt?.note && /短期承諾/.test(effPt.note) && (
+          <>
+            ，公司說明主因是約 {usd(shortTerm.value, true)}的短期承諾算力，價格明顯高於多年期合約
+            <FcCite k={shortTerm.src} />
+          </>
+        )
+      }。
+    </p>
+    <p>
+      {PL} GAAP 營業{oi != null && oi < 0 ? '損失' : '利益'} {usd(oi != null ? Math.abs(oi) : undefined)}{P === '2026Q3' && donation ? `，公司說明主要來自上述短期算力與 ${usd(donation)}員工捐款配捐計畫的非現金費用` : ''}；加回股份基礎給付、非現金捐贈與 Bartz 著作權和解費用的<strong>調整後營業利益</strong>（公司定義的非 GAAP 指標）是 {usd(adjOi)}<FcCite k={last.src} />。GAAP 淨損 {usd(ni != null ? Math.abs(ni) : undefined)}更大，主要是可轉換票據等金融工具隨公司估值上升認列的公允價值變動{fv != null ? `（當季 ${usd(Math.abs(fv))}）` : ''}<FcCite k={last.src} />：這是非現金項目，上市後也會隨這些工具轉換而改變，所以本頁的模型只預測營收、毛利率與營業損益，不預測淨利與 EPS。
+    </p>
+  </div>
+  <aside class="mem-basics__aside fc-figs" aria-label="關鍵數字">
+    <p class="fc-figs__title">關鍵數字</p>
+    <ul class="fc-figs__list" role="list">
+      <li class="mem-fig">
+        <p class="mem-fig__label">{periodLabel(P)} 營收</p>
+        <p class="mem-fig__value"><strong>{formatNumber(last.revenue / 100, { digits: 1 })}</strong><span class="mem-fig__unit">億美元</span></p>
+        <p class="mem-fig__meta">
+          招股書{yoy != null ? `；年增 ${formatNumber(yoy, { digits: 0 })}%` : ''}<FcCite k={last.src} />
+        </p>
+      </li>
+      {
+        rrLast && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">年化營收（{rrLast.date.slice(0, 4) === P.slice(0, 4) ? monthEnd(rrLast.date) : dayZh(rrLast.date)}）</p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(rrLast.value / 100)}</strong>
+              <span class="mem-fig__unit">億美元</span>
+            </p>
+            <p class="mem-fig__meta">
+              公司說法，不是 GAAP 營收
+              <FcCite k={rrLast.src} />
+            </p>
+          </li>
+        )
+      }
+      <li class="mem-fig">
+        <p class="mem-fig__label">{periodLabel(P)} 毛利率</p>
+        <p class="mem-fig__value"><strong>{fcPct(gm)}</strong></p>
+        <p class="mem-fig__meta">
+          營收減功能別銷貨成本{gmYa != null ? `；一年前 ${fcPct(gmYa)}` : ''}
+          {fnSrc && <FcCite k={fnSrc} />}
+        </p>
+      </li>
+      {
+        effPt && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">{periodLabel(P)} 算力效率</p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(effPt.value, { digits: 2 })}</strong>
+              <span class="mem-fig__unit">倍</span>
+            </p>
+            <p class="mem-fig__meta">
+              營收 ÷ 算力與基礎設施費用{effPrev ? `；上一季 ${formatNumber(effPrev.value, { digits: 2 })} 倍` : ''}
+              <FcCite k={effPt.src} />
+            </p>
+          </li>
+        )
+      }
+      {
+        f1 && (
+          <li class="mem-fig an-fig--wide" data-status="forecast">
+            <p class="mem-fig__label">
+              {periodLabel(f1.period)} 營收<StatusTag status="forecast" />
+            </p>
+            <p class="mem-fig__value">
+              <strong>{formatNumber(f1.revenue / 100)}</strong>
+              <span class="mem-fig__unit">億美元</span>
+            </p>
+            <p class="mem-fig__meta">
+              基準情境{lo && hi ? `；保守到樂觀 ${formatMoneyRange(Math.min(lo.revenue, hi.revenue), Math.max(lo.revenue, hi.revenue), 'USD', { unit: '億' })}` : ''}；毛利率 {fcPct(f1.grossMargin)}
+            </p>
+          </li>
+        )
+      }
+    </ul>
+  </aside>
+</div>
+
+<h3 class="fc-h3">三個關係：{PL}驗算</h3>
+<p class="fc-p">
+  模型用到的三個關係，都可以用 {PL}的財報驗算：年化營收決定營收，算力效率和「算力有多少列入銷貨成本」決定毛利率，算力費用占營收的比例則是營業損益最大的變數。
+</p>
+<ul class="an-ids" role="list">
+  {
+    cards.map((c, i) => (
+      <li class="an-id" style={`--k: var(--chart-${[1, 2, 7][i]})`}>
+        <p class="an-id__title">{c.title}</p>
+        <div class="an-id__eq">
+          <p class="an-id__lhs">
+            {grouped(c.eq).map((g) => (
+              <span class="an-id__grp">
+                {g.op && <span class="an-id__op">{g.op}</span>}
+                <span class="an-id__term">
+                  <small>{g.k}</small>
+                  <b>{g.v}</b>
+                </span>
+              </span>
+            ))}
+          </p>
+          <p class="an-id__res">
+            <span class="an-id__op">≈</span>
+            <span class="an-id__term">
+              <small>{c.res.k}</small>
+              <b>{c.res.v}</b>
+            </span>
+          </p>
+        </div>
+        <p class="an-id__note">{c.note}</p>
+      </li>
+    ))
+  }
+</ul>
+<p class="mem-fine an-fine">
+  每日年化營收路徑、換算倍數、算力效率與各項比例都是本站以招股書數字計算：年化營收的每日路徑把公司各次說法以固定成長率連起來（9 月以前的說法來自新聞稿與媒體，口徑未說明）；「其他營業費用」是依性質分類的人事、銷售行銷與通路合作、其他營運與管理費用，扣除非現金捐贈。乘出的結果與財報數字的差異來自四捨五入。
+  <FcCite k={last.src} />
+  {fnSrc && <FcCite k={fnSrc} />}
+  {effPt && <FcCite k={effPt.src} />}
+</p>
+
+{
+  Y && sensMain.length > 1 && (
+    <>
+      <h3 class="fc-h3">哪個假設最能移動 {Y} 年營業損益</h3>
+      <p class="fc-p">
+        只改一項假設、其他維持基準情境時，模型推估的 {Y} 年營業損益{oiBase != null ? `（基準 ${usd(oiBase)}）` : ''}變動多少。
+        {topCompute && '影響最大的兩項都和算力有關：多買的算力沒有轉成營收，或算力效率差一些，營業損益就少很多。'}
+        {convSmall && '年化營收的換算方式與 11–12 月的年化營收主要影響第四季，對全年的影響較小。'}
+        {q4Compute != null && `第四季的營收已由年化營收大致決定，算力費用每多 10%，第四季營業損益就差約 ${formatNumber(Math.abs(q4Compute))} 億美元。`}
+      </p>
+      <ol class="an-sens" role="list" aria-label={`${Y} 年營業損益對各項假設的敏感度（模型推估，億美元）`}>
+        {sensMain.map((s) => {
+          const w = (Math.abs(s.value) / sensMax) * 50;
+          return (
+            <li class="an-sens__row">
+              <span class="an-sens__name">
+                {s.driver}
+                <small>{s.change}</small>
+              </span>
+              <span class="an-sens__track" aria-hidden="true">
+                <i
+                  class:list={[s.value < 0 ? 'is-neg' : 'is-pos']}
+                  style={`--w: ${Math.max(s.value === 0 ? 0 : 0.6, w).toFixed(2)}%; --l: ${(s.value < 0 ? 50 - w : 50).toFixed(2)}%`}
+                />
+              </span>
+              <b class="an-sens__val">{fmtYi(s.value)}</b>
+            </li>
+          );
+        })}
+      </ol>
+      <p class="mem-fine">
+        <StatusTag status="forecast" /> 本站模型「{sel.name}」的敏感度分析，不是公司數字。
+        {sensStress.map((s) => `另做了一個壓力測試（${s.change}），${Y} 年營業損益 ${fmtYi(s.value)}，遠大於上面任何一項。`)}
+        完整列表（含營收與毛利率）見「情境預測」的敏感度表。
+      </p>
+    </>
+  )
+}
+
+<FlowSteps class="fc-flow" title="從年化營收到淨損益" steps={steps} />
+<p class="mem-fine an-coi">
+  利益揭露：本站由 Anthropic 開發的 Claude 撰寫。本頁的數字照招股書與公司文件抄錄，成長數字與招股書的風險因素並列（見「限制與風險」），不使用推銷字眼，也不提供投資建議。
+</p>
+
+<style>
+  .an-ids {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .an-id {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-inline-size: 0;
+    margin: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--c-border);
+    border-block-start: 4px solid var(--k);
+    border-radius: var(--radius-l);
+    background: var(--c-bg-elev);
+  }
+  .an-id__title {
+    margin: 0;
+    font-size: var(--fs-s);
+    font-weight: var(--fw-semibold);
+    color: var(--c-fg-muted);
+  }
+  .an-id__eq {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius-m);
+    background: var(--c-bg-sunken);
+  }
+  .an-id__lhs,
+  .an-id__res {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-1) var(--space-2);
+    margin: 0;
+  }
+  .an-id__res {
+    padding-block-start: var(--space-2);
+    border-block-start: 1px dashed var(--c-border);
+  }
+  .an-id__grp {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: var(--space-2);
+    min-inline-size: 0;
+  }
+  .an-id__term {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+  .an-id__term small {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+    line-height: 1.5;
+  }
+  .an-id__term b {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .an-id__res b {
+    font-size: var(--fs-l);
+  }
+  .an-id__op {
+    font-size: var(--fs-s);
+    color: var(--c-fg-subtle);
+    white-space: nowrap;
+  }
+  .an-id__note {
+    margin: 0;
+    font-size: var(--fs-s);
+    line-height: 1.7;
+    color: var(--c-fg-muted);
+  }
+  .an-fig--wide {
+    grid-column: 1 / -1;
+  }
+  .an-fine {
+    margin-block-start: var(--space-2);
+  }
+  .an-sens {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-2);
+    padding: 0;
+    list-style: none;
+  }
+  .an-sens__row {
+    display: grid;
+    grid-template-columns: minmax(0, 17rem) minmax(5rem, 1fr) 6.5em;
+    align-items: center;
+    gap: var(--space-3);
+    margin: 0;
+  }
+  .an-sens__name {
+    display: flex;
+    flex-direction: column;
+    font-size: var(--fs-s);
+    line-height: 1.5;
+  }
+  .an-sens__name small {
+    font-size: var(--fs-xs);
+    color: var(--c-fg-muted);
+  }
+  .an-sens__track {
+    position: relative;
+    block-size: 0.9rem;
+    border-radius: 3px;
+    background: var(--c-bg-sunken);
+  }
+  .an-sens__track::before {
+    content: '';
+    position: absolute;
+    inset-block: -3px;
+    inset-inline-start: 50%;
+    border-inline-start: 1px solid var(--c-fg-subtle);
+  }
+  .an-sens__track i {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: var(--l);
+    inline-size: var(--w);
+    border: 1.5px dashed var(--k);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--k) 30%, transparent);
+  }
+  .an-sens__track i.is-neg {
+    --k: var(--c-neg);
+  }
+  .an-sens__track i.is-pos {
+    --k: var(--c-pos);
+  }
+  .an-sens__val {
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+  }
+  .an-coi {
+    margin-block-start: var(--space-3);
+  }
+  @media (width < 36rem) {
+    .an-sens__row {
+      grid-template-columns: minmax(0, 1fr) 6.5em;
+    }
+    .an-sens__name {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

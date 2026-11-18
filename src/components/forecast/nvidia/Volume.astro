@@ -1,0 +1,219 @@
+---
+/**
+ * 數量與營收（輝達）: quarterly revenue (reported, then the base scenario hatched), revenue by platform (data center
+ * and edge) and the gross and operating margins with the base scenario, and a table from hyperscaler capex to revenue
+ * and EPS for the backtest window (reported) and the base-scenario quarters (model). Replaces the generic
+ * HistoryCharts; the model's derived series follow in a disclosure (the page).
+ *   <Volume b={bundle} />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import QuarterBars from '../../memory/forecast/QuarterBars.astro';
+import ChartCites from '../../memory/forecast/ChartCites.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import StatusTag from '../../memory/StatusTag.astro';
+import { actualGrossMargin, chartKey, citesIn, fcPct, forecastQuarters, lastReportedOf, periodLabel, qIndex, scenarioOf, type FcBundle } from '../../../lib/forecast-data';
+import { formatNumber } from '../../../lib/format';
+import { calOf, capexPath, newClassFrom, noteKey, platformRows, weeksOf } from './nv-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m, meta } = b;
+const last = lastReportedOf(m);
+const base = forecastQuarters(scenarioOf(m, 'base'));
+const rows = platformRows(b);
+const fcRows = rows.filter((r) => r.forecast);
+const newFrom = newClassFrom(b);
+const span = `${periodLabel(meta.historyFrom)}–${periodLabel(last)}`;
+const fcSpan = fcRows.length ? `${periodLabel(fcRows[0]!.period)}–${periodLabel(fcRows.at(-1)!.period)}` : '';
+const week14 = rows.filter((r) => weeksOf(b, r.period) === 14).map((r) => r.period);
+const weekNote = week14.length ? `${week14.map((p) => periodLabel(p)).join('、')} 有 14 週，比一般季度多一週。` : null;
+const yi = (v: number | undefined | null) => (v == null ? null : v / 100);
+const pt = (r: (typeof rows)[number], v: number | null) => ({ x: chartKey(r.period), y: v, forecast: r.forecast });
+const srcs = [...new Set(rows.filter((r) => r.q).map((r) => r.q!.src))];
+const platKeys = rows.filter((r) => r.q).map((r) => noteKey(b, r.q, 'platform'));
+
+// margins: reported quarters, then the base scenario (dashed)
+const om = (r: (typeof rows)[number]) => {
+  if (r.q) return r.q.operatingIncome != null ? (r.q.operatingIncome / r.q.revenue) * 100 : null;
+  const f = base.find((x) => x.period === r.period);
+  return f?.operatingIncome != null ? (f.operatingIncome / f.revenue) * 100 : null;
+};
+const gm = (r: (typeof rows)[number]) => (r.q ? (actualGrossMargin(b.company, r.q) ?? null) : (base.find((x) => x.period === r.period)?.grossMargin ?? null));
+// one-off charges inside operating expenses that the periodNote names (「FY2023 第一季另含 13.53 億美元收購 Arm 終止費用」)
+const ZH_Q: Record<string, number> = { 一: 1, 二: 2, 三: 3, 四: 4 };
+const armM = /(FY\d{4}) 第([一二三四])季另含 ([\d.]+) 億美元收購 Arm 終止費用/.exec(b.inputs.periodNote);
+const armPeriod = armM ? `${armM[1]}Q${ZH_Q[armM[2]!]}` : undefined;
+const arm = armPeriod && rows.some((r) => r.period === armPeriod) ? { period: armPeriod, amount: armM![3]! } : undefined;
+const armEvent = b.inputs.events.find((e) => /終止收購 Arm/.test(e.title));
+const noMtm = /不假設權益證券的評價損益/.test(scenarioOf(m, 'base')?.assumptions.map((a) => a.value).join('') ?? '');
+
+// capex → revenue table: the backtest window and the base scenario
+const capex = new Map(capexPath(b).map((p) => [p.period, p]));
+const table = rows
+  .filter((r) => qIndex(r.period) >= qIndex(m.test.from))
+  .map((r) => {
+    const c = capex.get(calOf(r.period));
+    const w = weeksOf(b, r.period);
+    const f = base.find((x) => x.period === r.period);
+    return {
+      ...r,
+      weeks: w,
+      cal: calOf(r.period),
+      capex: c?.value,
+      capexFc: c?.forecast ?? false,
+      capexSrc: c?.src,
+      ratio: c && r.dc != null ? ((r.dc * 13) / w / c.value) * 100 : undefined,
+      gm: r.q ? actualGrossMargin(b.company, r.q) : f?.grossMargin,
+      eps: r.q ? r.q.eps : f?.eps,
+      platKey: r.q ? noteKey(b, r.q, 'platform') : undefined,
+    };
+  });
+const fmt = (v: number | undefined | null, d = 0) => (v == null || !Number.isFinite(v) ? '—' : formatNumber(v, { digits: d }));
+---
+
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars
+    title="每季營收"
+    subtitle={`${span} 為財報實際值${fcSpan ? `，${fcSpan} 為基準情境（斜線）` : ''}`}
+    unit="億美元"
+    valueName="營收"
+    points={rows.map((r) => ({ period: r.period, value: r.revenue / 100, status: r.forecast ? ('forecast' as const) : undefined, note: weeksOf(b, r.period) === 14 ? '14 週' : undefined }))}
+    legend={fcRows.length ? [{ label: '財報實際值', kind: 'bar' }, { label: '基準情境（斜線）', kind: 'estimate' }] : undefined}
+    digits={0}
+    notes={[weekNote]}
+    as="h3"
+    class="nv-tail"
+  />
+  <MultiLine
+    title="營收依平台：資料中心與邊緣運算"
+    subtitle={`${span} 為財報實際值${fcSpan ? `，${fcSpan} 為基準情境（虛線）` : ''}`}
+    unit="億美元"
+    valueSuffix=" 億美元"
+    digits={0}
+    height={210}
+    series={[
+      { name: '資料中心', color: 'var(--chart-2)', points: rows.map((r) => pt(r, yi(r.dc))) },
+      { name: '邊緣運算', color: 'var(--chart-7)', points: rows.map((r) => pt(r, yi(r.edge))) },
+    ]}
+    endLabels={false}
+    notes={[`邊緣運算＝營收減資料中心營收（PC、遊戲機、工作站、車用與機器人等）；舊分類（遊戲、專業視覺化、車用、OEM 與其他）與${newFrom ? ` ${periodLabel(newFrom.period)} ` : ''}起的新分類，資料中心營收相同。`, weekNote]}
+    xTitle="會計季度"
+    as="h3"
+    class="mem-chart fc-years nv-tail"
+  />
+</div>
+<MultiLine
+  title="毛利率與營業利益率"
+  subtitle={`${span} 為財報實際值${fcSpan ? `，${fcSpan} 為基準情境（虛線）` : ''}`}
+  unit="%"
+  format="percent"
+  digits={1}
+  includeZero={false}
+  height={220}
+  series={[
+    { name: meta.gmLabel, color: 'var(--chart-2)', points: rows.map((r) => pt(r, gm(r))) },
+    { name: '營業利益率（GAAP）', color: 'var(--chart-7)', points: rows.map((r) => pt(r, om(r))) },
+  ]}
+  notes={[arm ? `${periodLabel(arm.period)} 的營業費用含 ${arm.amount} 億美元的 Arm 收購終止費用，營業利益率因此較低。` : null]}
+  xTitle="會計季度"
+  as="h3"
+  class="mem-chart fc-chart-wide fc-years"
+/>
+<ChartCites keys={srcs} label="各季財報出處" />
+<ChartCites keys={platKeys} label="市場平台營收" />
+{arm && armEvent && <ChartCites keys={[armEvent.src, ...citesIn(b, armEvent.detail)]} label="Arm 收購終止費用" />}
+
+<h3 class="fc-h3">從雲端資本支出到營收：回測期與基準情境</h3>
+<p class="fc-p">
+  {periodLabel(m.test.from)}–{periodLabel(last)} 是財報實際值與五家雲端業者公布的資本支出，{fcRows[0] ? `${periodLabel(fcRows[0].period)} 起` : '之後'}是選定模型在基準情境下的推估。「資料中心營收 ÷ 資本支出」是單季的比例（資料中心營收換算為 13 週）；預測各季的資本支出是模型反推或依情境假設推算，不是雲端業者的財測。
+</p>
+<div class="mem-tablewrap mem-tablewrap--cards fc-bits" tabindex="0" role="region" aria-label="雲端資本支出、資料中心營收與 EPS">
+  <table class="mem-table nv-vol">
+    <caption class="ch-sr">輝達各季對應日曆季的五大雲端業者資本支出、資料中心與邊緣運算營收、毛利率與 EPS：回測期為財報實際值，之後為基準情境的模型推估</caption>
+    <thead>
+      <tr>
+        <th scope="col">季度</th>
+        <th scope="col" class="num">雲端資本支出<small>億美元，對應日曆季</small></th>
+        <th scope="col" class="num">資料中心 ÷ 資本支出<small>%</small></th>
+        <th scope="col" class="num">資料中心營收<small>億美元</small></th>
+        <th scope="col" class="num">邊緣運算<small>億美元</small></th>
+        <th scope="col" class="num">總營收<small>億美元</small></th>
+        <th scope="col" class="num">{meta.gmLabel}</th>
+        <th scope="col" class="num">EPS<small>美元</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        table.map((r) => (
+          <tr class:list={[r.forecast && 'fc-row--forecast']}>
+            <th scope="row" data-label="季度">
+              <div class="fct-cell">
+                {periodLabel(r.period)}
+                {r.weeks === 14 && <span class="nv-wk">14 週</span>}
+                {r.forecast ? (
+                  <StatusTag status="forecast" />
+                ) : (
+                  <>
+                    {r.q && <FcCite k={r.q.src} />}
+                    {r.platKey && r.platKey !== r.q?.src && <FcCite k={r.platKey} />}
+                  </>
+                )}
+              </div>
+            </th>
+            <td class="num" data-label="雲端資本支出（億美元）">
+              {fmt(r.capex != null ? r.capex / 100 : undefined)}
+              <small class="nv-cal">
+                {periodLabel(r.cal)}
+                {r.capexFc ? '・推算' : r.capexSrc && <FcCite k={r.capexSrc} />}
+              </small>
+            </td>
+            <td class="num" data-label="資料中心 ÷ 資本支出（%）">{fmt(r.ratio, 1)}</td>
+            <td class="num" data-label="資料中心營收（億美元）">{fmt(r.dc != null ? r.dc / 100 : undefined)}</td>
+            <td class="num" data-label="邊緣運算（億美元）">{fmt(r.edge != null ? r.edge / 100 : undefined, 1)}</td>
+            <td class="num" data-label="總營收（億美元）">{fmt(r.revenue / 100)}</td>
+            <td class="num" data-label={meta.gmLabel}>{fcPct(r.gm)}</td>
+            <td class="num" data-label="EPS（美元）">{fmt(r.eps, 2)}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+<p class="mem-fine">資本支出是五家公司現金購置不動產與設備的合計（不含融資租賃）；預測列的資料中心與邊緣運算營收取自模型的推算序列，相加可能和總營收差 1 億美元左右（四捨五入）。EPS 為 GAAP 稀釋{noMtm ? '，預測列不假設權益證券的評價損益' : ''}。</p>
+
+<style is:global>
+  /* phones: hide the last year label of the long fiscal axes (「FY28」 clamped onto 「FY27」); same rule as Drivers.astro */
+  @container ch (width < 30rem) {
+    .nv-tail .ch-xg:not(:has(~ .ch-xg)) {
+      visibility: hidden;
+    }
+  }
+</style>
+
+<style>
+  .nv-wk {
+    display: inline-block;
+    margin-inline-start: 0.35em;
+    padding: 0 0.35em;
+    border: 1px solid var(--c-border-strong);
+    border-radius: var(--radius-s, 4px);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-muted);
+    white-space: nowrap;
+  }
+  .nv-cal {
+    display: block;
+    font-size: var(--fs-xs);
+    color: var(--c-fg-subtle);
+    white-space: nowrap;
+  }
+  /* phone cards: the column labels carry their units (「雲端資本支出（億美元）」) */
+  @media (max-width: 47.99rem) {
+    .mem-tablewrap--cards .nv-vol.mem-table tbody tr > * {
+      grid-template-columns: 10em minmax(0, 1fr);
+    }
+  }
+</style>

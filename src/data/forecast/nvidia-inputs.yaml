@@ -1,0 +1,1130 @@
+# 輝達（NVIDIA，NVDA）財報模型的輸入資料：會計季度損益、非 GAAP 毛利率與 EPS、存貨與存貨提列、資本支出、市場平台營收（舊分類與 FY2027 新分類）、供應承諾、每季財測與事件。格式見 src/schemas/forecast.ts（companyInputs）。
+# 由 fc2-data-nvidia 整理；雲端業者資本支出、CoWoS 產能、中國營收比重與財測序列等驅動因子在 nvidia-drivers.yaml；記憶體（含 HBM）價格在 src/data/memory/forecast/market-prices.yaml；模型輸出見 nvidia-model.json（由 scripts/models/nvidia.ts 產生）。
+company: "nvidia"
+currency: "USD"
+amountUnit: "million"
+periodNote: "輝達會計年度結束於 1 月的最後一個星期日，以結束年份命名（FY2027 為 2026-01-26 至 2027-01-31），一般 52 週，FY2017 起只有 FY2021 與 FY2027 為 53 週（第四季 14 週）；FY(Y+1) 第 n 季約當日曆 Y 年第 n 季延後約一個月（例如 FY2027 第三季為 2026-07-27 至 2026-10-25）。金額單位為百萬美元。FY2017 第一季至 FY2027 第二季的損益（營收、毛利、營業費用、營業利益、稅前淨利、淨利、研發、管銷、所得稅）、存貨、折舊攤銷與股份基礎薪酬取自 SEC XBRL（sec-companyfacts），採最近一次申報（含重編）的數字，第四季以全年值減前三季，現金流量項目以年初累計相減；FY2027 第三季取自 2026-11-17 新聞稿（10-Q 尚未申報）。operatingExpenses 為損益表的營業費用合計（Total operating expenses：研發加管銷，FY2017 第二季另含 0.02 億美元重組及其他費用、FY2023 第一季另含 13.53 億美元收購 Arm 終止費用；研發與管銷分列在 extra.研發費用、extra.管銷費用），grossProfit－operatingExpenses＝operatingIncome；nonOperating＝pretaxIncome－operatingIncome（利息收支、投資損益與其他）；netIncome 為 GAAP 淨利。eps 為 GAAP 稀釋每股盈餘、sharesDiluted 為稀釋加權平均股數（百萬股），兩者都換算為 2024 年 1 拆 10 之後的股數基礎：2021-07-19 前的數字除以（股數乘以）40，2021-07-19 至 2024-06-07 之間的除以 10；EPS 由公司原始兩位小數的數字換算，保留四位小數，早期數值很小是分割換算的結果。第一至第三季 EPS 與股數取自 XBRL，第四季取自該季新聞稿。grossMarginNonGaap 與 epsNonGaap 為各季新聞稿當時公布的非 GAAP 數字（EPS 同樣換算股數基礎）：FY2026 第四季（含）以前的非 GAAP 排除股份基礎薪酬，FY2027 第一季起改為不排除，口徑不同不可直接相比；FY2026 四季依新口徑重編的非 GAAP 毛利率與 EPS 寫在 extra.非GAAP毛利率含股份薪酬、extra.非GAAP_EPS含股份薪酬（hist-nongaap）。capex 為新聞稿自由現金流量調節表的「購置不動產、設備與無形資產」（Purchases related to property and equipment and intangible assets，含無形資產）。inventoryWritedown 為計入銷貨成本的存貨提列（XBRL InventoryWriteDown，FY2023 第二季起；第四季以全年減前三季，FY2026 第四季與 FY2027 第一季的原始值以十億美元四捨五入；FY2023 第一、四季無法拆出），extra.存貨與超額採購承諾提列為 10-Q 內文的「存貨與超額採購承諾提列」總額（含採購承諾，只填有單季數字的季度）。市場平台營收（extra）：FY2017–FY2026 為舊分類 資料中心營收、遊戲營收、專業視覺化營收、車用營收、OEM與其他營收（季營收趨勢表 rev-*，五項相加等於營收）；FY2027 第一季起公司改為 資料中心（超大規模營收、ACIE營收＝AI 雲、產業與企業）與 邊緣運算營收（PC、遊戲機、工作站、車用、機器人等），並把 FY2025 第一季以後重編為新分類（rev-fy2027q3，已反映 FY2027 第二季一家客戶由 ACIE 改列超大規模），所以遊戲、專業視覺化、車用只到 FY2026，新分類只從 FY2025 開始，兩套並存；資料中心營收在兩套分類中相同、FY2017 至今連續。資料中心運算營收與資料中心網路營收為 10-Q 的分項（FY2024–FY2026，FY2027 第一季為 CFO 評論的十億美元約數，之後未再揭露）。extra.供應與產能承諾為期末尚未履行的存貨採購與供應、產能承諾：FY2022 第一季（含）以前只有存貨採購義務，FY2022 第二季起加入長期供應與產能義務，FY2026 第三季起為「製造生產、長期供應與產能及相關承諾」（2026 年起公司以「供應承諾」稱之）；都不含雲端服務合約、其他非存貨採購義務與投資承諾；FY2026 第二季公司只揭露含非存貨義務的總額，因此空白。extra.雲端服務合約承諾為多年期雲端服務合約承諾。guidance 為上一季新聞稿對本季的財測：revenue 為營收中值，revenueLow／revenueHigh 為中值 ± 2%（FY2027 第四季為 ± 3%），grossMargin 為 GAAP 毛利率中值（區間一般為 ± 0.5 個百分點，寫在 extra.財測毛利率下緣／上緣），basis 標 GAAP；非 GAAP 毛利率、GAAP 與非 GAAP 營業費用財測寫在 extra.財測非GAAP毛利率、財測GAAP營業費用、財測非GAAP營業費用。FY2027 第四季財測（營收 1,300 億美元 ± 3%、毛利率 71.0–72.0%、GAAP 營業費用約 110 億美元，含多出的一週）沒有對應的已公布季度，寫在 events 2026-11-17 與 nvidia-drivers.yaml 的 guidance-revenue、guidance-gross-margin 序列。"
+asOf: "2026-11-18"
+quarters:
+  - period: "FY2017Q1"
+    start: "2016-02-01"
+    end: "2016-05-01"
+    status: "actual"
+    revenue: 1305
+    grossProfit: 751
+    operatingExpenses: 506
+    operatingIncome: 245
+    nonOperating: -4
+    pretaxIncome: 241
+    netIncome: 208
+    eps: 0.0088
+    epsNonGaap: 0.0115
+    grossMarginNonGaap: 58.6
+    sharesDiluted: 23960
+    inventory: 394
+    depreciation: 45
+    capex: 55
+    guidance: { basis: "GAAP", revenue: 1260, revenueLow: 1234.8, revenueHigh: 1285.2, grossMargin: 57.2, issued: "2016-02-17", src: "pr-fy2016q4" }
+    extra: { "研發費用": 346, "管銷費用": 159, "所得稅費用": 33, "股份基礎薪酬": 53, "資料中心營收": 143, "遊戲營收": 687, "專業視覺化營收": 189, "車用營收": 113, "OEM與其他營收": 173, "供應與產能承諾": 696, "財測營收區間百分比": 2, "財測毛利率下緣": 56.7, "財測毛利率上緣": 57.7, "財測非GAAP毛利率": 57.5, "財測GAAP營業費用": 500, "財測非GAAP營業費用": 445 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.35 美元（2018-02-28 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2017q1；市場平台營收取自 rev-fy2018q3；供應與產能承諾取自 tenq-fy2017q1；財測取自 pr-fy2016q4（2016-02-17）：營收 12.6 億美元 ± 2%、GAAP 毛利率 57.2%（± 0.5 個百分點）、非 GAAP 毛利率 57.5%、GAAP 營業費用約 5 億美元；FY2017 第三季採用 ASU 2016-09（股份基礎薪酬的所得稅處理）並追溯調整第一、二季，淨利由新聞稿原始的 1.96 億美元改為 2.08 億美元、稀釋 EPS 由 0.33 改為 0.35 美元（換算前），本檔採用重編後的 XBRL 數字。"
+    src: "sec-companyfacts"
+  - period: "FY2017Q2"
+    start: "2016-05-02"
+    end: "2016-07-31"
+    status: "actual"
+    revenue: 1428
+    grossProfit: 826
+    operatingExpenses: 509
+    operatingIncome: 317
+    nonOperating: 0
+    pretaxIncome: 317
+    netIncome: 261
+    eps: 0.0103
+    epsNonGaap: 0.0133
+    grossMarginNonGaap: 58.1
+    sharesDiluted: 25360
+    inventory: 521
+    depreciation: 47
+    capex: 33
+    guidance: { basis: "GAAP", revenue: 1350, revenueLow: 1323, revenueHigh: 1377, grossMargin: 57.7, issued: "2016-05-12", src: "pr-fy2017q1" }
+    extra: { "研發費用": 350, "管銷費用": 157, "所得稅費用": 56, "股份基礎薪酬": 58, "資料中心營收": 151, "遊戲營收": 781, "專業視覺化營收": 214, "車用營收": 119, "OEM與其他營收": 163, "供應與產能承諾": 826, "財測營收區間百分比": 2, "財測毛利率下緣": 57.2, "財測毛利率上緣": 58.2, "財測非GAAP毛利率": 58, "財測GAAP營業費用": 500, "財測非GAAP營業費用": 445 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.41 美元（2018-02-28 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2017q2；市場平台營收取自 rev-fy2018q3；供應與產能承諾取自 tenq-fy2017q2；財測取自 pr-fy2017q1（2016-05-12）：營收 13.5 億美元 ± 2%、GAAP 毛利率 57.7%（± 0.5 個百分點）、非 GAAP 毛利率 58%、GAAP 營業費用約 5 億美元；淨利為採用 ASU 2016-09 後的重編值（新聞稿原始為 2.53 億美元）。"
+    src: "sec-companyfacts"
+  - period: "FY2017Q3"
+    start: "2016-08-01"
+    end: "2016-10-30"
+    status: "actual"
+    revenue: 2004
+    grossProfit: 1183
+    operatingExpenses: 544
+    operatingIncome: 639
+    nonOperating: -18
+    pretaxIncome: 621
+    netIncome: 542
+    eps: 0.0208
+    epsNonGaap: 0.0235
+    grossMarginNonGaap: 59.2
+    sharesDiluted: 26120
+    inventory: 679
+    depreciation: 48
+    capex: 38
+    guidance: { basis: "GAAP", revenue: 1680, revenueLow: 1646.4, revenueHigh: 1713.6, grossMargin: 57.8, issued: "2016-08-11", src: "pr-fy2017q2" }
+    extra: { "研發費用": 373, "管銷費用": 171, "所得稅費用": 79, "股份基礎薪酬": 65, "資料中心營收": 240, "遊戲營收": 1244, "專業視覺化營收": 207, "車用營收": 127, "OEM與其他營收": 186, "供應與產能承諾": 908, "財測營收區間百分比": 2, "財測毛利率下緣": 57.3, "財測毛利率上緣": 58.3, "財測非GAAP毛利率": 58, "財測GAAP營業費用": 530, "財測非GAAP營業費用": 465 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.83 美元（2018-02-28 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2017q3；市場平台營收取自 rev-fy2018q3；供應與產能承諾取自 tenq-fy2017q3；財測取自 pr-fy2017q2（2016-08-11）：營收 16.8 億美元 ± 2%、GAAP 毛利率 57.8%（± 0.5 個百分點）、非 GAAP 毛利率 58%、GAAP 營業費用約 5.3 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2017Q4"
+    start: "2016-10-31"
+    end: "2017-01-29"
+    status: "actual"
+    revenue: 2173
+    grossProfit: 1303
+    operatingExpenses: 570
+    operatingIncome: 733
+    nonOperating: -8
+    pretaxIncome: 725
+    netIncome: 655
+    eps: 0.0248
+    epsNonGaap: 0.0283
+    grossMarginNonGaap: 60.2
+    sharesDiluted: 26400
+    inventory: 794
+    depreciation: 47
+    capex: 52
+    guidance: { basis: "GAAP", revenue: 2100, revenueLow: 2058, revenueHigh: 2142, grossMargin: 59, issued: "2016-11-10", src: "pr-fy2017q3" }
+    extra: { "研發費用": 394, "管銷費用": 176, "所得稅費用": 71, "股份基礎薪酬": 71, "資料中心營收": 296, "遊戲營收": 1348, "專業視覺化營收": 225, "車用營收": 128, "OEM與其他營收": 176, "供應與產能承諾": 1000, "財測營收區間百分比": 2, "財測毛利率下緣": 58.5, "財測毛利率上緣": 59.5, "財測非GAAP毛利率": 59.2, "財測GAAP營業費用": 572, "財測非GAAP營業費用": 500 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts（第四季＝全年減前三季）；第四季 EPS 與股數取自 pr-fy2017q4（原始值 0.99 美元、660 百萬股；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2017q4；市場平台營收取自 rev-fy2018q3；供應與產能承諾取自 tenq-fy2017q4；財測取自 pr-fy2017q3（2016-11-10）：營收 21 億美元 ± 2%、GAAP 毛利率 59%（± 0.5 個百分點）、非 GAAP 毛利率 59.2%、GAAP 營業費用約 5.72 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2018Q1"
+    start: "2017-01-30"
+    end: "2017-04-30"
+    status: "actual"
+    revenue: 1937
+    grossProfit: 1150
+    operatingExpenses: 596
+    operatingIncome: 554
+    nonOperating: -18
+    pretaxIncome: 536
+    netIncome: 507
+    eps: 0.0198
+    epsNonGaap: 0.0213
+    grossMarginNonGaap: 59.6
+    sharesDiluted: 25640
+    inventory: 821
+    depreciation: 47
+    capex: 53
+    guidance: { basis: "GAAP", revenue: 1900, revenueLow: 1862, revenueHigh: 1938, grossMargin: 59.5, issued: "2017-02-09", src: "pr-fy2017q4" }
+    extra: { "研發費用": 411, "管銷費用": 185, "所得稅費用": 29, "股份基礎薪酬": 76, "資料中心營收": 409, "遊戲營收": 1027, "專業視覺化營收": 205, "車用營收": 140, "OEM與其他營收": 156, "供應與產能承諾": 799, "財測營收區間百分比": 2, "財測毛利率下緣": 59, "財測毛利率上緣": 60, "財測非GAAP毛利率": 59.7, "財測GAAP營業費用": 603, "財測非GAAP營業費用": 520 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.79 美元（2019-02-21 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2018q1；市場平台營收取自 rev-fy2018q3；供應與產能承諾取自 tenq-fy2018q1；財測取自 pr-fy2017q4（2017-02-09）：營收 19 億美元 ± 2%、GAAP 毛利率 59.5%（± 0.5 個百分點）、非 GAAP 毛利率 59.7%、GAAP 營業費用約 6.03 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2018Q2"
+    start: "2017-05-01"
+    end: "2017-07-30"
+    status: "actual"
+    revenue: 2230
+    grossProfit: 1302
+    operatingExpenses: 614
+    operatingIncome: 688
+    nonOperating: -4
+    pretaxIncome: 684
+    netIncome: 583
+    eps: 0.023
+    epsNonGaap: 0.0253
+    grossMarginNonGaap: 58.6
+    sharesDiluted: 25320
+    inventory: 855
+    depreciation: 49
+    capex: 55
+    guidance: { basis: "GAAP", revenue: 1950, revenueLow: 1911, revenueHigh: 1989, grossMargin: 58.4, issued: "2017-05-09", src: "pr-fy2018q1" }
+    extra: { "研發費用": 416, "管銷費用": 198, "所得稅費用": 101, "股份基礎薪酬": 81, "資料中心營收": 416, "遊戲營收": 1186, "專業視覺化營收": 235, "車用營收": 142, "OEM與其他營收": 251, "供應與產能承諾": 1040, "財測營收區間百分比": 2, "財測毛利率下緣": 57.9, "財測毛利率上緣": 58.9, "財測非GAAP毛利率": 58.6, "財測GAAP營業費用": 605, "財測非GAAP營業費用": 530 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.92 美元（2019-02-21 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2018q2；市場平台營收取自 rev-fy2018q3；供應與產能承諾取自 tenq-fy2018q2；財測取自 pr-fy2018q1（2017-05-09）：營收 19.5 億美元 ± 2%、GAAP 毛利率 58.4%（± 0.5 個百分點）、非 GAAP 毛利率 58.6%、GAAP 營業費用約 6.05 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2018Q3"
+    start: "2017-07-31"
+    end: "2017-10-29"
+    status: "actual"
+    revenue: 2636
+    grossProfit: 1569
+    operatingExpenses: 674
+    operatingIncome: 895
+    nonOperating: 1
+    pretaxIncome: 896
+    netIncome: 838
+    eps: 0.0333
+    epsNonGaap: 0.0333
+    grossMarginNonGaap: 59.7
+    sharesDiluted: 25120
+    inventory: 857
+    depreciation: 50
+    capex: 69
+    guidance: { basis: "GAAP", revenue: 2350, revenueLow: 2303, revenueHigh: 2397, grossMargin: 58.6, issued: "2017-08-10", src: "pr-fy2018q2" }
+    extra: { "研發費用": 462, "管銷費用": 212, "所得稅費用": 58, "股份基礎薪酬": 107, "資料中心營收": 501, "遊戲營收": 1561, "專業視覺化營收": 239, "車用營收": 144, "OEM與其他營收": 191, "供應與產能承諾": 1160, "財測營收區間百分比": 2, "財測毛利率下緣": 58.1, "財測毛利率上緣": 59.1, "財測非GAAP毛利率": 58.8, "財測GAAP營業費用": 672, "財測非GAAP營業費用": 570 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 1.33 美元（2019-02-21 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2018q3；市場平台營收取自 rev-fy2018q3；供應與產能承諾取自 tenq-fy2018q3；財測取自 pr-fy2018q2（2017-08-10）：營收 23.5 億美元 ± 2%、GAAP 毛利率 58.6%（± 0.5 個百分點）、非 GAAP 毛利率 58.8%、GAAP 營業費用約 6.72 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2018Q4"
+    start: "2017-10-30"
+    end: "2018-01-28"
+    status: "actual"
+    revenue: 2911
+    grossProfit: 1801
+    operatingExpenses: 728
+    operatingIncome: 1073
+    nonOperating: 6
+    pretaxIncome: 1079
+    netIncome: 1118
+    eps: 0.0445
+    epsNonGaap: 0.043
+    grossMarginNonGaap: 62.1
+    sharesDiluted: 25120
+    inventory: 796
+    depreciation: 54
+    capex: 416
+    guidance: { basis: "GAAP", revenue: 2650, revenueLow: 2597, revenueHigh: 2703, grossMargin: 59.7, issued: "2017-11-09", src: "pr-fy2018q3" }
+    extra: { "研發費用": 507, "管銷費用": 221, "所得稅費用": -40, "股份基礎薪酬": 126, "資料中心營收": 606, "遊戲營收": 1739, "專業視覺化營收": 254, "車用營收": 132, "OEM與其他營收": 180, "供應與產能承諾": 1330, "財測營收區間百分比": 2, "財測毛利率下緣": 59.2, "財測毛利率上緣": 60.2, "財測非GAAP毛利率": 60, "財測GAAP營業費用": 722, "財測非GAAP營業費用": 600 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts（第四季＝全年減前三季）；第四季 EPS 與股數取自 pr-fy2018q4（原始值 1.78 美元、628 百萬股；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2018q4；市場平台營收取自 rev-fy2019q2；供應與產能承諾取自 tenq-fy2018q4；財測取自 pr-fy2018q3（2017-11-09）：營收 26.5 億美元 ± 2%、GAAP 毛利率 59.7%（± 0.5 個百分點）、非 GAAP 毛利率 60%、GAAP 營業費用約 7.22 億美元；資本支出 4.16 億美元含終止營業租賃融資安排後以 3.35 億美元買下的 Santa Clara 新園區大樓（tenq-fy2018q4）。"
+    src: "sec-companyfacts"
+  - period: "FY2019Q1"
+    start: "2018-01-29"
+    end: "2018-04-29"
+    status: "actual"
+    revenue: 3207
+    grossProfit: 2068
+    operatingExpenses: 773
+    operatingIncome: 1295
+    nonOperating: 16
+    pretaxIncome: 1311
+    netIncome: 1244
+    eps: 0.0495
+    epsNonGaap: 0.0513
+    grossMarginNonGaap: 64.7
+    sharesDiluted: 25080
+    inventory: 797
+    depreciation: 57
+    capex: 118
+    guidance: { basis: "GAAP", revenue: 2900, revenueLow: 2842, revenueHigh: 2958, grossMargin: 62.7, issued: "2018-02-08", src: "pr-fy2018q4" }
+    extra: { "研發費用": 542, "管銷費用": 231, "所得稅費用": 67, "股份基礎薪酬": 129, "資料中心營收": 701, "遊戲營收": 1723, "專業視覺化營收": 251, "車用營收": 145, "OEM與其他營收": 387, "供應與產能承諾": 1690, "財測營收區間百分比": 2, "財測毛利率下緣": 62.2, "財測毛利率上緣": 63.2, "財測非GAAP毛利率": 63, "財測GAAP營業費用": 770, "財測非GAAP營業費用": 645 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 1.98 美元（2020-02-20 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2019q1；市場平台營收取自 rev-fy2020q4；供應與產能承諾取自 tenq-fy2019q1；財測取自 pr-fy2018q4（2018-02-08）：營收 29 億美元 ± 2%、GAAP 毛利率 62.7%（± 0.5 個百分點）、非 GAAP 毛利率 63%、GAAP 營業費用約 7.7 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2019Q2"
+    start: "2018-04-30"
+    end: "2018-07-29"
+    status: "actual"
+    revenue: 3123
+    grossProfit: 1975
+    operatingExpenses: 818
+    operatingIncome: 1157
+    nonOperating: 23
+    pretaxIncome: 1180
+    netIncome: 1101
+    eps: 0.044
+    epsNonGaap: 0.0485
+    grossMarginNonGaap: 63.5
+    sharesDiluted: 25040
+    inventory: 1090
+    depreciation: 58
+    capex: 128
+    guidance: { basis: "GAAP", revenue: 3100, revenueLow: 3038, revenueHigh: 3162, grossMargin: 63.3, issued: "2018-05-10", src: "pr-fy2019q1" }
+    extra: { "研發費用": 581, "管銷費用": 237, "所得稅費用": 79, "股份基礎薪酬": 132, "資料中心營收": 760, "遊戲營收": 1805, "專業視覺化營收": 281, "車用營收": 161, "OEM與其他營收": 116, "供應與產能承諾": 1910, "財測營收區間百分比": 2, "財測毛利率下緣": 62.8, "財測毛利率上緣": 63.8, "財測非GAAP毛利率": 63.5, "財測GAAP營業費用": 810, "財測非GAAP營業費用": 685 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 1.76 美元（2020-02-20 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2019q2；市場平台營收取自 rev-fy2020q4；供應與產能承諾取自 tenq-fy2019q2；財測取自 pr-fy2019q1（2018-05-10）：營收 31 億美元 ± 2%、GAAP 毛利率 63.3%（± 0.5 個百分點）、非 GAAP 毛利率 63.5%、GAAP 營業費用約 8.1 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2019Q3"
+    start: "2018-07-30"
+    end: "2018-10-28"
+    status: "actual"
+    revenue: 3181
+    grossProfit: 1921
+    operatingExpenses: 863
+    operatingIncome: 1058
+    nonOperating: 23
+    pretaxIncome: 1081
+    netIncome: 1230
+    eps: 0.0493
+    epsNonGaap: 0.046
+    grossMarginNonGaap: 61
+    sharesDiluted: 25000
+    inventory: 1417
+    depreciation: 68
+    capex: 150
+    guidance: { basis: "GAAP", revenue: 3250, revenueLow: 3185, revenueHigh: 3315, grossMargin: 62.6, issued: "2018-08-16", src: "pr-fy2019q2" }
+    extra: { "研發費用": 605, "管銷費用": 258, "所得稅費用": -149, "股份基礎薪酬": 140, "資料中心營收": 792, "遊戲營收": 1764, "專業視覺化營收": 305, "車用營收": 172, "OEM與其他營收": 148, "供應與產能承諾": 1560, "財測營收區間百分比": 2, "財測毛利率下緣": 62.1, "財測毛利率上緣": 63.1, "財測非GAAP毛利率": 62.8, "財測GAAP營業費用": 870, "財測非GAAP營業費用": 730 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 1.97 美元（2020-02-20 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2019q3；市場平台營收取自 rev-fy2020q4；供應與產能承諾取自 tenq-fy2019q3；財測取自 pr-fy2019q2（2018-08-16）：營收 32.5 億美元 ± 2%、GAAP 毛利率 62.6%（± 0.5 個百分點）、非 GAAP 毛利率 62.8%、GAAP 營業費用約 8.7 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2019Q4"
+    start: "2018-10-29"
+    end: "2019-01-27"
+    status: "actual"
+    revenue: 2205
+    grossProfit: 1207
+    operatingExpenses: 913
+    operatingIncome: 294
+    nonOperating: 30
+    pretaxIncome: 324
+    netIncome: 567
+    eps: 0.023
+    epsNonGaap: 0.02
+    grossMarginNonGaap: 56
+    sharesDiluted: 24760
+    inventory: 1575
+    depreciation: 78
+    capex: 203
+    guidance: { basis: "GAAP", revenue: 2700, revenueLow: 2646, revenueHigh: 2754, grossMargin: 62.3, issued: "2018-11-15", src: "pr-fy2019q3" }
+    extra: { "研發費用": 647, "管銷費用": 266, "所得稅費用": -242, "股份基礎薪酬": 157, "資料中心營收": 679, "遊戲營收": 954, "專業視覺化營收": 293, "車用營收": 163, "OEM與其他營收": 116, "供應與產能承諾": 912, "財測營收區間百分比": 2, "財測毛利率下緣": 61.8, "財測毛利率上緣": 62.8, "財測非GAAP毛利率": 62.5, "財測GAAP營業費用": 915, "財測非GAAP營業費用": 755, "更新後財測營收": 2200, "更新後財測毛利率": 55 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts（第四季＝全年減前三季）；第四季 EPS 與股數取自 pr-fy2019q4（原始值 0.92 美元、619 百萬股；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2019q4；市場平台營收取自 rev-fy2020q4；供應與產能承諾取自 tenq-fy2019q4；財測取自 pr-fy2019q3（2018-11-15）：營收 27 億美元 ± 2%、GAAP 毛利率 62.3%（± 0.5 個百分點）、非 GAAP 毛利率 62.5%、GAAP 營業費用約 9.15 億美元；2019-01-28 公司另發新聞稿把本季營收財測下修為 22.0 億美元、GAAP 毛利率 55.0%、非 GAAP 毛利率 56.0%（sec-8k-20190128），理由是中國等地總體經濟轉弱影響遊戲 GPU 需求，以及資料中心部分交易在季末未成交；guidance 欄位保留 2018-11-15 的原始財測，更新值寫在 extra；本季認列約 1.28 億美元的超額 DRAM、板卡與其他零組件費用（cfo-fy2019q4），GAAP 毛利率 54.7%。"
+    src: "sec-companyfacts"
+  - period: "FY2020Q1"
+    start: "2019-01-28"
+    end: "2019-04-28"
+    status: "actual"
+    revenue: 2220
+    grossProfit: 1296
+    operatingExpenses: 938
+    operatingIncome: 358
+    nonOperating: 31
+    pretaxIncome: 389
+    netIncome: 394
+    eps: 0.016
+    epsNonGaap: 0.022
+    grossMarginNonGaap: 59
+    sharesDiluted: 24640
+    inventory: 1426
+    depreciation: 91
+    capex: 128
+    guidance: { basis: "GAAP", revenue: 2200, revenueLow: 2156, revenueHigh: 2244, grossMargin: 58.8, issued: "2019-02-14", src: "pr-fy2019q4" }
+    extra: { "研發費用": 674, "管銷費用": 264, "所得稅費用": -5, "股份基礎薪酬": 178, "資料中心營收": 634, "遊戲營收": 1055, "專業視覺化營收": 266, "車用營收": 166, "OEM與其他營收": 99, "供應與產能承諾": 782, "財測營收區間百分比": 2, "財測毛利率下緣": 58.3, "財測毛利率上緣": 59.3, "財測非GAAP毛利率": 59, "財測GAAP營業費用": 930, "財測非GAAP營業費用": 755 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.64 美元（2020-05-21 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2020q1；市場平台營收取自 rev-fy2020q4；供應與產能承諾取自 tenq-fy2020q1；財測取自 pr-fy2019q4（2019-02-14）：營收 22 億美元 ± 2%、GAAP 毛利率 58.8%（± 0.5 個百分點）、非 GAAP 毛利率 59%、GAAP 營業費用約 9.3 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2020Q2"
+    start: "2019-04-29"
+    end: "2019-07-28"
+    status: "actual"
+    revenue: 2579
+    grossProfit: 1541
+    operatingExpenses: 970
+    operatingIncome: 571
+    nonOperating: 35
+    pretaxIncome: 606
+    netIncome: 552
+    eps: 0.0225
+    epsNonGaap: 0.031
+    grossMarginNonGaap: 60.1
+    sharesDiluted: 24640
+    inventory: 1204
+    depreciation: 92
+    capex: 113
+    guidance: { basis: "GAAP", revenue: 2550, revenueLow: 2499, revenueHigh: 2601, grossMargin: 59.2, issued: "2019-05-16", src: "pr-fy2020q1" }
+    extra: { "研發費用": 704, "管銷費用": 266, "所得稅費用": 54, "股份基礎薪酬": 224, "資料中心營收": 655, "遊戲營收": 1313, "專業視覺化營收": 291, "車用營收": 209, "OEM與其他營收": 111, "供應與產能承諾": 757, "財測營收區間百分比": 2, "財測毛利率下緣": 58.7, "財測毛利率上緣": 59.7, "財測非GAAP毛利率": 59.5, "財測GAAP營業費用": 985, "財測非GAAP營業費用": 765 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.9 美元（2020-08-19 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2020q2；市場平台營收取自 rev-fy2020q4；供應與產能承諾取自 tenq-fy2020q2；財測取自 pr-fy2020q1（2019-05-16）：營收 25.5 億美元 ± 2%、GAAP 毛利率 59.2%（± 0.5 個百分點）、非 GAAP 毛利率 59.5%、GAAP 營業費用約 9.85 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2020Q3"
+    start: "2019-07-29"
+    end: "2019-10-27"
+    status: "actual"
+    revenue: 3014
+    grossProfit: 1916
+    operatingExpenses: 989
+    operatingIncome: 927
+    nonOperating: 32
+    pretaxIncome: 959
+    netIncome: 899
+    eps: 0.0363
+    epsNonGaap: 0.0445
+    grossMarginNonGaap: 64.1
+    sharesDiluted: 24720
+    inventory: 1047
+    depreciation: 92
+    capex: 104
+    guidance: { basis: "GAAP", revenue: 2900, revenueLow: 2842, revenueHigh: 2958, grossMargin: 62, issued: "2019-08-15", src: "pr-fy2020q2" }
+    extra: { "研發費用": 712, "管銷費用": 277, "所得稅費用": 60, "股份基礎薪酬": 223, "資料中心營收": 726, "遊戲營收": 1659, "專業視覺化營收": 324, "車用營收": 162, "OEM與其他營收": 143, "供應與產能承諾": 980, "財測營收區間百分比": 2, "財測毛利率下緣": 61.5, "財測毛利率上緣": 62.5, "財測非GAAP毛利率": 62.5, "財測GAAP營業費用": 980, "財測非GAAP營業費用": 765 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 1.45 美元（2020-11-18 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2020q3；市場平台營收取自 rev-fy2020q4；供應與產能承諾取自 tenq-fy2020q3；財測取自 pr-fy2020q2（2019-08-15）：營收 29 億美元 ± 2%、GAAP 毛利率 62%（± 0.5 個百分點）、非 GAAP 毛利率 62.5%、GAAP 營業費用約 9.8 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2020Q4"
+    start: "2019-10-28"
+    end: "2020-01-26"
+    status: "actual"
+    revenue: 3105
+    grossProfit: 2015
+    operatingExpenses: 1025
+    operatingIncome: 990
+    nonOperating: 26
+    pretaxIncome: 1016
+    netIncome: 950
+    eps: 0.0383
+    epsNonGaap: 0.0473
+    grossMarginNonGaap: 65.4
+    sharesDiluted: 24840
+    inventory: 979
+    depreciation: 106
+    capex: 144
+    guidance: { basis: "GAAP", revenue: 2950, revenueLow: 2891, revenueHigh: 3009, grossMargin: 64.1, issued: "2019-11-14", src: "pr-fy2020q3" }
+    extra: { "研發費用": 738, "管銷費用": 287, "所得稅費用": 65, "股份基礎薪酬": 220, "資料中心營收": 968, "遊戲營收": 1491, "專業視覺化營收": 331, "車用營收": 163, "OEM與其他營收": 152, "供應與產能承諾": 1160, "財測營收區間百分比": 2, "財測毛利率下緣": 63.6, "財測毛利率上緣": 64.6, "財測非GAAP毛利率": 64.5, "財測GAAP營業費用": 1020, "財測非GAAP營業費用": 805 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts（第四季＝全年減前三季）；第四季 EPS 與股數取自 pr-fy2020q4（原始值 1.53 美元、621 百萬股；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2020q4；市場平台營收取自 rev-fy2020q4；供應與產能承諾取自 tenq-fy2020q4；財測取自 pr-fy2020q3（2019-11-14）：營收 29.5 億美元 ± 2%、GAAP 毛利率 64.1%（± 0.5 個百分點）、非 GAAP 毛利率 64.5%、GAAP 營業費用約 10.2 億美元；財測不含當時尚未完成的 Mellanox 收購。"
+    src: "sec-companyfacts"
+  - period: "FY2021Q1"
+    start: "2020-01-27"
+    end: "2020-04-26"
+    status: "actual"
+    revenue: 3080
+    grossProfit: 2004
+    operatingExpenses: 1028
+    operatingIncome: 976
+    nonOperating: 5
+    pretaxIncome: 981
+    netIncome: 917
+    eps: 0.0368
+    epsNonGaap: 0.045
+    grossMarginNonGaap: 65.8
+    sharesDiluted: 24880
+    inventory: 1128
+    depreciation: 107
+    capex: 155
+    guidance: { basis: "GAAP", revenue: 3000, revenueLow: 2940, revenueHigh: 3060, grossMargin: 65, issued: "2020-02-13", src: "pr-fy2020q4" }
+    extra: { "研發費用": 735, "管銷費用": 293, "所得稅費用": 64, "股份基礎薪酬": 224, "資料中心營收": 1141, "遊戲營收": 1339, "專業視覺化營收": 307, "車用營收": 155, "OEM與其他營收": 138, "供應與產能承諾": 1760, "財測營收區間百分比": 2, "財測毛利率下緣": 64.5, "財測毛利率上緣": 65.5, "財測非GAAP毛利率": 65.4, "財測GAAP營業費用": 1050, "財測非GAAP營業費用": 835 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 1.47 美元（2021-05-26 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2021q1；市場平台營收取自 rev-fy2022q4；供應與產能承諾取自 tenq-fy2021q1；財測取自 pr-fy2020q4（2020-02-13）：營收 30 億美元 ± 2%、GAAP 毛利率 65%（± 0.5 個百分點）、非 GAAP 毛利率 65.4%、GAAP 營業費用約 10.5 億美元；公司表示已因新冠疫情的潛在影響把營收財測調降 1 億美元，且不含 Mellanox；FY2021 為 53 週會計年度，第四季 14 週。"
+    src: "sec-companyfacts"
+  - period: "FY2021Q2"
+    start: "2020-04-27"
+    end: "2020-07-26"
+    status: "actual"
+    revenue: 3866
+    grossProfit: 2275
+    operatingExpenses: 1624
+    operatingIncome: 651
+    nonOperating: -42
+    pretaxIncome: 609
+    netIncome: 622
+    eps: 0.0248
+    epsNonGaap: 0.0545
+    grossMarginNonGaap: 66
+    sharesDiluted: 25040
+    inventory: 1401
+    depreciation: 404
+    capex: 217
+    guidance: { basis: "GAAP", revenue: 3650, revenueLow: 3577, revenueHigh: 3723, grossMargin: 58.6, issued: "2020-05-21", src: "pr-fy2021q1" }
+    extra: { "研發費用": 997, "管銷費用": 627, "所得稅費用": -13, "股份基礎薪酬": 374, "資料中心營收": 1752, "遊戲營收": 1654, "專業視覺化營收": 203, "車用營收": 111, "OEM與其他營收": 146, "供應與產能承諾": 2040, "財測營收區間百分比": 2, "財測毛利率下緣": 58.1, "財測毛利率上緣": 59.1, "財測非GAAP毛利率": 66, "財測GAAP營業費用": 1520, "財測非GAAP營業費用": 1040 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.99 美元（2020-08-19 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2021q2；市場平台營收取自 rev-fy2022q4；供應與產能承諾取自 tenq-fy2021q2；財測取自 pr-fy2021q1（2020-05-21）：營收 36.5 億美元 ± 2%、GAAP 毛利率 58.6%（± 0.5 個百分點）、非 GAAP 毛利率 66%、GAAP 營業費用約 15.2 億美元；含本季首日完成收購的 Mellanox（預估占營收約一成出頭）；GAAP 毛利率較低主要反映收購相關成本；Mellanox 自本季起併入（2020-04-27 完成收購）。"
+    src: "sec-companyfacts"
+  - period: "FY2021Q3"
+    start: "2020-07-27"
+    end: "2020-10-25"
+    status: "actual"
+    revenue: 4726
+    grossProfit: 2960
+    operatingExpenses: 1562
+    operatingIncome: 1398
+    nonOperating: -50
+    pretaxIncome: 1348
+    netIncome: 1336
+    eps: 0.053
+    epsNonGaap: 0.0728
+    grossMarginNonGaap: 65.5
+    sharesDiluted: 25200
+    inventory: 1495
+    depreciation: 299
+    capex: 473
+    guidance: { basis: "GAAP", revenue: 4400, revenueLow: 4312, revenueHigh: 4488, grossMargin: 62.5, issued: "2020-08-19", src: "pr-fy2021q2" }
+    extra: { "研發費用": 1047, "管銷費用": 515, "所得稅費用": 12, "股份基礎薪酬": 383, "資料中心營收": 1900, "遊戲營收": 2271, "專業視覺化營收": 236, "車用營收": 125, "OEM與其他營收": 194, "供應與產能承諾": 2570, "財測營收區間百分比": 2, "財測毛利率下緣": 62, "財測毛利率上緣": 63, "財測非GAAP毛利率": 65.5, "財測GAAP營業費用": 1540, "財測非GAAP營業費用": 1090 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 2.12 美元（2020-11-18 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2021q3；市場平台營收取自 rev-fy2022q4；供應與產能承諾取自 tenq-fy2021q3；財測取自 pr-fy2021q2（2020-08-19）：營收 44 億美元 ± 2%、GAAP 毛利率 62.5%（± 0.5 個百分點）、非 GAAP 毛利率 65.5%、GAAP 營業費用約 15.4 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2021Q4"
+    start: "2020-10-26"
+    end: "2021-01-31"
+    status: "actual"
+    revenue: 5003
+    grossProfit: 3156
+    operatingExpenses: 1649
+    operatingIncome: 1507
+    nonOperating: -37
+    pretaxIncome: 1470
+    netIncome: 1457
+    eps: 0.0578
+    epsNonGaap: 0.0775
+    grossMarginNonGaap: 65.5
+    sharesDiluted: 25240
+    inventory: 1826
+    depreciation: 288
+    capex: 283
+    guidance: { basis: "GAAP", revenue: 4800, revenueLow: 4704, revenueHigh: 4896, grossMargin: 62.8, issued: "2020-11-18", src: "pr-fy2021q3" }
+    extra: { "研發費用": 1146, "管銷費用": 503, "所得稅費用": 13, "股份基礎薪酬": 416, "資料中心營收": 1903, "遊戲營收": 2495, "專業視覺化營收": 307, "車用營收": 145, "OEM與其他營收": 153, "供應與產能承諾": 2540, "財測營收區間百分比": 2, "財測毛利率下緣": 62.3, "財測毛利率上緣": 63.3, "財測非GAAP毛利率": 65.5, "財測GAAP營業費用": 1640, "財測非GAAP營業費用": 1180 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts（第四季＝全年減前三季）；第四季 EPS 與股數取自 pr-fy2021q4（原始值 2.31 美元、631 百萬股；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2021q4；資本支出取自 pr-fy2022q1 的上一季比較欄（本季新聞稿的自由現金流量表無法解析）；市場平台營收取自 rev-fy2022q4；供應與產能承諾取自 tenq-fy2021q4；財測取自 pr-fy2021q3（2020-11-18）：營收 48 億美元 ± 2%、GAAP 毛利率 62.8%（± 0.5 個百分點）、非 GAAP 毛利率 65.5%、GAAP 營業費用約 16.4 億美元；本季 14 週（53 週會計年度）。"
+    src: "sec-companyfacts"
+  - period: "FY2022Q1"
+    start: "2021-02-01"
+    end: "2021-05-02"
+    status: "actual"
+    revenue: 5661
+    grossProfit: 3629
+    operatingExpenses: 1673
+    operatingIncome: 1956
+    nonOperating: 88
+    pretaxIncome: 2044
+    netIncome: 1912
+    eps: 0.0758
+    epsNonGaap: 0.0915
+    grossMarginNonGaap: 66.2
+    sharesDiluted: 25280
+    inventory: 1992
+    depreciation: 281
+    capex: 298
+    guidance: { basis: "GAAP", revenue: 5300, revenueLow: 5194, revenueHigh: 5406, grossMargin: 63.8, issued: "2021-02-24", src: "pr-fy2021q4" }
+    extra: { "研發費用": 1153, "管銷費用": 520, "所得稅費用": 132, "股份基礎薪酬": 429, "資料中心營收": 2048, "遊戲營收": 2760, "專業視覺化營收": 372, "車用營收": 154, "OEM與其他營收": 327, "供應與產能承諾": 3460, "財測營收區間百分比": 2, "財測毛利率下緣": 63.3, "財測毛利率上緣": 64.3, "財測非GAAP毛利率": 66, "財測GAAP營業費用": 1670, "財測非GAAP營業費用": 1200 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 3.03 美元（2021-05-26 申報；EPS 除以 40、股數乘以 40 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2022q1；市場平台營收取自 rev-fy2022q4；供應與產能承諾取自 tenq-fy2022q1；財測取自 pr-fy2021q4（2021-02-24）：營收 53 億美元 ± 2%、GAAP 毛利率 63.8%（± 0.5 個百分點）、非 GAAP 毛利率 66%、GAAP 營業費用約 16.7 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2022Q2"
+    start: "2021-05-03"
+    end: "2021-08-01"
+    status: "actual"
+    revenue: 6507
+    grossProfit: 4215
+    operatingExpenses: 1771
+    operatingIncome: 2444
+    nonOperating: -50
+    pretaxIncome: 2394
+    netIncome: 2374
+    eps: 0.094
+    epsNonGaap: 0.104
+    grossMarginNonGaap: 66.7
+    sharesDiluted: 25320
+    inventory: 2114
+    depreciation: 286
+    capex: 183
+    guidance: { basis: "GAAP", revenue: 6300, revenueLow: 6174, revenueHigh: 6426, grossMargin: 64.6, issued: "2021-05-26", src: "pr-fy2022q1" }
+    extra: { "研發費用": 1245, "管銷費用": 526, "所得稅費用": 20, "股份基礎薪酬": 465, "資料中心營收": 2366, "遊戲營收": 3061, "專業視覺化營收": 519, "車用營收": 152, "OEM與其他營收": 409, "供應與產能承諾": 4790, "財測營收區間百分比": 2, "財測毛利率下緣": 64.1, "財測毛利率上緣": 65.1, "財測非GAAP毛利率": 66.5, "財測GAAP營業費用": 1760, "財測非GAAP營業費用": 1260 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.94 美元（2022-08-31 申報；EPS 除以 10、股數乘以 10 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2022q2；市場平台營收取自 rev-fy2022q4；供應與產能承諾取自 tenq-fy2022q2；財測取自 pr-fy2022q1（2021-05-26）：營收 63 億美元 ± 2%、GAAP 毛利率 64.6%（± 0.5 個百分點）、非 GAAP 毛利率 66.5%、GAAP 營業費用約 17.6 億美元；2021-07-19 完成 1 拆 4 股票分割。"
+    src: "sec-companyfacts"
+  - period: "FY2022Q3"
+    start: "2021-08-02"
+    end: "2021-10-31"
+    status: "actual"
+    revenue: 7103
+    grossProfit: 4631
+    operatingExpenses: 1960
+    operatingIncome: 2671
+    nonOperating: -33
+    pretaxIncome: 2638
+    netIncome: 2464
+    eps: 0.097
+    epsNonGaap: 0.117
+    grossMarginNonGaap: 67
+    sharesDiluted: 25380
+    inventory: 2233
+    depreciation: 298
+    capex: 221
+    guidance: { basis: "GAAP", revenue: 6800, revenueLow: 6664, revenueHigh: 6936, grossMargin: 65.2, issued: "2021-08-18", src: "pr-fy2022q2" }
+    extra: { "研發費用": 1403, "管銷費用": 557, "所得稅費用": 174, "股份基礎薪酬": 559, "資料中心營收": 2936, "遊戲營收": 3221, "專業視覺化營收": 577, "車用營收": 135, "OEM與其他營收": 234, "供應與產能承諾": 6900, "財測營收區間百分比": 2, "財測毛利率下緣": 64.7, "財測毛利率上緣": 65.7, "財測非GAAP毛利率": 67, "財測GAAP營業費用": 1960, "財測非GAAP營業費用": 1370 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.97 美元（2022-11-18 申報；EPS 除以 10、股數乘以 10 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2022q3；市場平台營收取自 rev-fy2022q4；供應與產能承諾取自 tenq-fy2022q3；財測取自 pr-fy2022q2（2021-08-18）：營收 68 億美元 ± 2%、GAAP 毛利率 65.2%（± 0.5 個百分點）、非 GAAP 毛利率 67%、GAAP 營業費用約 19.6 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2022Q4"
+    start: "2021-11-01"
+    end: "2022-01-30"
+    status: "actual"
+    revenue: 7643
+    grossProfit: 4999
+    operatingExpenses: 2029
+    operatingIncome: 2970
+    nonOperating: -105
+    pretaxIncome: 2865
+    netIncome: 3003
+    eps: 0.118
+    epsNonGaap: 0.132
+    grossMarginNonGaap: 67
+    sharesDiluted: 25450
+    inventory: 2605
+    depreciation: 309
+    capex: 273
+    guidance: { basis: "GAAP", revenue: 7400, revenueLow: 7252, revenueHigh: 7548, grossMargin: 65.3, issued: "2021-11-17", src: "pr-fy2022q3" }
+    extra: { "研發費用": 1466, "管銷費用": 563, "所得稅費用": -138, "股份基礎薪酬": 551, "資料中心營收": 3263, "遊戲營收": 3420, "專業視覺化營收": 643, "車用營收": 125, "OEM與其他營收": 192, "供應與產能承諾": 9000, "財測營收區間百分比": 2, "財測毛利率下緣": 64.8, "財測毛利率上緣": 65.8, "財測非GAAP毛利率": 67, "財測GAAP營業費用": 2020, "財測非GAAP營業費用": 1430 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts（第四季＝全年減前三季）；第四季 EPS 與股數取自 pr-fy2022q4（原始值 1.18 美元、2,545 百萬股；EPS 除以 10、股數乘以 10 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2022q4；市場平台營收取自 rev-fy2022q4；供應與產能承諾取自 tenq-fy2022q4；財測取自 pr-fy2022q3（2021-11-17）：營收 74 億美元 ± 2%、GAAP 毛利率 65.3%（± 0.5 個百分點）、非 GAAP 毛利率 67%、GAAP 營業費用約 20.2 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2023Q1"
+    start: "2022-01-31"
+    end: "2022-05-01"
+    status: "actual"
+    revenue: 8288
+    grossProfit: 5431
+    operatingExpenses: 3563
+    operatingIncome: 1868
+    nonOperating: -63
+    pretaxIncome: 1805
+    netIncome: 1618
+    eps: 0.064
+    epsNonGaap: 0.136
+    grossMarginNonGaap: 67.1
+    sharesDiluted: 25370
+    inventory: 3163
+    depreciation: 334
+    capex: 361
+    guidance: { basis: "GAAP", revenue: 8100, revenueLow: 7938, revenueHigh: 8262, grossMargin: 65.2, issued: "2022-02-16", src: "pr-fy2022q4" }
+    extra: { "研發費用": 1618, "管銷費用": 592, "所得稅費用": 187, "股份基礎薪酬": 578, "資料中心營收": 3750, "遊戲營收": 3620, "專業視覺化營收": 622, "車用營收": 138, "OEM與其他營收": 158, "供應與產能承諾": 9590, "財測營收區間百分比": 2, "財測毛利率下緣": 64.7, "財測毛利率上緣": 65.7, "財測非GAAP毛利率": 67, "財測GAAP營業費用": 3550, "財測非GAAP營業費用": 1600 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.64 美元（2023-05-26 申報；EPS 除以 10、股數乘以 10 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2023q1；市場平台營收取自 rev-fy2024q4；供應與產能承諾取自 tenq-fy2023q1；財測取自 pr-fy2022q4（2022-02-16）：營收 81 億美元 ± 2%、GAAP 毛利率 65.2%（± 0.5 個百分點）、非 GAAP 毛利率 67%、GAAP 營業費用約 35.5 億美元；GAAP 營業費用財測含終止收購 Arm 的 13.6 億美元費用；營業費用含終止收購 Arm 的 13.53 億美元費用（pr-fy2023q1 損益表的 Acquisition termination cost）。"
+    src: "sec-companyfacts"
+  - period: "FY2023Q2"
+    start: "2022-05-02"
+    end: "2022-07-31"
+    status: "actual"
+    revenue: 6704
+    grossProfit: 2915
+    operatingExpenses: 2416
+    operatingIncome: 499
+    nonOperating: -24
+    pretaxIncome: 475
+    netIncome: 656
+    eps: 0.026
+    epsNonGaap: 0.051
+    grossMarginNonGaap: 45.9
+    sharesDiluted: 25160
+    inventory: 3889
+    inventoryWritedown: 570
+    depreciation: 378
+    capex: 433
+    guidance: { basis: "GAAP", revenue: 8100, revenueLow: 7938, revenueHigh: 8262, grossMargin: 65.1, issued: "2022-05-25", src: "pr-fy2023q1" }
+    extra: { "研發費用": 1824, "管銷費用": 592, "所得稅費用": -181, "股份基礎薪酬": 648, "資料中心營收": 3806, "遊戲營收": 2042, "專業視覺化營收": 496, "車用營收": 220, "OEM與其他營收": 140, "供應與產能承諾": 9220, "財測營收區間百分比": 2, "財測毛利率下緣": 64.6, "財測毛利率上緣": 65.6, "財測非GAAP毛利率": 67.1, "財測GAAP營業費用": 2460, "財測非GAAP營業費用": 1750 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.26 美元（2023-08-28 申報；EPS 除以 10、股數乘以 10 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2023q2；市場平台營收取自 rev-fy2024q4；供應與產能承諾取自 tenq-fy2023q2；財測取自 pr-fy2023q1（2022-05-25）：營收 81 億美元 ± 2%、GAAP 毛利率 65.1%（± 0.5 個百分點）、非 GAAP 毛利率 67.1%、GAAP 營業費用約 24.6 億美元；財測已含俄羅斯與中國封控約 5 億美元的影響；2022-08-08 公司預告本季營收約 67.0 億美元（sec-8k-20220808）；存貨與相關準備等費用約 13.2 億美元（sec-8k-20220808 預告值），GAAP 毛利率 43.5%。"
+    src: "sec-companyfacts"
+  - period: "FY2023Q3"
+    start: "2022-08-01"
+    end: "2022-10-30"
+    status: "actual"
+    revenue: 5931
+    grossProfit: 3177
+    operatingExpenses: 2576
+    operatingIncome: 601
+    nonOperating: 12
+    pretaxIncome: 613
+    netIncome: 680
+    eps: 0.027
+    epsNonGaap: 0.058
+    grossMarginNonGaap: 56.1
+    sharesDiluted: 24990
+    inventory: 4454
+    inventoryWritedown: 354
+    depreciation: 406
+    capex: 530
+    guidance: { basis: "GAAP", revenue: 5900, revenueLow: 5782, revenueHigh: 6018, grossMargin: 62.4, issued: "2022-08-24", src: "pr-fy2023q2" }
+    extra: { "研發費用": 1945, "管銷費用": 631, "所得稅費用": -67, "股份基礎薪酬": 745, "資料中心營收": 3833, "遊戲營收": 1574, "專業視覺化營收": 200, "車用營收": 251, "OEM與其他營收": 73, "供應與產能承諾": 7020, "財測營收區間百分比": 2, "財測毛利率下緣": 61.9, "財測毛利率上緣": 62.9, "財測非GAAP毛利率": 65, "財測GAAP營業費用": 2590, "財測非GAAP營業費用": 1820 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.27 美元（2023-11-21 申報；EPS 除以 10、股數乘以 10 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2023q3；市場平台營收取自 rev-fy2024q4；供應與產能承諾取自 tenq-fy2023q3；財測取自 pr-fy2023q2（2022-08-24）：營收 59 億美元 ± 2%、GAAP 毛利率 62.4%（± 0.5 個百分點）、非 GAAP 毛利率 65%、GAAP 營業費用約 25.9 億美元；存貨相關費用 7.02 億美元，主要與中國資料中心需求轉弱有關（cfo-fy2023q3）。"
+    src: "sec-companyfacts"
+  - period: "FY2023Q4"
+    start: "2022-10-31"
+    end: "2023-01-29"
+    status: "actual"
+    revenue: 6051
+    grossProfit: 3833
+    operatingExpenses: 2577
+    operatingIncome: 1256
+    nonOperating: 32
+    pretaxIncome: 1288
+    netIncome: 1414
+    eps: 0.057
+    epsNonGaap: 0.088
+    grossMarginNonGaap: 66.1
+    sharesDiluted: 24770
+    inventory: 5159
+    depreciation: 426
+    capex: 509
+    guidance: { basis: "GAAP", revenue: 6000, revenueLow: 5880, revenueHigh: 6120, grossMargin: 63.2, issued: "2022-11-16", src: "pr-fy2023q3" }
+    extra: { "研發費用": 1952, "管銷費用": 625, "所得稅費用": -126, "股份基礎薪酬": 738, "資料中心營收": 3616, "遊戲營收": 1831, "專業視覺化營收": 226, "車用營收": 294, "OEM與其他營收": 84, "供應與產能承諾": 4920, "財測營收區間百分比": 2, "財測毛利率下緣": 62.7, "財測毛利率上緣": 63.7, "財測非GAAP毛利率": 66, "財測GAAP營業費用": 2560, "財測非GAAP營業費用": 1780 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts（第四季＝全年減前三季）；第四季 EPS 與股數取自 pr-fy2023q4（原始值 0.57 美元、2,477 百萬股；EPS 除以 10、股數乘以 10 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2023q4；市場平台營收取自 rev-fy2024q4；供應與產能承諾取自 tenq-fy2023q4；財測取自 pr-fy2023q3（2022-11-16）：營收 60 億美元 ± 2%、GAAP 毛利率 63.2%（± 0.5 個百分點）、非 GAAP 毛利率 66%、GAAP 營業費用約 25.6 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2024Q1"
+    start: "2023-01-30"
+    end: "2023-04-30"
+    status: "actual"
+    revenue: 7192
+    grossProfit: 4648
+    operatingExpenses: 2508
+    operatingIncome: 2140
+    nonOperating: 69
+    pretaxIncome: 2209
+    netIncome: 2043
+    eps: 0.082
+    epsNonGaap: 0.109
+    grossMarginNonGaap: 66.8
+    sharesDiluted: 24900
+    inventory: 4611
+    inventoryWritedown: 105
+    depreciation: 384
+    capex: 248
+    guidance: { basis: "GAAP", revenue: 6500, revenueLow: 6370, revenueHigh: 6630, grossMargin: 64.1, issued: "2023-02-22", src: "pr-fy2023q4" }
+    extra: { "研發費用": 1875, "管銷費用": 633, "所得稅費用": 166, "股份基礎薪酬": 735, "資料中心營收": 4284, "遊戲營收": 2240, "專業視覺化營收": 295, "車用營收": 296, "OEM與其他營收": 77, "資料中心運算營收": 3357, "資料中心網路營收": 927, "供應與產能承諾": 7270, "存貨與超額採購承諾提列": 134, "財測營收區間百分比": 2, "財測毛利率下緣": 63.6, "財測毛利率上緣": 64.6, "財測非GAAP毛利率": 66.5, "財測GAAP營業費用": 2530, "財測非GAAP營業費用": 1780 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 0.82 美元（2024-05-29 申報；EPS 除以 10、股數乘以 10 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2024q1；市場平台營收取自 rev-fy2024q4；資料中心運算與網路營收取自 tenq-fy2025q1（上年同期比較欄）；供應與產能承諾取自 tenq-fy2024q1；存貨與超額採購承諾提列取自 tenq-fy2024q1 內文；財測取自 pr-fy2023q4（2023-02-22）：營收 65 億美元 ± 2%、GAAP 毛利率 64.1%（± 0.5 個百分點）、非 GAAP 毛利率 66.5%、GAAP 營業費用約 25.3 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2024Q2"
+    start: "2023-05-01"
+    end: "2023-07-30"
+    status: "actual"
+    revenue: 13507
+    grossProfit: 9462
+    operatingExpenses: 2662
+    operatingIncome: 6800
+    nonOperating: 181
+    pretaxIncome: 6981
+    netIncome: 6188
+    eps: 0.248
+    epsNonGaap: 0.27
+    grossMarginNonGaap: 71.2
+    sharesDiluted: 24990
+    inventory: 4319
+    inventoryWritedown: 343
+    depreciation: 365
+    capex: 289
+    guidance: { basis: "GAAP", revenue: 11000, revenueLow: 10780, revenueHigh: 11220, grossMargin: 68.6, issued: "2023-05-24", src: "pr-fy2024q1" }
+    extra: { "研發費用": 2040, "管銷費用": 622, "所得稅費用": 793, "股份基礎薪酬": 841, "資料中心營收": 10323, "遊戲營收": 2486, "專業視覺化營收": 379, "車用營收": 253, "OEM與其他營收": 66, "資料中心運算營收": 8612, "資料中心網路營收": 1711, "供應與產能承諾": 11150, "存貨與超額採購承諾提列": 576, "財測營收區間百分比": 2, "財測毛利率下緣": 68.1, "財測毛利率上緣": 69.1, "財測非GAAP毛利率": 70, "財測GAAP營業費用": 2710, "財測非GAAP營業費用": 1900 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 2.48 美元（2023-08-28 申報；EPS 除以 10、股數乘以 10 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2024q2；市場平台營收取自 rev-fy2024q4；資料中心運算與網路營收取自 tenq-fy2025q2（上年同期比較欄）；供應與產能承諾取自 tenq-fy2024q2；存貨與超額採購承諾提列取自 tenq-fy2024q2 內文；財測取自 pr-fy2024q1（2023-05-24）：營收 110 億美元 ± 2%、GAAP 毛利率 68.6%（± 0.5 個百分點）、非 GAAP 毛利率 70%、GAAP 營業費用約 27.1 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2024Q3"
+    start: "2023-07-31"
+    end: "2023-10-29"
+    status: "actual"
+    revenue: 18120
+    grossProfit: 13400
+    operatingExpenses: 2983
+    operatingIncome: 10417
+    nonOperating: 105
+    pretaxIncome: 10522
+    netIncome: 9243
+    eps: 0.371
+    epsNonGaap: 0.402
+    grossMarginNonGaap: 75
+    sharesDiluted: 24940
+    inventory: 4779
+    inventoryWritedown: 208
+    depreciation: 372
+    capex: 278
+    guidance: { basis: "GAAP", revenue: 16000, revenueLow: 15680, revenueHigh: 16320, grossMargin: 71.5, issued: "2023-08-23", src: "pr-fy2024q2" }
+    extra: { "研發費用": 2294, "管銷費用": 689, "所得稅費用": 1279, "股份基礎薪酬": 979, "資料中心營收": 14514, "遊戲營收": 2856, "專業視覺化營收": 416, "車用營收": 261, "OEM與其他營收": 73, "資料中心運算營收": 11908, "資料中心網路營收": 2606, "供應與產能承諾": 17110, "存貨與超額採購承諾提列": 681, "財測營收區間百分比": 2, "財測毛利率下緣": 71, "財測毛利率上緣": 72, "財測非GAAP毛利率": 72.5, "財測GAAP營業費用": 2950, "財測非GAAP營業費用": 2000 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 3.71 美元（2023-11-21 申報；EPS 除以 10、股數乘以 10 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2024q3；市場平台營收取自 rev-fy2024q4；資料中心運算與網路營收取自 tenq-fy2025q3（上年同期比較欄）；供應與產能承諾取自 tenq-fy2024q3；存貨與超額採購承諾提列取自 tenq-fy2024q3 內文；財測取自 pr-fy2024q2（2023-08-23）：營收 160 億美元 ± 2%、GAAP 毛利率 71.5%（± 0.5 個百分點）、非 GAAP 毛利率 72.5%、GAAP 營業費用約 29.5 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2024Q4"
+    start: "2023-10-30"
+    end: "2024-01-28"
+    status: "actual"
+    revenue: 22103
+    grossProfit: 16791
+    operatingExpenses: 3177
+    operatingIncome: 13614
+    nonOperating: 492
+    pretaxIncome: 14106
+    netIncome: 12285
+    eps: 0.493
+    epsNonGaap: 0.516
+    grossMarginNonGaap: 76.7
+    sharesDiluted: 24900
+    inventory: 5282
+    inventoryWritedown: 117
+    depreciation: 387
+    capex: 253
+    guidance: { basis: "GAAP", revenue: 20000, revenueLow: 19600, revenueHigh: 20400, grossMargin: 74.5, issued: "2023-11-21", src: "pr-fy2024q3" }
+    extra: { "研發費用": 2465, "管銷費用": 712, "所得稅費用": 1821, "股份基礎薪酬": 994, "資料中心營收": 18404, "遊戲營收": 2865, "專業視覺化營收": 463, "車用營收": 281, "OEM與其他營收": 90, "資料中心運算營收": 15073, "資料中心網路營收": 3331, "供應與產能承諾": 16100, "財測營收區間百分比": 2, "財測毛利率下緣": 74, "財測毛利率上緣": 75, "財測非GAAP毛利率": 75.5, "財測GAAP營業費用": 3170, "財測非GAAP營業費用": 2200 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts（第四季＝全年減前三季）；第四季 EPS 與股數取自 pr-fy2024q4（原始值 4.93 美元、2,490 百萬股；EPS 除以 10、股數乘以 10 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2024q4；市場平台營收取自 rev-fy2024q4；資料中心運算與網路營收取自 tenq-fy2025q4（FY2024 全年 389.50／85.75 億美元減前三季（tenq-fy2025q3 九個月比較欄 238.77／52.44 億美元））；供應與產能承諾取自 tenq-fy2024q4；財測取自 pr-fy2024q3（2023-11-21）：營收 200 億美元 ± 2%、GAAP 毛利率 74.5%（± 0.5 個百分點）、非 GAAP 毛利率 75.5%、GAAP 營業費用約 31.7 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2025Q1"
+    start: "2024-01-29"
+    end: "2024-04-28"
+    status: "actual"
+    revenue: 26044
+    grossProfit: 20406
+    operatingExpenses: 3497
+    operatingIncome: 16909
+    nonOperating: 370
+    pretaxIncome: 17279
+    netIncome: 14881
+    eps: 0.598
+    epsNonGaap: 0.612
+    grossMarginNonGaap: 78.9
+    sharesDiluted: 24890
+    inventory: 5864
+    inventoryWritedown: 210
+    depreciation: 410
+    capex: 369
+    guidance: { basis: "GAAP", revenue: 24000, revenueLow: 23520, revenueHigh: 24480, grossMargin: 76.3, issued: "2024-02-21", src: "pr-fy2024q4" }
+    extra: { "研發費用": 2720, "管銷費用": 777, "所得稅費用": 2398, "股份基礎薪酬": 1011, "資料中心營收": 22563, "遊戲營收": 2647, "專業視覺化營收": 427, "車用營收": 329, "OEM與其他營收": 78, "資料中心運算營收": 19392, "資料中心網路營收": 3171, "超大規模營收": 10930, "ACIE營收": 11633, "邊緣運算營收": 3481, "供應與產能承諾": 18800, "存貨與超額採購承諾提列": 393, "財測營收區間百分比": 2, "財測毛利率下緣": 75.8, "財測毛利率上緣": 76.8, "財測非GAAP毛利率": 77, "財測GAAP營業費用": 3500, "財測非GAAP營業費用": 2500 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；EPS 原始值 5.98 美元（2024-05-29 申報；EPS 除以 10、股數乘以 10 換算）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2025q1；市場平台營收取自 rev-fy2026q4，新分類（超大規模、ACIE、邊緣運算）取自 rev-fy2027q3；資料中心運算與網路營收取自 tenq-fy2025q1；供應與產能承諾取自 tenq-fy2025q1；存貨與超額採購承諾提列取自 tenq-fy2025q1 內文；財測取自 pr-fy2024q4（2024-02-21）：營收 240 億美元 ± 2%、GAAP 毛利率 76.3%（± 0.5 個百分點）、非 GAAP 毛利率 77%、GAAP 營業費用約 35 億美元；2024-06-07 生效 1 拆 10 股票分割（本季新聞稿 EPS 為分割前數字）。"
+    src: "sec-companyfacts"
+  - period: "FY2025Q2"
+    start: "2024-04-29"
+    end: "2024-07-28"
+    status: "actual"
+    revenue: 30040
+    grossProfit: 22574
+    operatingExpenses: 3932
+    operatingIncome: 18642
+    nonOperating: 572
+    pretaxIncome: 19214
+    netIncome: 16599
+    eps: 0.67
+    epsNonGaap: 0.68
+    grossMarginNonGaap: 75.7
+    sharesDiluted: 24848
+    inventory: 6675
+    inventoryWritedown: 345
+    depreciation: 433
+    capex: 977
+    guidance: { basis: "GAAP", revenue: 28000, revenueLow: 27440, revenueHigh: 28560, grossMargin: 74.8, issued: "2024-05-22", src: "pr-fy2025q1" }
+    extra: { "研發費用": 3090, "管銷費用": 842, "所得稅費用": 2615, "股份基礎薪酬": 1153, "資料中心營收": 26272, "遊戲營收": 2880, "專業視覺化營收": 454, "車用營收": 346, "OEM與其他營收": 88, "資料中心運算營收": 22604, "資料中心網路營收": 3668, "超大規模營收": 13419, "ACIE營收": 12853, "邊緣運算營收": 3768, "供應與產能承諾": 27800, "存貨與超額採購承諾提列": 908, "財測營收區間百分比": 2, "財測毛利率下緣": 74.3, "財測毛利率上緣": 75.3, "財測非GAAP毛利率": 75.5, "財測GAAP營業費用": 4000, "財測非GAAP營業費用": 2800 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2025q2；市場平台營收取自 rev-fy2026q4，新分類（超大規模、ACIE、邊緣運算）取自 rev-fy2027q3；資料中心運算與網路營收取自 tenq-fy2025q2；供應與產能承諾取自 tenq-fy2025q2；存貨與超額採購承諾提列取自 tenq-fy2025q2 內文；財測取自 pr-fy2025q1（2024-05-22）：營收 280 億美元 ± 2%、GAAP 毛利率 74.8%（± 0.5 個百分點）、非 GAAP 毛利率 75.5%、GAAP 營業費用約 40 億美元；存貨提列主要來自 Blackwell 低良率材料（tenq-fy2025q2），公司更改 Blackwell GPU 光罩以提高良率（cfo-fy2025q2）。"
+    src: "sec-companyfacts"
+  - period: "FY2025Q3"
+    start: "2024-07-29"
+    end: "2024-10-27"
+    status: "actual"
+    revenue: 35082
+    grossProfit: 26156
+    operatingExpenses: 4287
+    operatingIncome: 21869
+    nonOperating: 447
+    pretaxIncome: 22316
+    netIncome: 19309
+    eps: 0.78
+    epsNonGaap: 0.81
+    grossMarginNonGaap: 75
+    sharesDiluted: 24774
+    inventory: 7654
+    inventoryWritedown: 322
+    depreciation: 478
+    capex: 813
+    guidance: { basis: "GAAP", revenue: 32500, revenueLow: 31850, revenueHigh: 33150, grossMargin: 74.4, issued: "2024-08-28", src: "pr-fy2025q2" }
+    extra: { "研發費用": 3390, "管銷費用": 897, "所得稅費用": 3007, "股份基礎薪酬": 1252, "資料中心營收": 30771, "遊戲營收": 3279, "專業視覺化營收": 486, "車用營收": 449, "OEM與其他營收": 97, "資料中心運算營收": 27644, "資料中心網路營收": 3127, "超大規模營收": 15636, "ACIE營收": 15135, "邊緣運算營收": 4311, "供應與產能承諾": 28900, "存貨與超額採購承諾提列": 865, "財測營收區間百分比": 2, "財測毛利率下緣": 73.9, "財測毛利率上緣": 74.9, "財測非GAAP毛利率": 75, "財測GAAP營業費用": 4300, "財測非GAAP營業費用": 3000 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2025q3；市場平台營收取自 rev-fy2026q4，新分類（超大規模、ACIE、邊緣運算）取自 rev-fy2027q3；資料中心運算與網路營收取自 tenq-fy2025q3；供應與產能承諾取自 tenq-fy2025q3；存貨與超額採購承諾提列取自 tenq-fy2025q3 內文；財測取自 pr-fy2025q2（2024-08-28）：營收 325 億美元 ± 2%、GAAP 毛利率 74.4%（± 0.5 個百分點）、非 GAAP 毛利率 75%、GAAP 營業費用約 43 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2025Q4"
+    start: "2024-10-28"
+    end: "2025-01-26"
+    status: "actual"
+    revenue: 39331
+    grossProfit: 28723
+    operatingExpenses: 4689
+    operatingIncome: 24034
+    nonOperating: 1183
+    pretaxIncome: 25217
+    netIncome: 22091
+    eps: 0.89
+    epsNonGaap: 0.89
+    grossMarginNonGaap: 73.5
+    sharesDiluted: 24706
+    inventory: 10080
+    inventoryWritedown: 724
+    depreciation: 543
+    capex: 1077
+    guidance: { basis: "GAAP", revenue: 37500, revenueLow: 36750, revenueHigh: 38250, grossMargin: 73, issued: "2024-11-20", src: "pr-fy2025q3" }
+    extra: { "研發費用": 3714, "管銷費用": 975, "所得稅費用": 3126, "股份基礎薪酬": 1321, "資料中心營收": 35580, "遊戲營收": 2544, "專業視覺化營收": 511, "車用營收": 570, "OEM與其他營收": 126, "資料中心運算營收": 32556, "資料中心網路營收": 3024, "超大規模營收": 19948, "ACIE營收": 15632, "邊緣運算營收": 3751, "供應與產能承諾": 30800, "雲端服務合約承諾": 10900, "財測營收區間百分比": 2, "財測毛利率下緣": 72.5, "財測毛利率上緣": 73.5, "財測非GAAP毛利率": 73.5, "財測GAAP營業費用": 4800, "財測非GAAP營業費用": 3400 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts（第四季＝全年減前三季）；第四季 EPS 與股數取自 pr-fy2025q4（原始值 0.89 美元、24,706 百萬股）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2025q4；市場平台營收取自 rev-fy2026q4，新分類（超大規模、ACIE、邊緣運算）取自 rev-fy2027q3；資料中心運算與網路營收取自 tenq-fy2025q4（FY2025 全年減前三季（tenq-fy2025q3 九個月 696.40／99.66 億美元））；供應與產能承諾取自 tenq-fy2025q4；雲端服務合約承諾取自 cfo-fy2025q4；財測取自 pr-fy2025q3（2024-11-20）：營收 375 億美元 ± 2%、GAAP 毛利率 73%（± 0.5 個百分點）、非 GAAP 毛利率 73.5%、GAAP 營業費用約 48 億美元；Blackwell 架構營收 110 億美元（cfo-fy2025q4）。"
+    src: "sec-companyfacts"
+  - period: "FY2026Q1"
+    start: "2025-01-27"
+    end: "2025-04-27"
+    status: "actual"
+    revenue: 44062
+    grossProfit: 26668
+    operatingExpenses: 5030
+    operatingIncome: 21638
+    nonOperating: 272
+    pretaxIncome: 21910
+    netIncome: 18775
+    eps: 0.76
+    epsNonGaap: 0.81
+    grossMarginNonGaap: 61
+    sharesDiluted: 24611
+    inventory: 11333
+    inventoryWritedown: 2300
+    depreciation: 611
+    capex: 1227
+    guidance: { basis: "GAAP", revenue: 43000, revenueLow: 42140, revenueHigh: 43860, grossMargin: 70.6, issued: "2025-02-26", src: "pr-fy2025q4" }
+    extra: { "研發費用": 3989, "管銷費用": 1041, "所得稅費用": 3135, "股份基礎薪酬": 1474, "資料中心營收": 39112, "遊戲營收": 3763, "專業視覺化營收": 509, "車用營收": 567, "OEM與其他營收": 111, "資料中心運算營收": 34155, "資料中心網路營收": 4957, "超大規模營收": 22260, "ACIE營收": 16852, "邊緣運算營收": 4950, "供應與產能承諾": 29800, "雲端服務合約承諾": 10600, "存貨與超額採購承諾提列": 5300, "H20相關費用": 4500, "非GAAP毛利率含股份薪酬": 60.8, "非GAAP_EPS含股份薪酬": 0.78, "財測營收區間百分比": 2, "財測毛利率下緣": 70.1, "財測毛利率上緣": 71.1, "財測非GAAP毛利率": 71, "財測GAAP營業費用": 5200, "財測非GAAP營業費用": 3600 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2026q1；市場平台營收取自 rev-fy2026q4，新分類（超大規模、ACIE、邊緣運算）取自 rev-fy2027q3；資料中心運算與網路營收取自 tenq-fy2026q1；供應與產能承諾取自 tenq-fy2026q1；雲端服務合約承諾取自 cfo-fy2026q1；存貨與超額採購承諾提列取自 tenq-fy2026q1 內文；非 GAAP 含股份基礎薪酬的重編值取自 hist-nongaap；財測取自 pr-fy2025q4（2025-02-26）：營收 430 億美元 ± 2%、GAAP 毛利率 70.6%（± 0.5 個百分點）、非 GAAP 毛利率 71%、GAAP 營業費用約 52 億美元；H20 出口須取得許可（2025-04-09 通知），本季認列 45 億美元 H20 超額存貨與採購義務費用、GAAP 毛利率 60.5%（排除後非 GAAP 毛利率 71.3%）；H20 銷售 46 億美元，另有 25 億美元無法出貨（cfo-fy2026q1）。"
+    src: "sec-companyfacts"
+  - period: "FY2026Q2"
+    start: "2025-04-28"
+    end: "2025-07-27"
+    status: "actual"
+    revenue: 46743
+    grossProfit: 33853
+    operatingExpenses: 5413
+    operatingIncome: 28440
+    nonOperating: 2766
+    pretaxIncome: 31206
+    netIncome: 26422
+    eps: 1.08
+    epsNonGaap: 1.05
+    grossMarginNonGaap: 72.7
+    sharesDiluted: 24532
+    inventory: 14962
+    inventoryWritedown: 886
+    depreciation: 669
+    capex: 1894
+    guidance: { basis: "GAAP", revenue: 45000, revenueLow: 44100, revenueHigh: 45900, grossMargin: 71.8, issued: "2025-05-28", src: "pr-fy2026q1" }
+    extra: { "研發費用": 4291, "管銷費用": 1122, "所得稅費用": 4784, "股份基礎薪酬": 1625, "資料中心營收": 41096, "遊戲營收": 4287, "專業視覺化營收": 601, "車用營收": 586, "OEM與其他營收": 173, "資料中心運算營收": 33844, "資料中心網路營收": 7252, "超大規模營收": 24168, "ACIE營收": 16928, "邊緣運算營收": 5647, "雲端服務合約承諾": 12600, "存貨與超額採購承諾提列": 1000, "H20相關費用": -180, "非GAAP毛利率含股份薪酬": 72.5, "非GAAP_EPS含股份薪酬": 1.01, "財測營收區間百分比": 2, "財測毛利率下緣": 71.3, "財測毛利率上緣": 72.3, "財測非GAAP毛利率": 72, "財測GAAP營業費用": 5700, "財測非GAAP營業費用": 4000 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2026q2；市場平台營收取自 rev-fy2026q4，新分類（超大規模、ACIE、邊緣運算）取自 rev-fy2027q3；資料中心運算與網路營收取自 tenq-fy2026q2；本季公司只揭露包含非存貨採購義務的總採購承諾 457.74 億美元（tenq-fy2026q2；cfo-fy2026q2 寫 458 億美元），沒有可與前後季比較的供應與產能承諾，因此不填；雲端服務合約承諾取自 cfo-fy2026q3；存貨與超額採購承諾提列取自 tenq-fy2026q2 內文；非 GAAP 含股份基礎薪酬的重編值取自 hist-nongaap；財測取自 pr-fy2026q1（2025-05-28）：營收 450 億美元 ± 2%、GAAP 毛利率 71.8%（± 0.5 個百分點）、非 GAAP 毛利率 72%、GAAP 營業費用約 57 億美元；財測已反映出口管制造成約 80 億美元的 H20 營收損失；迴轉先前提列的 H20 存貨 1.80 億美元（約 6.5 億美元 H20 售予中國以外的客戶），對中國客戶無 H20 銷售（cfo-fy2026q2）。"
+    src: "sec-companyfacts"
+  - period: "FY2026Q3"
+    start: "2025-07-28"
+    end: "2025-10-26"
+    status: "actual"
+    revenue: 57006
+    grossProfit: 41849
+    operatingExpenses: 5839
+    operatingIncome: 36010
+    nonOperating: 1926
+    pretaxIncome: 37936
+    netIncome: 31910
+    eps: 1.3
+    epsNonGaap: 1.3
+    grossMarginNonGaap: 73.6
+    sharesDiluted: 24483
+    inventory: 19784
+    inventoryWritedown: 378
+    depreciation: 751
+    capex: 1637
+    guidance: { basis: "GAAP", revenue: 54000, revenueLow: 52920, revenueHigh: 55080, grossMargin: 73.3, issued: "2025-08-27", src: "pr-fy2026q2" }
+    extra: { "研發費用": 4705, "管銷費用": 1134, "所得稅費用": 6026, "股份基礎薪酬": 1654, "資料中心營收": 51215, "遊戲營收": 4265, "專業視覺化營收": 760, "車用營收": 592, "OEM與其他營收": 174, "資料中心運算營收": 43028, "資料中心網路營收": 8187, "超大規模營收": 35140, "ACIE營收": 16075, "邊緣運算營收": 5791, "供應與產能承諾": 50300, "雲端服務合約承諾": 26000, "存貨與超額採購承諾提列": 410, "非GAAP毛利率含股份薪酬": 73.5, "非GAAP_EPS含股份薪酬": 1.27, "財測營收區間百分比": 2, "財測毛利率下緣": 72.8, "財測毛利率上緣": 73.8, "財測非GAAP毛利率": 73.5, "財測GAAP營業費用": 5900, "財測非GAAP營業費用": 4200 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2026q3；市場平台營收取自 rev-fy2026q4，新分類（超大規模、ACIE、邊緣運算）取自 rev-fy2027q3；資料中心運算與網路營收取自 tenq-fy2026q3；供應與產能承諾取自 tenq-fy2026q3；雲端服務合約承諾取自 tenq-fy2026q3；存貨與超額採購承諾提列取自 tenq-fy2026q3 內文；非 GAAP 含股份基礎薪酬的重編值取自 hist-nongaap；財測取自 pr-fy2026q2（2025-08-27）：營收 540 億美元 ± 2%、GAAP 毛利率 73.3%（± 0.5 個百分點）、非 GAAP 毛利率 73.5%、GAAP 營業費用約 59 億美元；財測未假設任何對中國的 H20 出貨；地理別營收自本季改依客戶總部所在地揭露；毛利率年減反映由 Hopper HGX 轉為 Blackwell 整櫃方案（cfo-fy2026q3）。"
+    src: "sec-companyfacts"
+  - period: "FY2026Q4"
+    start: "2025-10-27"
+    end: "2026-01-25"
+    status: "actual"
+    revenue: 68127
+    grossProfit: 51093
+    operatingExpenses: 6794
+    operatingIncome: 44299
+    nonOperating: 6099
+    pretaxIncome: 50398
+    netIncome: 42960
+    eps: 1.76
+    epsNonGaap: 1.62
+    grossMarginNonGaap: 75.2
+    sharesDiluted: 24432
+    inventory: 21403
+    inventoryWritedown: 400
+    depreciation: 812
+    capex: 1284
+    guidance: { basis: "GAAP", revenue: 65000, revenueLow: 63700, revenueHigh: 66300, grossMargin: 74.8, issued: "2025-11-19", src: "pr-fy2026q3" }
+    extra: { "研發費用": 5512, "管銷費用": 1282, "所得稅費用": 7438, "股份基礎薪酬": 1633, "資料中心營收": 62314, "遊戲營收": 3727, "專業視覺化營收": 1321, "車用營收": 604, "OEM與其他營收": 161, "資料中心運算營收": 51334, "資料中心網路營收": 10980, "超大規模營收": 42213, "ACIE營收": 20101, "邊緣運算營收": 5813, "供應與產能承諾": 95200, "雲端服務合約承諾": 27000, "非GAAP毛利率含股份薪酬": 75.1, "非GAAP_EPS含股份薪酬": 1.59, "財測營收區間百分比": 2, "財測毛利率下緣": 74.3, "財測毛利率上緣": 75.3, "財測非GAAP毛利率": 75, "財測GAAP營業費用": 6700, "財測非GAAP營業費用": 5000 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts（第四季＝全年減前三季）；第四季 EPS 與股數取自 pr-fy2026q4（原始值 1.76 美元、24,432 百萬股）；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2026q4；市場平台營收取自 rev-fy2026q4，新分類（超大規模、ACIE、邊緣運算）取自 rev-fy2027q3；資料中心運算與網路營收取自 tenq-fy2026q4（FY2026 全年 1,623.61／313.76 億美元減前三季（tenq-fy2026q3 九個月 1,110.27／203.96 億美元））；供應與產能承諾取自 cfo-fy2026q4；雲端服務合約承諾取自 cfo-fy2026q4；非 GAAP 含股份基礎薪酬的重編值取自 hist-nongaap；財測取自 pr-fy2026q3（2025-11-19）：營收 650 億美元 ± 2%、GAAP 毛利率 74.8%（± 0.5 個百分點）、非 GAAP 毛利率 75%、GAAP 營業費用約 67 億美元。"
+    src: "sec-companyfacts"
+  - period: "FY2027Q1"
+    start: "2026-01-26"
+    end: "2026-04-26"
+    status: "actual"
+    revenue: 81615
+    grossProfit: 61157
+    operatingExpenses: 7621
+    operatingIncome: 53536
+    nonOperating: 16367
+    pretaxIncome: 69903
+    netIncome: 58321
+    eps: 2.39
+    epsNonGaap: 1.87
+    grossMarginNonGaap: 75
+    sharesDiluted: 24391
+    inventory: 25797
+    inventoryWritedown: 800
+    depreciation: 997
+    capex: 1757
+    guidance: { basis: "GAAP", revenue: 78000, revenueLow: 76440, revenueHigh: 79560, grossMargin: 74.9, issued: "2026-02-25", src: "pr-fy2026q4" }
+    extra: { "研發費用": 6321, "管銷費用": 1300, "所得稅費用": 11582, "股份基礎薪酬": 1928, "資料中心營收": 75246, "資料中心運算營收": 60400, "資料中心網路營收": 14800, "超大規模營收": 43050, "ACIE營收": 32196, "邊緣運算營收": 6369, "供應與產能承諾": 119000, "雲端服務合約承諾": 30000, "存貨與超額採購承諾提列": 1100, "財測營收區間百分比": 2, "財測毛利率下緣": 74.4, "財測毛利率上緣": 75.4, "財測非GAAP毛利率": 75, "財測GAAP營業費用": 7700, "財測非GAAP營業費用": 7500 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2027q1；市場平台營收取自 rev-fy2027q3，新分類（超大規模、ACIE、邊緣運算）取自 rev-fy2027q3；資料中心運算與網路營收取自 cfo-fy2027q1（依舊分類，CFO 評論以十億美元為單位（604／148 億美元），加總與資料中心營收差 0.46 億美元）；供應與產能承諾取自 cfo-fy2027q1；雲端服務合約承諾取自 cfo-fy2027q1；存貨與超額採購承諾提列取自 tenq-fy2027q1 內文；財測取自 pr-fy2026q4（2026-02-25）：營收 780 億美元 ± 2%、GAAP 毛利率 74.9%（± 0.5 個百分點）、非 GAAP 毛利率 75%、GAAP 營業費用約 77 億美元；財測不含中國資料中心運算營收；非 GAAP 自本季起含股份基礎薪酬（毛利率影響 0.1 個百分點、營業費用含 19 億美元）；市場平台自本季改為資料中心（超大規模、ACIE）與邊緣運算，FY2025 第一季起已重編。"
+    src: "sec-companyfacts"
+  - period: "FY2027Q2"
+    start: "2026-04-27"
+    end: "2026-07-26"
+    status: "actual"
+    revenue: 96221
+    grossProfit: 72142
+    operatingExpenses: 8408
+    operatingIncome: 63734
+    nonOperating: 7773
+    pretaxIncome: 71507
+    netIncome: 59688
+    eps: 2.46
+    epsNonGaap: 2.22
+    grossMarginNonGaap: 75
+    sharesDiluted: 24285
+    inventory: 31575
+    inventoryWritedown: 784
+    depreciation: 1127
+    capex: 2677
+    guidance: { basis: "GAAP", revenue: 91000, revenueLow: 89180, revenueHigh: 92820, grossMargin: 74.9, issued: "2026-05-20", src: "pr-fy2027q1" }
+    extra: { "研發費用": 7054, "管銷費用": 1354, "所得稅費用": 11819, "股份基礎薪酬": 2026, "資料中心營收": 89023, "超大規模營收": 48710, "ACIE營收": 40313, "邊緣運算營收": 7198, "供應與產能承諾": 279000, "雲端服務合約承諾": 29000, "存貨與超額採購承諾提列": 985, "財測營收區間百分比": 2, "財測毛利率下緣": 74.4, "財測毛利率上緣": 75.4, "財測非GAAP毛利率": 75, "財測GAAP營業費用": 8500, "財測非GAAP營業費用": 8300 }
+    note: "來源：損益、存貨、折舊攤銷取自 sec-companyfacts；非 GAAP 毛利率與 EPS、資本支出取自 pr-fy2027q2；市場平台營收取自 rev-fy2027q3，新分類（超大規模、ACIE、邊緣運算）取自 rev-fy2027q3；供應與產能承諾取自 tenq-fy2027q2；雲端服務合約承諾取自 tenq-fy2027q2；存貨與超額採購承諾提列取自 tenq-fy2027q2 內文；財測取自 pr-fy2027q1（2026-05-20）：營收 910 億美元 ± 2%、GAAP 毛利率 74.9%（± 0.5 個百分點）、非 GAAP 毛利率 75%、GAAP 營業費用約 85 億美元；財測不含中國資料中心運算營收；本季將一家客戶由 ACIE 改列超大規模並重編前期；資料中心對中國的 Hopper 出貨低於資料中心營收的 1%（cfo-fy2027q2）。"
+    src: "sec-companyfacts"
+  - period: "FY2027Q3"
+    start: "2026-07-27"
+    end: "2026-10-25"
+    status: "actual"
+    revenue: 115844
+    grossProfit: 86676
+    operatingExpenses: 9156
+    operatingIncome: 77520
+    nonOperating: 1497
+    pretaxIncome: 79017
+    netIncome: 65287
+    eps: 2.7
+    epsNonGaap: 2.68
+    grossMarginNonGaap: 74.9
+    sharesDiluted: 24186
+    inventory: 39724
+    inventoryWritedown: 680
+    depreciation: 1254
+    capex: 4422
+    guidance: { basis: "GAAP", revenue: 108000, revenueLow: 105840, revenueHigh: 110160, grossMargin: 74, issued: "2026-08-26", src: "pr-fy2027q2" }
+    extra: { "研發費用": 7454, "管銷費用": 1702, "所得稅費用": 13730, "股份基礎薪酬": 2088, "資料中心營收": 107610, "超大規模營收": 60136, "ACIE營收": 47474, "邊緣運算營收": 8234, "供應與產能承諾": 390000, "雲端服務合約承諾": 28000, "財測營收區間百分比": 2, "財測毛利率下緣": 73.5, "財測毛利率上緣": 74.5, "財測非GAAP毛利率": 74, "財測GAAP營業費用": 9200, "財測非GAAP營業費用": 9000 }
+    note: "來源：損益、稀釋 EPS 與股數、存貨、折舊攤銷、資本支出取自 pr-fy2027q3（10-Q 尚未申報）；存貨提列取自 supp-fy2027q3；新市場平台營收取自 rev-fy2027q3；供應承諾與雲端服務合約取自 cfo-fy2027q3；財測取自 pr-fy2027q2（2026-08-26）：營收 1,080 億美元 ± 2%、GAAP 毛利率 74%（± 0.5 個百分點）、非 GAAP 毛利率 74%、GAAP 營業費用約 92 億美元；財測不含中國資料中心運算營收；GAAP 與非 GAAP 毛利率財測皆為 74.0% ± 0.5 個百分點；Vera Rubin NVL72 開始出貨，Vera Rubin 單季帶來近 200 億美元的季增營收（pres-fy2027q3）；資料中心 Hopper 對中國出貨 24 億美元（cfo-fy2027q3）；毛利率小幅季減反映 Rubin 初期量產。"
+    src: "pr-fy2027q3"
+monthly: []
+annual: []
+events:
+  - { date: "2019-01-28", title: "下修 FY2019 第四季財測", detail: "營收財測由 27.0 億美元下修為 22.0 億美元，GAAP 毛利率由 62.3% 降為 55.0%（含約 1.2 億美元超額 DRAM 等零組件費用）；理由是中國等地總體經濟轉弱影響遊戲 GPU 需求，以及資料中心部分交易未在季末成交；虛擬貨幣熱潮後的中階通路庫存去化大致符合預期。", src: "sec-8k-20190128" }
+  - { date: "2020-04-27", title: "完成收購 Mellanox", detail: "Mellanox 收購案在 FY2021 第二季首日完成，網路產品自該季起併入資料中心營收；第二季財測預估 Mellanox 約占營收一成出頭。", src: "pr-fy2021q1" }
+  - { date: "2021-07-19", title: "1 拆 4 股票分割", detail: "以股票股利方式完成 1 拆 4 分割（基準日 2021-06-21）。本檔 EPS 與股數已依其後的分割一併換算為目前股數基礎。", src: "pr-fy2022q2" }
+  - { date: "2022-02-08", title: "終止收購 Arm", detail: "輝達與軟銀因重大監管障礙終止 Arm 股權買賣協議，公司預告在 FY2023 第一季營業費用認列 13.6 億美元費用；實際損益表列 13.53 億美元（pr-fy2023q1）。", src: "pr-fy2022q4" }
+  - { date: "2022-08-08", title: "預告 FY2023 第二季營收低於財測", detail: "第二季營收預估約 67.0 億美元，低於 5 月財測 81.0 億美元；遊戲營收 20.4 億美元季減 44%，資料中心 38.1 億美元季增 1%；約 13.2 億美元的存貨與相關準備費用使 GAAP 毛利率降至約 43.7%（初步數字）。", src: "sec-8k-20220808" }
+  - { date: "2022-08-26", title: "A100／H100 出口中國須申請許可", detail: "美國政府通知輝達，A100 與即將推出的 H100 及其系統出口中國（含香港）與俄羅斯須取得許可；公司指出第三季約 4 億美元對中國的潛在銷售可能受影響。", src: "sec-8k-20220826" }
+  - { date: "2023-05-24", title: "生成式 AI 需求帶動財測大增", detail: "FY2024 第二季營收財測 110 億美元（pr-fy2024q1），較第一季實際的 71.9 億美元高出約五成；財務長評論指出資料中心需求來自大型語言模型與生成式 AI，使用 Hopper 與 Ampere 架構 GPU。", src: "cfo-fy2024q1" }
+  - { date: "2023-10-17", title: "美國擴大先進運算晶片出口管制", detail: "新規涵蓋 A100、A800、H100、H800、L40、L40S 與 RTX 4090 等超過性能門檻的產品；公司當時表示預期對近期財務沒有重大影響。", src: "sec-8k-20231017" }
+  - { date: "2024-06-07", title: "1 拆 10 股票分割", detail: "基準日 2024-06-06，分割於 2024-06-07 收盤後生效。FY2025 第一季新聞稿的 EPS 為分割前數字，本檔已換算。", src: "pr-fy2025q1" }
+  - { date: "2024-08-28", title: "Blackwell 更改光罩以提高良率", detail: "FY2025 第二季寄出 Blackwell 樣品，並更改 GPU 光罩以改善良率；當季存貨與超額採購承諾提列 9.08 億美元，主要來自低良率的 Blackwell 材料；量產預定第四季開始。", src: "cfo-fy2025q2" }
+  - { date: "2025-02-26", title: "Blackwell 量產出貨", detail: "FY2025 第四季 Blackwell 架構營收 110 億美元，公司稱是史上最快的產品量產；大型雲端業者約占資料中心營收的 50%。", src: "cfo-fy2025q4" }
+  - { date: "2025-04-09", title: "H20 出口中國須申請許可", detail: "美國政府通知 H20 及同等記憶體頻寬或互連頻寬的晶片出口中國（含港澳）與 D:5 國家須取得許可；公司預估 FY2026 第一季將認列至多約 55 億美元相關費用；實際認列 45 億美元，另有 25 億美元 H20 營收無法出貨（cfo-fy2026q1）。", src: "sec-8k-20250409" }
+  - { date: "2025-05-28", title: "FY2026 第二季財測反映 H20 損失", detail: "第二季營收財測 450 億美元，已反映約 80 億美元的 H20 營收損失；公司表示將努力在年底把毛利率恢復到約 75%（mid-70s）。", src: "pr-fy2026q1" }
+  - { date: "2025-11-19", title: "投入成本上升，力守 FY2027 毛利率", detail: "財務長在法說會表示 FY2027 投入成本上升，但會努力把毛利率維持在約 75%（mid-70s）；地理別營收自 FY2026 第三季起改依客戶總部所在地揭露（tenq-fy2026q3）。", src: "tr-fy2026q3" }
+  - { date: "2026-02-25", title: "供應承諾倍增、FY2027 起改變揭露口徑", detail: "FY2026 年底存貨 214 億美元、供應相關承諾 952 億美元，公司表示已預先確保未來數季以上的存貨與產能；自 FY2027 第一季起非 GAAP 數字不再排除股份基礎薪酬；財務長在法說會表示 FY2027 全年毛利率仍約 75%（mid-70s，tr-fy2026q4）。", src: "cfo-fy2026q4" }
+  - { date: "2026-05-20", title: "改用新市場平台、Vera Rubin 預定第三季出貨", detail: "FY2027 第一季起市場平台改為資料中心（超大規模、ACIE）與邊緣運算；財務長表示 Vera Rubin 預定下半年自第三季開始量產出貨，今年 CPU 營收能見度近 200 億美元。", src: "tr-fy2027q1" }
+  - { date: "2026-08-26", title: "記憶體漲價使毛利率財測下修", detail: "財務長表示記憶體價格漲幅超出預期且明年續漲，第三季毛利率財測 74% ± 0.5 個百分點，預期第四季在 71–72% 觸底、FY2028 約 72–73%（輝達已執行的產品漲價自 FY2028 第一季生效）；初步預期 FY2028 營收年增約 70%，屬供給受限的展望，供給瓶頸至少延續到 FY2028 年底；供應承諾由 1,190 億美元增至 2,790 億美元，主要為記憶體採購。", src: "tr-fy2027q2" }
+  - { date: "2026-10-21", title: "與供應鏈夥伴擴充載板、封裝與測試產能", detail: "與 IBIDEN、三星電機、欣興的載板協議三年內合計使產能增為 2.5 倍；艾克爾計畫在 2028 年底前把韓國廠的中介層晶圓（先進封裝）產能增加逾 300%；京元電子在美國建廠，輝達提供 11 億美元產能預付款；矽品目標在 2027 年中把共同封裝光學的光引擎產能提高為 15 倍，2028 年底前再翻倍；輝達預期測試產能 2027 年較 2026 年倍增。", src: "nv-supply-20261021" }
+  - { date: "2026-11-08", title: "董事會啟動獨立調查", detail: "董事會表示因媒體報導指稱執行長黃仁勳成為外國情報活動的目標，由獨立董事組成的委員會在外部律師協助下進行調查；董事會表示沒有理由相信國家安全或公司機密遭到洩漏。", src: "nv-board-20261108" }
+  - { date: "2026-11-10", title: "獨立董事委任外部律師進行調查", detail: "獨立董事委任前紐約南區代理聯邦檢察官 Joon H. Kim 及其所屬的 Wachtell, Lipton, Rosen & Katz 律師事務所進行獨立調查。", src: "nv-board-20261110" }
+  - { date: "2026-11-11", title: "執行長交接", detail: "董事會接受黃仁勳辭去總裁、執行長與董事職務，立即生效；財務長 Colette Kress 擔任代理執行長並續任財務長；Harvey C. Jones 擔任公司首位董事長；董事會將就內外部人選尋找正式執行長（8-K 於 2026-11-12 申報；公司新聞稿見 nv-ceo-20261112）。", src: "sec-8k-20261111" }
+  - { date: "2026-11-17", title: "成立國家安全與出口管制監督委員會", detail: "董事會新設常設委員會，負責國家安全政策、出口管制合規與全球貿易風險的董事會層級監督，由董事 Suzanne Nora Johnson 擔任主席，成員包括 Stephen C. Neal 與 John O. Dabiri。", src: "nv-natsec-20261117" }
+  - { date: "2026-11-17", title: "FY2027 第三季財報與第四季財測", detail: "第三季營收 1,158 億美元、GAAP 毛利率 74.8%；Vera Rubin NVL72 開始出貨；資料中心 Hopper 對中國出貨 24 億美元；供應承諾增至 3,900 億美元，主要為多年期記憶體採購。第四季（多一週）營收財測 1,300 億美元 ± 3%、毛利率 71.0–72.0%，不含中國資料中心運算營收。", src: "pr-fy2027q3" }
+pastForecasts: []
+sources:
+  sec-companyfacts: { title: "NVIDIA Corporation XBRL company facts (10-Q / 10-K financial data)", publisher: "U.S. Securities and Exchange Commission (EDGAR)", url: "https://data.sec.gov/api/xbrl/companyfacts/CIK0001045810.json", type: "filing", lang: "en", note: "輝達向 SEC 申報的 10-Q／10-K 結構化資料：營收、銷貨成本、毛利、營業費用、研發、管銷、營業利益、稅前淨利、所得稅、淨利、稀釋 EPS 與股數、存貨、折舊攤銷、股份基礎薪酬與存貨提列（InventoryWriteDown）；第四季以全年值減前三季，現金流量項目以年初至今累計值相減", accessed: "2026-11-18" }
+  pr-fy2016q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2016", publisher: "NVIDIA (SEC EDGAR 8-K Exhibit 99.1)", url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581016000189/q416pr.htm", type: "press-release", lang: "en", published: "2016-02-17", note: "輝達新聞室已無此篇，改讀 8-K 附件；含 FY2017 第一季財測", accessed: "2026-11-18" }
+  pr-fy2017q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2017", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2017", type: "press-release", lang: "en", published: "2016-05-12", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2017q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2017", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2017", type: "press-release", lang: "en", published: "2016-08-11", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2017q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2017", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2017", type: "press-release", lang: "en", published: "2016-11-10", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2017q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2017", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2017", type: "press-release", lang: "en", published: "2017-02-09", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2018q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2018", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2018", type: "press-release", lang: "en", published: "2017-05-09", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2018q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2018", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2018", type: "press-release", lang: "en", published: "2017-08-10", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2018q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2018", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2018", type: "press-release", lang: "en", published: "2017-11-09", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2018q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2018", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2018", type: "press-release", lang: "en", published: "2018-02-08", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2019q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2019", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2019", type: "press-release", lang: "en", published: "2018-05-10", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2019q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2019", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2019", type: "press-release", lang: "en", published: "2018-08-16", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2019q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2019", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2019", type: "press-release", lang: "en", published: "2018-11-15", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2019q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2019", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2019", type: "press-release", lang: "en", published: "2019-02-14", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2020q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2020", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2020", type: "press-release", lang: "en", published: "2019-05-16", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2020q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2020", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2020", type: "press-release", lang: "en", published: "2019-08-15", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2020q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2020", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2020", type: "press-release", lang: "en", published: "2019-11-14", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2020q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2020", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2020", type: "press-release", lang: "en", published: "2020-02-13", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2021q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2021", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2021", type: "press-release", lang: "en", published: "2020-05-21", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2021q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2021", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2021", type: "press-release", lang: "en", published: "2020-08-19", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2021q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2021", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2021", type: "press-release", lang: "en", published: "2020-11-18", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2021q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2021", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2021", type: "press-release", lang: "en", published: "2021-02-24", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2022q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2022", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2022", type: "press-release", lang: "en", published: "2021-05-26", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2022q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2022", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2022", type: "press-release", lang: "en", published: "2021-08-18", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2022q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2022", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2022", type: "press-release", lang: "en", published: "2021-11-17", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2022q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2022", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2022", type: "press-release", lang: "en", published: "2022-02-16", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2023q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2023", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2023", type: "press-release", lang: "en", published: "2022-05-25", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2023q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2023", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2023", type: "press-release", lang: "en", published: "2022-08-24", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2023q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2023", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2023", type: "press-release", lang: "en", published: "2022-11-16", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2023q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2023", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2023", type: "press-release", lang: "en", published: "2023-02-22", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2024q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2024", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2024", type: "press-release", lang: "en", published: "2023-05-24", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2024q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2024", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2024", type: "press-release", lang: "en", published: "2023-08-23", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2024q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2024", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2024", type: "press-release", lang: "en", published: "2023-11-21", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2024q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2024", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2024", type: "press-release", lang: "en", published: "2024-02-21", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2025q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2025", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2025", type: "press-release", lang: "en", published: "2024-05-22", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2025q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2025", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2025", type: "press-release", lang: "en", published: "2024-08-28", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2025q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2025", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2025", type: "press-release", lang: "en", published: "2024-11-20", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2025q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2025", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2025", type: "press-release", lang: "en", published: "2025-02-26", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2026q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2026", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2026", type: "press-release", lang: "en", published: "2025-05-28", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2026q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2026", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2026", type: "press-release", lang: "en", published: "2025-08-27", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2026q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2026", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2026", type: "press-release", lang: "en", published: "2025-11-19", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2026q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2026", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2026", type: "press-release", lang: "en", published: "2026-02-25", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2027q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2027", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2027", type: "press-release", lang: "en", published: "2026-05-20", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2027q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2027", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2027", type: "press-release", lang: "en", published: "2026-08-26", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2027q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2027", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2027", type: "press-release", lang: "en", published: "2026-11-17", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  rev-fy2018q3: { title: "NVIDIA Quarterly Revenue Trend (Q3 FY2018)", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2018/Rev_by_Mkt_Qtrly_Trend_Q318.pdf", type: "ir-presentation", lang: "en", published: "2017-11-09", note: "舊分類的市場平台季營收（資料中心、遊戲、專業視覺化、車用、OEM 與其他），八季一表；本檔逐季比對所有 FY2017–FY2026 的季營收趨勢表，同一季在各份趨勢表中的數字相同", accessed: "2026-11-18" }
+  rev-fy2019q2: { title: "NVIDIA Quarterly Revenue Trend (Q2 FY2019)", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2019/Q219/Rev_by_Mkt_Qtrly_Trend_Q219.pdf", type: "ir-presentation", lang: "en", published: "2018-08-16", note: "舊分類的市場平台季營收（資料中心、遊戲、專業視覺化、車用、OEM 與其他），八季一表；本檔逐季比對所有 FY2017–FY2026 的季營收趨勢表，同一季在各份趨勢表中的數字相同", accessed: "2026-11-18" }
+  rev-fy2020q4: { title: "NVIDIA Quarterly Revenue Trend (Q4 FY2020)", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2020/Q420/Rev_by_Mkt_Qtrly_Trend_Q420.pdf", type: "ir-presentation", lang: "en", published: "2020-02-13", note: "舊分類的市場平台季營收（資料中心、遊戲、專業視覺化、車用、OEM 與其他），八季一表；本檔逐季比對所有 FY2017–FY2026 的季營收趨勢表，同一季在各份趨勢表中的數字相同", accessed: "2026-11-18" }
+  rev-fy2022q4: { title: "NVIDIA Quarterly Revenue Trend (Q4 FY2022)", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2022/q4/Rev_by_Mkt_Qtrly_Trend_Q422.pdf", type: "ir-presentation", lang: "en", published: "2022-02-16", note: "舊分類的市場平台季營收（資料中心、遊戲、專業視覺化、車用、OEM 與其他），八季一表；本檔逐季比對所有 FY2017–FY2026 的季營收趨勢表，同一季在各份趨勢表中的數字相同", accessed: "2026-11-18" }
+  rev-fy2024q4: { title: "NVIDIA Quarterly Revenue Trend (Q4 FY2024)", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2024/Q4FY24/Rev_by_Mkt_Qtrly_Trend_Q424.pdf", type: "ir-presentation", lang: "en", published: "2024-02-21", note: "舊分類的市場平台季營收（資料中心、遊戲、專業視覺化、車用、OEM 與其他），八季一表；本檔逐季比對所有 FY2017–FY2026 的季營收趨勢表，同一季在各份趨勢表中的數字相同", accessed: "2026-11-18" }
+  rev-fy2026q4: { title: "NVIDIA Quarterly Revenue Trend (Q4 FY2026)", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/Q426/Rev_by_Mkt_Qtrly_Trend_Q426.pdf", type: "ir-presentation", lang: "en", published: "2026-02-25", note: "舊分類的市場平台季營收（資料中心、遊戲、專業視覺化、車用、OEM 與其他），八季一表；本檔逐季比對所有 FY2017–FY2026 的季營收趨勢表，同一季在各份趨勢表中的數字相同", accessed: "2026-11-18" }
+  rev-fy2027q3: { title: "NVIDIA Quarterly Revenue Trend (Q3 FY2027)", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/Q327/Rev-by-Mkt-Qtrly-Trend-Q327.pdf", type: "ir-presentation", lang: "en", published: "2026-11-17", note: "依 FY2027 新分類重編的市場平台季營收（FY2025 第一季起：資料中心－超大規模、ACIE、邊緣運算），已反映第二季的客戶改列", accessed: "2026-11-18" }
+  cfo-fy2019q4: { title: "CFO Commentary on Fourth Quarter Fiscal 2019 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2019/Q419/Q4FY19-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2019-02-14", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2023q3: { title: "CFO Commentary on Third Quarter Fiscal 2023 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2023/q3/Q3FY23-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2022-11-16", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2024q1: { title: "CFO Commentary on First Quarter Fiscal 2024 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2024/Q1FY24/Q1FY24-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2023-05-24", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2025q2: { title: "CFO Commentary on Second Quarter Fiscal 2025 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2025/Q225/Q2FY25-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2024-08-28", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2025q4: { title: "CFO Commentary on Fourth Quarter Fiscal 2025 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2025/Q425/Q4FY25-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2025-02-26", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2026q1: { title: "CFO Commentary on First Quarter Fiscal 2026 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/Q126/Q1FY26-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2025-05-28", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2026q2: { title: "CFO Commentary on Second Quarter Fiscal 2026 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/Q226/Q2FY26-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2025-08-27", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2026q3: { title: "CFO Commentary on Third Quarter Fiscal 2026 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/Q326/Q3FY26-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2025-11-19", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2026q4: { title: "CFO Commentary on Fourth Quarter Fiscal 2026 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/Q426/Q4FY26-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2026-02-25", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2027q1: { title: "CFO Commentary on First Quarter Fiscal 2027 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/Q127/Q1FY27-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2026-05-20", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2027q2: { title: "CFO Commentary on Second Quarter Fiscal 2027 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/Q227/Q2FY27-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2026-08-26", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2027q3: { title: "CFO Commentary on Third Quarter Fiscal 2027 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/Q327/Q3FY27-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2026-11-17", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  tenq-fy2017q1: { title: "NVIDIA Form 10-Q for the quarter ended 2016-05-01", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2017/10Q-2017-Q1.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2017q2: { title: "NVIDIA Form 10-Q for the quarter ended 2016-07-31", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2017/10Q-2017-Q2.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2017q3: { title: "NVIDIA Form 10-Q for the quarter ended 2016-10-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2017/10Q-2017-Q3.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2017q4: { title: "NVIDIA Form 10-K for fiscal year ended 2017-01-29", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2017/10K-2017-Q4.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2018q1: { title: "NVIDIA Form 10-Q for the quarter ended 2017-04-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2018/10Q-2018-Q1.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2018q2: { title: "NVIDIA Form 10-Q for the quarter ended 2017-07-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2018/10Q-2018-Q2.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2018q3: { title: "NVIDIA Form 10-Q for the quarter ended 2017-10-29", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2018/10Q-2018-Q3.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2018q4: { title: "NVIDIA Form 10-K for fiscal year ended 2018-01-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2018/NVIDIA-Q4Y18-Form-10K.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2019q1: { title: "NVIDIA Form 10-Q for the quarter ended 2018-04-29", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2019/NVIDIA-Q1Y19-Form-10Q.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2019q2: { title: "NVIDIA Form 10-Q for the quarter ended 2018-07-29", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2019/Q219/e21302ab-ede9-4119-ba3f-be0e61df02e3.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2019q3: { title: "NVIDIA Form 10-Q for the quarter ended 2018-10-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2019/Q319/f949f2f3-affc-4659-a4f1-069ee8093049.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2019q4: { title: "NVIDIA Form 10-K for fiscal year ended 2019-01-27", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2019/Q419/nvidia2019-10K.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2020q1: { title: "NVIDIA Form 10-Q for the quarter ended 2019-04-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2020/Q120/e0636cad-19cc-4520-8e80-4dfc8b28d16a.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2020q2: { title: "NVIDIA Form 10-Q for the quarter ended 2019-07-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2020/Q220/9e501519-7cc2-40f2-aeb9-e6aace95e474.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2020q3: { title: "NVIDIA Form 10-Q for the quarter ended 2019-10-27", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2020/q3/cfa30c13-a603-418d-9dc7-2c52c44a276c.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2020q4: { title: "NVIDIA Form 10-K for fiscal year ended 2020-01-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2020/q4/174b2f06-ba5b-4e0a-b288-e33c46e9a0a4.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2021q1: { title: "NVIDIA Form 10-Q for the quarter ended 2020-04-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2021/q1/6a2895c9-f648-4e77-bcd6-63bbfc4e0786.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2021q2: { title: "NVIDIA Form 10-Q for the quarter ended 2020-07-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2021/Q2/65b8fd67-6306-47d4-8a29-9a6be3860297.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2021q3: { title: "NVIDIA Form 10-Q for the quarter ended 2020-10-25", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2021/Q321/a0c4a358-8b0e-4b20-a5cd-dd56002591ed.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2021q4: { title: "NVIDIA Form 10-K for fiscal year ended 2021-01-31", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2021/q4/0ec16816-55e2-4812-8f77-75cab5909247.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2022q1: { title: "NVIDIA Form 10-Q for the quarter ended 2021-05-02", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2022/q1/NVDA-2022-Q1-10Q.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2022q2: { title: "NVIDIA Form 10-Q for the quarter ended 2021-08-01", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2022/q2/62e21663-af56-4c3a-b0d1-98bfdaa5d4a6.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2022q3: { title: "NVIDIA Form 10-Q for the quarter ended 2021-10-31", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2022/q3/420f1223-6131-4b97-b09d-3e9935257ed2.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2022q4: { title: "NVIDIA Form 10-K for fiscal year ended 2022-01-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2022/q4/ca04d49f-caab-436f-9e6f-e8493c8e8515.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2023q1: { title: "NVIDIA Form 10-Q for the quarter ended 2022-05-01", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2023/q1/8b8d4537-83d8-4c94-b065-e7a2cd34da49.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2023q2: { title: "NVIDIA Form 10-Q for the quarter ended 2022-07-31", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2023/Q2/19426b68-6120-44a3-9032-bb629ef2b3d9.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2023q3: { title: "NVIDIA Form 10-Q for the quarter ended 2022-10-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2023/q3/cd532449-4dc3-404a-a999-25e7b2e8c246.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2023q4: { title: "NVIDIA Form 10-K for fiscal year ended 2023-01-29", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2023/q4/4e9abe7b-fdc7-4cd2-8487-dc3a99f30e98.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2024q1: { title: "NVIDIA Form 10-Q for the quarter ended 2023-04-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2024/q1/ecefb2b2-efcb-45f3-b72b-212d90fcd873.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2024q2: { title: "NVIDIA Form 10-Q for the quarter ended 2023-07-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2024/q2/19771e6b-cc29-4027-899e-51a0c386111e.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2024q3: { title: "NVIDIA Form 10-Q for the quarter ended 2023-10-29", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2024/q3/NVIDIA-10Q.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2024q4: { title: "NVIDIA Form 10-K for fiscal year ended 2024-01-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2024/q4/1cbe8fe7-e08a-46e3-8dcc-b429fc06c1a4.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2025q1: { title: "NVIDIA Form 10-Q for the quarter ended 2024-04-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2025/q1/NVIDIA-10Q-20242905.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2025q2: { title: "NVIDIA Form 10-Q for the quarter ended 2024-07-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2025/q2/78501ce3-7816-4c4d-8688-53dd140df456.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2025q3: { title: "NVIDIA Form 10-Q for the quarter ended 2024-10-27", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2025/q3/ed2a395c-5e9b-4411-8b4a-a718d192155a.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2025q4: { title: "NVIDIA Form 10-K for fiscal year ended 2025-01-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2025/q4/177440d5-3b32-4185-8cc8-95500a9dc783.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2026q1: { title: "NVIDIA Form 10-Q for the quarter ended 2025-04-27", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/q1/b6df1c5c-5cb6-4a41-9d28-dd1bcd34cc26.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2026q2: { title: "NVIDIA Form 10-Q for the quarter ended 2025-07-27", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/q2/2e217538-c226-4d05-8f74-aaca89a21b33.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2026q3: { title: "NVIDIA Form 10-Q for the quarter ended 2025-10-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/q3/13e6981b-95ed-4aac-a602-ebc5865d0590.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2026q4: { title: "NVIDIA Form 10-K for fiscal year ended 2026-01-25", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/q4/10K-NVDA.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2027q1: { title: "NVIDIA Form 10-Q for the quarter ended 2026-04-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/q1/927dc2d6-a76c-4006-9f34-8769b2c665fb.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  tenq-fy2027q2: { title: "NVIDIA Form 10-Q for the quarter ended 2026-07-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/NVDA-2027-Q2-10Q-Final-including-exhibits.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：存貨與供應承諾（Commitments）、存貨與超額採購承諾提列、資料中心運算與網路營收（FY2025 起）", accessed: "2026-11-18" }
+  supp-fy2027q3: { title: "NVIDIA Supplemental Financial Information for the Quarter Ended October 25, 2026", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/Q327/Supplemental-Financial-Information-NVDA-2027-Q3.pdf", type: "ir-presentation", lang: "en", published: "2026-11-17", note: "10-Q 申報前的補充資料：三大報表、存貨組成與存貨提列、依客戶總部所在地的地理別營收、客戶集中度", accessed: "2026-11-18" }
+  hist-nongaap: { title: "Non-GAAP Historical Financial Tables including Stock-Based Compensation Expense", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/Q426/Historical-Non-GAAP-Financial-Measures-Including-SBC-full.pdf", type: "ir-presentation", lang: "en", published: "2026-02-25", note: "FY2026 各季非 GAAP 數字依新口徑（含股份基礎薪酬）重編", accessed: "2026-11-18" }
+  pres-fy2027q3: { title: "NVIDIA F3Q27 Quarterly Presentation", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/Q327/NVDA-F3Q27-Quarterly-Presentation.pdf", type: "ir-presentation", lang: "en", published: "2026-11-17", note: "第三季簡報：Vera Rubin 單季季增營收近 200 億美元、超大規模與 ACIE 營收", accessed: "2026-11-18" }
+  tr-fy2026q3: { title: "NVIDIA Q3 2026 Earnings Call Transcript", publisher: "NVIDIA Investor Relations (FactSet CallStreet transcript)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/q3/NVDA-Q3-2026-Earnings-Call-19-November-2025-5_00-PM-ET.pdf", type: "earnings-call", lang: "en", published: "2025-11-19", note: "法說會逐字稿：財務長的毛利率、營收與供應展望", accessed: "2026-11-18" }
+  tr-fy2026q4: { title: "NVIDIA Q4 2026 Earnings Call Transcript", publisher: "NVIDIA Investor Relations (FactSet CallStreet transcript)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/q4/NVDA-Q4-2026-Earnings-Call-25-February-2026-5_00-PM-ET.pdf", type: "earnings-call", lang: "en", published: "2026-02-25", note: "法說會逐字稿：財務長的毛利率、營收與供應展望", accessed: "2026-11-18" }
+  tr-fy2027q1: { title: "NVIDIA Q1 2027 Earnings Call Transcript", publisher: "NVIDIA Investor Relations (FactSet CallStreet transcript)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/q1/NVDA-Q1-2027-Earnings-Call-20-May-2026-5_00-PM-ET.pdf", type: "earnings-call", lang: "en", published: "2026-05-20", note: "法說會逐字稿：財務長的毛利率、營收與供應展望", accessed: "2026-11-18" }
+  tr-fy2027q2: { title: "NVIDIA Q2 2027 Earnings Call Transcript", publisher: "NVIDIA Investor Relations (FactSet CallStreet transcript)", url: "https://s201.q4cdn.com/141608511/files/content_files/TRANSCRIPT_-NVIDIA-Corp-NVDA-US-Q2-2027-Earnings-Call-26-August-2026-5_00-PM-ET.pdf", type: "earnings-call", lang: "en", published: "2026-08-26", note: "法說會逐字稿：財務長的毛利率、營收與供應展望", accessed: "2026-11-18" }
+  sec-8k-20190128: { title: "NVIDIA Updates Financial Guidance for Fourth Quarter of Fiscal 2019 (8-K Exhibit 99.1)", publisher: "NVIDIA (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581019000004/pressrelease.htm", type: "press-release", lang: "en", published: "2019-01-28", accessed: "2026-11-18" }
+  sec-8k-20220808: { title: "NVIDIA Announces Preliminary Financial Results for Second Quarter Fiscal 2023 (8-K Exhibit 99.1)", publisher: "NVIDIA (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581022000133/pressrelease.htm", type: "press-release", lang: "en", published: "2022-08-08", accessed: "2026-11-18" }
+  sec-8k-20220826: { title: "NVIDIA Form 8-K (Item 8.01): new U.S. license requirement for A100 and H100 exports to China and Russia", publisher: "NVIDIA (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581022000146/nvda-20220826.htm", type: "filing", lang: "en", published: "2022-08-31", accessed: "2026-11-18" }
+  sec-8k-20231017: { title: "NVIDIA Form 8-K (Item 8.01): U.S. Interim Final Rule on advanced computing exports", publisher: "NVIDIA (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581023000217/nvda-20231017.htm", type: "filing", lang: "en", published: "2023-10-17", accessed: "2026-11-18" }
+  sec-8k-20250409: { title: "NVIDIA Form 8-K (Item 8.01): U.S. license requirement for H20 exports", publisher: "NVIDIA (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581025000082/nvda-20250409.htm", type: "filing", lang: "en", published: "2025-04-15", accessed: "2026-11-18" }
+  sec-8k-20261111: { title: "NVIDIA Form 8-K (Items 5.02, 9.01): departure of the CEO and appointment of an interim CEO and board chair", publisher: "NVIDIA (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000082/nvda-20261111.htm", type: "filing", lang: "en", published: "2026-11-12", accessed: "2026-11-18" }
+  nv-board-20261108: { title: "Statement From NVIDIA Board of Directors", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/statement-from-nvidia-board-of-directors", type: "press-release", lang: "en", published: "2026-11-08", accessed: "2026-11-18" }
+  nv-board-20261110: { title: "Statement From the Independent Members of the NVIDIA Board", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/statement-from-the-independent-members-of-the-nvidia-board", type: "press-release", lang: "en", published: "2026-11-10", accessed: "2026-11-18" }
+  nv-ceo-20261112: { title: "NVIDIA Announces CEO Transition", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-ceo-transition", type: "press-release", lang: "en", published: "2026-11-12", accessed: "2026-11-18" }
+  nv-natsec-20261117: { title: "NVIDIA Board of Directors Establishes National Security and Export Control Oversight Committee", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-board-of-directors-establishes-national-security-and-export-control-oversight-committee", type: "press-release", lang: "en", published: "2026-11-17", accessed: "2026-11-18" }
+  nv-supply-20261021: { title: "NVIDIA and Supply Chain Partners Expand Capacity to Accelerate AI Infrastructure Buildout", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-and-supply-chain-partners-expand-capacity-to-accelerate-ai-infrastructure-buildout", type: "press-release", lang: "en", published: "2026-10-21", accessed: "2026-11-18" }
+lastVerified: "2026-11-18"
+editorial:
+  status: "fact-checked"
+  author: "fc2-data-nvidia"
+  checkedBy: "fc2-check-nvidia"
+  checkedOn: "2026-11-18"
+  notes: "2026-11-18 整理（fc2-data-nvidia）：FY2017 第一季至 FY2027 第三季共 43 季。XBRL 損益、存貨、折舊攤銷與 FY2027 第三季新聞稿；各季新聞稿逐一以程式解析財測（44 篇，FY2016 第四季讀 8-K 附件）、非 GAAP 摘要、第四季 EPS 與股數、自由現金流量調節的資本支出；舊分類季營收趨勢表 42 份中可解析的 39 份（另 3 份版面無法解析）逐季比對市場平台營收，五項相加等於營收、同一季在各份趨勢表中的數字相同；10-Q／10-K PDF 取得供應承諾、存貨提列與資料中心運算／網路營收。以 XBRL 原始數字比對新聞稿：第四季全年減前三季與新聞稿單季數字最多差 1 百萬美元（四捨五入）；FY2017 第一、二季淨利與 EPS 因 ASU 2016-09 追溯重編而與新聞稿不同（見各季 note）。FY2023 第三季至 FY2027 第二季的營收、GAAP 毛利率與營業利益率、資料中心營收與 FY2027 第二季新分類，和 src/content/financials/nvidia.json 逐季核對一致。 2026-11-18 查核（fc2-check-nvidia）：以程式獨立重算並比對約 3,300 個數值。損益、研發、管銷、所得稅、存貨、折舊攤銷、股份基礎薪酬、資本支出、存貨提列、EPS 與稀釋股數逐季對照 SEC XBRL companyfacts（第四季由全年減前三季、現金流量項目由年初累計相減、EPS 依申報日判斷分割倍數），最近 20 季另對照 stockanalysis.com（營收、毛利、營業利益、淨利、EPS、存貨、折舊攤銷、股份基礎薪酬、資本支出與新市場平台營收）；44 篇季度新聞稿重新解析財測（營收中值與區間百分比、GAAP 與非 GAAP 毛利率、營業費用）、非 GAAP 毛利率與 EPS、第四季 EPS 與股數、資本支出與發布日期，FY2017 第一季財測與各篇 8-K 以 SEC 原文核對；舊分類市場平台營收對照 6 份季營收趨勢表（FY2017–FY2026 共 40 季），新分類對照 rev-fy2027q3；資料中心運算與網路營收、供應與產能承諾、雲端服務合約、存貨與超額採購承諾提列、H20 費用、中國營收抽查 10-Q／10-K 與財務長評論原文；FY2027 第三季全部數字對照新聞稿、財務長評論、補充財務資料與簡報；23 則事件逐一對照新聞稿、8-K 與法說會逐字稿。內部一致性（毛利－營業費用＝營業利益、稅前－所得稅＝淨利、五項平台加總＝營收、季度連續、財測區間＝中值 ± 百分比）全數通過。數值沒有錯誤；第四季由 XBRL 全年減前三季的數字與第四季新聞稿有 18 處相差 1 百萬美元（四捨五入），FY2017 第一、二季淨利為 ASU 2016-09 重編值（已註明）。修正：2026-08-26 事件改寫漲價主體、2026-10-21 事件把艾克爾「提高三倍以上」改為原文的「增加逾 300%」並補測試產能、矽品「提高為 15 倍」；FY2027 第一季 note 刪除重複句並更正重編起點為 FY2025 第一季。"

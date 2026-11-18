@@ -1,0 +1,1822 @@
+{
+  "company": "anthropic",
+  "generatedBy": "scripts/models/anthropic.ts",
+  "generatedOn": "2026-11-18",
+  "asOf": "2026-11-18",
+  "currency": "USD",
+  "amountUnit": "million",
+  "periodLabel": "日曆季度（百萬美元；不預測淨利與 EPS）",
+  "train": {
+    "from": "2025Q1",
+    "to": "2025Q2"
+  },
+  "test": {
+    "from": "2025Q3",
+    "to": "2026Q3"
+  },
+  "lastReported": "2026Q3",
+  "summary": "選定模型把公司說過的年化營收連成每日路徑、加總 ÷ 364 換算成當季營收，毛利率用上一季「銷貨成本 ÷ 算力費用」推算。招股書只有 7 季財報，回測只有 2025Q3–2026Q3 共 5 季：代入財報公開前公布的年化營收與當季實際算力費用時，營收平均誤差 6.9%、毛利率 5.1 個百分點，但這是條件式結果；只用季初年化營收的事前版本營收誤差 17.8%，天真模型 44.6%，差距在統計上不顯著。基準情境 2026 年第四季營收約 223 億美元（保守至樂觀 191–230 億美元）；2027 年依招股書未來 12 個月約 707 億美元的算力承諾與算力效率假設推估約 1,541 億美元（1,274–1,777 億美元），營業損益在 −63 億美元與 271 億美元之間，取決於承諾的算力能否轉成營收。這是依假設推算的模型結果，不是投資建議。",
+  "candidates": [
+    {
+      "id": "naive",
+      "name": "天真模型（上一季不變）",
+      "description": "假設本季營收與毛利率都和上一季一樣。這是最簡單的對照組：模型如果贏不了它，就沒有存在的價值。Anthropic 的營收在測試期每季成長 47–144%，這種假設會系統性低估。",
+      "equations": [
+        "營收_t = 營收_t−1",
+        "毛利率_t = 毛利率_t−1"
+      ],
+      "metrics": {
+        "revenue": {
+          "mape": 44.62,
+          "mae": 3233.8,
+          "bias": -3233.8,
+          "n": 5
+        },
+        "grossMargin": {
+          "mae": 15.507,
+          "bias": -14.26,
+          "n": 5
+        },
+        "revenueExAnte": {
+          "mape": 44.62,
+          "mae": 3233.8,
+          "bias": -3233.8,
+          "n": 5
+        },
+        "grossMarginExAnte": {
+          "mae": 15.507,
+          "bias": -14.26,
+          "n": 5
+        }
+      },
+      "selected": false,
+      "note": "2025 年第三季低估 43%、2025 年第四季低估 32%、2026 年第一季低估 57%、2026 年第二季低估 59%、2026 年第三季低估 32%。Anthropic 上市前沒有公布任何營收或毛利率財測，2026-11-10 的初步招股書直接揭露第三季實際財報，沒有區間式的初步數字，因此沒有「公司財測」對照組。"
+    },
+    {
+      "id": "log-linear-trend",
+      "name": "對數線性趨勢（最近四季的成長率外推）",
+      "description": "用最近四季（不足四季時用全部，至少兩季）的營收取對數、對時間做直線迴歸，把迴歸的平均季成長率延伸一季；毛利率用同樣方法外推「銷貨成本 ÷ 營收」。只看營收本身的成長軌跡，不用任何驅動因子。",
+      "equations": [
+        "ln 營收_t = a + b × t（以 t−4 至 t−1 季估計 a、b）",
+        "ln（銷貨成本 ÷ 營收）_t = c + d × t；毛利率_t = 1 −（銷貨成本 ÷ 營收）_t"
+      ],
+      "metrics": {
+        "revenue": {
+          "mape": 26.09,
+          "mae": 2026.949,
+          "bias": 123.735,
+          "n": 5
+        },
+        "grossMargin": {
+          "mae": 10.522,
+          "bias": -7.16,
+          "n": 5
+        },
+        "revenueExAnte": {
+          "mape": 26.09,
+          "mae": 2026.949,
+          "bias": 123.735,
+          "n": 5
+        },
+        "grossMarginExAnte": {
+          "mae": 10.522,
+          "bias": -7.16,
+          "n": 5
+        }
+      },
+      "selected": false,
+      "note": "2025 年第三季高估 19%、2025 年第四季高估 34%、2026 年第一季低估 17%、2026 年第二季低估 34%、2026 年第三季高估 26%。成長率忽高忽低（2026 年第一、二季季增 132%、144%，第三季 47%），用過去的平均成長率外推，在加速時低估、減速時高估。各測試季迴歸的平均季成長率（斜率換算）依序為 109%、92%、76%、78%、106%；只有兩點時（2025Q3）沒有標準誤。"
+    },
+    {
+      "id": "compute-efficiency",
+      "name": "算力效率（營收跟著算力費用走）",
+      "description": "用公司定義的算力效率（營收 ÷ 算力與基礎設施費用）：本季營收 = 上一季的算力效率 × 本季實際的算力費用。直覺是「算力受限」：公司要先買到算力才能服務更多用量。銷貨成本也假設跟著算力費用等比例變化，所以毛利率會等於上一季。",
+      "equations": [
+        "營收_t = 算力效率_t−1 × 算力與基礎設施費用_t",
+        "算力效率 = 營收 ÷ 算力與基礎設施費用",
+        "毛利率_t = 毛利率_t−1"
+      ],
+      "metrics": {
+        "revenue": {
+          "mape": 24.57,
+          "mae": 2000.025,
+          "bias": -580.412,
+          "n": 5
+        },
+        "grossMargin": {
+          "mae": 15.507,
+          "bias": -14.26,
+          "n": 5
+        },
+        "revenueExAnte": {
+          "mape": 23.82,
+          "mae": 2028.701,
+          "bias": -1226.49,
+          "n": 5
+        },
+        "grossMarginExAnte": {
+          "mae": 15.507,
+          "bias": -14.26,
+          "n": 5
+        }
+      },
+      "selected": false,
+      "note": "測試期 2025Q3–2026Q3 共 5 季，每季只用上一季以前的財報估參數（擴張視窗）。代入當季實際的算力費用（條件式）。2025 年第三季低估 16%、2025 年第四季低估 3%、2026 年第一季低估 50%、2026 年第二季低估 33%、2026 年第三季高估 21%。算力費用大部分用在訓練、研究與免費使用者（列在研發與銷售行銷），不是服務付費客戶，算力效率在 2025 年第四季到 2026 年第二季由 0.69 倍跳到 2.08 倍、第三季又降到 1.72 倍（約 50 億美元短期承諾的高價算力，sec-fwp-ipo-site），所以單看算力費用預測不了營收。事前誤差是算力費用改用上一季的成長外推時的誤差（營收 MAPE 23.8%）。預測期的 2027 年仍用這個關係搭配情境假設（見限制）。"
+    },
+    {
+      "id": "run-rate-conversion",
+      "name": "年化營收換算（年化營收 → 當季營收，毛利率看算力）",
+      "description": "Anthropic 用「年化營收」（招股書定義：過去 28 天用量計費營收 × 13，加上當天的月訂閱費 × 12）描述營收規模。本模型把公司在各時點說過的年化營收連成一條每日路徑（相鄰兩點之間假設固定成長率），當季每天的年化營收加總 ÷ 364 就是「年化營收換算的當季營收」，再乘上訓練期的平均換算倍數；2025 年到 2026 年 8 月的說法來自新聞稿與媒體、口徑未說明，倍數同時吸收口徑差異與用量計費「過去 28 天」的落後。毛利率用上一季的「銷貨成本 ÷ 算力費用」乘上本季算力費用，得到銷貨成本，再除以預測的營收。預測期的第四季改用招股書口徑的 9 月底、10 月底數字，依定義換算（用量計費部分取 14 天後的年化營收），不再乘回測的平均倍數。",
+      "equations": [
+        "營收_t = k × Σ（當季每日年化營收）÷ 364",
+        "k = 訓練期各季的（營收 ÷ 年化營收換算值）平均",
+        "銷貨成本_t =（銷貨成本 ÷ 算力與基礎設施費用）_t−1 × 算力與基礎設施費用_t",
+        "毛利率_t = 1 − 銷貨成本_t ÷ 營收_t"
+      ],
+      "metrics": {
+        "revenue": {
+          "mape": 6.87,
+          "mae": 691.581,
+          "bias": 651.196,
+          "n": 5
+        },
+        "grossMargin": {
+          "mae": 5.086,
+          "bias": -4.307,
+          "n": 5
+        },
+        "revenueExAnte": {
+          "mape": 17.83,
+          "mae": 1822.474,
+          "bias": 1325.084,
+          "n": 5
+        },
+        "grossMarginExAnte": {
+          "mae": 7.998,
+          "bias": -5.514,
+          "n": 5
+        }
+      },
+      "selected": true,
+      "note": "測試期 2025Q3–2026Q3 共 5 季，每季只用上一季以前的財報估參數（擴張視窗）。代入在該季財報第一次公開以前公布的年化營收說法，以及當季實際的算力費用，屬於「驅動因子已知時」的誤差；2025Q1–2026Q2 的財報第一次公開是 2026-10-26 的 S-1（sec-s1），2026Q3 是 2026-11-10 的初步招股書。2026 年第三季的 9 月底與 10 月底年化營收和第三季財報同時公布（sec-fwp-eea），回測不用；該季只用到 2026 年 7 月底的 650 億美元（媒體引述知情人士，bbg-65b），之後維持不變。各季的預測：2025 年第三季低估 2%、2025 年第四季高估 8%、2026 年第一季低估 2%、2026 年第二季高估 14%、2026 年第三季高估 10%。換算倍數 k 在各測試季依序為 1.188、1.196、1.174、1.178、1.154：2025 年的說法多是「逾」「約」的整數、計算方式未說明，已認列營收比換算值高約 11–26%；2026 年的說法接近招股書口徑後，第二、三季只高約 4%、2%，所以用平均倍數在最後兩季高估。選擇規則：在 4 個逐季模型中取「營收 MAPE（%）＋ 毛利率 MAE（個百分點）」最小者，較簡單的模型與最低分相差不到 2 時改選較簡單者：本模型 12.0、算力效率 40.1、對數線性趨勢 36.6、天真模型 60.1；四個模型都改用事前版本計分時排名不變（本模型 25.8、對數線性趨勢 36.6、算力效率 39.3、天真模型 60.1）。天真模型與本模型逐季營收絕對百分比誤差的配對 t 值約 6.0（自由度 4），超過 5% 顯著水準所需的 2.78，但樣本只有 5 季；不過本模型是條件式的（年化營收幾乎就是營收本身的年化），天真與趨勢模型則完全事前，兩者不能直接比較。公平的比較是事前版本：營收 MAPE 17.8%，天真模型 44.6%、對數線性趨勢 26.1%。毛利率誤差主要來自 2025 年第三季（毛利率由 14.4% 升到 43.8%，銷貨成本 ÷ 算力費用由 48.5% 降到 38.0%，模型用上一季的比例）。營業損益在測試期介於 −30.9 億美元與 9.7 億美元之間，接近零時百分比誤差沒有意義，回測只評估營收與毛利率。本模型的「事前」誤差就是事前版本的誤差。預測期的第四季不用回測的平均倍數，改依招股書定義換算（見參數）：只有 2026 年第三季一季可以對照，依定義換算的倍數 0.997，但用到和財報同時公布的 9 月底數字，只是事後對照、不是回測。"
+    },
+    {
+      "id": "run-rate-ex-ante",
+      "name": "年化營收換算（事前版本：只用季初的年化營收）",
+      "description": "與選定模型相同，但不知道季中與季末的年化營收：本季營收 = 季初年化營收 × 天數 ÷ 364 × 訓練期的平均倍數（倍數同時包含季內成長與口徑差異）；算力費用延續上一季的成長率。用來衡量接近事前預測時的誤差。",
+      "equations": [
+        "營收_t = k_s × 季初年化營收_t × 天數_t ÷ 364",
+        "k_s = 訓練期各季的（營收 ÷ 季初年化營收換算值）平均",
+        "算力費用_t = 算力費用_t−1 ×（算力費用_t−1 ÷ 算力費用_t−2）；毛利率同選定模型"
+      ],
+      "metrics": {
+        "revenue": {
+          "mape": 17.83,
+          "mae": 1822.474,
+          "bias": 1325.084,
+          "n": 5
+        },
+        "grossMargin": {
+          "mae": 7.998,
+          "bias": -5.514,
+          "n": 5
+        }
+      },
+      "selected": false,
+      "note": "不參與模型選擇：參數與選定模型的做法相同，只是不用季中與季末的資訊。營收 MAPE 17.8%、毛利率 MAE 8.0 個百分點；2025 年第三季低估 1%、2025 年第四季高估 17%、2026 年第一季低估 26%、2026 年第二季高估 2%、2026 年第三季高估 43%。這仍不是嚴格的事前預測：公司在 2025–2026 年只是偶爾在新聞稿提到年化營收，季初的值要用前後兩次說法內插，其中 2025 年第三季用到 2025 年 8 月底的 50 億美元（季初後 62 天）、2025 年第四季用到 2025 年底的 90 億美元（就是該季季末）、2026 年第二季用到 2026-04-06 的 300 億美元（季初後 5 天）、2026 年第三季用到 2026 年 7 月底的 650 億美元（季初後 31 天）。若再要求季初的值只用季初以前已經發布的說法（不用之後的說法內插，最後一個說法之後維持不變）：2025 年第三季開始前沒有任何已發布的說法（最早的「2025 年初」與「8 月」數字在 2025-09-02 才公布），無法預測；其餘 4 季營收 MAPE 32.0%（2025 年第四季高估 1%、2026 年第一季低估 57%、2026 年第二季低估 51%、2026 年第三季高估 18%），同 4 季的天真模型 45.0%。公司在這段期間公布年化營收的次數太少，真正即時的預測做不到上面的事前誤差。天真模型與本版本逐季營收絕對百分比誤差的配對 t 值約 2.3（自由度 4），未達 5% 顯著水準所需的 2.78；對數線性趨勢與本版本逐季營收絕對百分比誤差的配對 t 值約 0.9（自由度 4），未達 5% 顯著水準所需的 2.78。"
+    }
+  ],
+  "parameters": [
+    {
+      "name": "換算倍數 k（全期 7 季平均）",
+      "value": 1.135,
+      "unit": "倍",
+      "note": "已認列營收 ÷ 年化營收換算值，各季依序為 2025Q1 1.112、2025Q2 1.264、2025Q3 1.210、2025Q4 1.110、2026Q1 1.193、2026Q2 1.036、2026Q3 1.023；標準誤 0.034。逐季下降，2025 年的新聞稿數字多是「逾」的整數。"
+    },
+    {
+      "name": "換算倍數 k（最後一個測試季使用，2025Q1–2026Q2 平均）",
+      "value": 1.154,
+      "unit": "倍"
+    },
+    {
+      "name": "2026Q3 實測換算倍數（9 月底用招股書數字）",
+      "value": 1.023,
+      "unit": "倍",
+      "note": "沒有用量計費的 14 天落後調整；7–8 月的值仍由 5 月的新聞稿與 7 月底的媒體報導內插。"
+    },
+    {
+      "name": "2026Q3 依定義換算的倍數（用量計費部分落後 14 天）",
+      "value": 0.997,
+      "unit": "倍",
+      "note": "已認列營收 ÷ 依招股書定義換算的營收（用量計費部分取 14 天後的年化營收，用各季的用量計費占比），各季依序為 2025Q1 1.030、2025Q2 1.167、2025Q3 1.132、2025Q4 1.044、2026Q1 1.021、2026Q2 0.962、2026Q3 0.997。只有 2026 年第三季的季末有招股書口徑的年化營收，而且 9 月底的數字和第三季財報同時公布，這是事後對照、不是回測；更早的說法口徑未說明，倍數只能參考。"
+    },
+    {
+      "name": "預測期的換算（依招股書定義；基準情境相當的倍數）",
+      "value": 1.039,
+      "unit": "倍",
+      "note": "9 月底與 10 月底的年化營收都是招股書口徑（過去 28 天用量計費營收 × 13 ＋ 當天的月訂閱費 × 12，sec-fwp-ipo-site）。用量計費（2026 年第三季占營收 78%，sec-fwp-japan）的部分是過去 28 天的平均，反映約 14 天前的營收，所以每天的用量營收取 14 天後的年化營收 ÷ 364、訂閱營收取當天 ÷ 364，不另乘倍數（1）；年化營收成長時，這相當於 Σ 每日年化營收 ÷ 364 的 1.039 倍（保守 0.995、樂觀 1.048）。12 月下旬的用量營收要看 1 月上旬的年化營收，沿用各情境 11–12 月的月增幅。不做這項調整時，2026 年第四季基準營收是 215 億美元；改用回測的全期平均 1.14（不做落後調整）則是 244 億美元（見敏感度）。"
+    },
+    {
+      "name": "事前版本的季初倍數 k_s（全期 7 季平均）",
+      "value": 1.608,
+      "unit": "倍",
+      "note": "營收 ÷（季初年化營收 × 天數 ÷ 364），標準誤 0.112；包含季內成長，季間差異很大。"
+    },
+    {
+      "name": "對數線性趨勢的平均季成長率（最近四季）",
+      "value": 106.4,
+      "unit": "%",
+      "note": "2025Q4–2026Q3 的 ln 營收對季度迴歸，斜率 0.725（標準誤 0.083，t 值 8.8，自由度 2）；只作對照，預測不使用。"
+    },
+    {
+      "name": "2026-09-30 年化營收",
+      "value": 71000,
+      "unit": "百萬美元",
+      "note": "招股書稱 10 月底比 9 月底增加 100 億美元，以 810 億減 100 億推得（sec-fwp-eea）。"
+    },
+    {
+      "name": "2026-10-31 年化營收",
+      "value": 81000,
+      "unit": "百萬美元",
+      "note": "約 810 億美元（未經查核，sec-fwp-eea）；第四季的第一個月因此已大致可知。"
+    },
+    {
+      "name": "10 月的年化營收月增幅",
+      "value": 13.8,
+      "unit": "%",
+      "note": "樂觀情境的 11–12 月沿用。"
+    },
+    {
+      "name": "2026 年 5 月至 10 月底的平均月增幅",
+      "value": 10.2,
+      "unit": "%",
+      "note": "5 月的 470 億美元（時點假設為 5 月中，an-series-h）到 10 月底的 810 億美元；基準情境的 11–12 月沿用。"
+    },
+    {
+      "name": "未來 12 個月的算力與基礎設施承諾",
+      "value": 70700,
+      "unit": "百萬美元",
+      "note": "招股書：截至 2026-09-30 的承諾總額約 9,009 億美元，其中未來 12 個月約 707 億、2030 年底前約 4,516 億（sec-fwp-eea）。模型把 2026Q4–2027Q3 的算力費用合計設為 707 億美元。"
+    },
+    {
+      "name": "算力費用的季成長率（2026Q4 起）",
+      "value": 24.8,
+      "unit": "%",
+      "note": "99 億美元 × （g + g² + g³ + g⁴）= 707 億美元的解；2027 年合計 882 億美元，高於合約義務表 2027 年的 292 億美元（只含已開始、不可取消的最低付款）。2027Q4 為 298 億美元，2030 年底前的承諾平均每季約 293 億美元（扣除未來 12 個月後分攤到其餘 13 季）。"
+    },
+    {
+      "name": "算力效率（2026 年第三季）",
+      "value": 1.72,
+      "unit": "倍",
+      "note": "基準情境 2027 年第四季的目標；2026 年第一季 1.40 倍為保守、2026 年第二季 2.08 倍為樂觀（最近三季的最低與最高）。"
+    },
+    {
+      "name": "銷貨成本 ÷ 算力費用（2026 年第三季）",
+      "value": 24.7,
+      "unit": "%",
+      "note": "基準情境沿用；保守用最近四季平均 28.3%、樂觀用最近四季最低 23.3%。"
+    },
+    {
+      "name": "算力以外的營業費用 ÷ 營收（2026 年第三季）",
+      "value": 33.6,
+      "unit": "%",
+      "note": "人事 17.1 億美元、銷售行銷與通路合作 23.6 億美元、其他營運與管理 35.9 億美元（扣除非現金捐贈 19.6 億美元）÷ 營收；三個情境相同。"
+    },
+    {
+      "name": "非現金捐贈（每季，最近四季平均）",
+      "value": 657,
+      "unit": "百萬美元",
+      "note": "2025Q4 5.4 億美元、2026Q1 1.3 億美元、2026Q2 0、2026Q3 19.6 億美元 的平均；員工捐款配捐計畫以 N 類普通股支付，時點與金額無法預測，預測期每季以平均數計入營業損益。"
+    }
+  ],
+  "derived": [
+    {
+      "id": "run-rate-quarter-end",
+      "name": "季末年化營收（由公司說法內插）",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 1815,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 3316,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 5778,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 9000,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 27919,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 57141,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 71000,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 98471,
+          "status": "forecast"
+        }
+      ],
+      "note": "公司說法的時點：2025 年初 10 億美元、2025 年 8 月底 50 億美元、2025 年底 90 億美元、2026-02-12 140 億美元、2026-04-06 300 億美元、2026 年 5 月中 470 億美元、2026 年 7 月底 650 億美元、2026 年 9 月底 710 億美元、2026 年 10 月底 810 億美元（「8 月逾 50 億美元」假設在 8 月底，5 月 28 日新聞稿的「當月稍早」假設在 5 月中，都是本模型的假設）；相鄰兩點之間以固定成長率內插，本站推算。2026 年 9 月底以前的說法來自新聞稿與媒體，口徑未說明；7 月底為 Bloomberg 引述知情人士（bbg-65b）。2026Q4 為基準情境的年底值。"
+    },
+    {
+      "id": "run-rate-implied-revenue",
+      "name": "年化營收換算的當季營收（Σ 每日年化營收 ÷ 364）",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 338,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 623,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 1142,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 1838,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 3965,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 11157,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 16582,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 21454,
+          "status": "forecast"
+        }
+      ],
+      "note": "用上面的每日年化營收路徑加總後除以 364（招股書定義是 28 天 × 13 ≈ 364 天），本站推算；和已認列營收對照，就是選定模型的換算倍數。2026Q4 用 9 月底、10 月底的招股書數字加上基準情境的 11–12 月路徑，換算方式和歷史相同（沒有用量計費的 14 天落後調整）。"
+    },
+    {
+      "id": "revenue-to-run-rate",
+      "name": "已認列營收 ÷ 年化營收換算值（換算倍數）",
+      "unit": "倍",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 1.112,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 1.264,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 1.21,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 1.11,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 1.193,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 1.036,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 1.023,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 1.039,
+          "status": "forecast"
+        }
+      ],
+      "note": "本站計算（用全部年化營收說法，含 9 月底的招股書數字；回測的 2026 年第三季不用 9 月底的數字，倍數為 1.154 的預測值對 1.054 的實際值）。全期平均 1.135（標準誤 0.034；倍數逐季下降，不是獨立樣本，標準誤偏小）。大於 1 表示已認列營收比年化營收換算值高：2025 年的說法多是「逾」的整數；用量計費的年化營收是過去 28 天的平均，成長時也會落後於當天的營收。2026 年第三季的季末值用招股書口徑後倍數降到 1.023，再依定義把用量計費部分落後 14 天計算則是 0.997。2026Q4 為基準情境依定義換算的營收 ÷ 本表的換算值（相當於倍數 1.039，不是另外乘上的倍數）。"
+    },
+    {
+      "id": "run-rate-monthly-growth",
+      "name": "年化營收的平均月增幅（相鄰兩次說法之間）",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2025-08",
+          "value": 22.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2025-12",
+          "value": 15.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2026-02",
+          "value": 37.7,
+          "status": "estimate"
+        },
+        {
+          "period": "2026-04",
+          "value": 54.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2026-05",
+          "value": 42,
+          "status": "estimate"
+        },
+        {
+          "period": "2026-07",
+          "value": 13.5,
+          "status": "estimate"
+        },
+        {
+          "period": "2026-09",
+          "value": 4.5,
+          "status": "estimate"
+        },
+        {
+          "period": "2026-10",
+          "value": 13.8,
+          "status": "estimate"
+        }
+      ],
+      "note": "（本次 ÷ 上次說法）^（30.44 ÷ 相隔天數）− 1，標在本次說法的月份，本站計算；7 月與 9 月的值用到 Bloomberg 的 7 月底估計（bbg-65b）。說法相隔 1–8 個月，月增幅只是平均值，看不出月內的波動。"
+    },
+    {
+      "id": "compute-efficiency",
+      "name": "算力效率（營收 ÷ 算力與基礎設施費用）",
+      "unit": "倍",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 0.4,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 0.57,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 0.68,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 0.69,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 1.4,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 2.08,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 1.72,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 1.81,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 1.79,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 1.76,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 1.74,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 1.72,
+          "status": "forecast"
+        }
+      ],
+      "note": "公司定義的 Compute Efficiency，本站以招股書金額計算到小數兩位（sec-fwp-ipo-site 公布的是一位或兩位的約數）。2026Q4 為基準情境的第四季營收 ÷ 算力費用，2027 年逐季移到 2026 年第三季的 1.72 倍（保守情境移到 2026 年第一季的 1.40 倍、樂觀情境移到 2026 年第二季的 2.08 倍）。"
+    },
+    {
+      "id": "cogs-to-compute",
+      "name": "銷貨成本 ÷ 算力與基礎設施費用",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 36.5,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 48.5,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 38,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 33.2,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 32,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 23.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 24.7,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 24.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 24.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 24.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 24.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 24.7,
+          "status": "forecast"
+        }
+      ],
+      "note": "功能別銷貨成本（幾乎全是服務付費客戶的算力，另含少量人事與分攤費用，sec-fwp-japan）÷ 依性質分類的算力與基礎設施費用，本站計算；其餘算力列在研發（訓練、研究、內部使用）與銷售行銷（免費使用者）。選定模型用上一季的比例推算本季的銷貨成本。預測期為基準情境。"
+    },
+    {
+      "id": "non-serving-compute-to-revenue",
+      "name": "銷貨成本以外的算力費用 ÷ 營收",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 159.3,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 91,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 91.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 96.5,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 48.7,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 36.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 43.8,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 41.6,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 42.1,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 42.7,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 43.2,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 43.8,
+          "status": "forecast"
+        }
+      ],
+      "note": "（算力與基礎設施費用 − 銷貨成本）÷ 營收，本站計算；銷貨成本另含少量人事與分攤費用，所以這是訓練、研究與免費使用算力的下限。營業損益主要由這一項決定：2026 年第三季占營收 43.8%，高於算力以外的營業費用合計（33.6%，不含非現金捐贈）。預測期為基準情境。"
+    },
+    {
+      "id": "gross-margin-bridge-efficiency",
+      "name": "毛利率季變化：算力效率的影響",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "2025Q2",
+          "value": 27.21,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 13.82,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 1.43,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 24.14,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 7.51,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": -2.35,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 0.73,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": -0.17,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": -0.18,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": -0.18,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": -0.19,
+          "status": "forecast"
+        }
+      ],
+      "note": "上季（銷貨成本 ÷ 算力費用）×（1 ÷ 上季算力效率 − 1 ÷ 本季算力效率），本站計算；與「銷貨成本占算力比例的影響」相加等於毛利率的季變化。2026 年第一、二季毛利率大升主要來自這一項（+24.1 個百分點、+7.5 個百分點）：營收成長遠快於算力費用；第三季算力效率下降（短期承諾的高價算力）使毛利率 −2.4 個百分點。2026Q4 起為基準情境。"
+    },
+    {
+      "id": "gross-margin-bridge-cogs-share",
+      "name": "毛利率季變化：銷貨成本占算力比例的影響",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "2025Q2",
+          "value": -21.09,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 15.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 6.91,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 0.86,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 4.16,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": -0.77,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 0,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 0,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 0,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 0,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 0,
+          "status": "forecast"
+        }
+      ],
+      "note": "（上季 − 本季的銷貨成本 ÷ 算力費用）÷ 本季算力效率，本站計算。2026 年第二季這一項 +4.2 個百分點，第三季 −0.8 個百分點。選定模型的毛利率用上一季的比例，所以這部分要落後一季才反映。"
+    },
+    {
+      "id": "compute-expense-path",
+      "name": "算力與基礎設施費用",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 944,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": 1390,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 2047,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 2945,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 3387,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 5558,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 9863,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q4",
+          "value": 12305,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 15351,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 19151,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 23893,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 29808,
+          "status": "forecast"
+        }
+      ],
+      "note": "2026Q3 以前為招股書數字；2026Q4–2027Q3 依招股書「未來 12 個月約 707 億美元」的承諾（sec-fwp-eea）以每季 +24.8% 等比成長分配，2027Q4 延續同一成長率（三個情境相同）。付款承諾不等於費用：自建資料中心與租賃會先列資本支出或使用權資產。"
+    },
+    {
+      "id": "non-compute-opex-to-revenue",
+      "name": "算力以外的營業費用 ÷ 營收（不含非現金捐贈與 Bartz 和解）",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": 97.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 75.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 66.9,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 68.1,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 61,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 43.5,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 33.6,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 33.6,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 33.6,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 33.6,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 33.6,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 33.6,
+          "status": "forecast"
+        }
+      ],
+      "note": "依性質分類的人事、銷售行銷與通路合作、其他營運與管理費用，扣除非現金捐贈，÷ 營收，本站計算；人事費用含股份基礎給付。預測期沿用 2026 年第三季的比例。"
+    },
+    {
+      "id": "adjusted-operating-margin",
+      "name": "調整後營業利益率（公司定義的非 GAAP 指標）",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2025Q1",
+          "value": -220.7,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": -129.5,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": -92.9,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": -84.4,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": -13,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 19.3,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 14.5,
+          "status": "actual"
+        }
+      ],
+      "note": "調整後營業利益 ÷ 營收；調整後營業利益是公司定義的非 GAAP 指標，營業損益加回股份基礎給付、非現金捐贈與 Bartz 和解（sec-fwp-eea）。模型預測的是 GAAP 營業損益，這裡只列歷史供對照。"
+    },
+    {
+      "id": "price-cut-offset-share",
+      "name": "季增營收中被降價抵銷的金額 ÷ 上一季營收",
+      "unit": "%",
+      "points": [
+        {
+          "period": "2025Q4",
+          "value": 5.1,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 5.2,
+          "status": "estimate"
+        }
+      ],
+      "note": "招股書季度趨勢說明的約數（2025 年第四季約 0.7 億美元、2026 年第三季約 6 億美元，sec-fwp-eea）÷ 上一季營收，本站計算；兩季的營收仍比前一季成長。新模型版本降價（例如 Opus 5.5 比 Opus 5 低 20%、Fable 5.2 比 Fable 5.1 低 20%）會壓低每 token 營收，用量增加才能抵銷。"
+    }
+  ],
+  "backtest": [
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 1382,
+      "predicted": 1357,
+      "candidate": "run-rate-conversion",
+      "benchmark": 787,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 2040,
+      "predicted": 2197,
+      "candidate": "run-rate-conversion",
+      "benchmark": 1382,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 4731,
+      "predicted": 4655,
+      "candidate": "run-rate-conversion",
+      "benchmark": 2040,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 11555,
+      "predicted": 13143,
+      "candidate": "run-rate-conversion",
+      "benchmark": 4731,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 16956,
+      "predicted": 18569,
+      "candidate": "run-rate-conversion",
+      "benchmark": 11555,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 43.78,
+      "predicted": 26.83,
+      "candidate": "run-rate-conversion",
+      "benchmark": 14.36,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 52.11,
+      "predicted": 49.11,
+      "candidate": "run-rate-conversion",
+      "benchmark": 43.78,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 77.11,
+      "predicted": 75.86,
+      "candidate": "run-rate-conversion",
+      "benchmark": 52.11,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 88.78,
+      "predicted": 86.48,
+      "candidate": "run-rate-conversion",
+      "benchmark": 77.11,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 85.66,
+      "predicted": 87.6,
+      "candidate": "run-rate-conversion",
+      "benchmark": 88.78,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 1382,
+      "predicted": 1364,
+      "candidate": "run-rate-ex-ante",
+      "benchmark": 787,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 2040,
+      "predicted": 2387,
+      "candidate": "run-rate-ex-ante",
+      "benchmark": 1382,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 4731,
+      "predicted": 3505,
+      "candidate": "run-rate-ex-ante",
+      "benchmark": 2040,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 11555,
+      "predicted": 11764,
+      "candidate": "run-rate-ex-ante",
+      "benchmark": 4731,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 16956,
+      "predicted": 24269,
+      "candidate": "run-rate-ex-ante",
+      "benchmark": 11555,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 43.78,
+      "predicted": 27.25,
+      "candidate": "run-rate-ex-ante",
+      "benchmark": 14.36,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 52.11,
+      "predicted": 52.06,
+      "candidate": "run-rate-ex-ante",
+      "benchmark": 43.78,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 77.11,
+      "predicted": 59.9,
+      "candidate": "run-rate-ex-ante",
+      "benchmark": 52.11,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 88.78,
+      "predicted": 89.41,
+      "candidate": "run-rate-ex-ante",
+      "benchmark": 77.11,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 85.66,
+      "predicted": 91.23,
+      "candidate": "run-rate-ex-ante",
+      "benchmark": 88.78,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 1382,
+      "predicted": 1159,
+      "candidate": "compute-efficiency",
+      "benchmark": 787,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 2040,
+      "predicted": 1988,
+      "candidate": "compute-efficiency",
+      "benchmark": 1382,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 4731,
+      "predicted": 2346,
+      "candidate": "compute-efficiency",
+      "benchmark": 2040,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 11555,
+      "predicted": 7763,
+      "candidate": "compute-efficiency",
+      "benchmark": 4731,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 16956,
+      "predicted": 20505,
+      "candidate": "compute-efficiency",
+      "benchmark": 11555,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 43.78,
+      "predicted": 14.36,
+      "candidate": "compute-efficiency",
+      "benchmark": 14.36,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 52.11,
+      "predicted": 43.78,
+      "candidate": "compute-efficiency",
+      "benchmark": 43.78,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 77.11,
+      "predicted": 52.11,
+      "candidate": "compute-efficiency",
+      "benchmark": 52.11,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 88.78,
+      "predicted": 77.11,
+      "candidate": "compute-efficiency",
+      "benchmark": 77.11,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 85.66,
+      "predicted": 88.78,
+      "candidate": "compute-efficiency",
+      "benchmark": 88.78,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 1382,
+      "predicted": 1647,
+      "candidate": "log-linear-trend",
+      "benchmark": 787,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 2040,
+      "predicted": 2728,
+      "candidate": "log-linear-trend",
+      "benchmark": 1382,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 4731,
+      "predicted": 3911,
+      "candidate": "log-linear-trend",
+      "benchmark": 2040,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 11555,
+      "predicted": 7617,
+      "candidate": "log-linear-trend",
+      "benchmark": 4731,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 16956,
+      "predicted": 21379,
+      "candidate": "log-linear-trend",
+      "benchmark": 11555,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 43.78,
+      "predicted": 20.06,
+      "candidate": "log-linear-trend",
+      "benchmark": 14.36,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 52.11,
+      "predicted": 53.33,
+      "candidate": "log-linear-trend",
+      "benchmark": 43.78,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 77.11,
+      "predicted": 62.51,
+      "candidate": "log-linear-trend",
+      "benchmark": 52.11,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 88.78,
+      "predicted": 82.88,
+      "candidate": "log-linear-trend",
+      "benchmark": 77.11,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 85.66,
+      "predicted": 92.84,
+      "candidate": "log-linear-trend",
+      "benchmark": 88.78,
+      "benchmarkLabel": "天真模型（上一季不變）"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "revenue",
+      "actual": 1382,
+      "predicted": 787,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "revenue",
+      "actual": 2040,
+      "predicted": 1382,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "revenue",
+      "actual": 4731,
+      "predicted": 2040,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "revenue",
+      "actual": 11555,
+      "predicted": 4731,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "revenue",
+      "actual": 16956,
+      "predicted": 11555,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q3",
+      "metric": "grossMargin",
+      "actual": 43.78,
+      "predicted": 14.36,
+      "candidate": "naive"
+    },
+    {
+      "period": "2025Q4",
+      "metric": "grossMargin",
+      "actual": 52.11,
+      "predicted": 43.78,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q1",
+      "metric": "grossMargin",
+      "actual": 77.11,
+      "predicted": 52.11,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q2",
+      "metric": "grossMargin",
+      "actual": 88.78,
+      "predicted": 77.11,
+      "candidate": "naive"
+    },
+    {
+      "period": "2026Q3",
+      "metric": "grossMargin",
+      "actual": 85.66,
+      "predicted": 88.78,
+      "candidate": "naive"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "bear",
+      "name": "保守",
+      "assumptions": [
+        {
+          "name": "2026 年第四季的年化營收",
+          "value": "9 月底 710 億美元、10 月底 810 億美元（招股書，sec-fwp-eea）；10 月的增加沒有維持：11–12 月年化營收逐步回落，年底回到 9 月底的 710 億美元。用量計費占第三季營收 78%（sec-fwp-japan），年化營收會隨用量波動；招股書也指出第二季到第三季約 6 億美元的成長被降價抵銷（sec-fwp-eea）",
+          "src": "sec-fwp-eea"
+        },
+        {
+          "name": "年化營收換算成營收",
+          "value": "依招股書定義，不另乘倍數：用量計費（第三季占營收 78%，sec-fwp-japan）的年化營收是過去 28 天 × 13，反映約 14 天前的營收，所以每天的用量營收取 14 天後的年化營收 ÷ 364、訂閱營收取當天 ÷ 364；本情境相當於 Σ 每日年化營收 ÷ 364 的 0.995 倍（2026 年第三季依同一方式為 1.00，不做落後調整為 1.02）",
+          "src": "sec-fwp-ipo-site"
+        },
+        {
+          "name": "算力與基礎設施費用",
+          "value": "2026Q4–2027Q3 合計 707 億美元（招股書揭露的未來 12 個月承諾），每季 +24.8%；2027Q4 延續，2027 年合計 882 億美元（三個情境相同：算力在使用前數月到數年就簽約承諾，近期大多是固定費用）",
+          "src": "sec-fwp-eea"
+        },
+        {
+          "name": "2027 年的算力效率（營收 ÷ 算力費用）",
+          "value": "由第四季的 1.55 倍逐季移到 1.40 倍（2026 年第一季的實際值）：算力到位但用量或價格跟不上（降價、競爭、出口限制或客戶流失）",
+          "src": "sec-fwp-ipo-site"
+        },
+        {
+          "name": "銷貨成本 ÷ 算力費用",
+          "value": "最近四季平均 28.3%（短期承諾的高價算力比重提高）",
+          "src": "sec-fwp-japan"
+        },
+        {
+          "name": "算力以外的營業費用與捐贈",
+          "value": "營收的 33.6%（2026 年第三季，不含非現金捐贈）；非現金捐贈每季 6.6 億美元（最近四季平均）",
+          "src": "sec-fwp-eea"
+        },
+        {
+          "name": "不預測的項目",
+          "value": "淨利與 EPS（淨損主要來自可轉換票據等金融工具的公允價值變動，上市後的股數與轉換條件要等最終招股書）；上市可能帶來的股份基礎給付變化",
+          "src": "sec-fwp-eea"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "2026Q4",
+          "revenue": 19084,
+          "grossMargin": 81.76,
+          "operatingIncome": -293,
+          "known": [],
+          "note": "算力費用 123 億美元、算力效率 1.55 倍、銷貨成本 35 億美元；算力以外的營業費用 64 億美元。營收由年化營收路徑依招股書定義換算（10 月已知，11–12 月為情境），季末年化營收 710 億美元；季增 +13%。"
+        },
+        {
+          "period": "2027Q1",
+          "revenue": 23217,
+          "grossMargin": 81.3,
+          "operatingIncome": -595,
+          "known": [],
+          "note": "算力費用 154 億美元、算力效率 1.51 倍、銷貨成本 43 億美元；算力以外的營業費用 78 億美元。"
+        },
+        {
+          "period": "2027Q2",
+          "revenue": 28227,
+          "grossMargin": 80.81,
+          "operatingIncome": -1070,
+          "known": [],
+          "note": "算力費用 192 億美元、算力效率 1.47 倍、銷貨成本 54 億美元；算力以外的營業費用 95 億美元。"
+        },
+        {
+          "period": "2027Q3",
+          "revenue": 34295,
+          "grossMargin": 80.29,
+          "operatingIncome": -1784,
+          "known": [],
+          "note": "算力費用 239 億美元、算力效率 1.44 倍、銷貨成本 68 億美元；算力以外的營業費用 115 億美元。"
+        },
+        {
+          "period": "2027Q4",
+          "revenue": 41636,
+          "grossMargin": 79.75,
+          "operatingIncome": -2825,
+          "known": [],
+          "note": "算力費用 298 億美元、算力效率 1.40 倍、銷貨成本 84 億美元；算力以外的營業費用 140 億美元。"
+        },
+        {
+          "period": "2026",
+          "revenue": 52326,
+          "grossMargin": 84.15,
+          "operatingIncome": -1553,
+          "known": [],
+          "note": "第一至三季為實際值（營收 332 億美元、營業損失 13 億美元），第四季為模型值；年增 +1,041%。"
+        },
+        {
+          "period": "2027",
+          "revenue": 127375,
+          "grossMargin": 80.41,
+          "operatingIncome": -6274,
+          "known": [],
+          "note": "四季加總；毛利率為全年毛利 ÷ 全年營收。算力費用 882 億美元，營收是算力費用的 1.44 倍；年增 +143%。"
+        }
+      ]
+    },
+    {
+      "id": "base",
+      "name": "基準",
+      "assumptions": [
+        {
+          "name": "2026 年第四季的年化營收",
+          "value": "9 月底 710 億美元、10 月底 810 億美元（招股書，sec-fwp-eea）；11–12 月每月 +10.2%，等於 2026 年 5 月的 470 億美元（an-series-h）到 10 月底的 810 億美元（sec-fwp-eea）之間的平均月增幅（5 月的新聞稿口徑未說明、時點假設為 5 月中），年底約 985 億美元",
+          "src": "sec-fwp-eea"
+        },
+        {
+          "name": "年化營收換算成營收",
+          "value": "依招股書定義，不另乘倍數：用量計費（第三季占營收 78%，sec-fwp-japan）的年化營收是過去 28 天 × 13，反映約 14 天前的營收，所以每天的用量營收取 14 天後的年化營收 ÷ 364、訂閱營收取當天 ÷ 364；本情境相當於 Σ 每日年化營收 ÷ 364 的 1.039 倍（2026 年第三季依同一方式為 1.00，不做落後調整為 1.02）",
+          "src": "sec-fwp-ipo-site"
+        },
+        {
+          "name": "算力與基礎設施費用",
+          "value": "2026Q4–2027Q3 合計 707 億美元（招股書揭露的未來 12 個月承諾），每季 +24.8%；2027Q4 延續，2027 年合計 882 億美元（三個情境相同：算力在使用前數月到數年就簽約承諾，近期大多是固定費用）",
+          "src": "sec-fwp-eea"
+        },
+        {
+          "name": "2027 年的算力效率（營收 ÷ 算力費用）",
+          "value": "由第四季的 1.81 倍逐季移到 1.72 倍（2026 年第三季的實際值）",
+          "src": "sec-fwp-ipo-site"
+        },
+        {
+          "name": "銷貨成本 ÷ 算力費用",
+          "value": "維持 2026 年第三季的 24.7%",
+          "src": "sec-fwp-japan"
+        },
+        {
+          "name": "算力以外的營業費用與捐贈",
+          "value": "營收的 33.6%（2026 年第三季，不含非現金捐贈）；非現金捐贈每季 6.6 億美元（最近四季平均）",
+          "src": "sec-fwp-eea"
+        },
+        {
+          "name": "不預測的項目",
+          "value": "淨利與 EPS（淨損主要來自可轉換票據等金融工具的公允價值變動，上市後的股數與轉換條件要等最終招股書）；上市可能帶來的股份基礎給付變化",
+          "src": "sec-fwp-eea"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "2026Q4",
+          "revenue": 22281,
+          "grossMargin": 86.38,
+          "operatingIncome": 1830,
+          "known": [],
+          "note": "算力費用 123 億美元、算力效率 1.81 倍、銷貨成本 30 億美元；算力以外的營業費用 75 億美元。營收由年化營收路徑依招股書定義換算（10 月已知，11–12 月為情境），季末年化營收 985 億美元；季增 +31%。"
+        },
+        {
+          "period": "2027Q1",
+          "revenue": 27446,
+          "grossMargin": 86.21,
+          "operatingIncome": 2212,
+          "known": [],
+          "note": "算力費用 154 億美元、算力效率 1.79 倍、銷貨成本 38 億美元；算力以外的營業費用 92 億美元。"
+        },
+        {
+          "period": "2027Q2",
+          "revenue": 33802,
+          "grossMargin": 86.03,
+          "operatingIncome": 2631,
+          "known": [],
+          "note": "算力費用 192 億美元、算力效率 1.76 倍、銷貨成本 47 億美元；算力以外的營業費用 114 億美元。"
+        },
+        {
+          "period": "2027Q3",
+          "revenue": 41623,
+          "grossMargin": 85.85,
+          "operatingIncome": 3081,
+          "known": [],
+          "note": "算力費用 239 億美元、算力效率 1.74 倍、銷貨成本 59 億美元；算力以外的營業費用 140 億美元。"
+        },
+        {
+          "period": "2027Q4",
+          "revenue": 51244,
+          "grossMargin": 85.66,
+          "operatingIncome": 3553,
+          "known": [],
+          "note": "算力費用 298 億美元、算力效率 1.72 倍、銷貨成本 73 億美元；算力以外的營業費用 172 億美元。"
+        },
+        {
+          "period": "2026",
+          "revenue": 55523,
+          "grossMargin": 85.87,
+          "operatingIncome": 570,
+          "known": [],
+          "note": "第一至三季為實際值（營收 332 億美元、營業損失 13 億美元），第四季為模型值；年增 +1,111%。"
+        },
+        {
+          "period": "2027",
+          "revenue": 154114,
+          "grossMargin": 85.89,
+          "operatingIncome": 11477,
+          "known": [],
+          "note": "四季加總；毛利率為全年毛利 ÷ 全年營收。算力費用 882 億美元，營收是算力費用的 1.75 倍；年增 +178%。"
+        }
+      ]
+    },
+    {
+      "id": "bull",
+      "name": "樂觀",
+      "assumptions": [
+        {
+          "name": "2026 年第四季的年化營收",
+          "value": "9 月底 710 億美元、10 月底 810 億美元（招股書，sec-fwp-eea）；10 月的增幅延續：11–12 月每月 +13.8%（9 月底 710 億美元 → 10 月底 810 億美元，sec-fwp-eea），年底約 1,050 億美元；公司在使用前數月到數年就簽下算力承諾（sec-fwp-eea），第四季可用的算力大致已定，更快的成長需要更多短期算力",
+          "src": "sec-fwp-eea"
+        },
+        {
+          "name": "年化營收換算成營收",
+          "value": "依招股書定義，不另乘倍數：用量計費（第三季占營收 78%，sec-fwp-japan）的年化營收是過去 28 天 × 13，反映約 14 天前的營收，所以每天的用量營收取 14 天後的年化營收 ÷ 364、訂閱營收取當天 ÷ 364；本情境相當於 Σ 每日年化營收 ÷ 364 的 1.048 倍（2026 年第三季依同一方式為 1.00，不做落後調整為 1.02）",
+          "src": "sec-fwp-ipo-site"
+        },
+        {
+          "name": "算力與基礎設施費用",
+          "value": "2026Q4–2027Q3 合計 707 億美元（招股書揭露的未來 12 個月承諾），每季 +24.8%；2027Q4 延續，2027 年合計 882 億美元（三個情境相同：算力在使用前數月到數年就簽約承諾，近期大多是固定費用）",
+          "src": "sec-fwp-eea"
+        },
+        {
+          "name": "2027 年的算力效率（營收 ÷ 算力費用）",
+          "value": "由第四季的 1.87 倍逐季移到 2.08 倍（2026 年第二季的實際值）：長期合約算力取代短期承諾的高價算力，營收成長快於算力",
+          "src": "sec-fwp-ipo-site"
+        },
+        {
+          "name": "銷貨成本 ÷ 算力費用",
+          "value": "最近四季最低的 23.3%（2026 年第二季；長期合約算力取代短期承諾算力）",
+          "src": "sec-fwp-japan"
+        },
+        {
+          "name": "算力以外的營業費用與捐贈",
+          "value": "營收的 33.6%（2026 年第三季，不含非現金捐贈）；非現金捐贈每季 6.6 億美元（最近四季平均）",
+          "src": "sec-fwp-eea"
+        },
+        {
+          "name": "不預測的項目",
+          "value": "淨利與 EPS（淨損主要來自可轉換票據等金融工具的公允價值變動，上市後的股數與轉換條件要等最終招股書）；上市可能帶來的股份基礎給付變化",
+          "src": "sec-fwp-eea"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "2026Q4",
+          "revenue": 23011,
+          "grossMargin": 87.52,
+          "operatingIncome": 2314,
+          "known": [],
+          "note": "算力費用 123 億美元、算力效率 1.87 倍、銷貨成本 29 億美元；算力以外的營業費用 77 億美元。營收由年化營收路徑依招股書定義換算（10 月已知，11–12 月為情境），季末年化營收 1,050 億美元；季增 +36%。"
+        },
+        {
+          "period": "2027Q1",
+          "revenue": 29510,
+          "grossMargin": 87.86,
+          "operatingIncome": 3582,
+          "known": [],
+          "note": "算力費用 154 億美元、算力效率 1.92 倍、銷貨成本 36 億美元；算力以外的營業費用 99 億美元。"
+        },
+        {
+          "period": "2027Q2",
+          "revenue": 37815,
+          "grossMargin": 88.18,
+          "operatingIncome": 5295,
+          "known": [],
+          "note": "算力費用 192 億美元、算力效率 1.97 倍、銷貨成本 45 億美元；算力以外的營業費用 127 億美元。"
+        },
+        {
+          "period": "2027Q3",
+          "revenue": 48425,
+          "grossMargin": 88.49,
+          "operatingIncome": 7597,
+          "known": [],
+          "note": "算力費用 239 億美元、算力效率 2.03 倍、銷貨成本 56 億美元；算力以外的營業費用 163 億美元。"
+        },
+        {
+          "period": "2027Q4",
+          "revenue": 61970,
+          "grossMargin": 88.78,
+          "operatingIncome": 10673,
+          "known": [],
+          "note": "算力費用 298 億美元、算力效率 2.08 倍、銷貨成本 70 億美元；算力以外的營業費用 208 億美元。"
+        },
+        {
+          "period": "2026",
+          "revenue": 56253,
+          "grossMargin": 86.34,
+          "operatingIncome": 1054,
+          "known": [],
+          "note": "第一至三季為實際值（營收 332 億美元、營業損失 13 億美元），第四季為模型值；年增 +1,127%。"
+        },
+        {
+          "period": "2027",
+          "revenue": 177720,
+          "grossMargin": 88.42,
+          "operatingIncome": 27147,
+          "known": [],
+          "note": "四季加總；毛利率為全年毛利 ÷ 全年營收。算力費用 882 億美元，營收是算力費用的 2.01 倍；年增 +216%。"
+        }
+      ]
+    }
+  ],
+  "sensitivities": [
+    {
+      "driver": "11–12 月的年化營收",
+      "change": "停在 10 月底的 810 億美元（每月 0%）",
+      "effect": "2026 年第四季營收 −20 億美元（−9.0%）、營業損益 −13 億美元；2027 年的路徑也從較低的第四季出發（2027 年營收 −44 億美元（−2.9%）、毛利率 −0.4 個百分點、營業損益 −29 億美元）"
+    },
+    {
+      "driver": "換算方式",
+      "change": "不做 14 天落後調整（Σ 每日年化營收 ÷ 364，倍數 1）",
+      "effect": "2026 年第四季營收 −8 億美元（−3.7%）、營業損益 −5 億美元；2027 年營收 −18 億美元（−1.2%）、毛利率 −0.2 個百分點、營業損益 −12 億美元"
+    },
+    {
+      "driver": "換算方式",
+      "change": "改用回測的全期平均倍數 1.14（不做落後調整）",
+      "effect": "2026 年第四季營收 +21 億美元（+9.3%）、營業損益 +14 億美元；2027 年營收 +46 億美元（+3.0%）、毛利率 +0.4 個百分點、營業損益 +30 億美元"
+    },
+    {
+      "driver": "算力與基礎設施費用（2026 年第四季起）",
+      "change": "多 10%，算力效率不變（2027 年營收跟著算力增加）",
+      "effect": "2026 年第四季營業損益 −12 億美元（第四季營收由年化營收決定，不變）；2027 年營收 +154 億美元（+10.0%）、營業損益 +14 億美元"
+    },
+    {
+      "driver": "算力與基礎設施費用（2026 年第四季起）",
+      "change": "多 10%，營收不變（多出的算力沒有轉成營收）",
+      "effect": "2026 年第四季營業損益 −12 億美元（第四季營收由年化營收決定，不變）；2027 年毛利率 −1.4 個百分點、營業損益 −88 億美元（營收不變）"
+    },
+    {
+      "driver": "算力效率（2027 年第四季的目標）",
+      "change": "低 0.2 倍",
+      "effect": "2027 年營收 −122 億美元（−7.9%）、毛利率 −1.2 個百分點、營業損益 −81 億美元"
+    },
+    {
+      "driver": "算力效率（2027 年第四季的目標）",
+      "change": "高 0.2 倍",
+      "effect": "2027 年營收 +122 億美元（+7.9%）、毛利率 +1.0 個百分點、營業損益 +81 億美元"
+    },
+    {
+      "driver": "銷貨成本 ÷ 算力費用",
+      "change": "高 5 個百分點",
+      "effect": "2027 年毛利率 −2.9 個百分點、營業損益不變（營收不變）；算力費用總額不變，只是較多算力列為銷貨成本、較少列為研發"
+    },
+    {
+      "driver": "算力以外的營業費用占營收比",
+      "change": "高 5 個百分點",
+      "effect": "2027 年營業損益 −77 億美元（營收不變）"
+    },
+    {
+      "driver": "需求停滯的壓力測試",
+      "change": "2027 年每季營收停在基準情境 2026 年第四季的水準，算力承諾照付",
+      "effect": "2027 年營收 −650 億美元（−42.2%）、毛利率 −10.3 個百分點、營業損益 −431 億美元（毛利率的變化來自銷貨成本仍按算力費用的比例計算；營業損益不受這個分類影響）"
+    }
+  ],
+  "limitations": [
+    "歷史太短：招股書只揭露 2025 年起的 7 季財報，回測只有 5 季、參數由 2–6 季估計，營收在這段期間成長約 45 倍。事前版本與天真模型的差距只有 5 季樣本可以檢驗（天真模型與事前版本逐季營收絕對百分比誤差的配對 t 值約 2.3（自由度 4），未達 5% 顯著水準所需的 2.78），誤差只能當參考。",
+    "回測是條件式的：年化營收幾乎就是營收本身的年化，代入季中與季末的年化營收等於事先知道大部分答案，誤差 6.9% 低估了真正預測的難度。事前版本（只用季初的年化營收）營收誤差 17.8%，而且季初的值要用前後兩次說法內插（2025 年第三季用到 2025 年 8 月底的 50 億美元（季初後 62 天）、2025 年第四季用到 2025 年底的 90 億美元（就是該季季末）、2026 年第二季用到 2026-04-06 的 300 億美元（季初後 5 天）、2026 年第三季用到 2026 年 7 月底的 650 億美元（季初後 31 天）），仍不是嚴格的事前預測；只用季初以前已發布的說法時，可預測的 4 季營收 MAPE 32.0%，同期天真模型 45.0%。依「與財報同日公布的說法不用」的規則，2026 年第三季的回測不用 9 月底的 710 億美元與 10 月底的 810 億美元。",
+    "年化營收的資料點：2026 年 9 月以前來自募資與合作新聞稿（多是「逾」「約」的整數，計算方式未說明），7 月底的 650 億美元是 Bloomberg 引述知情人士（公司未證實）；各說法的時點（例如「5 月稍早」假設為 5 月中）是本模型的假設。換算倍數因此在 2025 年約 1.11–1.26、2026 年第二、三季降到約 1.04、1.02。預測期改依招股書定義換算（用量計費部分落後 14 天，基準情境相當於倍數 1.04），這個換算方式只有 2026 年第三季一季可以事後對照（1.00）；不做落後調整，2026 年第四季營收會低約 4%，改用全期平均 1.14 則高約 9%。招股書也提醒年化營收可能包含之後因違反使用政策被停權客戶的營收。",
+    "2027 年沒有年化營收可用，改以「算力受限」的假設推估：營收 = 算力效率 × 算力費用，算力費用依招股書揭露的未來 12 個月約 707 億美元承諾等比分配。付款承諾不等於費用（自建資料中心、租賃與預付款會先資本化），約 1,862 億美元的承諾附終止權或生效條件；同一個關係（上一季效率 × 當季算力）在回測中營收 MAPE 24.6%，表現很差，算力效率在最近三季介於 1.40 與 2.08 倍。樂觀情境的 2027 年營收是保守情境的 1.40 倍，營業損益在 −63 億美元與 271 億美元之間，應看成情境，不是預測精度。",
+    "毛利率：招股書的風險因素提醒，服務客戶所需的算力可能比相關營收增加得更快、今天簽下的算力日後可能變得較不具成本效益、開放權重模型可能帶來價格壓力（1.1.3、1.1.4、1.1.9 節，sec-fwp-eea）。2025 年毛利率 39.5%、2026 年第二季 88.8%、第三季 85.7%，模型只用「銷貨成本 ÷ 算力費用」與算力效率兩個比例推算，沒有分開建模每 token 成本、硬體世代、短期承諾算力（第三季約 50 億美元，價格明顯高於多年期合約）與降價（Opus 5.5 比 Opus 5 低 20%，an-opus55；Fable 5.2 比 Fable 5.1 低 20%，an-fable52）。模型開發與內部使用的算力計入研發、免費使用的算力計入銷售與行銷，所以毛利率遠高於「營收減全部算力費用」的比率。",
+    "營業損益：算力以外的營業費用沿用第三季占營收的比例（這個比例在 2026 年第一季到第三季由 61% 降到 34%，若繼續下降，營業損益會比模型好），非現金捐贈用最近四季平均；上市可能帶來的股份基礎給付變化與上市相關費用，模型沒有納入。第四季的算力費用依承諾等比分配，是本模型的假設；第四季營收由年化營收決定，算力費用每多 10%，第四季營業損益約少 12 億美元。不預測淨利與 EPS：淨損主要來自可轉換票據、衍生負債與 SAFE 的公允價值變動（2026 年前九個月 943.24 億美元），以及列在其他收支的票據購買協議公允價值變動（sec-fwp-eea），上市後這些工具如何轉換、流通股數多少，要等最終招股書；截至 2026-11-18 EDGAR 還沒有 424B4，2026-11-17 的 S-1/A 第 3 號主文件本站也未能讀取，無法排除其中有數字修正（sec-submissions）。",
+    "集中度與關係人：2026 年前九個月前五大客戶約占營收 25%、經雲端業者市集的營收占 44%；Amazon 與 Google 同時是投資人、算力供應商、通路與客戶（sec-fwp-eea）。這些關係的變化會同時影響營收、通路費用與算力成本，模型沒有分開處理。美國國防部的供應鏈風險認定（an-dow）、2026 年 6 月對 Fable 5 與 Mythos 5 的出口限制等事件也可能影響營收，模型沒有納入。",
+    "治理與上市：Anthropic 是公益公司（PBC），長期利益信託（LTBT）選任過半董事，上市後創辦人 LLC 將握有 50.1% 投票權（sec-fwp-eea）。上市預計 2026-11-18 訂價、11-19 起在 Nasdaq 以代號 ANT 交易（sec-fwp-ipo-site），截至資料日尚未訂價；本站不推測發行價格，也不做估值。",
+    "利益揭露：本站由 Anthropic 開發的 Claude 撰寫。為避免偏頗，模型只用招股書與公開資料，成長數字與招股書的風險因素並列，不使用推銷字眼，也不提供投資建議。"
+  ],
+  "sourceKeys": [
+    "sec-fwp-eea",
+    "sec-fwp-japan",
+    "sec-fwp-ipo-site",
+    "sec-s1",
+    "sec-submissions",
+    "an-series-f",
+    "an-series-g",
+    "an-google-broadcom",
+    "an-series-h",
+    "bbg-65b",
+    "an-opus55",
+    "an-fable52",
+    "an-dow"
+  ]
+}

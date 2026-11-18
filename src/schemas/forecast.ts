@@ -15,7 +15,7 @@ import { Editorial, IsoDate, Source } from './common';
 
 const SrcKey = z.string().min(1); // key into the file's `sources` map
 /** 有財報模型頁的公司（roster id）。群聯與美光在記憶體專題，其餘在 /forecast/。 */
-export const FORECAST_COMPANIES = ['phison', 'micron', 'tsmc', 'mediatek', 'nvidia', 'spacex', 'tesla'] as const;
+export const FORECAST_COMPANIES = ['phison', 'micron', 'tsmc', 'mediatek', 'nvidia', 'spacex', 'tesla', 'anthropic'] as const;
 export type ForecastCompany = (typeof FORECAST_COMPANIES)[number];
 const CompanyId = z.enum(FORECAST_COMPANIES);
 /** actual＝公司公布；estimate＝第三方或推算；forecast＝對未來的預測；guidance＝公司財測 */

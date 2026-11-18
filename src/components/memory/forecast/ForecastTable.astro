@@ -26,7 +26,9 @@ const guideWhat =
   guide && forecastQuarters(base)[0]?.period === guide.period ? '下一季財測' : guide ? `${periodLabel(guide.period, 'long')}財測` : '';
 const shown = cols.filter((t) => base?.forecasts.some((f) => f[t] != null));
 /** card label on phones, where the header row (and its units) is hidden: 「營收（新台幣億元）」 */
-const cardLabel = (t: Target) => `${TARGET_SHORT[t]}（${unitOf(b, t).replace(/^新台幣/, '')}）`;
+// a page that says 「營業損益」 (Anthropic, FC_META.oiLabel) keeps that word on the cards too
+const shortOf = (t: Target) => (t === 'operatingIncome' && /^營業損益/.test(b.meta.oiLabel) ? '營業損益' : TARGET_SHORT[t]);
+const cardLabel = (t: Target) => `${shortOf(t)}（${unitOf(b, t).replace(/^新台幣/, '')}）`;
 ---
 
 <div class="mem-tablewrap mem-tablewrap--cards fc-ftable" tabindex="0" role="region" aria-label="情境預測表">

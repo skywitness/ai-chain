@@ -44,12 +44,14 @@ const guide = nextGuidance(b);
 const { actual, forecast } = summaryPeriodsOf(b);
 
 type Field = 'revenue' | 'grossMargin' | 'operatingIncome' | 'eps';
+// a model that forecasts no EPS in any scenario (Anthropic: net loss is not modelled) shows no row of empty 「—」
+const hasEps = m.scenarios.some((s) => s.forecasts.some((f) => f.eps != null));
 const FIELDS: Array<{ f: Field; label: string }> = [
   { f: 'revenue', label: '營收' },
   { f: 'grossMargin', label: meta.gmLabel },
   { f: 'operatingIncome', label: meta.oiLabel },
   { f: 'eps', label: meta.epsLabel },
-];
+].filter((x): x is { f: Field; label: string } => x.f !== 'eps' || hasEps);
 const fmt = (f: Field, v: number | undefined) =>
   v == null ? '—' : f === 'grossMargin' ? fcPct(v) : f === 'eps' ? fcEps(v, meta.epsUnit) : fcMoney(v, cur);
 function range(f: Field, lo: number, hi: number): string {

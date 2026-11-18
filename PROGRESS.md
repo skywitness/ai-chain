@@ -27,10 +27,20 @@
   - 參數產生器：`scripts/plan/make-update-args.mjs`。
   - `content-wf.js` 新增了 `financials-update` 與 `refresh` 兩種類型，以及 `asOf`（資料基準日）參數。
 
-## 🚧 進行中：輝達財報模型（2026-11-18 開始）
+## ✅ 財報模型：輝達與 Anthropic（2026-11-18 上線）
 
-- 用同一支 `research/plan/workflows/forecast2-wf.js`，args `{"asOf":"2026-11-18","companies":["nvidia"],"searchBudget":6,"platform":false}`，run `wf_6caea094-f93`（6 個 agent：資料→查核→建模→模型審查→專屬段落→審查）。腳本已加入前四家審查學到的規則（回測不得用同日法說的說法、條件式回測不和事前財測直接比較、參數顯著性、財測參數命名、模型 JSON 先放暫存區）。
-- 模型檔進 `src/data/forecast/nvidia-model.json` 後，`/forecast/nvidia/`、專題卡片與 `/companies/nvidia/` 的連結會自動出現；`FC_META.nvidia` 是事先寫的，要對照資料確認。
+使用者要求：輝達等 FY2027Q3 財報（2026-11-17 美股盤後）公布後再做；之後加做 Anthropic（2026-10-26 公開 S-1，預計 11-18 訂價、11-19 在 Nasdaq 以 ANT 掛牌）。
+
+- **Workflow**：同一支 `research/plan/workflows/forecast2-wf.js`（`platform:false`，新增 `note` 參數附加到所有 agent 的共同說明），兩個 run 同時執行，各 6 個 agent、0 錯誤：輝達 `wf_abd6b8e1-029`，Anthropic `wf_a70a0aae-d7f`。`FORECAST_COMPANIES` 加入 `anthropic`，`FC_META.anthropic` 由主 session 先寫、資料 agent 依招股書修正。
+- **資料**：
+  - 輝達 43 個會計季（FY2017Q1–FY2027Q3）＋22 條驅動因子（五大雲端業者資本支出、CoWoS 產能、中國營收、財測）；與 `src/content/financials/nvidia.json` 重疊的 60 個數值完全一致。新舊兩種平台分類並存（FY2027 起改為超大規模、ACIE、邊緣運算）。
+  - Anthropic 7 季（2025Q1–2026Q3）＋2023–2025 年度＋25 條驅動因子（年化營收、算力費用與效率、客戶數、雲端市集占比、算力承諾）。S-1 主檔太大讀不到，改讀公司在 EDGAR 的 FWP（歐洲版招股書與日本招股書英譯本，依 11-10 的 S-1/A 第 2 號）；11-17 的 S-1/A 第 3 號未讀，頁面已註明。
+- **模型**：
+  - 輝達「雲端資本支出比例模型」：7 季回測營收 MAPE 5.3%、毛利率 1.1 個百分點；一季前不如輝達財測（4.7%）與延續成長的天真模型（3.5%），但連續推估最好（4.4%），頁首已並列。基準 FY2027Q4 營收 1,363 億美元（財測 1,261–1,339 億）；FY2028 營收 6,657 億美元（4,768–7,537 億）、EPS 14.9 美元，低於公司 8 月說的約 70% 成長。
+  - Anthropic「年化營收換算模型」：5 季回測，代入當季年化營收時營收誤差 6.9%，只用季初資訊時 17.8%（對天真模型不顯著）；嚴格只用季初以前說法約 32%。基準 2026Q4 營收 223 億美元（191–230 億）、毛利率約 86%；2027 年 1,541 億美元（1,274–1,777 億）。只預測營收、毛利率與營業損益，不預測淨利與 EPS（淨損主要是金融工具公允價值變動）。頁面有利益揭露（本站由 Claude 撰寫），風險因素與成長數字並列。
+- **共用程式的修改**（審查 agent）：頁首在延續成長的天真模型較準時也列出它；敏感度表的「變動」欄可引用來源；`/companies/<id>/` 模型頁連結的頁尾依各公司 `noticeInputs`；專題卡片避免單字換行；沒有 EPS 預測時摘要卡隱藏 EPS 列、候選模型註腳不提 EPS；`oiLabel` 為「營業損益」時手機卡片也用同一詞；`/companies/anthropic/` 補上模型頁連結並改寫「沒有公開財報」的說明。群聯、美光頁內容不變。
+- **驗證**：`astro check` 0 錯誤；`check-forecast`（9 家都可重現）、`validate-data`、`check-zh`、`check-content-rules`、`check-memory`、`check-roster` 0 錯誤；`BASE_PATH=/ai-chain/` 建置後連結 873 頁、35,245 條 0 失效；預算與海報通過；E2E 1,747 項通過（1 項略過）；axe 32 項通過（總覽、輝達與 Anthropic 模型頁和公司頁、台積電、SpaceX、美光，淺色與深色、桌機與手機）。
+- **待辦**：`/companies/anthropic/` 的公司內容仍停在 2026-10-06（寫「私人公司」、年化營收到 5 月），要在 11-19 掛牌後依 `docs/UPDATING.md` 更新，並把 `FC_META.anthropic.nameFull` 的「預計代號 ANT」改掉；輝達 11-17 法說會逐字稿公布後，複查 FY2028 毛利率（72–73%）與營收（約 70%）的錨點。
 
 ## ✅ 財報模型專題 `/forecast/`：台積電、聯發科、SpaceX、特斯拉（2026-11-18 上線）
 

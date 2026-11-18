@@ -108,6 +108,13 @@ const gap = (a: string, b: string) =>
 const nm = (before: string, after: string) => `${before}${gap(before, meta.name)}${meta.name}${gap(meta.name, after)}${after}`;
 const sel = selectedCandidate(m);
 const naive = m.candidates.find((c) => c.id === 'naive-last-quarter' || c.id === 'naive');
+// the momentum benchmark (輝達: 延續上一季成長) joins the hero sentence when its revenue error is below the selected
+// model's, so the hero never leaves out a simpler model that did better
+const momentum = m.candidates.find((c) => c.id === 'naive-momentum' || c.id === 'momentum');
+const revErr = (c: typeof sel | undefined) => c?.metrics.revenue?.mape ?? c?.metrics.revenue?.mae;
+const momentumErr = revErr(momentum);
+const selErr = revErr(sel);
+const momentumBeats = momentumErr != null && selErr != null && momentumErr < selErr;
 const guidanceCand = m.candidates.find((c) => c.id === 'guidance');
 const exAnte = m.candidates.find((c) => c.id.endsWith('-ex-ante'));
 const g = nextGuidance(b);
@@ -120,6 +127,8 @@ const partialText =
     ? `${periodLabel(firstFq.period, 'long')}的 ${partialMonths.map((x) => Number(x.period.slice(5))).join('、')} 月營收已公布，其餘月份與毛利率以下仍是推估`
     : '';
 const anyKnown = !!sp.actual || sp.forecast.some((p) => (forecastOf(m, 'base', p)?.known.length ?? 0) > 0) || partialText !== '';
+// a model without any EPS forecast (Anthropic) drops the EPS row of the summary cards; the lede says why
+const noEpsText = m.scenarios.every((s) => s.forecasts.every((f) => f.eps == null)) ? '模型不預測淨利與 EPS' : '';
 const testSpan = `${periodLabel(m.test.from)}–${periodLabel(m.test.to)}`;
 const nTest = sel.metrics.revenue?.n ?? sel.metrics.grossMargin?.n ?? 0;
 const fixedParams = m.parameters.some((p) => /不重估/.test(p.name));
@@ -135,7 +144,7 @@ const errsOf = (c: typeof sel | undefined, withNames: boolean) =>
         .join('、')
     : '';
 const exAnteRev = sel.metrics.revenueExAnte ?? exAnte?.metrics.revenue;
-const heroModel = `${testSpan} 共 ${nTest} 季逐季回測（代入${meta.backtest.known}）：${errsOf(sel, true)}${naive ? `；沿用上一季的天真模型為 ${errsOf(naive, false)}` : ''}${guidanceCand ? `${nm('；', '自己的財測為')} ${errsOf(guidanceCand, false)}` : ''}${exAnteRev ? `；${meta.backtest.exAnteLine}時，營收誤差為 ${errHeadline(b, 'revenue', exAnteRev)}` : ''}。`;
+const heroModel = `${testSpan} 共 ${nTest} 季逐季回測（代入${meta.backtest.known}）：${errsOf(sel, true)}${naive ? `；沿用上一季的天真模型為 ${errsOf(naive, false)}` : ''}${momentumBeats ? `；延續上一季成長的天真模型為 ${errsOf(momentum, false)}` : ''}${guidanceCand ? `${nm('；', '自己的財測為')} ${errsOf(guidanceCand, false)}` : ''}${exAnteRev ? `；${meta.backtest.exAnteLine}時，營收誤差為 ${errHeadline(b, 'revenue', exAnteRev)}` : ''}。`;
 
 const hasDrivers = driverGroups(b).length > 0;
 const DriversSec = companySection(company, 'Drivers');
@@ -251,7 +260,7 @@ const jsonLd = [
       <div class="sec-head">
         <h2 id="summary-h">預測摘要</h2>
         <p class="sec-head__lede">
-          {`${pureForecastLabels}是模型推估${mixedText ? `，${mixedText}` : ''}。大字是基準情境，下方是保守到樂觀情境的區間${g ? `；${periodLabel(g.period, 'long')}${nm('另列', '自己的財測對照')}` : ''}${partialText ? `；${partialText}` : ''}。`}
+          {`${pureForecastLabels}是模型推估${mixedText ? `，${mixedText}` : ''}。大字是基準情境，下方是保守到樂觀情境的區間${g ? `；${periodLabel(g.period, 'long')}${nm('另列', '自己的財測對照')}` : ''}${partialText ? `；${partialText}` : ''}${noEpsText ? `；${noEpsText}` : ''}。`}
         </p>
       </div>
       <SummaryCards b={b} />

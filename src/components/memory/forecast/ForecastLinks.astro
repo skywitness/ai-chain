@@ -77,6 +77,10 @@ const list = (company ? [company] : (companies ?? forecastCompaniesWithPages('me
 // callout kicker: the topic the page belongs to
 const topic = list[0]?.meta.topic ?? 'memory';
 const hid = uid(Astro, 'fc-links');
+// what the models are built from: the memory topic's price paths, or the page's own inputs (FC_META.noticeInputs) on a
+// /forecast/ company callout — 「假設價格路徑」 does not describe 台積電、輝達… models
+const footInputs =
+  topic === 'memory' ? '依公開資料與假設價格路徑' : list.length === 1 ? `依${list[0]!.meta.noticeInputs}` : '依公開財報、驅動因子與假設的情境';
 ---
 
 {
@@ -133,7 +137,7 @@ const hid = uid(Astro, 'fc-links');
       </ul>
       <p class="mem-fine fc-links__foot">
         <Icon name="info" size="1em" />
-        依公開資料與假設價格路徑推算的教學模型，不是投資建議；不提供目標價或買賣建議。
+        {footInputs}推算的教學模型，不是投資建議；不提供目標價或買賣建議。
       </p>
     </div>
   )

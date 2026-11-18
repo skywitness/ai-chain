@@ -1,0 +1,255 @@
+---
+/**
+ * 數量與營收（Anthropic）: quarterly revenue by billing type (usage-based vs subscription), gross, adjusted and GAAP
+ * operating margin, annual revenue (reported years and the scenarios), and a table from run-rate to revenue, compute,
+ * gross margin and operating income for the backtest window (reported) and the base scenario (model). Replaces the
+ * generic HistoryCharts; the model's derived series follow in a disclosure (the page).
+ *   <Volume b={bundle} />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import QuarterBars from '../../memory/forecast/QuarterBars.astro';
+import ChartCites from '../../memory/forecast/ChartCites.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import StatusTag from '../../memory/StatusTag.astro';
+import { chartKey, fcPct, forecastOf, paramStarting, periodLabel, quartersFrom, reportedQuartersIn, type FcBundle } from '../../../lib/forecast-data';
+import { formatMoneyRange, formatNumber } from '../../../lib/format';
+import { derivedAt, driverAt, ex, forecastYear, grossMarginOf, lastQuarters, runRateStatements, scenarioQuarters, shownQuarters } from './an-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m, meta } = b;
+const { P } = lastQuarters(b);
+const qs = shownQuarters(b);
+const first = qs[0]!;
+const span = `${periodLabel(first.period)}–${periodLabel(P)}`;
+const srcs = [...new Set(qs.map((q) => q.src))];
+const fnSrc = driverAt(b, 'cost-of-revenue-share', P)?.src;
+const yi = (v: number | undefined | null) => (v == null ? null : v / 100);
+const pt = (q: (typeof qs)[number], v: number | null) => ({ x: chartKey(q.period), y: v });
+const pctOf = (v: number | undefined | null, rev: number) => (v == null ? null : (v / rev) * 100);
+const bartzQ = qs.find((q) => (ex(q, 'Bartz和解') ?? 0) > 0);
+
+// annual revenue: reported years, then the scenario years
+const Y = forecastYear(b);
+const curYear = P.slice(0, 4);
+const nRep = reportedQuartersIn(inputs, curYear);
+const annualRows = inputs.annual
+  .filter((a) => typeof a.extra?.['營收'] === 'number')
+  .map((a) => ({ period: a.year, value: Number(a.extra?.['營收']) / 100, src: a.src }));
+const yearsFc = [curYear, ...(Y && Y !== curYear ? [Y] : [])].filter((y) => !annualRows.some((a) => a.period === y));
+const annualBars = [
+  ...annualRows.map((a) => ({ period: a.period, value: a.value })),
+  ...yearsFc.flatMap((y) => {
+    const f = forecastOf(m, 'base', y);
+    const lo = forecastOf(m, 'bear', y);
+    const hi = forecastOf(m, 'bull', y);
+    return f
+      ? [
+          {
+            period: y,
+            value: f.revenue / 100,
+            status: 'forecast' as const,
+            note: `基準情境${lo && hi ? `；保守到樂觀 ${formatMoneyRange(Math.min(lo.revenue, hi.revenue), Math.max(lo.revenue, hi.revenue), 'USD', { unit: '億' })}` : ''}${y === curYear && nRep > 0 ? `；前 ${nRep} 季為實際值` : ''}`,
+          },
+        ]
+      : [];
+  }),
+];
+const fyYear = Y ? forecastOf(m, 'base', Y) : undefined;
+const fyLo = Y ? forecastOf(m, 'bear', Y) : undefined;
+const fyHi = Y ? forecastOf(m, 'bull', Y) : undefined;
+
+// backtest window (reported) followed by the base scenario
+const test = quartersFrom(inputs, m.test.from);
+const base = scenarioQuarters(b, 'base');
+type Row = {
+  period: string;
+  status: 'actual' | 'forecast';
+  rrEnd?: number | undefined;
+  implied?: number | undefined;
+  k?: number | undefined;
+  revenue: number;
+  compute?: number | undefined;
+  eff?: number | undefined;
+  gm?: number | undefined;
+  oi?: number | undefined;
+  src?: string | undefined;
+};
+const rows: Row[] = [
+  ...test.map((q) => ({
+    period: q.period,
+    status: 'actual' as const,
+    rrEnd: derivedAt(b, 'run-rate-quarter-end', q.period),
+    implied: derivedAt(b, 'run-rate-implied-revenue', q.period),
+    k: derivedAt(b, 'revenue-to-run-rate', q.period),
+    revenue: q.revenue,
+    compute: ex(q, '算力與基礎設施費用'),
+    eff: derivedAt(b, 'compute-efficiency', q.period),
+    gm: grossMarginOf(q),
+    oi: q.operatingIncome ?? undefined,
+    src: q.src,
+  })),
+  ...base.map((f) => ({
+    period: f.period,
+    status: 'forecast' as const,
+    rrEnd: derivedAt(b, 'run-rate-quarter-end', f.period),
+    implied: derivedAt(b, 'run-rate-implied-revenue', f.period),
+    k: derivedAt(b, 'revenue-to-run-rate', f.period),
+    revenue: f.revenue,
+    compute: derivedAt(b, 'compute-expense-path', f.period),
+    eff: derivedAt(b, 'compute-efficiency', f.period),
+    gm: f.grossMargin ?? undefined,
+    oi: f.operatingIncome ?? undefined,
+  })),
+];
+// quarter ends that coincide with a company statement, the commitment the compute path spreads, the launch year
+const qeStatements = runRateStatements(b).filter((s) => /-(03-31|06-30|09-30|12-31)$/.test(s.date) && s.status === 'actual');
+const qeLabel = qeStatements.map((s) => (s.date.endsWith('12-31') ? `${s.date.slice(0, 4)} 年底` : `${s.date.slice(0, 4)} 年 ${Number(s.date.slice(5, 7))} 月底`)).join('與 ');
+const commit = paramStarting(m, '未來 12 個月的算力與基礎設施承諾');
+const compG = paramStarting(m, '算力費用的季成長率');
+const launch = inputs.annual.find((a) => /開始商業化/.test(a.note ?? ''));
+const launchNote = launch ? /(公司在 \d{4} 年第[一二三四]季開始商業化)/.exec(launch.note ?? '')?.[1] : undefined;
+const launchRev = launch && typeof launch.extra?.['營收'] === 'number' ? Number(launch.extra['營收']) : undefined;
+const noRunRate = rows.filter((r) => r.status === 'forecast' && r.implied == null);
+const fmt = (v: number | undefined | null, d = 0) => (v == null || !Number.isFinite(v) ? '—' : formatNumber(v, { digits: d }));
+const fmtYi = (v: number | undefined | null) => (v == null || !Number.isFinite(v) ? '—' : formatNumber(v / 100, { digits: 1 }));
+---
+
+<div class="mem-grid mem-grid--charts">
+  <QuarterBars title="每季營收" subtitle={`${span}，招股書`} unit="億美元" valueName="營收" points={qs.map((q) => ({ period: q.period, value: q.revenue / 100 }))} digits={1} as="h3" />
+  <MultiLine
+    title="營收依計費方式"
+    subtitle={`${span}，招股書附註 2（單季以累計數相減推算）`}
+    unit="億美元"
+    valueSuffix=" 億美元"
+    digits={1}
+    height={210}
+    series={[
+      { name: '用量計費（API、Claude Code 等）', color: 'var(--chart-1)', points: qs.map((q) => pt(q, yi(ex(q, '用量計費營收')))) },
+      { name: '訂閱（Pro、Max、Team 等）', color: 'var(--chart-3)', points: qs.map((q) => pt(q, yi(ex(q, '訂閱營收')))) },
+    ]}
+    xTitle="季度"
+    as="h3"
+    class="mem-chart"
+  />
+</div>
+<MultiLine
+  title="毛利率與營業利益率"
+  subtitle={`${span}，招股書；調整後營業利益率是公司定義的非 GAAP 指標`}
+  unit="%"
+  format="percent"
+  digits={1}
+  height={240}
+  series={[
+    { name: meta.gmLabel, color: 'var(--chart-2)', points: qs.map((q) => pt(q, grossMarginOf(q) ?? null)) },
+    { name: '調整後營業利益率（非 GAAP）', color: 'var(--chart-3)', points: qs.map((q) => pt(q, pctOf(ex(q, '調整後營業利益'), q.revenue))) },
+    { name: '營業利益率（GAAP）', color: 'var(--chart-7)', points: qs.map((q) => pt(q, pctOf(q.operatingIncome, q.revenue))) },
+  ]}
+  notes={[
+    '毛利率＝（營收 − 功能別銷貨成本）÷ 營收；招股書的損益表依性質分類，沒有毛利一欄，功能別費用來自財報附註。',
+    '調整後營業利益＝GAAP 營業損益加回股份基礎給付、非現金捐贈與 Bartz 和解費用。',
+    bartzQ ? `${periodLabel(bartzQ.period)} 的 GAAP 營業損益含 Bartz 著作權集體訴訟和解費用 ${formatNumber((ex(bartzQ, 'Bartz和解') ?? 0) / 100)} 億美元。` : null,
+  ]}
+  xTitle="季度"
+  as="h3"
+  class="mem-chart fc-chart-wide"
+/>
+<ChartCites keys={[...srcs, fnSrc]} label="各季財報出處" />
+
+{
+  annualBars.length > 1 && (
+    <>
+      <QuarterBars
+        title="年度營收：實際與模型推估"
+        subtitle={`${annualRows.length ? `${annualRows[0]!.period}–${annualRows.at(-1)!.period} 年經查核的財報` : ''}${yearsFc.length ? `；${yearsFc.map((y) => (y === curYear && nRep > 0 ? `${y} 年為前 ${nRep} 季實際加基準情境` : `${y} 年為基準情境`)).join('、')}（斜線）` : ''}`}
+        unit="億美元"
+        valueName="營收"
+        points={annualBars}
+        digits={1}
+        color="var(--chart-2)"
+        legend={[
+          { label: '財報實際', kind: 'bar', color: 'var(--chart-2)' },
+          { label: '基準情境（斜線）', kind: 'estimate', color: 'var(--chart-2)' },
+        ]}
+        as="h3"
+        class="fc-chart-wide"
+        notes={[
+          fyYear && fyLo && fyHi && Y
+            ? `${Y} 年保守到樂觀 ${formatMoneyRange(Math.min(fyLo.revenue, fyHi.revenue), Math.max(fyLo.revenue, fyHi.revenue), 'USD', { unit: '億' })}：沒有年化營收可用，依算力承諾與算力效率的假設推估，應看成情境，不是精確的預測。`
+            : null,
+          launch && launchNote && launchRev != null ? `${launchNote}，${launch.year} 年營收只有約 ${formatNumber(launchRev / 100, { digits: 1 })} 億美元。` : null,
+        ]}
+      />
+      <ChartCites keys={annualRows.map((a) => a.src)} />
+    </>
+  )
+}
+
+<h3 class="fc-h3">從年化營收到營收、毛利與營業損益</h3>
+<p class="fc-p">
+  {periodLabel(m.test.from)}–{periodLabel(P)} 是招股書的實際值與本站以公司說法推算的年化營收，{base[0] ? periodLabel(base[0].period) : ''} 起是選定模型在基準情境下的推估。{base[0] ? `${periodLabel(base[0].period)} 的營收由年化營收換算` : ''}{noRunRate.length ? `，${noRunRate.map((r) => periodLabel(r.period)).at(0)}–${noRunRate.map((r) => periodLabel(r.period)).at(-1)} 沒有年化營收可用，營收＝算力效率 × 算力費用` : ''}。
+</p>
+<div class="mem-tablewrap mem-tablewrap--cards fc-bits an-bits" tabindex="0" role="region" aria-label="年化營收、營收、算力費用、毛利率與營業損益">
+  <table class="mem-table">
+    <caption class="ch-sr">Anthropic 各季的季末年化營收、年化營收換算的營收、換算倍數、已認列營收、算力費用、算力效率、毛利率與營業損益：回測期為招股書實際值與本站推算，之後為基準情境的模型推估</caption>
+    <thead>
+      <tr>
+        <th scope="col">季度</th>
+        <th scope="col" class="num">季末年化營收<small>億美元</small></th>
+        <th scope="col" class="num">年化營收換算<small>億美元</small></th>
+        <th scope="col" class="num">換算倍數<small>倍</small></th>
+        <th scope="col" class="num">營收<small>億美元</small></th>
+        <th scope="col" class="num">算力費用<small>億美元</small></th>
+        <th scope="col" class="num">算力效率<small>倍</small></th>
+        <th scope="col" class="num">毛利率</th>
+        <th scope="col" class="num">營業損益<small>億美元</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((r) => (
+          <tr class:list={[r.status === 'forecast' && 'fc-row--forecast']}>
+            <th scope="row" data-label="季度">
+              {periodLabel(r.period)}
+              {r.status === 'forecast' ? (
+                <StatusTag status="forecast" />
+              ) : (
+                <>
+                  {r.src && <FcCite k={r.src} />}
+                  {fnSrc && fnSrc !== r.src && <FcCite k={fnSrc} />}
+                </>
+              )}
+            </th>
+            <td class="num" data-label="季末年化營收（億美元）">{fmt(r.rrEnd != null ? r.rrEnd / 100 : undefined)}</td>
+            <td class="num" data-label="年化營收換算（億美元）">{fmtYi(r.implied)}</td>
+            <td class="num" data-label="換算倍數（倍）">{fmt(r.k, 3)}</td>
+            <td class="num" data-label="營收（億美元）">{fmtYi(r.revenue)}</td>
+            <td class="num" data-label="算力費用（億美元）">{fmtYi(r.compute)}</td>
+            <td class="num" data-label="算力效率（倍）">{fmt(r.eff, 2)}</td>
+            <td class="num" data-label="毛利率">{fcPct(r.gm)}</td>
+            <td class="num" data-label="營業損益（億美元）">{fmtYi(r.oi)}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+<p class="mem-fine">
+  季末年化營收與年化營收換算（當季每日年化營收加總 ÷ 364）是本站把公司各次說法以固定成長率連成每日路徑後推算，{qeLabel ? `只有 ${qeLabel}的季末剛好是公司說法；` : ''}換算倍數＝營收 ÷ 年化營收換算。預測列的換算倍數不是另外乘上的倍數，而是依招股書定義（用量計費部分落後 14 天）換算的營收 ÷ 年化營收換算。算力費用在預測期依招股書{commit ? `未來 12 個月約 ${formatNumber(commit.value / 100)} 億美元` : ''}的承諾等比分配到之後四季{compG ? `（每季 +${formatNumber(compG.value, { digits: 1 })}%），再之後延續同一成長率` : ''}，三個情境相同。營業損益為 GAAP，預測期每季另計入非現金捐贈的近四季平均。
+</p>
+
+<style>
+  /* card labels carry their unit (「季末年化營收（億美元）」): wider than the shared 6.5em label column
+     (src/components/memory/forecast/forecast.css floats the label inside a padded cell) */
+  @media (max-width: 47.99rem) {
+    .an-bits :global(.mem-table tbody tr > td) {
+      padding-inline-start: calc(9rem + var(--space-2));
+    }
+    .an-bits :global(.mem-table tbody tr > td::before) {
+      inline-size: 9rem;
+      margin-inline-start: calc(-9rem - var(--space-2));
+    }
+  }
+</style>

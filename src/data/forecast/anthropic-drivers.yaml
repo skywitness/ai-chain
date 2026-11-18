@@ -1,0 +1,356 @@
+# Anthropic 財報模型的驅動因子：年化營收、算力費用與效率、成本結構、客戶數與集中度、通路、營收組合、合約義務、模型牌價。格式見 src/schemas/forecast.ts（companyDrivers）。
+# 由 fc2-data-anthropic 整理（2026-11-18）。公司說法標 actual，媒體或推算標 estimate；招股書在上市前揭露的營運指標都未經查核。
+
+company: "anthropic"
+asOf: "2026-11-18"
+series:
+  - id: "run-rate-revenue"
+    name: "年化營收（run-rate）"
+    category: "年化營收"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "month"
+    definition: "招股書定義：過去 28 天的用量計費營收 ×13，加上衡量日的每月訂閱費 ×12。2026 年 9 月以前的點來自募資與合作新聞稿，公司當時沒有說明計算方式，可能與招股書定義不同；多數是「約」或「逾」的整數。年化營收不是 GAAP 營收，也不是對未來營收的預測。"
+    points:
+      - { period: "2025-01", value: 1000, status: "actual", src: "an-series-f", note: "2025 年初約 10 億美元" }
+      - { period: "2025-08", value: 5000, status: "actual", src: "an-series-f", note: "8 月逾 50 億美元" }
+      - { period: "2025-12", value: 9000, status: "actual", src: "an-google-broadcom", note: "2025 年底約 90 億美元" }
+      - { period: "2026-02", value: 14000, status: "actual", src: "an-series-g", note: "2026-02-12 為 140 億美元" }
+      - { period: "2026-04", value: 30000, status: "actual", src: "an-google-broadcom", note: "2026-04-06 逾 300 億美元（2026-04-20 的 Amazon 合作新聞稿同）" }
+      - { period: "2026-05", value: 47000, status: "actual", src: "an-series-h", note: "5 月稍早突破 470 億美元" }
+      - { period: "2026-07", value: 65000, status: "estimate", src: "bbg-65b", note: "Bloomberg 引述知情人士：7 月底達 650 億美元；公司未公開證實" }
+      - { period: "2026-09", value: 71000, status: "actual", src: "sec-fwp-eea", note: "招股書稱 10 月底比 9 月底增加 100 億美元，以 810 億減 100 億推得約 710 億美元" }
+      - { period: "2026-10", value: 81000, status: "actual", src: "sec-fwp-eea", note: "2026-10-31 約 810 億美元（未經查核）" }
+    note: "和已認列營收對照：2025 年第四季營收 20.40 億美元 ×4＝81.6 億美元，2026 年第三季 169.56 億美元 ×4＝678.2 億美元；用量計費占營收約八成，年化營收會隨用量波動，公司也提醒其中可能含違反使用政策、之後被停權客戶的營收。"
+  - id: "claude-code-run-rate"
+    name: "Claude Code 年化營收"
+    category: "年化營收"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "month"
+    definition: "公司新聞稿揭露的 Claude Code 年化營收（未說明計算方式）；招股書沒有單獨揭露 Claude Code 營收。"
+    points:
+      - { period: "2025-08", value: 500, status: "actual", src: "an-series-f", note: "逾 5 億美元" }
+      - { period: "2025-11", value: 1000, status: "actual", src: "an-bun", note: "公開提供六個月後達 10 億美元" }
+      - { period: "2026-02", value: 2500, status: "actual", src: "an-series-g", note: "逾 25 億美元" }
+  - id: "compute-infra-expense"
+    name: "算力與基礎設施費用"
+    category: "算力"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "損益表依性質分類的「算力與基礎設施」：研究、模型開發、服務客戶與內部使用的全部算力，包括向雲端業者承諾與隨需租用的費用、儲存、網路、機房託管、設備租賃與電力，2026 年起也含資料中心租金與自有設備折舊。公司通常提前 12–18 個月採購算力，近期大多是固定費用。"
+    points:
+      - { period: "2025Q1", value: 944, status: "actual", src: "sec-fwp-eea" }
+      - { period: "2025Q2", value: 1390, status: "actual", src: "sec-fwp-eea" }
+      - { period: "2025Q3", value: 2047, status: "actual", src: "sec-fwp-eea" }
+      - { period: "2025Q4", value: 2945, status: "actual", src: "sec-fwp-eea" }
+      - { period: "2026Q1", value: 3387, status: "actual", src: "sec-fwp-eea" }
+      - { period: "2026Q2", value: 5558, status: "actual", src: "sec-fwp-eea" }
+      - { period: "2026Q3", value: 9863, status: "actual", src: "sec-fwp-eea", note: "含約 50 億美元短期承諾的算力" }
+    note: "年度：2023 年 4.33 億、2024 年 25.22 億、2025 年 73.26 億美元。"
+  - id: "compute-efficiency"
+    name: "算力效率（營收 ÷ 算力與基礎設施費用）"
+    category: "算力"
+    kind: "level"
+    unit: "倍"
+    frequency: "quarter"
+    definition: "公司定義的 Compute Efficiency：當季營收除以當季算力與基礎設施費用；大於 1 表示營收超過全部算力費用。"
+    points:
+      - { period: "2025Q1", value: 0.4, status: "actual", src: "sec-fwp-ipo-site" }
+      - { period: "2025Q2", value: 0.57, status: "actual", src: "sec-fwp-ipo-site" }
+      - { period: "2025Q3", value: 0.68, status: "actual", src: "sec-fwp-ipo-site" }
+      - { period: "2025Q4", value: 0.69, status: "actual", src: "sec-fwp-ipo-site" }
+      - { period: "2026Q1", value: 1.4, status: "actual", src: "sec-fwp-ipo-site" }
+      - { period: "2026Q2", value: 2.08, status: "actual", src: "sec-fwp-ipo-site" }
+      - { period: "2026Q3", value: 1.72, status: "actual", src: "sec-fwp-ipo-site", note: "公司說明下降主因是 50 億美元短期承諾算力，價格明顯高於多年期合約" }
+  - id: "short-term-compute"
+    name: "短期承諾的算力費用"
+    category: "算力"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "算力與基礎設施費用中，以短期承諾取得的算力；公司說明其價格明顯高於多年期合約，並預期短期內使用量會繼續增加。"
+    points:
+      - { period: "2026H1", value: 1500, status: "actual", src: "sec-fwp-eea", note: "前九個月約 65 億美元減第三季約 50 億美元推得，約數" }
+      - { period: "2026Q3", value: 5000, status: "actual", src: "sec-fwp-eea", note: "約 50 億美元" }
+  - id: "cost-of-revenue-share"
+    name: "銷貨成本占營收比"
+    category: "成本結構"
+    kind: "share"
+    unit: "%"
+    frequency: "quarter"
+    definition: "功能別銷貨成本（附註 8：幾乎全是服務客戶工作負載的算力與基礎設施成本，另含部分人事與分攤費用）÷ 營收；100 減此值即毛利率。單季銷貨成本以上半年、前九個月與全年累計數相減推算。"
+    points:
+      - { period: "2025Q1", value: 91.8, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q2", value: 85.6, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q3", value: 56.2, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q4", value: 47.9, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q1", value: 22.9, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q2", value: 11.2, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q3", value: 14.3, status: "actual", src: "sec-fwp-japan" }
+    note: "年度：2023 年 63.4%、2024 年 194.8%、2025 年 60.5%、2026 年前九個月 14.5%。"
+  - id: "rd-share"
+    name: "研發費用占營收比"
+    category: "成本結構"
+    kind: "share"
+    unit: "%"
+    frequency: "quarter"
+    definition: "功能別研發費用 ÷ 營收。研發主要是模型開發、研究與內部使用的算力與基礎設施成本（訓練算力在此），另含人事、軟體與分攤費用。"
+    points:
+      - { period: "2025Q1", value: 222.1, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q2", value: 129.0, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q3", value: 126.2, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q4", value: 134.5, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q1", value: 74.3, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q2", value: 53.9, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q3", value: 56.0, status: "actual", src: "sec-fwp-japan" }
+    note: "研發金額：2025 年 63.38 億美元、2026 年前九個月 192.40 億美元。"
+  - id: "non-serving-compute"
+    name: "銷貨成本以外的算力費用（推算下限）"
+    category: "算力"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "算力與基礎設施費用減功能別銷貨成本，粗估訓練、研究、內部使用與免費使用者所用的算力。銷貨成本另含部分人事與分攤費用，所以這個差額略低於實際數，只能當下限參考。"
+    points:
+      - { period: "2025Q1", value: 599, status: "estimate", src: "sec-fwp-japan" }
+      - { period: "2025Q2", value: 716, status: "estimate", src: "sec-fwp-japan" }
+      - { period: "2025Q3", value: 1270, status: "estimate", src: "sec-fwp-japan" }
+      - { period: "2025Q4", value: 1968, status: "estimate", src: "sec-fwp-japan" }
+      - { period: "2026Q1", value: 2304, status: "estimate", src: "sec-fwp-japan" }
+      - { period: "2026Q2", value: 4261, status: "estimate", src: "sec-fwp-japan" }
+      - { period: "2026Q3", value: 7431, status: "estimate", src: "sec-fwp-japan" }
+  - id: "customers-100k"
+    name: "過去十二個月營收 10 萬美元以上的客戶數"
+    category: "客戶"
+    kind: "level"
+    unit: "家"
+    frequency: "quarter"
+    definition: "招股書定義：過去十二個月（TTM）營收 10 萬美元以上的客戶；多數點為「約」或「逾」。截至 2026-09-30 的過去十二個月，這些客戶貢獻 261 億美元營收（約占同期營收 352.82 億美元的 74%）；2026 年前九個月這些客戶約占營收 74%（2025 年同期約 75%）。"
+    points:
+      - { period: "2023Q4", value: 20, status: "actual", src: "sec-fwp-eea", note: "約 20 家" }
+      - { period: "2024Q4", value: 200, status: "actual", src: "sec-fwp-eea", note: "約 200 家" }
+      - { period: "2025Q1", value: 400, status: "actual", src: "sec-fwp-eea", note: "約 400 家" }
+      - { period: "2025Q3", value: 950, status: "actual", src: "sec-fwp-eea", note: "逾 950 家" }
+      - { period: "2025Q4", value: 1500, status: "actual", src: "sec-fwp-eea", note: "約 1,500 家" }
+      - { period: "2026Q3", value: 11900, status: "actual", src: "sec-fwp-eea", note: "逾 11,900 家；TTM 營收 1,000 萬美元以上約 250 家" }
+  - id: "customers-1m"
+    name: "年支出逾 100 萬美元的客戶數"
+    category: "客戶"
+    kind: "level"
+    unit: "家"
+    frequency: "month"
+    definition: "2026 年 9 月以前是新聞稿的「年化支出逾 100 萬美元」客戶，2026 年 9 月是招股書的「過去十二個月營收 100 萬美元以上」客戶；兩種口徑不同，不宜直接計算成長率。"
+    points:
+      - { period: "2024-02", value: 12, status: "actual", src: "an-series-g", note: "公司稱兩年前有「一打」（a dozen）客戶，取 12" }
+      - { period: "2026-02", value: 500, status: "actual", src: "an-series-g", note: "逾 500 家（年化支出）" }
+      - { period: "2026-04", value: 1000, status: "actual", src: "an-google-broadcom", note: "逾 1,000 家（年化支出），不到兩個月倍增" }
+      - { period: "2026-09", value: 1900, status: "actual", src: "sec-fwp-eea", note: "逾 1,900 家（TTM 營收口徑）" }
+  - id: "top5-customer-share"
+    name: "前五大客戶營收占比"
+    category: "客戶"
+    kind: "share"
+    unit: "%"
+    frequency: "quarter"
+    definition: "以招股書「前五大以外客戶貢獻的營收占比」換算（100 減該比率）；2026 年前九個月前五大客戶約占 25%，沒有單一客戶超過 10%。"
+    points:
+      - { period: "2026Q1", value: 36, status: "actual", src: "sec-fwp-eea", note: "前五大以外約 64%" }
+      - { period: "2026Q3", value: 21, status: "actual", src: "sec-fwp-eea", note: "前五大以外約 79%" }
+  - id: "largest-customer-share"
+    name: "單一最大客戶營收占比（達 10% 才揭露）"
+    category: "客戶"
+    kind: "share"
+    unit: "%"
+    frequency: "quarter"
+    definition: "期中財報「占營收 10% 以上的客戶」表中的最大值；客戶以代號表示，不同期間可能是不同客戶。"
+    points:
+      - { period: "2025Q2", value: 18, status: "actual", src: "sec-fwp-japan", note: "Customer B；Customer A 另占 11%" }
+      - { period: "2026Q2", value: 11, status: "actual", src: "sec-fwp-japan", note: "Customer C；2026 年上半年同為 11%" }
+  - id: "csp-marketplace-share-year"
+    name: "經雲端業者市集的營收占比（年度）"
+    category: "通路"
+    kind: "share"
+    unit: "%"
+    frequency: "year"
+    definition: "透過雲端業者（AWS、Google Cloud、Microsoft Azure）市集銷售給客戶的營收占比；雲端業者代收款項後扣除費用再撥付，公司以總額認列營收。2025 年底這些通路占應收帳款淨額 60%。"
+    points:
+      - { period: "2023", value: 11, status: "actual", src: "sec-fwp-eea", note: "約 11%" }
+      - { period: "2024", value: 32, status: "actual", src: "sec-fwp-eea" }
+      - { period: "2025", value: 47, status: "actual", src: "sec-fwp-eea" }
+    note: "2026 年前九個月 44%（應收帳款占比 52%）。"
+  - id: "csp-marketplace-share-quarter"
+    name: "經雲端業者市集的營收占比（單季）"
+    category: "通路"
+    kind: "share"
+    unit: "%"
+    frequency: "quarter"
+    definition: "同上；第二季為期中財報直接揭露，第一季與第三季以上半年（48%）、前九個月（44%）與第二季（47%）的整數百分比推算，四捨五入誤差寫在 low／high。"
+    points:
+      - { period: "2025Q2", value: 47, status: "actual", src: "sec-fwp-japan", note: "2025 年上半年 44%" }
+      - { period: "2026Q1", value: 50, low: 47, high: 53, status: "estimate", src: "sec-fwp-japan" }
+      - { period: "2026Q2", value: 47, status: "actual", src: "sec-fwp-japan", note: "2026 年上半年 48%" }
+      - { period: "2026Q3", value: 40, low: 39, high: 42, status: "estimate", src: "sec-fwp-eea" }
+    note: "招股書說明 2026 年第一季到第三季銷售行銷與通路合作費用占營收比下降，部分原因是經通路夥伴的營收占比下降與通路合約條件改變。"
+  - id: "subscription-share"
+    name: "訂閱營收占比"
+    category: "營收組合"
+    kind: "share"
+    unit: "%"
+    frequency: "quarter"
+    definition: "訂閱營收（Claude Pro、Max、Ultra、Team、Enterprise 等方案，按期間認列）÷ 營收；其餘為依 token 用量認列的用量計費營收（API、Claude Code 等）。單季數以附註 2 的累計數相減推算。"
+    points:
+      - { period: "2025Q1", value: 17.8, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q2", value: 14.4, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q3", value: 17.4, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q4", value: 18.1, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q1", value: 17.1, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q2", value: 20.9, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q3", value: 21.9, status: "actual", src: "sec-fwp-japan" }
+    note: "年度：2023 年 4.9%、2024 年 25.4%、2025 年 17.2%、2026 年前九個月 20.9%。"
+  - id: "international-share"
+    name: "美國以外營收占比"
+    category: "營收組合"
+    kind: "share"
+    unit: "%"
+    frequency: "quarter"
+    definition: "依客戶帳單地址區分的美國以外營收 ÷ 營收；單季數以附註 2 的累計數相減推算。"
+    points:
+      - { period: "2025Q1", value: 30.6, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q2", value: 29.0, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q3", value: 28.4, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q4", value: 23.9, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q1", value: 22.7, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q2", value: 29.8, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q3", value: 31.0, status: "actual", src: "sec-fwp-japan" }
+  - id: "deferred-revenue"
+    name: "遞延營收（期末）"
+    category: "營收組合"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "已開立帳單或預收、尚未認列的營收，主要是按期間認列的訂閱。"
+    points:
+      - { period: "2023Q4", value: 7, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2024Q4", value: 28, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2025Q4", value: 269, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q2", value: 1650, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q3", value: 1971, status: "actual", src: "sec-fwp-japan" }
+  - id: "remaining-performance-obligations"
+    name: "剩餘履約義務（期末）"
+    category: "營收組合"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "遞延營收加上不可取消承諾中尚未認列的金額；公司預期約 75% 在未來十二個月認列。實際認列時點取決於客戶用量。"
+    points:
+      - { period: "2026Q2", value: 10800, status: "actual", src: "sec-fwp-japan" }
+      - { period: "2026Q3", value: 13800, status: "actual", src: "sec-fwp-japan" }
+  - id: "price-cut-revenue-effect"
+    name: "季增營收中被降價抵銷的金額"
+    category: "價格"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "招股書季度趨勢（第 5.11.1 節）說明的約數：當季相較前一季，用量增加帶來的營收成長中，被新模型版本降價與合約折扣抵銷的金額（以負值表示）；兩季的營收仍比前一季成長。公司說明其他各季的價格變動對營收趨勢沒有重大影響。"
+    points:
+      - { period: "2025Q4", value: -70, status: "actual", src: "sec-fwp-eea", note: "約 7,000 萬美元" }
+      - { period: "2026Q3", value: -600, status: "actual", src: "sec-fwp-eea", note: "約 6 億美元" }
+  - id: "opus-output-price"
+    name: "Opus 系列牌價（輸出）"
+    category: "價格"
+    kind: "level"
+    unit: "美元／百萬 token"
+    frequency: "month"
+    definition: "各版 Opus 上線時的標準輸出價格；輸入價格都是輸出的五分之一。期間為上線月份。"
+    points:
+      - { period: "2025-05", value: 75, status: "actual", src: "claude-pricing", note: "Opus 4（2025-05-22），輸入 15" }
+      - { period: "2025-08", value: 75, status: "actual", src: "claude-pricing", note: "Opus 4.1，輸入 15" }
+      - { period: "2025-11", value: 25, status: "actual", src: "an-opus45", note: "Opus 4.5（2025-11-24），輸入 5" }
+      - { period: "2026-02", value: 25, status: "actual", src: "claude-pricing", note: "Opus 4.6" }
+      - { period: "2026-04", value: 25, status: "actual", src: "claude-pricing", note: "Opus 4.7" }
+      - { period: "2026-05", value: 25, status: "actual", src: "claude-pricing", note: "Opus 4.8" }
+      - { period: "2026-07", value: 25, status: "actual", src: "claude-pricing", note: "Opus 5（2026-07-24）" }
+      - { period: "2026-09", value: 20, status: "actual", src: "an-opus55", note: "Opus 5.5（2026-09-22），輸入 4，比 Opus 5 低 20%" }
+    note: "上線日依 claude-deprecations 的模型生命週期表。"
+  - id: "fable-output-price"
+    name: "Fable 系列牌價（輸出）"
+    category: "價格"
+    kind: "level"
+    unit: "美元／百萬 token"
+    frequency: "month"
+    definition: "最高階 Fable 系列上線時的標準輸出價格；輸入價格是輸出的五分之一。"
+    points:
+      - { period: "2026-06", value: 50, status: "actual", src: "claude-pricing", note: "Fable 5（2026-06-09），輸入 10" }
+      - { period: "2026-09", value: 50, status: "actual", src: "an-fable51", note: "Fable 5.1（2026-09-01），牌價不變、快取讀取降 75%；公司估計一般工作負載費用低約 25%" }
+      - { period: "2026-11", value: 40, status: "actual", src: "an-fable52", note: "Fable 5.2（2026-11-09），輸入 8" }
+  - id: "sonnet-output-price"
+    name: "Sonnet 系列牌價（輸出）"
+    category: "價格"
+    kind: "level"
+    unit: "美元／百萬 token"
+    frequency: "month"
+    definition: "中階 Sonnet 系列上線時的標準輸出價格；輸入價格是輸出的五分之一。"
+    points:
+      - { period: "2025-05", value: 15, status: "actual", src: "claude-pricing", note: "Sonnet 4" }
+      - { period: "2025-09", value: 15, status: "actual", src: "claude-pricing", note: "Sonnet 4.5" }
+      - { period: "2026-02", value: 15, status: "actual", src: "claude-pricing", note: "Sonnet 4.6" }
+      - { period: "2026-06", value: 10, status: "actual", src: "claude-pricing", note: "Sonnet 5（2026-06-30），輸入 2；上線時 2／10 美元是到 2026-08-31 的限時價，原訂 9 月 1 日起調為 3／15 美元，之後改為標準價、不再調漲" }
+      - { period: "2026-09", value: 10, status: "actual", src: "claude-pricing", note: "Sonnet 5.5（2026-09-28）" }
+  - id: "haiku-output-price"
+    name: "Haiku 系列牌價（輸出）"
+    category: "價格"
+    kind: "level"
+    unit: "美元／百萬 token"
+    frequency: "month"
+    definition: "小型 Haiku 系列上線時的標準輸出價格；Haiku 5.5 為提示 10 萬 token 以內的價格（超過時 2.50 美元）。"
+    points:
+      - { period: "2025-10", value: 5, status: "actual", src: "claude-pricing", note: "Haiku 4.5，輸入 1" }
+      - { period: "2026-10", value: 0.5, status: "actual", src: "claude-pricing", note: "Haiku 5.5（2026-10-07），輸入 0.10" }
+  - id: "contractual-obligations"
+    name: "合約義務（截至 2026-09-30，依付款年度）"
+    category: "算力承諾"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "year"
+    definition: "招股書合約義務表：營業租賃、融資租賃與不可取消的採購承諾（主要是雲端業者託管與其他基礎設施服務的最低付款），合計 3,199.93 億美元。不含短期承諾、尚未開始的租賃與 9 月底以後的新合約；加上這些後的承諾總額約 9,009 億美元（2030 年底前約 4,516 億、未來十二個月約 707 億），另有約 1,500–1,750 億美元未訂固定金額的安排未計入；其中約 1,862 億美元附終止權或生效條件。"
+    points:
+      - { period: "2026", value: 5231, status: "actual", src: "sec-fwp-eea", note: "2026 年第四季" }
+      - { period: "2027", value: 29165, status: "actual", src: "sec-fwp-eea" }
+      - { period: "2028", value: 44357, status: "actual", src: "sec-fwp-eea" }
+      - { period: "2029", value: 47752, status: "actual", src: "sec-fwp-eea" }
+      - { period: "2030", value: 45070, status: "actual", src: "sec-fwp-eea" }
+    note: "2031 年以後合計 1,484.18 億美元（期間標示不是單一年度，所以不列為資料點）；表中各年與 2031 年以後相加為 3,199.93 億美元。"
+  - id: "revenue-per-employee"
+    name: "每位員工的過去十二個月營收"
+    category: "營運效率"
+    kind: "level"
+    unit: "百萬美元／人"
+    frequency: "quarter"
+    definition: "過去十二個月營收 ÷ 員工數；2026-09-30 員工約 5,300 人，一年內增加約 170%。"
+    points:
+      - { period: "2025Q3", value: 1.4, status: "actual", src: "sec-fwp-eea", note: "約 140 萬美元" }
+      - { period: "2026Q3", value: 6.6, status: "actual", src: "sec-fwp-eea", note: "逾 660 萬美元" }
+sources:
+  sec-fwp-eea: { title: "Free Writing Prospectus (Form FWP) - Exhibit A: EEA retail prospectus dated November 11, 2026", publisher: "Anthropic, PBC (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/2130357/000162828026073040/anthropicpbc-fwpxeeaprospea.htm", type: "filing", lang: "en", published: "2026-11-12", accessed: "2026-11-18", note: "依 2026-11-10 初步招股書（S-1/A 第 2 號）編製；年化營收、客戶數、集中度、雲端市集占比（風險因素 1.1.18）、短期算力、合約義務、季度趨勢（第 5.11 節，頁面影像 anthropicpbc-exatoeeafwp186.jpg）與合約義務表（第 190 頁，anthropicpbc-exatoeeafwp200.jpg）" }
+  sec-fwp-japan: { title: "Free Writing Prospectus (Form FWP) - Exhibit A: English translation of the Japanese prospectus (November 2026)", publisher: "Anthropic, PBC (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm", type: "filing", lang: "en", published: "2026-11-12", accessed: "2026-11-18", note: "所附財報：附註 2 營收拆分、遞延營收與剩餘履約義務、附註 8 功能別營業費用、期中財報的客戶集中度與雲端市集占比（頁面影像 anthropicpbc-exatojapanf218.jpg、225.jpg、246.jpg、247.jpg、250.jpg）" }
+  sec-fwp-ipo-site: { title: "Free Writing Prospectus (Form FWP) - IPO website", publisher: "Anthropic, PBC (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/2130357/000162828026072949/anthropicpbc-fwpipowebsi.htm", type: "filing", lang: "en", published: "2026-11-12", accessed: "2026-11-18", note: "單季營收、算力與基礎設施費用與算力效率表、年化營收定義" }
+  an-series-f: { title: "Anthropic raises $13B Series F at $183B post-money valuation", publisher: "Anthropic", url: "https://www.anthropic.com/news/anthropic-raises-series-f-at-usd183b-post-money-valuation", type: "press-release", lang: "en", published: "2025-09-02", accessed: "2026-11-18" }
+  an-bun: { title: "Anthropic acquires Bun as Claude Code reaches $1B milestone", publisher: "Anthropic", url: "https://www.anthropic.com/news/anthropic-acquires-bun-as-claude-code-reaches-usd1b-milestone", type: "press-release", lang: "en", published: "2025-12-03", accessed: "2026-11-18" }
+  an-series-g: { title: "Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation", publisher: "Anthropic", url: "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation", type: "press-release", lang: "en", published: "2026-02-12", accessed: "2026-11-18" }
+  an-google-broadcom: { title: "Anthropic expands partnership with Google and Broadcom for multiple gigawatts of next-generation compute", publisher: "Anthropic", url: "https://www.anthropic.com/news/google-broadcom-partnership-compute", type: "press-release", lang: "en", published: "2026-04-06", accessed: "2026-11-18" }
+  an-series-h: { title: "Anthropic raises $65B in Series H funding at $965B post-money valuation", publisher: "Anthropic", url: "https://www.anthropic.com/news/series-h", type: "press-release", lang: "en", published: "2026-05-28", accessed: "2026-11-18" }
+  bbg-65b: { title: "Anthropic's Annualized Revenue Tops $65 Billion Before IPO", publisher: "Bloomberg News（Bloomberg Industry Group 轉載）", url: "https://news.bgov.com/financial-accounting/anthropic-revenue-run-rate-surpasses-65-billion-ahead-of-ipo", type: "news", lang: "en", published: "2026-08-18", accessed: "2026-11-18", note: "媒體引述知情人士，非公司公開說法" }
+  an-opus45: { title: "Introducing Claude Opus 4.5", publisher: "Anthropic", url: "https://www.anthropic.com/news/claude-opus-4-5", type: "press-release", lang: "en", published: "2025-11-24", accessed: "2026-11-18" }
+  an-fable51: { title: "Introducing Claude Fable 5.1 and Claude Mythos 5.1", publisher: "Anthropic", url: "https://www.anthropic.com/claude-fable-and-mythos-5-1", type: "press-release", lang: "en", published: "2026-09-01", accessed: "2026-11-18" }
+  an-opus55: { title: "Introducing Claude Opus 5.5", publisher: "Anthropic", url: "https://www.anthropic.com/claude-opus-5-5", type: "press-release", lang: "en", published: "2026-09-22", accessed: "2026-11-18" }
+  an-fable52: { title: "Introducing Claude Fable 5.2 and Claude Mythos 5.2", publisher: "Anthropic", url: "https://www.anthropic.com/claude-fable-and-mythos-5-2", type: "press-release", lang: "en", published: "2026-11-09", accessed: "2026-11-18" }
+  claude-pricing: { title: "Pricing", publisher: "Anthropic", url: "https://platform.claude.com/docs/en/about-claude/pricing", type: "docs", lang: "en", accessed: "2026-11-18", note: "各模型每百萬 token 的標準價格（含已退役的 Opus 4、Opus 4.1、Sonnet 4）" }
+  claude-deprecations: { title: "Model deprecations", publisher: "Anthropic", url: "https://platform.claude.com/docs/en/about-claude/model-deprecations", type: "docs", lang: "en", accessed: "2026-11-18", note: "模型生命週期表：API ID 與「不早於上線一年後」的退役日，用來確認各版上線日" }
+lastVerified: "2026-11-18"
+editorial:
+  status: "fact-checked"
+  author: "fc2-data-anthropic"
+  checkedBy: "fc2-check-anthropic"
+  checkedOn: "2026-11-18"
+  notes: "查核（fc2-check-anthropic，2026-11-18）：所有由財報計算的序列（算力費用、算力效率、銷貨成本與研發占比、銷貨成本以外的算力、訂閱與美國以外占比）都以程式對 anthropic-inputs.yaml 重算，誤差在四捨五入以內；算力效率、客戶數、年化營收定義與 810 億美元、每位員工營收對照上市網站 FWP；季度趨勢、短期算力、合約義務表（第 190 頁）、前五大客戶、雲端市集占比、遞延營收與剩餘履約義務對照招股書影像；年化營收與客戶數的新聞稿點、Bloomberg 報導，以及各模型牌價（定價頁）與上線日（模型生命週期表）逐一重讀原文。修正：降價影響序列改名並說明是抵銷季增、Sonnet 5 上線價原為限時價、G 輪「一打」客戶、TTM 營收 261 億美元與 74% 的口徑；合約義務的「2031 年以後」不是單一年度，移到 note（頁面依期間排序時會排到最前面）。short-term-compute 的「2026H1」是上半年合計，無法拆成單季。原整理說明：招股書數字取自 SEC 上的 FWP（歐洲經濟區公開說明書、日本公開說明書英譯、上市網站）；百分比序列由本檔以招股書金額計算到小數一位。年化營收的 2025-01 至 2026-05 各點與 src/content/financials/anthropic.json 相同。"

@@ -1,0 +1,232 @@
+---
+/**
+ * 一分鐘看懂（輝達）: a chip designer that sells GPUs, CPUs, networking and whole AI server racks, mostly to cloud
+ * providers and AI clouds — so data-center revenue follows the hyperscalers' capex (the selected model takes it as a
+ * stable share of five companies' capex), and the gross margin follows product transitions, memory costs and the
+ * inventory and purchase-obligation provisions. Key figures of the latest quarter and the company's guidance for the
+ * next one. Everything is read from the bundle (see nv-data.ts).
+ *   <Basics b={bundle} />
+ */
+import FlowSteps from '../../content/FlowSteps.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import {
+  actualGrossMargin,
+  calendarHint,
+  citesIn,
+  driverOf,
+  fcMoney,
+  fcPct,
+  lastReportedOf,
+  nextQuarter,
+  periodLabel,
+  qIndex,
+  quarterOf,
+  selectedCandidate,
+  type FcBundle,
+} from '../../../lib/forecast-data';
+import { formatDate, formatNumber } from '../../../lib/format';
+import { calOf, dcOf, derivedMap, driverMap, extraOf, noteKey, param, provisionBasis } from './nv-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { inputs, model: m, meta } = b;
+const fyStart = meta.fyStartMonth ?? 2;
+const last = lastReportedOf(m);
+const q = quarterOf(inputs, last)!;
+const q0 = inputs.quarters.find((x) => qIndex(x.period) === qIndex(last) - 4);
+const next = nextQuarter(last);
+const sel = selectedCandidate(m);
+const n0 = (v: number) => formatNumber(v, { digits: 0 });
+const n1 = (v: number) => formatNumber(v, { digits: 1 });
+const yi = (v: number) => formatNumber(v / 100, { digits: 0 });
+
+// revenue split of the latest quarter
+const dc = dcOf(q);
+const dcKey = noteKey(b, q, 'platform');
+const dcShare = dc != null ? (dc / q.revenue) * 100 : undefined;
+const edge = dc != null ? q.revenue - dc : undefined;
+const yoy = q0 ? (q.revenue / q0.revenue - 1) * 100 : undefined;
+const gm = actualGrossMargin(b.company, q);
+const gm0 = q0 ? actualGrossMargin(b.company, q0) : undefined;
+
+// hyperscaler capex of the matching calendar quarter, and the share the five companies take of data-center revenue
+const capexS = driverOf(b, 'hyperscaler-capex-total');
+const capex = driverMap(b, 'hyperscaler-capex-total');
+const cq = calOf(last);
+const cx = capex.get(cq);
+const cx0 = capex.get(`${Number(cq.slice(0, 4)) - 1}${cq.slice(4)}`);
+const cxYoy = cx && cx0 ? (cx.value / cx0.value - 1) * 100 : undefined;
+const halfKey = /一半多一點/.test(capexS?.note ?? '') ? citesIn(b, capexS?.note)[0] : undefined;
+const ratioP = param(b, /^資料中心營收占雲端業者資本支出的比例/);
+// four-quarter ratio: the first quarter at 40% or more, and the value a year before it
+const r4 = [...derivedMap(b, 'capture-ratio-4q')].filter(([, v]) => v.status !== 'forecast').sort((x, y) => qIndex(x[0]) - qIndex(y[0]));
+const jump = r4.find(([, v]) => v.value >= 40);
+const before = jump ? r4.find(([p]) => qIndex(p) === qIndex(jump[0]) - 4) : undefined;
+const genAi = inputs.events.find((e) => /生成式 AI/.test(e.title));
+
+// gross margin: core margin (before provisions) and GAAP margin over the backtest window, the largest provision
+const core = derivedMap(b, 'gm-core');
+const prov = derivedMap(b, 'provision-rate');
+const win = inputs.quarters.filter((x) => qIndex(x.period) >= qIndex(m.test.from) && qIndex(x.period) <= qIndex(last));
+const coreVals = win.map((x) => core.get(x.period)?.value).filter((v): v is number => v != null);
+const gmVals = win.map((x) => actualGrossMargin(b.company, x)).filter((v): v is number => v != null);
+const topProv = win
+  .map((x) => ({ q: x, v: prov.get(x.period)?.value }))
+  .filter((x): x is { q: typeof x.q; v: number } => x.v != null && provisionBasis(x.q) === 'total')
+  .sort((x, y) => y.v - x.v)[0];
+const topEvent = topProv
+  ? inputs.events.find((e) => e.date >= topProv.q.start && e.date <= topProv.q.end && /H20|存貨|出口/.test(e.title + e.detail))
+  : undefined;
+const memEvent = inputs.events.find((e) => /記憶體/.test(e.title) && /毛利率/.test(e.title));
+const gGm = driverMap(b, 'guidance-gross-margin').get(next);
+const gGmYear = [...driverMap(b, 'guidance-gross-margin-annual').values()].filter((p) => p.status === 'guidance').at(-1);
+
+// guidance: revenue range of the next quarter, the usual band, the record against the midpoint
+const gRev = driverMap(b, 'guidance-revenue').get(next);
+const gRevS = driverOf(b, 'guidance-revenue');
+const band = extraOf(q, '財測營收區間百分比');
+const bandNext = gRev?.high != null ? Math.round((gRev.high / gRev.value - 1) * 100) : undefined;
+const beats = [...derivedMap(b, 'guidance-beat-revenue')].sort((x, y) => qIndex(x[0]) - qIndex(y[0]));
+const above = beats.filter(([, v]) => v.value > 0).length;
+const sorted = beats.map(([, v]) => v.value).sort((x, y) => x - y);
+const median = sorted.length ? (sorted.length % 2 ? sorted[(sorted.length - 1) / 2]! : (sorted[sorted.length / 2 - 1]! + sorted[sorted.length / 2]!) / 2) : undefined;
+const gParam = b.model.parameters.find((p) => p.name.startsWith(`${next} 財測：營收`));
+const noChina = /不含中國資料中心運算營收/.test(gParam?.note ?? '');
+const gKey = gRev?.src;
+// the CFO's preliminary outlook for the next fiscal year (note of the guidance series)
+const fyOutlook = /（(\d{4}-\d{2}-\d{2})）初步預期 (FY\d{4}) 營收年增約 (\d+)%/.exec(gRevS?.note ?? '');
+const fyOutlookKey = fyOutlook ? citesIn(b, gRevS?.note)[0] : undefined;
+const weeks14 = /14 週/.test(gRev?.note ?? '');
+
+// supply commitments
+const supply = extraOf(q, '供應與產能承諾');
+const cover = derivedMap(b, 'supply-commitment-cover').get(last)?.value;
+const supplyKey = noteKey(b, q, 'supply');
+
+const range = (lo?: number, hi?: number, digits = 0) => (lo != null && hi != null ? `${formatNumber(lo, { digits })}–${formatNumber(hi, { digits })}` : '');
+---
+
+<div class="mem-basics__grid">
+  <div class="prose mem-basics__prose">
+    <p>
+      {meta.nameFull}設計 GPU、CPU 與網路晶片，並組成整櫃的 AI 伺服器系統出售；晶片交由台積電等代工廠製造，HBM（高頻寬記憶體）向記憶體廠採購。{periodLabel(last, 'long')}（{calendarHint(last, fyStart)}）營收 {fcMoney(q.revenue, 'USD')}<FcCite k={q.src} />{dc != null && dcShare != null && edge != null && <>，其中資料中心 {fcMoney(dc, 'USD')}、占 {n0(dcShare)}%{dcKey && <FcCite k={dcKey} />}；其餘 {fcMoney(edge, 'USD')}是 PC、遊戲機、工作站、車用與機器人等「邊緣運算」</>}。
+    </p>
+    <p>
+      <strong>營收看雲端業者的資本支出。</strong>{halfKey && <>輝達表示前五大雲端業者（hyperscalers）約占資料中心營收的一半多一點<FcCite k={halfKey} />；</>}本頁用微軟、Alphabet、亞馬遜、Meta、甲骨文五家公司財報的資本支出代表雲端業者的投資{cx && <>，{periodLabel(cq, 'long')}合計 {fcMoney(cx.value, 'USD')}{cxYoy != null && `，年增 ${n0(cxYoy)}%`}<FcCite k={cx.src} /></>}。{ratioP && <>最近四季，輝達的資料中心營收約等於同期這五家資本支出的 {n1(ratioP.value)}%{jump && before && <>（{periodLabel(before[0])} 只有 {n1(before[1].value)}%，生成式 AI 需求爆發{genAi && <FcCite k={genAi.src} />}後，{periodLabel(jump[0])} 升到 {n1(jump[1].value)}%）</>}。</>}資本支出還包括土地、建築、電力與其他廠商的設備，所以這是「比例」而不是市占率；本頁選定的「{sel.name}」就用這個比例乘上雲端業者的資本支出，推估資料中心營收。
+    </p>
+    <p>
+      <strong>毛利率看產品轉換、記憶體成本與存貨提列。</strong>{coreVals.length > 0 && gmVals.length > 0 && `${periodLabel(m.test.from)}–${periodLabel(last)} 的 ${coreVals.length} 季，扣除存貨與採購承諾提列前的「核心毛利率」（本站推算）在 ${n1(Math.min(...coreVals))}–${n1(Math.max(...coreVals))}% 之間，GAAP 毛利率則在 ${n1(Math.min(...gmVals))}–${n1(Math.max(...gmVals))}% 之間。`}{topProv && <>差距主要來自提列：{periodLabel(topProv.q.period, 'long')}{topEvent ? `（${topEvent.title}）` : ''}提列占營收 {n1(topProv.v)}%，GAAP 毛利率降到 {fcPct(actualGrossMargin(b.company, topProv.q))}<FcCite k={topProv.q.src} />{noteKey(b, topProv.q, 'provision') !== topProv.q.src && <FcCite k={noteKey(b, topProv.q, 'provision')!} />}{topEvent && <FcCite k={topEvent.src} />}。</>}{memEvent && gGm && <>財務長在 {formatDate(memEvent.date)}表示記憶體價格漲幅超出預期<FcCite k={memEvent.src} />；{periodLabel(next, 'long')}的毛利率財測為 {gGm.low != null && gGm.high != null ? `${range(gGm.low, gGm.high, 1)}%` : fcPct(gGm.value)}<FcCite k={gGm.src} />{gGmYear && gGmYear.low != null && gGmYear.high != null && <>，{gGmYear.period} 約 {range(gGmYear.low, gGmYear.high)}%<FcCite k={gGmYear.src} /></>}。</>}
+    </p>
+    <p>
+      輝達每季在財報新聞稿公布下一季的營收、GAAP 毛利率與營業費用財測{band != null && `，營收以中值上下 ${n0(band)}% 表示`}{bandNext != null && band != null && bandNext !== band && `（${periodLabel(next)} 為 ${bandNext}%）`}。{beats.length > 0 && median != null && `${periodLabel(beats[0]![0])} 以來 ${beats.length} 季中，有 ${above} 季的實際營收高於財測中值，中位數高 ${n1(median)}%（本站由各季財測與財報計算）。`}本頁 {periodLabel(next, 'long')}的三種情境以財測加上歷史偏差設定{noChina && <>；財測不含中國資料中心運算營收{gKey && <FcCite k={gKey} />}</>}。{fyOutlook && <>{fyOutlook[2]} 公司沒有數字財測，只有財務長在 {formatDate(fyOutlook[1])}初步預期營收年增約 {fyOutlook[3]}%、屬供給受限的展望{fyOutlookKey && <FcCite k={fyOutlookKey} />}；本頁 {fyOutlook[2]} 的各季數字是模型依雲端資本支出情境推算的結果。</>}
+    </p>
+  </div>
+  <aside class="mem-basics__aside fc-figs" aria-label="關鍵數字">
+    <p class="fc-figs__title">關鍵數字</p>
+    <ul class="fc-figs__list" role="list">
+      <li class="mem-fig">
+        <p class="mem-fig__label">{periodLabel(last)} 營收</p>
+        <p class="mem-fig__value">
+          <strong>{yi(q.revenue)}</strong>
+          <span class="mem-fig__unit">億美元</span>
+        </p>
+        <p class="mem-fig__meta">
+          財報{yoy != null && `；年增 ${n0(yoy)}%`}
+          <FcCite k={q.src} />
+          {q0 && q0.src !== q.src && <FcCite k={q0.src} />}
+        </p>
+      </li>
+      {
+        dcShare != null && dc != null && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">資料中心占營收</p>
+            <p class="mem-fig__value">
+              <strong>{n0(dcShare)}%</strong>
+            </p>
+            <p class="mem-fig__meta">
+              {periodLabel(last)}：{yi(dc)} 億美元
+              {dcKey && <FcCite k={dcKey} />}
+            </p>
+          </li>
+        )
+      }
+      {
+        gm != null && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">
+              {periodLabel(last)} {meta.gmLabel}
+            </p>
+            <p class="mem-fig__value">
+              <strong>{fcPct(gm)}</strong>
+            </p>
+            <p class="mem-fig__meta">
+              財報{gm0 != null && `；一年前 ${fcPct(gm0)}`}
+              <FcCite k={q.src} />
+              {q0 && q0.src !== q.src && <FcCite k={q0.src} />}
+            </p>
+          </li>
+        )
+      }
+      {
+        ratioP && (
+          <li class="mem-fig" data-status="estimate">
+            <p class="mem-fig__label">資料中心營收 ÷ 雲端資本支出</p>
+            <p class="mem-fig__value">
+              <strong>{n1(ratioP.value)}%</strong>
+            </p>
+            <p class="mem-fig__meta">
+              最近四季；本站推算
+              {cx && <FcCite k={cx.src} />}
+            </p>
+          </li>
+        )
+      }
+      {
+        gRev && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">
+              {periodLabel(next)} 營收<span class="fc-tag fc-tag--guidance">財測</span>
+            </p>
+            <p class="mem-fig__value">
+              <strong>{gRev.low != null && gRev.high != null ? range(gRev.low / 100, gRev.high / 100) : yi(gRev.value)}</strong>
+              <span class="mem-fig__unit">億美元</span>
+            </p>
+            <p class="mem-fig__meta">
+              {gGm && `毛利率 ${gGm.low != null && gGm.high != null ? `${range(gGm.low, gGm.high, 1)}%` : fcPct(gGm.value)}`}
+              {weeks14 && '；14 週'}
+              <FcCite k={gRev.src} />
+            </p>
+          </li>
+        )
+      }
+      {
+        supply != null && (
+          <li class="mem-fig">
+            <p class="mem-fig__label">供應與產能承諾</p>
+            <p class="mem-fig__value">
+              <strong>{yi(supply)}</strong>
+              <span class="mem-fig__unit">億美元</span>
+            </p>
+            <p class="mem-fig__meta">
+              {periodLabel(last)} 底{cover != null && `；約當 ${n1(cover)} 季營收`}
+              {supplyKey && <FcCite k={supplyKey} />}
+            </p>
+          </li>
+        )
+      }
+    </ul>
+  </aside>
+</div>
+<FlowSteps
+  class="fc-flow"
+  title="從雲端資本支出到 EPS"
+  steps={[
+    { title: '雲端資本支出', detail: cx ? `五大雲端業者 ${periodLabel(cq)} 合計 ${yi(cx.value)} 億美元` : '五大雲端業者的資本支出' },
+    { title: '資料中心營收', detail: ratioP ? `約為同期資本支出的 ${n1(ratioP.value)}%（最近四季）` : '資本支出 × 固定比例' },
+    { title: '加上邊緣運算', detail: 'PC、遊戲、工作站、車用，依季節性推算' },
+    { title: '毛利率', detail: '核心毛利率減去存貨與採購承諾提列' },
+    { title: 'EPS', detail: '減營業費用、加業外、扣稅，再除以股數' },
+  ]}
+/>

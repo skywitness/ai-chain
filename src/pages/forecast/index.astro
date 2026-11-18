@@ -202,8 +202,12 @@ const jsonLd = [
                   {x.period && x.base && (
                     <dl class="fct-card__next">
                       <dt>
-                        {`${periodLabel(x.period, 'long')}${x.meta.fyStartMonth ? `（${calendarHint(x.period, x.meta.fyStartMonth)}）` : ''}營收`}
-                        <span class="mem-st mem-st--forecast">基準情境</span>
+                        {`${periodLabel(x.period, 'long')}${x.meta.fyStartMonth ? `（${calendarHint(x.period, x.meta.fyStartMonth)}）` : ''}`}
+                        {/* 「營收」 stays with its tag, so a long fiscal-quarter label (輝達) never leaves 「收」 alone on a line */}
+                        <span class="mem-nowrap">
+                          營收
+                          <span class="mem-st mem-st--forecast">基準情境</span>
+                        </span>
                       </dt>
                       <dd>
                         <span class="fct-card__big">{formatMoney(x.base.revenue, x.meta.currency, { unit: '億' })}</span>
@@ -214,7 +218,13 @@ const jsonLd = [
                         )}
                         <span class="fct-card__gm">
                           {x.meta.gmLabel} {fcPct(x.base.grossMargin)}
-                          {x.guide && `；${zhConcat(x.meta.name, '財測營收')} ${formatMoney(x.guide.revenue, x.meta.currency, { unit: '億' })}${x.guide.basis ? '（美元財測換算）' : ''}`}
+                          {x.guide && (
+                            <>
+                              {`；${zhConcat(x.meta.name, '財測營收')} `}
+                              <span class="mem-nowrap">{formatMoney(x.guide.revenue, x.meta.currency, { unit: '億' })}</span>
+                              {x.guide.basis ? '（美元財測換算）' : ''}
+                            </>
+                          )}
                         </span>
                       </dd>
                     </dl>

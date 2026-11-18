@@ -19,6 +19,8 @@ const cards = b.model.candidates
   .map((c, i) => ({ c, i, role: candidateRole(c) }))
   .sort((x, y) => ORDER[x.role.kind] - ORDER[y.role.kind] || x.i - y.i);
 const HEAD: Target[] = ['revenue', 'grossMargin', 'eps'];
+// the footnote explains the EPS error only when a card shows one (SpaceX and Anthropic test no EPS)
+const anyEps = b.model.candidates.some((c) => c.metrics['eps'] != null);
 ---
 
 <ol class="fc-cands" role="list">
@@ -63,5 +65,5 @@ const HEAD: Target[] = ['revenue', 'grossMargin', 'eps'];
   }
 </ol>
 <p class="mem-fine">
-  「誤差」是回測期（{b.model.test.from}–{b.model.test.to}）的平均：金額看平均絕對百分比誤差（MAPE），毛利率看平均絕對誤差（個百分點），EPS 看平均絕對誤差（括號內為百分比）。
+  「誤差」是回測期（{b.model.test.from}–{b.model.test.to}）的平均：金額看平均絕對百分比誤差（MAPE），毛利率看平均絕對誤差（個百分點）{anyEps ? '，EPS 看平均絕對誤差（括號內為百分比）' : ''}。
 </p>

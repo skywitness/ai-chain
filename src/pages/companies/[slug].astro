@@ -214,7 +214,10 @@ const hasRevenue = !!fin && fin.series.some((s) => s.metric === 'revenue' && s.p
 const revenueLede = !fin
   ? undefined
   : !hasRevenue
-    ? nz('沒有公開經會計師查核的財報；以下是公司揭露或媒體報導的營收規模指標，屬估計值，僅供參考。')
+    ? forecastCompany
+      ? // the model page reads the company's own filings (Anthropic: the S-1 quarters), so 「沒有公開財報」 would be wrong here
+        '以下是公司揭露或媒體報導的營收規模指標，屬估計值，僅供參考；季度財報與模型推估見下方的財報模型頁。'
+      : nz('沒有公開經會計師查核的財報；以下是公司揭露或媒體報導的營收規模指標，屬估計值，僅供參考。')
     : finProfile === 'full'
       ? '金額以公司財報的原幣呈現，可切換季、年與月資料；美元換算只供跨公司比較。'
       : '金額以公司財報的原幣呈現；美元換算只供跨公司比較。';
@@ -337,7 +340,11 @@ const revenueLede = !fin
   >
     {
       fin && !hasRevenue ? (
-        <MetricBars financials={fin} company={nameForCharts} />
+        <>
+          <MetricBars financials={fin} company={nameForCharts} />
+          {/* a company whose financials hold only operating metrics (Anthropic: run-rate) still links its model page */}
+          {forecastCompany && <ForecastLinks variant="callout" company={forecastCompany} class="co-forecast" />}
+        </>
       ) : fin ? (
         <>
           {finProfile === 'compact' && <FinNotes financials={fin} part="headline" />}

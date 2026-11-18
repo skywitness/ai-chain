@@ -1,0 +1,304 @@
+# Anthropic 財報模型的輸入資料：日曆季度損益（依性質與依功能兩種分類）、營收拆分、非 GAAP 調節、可推算的現金流、年度財報與事件。格式見 src/schemas/forecast.ts（companyInputs）。
+# 由 fc2-data-anthropic 整理（2026-11-18）；驅動因子（年化營收、算力費用與效率、客戶數、雲端市集占比、合約義務、模型牌價…）在 anthropic-drivers.yaml；模型輸出 anthropic-model.json 由 scripts/models/anthropic.ts 產生。
+# 本站由 Anthropic 開發的 Claude 撰寫：數字一律照招股書與公司文件抄錄，風險因素與成長數字並列，不使用推銷字眼。
+
+company: "anthropic"
+currency: "USD"
+amountUnit: "million"
+periodNote: "會計年度與曆年相同，季度為日曆季度（2025Q1＝2025-01-01 至 2025-03-31）。Anthropic, PBC 在 2026-10-26 公開遞交 S-1，截至 2026-11-18 尚未訂價掛牌（預計在 Nasdaq 以代號 ANT 交易），沒有 10-Q，也沒有公司財測。季資料只有招股書揭露的 2025Q1–2026Q3 共 7 季，2024 年以前只有 2023、2024 年度數。數字取自公司依 2026-11-10 初步招股書（S-1/A 第 2 號）提交的自由撰寫公開說明書（FWP）：季度損益表（依性質分類）與調整後營業利益、調整後淨利的單季調節表取自 sec-fwp-eea 第 5.10–5.11 節；功能別營業費用（附註 8：銷貨成本、研發、銷售與行銷、一般及管理）、營收拆分（附註 2：用量計費與訂閱、美國與美國以外）與現金流量表取自 sec-fwp-japan 所附的 2023–2025 年度與 2025、2026 年前九個月財報，以及 2026 年上半年期中財報；單季數以「上半年減第二季」「前九個月減上半年」「全年減前九個月」推算，各季相加都與公布的累計數一致。2026-11-17 的 S-1/A 第 3 號主文件超過 10 MB，本檔未能直接讀取，無法排除其中有數字修正。金額單位為百萬美元。損益表主表依性質分類（算力與基礎設施、人事、Bartz 和解、銷售行銷與通路合作、其他營運與管理），沒有毛利一欄；本檔的 grossProfit＝營收－功能別「銷貨成本」（附註 8：幾乎全是服務客戶工作負載的算力與基礎設施成本，另含部分人事與分攤費用），operatingExpenses＝研發＋銷售與行銷＋一般及管理＋Bartz 和解（功能別），grossProfit－operatingExpenses＝operatingIncome。模型開發、研究與內部使用的算力計入研發，提供免費使用的算力計入銷售與行銷，因此毛利率遠高於「營收減全部算力費用」的比率（例如 2026Q3 毛利率 85.7%，算力與基礎設施費用卻占營收 58%）。operatingIncome 為 GAAP 營業損益；nonOperating＝利息收入＋可轉換票據、衍生負債與 SAFE 的公允價值變動＋其他收支淨額，等於 pretaxIncome－operatingIncome；netIncome 為 GAAP 淨損，主要來自可轉換票據等工具隨公司估值上升而認列的非現金公允價值變動（2026 年前九個月 943.24 億美元）。上市前沒有單季每股盈餘（年度與前九個月的每股淨損寫在 annual 與 2026Q3 的 note，基本與稀釋相同）。depreciation（折舊攤銷）、capex（購置不動產與設備）與營業活動現金流只填在可由累計數推算的季度（2025Q3、2025Q4、2026Q3），上半年合計寫在第二季的 note；公司的算力至今主要透過雲端業者的安排取得、隨算力到位付款並計入費用，所以資本支出很小，但公司預期自建資料中心與租賃會使資本支出與預付款大幅增加。extra（百萬美元）：依性質分類的五項費用、功能別四項費用、利息收入、公允價值變動、其他收支淨額、所得稅、股份基礎給付、非現金捐贈（員工捐款配捐計畫，以 N 類普通股支付）、調整後營業利益與調整後淨利（公司定義的非 GAAP 指標：營業損益加回股份基礎給付、非現金捐贈與 Bartz 和解；淨利另加回上述公允價值變動與其他金融工具公允價值變動，並扣除稅務影響）、用量計費與訂閱營收、美國與美國以外營收（依客戶帳單地址）。Stock Analysis（sa-q）的單季營收、營業損益與淨損與本檔一致，只用來交叉核對。"
+asOf: "2026-11-18"
+quarters:
+  - period: "2025Q1"
+    start: "2025-01-01"
+    end: "2025-03-31"
+    status: "actual"
+    revenue: 376
+    grossProfit: 31
+    operatingExpenses: 966
+    operatingIncome: -935
+    nonOperating: -5650
+    pretaxIncome: -6585
+    netIncome: -6592
+    extra: { 算力與基礎設施費用: 944, 人事費用: 218, Bartz和解: 0, 銷售行銷與通路合作費用: 24, 其他營運與管理費用: 125, 銷貨成本: 345, 研發費用: 835, 銷售與行銷費用: 63, 一般及管理費用: 68, 利息收入: 51, 可轉換票據等公允價值變動: -5701, 其他收支淨額: 0, 所得稅: 7, 股份基礎給付: 105, 非現金捐贈: 0, 調整後營業利益: -830, 調整後淨利: -786, 用量計費營收: 309, 訂閱營收: 67, 美國營收: 261, 美國以外營收: 115 }
+    note: "損益、依性質分類的費用與非 GAAP 調節取自 sec-fwp-eea 第 5.10.1、5.11.8–5.11.9 節。功能別費用以 sec-fwp-japan 上半年期中財報的 2025 年上半年減第二季推算（銷貨成本 1,019－674、研發 1,850－1,015、銷售與行銷 239－176、一般及管理 190－122）；用量計費與訂閱、美國與美國以外營收同法推算（附註 2）。股份基礎給付 105 為調節表數字，計入人事費用。"
+    src: "sec-fwp-eea"
+  - period: "2025Q2"
+    start: "2025-04-01"
+    end: "2025-06-30"
+    status: "actual"
+    revenue: 787
+    grossProfit: 113
+    operatingExpenses: 1313
+    operatingIncome: -1200
+    nonOperating: -5177
+    pretaxIncome: -6377
+    netIncome: -6377
+    extra: { 算力與基礎設施費用: 1390, 人事費用: 320, Bartz和解: 0, 銷售行銷與通路合作費用: 96, 其他營運與管理費用: 181, 銷貨成本: 674, 研發費用: 1015, 銷售與行銷費用: 176, 一般及管理費用: 122, 利息收入: 64, 可轉換票據等公允價值變動: -5241, 其他收支淨額: 0, 所得稅: 0, 股份基礎給付: 181, 非現金捐贈: 0, 調整後營業利益: -1019, 調整後淨利: -957, 用量計費營收: 674, 訂閱營收: 113, 美國營收: 559, 美國以外營收: 228 }
+    note: "損益與調節取自 sec-fwp-eea；功能別費用、營收拆分直接取自 sec-fwp-japan 上半年期中財報的第二季欄。2025 年上半年購置不動產與設備 18、折舊攤銷 14、營業活動現金流 －1,513（現金流量表只有上半年累計，無法拆成單季）。單一客戶（期中財報的 Customer B）占當季營收 18%、Customer A 占 11%；透過雲端業者市集的營收占 47%。"
+    src: "sec-fwp-eea"
+  - period: "2025Q3"
+    start: "2025-07-01"
+    end: "2025-09-30"
+    status: "actual"
+    revenue: 1382
+    grossProfit: 605
+    operatingExpenses: 3694
+    operatingIncome: -3089
+    nonOperating: -9044
+    pretaxIncome: -12133
+    netIncome: -12138
+    depreciation: 10
+    capex: 93
+    extra: { 算力與基礎設施費用: 2047, 人事費用: 489, Bartz和解: 1500, 銷售行銷與通路合作費用: 202, 其他營運與管理費用: 233, 銷貨成本: 777, 研發費用: 1744, 銷售與行銷費用: 291, 一般及管理費用: 159, 利息收入: 124, 可轉換票據等公允價值變動: -9165, 其他收支淨額: -3, 所得稅: 5, 股份基礎給付: 305, 非現金捐贈: 0, 調整後營業利益: -1284, 調整後淨利: -1168, 用量計費營收: 1142, 訂閱營收: 240, 美國營收: 990, 美國以外營收: 392, 營業活動現金流: -511 }
+    note: "損益與調節取自 sec-fwp-eea。本季認列 Bartz 著作權集體訴訟和解費用 15 億美元，營業損失因此擴大；調整後營業利益排除這筆費用。功能別費用、營收拆分、折舊攤銷、資本支出與營業活動現金流都以 sec-fwp-japan 的 2025 年前九個月減上半年推算（銷貨成本 1,796－1,019、購置不動產與設備 111－18、營業活動現金流 －2,024－（－1,513））。"
+    src: "sec-fwp-eea"
+  - period: "2025Q4"
+    start: "2025-10-01"
+    end: "2025-12-31"
+    status: "actual"
+    revenue: 2040
+    grossProfit: 1063
+    operatingExpenses: 3899
+    operatingIncome: -2836
+    nonOperating: -14014
+    pretaxIncome: -16850
+    netIncome: -16858
+    depreciation: 16
+    capex: 20
+    extra: { 算力與基礎設施費用: 2945, 人事費用: 812, Bartz和解: 0, 銷售行銷與通路合作費用: 246, 其他營運與管理費用: 873, 銷貨成本: 977, 研發費用: 2744, 銷售與行銷費用: 381, 一般及管理費用: 774, 利息收入: 192, 可轉換票據等公允價值變動: -14201, 其他收支淨額: -5, 所得稅: 8, 股份基礎給付: 574, 非現金捐贈: 541, 調整後營業利益: -1721, 調整後淨利: -1544, 用量計費營收: 1671, 訂閱營收: 369, 美國營收: 1552, 美國以外營收: 488, 營業活動現金流: -613, 現金及短期投資: 20277 }
+    note: "損益與調節取自 sec-fwp-eea（與 2025 全年減前九個月一致）。其他營運與管理費用含員工捐款配捐計畫的非現金費用 5.41 億美元。招股書指出，第三季到第四季用量增加帶來的營收成長中，約 7,000 萬美元被新模型降價與合約折扣抵銷（第 5.11.1 節）。功能別費用、營收拆分、折舊攤銷、資本支出與營業活動現金流以 sec-fwp-japan 的 2025 全年減前九個月推算。期末現金、約當現金與短期投資 202.77 億美元（sec-fwp-eea 摘要資產負債表）。"
+    src: "sec-fwp-eea"
+  - period: "2026Q1"
+    start: "2026-01-01"
+    end: "2026-03-31"
+    status: "actual"
+    revenue: 4731
+    grossProfit: 3648
+    operatingExpenses: 5315
+    operatingIncome: -1667
+    nonOperating: -12751
+    pretaxIncome: -14418
+    netIncome: -14439
+    extra: { 算力與基礎設施費用: 3387, 人事費用: 1295, Bartz和解: 0, 銷售行銷與通路合作費用: 1033, 其他營運與管理費用: 683, 銷貨成本: 1083, 研發費用: 3513, 銷售與行銷費用: 1246, 一般及管理費用: 556, 利息收入: 349, 可轉換票據等公允價值變動: -12791, 其他收支淨額: -309, 所得稅: 21, 股份基礎給付: 924, 非現金捐贈: 126, 調整後營業利益: -617, 調整後淨利: -312, 用量計費營收: 3924, 訂閱營收: 807, 美國營收: 3657, 美國以外營收: 1074 }
+    note: "損益與調節取自 sec-fwp-eea。營收季增 132%；銷售行銷與通路合作費用占營收 22%，主要是支付給通路夥伴的費用。其他收支淨額 －3.09 億美元主要是 2026 年 3 月與 Google 簽訂的票據購買協議（合作夥伴融資安排）的首次認列與公允價值變動（期中財報附註：上半年 －94.05 億美元減第二季 －91.23 億美元＝－2.82 億美元）；與 Amazon 的票據購買協議（2026 年 4 月）和超微的賣權（2026 年 7 月）在之後的季度才簽訂。功能別費用與營收拆分以 sec-fwp-japan 的 2026 年上半年減第二季推算。調整後淨利另加回其他金融工具公允價值變動 288、扣除稅務影響 2。"
+    src: "sec-fwp-eea"
+  - period: "2026Q2"
+    start: "2026-04-01"
+    end: "2026-06-30"
+    status: "actual"
+    revenue: 11555
+    grossProfit: 10258
+    operatingExpenses: 9284
+    operatingIncome: 974
+    nonOperating: -67283
+    pretaxIncome: -66309
+    netIncome: -66309
+    extra: { 算力與基礎設施費用: 5558, 人事費用: 1857, Bartz和解: 0, 銷售行銷與通路合作費用: 2135, 其他營運與管理費用: 1031, 銷貨成本: 1297, 研發費用: 6228, 銷售與行銷費用: 2562, 一般及管理費用: 494, 利息收入: 762, 可轉換票據等公允價值變動: -59597, 其他收支淨額: -8448, 所得稅: 0, 股份基礎給付: 1261, 非現金捐贈: 0, 調整後營業利益: 2235, 調整後淨利: 2736, 用量計費營收: 9140, 訂閱營收: 2415, 美國營收: 8106, 美國以外營收: 3449, 現金及短期投資: 131651 }
+    note: "損益與調節取自 sec-fwp-eea；功能別費用、營收拆分直接取自 sec-fwp-japan 上半年期中財報的第二季欄。招股書揭露期間中第一個營業利益為正的季度（9.74 億美元）。公允價值變動 －595.97 億美元反映 H 輪募資後的估值上升；其他收支淨額 －84.48 億美元主要是票據購買協議的公允價值變動（期中財報附註：－91.23 億美元，另有認股權利益 7.24 億美元）。2026 年上半年購置不動產與設備 482、折舊攤銷 97、營業活動現金流 3,929。單一客戶（期中財報的 Customer C）占當季營收 11%；透過雲端業者市集的營收占 47%。期末現金及約當現金 1,123.89 億美元加短期投資 192.62 億美元＝1,316.51 億美元（不含受限現金 25.29 億美元）。"
+    src: "sec-fwp-eea"
+  - period: "2026Q3"
+    start: "2026-07-01"
+    end: "2026-09-30"
+    status: "actual"
+    revenue: 16956
+    grossProfit: 14524
+    operatingExpenses: 15091
+    operatingIncome: -567
+    nonOperating: -22328
+    pretaxIncome: -22895
+    netIncome: -23291
+    depreciation: 153
+    capex: 443
+    extra: { 算力與基礎設施費用: 9863, 人事費用: 1711, Bartz和解: 0, 銷售行銷與通路合作費用: 2361, 其他營運與管理費用: 3588, 銷貨成本: 2432, 研發費用: 9499, 銷售與行銷費用: 2811, 一般及管理費用: 2781, 利息收入: 1248, 可轉換票據等公允價值變動: -21936, 其他收支淨額: -1640, 所得稅: 396, 股份基礎給付: 1070, 非現金捐贈: 1960, 調整後營業利益: 2463, 調整後淨利: 3167, 用量計費營收: 13242, 訂閱營收: 3714, 美國營收: 11707, 美國以外營收: 5249, 營業活動現金流: 2640, 現金及短期投資: 131845, 短期承諾算力費用: 5000 }
+    note: "損益與調節取自 sec-fwp-eea（2026-09-30 止的三個月，未經查核）。營收年增 1,127%，算力與基礎設施費用年增 382%；營業損失 5.67 億美元，公司說明主要是約 50 億美元短期承諾的算力（價格明顯高於多年期合約）與 19.6 億美元員工捐款配捐的非現金費用。招股書指出，第二季到第三季用量增加帶來的營收成長中，約 6 億美元被新模型降價與合約折扣抵銷（第 5.11.1 節）。功能別費用、營收拆分、折舊攤銷、資本支出與營業活動現金流以 sec-fwp-japan 的 2026 年前九個月減上半年推算（銷貨成本 4,812－2,380、購置不動產與設備 925－482、營業活動現金流 6,569－3,929）；前九個月另有租賃資產與設備預付款 19.55 億美元。前九個月淨損 1,040.39 億美元、每股淨損 50.10 美元（基本與稀釋，加權平均 20.77 億股）。期末現金、約當現金與短期投資 1,318.45 億美元，另有 148 億美元未動用循環信用額度。"
+    src: "sec-fwp-eea"
+monthly: []
+annual:
+  - year: "2023"
+    sales:
+      - { product: "用量計費（consumption-based）", value: 39 }
+      - { product: "訂閱（subscription-based）", value: 2 }
+    extra: { 營收: 41, 銷貨成本: 26, 毛利: 15, 研發費用: 422, 銷售與行銷費用: 76, 一般及管理費用: 68, 營業損益: -551, 算力與基礎設施費用: 433, 人事費用: 95, 銷售行銷與通路合作費用: 2, 其他營運與管理費用: 62, 利息收入: 69, 可轉換票據等公允價值變動: -1045, 其他收支淨額: -2, 稅前損益: -1529, 所得稅: 2, 淨利: -1531, 每股淨損: -1.42, 加權平均股數: 1076.88, 股份基礎給付: 29, 調整後營業利益: -522, 調整後淨利: -457, 營業活動現金流: -1627, 投資活動現金流: -2, 籌資活動現金流: 2320, 購置不動產與設備: 2, 折舊攤銷: 3, 美國營收: 34, 美國以外營收: 7, 雲端市集營收占比: 11, 十萬美元以上客戶數: 20 }
+    note: "經查核的 2023 年度財報（sec-fwp-japan 附註 2、附註 8、現金流量表；sec-fwp-eea 摘要與調節表）。單位為百萬美元，但每股淨損為美元、加權平均股數為百萬股（已反映 2026-09-17 的 1 拆 10）、雲端市集營收占比為百分比（約數，sec-fwp-eea 風險因素 1.1.18）、十萬美元以上客戶數為「過去十二個月營收 10 萬美元以上」的客戶家數（約數）。公司在 2023 年第一季開始商業化。"
+    src: "sec-fwp-japan"
+  - year: "2024"
+    sales:
+      - { product: "用量計費（consumption-based）", value: 288 }
+      - { product: "訂閱（subscription-based）", value: 98 }
+    extra: { 營收: 386, 銷貨成本: 752, 毛利: -366, 研發費用: 2275, 銷售與行銷費用: 163, 一般及管理費用: 176, 營業損益: -2980, 算力與基礎設施費用: 2522, 人事費用: 454, 銷售行銷與通路合作費用: 43, 其他營運與管理費用: 347, 利息收入: 106, 可轉換票據等公允價值變動: -5434, 其他收支淨額: 0, 稅前損益: -8308, 所得稅: 1, 淨利: -8309, 每股淨損: -5.43, 加權平均股數: 1528.99, 股份基礎給付: 192, 調整後營業利益: -2788, 調整後淨利: -2683, 營業活動現金流: -5692, 投資活動現金流: -22, 籌資活動現金流: 7248, 購置不動產與設備: 15, 折舊攤銷: 21, 廣告費用: 33, 美國營收: 263, 美國以外營收: 123, 現金及短期投資: 3141, 雲端市集營收占比: 32, 十萬美元以上客戶數: 200 }
+    note: "經查核的 2024 年度財報（來源與單位同 2023）。銷貨成本大於營收，毛利為負。"
+    src: "sec-fwp-japan"
+  - year: "2025"
+    sales:
+      - { product: "用量計費（consumption-based）", value: 3796 }
+      - { product: "訂閱（subscription-based）", value: 789 }
+    extra: { 營收: 4585, 銷貨成本: 2773, 毛利: 1812, 研發費用: 6338, 銷售與行銷費用: 911, 一般及管理費用: 1123, Bartz和解: 1500, 營業損益: -8060, 算力與基礎設施費用: 7326, 人事費用: 1839, 銷售行銷與通路合作費用: 568, 其他營運與管理費用: 1412, 利息收入: 431, 可轉換票據等公允價值變動: -34308, 其他收支淨額: -8, 稅前損益: -41945, 所得稅: 20, 淨利: -41965, 每股淨損: -23.04, 加權平均股數: 1821.08, 股份基礎給付: 1165, 非現金捐贈: 541, 調整後營業利益: -4854, 調整後淨利: -4455, 營業活動現金流: -2637, 投資活動現金流: -3077, 籌資活動現金流: 19960, 購置不動產與設備: 131, 折舊攤銷: 40, 廣告費用: 147, 美國營收: 3362, 美國以外營收: 1223, 現金及短期投資: 20277, 雲端市集營收占比: 47, 十萬美元以上客戶數: 1500 }
+    note: "經查核的 2025 年度財報（來源與單位同 2023）。毛利率 39.5%（營收減功能別銷貨成本）。股份基礎給付 1,165 取自調整後營業利益調節表，現金流量表列 1,158。2026 年 6 月提交的 S-1 草案（DRS）把 Bartz 和解 15 億美元併在其他營運與管理費用（29.12 億美元），公開版招股書改為單獨列示。"
+    src: "sec-fwp-japan"
+events:
+  - date: "2025-09-02"
+    title: "完成 130 億美元 F 輪，投後估值 1,830 億美元"
+    detail: "公司稱年化營收（run-rate）由 2025 年初約 10 億美元增至 8 月逾 50 億美元，Claude Code 年化營收逾 5 億美元，企業客戶逾 30 萬家。"
+    src: "an-series-f"
+  - date: "2025-09-30"
+    title: "認列 Bartz 著作權訴訟和解費用 15 億美元"
+    detail: "2025 年第三季認列 15 億美元和解費用（招股書第 5.11.2.3 節），使當季營業損失擴大到 30.89 億美元；公司在調整後指標中排除這筆費用。"
+    src: "sec-fwp-eea"
+  - date: "2025-10-23"
+    title: "擴大使用 Google Cloud TPU"
+    detail: "最多 100 萬顆 TPU、價值數百億美元，預計 2026 年上線逾 1 GW 容量。"
+    src: "an-google-tpu"
+  - date: "2025-11-12"
+    title: "宣布與 Fluidstack 投資 500 億美元興建資料中心"
+    detail: "在德州與紐約興建自用資料中心，預計 2026 年陸續上線，創造約 800 個長期與 2,400 個營建工作。"
+    src: "an-fluidstack"
+  - date: "2025-11-18"
+    title: "與 Microsoft、輝達（NVIDIA）建立策略合作"
+    detail: "承諾採購 300 億美元 Azure 算力，初期最高 1 GW（Grace Blackwell 與 Vera Rubin 系統）；輝達與 Microsoft 分別承諾投資最高 100 億與 50 億美元。"
+    src: "an-ms-nv"
+  - date: "2025-11-24"
+    title: "推出 Opus 4.5，旗艦價格降為每百萬 token 5／25 美元"
+    detail: "輸入／輸出價格 5／25 美元；前一代 Opus 4.1 為 15／75 美元（Anthropic 定價頁）。"
+    src: "an-opus45"
+  - date: "2025-12-03"
+    title: "Claude Code 年化營收達 10 億美元，收購 Bun"
+    detail: "公司稱 Claude Code 公開提供六個月後、在 2025 年 11 月達到 10 億美元年化營收。"
+    src: "an-bun"
+  - date: "2026-02-12"
+    title: "完成 300 億美元 G 輪，投後估值 3,800 億美元"
+    detail: "公司稱年化營收 140 億美元、Claude Code 年化營收逾 25 億美元；年化支出逾 100 萬美元的客戶逾 500 家（兩年前約 12 家）。"
+    src: "an-series-g"
+  - date: "2026-03-05"
+    title: "遭美國國防部列為供應鏈風險"
+    detail: "公司收到國防部 3 月 4 日的信函，表示這項認定在法律上站不住腳、將在法院挑戰，並說明認定範圍有限、過渡期間會繼續提供模型。"
+    src: "an-dow"
+  - date: "2026-04-06"
+    title: "與 Google、博通（Broadcom）簽下多 GW 的 TPU 容量"
+    detail: "新一代 TPU 容量預計 2027 年起上線；公司稱年化營收逾 300 億美元（2025 年底約 90 億美元），年化支出逾 100 萬美元的客戶逾 1,000 家。"
+    src: "an-google-broadcom"
+  - date: "2026-04-20"
+    title: "與 Amazon 簽下最高 5 GW 算力協議"
+    detail: "十年內在 AWS 投入逾 1,000 億美元，2026 年底前約 1 GW 的 Trainium2 與 Trainium3 容量；Amazon 先投資 50 億美元、未來最多再投資 200 億美元（先前已投資 80 億美元）；公司已使用逾 100 萬顆 Trainium2。"
+    src: "an-amazon"
+  - date: "2026-05-06"
+    title: "租用 SpaceX 的 Colossus 1 資料中心全部算力"
+    detail: "逾 300 MW、逾 22 萬顆輝達 GPU，當月到位，同時提高 Claude Code 與 API 的使用上限。"
+    src: "an-spacex"
+  - date: "2026-05-28"
+    title: "完成 650 億美元 H 輪，投後估值 9,650 億美元"
+    detail: "含先前承諾的 150 億美元雲端業者投資（其中 Amazon 50 億美元）；公司稱年化營收在當月稍早突破 470 億美元；美光、三星與 SK 海力士以策略基礎設施夥伴身分參與。"
+    src: "an-series-h"
+  - date: "2026-06-01"
+    title: "向美國證管會秘密遞交 S-1 草案"
+    detail: "EDGAR 申報清單在 2026-06-01 列出 DRS，之後在 7–10 月提交五次修正（DRS/A）。"
+    src: "sec-submissions"
+  - date: "2026-06-09"
+    title: "推出 Fable 5 與 Mythos 5（每百萬 token 10／50 美元）"
+    detail: "招股書指出，美國商務部在 2026 年 6 月對這兩款模型實施全球出口限制，公司與政府及業界夥伴更新防護措施，在限制解除後重新上線。"
+    src: "sec-fwp-eea"
+  - date: "2026-07-22"
+    title: "與超微（AMD）簽下最多 2 GW 的 MI450 GPU"
+    detail: "第一個 1 GW 預計 2027 年上半年開始部署，採用 Helios 機櫃與 MI455X；超微承諾最多 50 億美元的策略股權投資。"
+    src: "amd-anthropic"
+  - date: "2026-07-24"
+    title: "推出 Opus 5，價格維持每百萬 token 5／25 美元"
+    detail: "與 Opus 4.5–4.8 相同；API 生命週期表列出的上線日為 2026-07-24。"
+    src: "claude-deprecations"
+  - date: "2026-08-18"
+    title: "媒體報導年化營收在 7 月底逾 650 億美元"
+    detail: "Bloomberg 引述知情人士，指公司在定期投資人更新中提到年化營收在 7 月底達 650 億美元；公司未公開證實，本站標為估計。"
+    src: "bbg-65b"
+  - date: "2026-08-26"
+    title: "媒體報導與 Nscale 簽下約 450 億美元雲端合約"
+    detail: "CNBC 證實合約、並引述知情人士：約 460 MW、位於西維吉尼亞州、採用輝達 Vera Rubin，預計 2027 年底上線；公司未公開說明。"
+    src: "cnbc-nscale"
+  - date: "2026-09-01"
+    title: "推出 Fable 5.1 與 Mythos 5.1"
+    detail: "牌價維持每百萬 token 10／50 美元，快取讀取降 75%；公司估計一般工作負載的費用比 Fable 5 低約 25%。"
+    src: "an-fable51"
+  - date: "2026-09-04"
+    title: "循環信用額度擴大為 150 億美元"
+    detail: "修訂後的信用協議到期日為 2031-09-04，自 2026 年第四季起每季底至少要維持 50 億美元流動性；截至 2026-09-30 沒有借款，另有 2.05 億美元備用信用狀，可動用額度 148 億美元。"
+    src: "sec-fwp-eea"
+  - date: "2026-09-17"
+    title: "A 類與 N 類普通股 1 拆 10"
+    detail: "所有股數與每股數字都已追溯調整（招股書期中財報附註 1）。"
+    src: "sec-fwp-japan"
+  - date: "2026-09-22"
+    title: "推出 Opus 5.5，價格降為每百萬 token 4／20 美元"
+    detail: "比 Opus 5 低 20%，快取讀取降 60%；公司以自家測試估計一般工作負載的費用比 Opus 5 低 40%。"
+    src: "an-opus55"
+  - date: "2026-10-07"
+    title: "推出 Haiku 5.5（提示 10 萬 token 以內每百萬 token 0.10／0.50 美元）"
+    detail: "Haiku 4.5 為 1／5 美元；提示超過 10 萬 token 時整筆改按 0.50／2.50 美元計價。"
+    src: "claude-pricing"
+  - date: "2026-10-26"
+    title: "公開遞交 S-1"
+    detail: "取代先前的保密草案，首次公開完整招股書；11 月 2 日、10 日與 17 日再提交三次修正（S-1/A）。"
+    src: "sec-submissions"
+  - date: "2026-11-08"
+    title: "媒體報導以 34 億美元取得 1.7 GW 燃氣發電機組"
+    detail: "Financial Times 引述一位知情人士：公司在 9 月下旬接手 OnePWR 向開拓重工（Caterpillar）訂購的發電機組與安裝工程；雙方婉拒置評，本站未能以一手來源證實。"
+    src: "tnw-ft-generators"
+  - date: "2026-11-09"
+    title: "推出 Fable 5.2，價格降為每百萬 token 8／40 美元"
+    detail: "Fable 5.1 為 10／50 美元，降幅 20%；所有平台同日提供。"
+    src: "an-fable52"
+  - date: "2026-11-10"
+    title: "啟動上市路演，價格區間每股 70–78 美元"
+    detail: "發行 8.25 億股 A 類普通股（公司發行 801,351,354 股、既有股東出售 23,648,646 股），承銷商另有 1.2375 億股超額配售選擇權；已申請在 Nasdaq Global Select Market 以代號 ANT 掛牌。"
+    src: "an-roadshow"
+  - date: "2026-11-10"
+    title: "初步招股書揭露第三季財報與 10 月年化營收"
+    detail: "2026-11-10 的初步招股書：第三季營收 169.56 億美元、營業損失 5.67 億美元、調整後營業利益 24.63 億美元；年化營收在 2026-10-31 約 810 億美元，比 9 月底增加 100 億美元；另有 260 億美元 N 類普通股同步私募。"
+    src: "sec-fwp-eea"
+  - date: "2026-11-10"
+    title: "初步招股書列出的承諾、集中度與治理風險"
+    detail: "算力與基礎設施等合約承諾約 9,009 億美元（2030 年底前約 4,516 億、未來 12 個月約 707 億），另有約 1,500–1,750 億美元未定金額的安排；前九個月經雲端業者市集的營收占 44%、前五大客戶約占 25%；Amazon、Google 同時是投資人、算力供應商、通路與客戶；公司是公益公司（PBC），長期利益信託（LTBT）選任過半董事，上市後創辦人 LLC 將握有 50.1% 投票權。"
+    src: "sec-fwp-eea"
+  - date: "2026-11-17"
+    title: "提交 S-1/A 第 3 號與 8-A 證券登記"
+    detail: "EDGAR 申報清單在 11 月 17 日列出兩份文件；截至 11 月 18 日尚未出現 424(b)(4) 最終招股書。"
+    src: "sec-submissions"
+  - date: "2026-11-18"
+    title: "預計訂價，11 月 19 日起交易"
+    detail: "公司上市網站的預定時程（以主管機關核准為前提）；截至本檔整理時尚未公布訂價，本站不推測發行價格。"
+    src: "sec-fwp-ipo-site"
+pastForecasts: []
+sources:
+  sec-fwp-eea: { title: "Free Writing Prospectus (Form FWP) - Exhibit A: EEA retail prospectus dated November 11, 2026", publisher: "Anthropic, PBC (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/2130357/000162828026073040/anthropicpbc-fwpxeeaprospea.htm", type: "filing", lang: "en", published: "2026-11-12", accessed: "2026-11-18", note: "依 2026-11-10 初步招股書（S-1/A 第 2 號）編製的歐洲經濟區散戶公開說明書：摘要財務資料與調節表、風險因素（1.1.18 客戶與通路集中、1.1.21 定價、1.5 治理結構）、業務與 MD&A；第 172–190 頁（5.9–5.12 節：季度損益表、季度趨勢、單季調整後營業利益與淨利、現金流量、合約義務）以頁面影像 anthropicpbc-exatoeeafwp182.jpg 至 anthropicpbc-exatoeeafwp200.jpg 呈現" }
+  sec-fwp-japan: { title: "Free Writing Prospectus (Form FWP) - Exhibit A: English translation of the Japanese prospectus (November 2026)", publisher: "Anthropic, PBC (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/2130357/000162828026073045/anthropicpbc-fwpjapanamend.htm", type: "filing", lang: "en", published: "2026-11-12", accessed: "2026-11-18", note: "附 2023–2025 年度（經查核）與 2025、2026 年前九個月的合併財報：損益表（第 397 頁）、現金流量表（第 403–404 頁）、附註 2 營收拆分與剩餘履約義務（第 419–420 頁）、附註 8 功能別營業費用（第 434 頁）；以及 2026 年上半年期中財報：現金流量表（第 473 頁）、客戶集中度（第 475 頁）、營收拆分（第 477 頁）、功能別營業費用（第 484 頁）。財報頁以頁面影像 anthropicpbc-exatojapanf207.jpg 至 anthropicpbc-exatojapanf250.jpg 呈現" }
+  sec-fwp-ipo-site: { title: "Free Writing Prospectus (Form FWP) - IPO website", publisher: "Anthropic, PBC (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/2130357/000162828026072949/anthropicpbc-fwpipowebsi.htm", type: "filing", lang: "en", published: "2026-11-12", accessed: "2026-11-18", note: "2026-11-10 的上市網站內容：單季營收、算力與基礎設施費用、算力效率、單季調整後營業利益調節、年化營收定義（過去 28 天用量計費營收 ×13，加上衡量日的月訂閱費 ×12）與 2026 年 10 月約 810 億美元、預定訂價日 11 月 18 日與首日交易 11 月 19 日" }
+  sec-fwp-uk: { title: "Free Writing Prospectus (Form FWP) - UK retail offer materials", publisher: "Anthropic, PBC (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/2130357/000162828026072952/anthropicpbc-fwpukmaterials.htm", type: "filing", lang: "en", published: "2026-11-12", accessed: "2026-11-18", note: "英國散戶發行資料：價格區間、發行股數、同步私募 260 億美元、以 74 美元中值估計的募資淨額約 846 億美元，以及摘要財務與非 GAAP 調節" }
+  sec-submissions: { title: "Anthropic, PBC (CIK 0002130357) filing index", publisher: "U.S. Securities and Exchange Commission (EDGAR)", url: "https://data.sec.gov/submissions/CIK0002130357.json", type: "dataset", lang: "en", accessed: "2026-11-18", note: "申報清單：DRS（2026-06-01）與五次 DRS/A、S-1（2026-10-26）、S-1/A（11-02、11-10、11-17）、FWP（11-12）、8-A12B（11-17）；截至 2026-11-18 沒有 424B4" }
+  sec-s1: { title: "Form S-1 Registration Statement", publisher: "Anthropic, PBC (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/2130357/000162828026067168/anthropicpbc-sx1.htm", type: "filing", lang: "en", published: "2026-10-26", accessed: "2026-11-18", note: "原始 S-1；主文件超過 10 MB，本檔未直接讀取，數字改取自 2026-11-10 初步招股書的 FWP 版本" }
+  an-roadshow: { title: "Anthropic launches roadshow for proposed initial public offering", publisher: "Anthropic", url: "https://www.anthropic.com/news/roadshow-launch", type: "press-release", lang: "en", published: "2026-11-10", accessed: "2026-11-18" }
+  an-series-f: { title: "Anthropic raises $13B Series F at $183B post-money valuation", publisher: "Anthropic", url: "https://www.anthropic.com/news/anthropic-raises-series-f-at-usd183b-post-money-valuation", type: "press-release", lang: "en", published: "2025-09-02", accessed: "2026-11-18" }
+  an-series-g: { title: "Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation", publisher: "Anthropic", url: "https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation", type: "press-release", lang: "en", published: "2026-02-12", accessed: "2026-11-18" }
+  an-series-h: { title: "Anthropic raises $65B in Series H funding at $965B post-money valuation", publisher: "Anthropic", url: "https://www.anthropic.com/news/series-h", type: "press-release", lang: "en", published: "2026-05-28", accessed: "2026-11-18" }
+  an-google-tpu: { title: "Expanding our use of Google Cloud TPUs and Services", publisher: "Anthropic", url: "https://www.anthropic.com/news/expanding-our-use-of-google-cloud-tpus-and-services", type: "press-release", lang: "en", published: "2025-10-23", accessed: "2026-11-18" }
+  an-fluidstack: { title: "Anthropic invests $50 billion in American AI infrastructure", publisher: "Anthropic", url: "https://www.anthropic.com/news/anthropic-invests-50-billion-in-american-ai-infrastructure", type: "press-release", lang: "en", published: "2025-11-12", accessed: "2026-11-18" }
+  an-ms-nv: { title: "Microsoft, NVIDIA, and Anthropic announce strategic partnerships", publisher: "Anthropic", url: "https://www.anthropic.com/news/microsoft-nvidia-anthropic-announce-strategic-partnerships", type: "press-release", lang: "en", published: "2025-11-18", accessed: "2026-11-18" }
+  an-opus45: { title: "Introducing Claude Opus 4.5", publisher: "Anthropic", url: "https://www.anthropic.com/news/claude-opus-4-5", type: "press-release", lang: "en", published: "2025-11-24", accessed: "2026-11-18" }
+  an-bun: { title: "Anthropic acquires Bun as Claude Code reaches $1B milestone", publisher: "Anthropic", url: "https://www.anthropic.com/news/anthropic-acquires-bun-as-claude-code-reaches-usd1b-milestone", type: "press-release", lang: "en", published: "2025-12-03", accessed: "2026-11-18" }
+  an-dow: { title: "Where things stand with the Department of War", publisher: "Anthropic", url: "https://www.anthropic.com/news/where-stand-department-war", type: "press-release", lang: "en", published: "2026-03-05", accessed: "2026-11-18" }
+  an-google-broadcom: { title: "Anthropic expands partnership with Google and Broadcom for multiple gigawatts of next-generation compute", publisher: "Anthropic", url: "https://www.anthropic.com/news/google-broadcom-partnership-compute", type: "press-release", lang: "en", published: "2026-04-06", accessed: "2026-11-18" }
+  an-amazon: { title: "Anthropic and Amazon expand collaboration for up to 5 gigawatts of new compute", publisher: "Anthropic", url: "https://www.anthropic.com/news/anthropic-amazon-compute", type: "press-release", lang: "en", published: "2026-04-20", accessed: "2026-11-18" }
+  an-spacex: { title: "Higher usage limits for Claude and a compute deal with SpaceX", publisher: "Anthropic", url: "https://www.anthropic.com/news/higher-limits-spacex", type: "press-release", lang: "en", published: "2026-05-06", accessed: "2026-11-18" }
+  amd-anthropic: { title: "AMD and Anthropic Announce Strategic Partnership to Deploy Up to 2 Gigawatts of AMD Instinct MI450 Series GPUs", publisher: "AMD", url: "https://ir.amd.com/news-events/press-releases/detail/1292/amd-and-anthropic-announce-strategic-partnership-to-deploy-up-to-2-gigawatts-of-amd-instinct-mi450-series-gpus", type: "press-release", lang: "en", published: "2026-07-22", accessed: "2026-11-18" }
+  an-fable51: { title: "Introducing Claude Fable 5.1 and Claude Mythos 5.1", publisher: "Anthropic", url: "https://www.anthropic.com/claude-fable-and-mythos-5-1", type: "press-release", lang: "en", published: "2026-09-01", accessed: "2026-11-18" }
+  an-opus55: { title: "Introducing Claude Opus 5.5", publisher: "Anthropic", url: "https://www.anthropic.com/claude-opus-5-5", type: "press-release", lang: "en", published: "2026-09-22", accessed: "2026-11-18" }
+  an-fable52: { title: "Introducing Claude Fable 5.2 and Claude Mythos 5.2", publisher: "Anthropic", url: "https://www.anthropic.com/claude-fable-and-mythos-5-2", type: "press-release", lang: "en", published: "2026-11-09", accessed: "2026-11-18" }
+  claude-pricing: { title: "Pricing", publisher: "Anthropic", url: "https://platform.claude.com/docs/en/about-claude/pricing", type: "docs", lang: "en", accessed: "2026-11-18", note: "各模型每百萬 token 的輸入、輸出、快取與 Batch 價格（含已退役的 Opus 4、Opus 4.1、Sonnet 4）" }
+  claude-deprecations: { title: "Model deprecations", publisher: "Anthropic", url: "https://platform.claude.com/docs/en/about-claude/model-deprecations", type: "docs", lang: "en", accessed: "2026-11-18", note: "模型生命週期表：各模型的 API ID（舊模型含快照日期）與「不早於上線一年後」的退役日，用來確認上線日" }
+  bbg-65b: { title: "Anthropic's Annualized Revenue Tops $65 Billion Before IPO", publisher: "Bloomberg News（Bloomberg Industry Group 轉載）", url: "https://news.bgov.com/financial-accounting/anthropic-revenue-run-rate-surpasses-65-billion-ahead-of-ipo", type: "news", lang: "en", published: "2026-08-18", accessed: "2026-11-18", note: "媒體引述知情人士，非公司公開說法" }
+  cnbc-nscale: { title: "Anthropic and Nscale strike $45 billion cloud deal, sources say", publisher: "CNBC", url: "https://www.cnbc.com/2026/08/26/anthropic-and-nscale-strike-45-billion-cloud-deal-sources-say.html", type: "news", lang: "en", published: "2026-08-26", accessed: "2026-11-18", note: "容量、地點、晶片與時程引述兩位知情人士" }
+  tnw-ft-generators: { title: "Anthropic buys $3.4bn of gas generators for its data centres, FT reports", publisher: "The Next Web（轉述 Financial Times）", url: "https://thenextweb.com/news/anthropic-3-4bn-gas-generators-onepwr-ft", type: "news", lang: "en", published: "2026-11-08", accessed: "2026-11-18", note: "FT 引述一位知情人士，公司與 OnePWR 婉拒置評；本站未能以一手來源證實" }
+  sa-q: { title: "Anthropic, PBC (ANT) quarterly financials", publisher: "Stock Analysis", url: "https://stockanalysis.com/stocks/ant/financials/?p=quarterly", type: "dataset", lang: "en", accessed: "2026-11-18", note: "彙整資料（只有營收、營業損益與淨利），僅用來交叉核對，七季數字與招股書一致" }
+lastVerified: "2026-11-18"
+editorial:
+  status: "fact-checked"
+  author: "fc2-data-anthropic"
+  checkedBy: "fc2-check-anthropic"
+  checkedOn: "2026-11-18"
+  notes: "查核（fc2-check-anthropic，2026-11-18）：以程式逐季驗算 184 項內部關係（毛利－營業費用＝營業損益、依性質與依功能合計、業外與稅前、稅後淨損、營收拆分、調整後營業利益、季度連續、各季相加＝2025 全年與 2025、2026 年前九個月），全部吻合；7 季營收、營業損益、淨損、稅前率與年度營收、營業損益、淨損、每股淨損、營業與投資與籌資現金流、資本支出、折舊攤銷、所得稅與現金及短期投資，與 Stock Analysis（sa-q）逐筆一致；並重讀 sec-fwp-eea 第 174–181、188–190 頁影像與 sec-fwp-japan 第 397、403–404、413–416、419–420、423–424、433–434、473–480、483–484 頁影像核對每個數字。修正：2025Q4、2026Q3 降價影響的說法（是抵銷季增，不是營收比前一季少）、2026Q1 其他收支淨額的說明（當季只有 Google 的票據購買協議，Amazon 協議在 4 月、超微賣權在 7 月）、信用額度截至 9 月底有 2.05 億美元備用信用狀、FT 報導中雙方是婉拒置評、G 輪「一打」客戶、創辦人 LLC 的 50.1% 投票權是上市後。未讀取 2026-11-17 的 S-1/A 第 3 號（主文件 95 MB），截至 11-18 EDGAR 仍沒有 424B4。原整理說明：單季損益表與調節表取自歐洲經濟區公開說明書 FWP 的頁面影像（第 175、178 頁），功能別費用、營收拆分與現金流量取自日本公開說明書英譯 FWP 所附財報影像（第 403–404、419、434、473、475、477、484 頁），逐季驗算：依性質五項費用相加＝總營業費用、功能別四項（含 Bartz）相加＝總營業費用、營收－總營業費用＝營業損益、營業損益＋業外＝稅前、稅前－所得稅＝淨損、用量計費＋訂閱＝營收、美國＋美國以外＝營收、調整後營業利益與淨利調節，全部吻合；各季相加與前九個月、全年公布數一致。與 src/content/financials/anthropic.json 沒有重疊的季度（該檔只有公司公告的年化營收），其年化營收數值與本檔驅動因子相同。"

@@ -1,0 +1,748 @@
+# 輝達（NVIDIA）財報模型的驅動因子：五大雲端業者資本支出、CoWoS 產能估計、中國營收比重、新興 AI 雲容量與公司財測序列。格式見 src/schemas/forecast.ts（companyDrivers）。
+# 由 fc2-data-nvidia 整理；財報數字在 nvidia-inputs.yaml；記憶體與 HBM 價格（毛利率的成本壓力）在 src/data/memory/forecast/market-prices.yaml（dram-incl-hbm-contract-qoq 與其 note）。
+company: "nvidia"
+asOf: "2026-11-18"
+series:
+  - id: "hyperscaler-capex-total"
+    name: "五大雲端業者資本支出合計"
+    category: "雲端資本支出"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "微軟、Alphabet、亞馬遜、Meta、甲骨文五家公司現金流量表的購置不動產與設備支出（SEC XBRL）單季加總；日曆季度（微軟、甲骨文的會計季度依季末月份對應，甲骨文約早一個月）。不含融資租賃，因此低於微軟、Meta 自己公布含融資租賃的資本支出。輝達 FY(Y+1) 第 n 季約當日曆 Y 年第 n 季延後約一個月。"
+    points:
+      - { period: "2017Q3", value: 10972, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2017Q4", value: 13374, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2018Q1", value: 16429, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2018Q2", value: 16538, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2018Q3", value: 15961, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2018Q4", value: 19244, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2019Q1", value: 14773, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2019Q2", value: 17785, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2019Q3", value: 18732, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2019Q4", value: 19358, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2020Q1", value: 20521, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2020Q2", value: 21282, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2020Q3", value: 25501, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2020Q4", value: 29657, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2021Q1", value: 27830, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2021Q2", value: 31594, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2021Q3", value: 33785, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2021Q4", value: 37508, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2022Q1", value: 36619, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2022Q2", value: 38418, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2022Q3", value: 41031, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2022Q4", value: 41939, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2023Q1", value: 36554, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2023Q2", value: 35333, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2023Q3", value: 38261, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2023Q4", value: 44014, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2024Q1", value: 45963, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2024Q2", value: 55650, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2024Q3", value: 61165, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2024Q4", value: 76309, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2025Q1", value: 77764, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2025Q2", value: 97326, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2025Q3", value: 105773, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2025Q4", value: 130665, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2026Q1", value: 148385, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2026Q2", value: 181543, status: "actual", src: "sec-xbrl-hyperscalers" }
+      - { period: "2026Q3", value: 230422, status: "actual", src: "sec-xbrl-hyperscalers" }
+    note: "輝達在 FY2026 第四季法說會表示，前五大雲端業者合計約占其資料中心營收的一半多一點（tr-fy2026q4）。2020 與 2022 年第四季的 Meta 數字採原始 10-K 口徑（見 capex-meta 的說明）。"
+  - id: "capex-msft"
+    name: "微軟資本支出"
+    category: "雲端資本支出"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "Microsoft 現金流量表的資本支出，XBRL 標籤 PaymentsToAcquirePropertyPlantAndEquipment（Additions to property and equipment，現金購置，不含融資租賃）；會計年度 7 月至隔年 6 月，FY 第一季（7–9 月）記為日曆第三季；單季值由年初累計相減。"
+    points:
+      - { period: "2017Q3", value: 2132, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2017Q4", value: 2586, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2018Q1", value: 2934, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2018Q2", value: 3980, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2018Q3", value: 3602, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2018Q4", value: 3707, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2019Q1", value: 2565, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2019Q2", value: 4051, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2019Q3", value: 3385, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2019Q4", value: 3545, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2020Q1", value: 3767, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2020Q2", value: 4744, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2020Q3", value: 4907, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2020Q4", value: 4174, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2021Q1", value: 5089, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2021Q2", value: 6452, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2021Q3", value: 5810, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2021Q4", value: 5865, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2022Q1", value: 5340, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2022Q2", value: 6871, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2022Q3", value: 6283, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2022Q4", value: 6274, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2023Q1", value: 6607, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2023Q2", value: 8943, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2023Q3", value: 9917, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2023Q4", value: 9735, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2024Q1", value: 10952, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2024Q2", value: 13873, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2024Q3", value: 14923, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2024Q4", value: 15804, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2025Q1", value: 16745, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2025Q2", value: 17079, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2025Q3", value: 19394, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2025Q4", value: 29876, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2026Q1", value: 30876, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2026Q2", value: 35802, status: "actual", src: "sec-xbrl-msft" }
+      - { period: "2026Q3", value: 39367, status: "actual", src: "sec-xbrl-msft" }
+    note: "UAO 2026-11-01 報導：財務長 Amy Hood 表示 2026 日曆年資本支出（含融資租賃）約 1,700 億美元，原因之一是部分第三方產能交付延後，並預估 2026 年第四季（含融資租賃）逾 500 億美元；同報導指出 2026 年第三季含融資租賃的資本支出為 452 億美元（uao-capex-20261101，媒體報導）。本序列只含現金購置，不能直接和這些數字相比。"
+  - id: "capex-googl"
+    name: "Alphabet（Google）資本支出"
+    category: "雲端資本支出"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "Alphabet 現金流量表的資本支出，XBRL 標籤 PaymentsToAcquirePropertyPlantAndEquipment（Purchases of property and equipment）；單季值由年初累計相減。"
+    points:
+      - { period: "2017Q3", value: 3538, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2017Q4", value: 4307, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2018Q1", value: 7299, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2018Q2", value: 5477, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2018Q3", value: 5282, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2018Q4", value: 7081, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2019Q1", value: 4638, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2019Q2", value: 6126, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2019Q3", value: 6732, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2019Q4", value: 6052, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2020Q1", value: 6005, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2020Q2", value: 5391, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2020Q3", value: 5406, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2020Q4", value: 5479, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2021Q1", value: 5942, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2021Q2", value: 5496, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2021Q3", value: 6819, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2021Q4", value: 6383, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2022Q1", value: 9786, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2022Q2", value: 6828, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2022Q3", value: 7276, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2022Q4", value: 7595, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2023Q1", value: 6289, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2023Q2", value: 6888, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2023Q3", value: 8055, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2023Q4", value: 11019, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2024Q1", value: 12012, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2024Q2", value: 13186, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2024Q3", value: 13061, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2024Q4", value: 14276, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2025Q1", value: 17197, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2025Q2", value: 22446, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2025Q3", value: 23953, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2025Q4", value: 27851, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2026Q1", value: 35674, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2026Q2", value: 44924, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2026Q3", value: 51355, status: "actual", src: "sec-xbrl-googl" }
+    note: "2026 年財測與 2027 年展望見 capex-annual-googl。"
+  - id: "capex-amzn"
+    name: "亞馬遜資本支出"
+    category: "雲端資本支出"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "Amazon 現金流量表的資本支出，XBRL 標籤 PaymentsToAcquireProductiveAssets（Purchases of property and equipment，未扣除處分收入與獎勵款；2017 年上半年以前的標籤口徑不一致，因此從 2017Q3 開始）；單季值由年初累計相減。"
+    points:
+      - { period: "2017Q3", value: 3074, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2017Q4", value: 3619, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2018Q1", value: 3098, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2018Q2", value: 3243, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2018Q3", value: 3352, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2018Q4", value: 3734, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2019Q1", value: 3290, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2019Q2", value: 3562, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2019Q3", value: 4697, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2019Q4", value: 5312, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2020Q1", value: 6795, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2020Q2", value: 7459, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2020Q3", value: 11063, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2020Q4", value: 14823, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2021Q1", value: 12082, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2021Q2", value: 14288, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2021Q3", value: 15748, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2021Q4", value: 18935, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2022Q1", value: 14951, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2022Q2", value: 15724, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2022Q3", value: 16378, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2022Q4", value: 16592, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2023Q1", value: 14207, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2023Q2", value: 11455, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2023Q3", value: 12479, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2023Q4", value: 14588, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2024Q1", value: 14925, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2024Q2", value: 17620, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2024Q3", value: 22620, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2024Q4", value: 27834, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2025Q1", value: 25019, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2025Q2", value: 32183, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2025Q3", value: 35095, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2025Q4", value: 39522, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2026Q1", value: 44203, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2026Q2", value: 54208, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2026Q3", value: 77259, status: "actual", src: "sec-xbrl-amzn" }
+    note: "2026 年展望見 capex-annual-amzn。"
+  - id: "capex-meta"
+    name: "Meta 資本支出"
+    category: "雲端資本支出"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "Meta Platforms 現金流量表的資本支出，XBRL 標籤 PaymentsToAcquirePropertyPlantAndEquipment（Purchases of property and equipment，不含融資租賃本金；公司自己公布的資本支出另加融資租賃本金）；單季值由年初累計相減。"
+    points:
+      - { period: "2017Q3", value: 1755, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2017Q4", value: 2263, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2018Q1", value: 2812, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2018Q2", value: 3460, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2018Q3", value: 3342, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2018Q4", value: 4301, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2019Q1", value: 3837, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2019Q2", value: 3633, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2019Q3", value: 3532, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2019Q4", value: 4100, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2020Q1", value: 3558, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2020Q2", value: 3255, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2020Q3", value: 3689, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2020Q4", value: 4613, status: "actual", src: "sec-xbrl-meta", note: "全年 151.15 億美元（2021-01-28 申報的 10-K）減前三季 105.02 億美元；2023-02-02 的 10-K 把 2020 全年重編為 151.63 億美元，但前三季未重編，若用重編值第四季會吸收全部差額，因此採原始口徑" }
+      - { period: "2021Q1", value: 4303, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2021Q2", value: 4641, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2021Q3", value: 4346, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2021Q4", value: 5400, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2022Q1", value: 5441, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2022Q2", value: 7572, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2022Q3", value: 9375, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2022Q4", value: 9043, status: "actual", src: "sec-xbrl-meta", note: "全年 314.31 億美元（2023-02-02 申報的 10-K）減前三季 223.88 億美元；2025-01-30 的 10-K 把 2022 全年重編為 311.86 億美元，但前三季未重編，若用重編值第四季會吸收全部差額，因此採原始口徑" }
+      - { period: "2023Q1", value: 6823, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2023Q2", value: 6134, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2023Q3", value: 6496, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2023Q4", value: 7592, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2024Q1", value: 6400, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2024Q2", value: 8173, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2024Q3", value: 8258, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2024Q4", value: 14425, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2025Q1", value: 12941, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2025Q2", value: 16538, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2025Q3", value: 18829, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2025Q4", value: 21383, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2026Q1", value: 18997, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2026Q2", value: 30116, status: "actual", src: "sec-xbrl-meta" }
+      - { period: "2026Q3", value: 33942, status: "actual", src: "sec-xbrl-meta" }
+    note: "含融資租賃本金的年度數字與 2026 年財測見 capex-annual-meta。Meta 曾重編前期的資本支出：2021 與 2023 年各季採後來 10-Q 重編的數字（四季一致）；2020 與 2022 年只有全年數字被重編、各季未重編，所以這兩年的第四季用原始 10-K 全年值減前三季。"
+  - id: "capex-orcl"
+    name: "甲骨文（Oracle）資本支出"
+    category: "雲端資本支出"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "Oracle 現金流量表的資本支出，XBRL 標籤 PaymentsToAcquirePropertyPlantAndEquipment（Capital expenditures）；會計年度 6 月至隔年 5 月，季末為 8、11、2、5 月，依序記為日曆第三、四、一、二季（約早一個月）；單季值由年初累計相減。"
+    points:
+      - { period: "2017Q3", value: 473, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2017Q4", value: 599, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2018Q1", value: 286, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2018Q2", value: 378, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2018Q3", value: 383, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2018Q4", value: 421, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2019Q1", value: 443, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2019Q2", value: 413, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2019Q3", value: 386, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2019Q4", value: 349, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2020Q1", value: 396, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2020Q2", value: 433, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2020Q3", value: 436, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2020Q4", value: 568, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2021Q1", value: 414, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2021Q2", value: 717, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2021Q3", value: 1062, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2021Q4", value: 925, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2022Q1", value: 1101, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2022Q2", value: 1423, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2022Q3", value: 1719, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2022Q4", value: 2435, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2023Q1", value: 2628, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2023Q2", value: 1913, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2023Q3", value: 1314, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2023Q4", value: 1080, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2024Q1", value: 1674, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2024Q2", value: 2798, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2024Q3", value: 2303, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2024Q4", value: 3970, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2025Q1", value: 5862, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2025Q2", value: 9080, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2025Q3", value: 8502, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2025Q4", value: 12033, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2026Q1", value: 18635, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2026Q2", value: 16493, status: "actual", src: "sec-xbrl-orcl" }
+      - { period: "2026Q3", value: 28499, status: "actual", src: "sec-xbrl-orcl" }
+  - id: "capex-annual-googl"
+    name: "Alphabet 年度資本支出與財測"
+    category: "雲端資本支出"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "year"
+    definition: "日曆年；實際值為 XBRL 購置不動產與設備支出的四季加總，2026 年為公司財測中值與區間（媒體整理的法說會說法）。"
+    points:
+      - { period: "2024", value: 52535, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2025", value: 91447, status: "actual", src: "sec-xbrl-googl" }
+      - { period: "2026", value: 200000, low: 195000, high: 205000, status: "guidance", src: "marketbeat-googl-20261029", note: "2026-10-28 第三季法說會維持 1,950–2,050 億美元" }
+    note: "2027 年公司只說將「大幅增加」，未給數字（ap-googl-20261028）。"
+  - id: "capex-annual-meta"
+    name: "Meta 年度資本支出（含融資租賃本金）與財測"
+    category: "雲端資本支出"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "year"
+    definition: "日曆年；Meta 自己的口徑：購置不動產與設備加上融資租賃本金支付（XBRL PaymentsToAcquirePropertyPlantAndEquipment＋FinanceLeasePrincipalPayments），2026 年為公司財測。"
+    points:
+      - { period: "2024", value: 39225, status: "actual", src: "sec-xbrl-meta", note: "購置 372.56 億美元＋融資租賃本金 19.69 億美元" }
+      - { period: "2025", value: 72215, status: "actual", src: "sec-xbrl-meta", note: "購置 696.91 億美元＋融資租賃本金 25.24 億美元" }
+      - { period: "2026", value: 140000, low: 135000, high: 145000, status: "guidance", src: "meta-q3-2026", note: "2026-10-21 由 1,300–1,450 億美元收窄為 1,350–1,450 億美元" }
+  - id: "capex-annual-amzn"
+    name: "亞馬遜年度資本支出與 2026 年展望"
+    category: "雲端資本支出"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "year"
+    definition: "日曆年；實際值為 XBRL 的購置不動產與設備（未扣除處分收入與獎勵款）四季加總；2026 年為媒體報導的公司說法「現金資本支出約 2,200 億美元」，亞馬遜的現金資本支出通常指扣除處分收入與獎勵款後的淨額，口徑可能略低於實際值的毛額。"
+    points:
+      - { period: "2024", value: 82999, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2025", value: 131819, status: "actual", src: "sec-xbrl-amzn" }
+      - { period: "2026", value: 220000, status: "guidance", src: "uao-capex-20261101", note: "媒體報導（UAO，2026-11-01）：公司仍預期 2026 年現金資本支出約 2,200 億美元" }
+  - id: "capex-top5-outlook"
+    name: "前五大雲端業者資本支出預期（輝達法說會引述）"
+    category: "雲端資本支出"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "year"
+    definition: "輝達財務長在 FY2027 第二季法說會（2026-08-26）引述的前五大雲端業者（hyperscalers）資本支出預期；該次法說會未說明來源，先前兩次法說會（tr-fy2026q4、tr-fy2027q1）說明這類數字是分析師預期；公司未列出採計的五家公司與口徑。"
+    points:
+      - { period: "2026", value: 800000, status: "estimate", src: "tr-fy2027q2", note: "原文 nearly $800 billion；FY2026 第四季法說會（2026-02-25）時為接近 7,000 億美元（tr-fy2026q4）" }
+      - { period: "2027", value: 1300000, status: "estimate", src: "tr-fy2027q2", note: "原文 $1.3 trillion；FY2027 第一季法說會（2026-05-20）說分析師預估 2027 年逾 1 兆美元（tr-fy2027q1）" }
+    note: "輝達表示這五家約占其資料中心營收的一半多一點（tr-fy2026q4）。"
+  - id: "cowos-capacity-tsmc"
+    name: "台積電 CoWoS 月產能（年底，外部估計）"
+    category: "封裝產能"
+    kind: "level"
+    unit: "千片／月（12 吋晶圓）"
+    frequency: "year"
+    definition: "台積電 CoWoS 先進封裝的年底月產能，台積電未公布片數，全部為研究機構或媒體引述的法人估計（日曆年）；不含封測廠（OSAT）的類 CoWoS 產能。"
+    points:
+      - { period: "2024", value: 35, status: "estimate", src: "tf-cowos-20241213", note: "《工商時報》引述的法人估計 3.5 萬片；TrendForce 2024 年 4 月預估年底接近 4 萬片（tf-cowos-20240416）" }
+      - { period: "2025", value: 70, low: 70, high: 80, status: "estimate", src: "tf-cowos-20260805", note: "2026 年報導的事後估計約 7 萬片；先前預估 7.5–8 萬片（tf-cowos-20241121）、7.5 萬片（tf-cowos-20250102）" }
+      - { period: "2026", value: 130, low: 120, high: 140, status: "forecast", src: "tf-cowos-20260615", note: "《經濟日報》法人估計 12–14 萬片；快科技 13–14 萬片（tf-cowos-20260805）、《工商時報》逾 13 萬片（tf-cowos-20261027）" }
+      - { period: "2027", value: 200, status: "forecast", src: "tf-cowos-20261027", note: "《工商時報》法人估計的目標；高盛估平均每月 22.75 萬片" }
+    note: "台積電 2026 年 5 月技術論壇預估 CoWoS 產能 2022–2027 年的年複合成長率逾 80%（tf-cowos-20260615 引述 Reuters）。產能數字口徑不一（年底月產能、全年片數、是否含封測夥伴），只適合看趨勢。"
+  - id: "cowos-capacity-tsmc-gs"
+    name: "台積電 CoWoS 全年產能（高盛估計）"
+    category: "封裝產能"
+    kind: "level"
+    unit: "千片／年"
+    frequency: "year"
+    definition: "高盛估計的台積電 CoWoS 全年產能（片數），經 TrendForce News 引述；日曆年。"
+    points:
+      - { period: "2026", value: 1275, status: "forecast", src: "tf-cowos-20261027", note: "平均每月約 10.6 萬片" }
+      - { period: "2027", value: 2730, status: "forecast", src: "tf-cowos-20261027", note: "年增 114%，平均每月 22.75 萬片" }
+      - { period: "2028", value: 3480, status: "forecast", src: "tf-cowos-20261027", note: "年增 27%，平均每月近 29 萬片" }
+  - id: "cowos-nvidia-share"
+    name: "輝達占台積電 CoWoS 產能比重（外部估計）"
+    category: "封裝產能"
+    kind: "share"
+    unit: "%"
+    frequency: "year"
+    definition: "輝達需求或預訂量占台積電 CoWoS 全年產能的比重，研究機構與媒體估計；日曆年。"
+    points:
+      - { period: "2025", value: 60, status: "estimate", src: "tf-cowos-20241121", note: "TrendForce 2024 年 11 月預估「近 60%」" }
+      - { period: "2026", value: 50, status: "estimate", src: "tf-cowos-20260805", note: "快科技報導輝達預訂約 80–85 萬片、占比「逾 50%」，取下限 50" }
+  - id: "china-revenue-billing"
+    name: "中國（含香港）營收：依客戶帳單地址"
+    category: "中國"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "10-Q／10-K 地理別營收中「China (including Hong Kong)」（FY2019 第二季以前標示為 China，與後來的數字同一口徑），依客戶帳單地址歸屬；第四季為全年減前三季。FY2026 第三季起公司改依客戶總部所在地揭露，本序列到 FY2026 第二季為止。帳單地址不等於最終使用地，新加坡等地常是集中開票地點。"
+    points:
+      - { period: "FY2017Q1", value: 247, status: "actual", src: "tenq-fy2017q1" }
+      - { period: "FY2017Q2", value: 256, status: "actual", src: "tenq-fy2017q2" }
+      - { period: "FY2017Q3", value: 341, status: "actual", src: "tenq-fy2017q3" }
+      - { period: "FY2017Q4", value: 460, status: "actual", src: "tenq-fy2017q4", note: "全年 13.05 億美元 減前三季 8.45 億美元（tenq-fy2017q3 九個月）" }
+      - { period: "FY2018Q1", value: 330, status: "actual", src: "tenq-fy2018q1" }
+      - { period: "FY2018Q2", value: 481, status: "actual", src: "tenq-fy2018q2" }
+      - { period: "FY2018Q3", value: 515, status: "actual", src: "tenq-fy2018q3" }
+      - { period: "FY2018Q4", value: 571, status: "actual", src: "tenq-fy2018q4", note: "全年 18.96 億美元 減前三季 13.25 億美元（tenq-fy2018q3 九個月）" }
+      - { period: "FY2019Q1", value: 754, status: "actual", src: "tenq-fy2019q1" }
+      - { period: "FY2019Q2", value: 760, status: "actual", src: "tenq-fy2019q2" }
+      - { period: "FY2019Q3", value: 704, status: "actual", src: "tenq-fy2019q3" }
+      - { period: "FY2019Q4", value: 583, status: "actual", src: "tenq-fy2019q4", note: "全年 28.01 億美元 減前三季 22.18 億美元（tenq-fy2019q3 九個月）" }
+      - { period: "FY2020Q1", value: 553, status: "actual", src: "tenq-fy2020q1" }
+      - { period: "FY2020Q2", value: 583, status: "actual", src: "tenq-fy2020q2" }
+      - { period: "FY2020Q3", value: 758, status: "actual", src: "tenq-fy2020q3" }
+      - { period: "FY2020Q4", value: 837, status: "actual", src: "tenq-fy2020q4", note: "全年 27.31 億美元 減前三季 18.94 億美元（tenq-fy2020q3 九個月）" }
+      - { period: "FY2021Q1", value: 758, status: "actual", src: "tenq-fy2021q1" }
+      - { period: "FY2021Q2", value: 855, status: "actual", src: "tenq-fy2021q2" }
+      - { period: "FY2021Q3", value: 1113, status: "actual", src: "tenq-fy2021q3" }
+      - { period: "FY2021Q4", value: 1159, status: "actual", src: "tenq-fy2021q4", note: "全年 38.86 億美元 減前三季 27.27 億美元（tenq-fy2021q3 九個月）" }
+      - { period: "FY2022Q1", value: 1391, status: "actual", src: "tenq-fy2022q1" }
+      - { period: "FY2022Q2", value: 1720, status: "actual", src: "tenq-fy2022q2" }
+      - { period: "FY2022Q3", value: 2017, status: "actual", src: "tenq-fy2022q3" }
+      - { period: "FY2022Q4", value: 1983, status: "actual", src: "tenq-fy2022q4", note: "全年 71.11 億美元 減前三季 51.28 億美元（tenq-fy2022q3 九個月）" }
+      - { period: "FY2023Q1", value: 2081, status: "actual", src: "tenq-fy2023q1" }
+      - { period: "FY2023Q2", value: 1602, status: "actual", src: "tenq-fy2023q2" }
+      - { period: "FY2023Q3", value: 1148, status: "actual", src: "tenq-fy2023q3" }
+      - { period: "FY2023Q4", value: 954, status: "actual", src: "tenq-fy2023q4", note: "全年 57.85 億美元 減前三季 48.31 億美元（tenq-fy2023q3 九個月）" }
+      - { period: "FY2024Q1", value: 1590, status: "actual", src: "tenq-fy2024q1" }
+      - { period: "FY2024Q2", value: 2740, status: "actual", src: "tenq-fy2024q2" }
+      - { period: "FY2024Q3", value: 4030, status: "actual", src: "tenq-fy2024q3" }
+      - { period: "FY2024Q4", value: 1946, status: "actual", src: "tenq-fy2024q4", note: "全年 103.1 億美元 減前三季 83.6 億美元（tenq-fy2024q3 九個月）" }
+      - { period: "FY2025Q1", value: 2491, status: "actual", src: "tenq-fy2025q1" }
+      - { period: "FY2025Q2", value: 3667, status: "actual", src: "tenq-fy2025q2" }
+      - { period: "FY2025Q3", value: 5416, status: "actual", src: "tenq-fy2025q3" }
+      - { period: "FY2025Q4", value: 5534, status: "actual", src: "tenq-fy2025q4", note: "全年 171.1 億美元 減前三季 115.7 億美元（tenq-fy2025q3 九個月）" }
+      - { period: "FY2026Q1", value: 5522, status: "actual", src: "tenq-fy2026q1" }
+      - { period: "FY2026Q2", value: 2769, status: "actual", src: "tenq-fy2026q2" }
+  - id: "china-share-billing"
+    name: "中國（含香港）營收占比：依客戶帳單地址"
+    category: "中國"
+    kind: "share"
+    unit: "%"
+    frequency: "quarter"
+    definition: "china-revenue-billing 除以當季總營收（nvidia-inputs.yaml）。"
+    points:
+      - { period: "FY2017Q1", value: 18.9, status: "actual", src: "tenq-fy2017q1" }
+      - { period: "FY2017Q2", value: 17.9, status: "actual", src: "tenq-fy2017q2" }
+      - { period: "FY2017Q3", value: 17, status: "actual", src: "tenq-fy2017q3" }
+      - { period: "FY2017Q4", value: 21.2, status: "actual", src: "tenq-fy2017q4" }
+      - { period: "FY2018Q1", value: 17, status: "actual", src: "tenq-fy2018q1" }
+      - { period: "FY2018Q2", value: 21.6, status: "actual", src: "tenq-fy2018q2" }
+      - { period: "FY2018Q3", value: 19.5, status: "actual", src: "tenq-fy2018q3" }
+      - { period: "FY2018Q4", value: 19.6, status: "actual", src: "tenq-fy2018q4" }
+      - { period: "FY2019Q1", value: 23.5, status: "actual", src: "tenq-fy2019q1" }
+      - { period: "FY2019Q2", value: 24.3, status: "actual", src: "tenq-fy2019q2" }
+      - { period: "FY2019Q3", value: 22.1, status: "actual", src: "tenq-fy2019q3" }
+      - { period: "FY2019Q4", value: 26.4, status: "actual", src: "tenq-fy2019q4" }
+      - { period: "FY2020Q1", value: 24.9, status: "actual", src: "tenq-fy2020q1" }
+      - { period: "FY2020Q2", value: 22.6, status: "actual", src: "tenq-fy2020q2" }
+      - { period: "FY2020Q3", value: 25.1, status: "actual", src: "tenq-fy2020q3" }
+      - { period: "FY2020Q4", value: 27, status: "actual", src: "tenq-fy2020q4" }
+      - { period: "FY2021Q1", value: 24.6, status: "actual", src: "tenq-fy2021q1" }
+      - { period: "FY2021Q2", value: 22.1, status: "actual", src: "tenq-fy2021q2" }
+      - { period: "FY2021Q3", value: 23.6, status: "actual", src: "tenq-fy2021q3" }
+      - { period: "FY2021Q4", value: 23.2, status: "actual", src: "tenq-fy2021q4" }
+      - { period: "FY2022Q1", value: 24.6, status: "actual", src: "tenq-fy2022q1" }
+      - { period: "FY2022Q2", value: 26.4, status: "actual", src: "tenq-fy2022q2" }
+      - { period: "FY2022Q3", value: 28.4, status: "actual", src: "tenq-fy2022q3" }
+      - { period: "FY2022Q4", value: 25.9, status: "actual", src: "tenq-fy2022q4" }
+      - { period: "FY2023Q1", value: 25.1, status: "actual", src: "tenq-fy2023q1" }
+      - { period: "FY2023Q2", value: 23.9, status: "actual", src: "tenq-fy2023q2" }
+      - { period: "FY2023Q3", value: 19.4, status: "actual", src: "tenq-fy2023q3" }
+      - { period: "FY2023Q4", value: 15.8, status: "actual", src: "tenq-fy2023q4" }
+      - { period: "FY2024Q1", value: 22.1, status: "actual", src: "tenq-fy2024q1" }
+      - { period: "FY2024Q2", value: 20.3, status: "actual", src: "tenq-fy2024q2" }
+      - { period: "FY2024Q3", value: 22.2, status: "actual", src: "tenq-fy2024q3" }
+      - { period: "FY2024Q4", value: 8.8, status: "actual", src: "tenq-fy2024q4" }
+      - { period: "FY2025Q1", value: 9.6, status: "actual", src: "tenq-fy2025q1" }
+      - { period: "FY2025Q2", value: 12.2, status: "actual", src: "tenq-fy2025q2" }
+      - { period: "FY2025Q3", value: 15.4, status: "actual", src: "tenq-fy2025q3" }
+      - { period: "FY2025Q4", value: 14.1, status: "actual", src: "tenq-fy2025q4" }
+      - { period: "FY2026Q1", value: 12.5, status: "actual", src: "tenq-fy2026q1" }
+      - { period: "FY2026Q2", value: 5.9, status: "actual", src: "tenq-fy2026q2" }
+  - id: "china-revenue-hq"
+    name: "中國（含香港）營收：依客戶總部所在地"
+    category: "中國"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "10-Q／10-K 依客戶總部所在地的地理別營收中「China (including Hong Kong)」，FY2026 第三季起採用並重編 FY2025 第三季以後；總部所在地不等於出貨地或最終客戶所在地。"
+    points:
+      - { period: "FY2025Q3", value: 8142, status: "actual", src: "tenq-fy2026q3", note: "上年同期比較欄" }
+      - { period: "FY2025Q4", value: 7818, status: "actual", src: "tenq-fy2026q4", note: "FY2025 全年 250.48 億美元（tenq-fy2026q4）減前三季 172.30 億美元（tenq-fy2026q3）" }
+      - { period: "FY2026Q1", value: 9659, status: "actual", src: "tenq-fy2027q1", note: "上年同期比較欄（帳單地址口徑為 55.22 億美元）" }
+      - { period: "FY2026Q2", value: 3985, status: "actual", src: "tenq-fy2027q2", note: "上年同期比較欄（帳單地址口徑為 27.69 億美元）" }
+      - { period: "FY2026Q3", value: 2973, status: "actual", src: "tenq-fy2026q3" }
+      - { period: "FY2026Q4", value: 3060, status: "actual", src: "tenq-fy2026q4", note: "FY2026 全年 196.77 億美元減前三季 166.17 億美元（tenq-fy2026q3）" }
+      - { period: "FY2027Q1", value: 4550, status: "actual", src: "tenq-fy2027q1" }
+      - { period: "FY2027Q2", value: 7880, status: "actual", src: "tenq-fy2027q2" }
+      - { period: "FY2027Q3", value: 11050, status: "actual", src: "supp-fy2027q3" }
+    note: "年度值（總部口徑）：FY2024 123.30、FY2025 250.48、FY2026 196.77 億美元（tenq-fy2026q4）；FY2025 上半年合計 90.88 億美元，未拆季。"
+  - id: "china-share-hq"
+    name: "中國（含香港）營收占比：依客戶總部所在地"
+    category: "中國"
+    kind: "share"
+    unit: "%"
+    frequency: "quarter"
+    definition: "china-revenue-hq 除以當季總營收（nvidia-inputs.yaml）。"
+    points:
+      - { period: "FY2025Q3", value: 23.2, status: "actual", src: "tenq-fy2026q3" }
+      - { period: "FY2025Q4", value: 19.9, status: "actual", src: "tenq-fy2026q4" }
+      - { period: "FY2026Q1", value: 21.9, status: "actual", src: "tenq-fy2027q1" }
+      - { period: "FY2026Q2", value: 8.5, status: "actual", src: "tenq-fy2027q2" }
+      - { period: "FY2026Q3", value: 5.2, status: "actual", src: "tenq-fy2026q3" }
+      - { period: "FY2026Q4", value: 4.5, status: "actual", src: "tenq-fy2026q4" }
+      - { period: "FY2027Q1", value: 5.6, status: "actual", src: "tenq-fy2027q1" }
+      - { period: "FY2027Q2", value: 8.2, status: "actual", src: "tenq-fy2027q2" }
+      - { period: "FY2027Q3", value: 9.5, status: "actual", src: "supp-fy2027q3" }
+  - id: "china-dc-hopper"
+    name: "資料中心 Hopper（含 H20）對中國出貨"
+    category: "中國"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "財務長評論揭露的資料中心 Hopper 產品（FY2026 為 H20）對中國的銷售或出貨金額；公司未逐季揭露，只列有數字的季度。"
+    points:
+      - { period: "FY2026Q1", value: 4600, status: "actual", src: "cfo-fy2026q1", note: "H20 銷售 46 億美元（出口許可新規前），另有 25 億美元無法出貨" }
+      - { period: "FY2026Q2", value: 0, status: "actual", src: "cfo-fy2026q2", note: "對中國客戶無 H20 銷售；另有約 6.5 億美元 H20 售予中國以外的客戶" }
+      - { period: "FY2027Q1", value: 0, status: "actual", src: "cfo-fy2027q1", note: "本季沒有資料中心 Hopper 對中國出貨" }
+      - { period: "FY2027Q3", value: 2400, status: "actual", src: "cfo-fy2027q3" }
+    note: "FY2026 第三季 H20 銷售「不重大」（cfo-fy2026q3），FY2027 第二季對中國的 Hopper 出貨低於資料中心營收的 1%（cfo-fy2027q2），兩季未列數字。FY2027 各季財測都不含中國資料中心運算營收。"
+  - id: "neocloud-capacity"
+    name: "新興 AI 雲業者裝置容量（輝達估計）"
+    category: "AI 雲"
+    kind: "level"
+    unit: "GW"
+    frequency: "year"
+    definition: "輝達財務長在 FY2027 第二季法說會說明的新興 AI 雲（neocloud）夥伴總裝置容量，日曆年底。"
+    points:
+      - { period: "2025", value: 3, status: "estimate", src: "tr-fy2027q2", note: "原文 approximately 3 gigawatts at the end of 2025" }
+      - { period: "2026", value: 8, status: "forecast", src: "tr-fy2027q2", note: "預期年底 8 GW" }
+  - id: "guidance-revenue"
+    name: "營收財測（中值與區間）"
+    category: "財測"
+    kind: "level"
+    unit: "百萬美元"
+    frequency: "quarter"
+    definition: "上一季新聞稿對本季的營收財測：中值與 ± 2%（FY2027 第四季 ± 3%）換算的上下緣；會計季度。與 nvidia-inputs.yaml 各季的 guidance 相同，另加尚未公布的 FY2027 第四季。"
+    points:
+      - { period: "FY2017Q1", value: 1260, low: 1234.8, high: 1285.2, status: "guidance", src: "pr-fy2016q4" }
+      - { period: "FY2017Q2", value: 1350, low: 1323, high: 1377, status: "guidance", src: "pr-fy2017q1" }
+      - { period: "FY2017Q3", value: 1680, low: 1646.4, high: 1713.6, status: "guidance", src: "pr-fy2017q2" }
+      - { period: "FY2017Q4", value: 2100, low: 2058, high: 2142, status: "guidance", src: "pr-fy2017q3" }
+      - { period: "FY2018Q1", value: 1900, low: 1862, high: 1938, status: "guidance", src: "pr-fy2017q4" }
+      - { period: "FY2018Q2", value: 1950, low: 1911, high: 1989, status: "guidance", src: "pr-fy2018q1" }
+      - { period: "FY2018Q3", value: 2350, low: 2303, high: 2397, status: "guidance", src: "pr-fy2018q2" }
+      - { period: "FY2018Q4", value: 2650, low: 2597, high: 2703, status: "guidance", src: "pr-fy2018q3" }
+      - { period: "FY2019Q1", value: 2900, low: 2842, high: 2958, status: "guidance", src: "pr-fy2018q4" }
+      - { period: "FY2019Q2", value: 3100, low: 3038, high: 3162, status: "guidance", src: "pr-fy2019q1" }
+      - { period: "FY2019Q3", value: 3250, low: 3185, high: 3315, status: "guidance", src: "pr-fy2019q2" }
+      - { period: "FY2019Q4", value: 2700, low: 2646, high: 2754, status: "guidance", src: "pr-fy2019q3", note: "2019-01-28 下修為 22.0 億美元（sec-8k-20190128）" }
+      - { period: "FY2020Q1", value: 2200, low: 2156, high: 2244, status: "guidance", src: "pr-fy2019q4" }
+      - { period: "FY2020Q2", value: 2550, low: 2499, high: 2601, status: "guidance", src: "pr-fy2020q1" }
+      - { period: "FY2020Q3", value: 2900, low: 2842, high: 2958, status: "guidance", src: "pr-fy2020q2" }
+      - { period: "FY2020Q4", value: 2950, low: 2891, high: 3009, status: "guidance", src: "pr-fy2020q3" }
+      - { period: "FY2021Q1", value: 3000, low: 2940, high: 3060, status: "guidance", src: "pr-fy2020q4" }
+      - { period: "FY2021Q2", value: 3650, low: 3577, high: 3723, status: "guidance", src: "pr-fy2021q1" }
+      - { period: "FY2021Q3", value: 4400, low: 4312, high: 4488, status: "guidance", src: "pr-fy2021q2" }
+      - { period: "FY2021Q4", value: 4800, low: 4704, high: 4896, status: "guidance", src: "pr-fy2021q3" }
+      - { period: "FY2022Q1", value: 5300, low: 5194, high: 5406, status: "guidance", src: "pr-fy2021q4" }
+      - { period: "FY2022Q2", value: 6300, low: 6174, high: 6426, status: "guidance", src: "pr-fy2022q1" }
+      - { period: "FY2022Q3", value: 6800, low: 6664, high: 6936, status: "guidance", src: "pr-fy2022q2" }
+      - { period: "FY2022Q4", value: 7400, low: 7252, high: 7548, status: "guidance", src: "pr-fy2022q3" }
+      - { period: "FY2023Q1", value: 8100, low: 7938, high: 8262, status: "guidance", src: "pr-fy2022q4" }
+      - { period: "FY2023Q2", value: 8100, low: 7938, high: 8262, status: "guidance", src: "pr-fy2023q1" }
+      - { period: "FY2023Q3", value: 5900, low: 5782, high: 6018, status: "guidance", src: "pr-fy2023q2" }
+      - { period: "FY2023Q4", value: 6000, low: 5880, high: 6120, status: "guidance", src: "pr-fy2023q3" }
+      - { period: "FY2024Q1", value: 6500, low: 6370, high: 6630, status: "guidance", src: "pr-fy2023q4" }
+      - { period: "FY2024Q2", value: 11000, low: 10780, high: 11220, status: "guidance", src: "pr-fy2024q1" }
+      - { period: "FY2024Q3", value: 16000, low: 15680, high: 16320, status: "guidance", src: "pr-fy2024q2" }
+      - { period: "FY2024Q4", value: 20000, low: 19600, high: 20400, status: "guidance", src: "pr-fy2024q3" }
+      - { period: "FY2025Q1", value: 24000, low: 23520, high: 24480, status: "guidance", src: "pr-fy2024q4" }
+      - { period: "FY2025Q2", value: 28000, low: 27440, high: 28560, status: "guidance", src: "pr-fy2025q1" }
+      - { period: "FY2025Q3", value: 32500, low: 31850, high: 33150, status: "guidance", src: "pr-fy2025q2" }
+      - { period: "FY2025Q4", value: 37500, low: 36750, high: 38250, status: "guidance", src: "pr-fy2025q3" }
+      - { period: "FY2026Q1", value: 43000, low: 42140, high: 43860, status: "guidance", src: "pr-fy2025q4" }
+      - { period: "FY2026Q2", value: 45000, low: 44100, high: 45900, status: "guidance", src: "pr-fy2026q1" }
+      - { period: "FY2026Q3", value: 54000, low: 52920, high: 55080, status: "guidance", src: "pr-fy2026q2" }
+      - { period: "FY2026Q4", value: 65000, low: 63700, high: 66300, status: "guidance", src: "pr-fy2026q3" }
+      - { period: "FY2027Q1", value: 78000, low: 76440, high: 79560, status: "guidance", src: "pr-fy2026q4" }
+      - { period: "FY2027Q2", value: 91000, low: 89180, high: 92820, status: "guidance", src: "pr-fy2027q1" }
+      - { period: "FY2027Q3", value: 108000, low: 105840, high: 110160, status: "guidance", src: "pr-fy2027q2" }
+      - { period: "FY2027Q4", value: 130000, low: 126100, high: 133900, status: "guidance", src: "pr-fy2027q3", note: "± 3%，本季 14 週" }
+    note: "財務長在 FY2027 第二季法說會（2026-08-26）初步預期 FY2028 營收年增約 70%，屬供給受限的展望（tr-fy2027q2）；第三季法說會（2026-11-17）的逐字稿在 2026-11-18 尚未公布。"
+  - id: "guidance-gross-margin"
+    name: "GAAP 毛利率財測"
+    category: "財測"
+    kind: "level"
+    unit: "%"
+    frequency: "quarter"
+    definition: "上一季新聞稿對本季的 GAAP 毛利率財測中值，區間一般為 ± 0.5 個百分點（FY2027 第四季為 71.0–72.0%）；會計季度。"
+    points:
+      - { period: "FY2017Q1", value: 57.2, low: 56.7, high: 57.7, status: "guidance", src: "pr-fy2016q4" }
+      - { period: "FY2017Q2", value: 57.7, low: 57.2, high: 58.2, status: "guidance", src: "pr-fy2017q1" }
+      - { period: "FY2017Q3", value: 57.8, low: 57.3, high: 58.3, status: "guidance", src: "pr-fy2017q2" }
+      - { period: "FY2017Q4", value: 59, low: 58.5, high: 59.5, status: "guidance", src: "pr-fy2017q3" }
+      - { period: "FY2018Q1", value: 59.5, low: 59, high: 60, status: "guidance", src: "pr-fy2017q4" }
+      - { period: "FY2018Q2", value: 58.4, low: 57.9, high: 58.9, status: "guidance", src: "pr-fy2018q1" }
+      - { period: "FY2018Q3", value: 58.6, low: 58.1, high: 59.1, status: "guidance", src: "pr-fy2018q2" }
+      - { period: "FY2018Q4", value: 59.7, low: 59.2, high: 60.2, status: "guidance", src: "pr-fy2018q3" }
+      - { period: "FY2019Q1", value: 62.7, low: 62.2, high: 63.2, status: "guidance", src: "pr-fy2018q4" }
+      - { period: "FY2019Q2", value: 63.3, low: 62.8, high: 63.8, status: "guidance", src: "pr-fy2019q1" }
+      - { period: "FY2019Q3", value: 62.6, low: 62.1, high: 63.1, status: "guidance", src: "pr-fy2019q2" }
+      - { period: "FY2019Q4", value: 62.3, low: 61.8, high: 62.8, status: "guidance", src: "pr-fy2019q3", note: "2019-01-28 下修為 55.0%（sec-8k-20190128）" }
+      - { period: "FY2020Q1", value: 58.8, low: 58.3, high: 59.3, status: "guidance", src: "pr-fy2019q4" }
+      - { period: "FY2020Q2", value: 59.2, low: 58.7, high: 59.7, status: "guidance", src: "pr-fy2020q1" }
+      - { period: "FY2020Q3", value: 62, low: 61.5, high: 62.5, status: "guidance", src: "pr-fy2020q2" }
+      - { period: "FY2020Q4", value: 64.1, low: 63.6, high: 64.6, status: "guidance", src: "pr-fy2020q3" }
+      - { period: "FY2021Q1", value: 65, low: 64.5, high: 65.5, status: "guidance", src: "pr-fy2020q4" }
+      - { period: "FY2021Q2", value: 58.6, low: 58.1, high: 59.1, status: "guidance", src: "pr-fy2021q1" }
+      - { period: "FY2021Q3", value: 62.5, low: 62, high: 63, status: "guidance", src: "pr-fy2021q2" }
+      - { period: "FY2021Q4", value: 62.8, low: 62.3, high: 63.3, status: "guidance", src: "pr-fy2021q3" }
+      - { period: "FY2022Q1", value: 63.8, low: 63.3, high: 64.3, status: "guidance", src: "pr-fy2021q4" }
+      - { period: "FY2022Q2", value: 64.6, low: 64.1, high: 65.1, status: "guidance", src: "pr-fy2022q1" }
+      - { period: "FY2022Q3", value: 65.2, low: 64.7, high: 65.7, status: "guidance", src: "pr-fy2022q2" }
+      - { period: "FY2022Q4", value: 65.3, low: 64.8, high: 65.8, status: "guidance", src: "pr-fy2022q3" }
+      - { period: "FY2023Q1", value: 65.2, low: 64.7, high: 65.7, status: "guidance", src: "pr-fy2022q4" }
+      - { period: "FY2023Q2", value: 65.1, low: 64.6, high: 65.6, status: "guidance", src: "pr-fy2023q1" }
+      - { period: "FY2023Q3", value: 62.4, low: 61.9, high: 62.9, status: "guidance", src: "pr-fy2023q2" }
+      - { period: "FY2023Q4", value: 63.2, low: 62.7, high: 63.7, status: "guidance", src: "pr-fy2023q3" }
+      - { period: "FY2024Q1", value: 64.1, low: 63.6, high: 64.6, status: "guidance", src: "pr-fy2023q4" }
+      - { period: "FY2024Q2", value: 68.6, low: 68.1, high: 69.1, status: "guidance", src: "pr-fy2024q1" }
+      - { period: "FY2024Q3", value: 71.5, low: 71, high: 72, status: "guidance", src: "pr-fy2024q2" }
+      - { period: "FY2024Q4", value: 74.5, low: 74, high: 75, status: "guidance", src: "pr-fy2024q3" }
+      - { period: "FY2025Q1", value: 76.3, low: 75.8, high: 76.8, status: "guidance", src: "pr-fy2024q4" }
+      - { period: "FY2025Q2", value: 74.8, low: 74.3, high: 75.3, status: "guidance", src: "pr-fy2025q1" }
+      - { period: "FY2025Q3", value: 74.4, low: 73.9, high: 74.9, status: "guidance", src: "pr-fy2025q2" }
+      - { period: "FY2025Q4", value: 73, low: 72.5, high: 73.5, status: "guidance", src: "pr-fy2025q3" }
+      - { period: "FY2026Q1", value: 70.6, low: 70.1, high: 71.1, status: "guidance", src: "pr-fy2025q4" }
+      - { period: "FY2026Q2", value: 71.8, low: 71.3, high: 72.3, status: "guidance", src: "pr-fy2026q1" }
+      - { period: "FY2026Q3", value: 73.3, low: 72.8, high: 73.8, status: "guidance", src: "pr-fy2026q2" }
+      - { period: "FY2026Q4", value: 74.8, low: 74.3, high: 75.3, status: "guidance", src: "pr-fy2026q3" }
+      - { period: "FY2027Q1", value: 74.9, low: 74.4, high: 75.4, status: "guidance", src: "pr-fy2026q4" }
+      - { period: "FY2027Q2", value: 74.9, low: 74.4, high: 75.4, status: "guidance", src: "pr-fy2027q1" }
+      - { period: "FY2027Q3", value: 74, low: 73.5, high: 74.5, status: "guidance", src: "pr-fy2027q2" }
+      - { period: "FY2027Q4", value: 71.5, low: 71, high: 72, status: "guidance", src: "pr-fy2027q3" }
+    note: "財務長在 2026-08-26 表示記憶體價格漲幅超出預期，預期毛利率在 FY2027 第四季觸底於 71–72%，FY2028 約 72–73%（tr-fy2027q2）；先前（2025-11-19、2026-02-25、2026-05-20）的說法是 FY2027 全年約 75%（mid-70s）。記憶體（含 HBM）合約價見 market-prices.yaml 的 dram-incl-hbm-contract-qoq。"
+  - id: "guidance-gross-margin-annual"
+    name: "年度毛利率展望（法說會）"
+    category: "財測"
+    kind: "level"
+    unit: "%"
+    frequency: "year"
+    definition: "財務長在法說會對整個會計年度毛利率的口頭展望；文字區間的換算：mid-70s 取 75（以 74–76 表示），明確區間取中值。"
+    points:
+      - { period: "FY2027", value: 75, low: 74, high: 76, status: "guidance", src: "tr-fy2026q3", note: "2025-11-19 原文：input costs are on the rise, but we are working to hold gross margins in the mid-70s；2026-02-25、2026-05-20 重申 mid-70s；2026-08-26 改為第三季 74%、第四季 71–72%" }
+      - { period: "FY2028", value: 72.5, low: 72, high: 73, status: "guidance", src: "tr-fy2027q2", note: "2026-08-26 原文：settling at 72% to 73% in fiscal year 2028 as executed price increases take effect in Q1" }
+sources:
+  sec-xbrl-msft: { title: "Microsoft XBRL company facts (10-Q / 10-K financial data)", publisher: "U.S. Securities and Exchange Commission (EDGAR)", url: "https://data.sec.gov/api/xbrl/companyfacts/CIK0000789019.json", type: "filing", lang: "en", note: "Microsoft 申報的現金流量表資本支出；單季值由年初累計值相減", accessed: "2026-11-18" }
+  sec-xbrl-googl: { title: "Alphabet XBRL company facts (10-Q / 10-K financial data)", publisher: "U.S. Securities and Exchange Commission (EDGAR)", url: "https://data.sec.gov/api/xbrl/companyfacts/CIK0001652044.json", type: "filing", lang: "en", note: "Alphabet 申報的現金流量表資本支出；單季值由年初累計值相減", accessed: "2026-11-18" }
+  sec-xbrl-amzn: { title: "Amazon XBRL company facts (10-Q / 10-K financial data)", publisher: "U.S. Securities and Exchange Commission (EDGAR)", url: "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json", type: "filing", lang: "en", note: "Amazon 申報的現金流量表資本支出；單季值由年初累計值相減", accessed: "2026-11-18" }
+  sec-xbrl-meta: { title: "Meta Platforms XBRL company facts (10-Q / 10-K financial data)", publisher: "U.S. Securities and Exchange Commission (EDGAR)", url: "https://data.sec.gov/api/xbrl/companyfacts/CIK0001326801.json", type: "filing", lang: "en", note: "Meta Platforms 申報的現金流量表資本支出；單季值由年初累計值相減", accessed: "2026-11-18" }
+  sec-xbrl-orcl: { title: "Oracle XBRL company facts (10-Q / 10-K financial data)", publisher: "U.S. Securities and Exchange Commission (EDGAR)", url: "https://data.sec.gov/api/xbrl/companyfacts/CIK0001341439.json", type: "filing", lang: "en", note: "Oracle 申報的現金流量表資本支出；單季值由年初累計值相減", accessed: "2026-11-18" }
+  sec-xbrl-hyperscalers: { title: "Hyperscaler capital expenditures, sum of Microsoft, Alphabet, Amazon, Meta and Oracle XBRL cash-flow data", publisher: "本站整理（資料：SEC EDGAR XBRL API）", url: "https://www.sec.gov/search-filings/edgar-application-programming-interfaces", type: "dataset", lang: "en", note: "五家公司 companyfacts（sec-xbrl-msft、sec-xbrl-googl、sec-xbrl-amzn、sec-xbrl-meta、sec-xbrl-orcl）單季資本支出的加總", accessed: "2026-11-18" }
+  meta-q3-2026: { title: "Meta Reports Third Quarter 2026 Results (8-K Exhibit 99.1)", publisher: "Meta Platforms (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1326801/000162828026066700/meta-09302026xexhibit991.htm", type: "press-release", lang: "en", published: "2026-10-21", note: "財務長展望：2026 年資本支出（含融資租賃本金）1,350–1,450 億美元（由 1,300–1,450 億美元收窄）；第三季含融資租賃本金的資本支出 349.1 億美元", accessed: "2026-11-18" }
+  marketbeat-googl-20261029: { title: "Alphabet Q3 Earnings Call Highlights", publisher: "MarketBeat", url: "https://www.marketbeat.com/instant-alerts/transcript-alphabet-q3-earnings-call-highlights-2026-10-29/", type: "news", lang: "en", published: "2026-10-29", note: "媒體整理的法說會重點：Alphabet 維持 2026 年資本支出 1,950–2,050 億美元，並預期 2027 年大幅增加", accessed: "2026-11-18" }
+  ap-googl-20261028: { title: "Google misses revenue expectations; Alphabet stock sinks in early after-hours trading", publisher: "Associated Press (via Spectrum News NY1)", url: "https://ny1.com/nyc/all-boroughs/ap-top-news/2026/10/28/google-misses-revenue-expectations-alphabet-stock-sinks-in-early-after-hours-trading", type: "news", lang: "en", published: "2026-10-28", note: "財務長 Anat Ashkenazi 表示 2027 年資本支出將「大幅增加」，細節在第四季法說會說明", accessed: "2026-11-18" }
+  uao-capex-20261101: { title: "Hyperscaler Q3 capex, debt, equity and leases", publisher: "Universal Asset Owners", url: "https://www.universalassetowners.com/newsroom/hyperscaler-q3-capex-debt-equity-leases/", type: "news", lang: "en", published: "2026-11-01", note: "整理 2026 年第三季財報：微軟 2026 日曆年約 1,700 億美元（含融資租賃）、亞馬遜 2026 年現金資本支出約 2,200 億美元、Meta 1,350–1,450 億美元", accessed: "2026-11-18" }
+  tr-fy2026q4: { title: "NVIDIA Q4 2026 Earnings Call Transcript", publisher: "NVIDIA Investor Relations (FactSet CallStreet transcript)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/q4/NVDA-Q4-2026-Earnings-Call-25-February-2026-5_00-PM-ET.pdf", type: "earnings-call", lang: "en", published: "2026-02-25", note: "法說會逐字稿：財務長的毛利率、營收與供應展望", accessed: "2026-11-18" }
+  tr-fy2027q1: { title: "NVIDIA Q1 2027 Earnings Call Transcript", publisher: "NVIDIA Investor Relations (FactSet CallStreet transcript)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/q1/NVDA-Q1-2027-Earnings-Call-20-May-2026-5_00-PM-ET.pdf", type: "earnings-call", lang: "en", published: "2026-05-20", note: "法說會逐字稿：財務長的毛利率、營收與供應展望", accessed: "2026-11-18" }
+  tr-fy2027q2: { title: "NVIDIA Q2 2027 Earnings Call Transcript", publisher: "NVIDIA Investor Relations (FactSet CallStreet transcript)", url: "https://s201.q4cdn.com/141608511/files/content_files/TRANSCRIPT_-NVIDIA-Corp-NVDA-US-Q2-2027-Earnings-Call-26-August-2026-5_00-PM-ET.pdf", type: "earnings-call", lang: "en", published: "2026-08-26", note: "法說會逐字稿：財務長的毛利率、營收與供應展望", accessed: "2026-11-18" }
+  tf-cowos-20240416: { title: "Demand for NVIDIA’s Blackwell Platform Expected to Boost TSMC’s CoWoS Total Capacity by Over 150% in 2024, Says TrendForce", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20240416-12119.html", type: "analyst", lang: "en", published: "2024-04-16", note: "TrendForce 研究：2024 年底台積電 CoWoS 月產能接近 4 萬片，年增 150%", accessed: "2026-11-18" }
+  tf-cowos-20241121: { title: "TrendForce: Unveiling New Opportunities in Tech Innovation for 2025", publisher: "TrendForce", url: "https://www.trendforce.com/presscenter/news/20241121-12374.html", type: "analyst", lang: "en", published: "2024-11-21", note: "TrendForce 研究：2025 年輝達需求將占台積電 CoWoS 產出近 60%，台積電 CoWoS 月產能在 2025 年底約 7.5–8 萬片", accessed: "2026-11-18" }
+  tf-cowos-20241213: { title: "[News] TSMC Ramps up CoWoS Capacity across Taiwan, Projected to Nearly Triple by 2026", publisher: "TrendForce News", url: "https://www.trendforce.com/news/2024/12/13/news-tsmc-ramps-up-cowos-capacity-across-taiwan-projected-to-nearly-triple-by-2026/", type: "news", lang: "en", published: "2024-12-13", note: "引述《工商時報》法人估計：台積電 2024 年 CoWoS 月產能 3.5 萬片、2025 年底 7 萬片、2026 年底 9 萬片", accessed: "2026-11-18" }
+  tf-cowos-20250102: { title: "[News] TSMC Set to Expand CoWoS Capacity to Record 75,000 Wafers in 2025, Doubling 2024 Output", publisher: "TrendForce News", url: "https://www.trendforce.com/news/2025/01/02/news-tsmc-set-to-expand-cowos-capacity-to-record-75000-wafers-in-2025-doubling-2024-output/", type: "news", lang: "en", published: "2025-01-02", note: "引述《經濟日報》業界估計：2025 年月產能可達 7.5 萬片", accessed: "2026-11-18" }
+  tf-cowos-20260615: { title: "[News] TSMC CoWoS Supply-Demand Gap Reportedly Seen Narrowing from 20% to 10% by End-2026 as Capacity Expands", publisher: "TrendForce News", url: "https://www.trendforce.com/news/2026/06/15/news-tsmc-cowos-supply-demand-gap-reportedly-seen-narrowing-from-20-to-10-by-end-2026-as-capacity-expands/", type: "news", lang: "en", published: "2026-06-15", note: "引述《經濟日報》法人估計：台積電 2026 年 CoWoS 月產能 12–14 萬片，加上封測夥伴 5–6 萬片，全產業近 20 萬片；供需缺口由約 20% 縮小到年底約 10%", accessed: "2026-11-18" }
+  tf-cowos-20260805: { title: "[News] TSMC Reportedly Expands Outsourcing of Key CoWoS Front-End Step to OSATs Amid Rising NVIDIA, ASIC Demand", publisher: "TrendForce News", url: "https://www.trendforce.com/news/2026/08/05/news-tsmc-reportedly-expands-outsourcing-of-key-cowos-front-end-step-to-osats-amid-rising-nvidia-asic-demand/", type: "news", lang: "en", published: "2026-08-05", note: "引述快科技（Mydrivers）：月產能由 2025 年約 7 萬片增至 2026 年底 13–14 萬片；輝達預訂 2026 年約 80–85 萬片，占台積電 CoWoS 產能逾 50%；供需缺口 2026 年仍約 20%", accessed: "2026-11-18" }
+  tf-cowos-20261027: { title: "[News] TSMC Reportedly Eyes 20% CoWoS Price Hike, Skips Equipment Price Renegotiations Amid AI Demand Surge", publisher: "TrendForce News", url: "https://www.trendforce.com/news/2026/10/27/news-tsmc-reportedly-eyes-20-cowos-price-hike-skips-equipment-price-renegotiations-amid-ai-demand-surge/", type: "news", lang: "en", published: "2026-10-27", note: "引述《工商時報》法人估計 2026 年月產能逾 13 萬片、2027 年目標 20 萬片；高盛估 2026 年 127.5 萬片（平均每月約 10.6 萬片）、2027 年 273 萬片（每月 22.75 萬片）、2028 年 348 萬片（每月近 29 萬片）", accessed: "2026-11-18" }
+  tenq-fy2017q1: { title: "NVIDIA Form 10-Q for the quarter ended 2016-05-01", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2017/10Q-2017-Q1.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2017q2: { title: "NVIDIA Form 10-Q for the quarter ended 2016-07-31", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2017/10Q-2017-Q2.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2017q3: { title: "NVIDIA Form 10-Q for the quarter ended 2016-10-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2017/10Q-2017-Q3.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2017q4: { title: "NVIDIA Form 10-K for fiscal year ended 2017-01-29", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2017/10K-2017-Q4.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2018q1: { title: "NVIDIA Form 10-Q for the quarter ended 2017-04-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2018/10Q-2018-Q1.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2018q2: { title: "NVIDIA Form 10-Q for the quarter ended 2017-07-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2018/10Q-2018-Q2.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2018q3: { title: "NVIDIA Form 10-Q for the quarter ended 2017-10-29", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2018/10Q-2018-Q3.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2018q4: { title: "NVIDIA Form 10-K for fiscal year ended 2018-01-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2018/NVIDIA-Q4Y18-Form-10K.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2019q1: { title: "NVIDIA Form 10-Q for the quarter ended 2018-04-29", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2019/NVIDIA-Q1Y19-Form-10Q.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2019q2: { title: "NVIDIA Form 10-Q for the quarter ended 2018-07-29", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2019/Q219/e21302ab-ede9-4119-ba3f-be0e61df02e3.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2019q3: { title: "NVIDIA Form 10-Q for the quarter ended 2018-10-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2019/Q319/f949f2f3-affc-4659-a4f1-069ee8093049.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2019q4: { title: "NVIDIA Form 10-K for fiscal year ended 2019-01-27", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2019/Q419/nvidia2019-10K.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2020q1: { title: "NVIDIA Form 10-Q for the quarter ended 2019-04-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2020/Q120/e0636cad-19cc-4520-8e80-4dfc8b28d16a.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2020q2: { title: "NVIDIA Form 10-Q for the quarter ended 2019-07-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2020/Q220/9e501519-7cc2-40f2-aeb9-e6aace95e474.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2020q3: { title: "NVIDIA Form 10-Q for the quarter ended 2019-10-27", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2020/q3/cfa30c13-a603-418d-9dc7-2c52c44a276c.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2020q4: { title: "NVIDIA Form 10-K for fiscal year ended 2020-01-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2020/q4/174b2f06-ba5b-4e0a-b288-e33c46e9a0a4.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2021q1: { title: "NVIDIA Form 10-Q for the quarter ended 2020-04-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2021/q1/6a2895c9-f648-4e77-bcd6-63bbfc4e0786.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2021q2: { title: "NVIDIA Form 10-Q for the quarter ended 2020-07-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2021/Q2/65b8fd67-6306-47d4-8a29-9a6be3860297.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2021q3: { title: "NVIDIA Form 10-Q for the quarter ended 2020-10-25", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/quarterly_reports/2021/Q321/a0c4a358-8b0e-4b20-a5cd-dd56002591ed.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2021q4: { title: "NVIDIA Form 10-K for fiscal year ended 2021-01-31", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2021/q4/0ec16816-55e2-4812-8f77-75cab5909247.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2022q1: { title: "NVIDIA Form 10-Q for the quarter ended 2021-05-02", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2022/q1/NVDA-2022-Q1-10Q.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2022q2: { title: "NVIDIA Form 10-Q for the quarter ended 2021-08-01", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2022/q2/62e21663-af56-4c3a-b0d1-98bfdaa5d4a6.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2022q3: { title: "NVIDIA Form 10-Q for the quarter ended 2021-10-31", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2022/q3/420f1223-6131-4b97-b09d-3e9935257ed2.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2022q4: { title: "NVIDIA Form 10-K for fiscal year ended 2022-01-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2022/q4/ca04d49f-caab-436f-9e6f-e8493c8e8515.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2023q1: { title: "NVIDIA Form 10-Q for the quarter ended 2022-05-01", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2023/q1/8b8d4537-83d8-4c94-b065-e7a2cd34da49.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2023q2: { title: "NVIDIA Form 10-Q for the quarter ended 2022-07-31", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2023/Q2/19426b68-6120-44a3-9032-bb629ef2b3d9.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2023q3: { title: "NVIDIA Form 10-Q for the quarter ended 2022-10-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2023/q3/cd532449-4dc3-404a-a999-25e7b2e8c246.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2023q4: { title: "NVIDIA Form 10-K for fiscal year ended 2023-01-29", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2023/q4/4e9abe7b-fdc7-4cd2-8487-dc3a99f30e98.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2024q1: { title: "NVIDIA Form 10-Q for the quarter ended 2023-04-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2024/q1/ecefb2b2-efcb-45f3-b72b-212d90fcd873.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2024q2: { title: "NVIDIA Form 10-Q for the quarter ended 2023-07-30", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2024/q2/19771e6b-cc29-4027-899e-51a0c386111e.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2024q3: { title: "NVIDIA Form 10-Q for the quarter ended 2023-10-29", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2024/q3/NVIDIA-10Q.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2024q4: { title: "NVIDIA Form 10-K for fiscal year ended 2024-01-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2024/q4/1cbe8fe7-e08a-46e3-8dcc-b429fc06c1a4.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2025q1: { title: "NVIDIA Form 10-Q for the quarter ended 2024-04-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2025/q1/NVIDIA-10Q-20242905.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2025q2: { title: "NVIDIA Form 10-Q for the quarter ended 2024-07-28", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2025/q2/78501ce3-7816-4c4d-8688-53dd140df456.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2025q3: { title: "NVIDIA Form 10-Q for the quarter ended 2024-10-27", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2025/q3/ed2a395c-5e9b-4411-8b4a-a718d192155a.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2025q4: { title: "NVIDIA Form 10-K for fiscal year ended 2025-01-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2025/q4/177440d5-3b32-4185-8cc8-95500a9dc783.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2026q1: { title: "NVIDIA Form 10-Q for the quarter ended 2025-04-27", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/q1/b6df1c5c-5cb6-4a41-9d28-dd1bcd34cc26.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2026q2: { title: "NVIDIA Form 10-Q for the quarter ended 2025-07-27", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/q2/2e217538-c226-4d05-8f74-aaca89a21b33.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2026q3: { title: "NVIDIA Form 10-Q for the quarter ended 2025-10-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/q3/13e6981b-95ed-4aac-a602-ebc5865d0590.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2026q4: { title: "NVIDIA Form 10-K for fiscal year ended 2026-01-25", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/q4/10K-NVDA.pdf", type: "annual-report", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2027q1: { title: "NVIDIA Form 10-Q for the quarter ended 2026-04-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/q1/927dc2d6-a76c-4006-9f34-8769b2c665fb.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  tenq-fy2027q2: { title: "NVIDIA Form 10-Q for the quarter ended 2026-07-26", publisher: "NVIDIA (SEC filing, investor-relations copy)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/NVDA-2027-Q2-10Q-Final-including-exhibits.pdf", type: "filing", lang: "en", note: "投資人關係網站上的申報文件 PDF：地理別營收（Revenue by geographic area）", accessed: "2026-11-18" }
+  supp-fy2027q3: { title: "NVIDIA Supplemental Financial Information for the Quarter Ended October 25, 2026", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/Q327/Supplemental-Financial-Information-NVDA-2027-Q3.pdf", type: "ir-presentation", lang: "en", published: "2026-11-17", note: "10-Q 申報前的補充資料：三大報表、存貨組成與存貨提列、依客戶總部所在地的地理別營收、客戶集中度", accessed: "2026-11-18" }
+  cfo-fy2026q1: { title: "CFO Commentary on First Quarter Fiscal 2026 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/Q126/Q1FY26-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2025-05-28", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2026q2: { title: "CFO Commentary on Second Quarter Fiscal 2026 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/Q226/Q2FY26-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2025-08-27", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2027q1: { title: "CFO Commentary on First Quarter Fiscal 2027 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/Q127/Q1FY27-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2026-05-20", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2027q3: { title: "CFO Commentary on Third Quarter Fiscal 2027 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/Q327/Q3FY27-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2026-11-17", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2026q3: { title: "CFO Commentary on Third Quarter Fiscal 2026 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/Q326/Q3FY26-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2025-11-19", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  cfo-fy2027q2: { title: "CFO Commentary on Second Quarter Fiscal 2027 Results", publisher: "NVIDIA Investor Relations", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2027/Q227/Q2FY27-CFO-Commentary.pdf", type: "ir-presentation", lang: "en", published: "2026-08-26", note: "財務長評論：營收與毛利率變動原因、存貨與採購承諾、下一季財測", accessed: "2026-11-18" }
+  pr-fy2016q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2016", publisher: "NVIDIA (SEC EDGAR 8-K Exhibit 99.1)", url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581016000189/q416pr.htm", type: "press-release", lang: "en", published: "2016-02-17", note: "輝達新聞室已無此篇，改讀 8-K 附件；含 FY2017 第一季財測", accessed: "2026-11-18" }
+  pr-fy2017q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2017", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2017", type: "press-release", lang: "en", published: "2016-05-12", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2017q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2017", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2017", type: "press-release", lang: "en", published: "2016-08-11", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2017q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2017", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2017", type: "press-release", lang: "en", published: "2016-11-10", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2017q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2017", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2017", type: "press-release", lang: "en", published: "2017-02-09", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2018q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2018", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2018", type: "press-release", lang: "en", published: "2017-05-09", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2018q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2018", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2018", type: "press-release", lang: "en", published: "2017-08-10", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2018q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2018", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2018", type: "press-release", lang: "en", published: "2017-11-09", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2018q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2018", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2018", type: "press-release", lang: "en", published: "2018-02-08", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2019q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2019", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2019", type: "press-release", lang: "en", published: "2018-05-10", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2019q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2019", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2019", type: "press-release", lang: "en", published: "2018-08-16", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2019q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2019", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2019", type: "press-release", lang: "en", published: "2018-11-15", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2019q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2019", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2019", type: "press-release", lang: "en", published: "2019-02-14", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2020q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2020", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2020", type: "press-release", lang: "en", published: "2019-05-16", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2020q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2020", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2020", type: "press-release", lang: "en", published: "2019-08-15", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2020q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2020", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2020", type: "press-release", lang: "en", published: "2019-11-14", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2020q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2020", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2020", type: "press-release", lang: "en", published: "2020-02-13", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2021q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2021", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2021", type: "press-release", lang: "en", published: "2020-05-21", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2021q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2021", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2021", type: "press-release", lang: "en", published: "2020-08-19", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2021q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2021", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2021", type: "press-release", lang: "en", published: "2020-11-18", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2021q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2021", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2021", type: "press-release", lang: "en", published: "2021-02-24", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2022q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2022", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2022", type: "press-release", lang: "en", published: "2021-05-26", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2022q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2022", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2022", type: "press-release", lang: "en", published: "2021-08-18", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2022q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2022", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2022", type: "press-release", lang: "en", published: "2021-11-17", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2022q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2022", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2022", type: "press-release", lang: "en", published: "2022-02-16", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2023q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2023", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2023", type: "press-release", lang: "en", published: "2022-05-25", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2023q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2023", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2023", type: "press-release", lang: "en", published: "2022-08-24", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2023q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2023", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2023", type: "press-release", lang: "en", published: "2022-11-16", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2023q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2023", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2023", type: "press-release", lang: "en", published: "2023-02-22", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2024q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2024", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2024", type: "press-release", lang: "en", published: "2023-05-24", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2024q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2024", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2024", type: "press-release", lang: "en", published: "2023-08-23", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2024q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2024", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2024", type: "press-release", lang: "en", published: "2023-11-21", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2024q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2024", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2024", type: "press-release", lang: "en", published: "2024-02-21", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2025q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2025", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2025", type: "press-release", lang: "en", published: "2024-05-22", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2025q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2025", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2025", type: "press-release", lang: "en", published: "2024-08-28", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2025q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2025", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2025", type: "press-release", lang: "en", published: "2024-11-20", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2025q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2025", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2025", type: "press-release", lang: "en", published: "2025-02-26", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2026q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2026", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2026", type: "press-release", lang: "en", published: "2025-05-28", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2026q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2026", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2026", type: "press-release", lang: "en", published: "2025-08-27", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2026q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2026", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2026", type: "press-release", lang: "en", published: "2025-11-19", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2026q4: { title: "NVIDIA Announces Financial Results for Fourth Quarter and Fiscal 2026", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-fourth-quarter-and-fiscal-2026", type: "press-release", lang: "en", published: "2026-02-25", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2027q1: { title: "NVIDIA Announces Financial Results for First Quarter Fiscal 2027", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2027", type: "press-release", lang: "en", published: "2026-05-20", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2027q2: { title: "NVIDIA Announces Financial Results for Second Quarter Fiscal 2027", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-second-quarter-fiscal-2027", type: "press-release", lang: "en", published: "2026-08-26", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  pr-fy2027q3: { title: "NVIDIA Announces Financial Results for Third Quarter Fiscal 2027", publisher: "NVIDIA", url: "https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-third-quarter-fiscal-2027", type: "press-release", lang: "en", published: "2026-11-17", note: "季度新聞稿：GAAP 與非 GAAP 損益摘要、損益表、資產負債表、自由現金流量調節（資本支出）、市場平台重點與下一季財測", accessed: "2026-11-18" }
+  sec-8k-20190128: { title: "NVIDIA Updates Financial Guidance for Fourth Quarter of Fiscal 2019 (8-K Exhibit 99.1)", publisher: "NVIDIA (SEC EDGAR)", url: "https://www.sec.gov/Archives/edgar/data/1045810/000104581019000004/pressrelease.htm", type: "press-release", lang: "en", published: "2019-01-28", accessed: "2026-11-18" }
+  tr-fy2026q3: { title: "NVIDIA Q3 2026 Earnings Call Transcript", publisher: "NVIDIA Investor Relations (FactSet CallStreet transcript)", url: "https://s201.q4cdn.com/141608511/files/doc_financials/2026/q3/NVDA-Q3-2026-Earnings-Call-19-November-2025-5_00-PM-ET.pdf", type: "earnings-call", lang: "en", published: "2025-11-19", note: "法說會逐字稿：財務長的毛利率、營收與供應展望", accessed: "2026-11-18" }
+lastVerified: "2026-11-18"
+editorial:
+  status: "fact-checked"
+  author: "fc2-data-nvidia"
+  checkedBy: "fc2-check-nvidia"
+  checkedOn: "2026-11-18"
+  notes: "2026-11-18 整理（fc2-data-nvidia）：雲端業者資本支出以程式讀取五家公司的 SEC XBRL companyfacts，單季值由年初累計相減，並抽查 2026 年第三季 Alphabet 513.55、亞馬遜 772.59 億美元，與媒體整理的財報數字（uao-capex-20261101：514、773 億美元）一致；Meta 年度數字為購置支出加融資租賃本金，依 Meta 自己的資本支出口徑計算。中國營收逐一讀取 10-Q／10-K 的地理別營收表（依座標還原表格），帳單地址口徑三個季度加總與九個月累計值的差異在 1 百萬美元以內。CoWoS 產能、輝達占比與 2026 年以後的雲端資本支出展望都是外部估計或媒體報導，已標 estimate／forecast 與發布者。 2026-11-18 查核（fc2-check-nvidia）：五家雲端業者 185 個單季資本支出以程式重新由 SEC XBRL companyfacts 推算並逐點比對，最近 20 季另與 stockanalysis.com 現金流量表比對（100 點）；五家加總、年度值等於四季加總、Meta 年度購置加融資租賃本金都重算一致；發現 Meta 2020 與 2022 年第四季因只有全年值被重編、前三季未重編，使重編差額全部落在第四季（4,661 與 8,798），已改回原始口徑 4,613 與 9,043，五家合計同步改為 29,657 與 41,939。中國營收（帳單地址與總部口徑）抽查 10-Q／10-K 原文 20 個以上季度並重算占比；CoWoS 產能、輝達占比與高盛估計逐一對照 TrendForce 原文；Alphabet、Meta、亞馬遜 2026 年資本支出財測對照 MarketBeat、Meta 8-K 附件與 UAO 原文；財測序列與 nvidia-inputs.yaml 一致並對照各季新聞稿重新解析的數字；新興 AI 雲容量與前五大雲端業者資本支出預期對照法說會逐字稿。"

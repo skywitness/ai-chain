@@ -1,0 +1,655 @@
+---
+/**
+ * 驅動因子（Anthropic）: the drivers behind revenue, gross margin and operating income, from anthropic-drivers.yaml
+ * and the model's derived series — the run-rate the company stated (dated) and the scenario year-end paths, the
+ * conversion factor from run-rate to recognised revenue (with and without the 14-day lag of the usage part),
+ * revenue against the compute and infrastructure expense and compute efficiency by scenario, where compute lands in
+ * the functional income statement and the gross-margin bridge, revenue mix and customers, list prices of the model
+ * families, and the contractual obligations behind the compute path. History is solid; estimates, the scenarios
+ * and the model's forecast are dashed or hatched and labelled. The page renders every driver series as tables below.
+ *   <Drivers b={bundle} />
+ */
+import MultiLine from '../../charts/MultiLine.astro';
+import QuarterBars from '../../memory/forecast/QuarterBars.astro';
+import ChartCites from '../../memory/forecast/ChartCites.astro';
+import FcCite from '../../memory/forecast/FcCite.astro';
+import StatusTag from '../../memory/StatusTag.astro';
+import {
+  chartKey,
+  driverOf,
+  fcPct,
+  fcPp,
+  forecastOf,
+  paramStarting,
+  periodLabel,
+  qIndex,
+  quarterRange,
+  SCENARIO_COLOR,
+  SCENARIO_ORDER,
+  scenarioOf,
+  type FcBundle,
+} from '../../../lib/forecast-data';
+import { formatNumber } from '../../../lib/format';
+import {
+  costByNature,
+  derivedQ,
+  driverAt,
+  driverQ,
+  events,
+  ex,
+  forecastYear,
+  grossMarginOf,
+  growth,
+  lastQuarters,
+  monthRange,
+  priceInEffect,
+  runRateStatements,
+  scenarioEfficiency,
+  scenarioQuarters,
+  shownQuarters,
+  yearEndRunRates,
+  type AnPoint,
+} from './an-data';
+
+interface Props {
+  b: FcBundle;
+}
+const { b } = Astro.props;
+const { model: m } = b;
+const { P, last } = lastQuarters(b);
+const qs = shownQuarters(b);
+const first = qs[0]!;
+const qKeys = [...new Set(qs.map((q) => q.src))];
+const span = `${periodLabel(first.period)}–${periodLabel(P)}`;
+const fq = scenarioQuarters(b, 'base');
+const nextP = fq[0]?.period;
+const lastFq = fq.at(-1)?.period;
+const Y = forecastYear(b);
+const SC_NAME: Record<string, string> = Object.fromEntries((m.scenarios ?? []).map((s) => [s.id, s.name]));
+
+const yi = (millions: number | undefined, d = 1, trim = false) => (millions == null || !Number.isFinite(millions) ? '—' : `${formatNumber(millions / 100, { digits: d, trim })} 億美元`);
+const n2 = (v: number | undefined) => (v == null ? '—' : formatNumber(v, { digits: 2 }));
+const line = (pts: AnPoint[], scale = 1) => pts.map((p) => ({ x: chartKey(p.period), y: p.value * scale, forecast: p.forecast }));
+const dateZh = (iso: string) => {
+  const [y, mo, d] = iso.split('-').map(Number) as [number, number, number];
+  return `${y} 年 ${mo} 月 ${d} 日`;
+};
+const lastDayOf = (p: string) => {
+  const y = Number(p.slice(0, 4));
+  const q = Number(p.slice(5));
+  const mo = q * 3;
+  return `${y}-${String(mo).padStart(2, '0')}-${new Date(Date.UTC(y, mo, 0)).getUTCDate()}`;
+};
+const fnSrc = driverAt(b, 'cost-of-revenue-share', P)?.src;
+
+// ── run-rate: statements, scenario year-end paths and the conversion factor ──
+const st = runRateStatements(b);
+const stLast = st.at(-1);
+const stFirst = st[0];
+const stMedia = st.filter((s) => s.status === 'estimate');
+const s1Basis = st.filter((s) => s.src === stLast?.src);
+const ends = yearEndRunRates(b);
+const endDate = nextP ? lastDayOf(nextP) : undefined;
+const rrSeries = [
+  {
+    name: '公司說法',
+    color: 'var(--chart-1)',
+    points: st.map((s) => ({ x: s.date, y: s.value / 100, estimate: s.status === 'estimate' })),
+  },
+  ...(stLast && endDate
+    ? ends.map((e) => ({
+        name: `${SC_NAME[e.id] ?? e.id}情境`,
+        color: SCENARIO_COLOR[e.id],
+        points: [
+          { x: stLast.date, y: stLast.value / 100 },
+          { x: endDate, y: e.value / 100, forecast: true },
+        ],
+      }))
+    : []),
+];
+const ccr = (driverOf(b, 'claude-code-run-rate')?.points ?? []).slice().sort((a, c) => a.period.localeCompare(c.period));
+const kHist = derivedQ(b, 'revenue-to-run-rate', false);
+const kAll = derivedQ(b, 'revenue-to-run-rate');
+const kNext = kAll.find((p) => p.period === nextP);
+const kDefParam = paramStarting(m, `${P} 依定義換算的倍數`);
+const kDef = [...(kDefParam?.note ?? '').matchAll(/(\d{4}Q[1-4]) ([\d.]+)/g)].map((x) => ({ period: x[1]!, value: Number(x[2]) }));
+const conv = paramStarting(m, '預測期的換算');
+const convRange = /保守 ([\d.]+)、樂觀 ([\d.]+)/.exec(conv?.note ?? '');
+const usageShare = ex(last, '用量計費營收') != null ? ((ex(last, '用量計費營收') ?? 0) / last.revenue) * 100 : undefined;
+const k2025 = kHist.filter((p) => p.period.startsWith(String(Number(P.slice(0, 4)) - 1)));
+const kRecent = kHist.slice(-2);
+const monthsBetween = (a: string, c: string) => (Number(c.slice(0, 4)) - Number(a.slice(0, 4))) * 12 + Number(c.slice(5, 7)) - Number(a.slice(5, 7));
+const monthEnd = (iso: string) => {
+  const [y, mo, d] = iso.split('-').map(Number) as [number, number, number];
+  return d === new Date(Date.UTC(y, mo, 0)).getUTCDate() ? `${y} 年 ${mo} 月底` : dateZh(iso);
+};
+
+// ── compute: revenue vs expense, efficiency by scenario ──
+const comp = derivedQ(b, 'compute-expense-path');
+const compHist = driverQ(b, 'compute-infra-expense');
+const revLine = [
+  ...qs.map((q) => ({ x: chartKey(q.period), y: q.revenue / 100 })),
+  ...fq.map((f) => ({ x: chartKey(f.period), y: f.revenue / 100, forecast: true })),
+];
+const effHist = derivedQ(b, 'compute-efficiency', false);
+const effNow = effHist.find((p) => p.period === P);
+const effLines = [
+  { name: '實際', color: 'var(--c-fg-muted)', points: line(effHist) },
+  ...SCENARIO_ORDER.map((id) => ({
+    name: SC_NAME[id] ?? id,
+    color: SCENARIO_COLOR[id],
+    points: [...(effNow ? [{ x: chartKey(P), y: effNow.value }] : []), ...line(scenarioEfficiency(b, id))],
+  })),
+];
+const effAt = (id: (typeof SCENARIO_ORDER)[number], p: string | undefined) => (p ? scenarioEfficiency(b, id).find((x) => x.period === p)?.value : undefined);
+const commit = paramStarting(m, '未來 12 個月的算力與基礎設施承諾');
+const compG = paramStarting(m, '算力費用的季成長率');
+const compYear = Y ? comp.filter((p) => p.forecast && p.period.startsWith(Y)).reduce((s, p) => s + p.value, 0) : undefined;
+const firstAbove = effHist.find((p) => p.value >= 1);
+const effMax = effHist.length ? effHist.reduce((a, c) => (c.value > a.value ? c : a)) : undefined;
+const shortTerm = driverAt(b, 'short-term-compute', P);
+const recent3 = effHist.slice(-3).map((p) => p.value);
+const near = (a: number | undefined, c: number | undefined) => a != null && c != null && Math.abs(a - c) < 0.006;
+const targetsRecent =
+  recent3.length === 3 &&
+  near(effAt('bear', lastFq), Math.min(...recent3)) &&
+  near(effAt('base', lastFq), effNow?.value) &&
+  near(effAt('bull', lastFq), Math.max(...recent3));
+const ceMape = m.candidates.find((c) => c.id === 'compute-efficiency')?.metrics.revenue?.mape;
+const compKeys = [...new Set([...compHist.map((p) => p.src), ...(driverQ(b, 'compute-efficiency').map((p) => p.src) ?? [])])];
+
+// ── gross margin: where compute lands ──
+const totalShare = [
+  ...effHist.map((p) => ({ x: chartKey(p.period), y: 100 / p.value })),
+  ...fq.flatMap((f) => {
+    const c = comp.find((p) => p.period === f.period)?.value;
+    return c ? [{ x: chartKey(f.period), y: (c / f.revenue) * 100, forecast: true }] : [];
+  }),
+];
+const cogsShare = [
+  ...qs.map((q) => ({ x: chartKey(q.period), y: grossMarginOf(q) != null ? 100 - (grossMarginOf(q) ?? 0) : null })),
+  ...fq.map((f) => ({ x: chartKey(f.period), y: f.grossMargin != null ? 100 - f.grossMargin : null, forecast: true })),
+];
+const nonServing = derivedQ(b, 'non-serving-compute-to-revenue');
+const c2c = derivedQ(b, 'cogs-to-compute');
+const c2cNow = c2c.find((p) => p.period === P)?.value;
+const c2cPeak = c2c.filter((p) => !p.forecast).reduce<AnPoint | undefined>((a, c) => (!a || c.value > a.value ? c : a), undefined);
+const nsNow = nonServing.find((p) => p.period === P)?.value;
+const otherShare = (() => {
+  const c = costByNature(last);
+  return c.other != null ? (c.other / last.revenue) * 100 : undefined;
+})();
+const bEff = derivedQ(b, 'gross-margin-bridge-efficiency');
+const bShare = derivedQ(b, 'gross-margin-bridge-cogs-share');
+const gmOf = (p: string) => grossMarginOf(qs.find((q) => q.period === p)) ?? forecastOf(m, 'base', p)?.grossMargin;
+const prevOf = (p: string) => [...qs.map((q) => q.period), ...fq.map((f) => f.period)].find((x) => qIndex(x) === qIndex(p) - 1);
+const bridge = bEff
+  .filter((w) => !w.forecast || w.period === nextP)
+  .map((w) => {
+    const pp = prevOf(w.period);
+    const now = gmOf(w.period);
+    const before = pp ? gmOf(pp) : undefined;
+    return {
+      period: w.period,
+      forecast: w.forecast,
+      gm: now,
+      d: now != null && before != null ? now - before : undefined,
+      eff: w.value,
+      share: bShare.find((x) => x.period === w.period)?.value,
+      src: qs.find((q) => q.period === w.period)?.src,
+    };
+  });
+// quarters where gross margin rose by 5 points or more, by the part that drove it; the latest reported quarter
+const bigUp = bridge.filter((r) => !r.forecast && (r.d ?? 0) >= 5);
+const effLed = bigUp.filter((r) => r.eff >= (r.share ?? 0));
+const shareLed = bigUp.filter((r) => (r.share ?? 0) > r.eff);
+const lastBridge = bridge.filter((r) => !r.forecast).at(-1);
+const lastDown = lastBridge && (lastBridge.d ?? 0) < 0 && !bigUp.includes(lastBridge) ? lastBridge : undefined;
+const pl = (rows: typeof bridge) => rows.map((r) => periodLabel(r.period)).join('、');
+const c2cA = (id: string) => scenarioOf(m, id as 'base')?.assumptions.find((a) => a.name.startsWith('銷貨成本 ÷ 算力費用'));
+const signedPp = (v: number | undefined) => (v == null ? '—' : formatNumber(v, { digits: 1, signed: true }));
+
+// ── revenue mix, channels and customers ──
+const subShare = driverQ(b, 'subscription-share');
+const intlShare = driverQ(b, 'international-share');
+const cspY = (driverOf(b, 'csp-marketplace-share-year')?.points ?? []).slice().sort((a, c) => a.period.localeCompare(c.period));
+const cspQ = driverQ(b, 'csp-marketplace-share-quarter');
+const cspNow = cspQ.find((p) => p.period === P);
+const top5 = driverQ(b, 'top5-customer-share');
+const c100 = driverQ(b, 'customers-100k');
+const c100Range = c100.length ? quarterRange(c100[0]!.period, c100.at(-1)!.period) : [];
+const c100Bars = c100Range.map((p) => {
+  const pt = c100.find((x) => x.period === p);
+  return { period: p, value: pt ? pt.value : null, note: pt?.note };
+});
+const c100Def = driverOf(b, 'customers-100k')?.definition ?? '';
+const c100Rev = /(貢獻 [\d,]+ 億美元營收（約占同期營收 [\d,.]+ 億美元的 \d+%）)/.exec(c100Def)?.[1];
+const c1m = (driverOf(b, 'customers-1m')?.points ?? []).slice().sort((a, c) => a.period.localeCompare(c.period));
+const rpo = driverQ(b, 'remaining-performance-obligations');
+const rpo12 = /約 (\d+)% 在未來十二個月認列/.exec(driverOf(b, 'remaining-performance-obligations')?.definition ?? '')?.[1];
+const cspQNote = driverOf(b, 'csp-marketplace-share-quarter')?.note;
+const concEvent = events(b, /集中度/).find((e) => /Amazon、Google 同時是/.test(e.detail));
+const mixKeys = [...new Set([...subShare, ...intlShare, ...cspQ, ...top5].map((p) => p.src))];
+
+// ── list prices of the model families (output price in effect each month) ──
+const FAMILIES = [
+  { id: 'fable-output-price', name: 'Fable', color: 'var(--chart-7)' },
+  { id: 'opus-output-price', name: 'Opus', color: 'var(--chart-1)' },
+  { id: 'sonnet-output-price', name: 'Sonnet', color: 'var(--chart-3)' },
+  { id: 'haiku-output-price', name: 'Haiku', color: 'var(--chart-4)' },
+].filter((f) => driverOf(b, f.id));
+const pricePts = FAMILIES.flatMap((f) => driverOf(b, f.id)!.points.filter((p) => /^\d{4}-\d{2}$/.test(p.period)));
+const pMonths = pricePts.length
+  ? monthRange(pricePts.map((p) => p.period).sort()[0]!, pricePts.map((p) => p.period).sort().at(-1)!)
+  : [];
+const priceLines = FAMILIES.map((f) => {
+  const vals = priceInEffect(b, f.id, pMonths);
+  return { name: f.name, color: f.color, points: pMonths.map((mo, i) => ({ x: mo, y: vals[i] ?? null })) };
+});
+const famChange = FAMILIES.map((f) => {
+  const pts = driverOf(b, f.id)!.points.slice().sort((a, c) => a.period.localeCompare(c.period));
+  const end = pts.at(-1)!;
+  // the first launch at the final price (the change, not a later launch at the same price)
+  const to = pts.find((_, i) => pts.slice(i).every((q) => q.value === end.value)) ?? end;
+  return { name: f.name, from: pts[0]!, to, down: end.value < pts[0]!.value };
+}).filter((x) => x.from.value !== x.to.value);
+const ym = (p: string) => `${p.slice(0, 4)} 年 ${Number(p.slice(5, 7))} 月`;
+const cuts = driverQ(b, 'price-cut-revenue-effect');
+const cutShare = derivedQ(b, 'price-cut-offset-share', false);
+const priceKeys = [...new Set([...pricePts.map((p) => p.src), ...cuts.map((p) => p.src)])];
+
+// ── contractual obligations ──
+const obl = driverOf(b, 'contractual-obligations');
+const oblPts = (obl?.points ?? []).slice().sort((a, c) => a.period.localeCompare(c.period));
+const obl2027 = Y ? oblPts.find((p) => p.period === Y) : undefined;
+const oblFirst = oblPts[0];
+const compNext = comp.find((p) => p.period === nextP)?.value;
+---
+
+<h3 class="fc-h3">年化營收：公司說過的數字，和已認列的營收差多少</h3>
+<p class="fc-p">
+  {stFirst && stLast && (
+    <>
+      Anthropic 上市前在募資與合作新聞稿中提過幾次年化營收{s1Basis.length > 1 ? `，招股書再揭露 ${s1Basis.map((x) => monthEnd(x.date)).join('與 ')}的數字` : ''}：從 {stFirst.date.slice(0, 4)} 年初約 {yi(stFirst.value, 0, true)}，到 {dateZh(stLast.date)}約 {yi(stLast.value, 0, true)}
+      {[...new Set(st.filter((s) => s.status === 'actual').map((s) => s.src))].map((k) => <FcCite k={k} />)}，約 {monthsBetween(stFirst.date, stLast.date)} 個月增加為 {formatNumber(stLast.value / stFirst.value)} 倍。
+    </>
+  )}
+  {stMedia.map((s) => (
+    <>
+      {monthEnd(s.date)}的 {yi(s.value, 0, true)}是媒體引述知情人士，公司沒有證實，本站標為估計
+      <FcCite k={s.src} />。
+    </>
+  ))}
+  2026 年 9 月以前的說法沒有說明計算方式，多是「約」「逾」的整數；招股書才定義為過去 28 天的用量計費營收 × 13，加上當天的月訂閱費 × 12<FcCite k="sec-fwp-ipo-site" />。
+  {ccr.length >= 2 && (
+    <>
+      新聞稿也提過 Claude Code 的年化營收，從 {ccr[0]!.period.slice(0, 4)} 年 {Number(ccr[0]!.period.slice(5))} 月逾 {yi(ccr[0]!.value, 0, true)}到 {ccr.at(-1)!.period.slice(0, 4)} 年 {Number(ccr.at(-1)!.period.slice(5))} 月逾 {yi(ccr.at(-1)!.value, 0, true)}
+      {[...new Set(ccr.map((p) => p.src))].map((k) => <FcCite k={k} />)}，招股書沒有單獨揭露。
+    </>
+  )}
+</p>
+<p class="fc-p">
+  模型把這些說法連成每日路徑，每季加總後除以 364，再和已認列營收比較，比值就是<strong>換算倍數</strong>。
+  {k2025.length > 0 && `${k2025[0]!.period.slice(0, 4)} 年各季約 ${formatNumber(Math.min(...k2025.map((p) => p.value)), { digits: 2 })}–${formatNumber(Math.max(...k2025.map((p) => p.value)), { digits: 2 })}，也就是已認列營收比換算值高 ${formatNumber((Math.min(...k2025.map((p) => p.value)) - 1) * 100)}–${formatNumber((Math.max(...k2025.map((p) => p.value)) - 1) * 100)}%：新聞稿多是「逾」「約」的整數，口徑也沒有說明；`}
+  {kRecent.length === 2 && `${kRecent.map((p) => periodLabel(p.period)).join('、')} 降到 ${kRecent.map((p) => n2(p.value)).join('、')}。`}
+  依招股書定義，用量計費（{periodLabel(P)} 占營收 {usageShare != null ? formatNumber(usageShare, { digits: 0 }) : '—'}%）的年化營收是過去 28 天的平均，大約反映 14 天前的營收；把這部分往後挪 14 天再算，{periodLabel(P)} 的倍數是 {kDefParam ? formatNumber(kDefParam.value, { digits: 3 }) : '—'}{kDefParam && Math.abs(kDefParam.value - 1) < 0.01 ? '，幾乎剛好是 1' : ''}{fnSrc && <FcCite k={fnSrc} />}。
+  {nextP && conv && (
+    <>
+      所以 {periodLabel(nextP, 'long')}改用這個換算方式、不另乘倍數；年化營收還在成長時，往後挪 14 天會取到較高的值，基準情境相當於倍數 {formatNumber(conv.value, { digits: 3 })}
+      {convRange ? `（保守 ${convRange[1]}、樂觀 ${convRange[2]}）` : ''}。
+    </>
+  )}
+</p>
+<MultiLine
+    title="公司說過的年化營收"
+    subtitle={`各次說法的時點；${endDate && nextP ? `${periodLabel(nextP)} 底為三個情境的假設（虛線）` : ''}`}
+    unit="億美元"
+    valueSuffix=" 億美元"
+    digits={0}
+    height={240}
+    series={rrSeries}
+    xTitle="日期"
+    as="h4"
+    class="mem-chart fc-chart-wide"
+    notes={[
+      '2026 年 9 月以前來自募資與合作新聞稿，口徑未說明；9 月底與 10 月底是招股書口徑（9 月底由「10 月底比 9 月底增加 100 億美元」推得）。',
+      stMedia.length ? '虛線段落連到媒體引述知情人士的估計，公司沒有證實。' : null,
+      st.some((s) => s.assumed) ? '沒有確切日期的說法（例如「8 月」「5 月稍早」）依本站模型的假設畫在月初、月中或月底。年化營收不是 GAAP 營收，也不是對未來營收的預測。' : null,
+    ]}
+  />
+  <MultiLine
+    title="換算倍數：已認列營收 ÷ 年化營收換算值"
+    subtitle={`${span} 為本站以招股書營收計算；${nextP ? `${periodLabel(nextP)} 為基準情境（虛線）` : ''}`}
+    unit="倍"
+    badge="本站計算"
+    digits={3}
+    includeZero={false}
+    height={240}
+    series={[
+      { name: 'Σ 每日年化營收 ÷ 364', color: 'var(--chart-1)', points: line(kAll) },
+      ...(kDef.length
+        ? [
+            {
+              name: '用量計費落後 14 天（依招股書定義）',
+              color: 'var(--chart-2)',
+              points: [
+                ...kDef.map((p) => ({ x: chartKey(p.period), y: p.value })),
+                ...(nextP && kNext ? [{ x: chartKey(nextP), y: 1, forecast: true }] : []),
+              ],
+            },
+          ]
+        : []),
+    ]}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart fc-chart-wide"
+    notes={[
+      '大於 1 表示已認列營收比年化營收換算值高。2026 年 9 月以前的說法口徑未說明，倍數同時吸收口徑差異與用量計費的落後，只能參考。',
+      `只有 ${periodLabel(P)} 的季末有招股書口徑的年化營收，而且 9 月底的數字和第三季財報同時公布，這是事後對照，不是回測。`,
+      nextP ? `${periodLabel(nextP)}：依定義換算，「落後 14 天」的倍數就是 1；換成不做落後調整的換算方式相當於 ${kNext ? formatNumber(kNext.value, { digits: 3 }) : '—'}。` : null,
+    ]}
+  />
+<ChartCites keys={[...st.map((s) => s.src), 'sec-fwp-ipo-site', ...qKeys, fnSrc]} />
+
+<h3 class="fc-h3">算力：營收追上算力費用了嗎</h3>
+<p class="fc-p">
+  {compHist.length > 1 && (
+    <>
+      算力與基礎設施費用從 {periodLabel(compHist[0]!.period)} 的 {yi(compHist[0]!.value, 2)}增加到 {periodLabel(P)} 的 {yi(compHist.at(-1)!.value)}，營收同期從 {yi(first.revenue, 2)}增加到 {yi(last.revenue)}
+      <FcCite k={compHist.at(-1)!.src} />。
+    </>
+  )}
+  公司把營收 ÷ 算力費用稱為<strong>算力效率</strong>
+  {firstAbove && (
+    <>
+      ：{periodLabel(firstAbove.period)} 第一次超過 1 倍（營收超過全部算力費用）
+      {effMax && effMax.period !== firstAbove.period && `，${periodLabel(effMax.period)} 達 ${n2(effMax.value)} 倍`}
+      {effNow && effMax && effNow.period !== effMax.period && `，${periodLabel(P)} 降到 ${n2(effNow.value)} 倍`}
+    </>
+  )}
+  {shortTerm && <>，主因是約 {yi(shortTerm.value, 0, true)}價格明顯高於多年期合約的短期承諾算力<FcCite k={shortTerm.src} /></>}。
+  {commit && (
+    <>
+      招股書揭露未來 12 個月的算力與基礎設施承諾約 {yi(commit.value, 0, true)}
+      <FcCite k="sec-fwp-eea" />，模型把它當成 {nextP ? periodLabel(nextP) : ''} 起四季的算力費用{compG ? `（每季 +${formatNumber(compG.value, { digits: 1 })}%${fq.length > 4 ? `，${periodLabel(fq[4]!.period)} 起延續同一成長率` : ''}）` : ''}{compYear ? `，${Y} 年合計約 ${yi(compYear, 0)}` : ''}，三個情境相同：算力在使用前就簽約承諾，短期內很難調整。
+    </>
+  )}
+  {nextP && Y && (
+    <>
+      {periodLabel(nextP)} 的營收由年化營收決定，算力效率是結果（基準 {n2(effAt('base', nextP))} 倍）；{Y} 年沒有年化營收可用，營收改由「算力效率 × 算力費用」推估，效率逐季移到保守 {n2(effAt('bear', lastFq))}、基準 {n2(effAt('base', lastFq))}、樂觀 {n2(effAt('bull', lastFq))} 倍{targetsRecent ? '，也就是最近三季的最低、最近一季與最高值' : ''}。同一個關係（上一季的效率 × 當季算力費用）在回測中{ceMape != null ? `營收平均誤差 ${fcPct(ceMape)}，` : ''}表現很差，所以 {Y} 年應看成情境，不是精確的預測。
+    </>
+  )}
+</p>
+<div class="mem-grid mem-grid--charts">
+  <MultiLine
+    title="營收和算力與基礎設施費用"
+    subtitle={`${span} 為招股書；${nextP && lastFq ? `${periodLabel(nextP)}–${periodLabel(lastFq)} 營收為基準情境、算力費用為依承諾推估（虛線）` : ''}`}
+    unit="億美元"
+    valueSuffix=" 億美元"
+    digits={0}
+    height={240}
+    series={[
+      { name: '營收', color: 'var(--chart-2)', points: revLine },
+      { name: '算力與基礎設施費用', color: 'var(--chart-1)', points: line(comp, 0.01) },
+    ]}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart"
+    notes={[
+      '算力與基礎設施費用是損益表依性質分類的一項，包含訓練、研究、服務客戶與內部使用的全部算力。',
+      '付款承諾不等於費用：自建資料中心與租賃會先列為資本支出或使用權資產，之後才以折舊與租金計入費用。',
+    ]}
+  />
+  <MultiLine
+    title="算力效率：營收 ÷ 算力與基礎設施費用"
+    subtitle={`${span} 為本站以招股書金額計算；之後為三個情境（虛線）`}
+    unit="倍"
+    digits={2}
+    height={240}
+    series={effLines}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart"
+    notes={[
+      '公司公布的算力效率是一位或兩位的約數，本站以營收與算力費用重算到小數兩位。',
+      nextP ? `${periodLabel(nextP)} 的效率由年化營收推出的營收除以算力費用；之後的效率是情境假設。` : null,
+    ]}
+  />
+</div>
+<ChartCites keys={[...compKeys, ...qKeys, 'sec-fwp-eea', shortTerm?.src]} />
+
+<h3 class="fc-h3">毛利率：算力有多少列入銷貨成本</h3>
+<p class="fc-p">
+  財報依功能把算力分開：服務付費客戶的列入銷貨成本，訓練、研究與內部使用的列入研發，免費使用者的列入銷售與行銷{fnSrc && <FcCite k={fnSrc} />}。所以毛利率＝1 −（銷貨成本 ÷ 算力費用）÷ 算力效率，兩個比例都會移動毛利率。
+  {c2cPeak && c2cNow != null && `銷貨成本占算力費用的比例在 ${periodLabel(c2cPeak.period)} 最高（${fcPct(c2cPeak.value)}），${periodLabel(P)} 是 ${fcPct(c2cNow)}；`}
+  {nsNow != null && `其餘的算力（相當於營收的 ${fcPct(nsNow)}）花在訓練、研究與免費使用者，不影響毛利率${otherShare != null && nsNow > otherShare ? `，卻比算力以外的營業費用（營收的 ${fcPct(otherShare)}，不含非現金捐贈）還大，是營業損益最大的負擔` : '，但會減少營業損益'}。`}
+  {bigUp.length > 0 && (
+    <>
+      毛利率一季升 5 個百分點以上的季度裡，
+      {shareLed.length > 0 && `${pl(shareLed)} 主要來自銷貨成本占算力比例下降（${shareLed.map((r) => fcPp(r.share ?? 0)).join('、')}）`}
+      {shareLed.length > 0 && effLed.length > 0 && '，'}
+      {effLed.length > 0 && `${pl(effLed)} 主要來自算力效率提高（${effLed.map((r) => fcPp(r.eff)).join('、')}）`}
+      {lastDown && `；${periodLabel(lastDown.period)} 毛利率 ${fcPp(lastDown.d ?? 0)}，其中算力效率 ${fcPp(lastDown.eff)}、銷貨成本占算力比例 ${fcPp(lastDown.share ?? 0)}`}。
+    </>
+  )}
+  {c2cA('base') && c2cA('bear') && c2cA('bull') && `模型的毛利率用上一季的比例推算；情境假設為${c2cA('base')!.value.split('（')[0]}（基準）、${c2cA('bear')!.value.split('（')[0]}（保守）、${c2cA('bull')!.value.split('（')[0]}（樂觀）。`}
+</p>
+<MultiLine
+  title="算力費用占營收比，依財報的功能分類"
+  subtitle={`${span} 為本站以招股書金額計算；${nextP ? `${periodLabel(nextP)} 起為基準情境（虛線）` : ''}`}
+  unit="%"
+  format="percent"
+  digits={1}
+  height={250}
+  series={[
+    { name: '全部算力費用 ÷ 營收', color: 'var(--c-fg-muted)', points: totalShare },
+    { name: '銷貨成本 ÷ 營收（服務付費客戶）', color: 'var(--chart-2)', points: cogsShare },
+    { name: '其餘算力 ÷ 營收（訓練、研究、免費使用）', color: 'var(--chart-1)', points: line(nonServing) },
+  ]}
+  xTitle="季度"
+  as="h4"
+  class="mem-chart fc-chart-wide"
+  notes={[
+    '100% 減「銷貨成本 ÷ 營收」就是毛利率。銷貨成本另含少量人事與分攤費用，所以「其餘算力」（算力費用減銷貨成本）是訓練、研究與免費使用算力的下限。',
+    '單季的功能別費用以招股書上半年、前九個月與全年的累計數相減推算。',
+  ]}
+/>
+<div class="mem-tablewrap mem-tablewrap--cards an-bridge" tabindex="0" role="region" aria-label="毛利率季變化的拆解">
+  <table class="mem-table">
+    <caption class="ch-sr">Anthropic 毛利率季變化拆成算力效率與銷貨成本占算力比例兩部分（本站計算；最後一列為基準情境）</caption>
+    <thead>
+      <tr>
+        <th scope="col">季度</th>
+        <th scope="col" class="num">毛利率</th>
+        <th scope="col" class="num">較上季<small>個百分點</small></th>
+        <th scope="col" class="num">算力效率的影響<small>個百分點</small></th>
+        <th scope="col" class="num">銷貨成本占算力比例的影響<small>個百分點</small></th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        bridge.map((r) => (
+          <tr class:list={[r.forecast && 'fc-row--forecast']}>
+            <th scope="row" data-label="季度">
+              {periodLabel(r.period)}
+              {r.forecast ? <StatusTag status="forecast" /> : r.src && <FcCite k={r.src} />}
+            </th>
+            <td class="num" data-label="毛利率">{fcPct(r.gm)}</td>
+            <td class="num" data-label="較上季"><span>{signedPp(r.d)}<span class="an-pp"> 個百分點</span></span></td>
+            <td class="num" data-label="算力效率的影響"><span>{signedPp(r.eff)}<span class="an-pp"> 個百分點</span></span></td>
+            <td class="num" data-label="銷貨成本占算力比例的影響"><span>{signedPp(r.share)}<span class="an-pp"> 個百分點</span></span></td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+<p class="mem-fine">
+  算力效率的影響＝上季（銷貨成本 ÷ 算力費用）×（1 ÷ 上季算力效率 − 1 ÷ 本季算力效率）；銷貨成本占算力比例的影響＝（上季 − 本季的銷貨成本 ÷ 算力費用）÷ 本季算力效率；兩者相加等於毛利率的季變化（差異來自四捨五入）。本站以招股書的算力費用、營收與功能別銷貨成本計算。
+</p>
+<ChartCites keys={[...qKeys, fnSrc, ...compKeys]} />
+
+<h3 class="fc-h3">營收組合、通路與客戶</h3>
+<p class="fc-p">
+  {subShare.length > 1 && `訂閱營收的占比從 ${periodLabel(subShare[0]!.period)} 的 ${fcPct(subShare[0]!.value)} 變成 ${periodLabel(subShare.at(-1)!.period)} 的 ${fcPct(subShare.at(-1)!.value)}，其餘是依 token 用量認列的用量計費營收；`}
+  {intlShare.length > 1 && `美國以外的營收占比在 ${formatNumber(Math.min(...intlShare.map((p) => p.value)), { digits: 0 })}–${formatNumber(Math.max(...intlShare.map((p) => p.value)), { digits: 0 })}% 之間`}
+  {subShare.length > 1 && subShare[0] && <FcCite k={subShare[0].src} />}。
+  {cspY.length > 1 && (
+    <>
+      經雲端業者市集銷售的營收占比從 {cspY[0]!.period} 年約 {formatNumber(cspY[0]!.value)}% 升到 {cspY.at(-1)!.period} 年的 {formatNumber(cspY.at(-1)!.value)}%
+      <FcCite k={cspY.at(-1)!.src} />
+      {cspNow && <>，{periodLabel(P)} 約 {formatNumber(cspNow.value)}%（本站推算）<FcCite k={cspNow.src} /></>}；雲端業者代收款項後扣除費用再撥付，公司以總額認列營收，付給通路夥伴的費用列在銷售行銷與通路合作費用。
+      {cspQNote && /部分原因/.test(cspQNote) && cspQNote}
+    </>
+  )}
+</p>
+<p class="fc-p">
+  {top5.length > 1 && (
+    <>
+      前五大客戶的營收占比從 {periodLabel(top5[0]!.period)} 約 {formatNumber(top5[0]!.value)}% 降到 {periodLabel(top5.at(-1)!.period)} 約 {formatNumber(top5.at(-1)!.value)}%
+      <FcCite k={top5.at(-1)!.src} />
+      {concEvent && <>，但 Amazon 與 Google 同時是投資人、算力供應商、通路與客戶<FcCite k={concEvent.src} /></>}。
+    </>
+  )}
+  {c100.length > 1 && (
+    <>
+      過去十二個月營收 10 萬美元以上的客戶從 {periodLabel(c100[0]!.period)} 約 {formatNumber(c100[0]!.value)} 家增加到 {periodLabel(c100.at(-1)!.period)} 逾 {formatNumber(c100.at(-1)!.value)} 家{c100Rev ? `，${c100Rev}` : ''}
+      <FcCite k={c100.at(-1)!.src} />
+      {c1m.length > 0 && <>；年支出 100 萬美元以上的客戶在 {c1m.at(-1)!.period.slice(0, 4)} 年 {Number(c1m.at(-1)!.period.slice(5))} 月逾 {formatNumber(c1m.at(-1)!.value)} 家（招股書口徑，和之前新聞稿的口徑不同）<FcCite k={c1m.at(-1)!.src} /></>}。
+    </>
+  )}
+  {rpo.length > 1 && (
+    <>
+      剩餘履約義務（遞延營收加上不可取消承諾中尚未認列的金額）從 {periodLabel(rpo[0]!.period)} 底的 {yi(rpo[0]!.value, 0)}增加到 {periodLabel(rpo.at(-1)!.period)} 底的 {yi(rpo.at(-1)!.value, 0)}，約是 {periodLabel(P)} 營收的 {formatNumber((rpo.at(-1)!.value / last.revenue) * 100)}%{rpo12 ? `，公司預期約 ${rpo12}% 在未來十二個月認列` : ''}
+      <FcCite k={rpo.at(-1)!.src} />。
+    </>
+  )}
+</p>
+<div class="mem-grid mem-grid--charts">
+  <MultiLine
+    title="訂閱與美國以外營收的占比"
+    subtitle={`${span}，本站以招股書附註 2 的累計數相減推算`}
+    unit="%"
+    format="percent"
+    digits={1}
+    height={230}
+    series={[
+      { name: '訂閱營收占比', color: 'var(--chart-3)', points: subShare.map((p) => ({ x: chartKey(p.period), y: p.value })) },
+      { name: '美國以外營收占比', color: 'var(--chart-4)', points: intlShare.map((p) => ({ x: chartKey(p.period), y: p.value })) },
+    ]}
+    xTitle="季度"
+    as="h4"
+    class="mem-chart"
+    notes={['訂閱是 Pro、Max、Team、Enterprise 等方案，按期間認列；美國以外依客戶帳單地址區分。']}
+  />
+  <QuarterBars
+    title="過去十二個月營收 10 萬美元以上的客戶數"
+    subtitle={c100.length ? `${periodLabel(c100[0]!.period)}–${periodLabel(c100.at(-1)!.period)} 季底，招股書揭露的時點；空白季度沒有揭露` : ''}
+    unit="家"
+    valueName="客戶數"
+    points={c100Bars}
+    digits={0}
+    color="var(--chart-3)"
+    as="h4"
+    notes={['多數點是招股書的「約」「逾」整數。']}
+  />
+</div>
+<ChartCites keys={[...mixKeys, ...c100.map((p) => p.src), ...cspY.map((p) => p.src), ...c1m.slice(-1).map((p) => p.src), ...rpo.map((p) => p.src), concEvent?.src]} />
+
+{
+  priceLines.length > 0 && pMonths.length > 1 && (
+    <>
+      <h3 class="fc-h3">價格：新版本常常降價，用量要成長得更快</h3>
+      <p class="fc-p">
+        API 的牌價按每百萬 token 計算，各系列新版本推出時常常降價或維持原價：
+        {famChange.map((c, i) => (
+          <>
+            {i > 0 && '；'}
+            {c.name} 從 {ym(c.from.period)}的 {formatNumber(c.from.value, { digits: c.from.value < 1 ? 2 : 0 })} 美元{c.down ? '降' : '升'}到 {ym(c.to.period)}的 {formatNumber(c.to.value, { digits: c.to.value < 1 ? 2 : 0 })} 美元（{formatNumber(growth(c.from.value, c.to.value) ?? 0, { digits: 0, signed: true })}%）
+            <FcCite k={c.from.src} />
+            {c.to.src !== c.from.src && <FcCite k={c.to.src} />}
+          </>
+        ))}
+        。
+        {cuts.length > 0 && (
+          <>
+            招股書說明，用量增加帶來的季增營收中，有一部分被新模型降價與合約折扣抵銷：{cuts.map((c) => `${periodLabel(c.period)} 約 ${yi(Math.abs(c.value), 1, true)}${cutShare.find((x) => x.period === c.period) ? `（上一季營收的 ${fcPct(cutShare.find((x) => x.period === c.period)!.value)}）` : ''}`).join('、')}
+            <FcCite k={cuts.at(-1)!.src} />，兩季的營收仍比前一季成長。
+          </>
+        )}
+        招股書沒有揭露 token 用量，所以模型不拆「價格 × 用量」，降價的影響包含在年化營收與算力效率裡。
+      </p>
+      <MultiLine
+        title="各系列最新版本的 API 牌價（輸出）"
+        subtitle={`${ym(pMonths[0]!)}–${ym(pMonths.at(-1)!)}，每月的值是當時最新版本上線時的標準價格；本站整理`}
+        unit="美元／每百萬 token"
+        digits={2}
+        height={230}
+        series={priceLines}
+        xTitle="月份"
+        as="h4"
+        class="mem-chart fc-chart-wide"
+        notes={[
+          '輸入價格是輸出的五分之一；快取、批次與長提示的價格另計（例如 Haiku 5.5 提示超過 10 萬 token 時改按較高價格計價），實際費用還要看合約折扣。',
+          '各系列定位不同，價格不能直接比較；這是新版本上線時的牌價，不代表客戶實際使用的版本組合。',
+        ]}
+      />
+      <ChartCites keys={priceKeys} />
+    </>
+  )
+}
+
+{
+  oblPts.length > 0 && (
+    <>
+      <h3 class="fc-h3">算力承諾：已經簽下的付款</h3>
+      <p class="fc-p">
+        招股書的合約義務表列出截至 {periodLabel(P)} 底不可取消的最低付款，主要是雲端業者託管與其他基礎設施服務
+        {obl2027 && Y && compYear ? `：${Y} 年約 ${yi(obl2027.value, 0)}，低於模型假設的 ${Y} 年算力費用 ${yi(compYear, 0)}` : ''}
+        {oblFirst && compNext != null && nextP ? `；${periodLabel(nextP)} 約 ${yi(oblFirst.value, 0)}，模型假設 ${yi(compNext, 0)}` : ''}
+        <FcCite k={oblPts.at(-1)!.src} />。差距是因為這張表不含短期承諾、尚未開始的租賃與 9 月底以後簽下的新合約；加上這些後的承諾總額{commit ? `中，未來 12 個月約 ${yi(commit.value, 0, true)}` : ''}，模型就是用這個數字分配算力費用。
+      </p>
+      <QuarterBars
+        title="合約義務：依付款年度"
+        subtitle={`截至 ${periodLabel(P)} 底的營業租賃、融資租賃與不可取消的採購承諾；${oblFirst ? `${oblFirst.period} 年只含第四季` : ''}`}
+        unit="億美元"
+        valueName="最低付款"
+        points={oblPts.map((p) => ({ period: p.period, value: Math.round(p.value / 100), note: p.note }))}
+        digits={0}
+        color="var(--chart-1)"
+        as="h4"
+        class="fc-chart-wide"
+        notes={[obl?.definition, obl?.note]}
+      />
+      <ChartCites keys={[...oblPts.map((p) => p.src), 'sec-fwp-eea']} />
+    </>
+  )
+}
+
+<style>
+  .an-bridge {
+    margin-block-start: var(--space-4);
+  }
+  .an-bridge th small {
+    display: block;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-regular);
+    color: var(--c-fg-subtle);
+  }
+  .an-bridge th[scope='row'] :global(.mem-st) {
+    margin-inline-start: 0.4em;
+  }
+  .an-pp {
+    display: none;
+  }
+  @media (max-width: 47.99rem) {
+    .an-pp {
+      display: inline;
+      color: var(--c-fg-muted);
+    }
+    /* card labels such as 「銷貨成本占算力比例的影響」 need more than the shared 6.5em column */
+    .an-bridge :global(.mem-table tbody tr > *) {
+      grid-template-columns: 11em minmax(0, 1fr);
+    }
+  }
+</style>

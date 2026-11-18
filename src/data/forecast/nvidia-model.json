@@ -1,0 +1,4893 @@
+{
+  "company": "nvidia",
+  "generatedBy": "scripts/models/nvidia.ts",
+  "generatedOn": "2026-11-18",
+  "asOf": "2026-11-18",
+  "currency": "USD",
+  "amountUnit": "million",
+  "periodLabel": "輝達會計季度（會計年度約為前一年 2 月至當年 1 月，FY2027 為 53 週）",
+  "train": {
+    "from": "FY2017Q2",
+    "to": "FY2025Q4"
+  },
+  "test": {
+    "from": "FY2026Q1",
+    "to": "FY2027Q3"
+  },
+  "lastReported": "FY2027Q3",
+  "summary": "選定模型是「雲端資本支出比例模型」：資料中心營收約等於五大雲端業者資本支出的 48%（最近四季），毛利率從扣除存貨提列的核心毛利率推算。FY2026 第一季至 FY2027 第三季共 7 季代入當季實際資本支出與提列的一季前回測，營收誤差 5.3%、毛利率 1.1 個百分點，營收不如延續上季成長的天真模型（3.5%）與輝達財測（4.7%）；改成事前預測時為 5.1%、2.9 個百分點，也不如財測；同樣只用季初資訊的方法中，最準的是財測加上歷史偏差（1.1%、1.7 個百分點）。基準情境 FY2027 第四季營收約 1,363 億美元、毛利率 71.7%；FY2028 營收約 6,657 億美元（年增 55%，扣除 FY2027 多出的一週為 58%；財務長 8 月的初步展望約 70%）、毛利率 72.5%、EPS 14.92 美元，保守至樂觀為營收 4,768–7,537 億美元、EPS 9.86–17.49 美元。這是依假設推算的模型結果，不是投資建議。",
+  "candidates": [
+    {
+      "id": "naive",
+      "name": "天真模型（上一季不變）",
+      "description": "假設本季營收與毛利率都和上一季一樣。這是最簡單的對照組；測試期輝達營收平均每季成長 17%，這個模型在成長期會一直低估。",
+      "equations": [
+        "營收_t = 營收_t−1（每 13 週）",
+        "毛利率_t = 毛利率_t−1",
+        "營業費用_t（每 13 週）= 營業費用_t−1 × e^e0 ×（營收_t ÷ 營收_t−1）^ε；營業利益_t = 營收_t × 毛利率_t − 營業費用_t",
+        "淨利_t =（營業利益_t + 最近四季平均業外收支）×（1 − 最近四季有效稅率）；EPS_t = 淨利_t ÷ 稀釋股數_t−1"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 10930.429,
+          "bias": -10930.429,
+          "n": 7,
+          "mape": 14.21
+        },
+        "grossMargin": {
+          "mae": 3.891,
+          "bias": -0.256,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 8607.427,
+          "bias": -7999.698,
+          "n": 7,
+          "mape": 18.46
+        },
+        "netIncome": {
+          "mae": 8724.928,
+          "bias": -8040.545,
+          "n": 7,
+          "mape": 20.53
+        },
+        "eps": {
+          "mae": 0.362,
+          "bias": -0.334,
+          "n": 7,
+          "mape": 20.75
+        },
+        "revenueTrain": {
+          "mae": 1721.316,
+          "bias": -1445.753,
+          "n": 25,
+          "mape": 14.79
+        },
+        "grossMarginTrain": {
+          "mae": 3.645,
+          "bias": -0.506,
+          "n": 25
+        }
+      },
+      "selected": false,
+      "note": "營業利益、淨利與 EPS 用與其他模型相同的營業費用、業外、稅率與股數規則換算。"
+    },
+    {
+      "id": "naive-momentum",
+      "name": "天真模型（延續上一季成長）",
+      "description": "假設本季營收的季成長率和上一季一樣，毛利率和上一季一樣。對快速成長的公司，這是比「上一季不變」更公平的對照組：不需要任何驅動因子，只看營收自己的動能。",
+      "equations": [
+        "營收_t = 營收_t−1 ×（營收_t−1 ÷ 營收_t−2）（每 13 週）",
+        "毛利率_t = 毛利率_t−1",
+        "營業費用_t（每 13 週）= 營業費用_t−1 × e^e0 ×（營收_t ÷ 營收_t−1）^ε；營業利益_t = 營收_t × 毛利率_t − 營業費用_t",
+        "淨利_t =（營業利益_t + 最近四季平均業外收支）×（1 − 最近四季有效稅率）；EPS_t = 淨利_t ÷ 稀釋股數_t−1"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 2231.268,
+          "bias": -631.421,
+          "n": 7,
+          "mape": 3.52
+        },
+        "grossMargin": {
+          "mae": 3.891,
+          "bias": -0.256,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 2696.076,
+          "bias": -519.874,
+          "n": 7,
+          "mape": 8.75
+        },
+        "netIncome": {
+          "mae": 4993.594,
+          "bias": -1693.386,
+          "n": 7,
+          "mape": 13.88
+        },
+        "eps": {
+          "mae": 0.202,
+          "bias": -0.075,
+          "n": 7,
+          "mape": 13.85
+        },
+        "revenueTrain": {
+          "mae": 1179.2,
+          "bias": 319.607,
+          "n": 25,
+          "mape": 14.32
+        },
+        "grossMarginTrain": {
+          "mae": 3.645,
+          "bias": -0.506,
+          "n": 25
+        }
+      },
+      "selected": false,
+      "note": "測試期營收 MAPE 3.52%，低於兩個結構模型；最大的誤差在 FY2026 第三季（13.0%）。訓練期（FY2019 第四季至 FY2025 第四季）營收 MAPE 14.3%：成長轉折時（例如 FY2024 第二季營收季增 88%）誤差很大。它不是結構模型，延伸到 FY2028 只會把最近一季的成長率一直複利下去，不參與模型選擇。"
+    },
+    {
+      "id": "guidance",
+      "name": "輝達財測（對照基準）",
+      "description": "輝達在上一季財報公布的本季財測中值：營收（中值 ± 2%，FY2027 第四季 ± 3%）、GAAP 毛利率與 GAAP 營業費用（營業利益 = 營收 × 毛利率 − 營業費用）。這不是本站的模型，而是公司在季度開始時的判斷。公司不給淨利與 EPS 財測。",
+      "equations": [
+        "預測值 = 上一季新聞稿的本季財測中值",
+        "營業利益 = 營收財測 × 毛利率財測 − 營業費用財測"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 3659.714,
+          "bias": -3659.714,
+          "n": 7,
+          "mape": 4.66
+        },
+        "grossMargin": {
+          "mae": 1.705,
+          "bias": 1.173,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 3392.286,
+          "bias": -2386.571,
+          "n": 7,
+          "mape": 7.85
+        }
+      },
+      "selected": false,
+      "note": "輝達的營收財測歷來偏保守：FY2025 第四季以前 36 季中有 33 季實際營收高於中值，測試期 7 季全部高於中值（平均高 4.9%）。毛利率財測很準，測試期誤差幾乎全部來自 FY2026 第一季：財測公布後，美國在 2025-04-09 要求 H20 出口中國須申請許可，公司當季認列 45 億美元 H20 相關費用（sec-8k-20250409、cfo-fy2026q1）；不計這一季，財測的毛利率 MAE 為 0.31 個百分點。"
+    },
+    {
+      "id": "guidance-bias",
+      "name": "財測＋歷史偏差校正",
+      "description": "輝達財測中值加上 FY2025 第四季以前財測誤差的中位數：營收乘以（1 + 4.67%）、毛利率 +0.26 個百分點、營業費用乘以（1 + 0.33%），再用相同規則推算淨利與 EPS。只用季度開始時就有的資訊，是事前的預測。",
+      "equations": [
+        "營收_t = 營收財測中值 ×（1 + 4.67%）",
+        "毛利率_t = 毛利率財測中值 + 0.26",
+        "營業費用_t = 營業費用財測 ×（1 + 0.33%）",
+        "淨利、EPS 同其他模型"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 811.529,
+          "bias": -431.244,
+          "n": 7,
+          "mape": 1.05
+        },
+        "grossMargin": {
+          "mae": 1.7,
+          "bias": 1.438,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 1318.135,
+          "bias": 165.29,
+          "n": 7,
+          "mape": 4.28
+        },
+        "netIncome": {
+          "mae": 3696.068,
+          "bias": -1091.686,
+          "n": 7,
+          "mape": 9.57
+        },
+        "eps": {
+          "mae": 0.153,
+          "bias": -0.05,
+          "n": 7,
+          "mape": 9.7
+        }
+      },
+      "selected": false,
+      "note": "不參與模型選擇：它只能預測公司已給財測的下一季，無法延伸到 FY2028。測試期在只用季初資訊的事前方法中，它的營收、毛利率與 EPS 誤差最小（營收 MAPE 1.05%、毛利率 MAE 1.70 個百分點、EPS MAPE 9.7%；毛利率與財測本身（1.71 個百分點）幾乎相同）；代入當季實際資本支出與提列的兩個結構模型 EPS 誤差較小（8.9%、9.4%），但那是條件式回測，不能直接比較。本站 FY2027 第四季的預測也以財測加上歷史偏差為準：偏差改用 FY2017 第一季至 FY2027 第三季全部 43 季的分布，三個情境分別取第 10、50、90 百分位。營收偏差和同季雲端業者資本支出成長沒有關係（斜率 −0.121，標準誤 0.152）。"
+    },
+    {
+      "id": "capex-regression",
+      "name": "雲端資本支出成長迴歸",
+      "description": "用迴歸估計兩個關係：資料中心營收的季成長率和五大雲端業者（微軟、Alphabet、亞馬遜、Meta、甲骨文）資本支出季成長率的關係；核心毛利率（扣除存貨與採購承諾提列前）和資料中心營收比重的關係（資料中心產品毛利率較高）。邊緣運算營收依季節性推算。",
+      "equations": [
+        "log（資料中心營收_t ÷ 資料中心營收_t−1）= 0.158 − 0.164 × log（資本支出_t ÷ 資本支出_t−1）",
+        "邊緣運算營收_t = 邊緣運算營收_t−1 × e^(s_q)，s_q 為訓練期各會計季的平均對數季變化（含成長）",
+        "毛利率_t = 54.78 + 0.225 × 資料中心營收比重_t（%）− 當季提列率_t",
+        "營業費用_t（每 13 週）= 營業費用_t−1 × e^e0 ×（營收_t ÷ 營收_t−1）^ε；營業利益_t = 營收_t × 毛利率_t − 營業費用_t",
+        "淨利_t =（營業利益_t + 最近四季平均業外收支）×（1 − 最近四季有效稅率）；EPS_t = 淨利_t ÷ 稀釋股數_t−1"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 3984.739,
+          "bias": -2878.011,
+          "n": 7,
+          "mape": 5.31
+        },
+        "grossMargin": {
+          "mae": 0.761,
+          "bias": 0.387,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 3024.18,
+          "bias": -1827.372,
+          "n": 7,
+          "mape": 6.83
+        },
+        "netIncome": {
+          "mae": 4225.305,
+          "bias": -2784.373,
+          "n": 7,
+          "mape": 9.47
+        },
+        "eps": {
+          "mae": 0.173,
+          "bias": -0.119,
+          "n": 7,
+          "mape": 9.43
+        },
+        "revenueTrain": {
+          "mae": 886.39,
+          "bias": -368.9,
+          "n": 25,
+          "mape": 11.01
+        },
+        "grossMarginTrain": {
+          "mae": 3.7,
+          "bias": 0.533,
+          "n": 25
+        },
+        "revenueDynamic": {
+          "mae": 7097.729,
+          "bias": -5084.09,
+          "n": 7,
+          "mape": 8.23
+        },
+        "grossMarginDynamic": {
+          "mae": 0.944,
+          "bias": 0.856,
+          "n": 7
+        }
+      },
+      "selected": false,
+      "note": "資料中心營收季成長對同一日曆季資本支出季成長的斜率只有 −0.164（標準誤 0.326，t 值 −0.50，FY2018 第四季至 FY2025 第四季共 29 季）；改用上一個日曆季為 −0.436（標準誤 0.336），都與 0 沒有顯著差異：逐季看，雲端業者資本支出的變化解釋不了輝達資料中心營收的變化（付款與出貨的時間差、雲端業者只占資料中心營收約一半）。全期（至 FY2027 第三季）估計為 −0.115（標準誤 0.263）。斜率不顯著，這個模型的營收規則實際上等於每季固定成長約 17%（截距），用來推估 FY2028 時不會隨雲端業者資本支出的情境改變。毛利率對資料中心比重的斜率 0.225（標準誤 0.029，t 值 7.8，FY2017 第一季至 FY2025 第四季共 36 季）在統計上顯著；資料中心比重 FY2025 以後已在 86–93% 之間，所以測試期的毛利率預測幾乎是固定的核心毛利率減去當季提列，一季前的毛利率誤差（0.76 個百分點）比選定模型小。回測代入當季實際的資本支出與提列。連續推估（從 FY2025 第四季出發、不用新財報）的營收 MAPE 8.23%、資料中心營收平均誤差 8.8%，比選定模型大。訓練期（FY2019 第四季至 FY2025 第四季）營收 MAPE 11.0%。營業費用與獲利的規則同選定模型。"
+    },
+    {
+      "id": "capex-share",
+      "name": "雲端資本支出比例模型",
+      "description": "把輝達的資料中心營收看成五大雲端業者資本支出的一個比例：過去四季資料中心營收合計 ÷ 同期資本支出合計（FY2025 以來約 46–50%），乘上當季的資本支出；五大雲端業者只占資料中心營收約一半（tr-fy2026q4），所以這個比例也假設 AI 雲、產業與企業客戶（ACIE）跟著同一波投資成長。毛利率從上一季「扣除存貨與採購承諾提列前」的核心毛利率出發，再減去當季的提列。邊緣運算營收依季節性推算。",
+      "equations": [
+        "比例_t = Σ（資料中心營收_t−1…t−4）÷ Σ（資本支出_t−1…t−4）（每 13 週）",
+        "資料中心營收_t = 比例_t × 五大雲端業者資本支出_t（同一日曆季，約早一個月）",
+        "邊緣運算營收_t = 邊緣運算營收_t−1 × e^(s_q)，s_q 為訓練期各會計季的平均對數季變化（含成長）",
+        "核心毛利率 = 毛利率 + 存貨與採購承諾提列 ÷ 營收；毛利率_t = 核心毛利率_t−1 − 提列_t ÷ 營收_t",
+        "營業費用_t（每 13 週）= 營業費用_t−1 × e^e0 ×（營收_t ÷ 營收_t−1）^ε；營業利益_t = 營收_t × 毛利率_t − 營業費用_t",
+        "淨利_t =（營業利益_t + 最近四季平均業外收支）×（1 − 最近四季有效稅率）；EPS_t = 淨利_t ÷ 稀釋股數_t−1"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 3578.311,
+          "bias": -474.231,
+          "n": 7,
+          "mape": 5.33
+        },
+        "grossMargin": {
+          "mae": 1.112,
+          "bias": -0.077,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 2393.954,
+          "bias": -173.89,
+          "n": 7,
+          "mape": 5.16
+        },
+        "netIncome": {
+          "mae": 4794.587,
+          "bias": -1396.762,
+          "n": 7,
+          "mape": 8.91
+        },
+        "eps": {
+          "mae": 0.197,
+          "bias": -0.062,
+          "n": 7,
+          "mape": 8.86
+        },
+        "revenueTrain": {
+          "mae": 2094.959,
+          "bias": -1725.564,
+          "n": 25,
+          "mape": 16.37
+        },
+        "grossMarginTrain": {
+          "mae": 3.109,
+          "bias": -0.579,
+          "n": 25
+        },
+        "revenueExAnte": {
+          "mae": 3797.226,
+          "bias": -2306.831,
+          "n": 7,
+          "mape": 5.11
+        },
+        "grossMarginExAnte": {
+          "mae": 2.882,
+          "bias": 0.767,
+          "n": 7
+        },
+        "operatingIncomeExAnte": {
+          "mae": 3416.135,
+          "bias": -1299.928,
+          "n": 7,
+          "mape": 9.09
+        },
+        "epsExAnte": {
+          "mae": 0.233,
+          "bias": -0.101,
+          "n": 7,
+          "mape": 14.28
+        },
+        "revenueDynamic": {
+          "mae": 2793.893,
+          "bias": -1549.84,
+          "n": 7,
+          "mape": 4.41
+        },
+        "grossMarginDynamic": {
+          "mae": 1.022,
+          "bias": -0.062,
+          "n": 7
+        }
+      },
+      "selected": true,
+      "note": "一季前的回測代入當季實際的雲端業者資本支出（雲端業者的季報在輝達財報之前公布）與當季提列（輝達財報時才公布），是條件式回測：營收 MAPE 5.33%、毛利率 MAE 1.11 個百分點。營收不如延續上一季成長的天真模型（3.52%）與輝達財測（4.66%），而且代入實際的資本支出並沒有比事前版本準（5.11%）；毛利率比財測（1.71 個百分點）準，是因為已知 FY2026 第一季的 H20 費用（不計這一季，本模型 0.91、財測 0.31 個百分點）。這個模型的用途是多季推估：比例固定在 FY2025 第四季為止的四季值（48.2%）、往後 7 季不用新財報、只代入實際資本支出與提列時（連續推估），資料中心營收的平均誤差 4.2%、總營收 MAPE 4.41%、毛利率 MAE 1.02 個百分點，FY2028 的推估就是這樣做的。比例用四季合計，是配合年度推估的口徑，不是由回測選出來的：改用上一季單季比例時，一季前的營收 MAPE 在訓練期較小（12.9%，四季合計 16.4%），在測試期較大（7.07%）。訓練期誤差大，主要在 FY2024：生成式 AI 需求爆發，比例由約 10% 升到 40% 以上。毛利率若不扣當季提列（只用上一季核心毛利率）MAE 為 2.80；若只用存貨跌價（XBRL，不含採購承諾）為 2.90 個百分點。選擇規則：在能延伸到 FY2028、不依賴財測的兩個結構模型中，取兩種回測（一季前、連續推估）「營收 MAPE（%）＋ 毛利率 MAE（個百分點）」的平均最小者，差距在 0.5 以內取估計參數較少者：本模型 5.94（一季前 6.44、連續 5.43）、資本支出成長迴歸 7.62（6.07、9.17）。只看一季前，迴歸略好（毛利率較準），差距 0.37，在 0.5 以內，依同一規則仍選估計參數較少的本模型；不計 FY2026 第一季時為 6.09 與 6.11。只看連續推估也選本模型，所以選擇不隨兩種回測的權重改變，但本模型在一季前並沒有比較準。一季前逐季誤差差距的配對 t 值：營收 0.02（4／7 季較準）、毛利率 1.20，自由度 6 的 5% 臨界值為 2.45，都不顯著；只有 7 季，排名只能當作參考。營業費用規則以 FY2017 第二季至 FY2025 第四季共 35 季估計（FY2023 第一季扣除 13.53 億美元的 Arm 收購終止費用，pr-fy2023q1）：ε = 0.081（標準誤 0.082）、e0 = +5.58%／季（標準誤 1.55%）。業外收支用最近四季平均、有效稅率用最近四季的稅額 ÷ 稅前淨利、股數用上一季的稀釋股數：已知營業利益時，FY2018 第一季至 FY2025 第四季的淨利 MAPE：最近四季平均 8.80%、上一季 9.59%、去年同季 14.26%，取最小者（測試期依序為 6.49%、8.51%、6.21%）。14 週的季度（FY2021 第四季）以每 13 週換算。"
+    },
+    {
+      "id": "capex-share-ex-ante",
+      "name": "雲端資本支出比例模型（事前版本）",
+      "description": "與選定模型相同，但只用上一季財報公布時就知道的資訊：當季的雲端業者資本支出改用上一個日曆季的實際值乘上過去一年的平均季成長，當季提列改用最近四季提列率的中位數。用來和輝達財測做事前比較。",
+      "equations": [
+        "資本支出_t（事前）= 資本支出_t−1 ×（資本支出_t−1 ÷ 資本支出_t−5）^(1/4)",
+        "毛利率_t = 核心毛利率_t−1 − 最近四季提列率中位數",
+        "其餘同「雲端資本支出比例模型」"
+      ],
+      "metrics": {
+        "revenue": {
+          "mae": 3797.226,
+          "bias": -2306.831,
+          "n": 7,
+          "mape": 5.11
+        },
+        "grossMargin": {
+          "mae": 2.882,
+          "bias": 0.767,
+          "n": 7
+        },
+        "operatingIncome": {
+          "mae": 3416.135,
+          "bias": -1299.928,
+          "n": 7,
+          "mape": 9.09
+        },
+        "netIncome": {
+          "mae": 5646.766,
+          "bias": -2329.659,
+          "n": 7,
+          "mape": 14.14
+        },
+        "eps": {
+          "mae": 0.233,
+          "bias": -0.101,
+          "n": 7,
+          "mape": 14.28
+        }
+      },
+      "selected": false,
+      "note": "不參與模型選擇。測試期營收 MAPE 5.11%、毛利率 MAE 2.88 個百分點，輝達財測為 4.66%、1.71，財測加歷史偏差為 1.05%、1.70；營收有 3／7 季比財測中值準（配對 t 值 0.45）。毛利率誤差最大的是 FY2026 第一季（事前不知道 H20 費用，下一季又不知道費用不再發生）。同樣在季初做預測，本模型沒有比公司財測準。"
+    }
+  ],
+  "parameters": [
+    {
+      "name": "FY2027Q4 財測：營收中值",
+      "value": 130000,
+      "unit": "百萬美元",
+      "note": "1,300 億美元 ± 3%，即 1,261–1,339 億美元（pr-fy2027q3）；本季多一週（14 週），財測不含中國資料中心運算營收。"
+    },
+    {
+      "name": "FY2027Q4 財測：毛利率中值",
+      "value": 71.5,
+      "unit": "%",
+      "note": "GAAP 與非 GAAP 毛利率都是 71.0–72.0%（pr-fy2027q3）；財務長 8 月表示記憶體價格漲幅超出預期，毛利率在第四季觸底（tr-fy2027q2）。"
+    },
+    {
+      "name": "FY2027Q4 財測：營業費用",
+      "value": 11000,
+      "unit": "百萬美元",
+      "note": "GAAP 營業費用約 110 億美元（含多出的一週；pr-fy2027q3）。"
+    },
+    {
+      "name": "有效稅率（預測期）",
+      "value": 17,
+      "unit": "%",
+      "note": "公司預估 FY2027 全年 GAAP 稅率 16–18%（pr-fy2027q3），取中值；FY2027 前三季實際為 16.85%。FY2028 沿用（公司尚未給 FY2028 稅率）。"
+    },
+    {
+      "name": "資料中心營收占雲端業者資本支出的比例（最近四季）",
+      "value": 48.36,
+      "unit": "%",
+      "note": "FY2026 第四季至 FY2027 第三季資料中心營收 3,342 億美元 ÷ 2025 年第四季至 2026 年第三季五大雲端業者資本支出 6,910 億美元（sec-xbrl-hyperscalers）。會計年度：FY2025 48.2%、FY2026 47.1%；回測期第一季用的值（FY2025 第四季為止的四季）為 48.2%。這是計算值，不是迴歸估計。"
+    },
+    {
+      "name": "資料中心營收季成長對資本支出季成長的斜率",
+      "value": -0.164,
+      "note": "FY2018 第四季至 FY2025 第四季共 29 季估計，標準誤 0.326、t 值 −0.50，與 0 沒有顯著差異；截距 +15.8%／季（對數，標準誤 4.2%）。選定模型因此不用季成長的關係，而用四季合計的比例。"
+    },
+    {
+      "name": "核心毛利率對資料中心營收比重的斜率",
+      "value": 0.225,
+      "unit": "個百分點／個百分點",
+      "note": "FY2017 第一季至 FY2025 第四季共 36 季，標準誤 0.029（t 值 7.8）；截距 54.78%。資料中心比重每高 10 個百分點，核心毛利率約高 2.3 個百分點（資本支出成長迴歸用）。"
+    },
+    {
+      "name": "DRAM 合約價季變化對毛利率季變化的影響（檢定，未採用）",
+      "value": -0.112,
+      "unit": "個百分點／1%",
+      "note": "TrendForce 一般型 DRAM 合約價季變化（同一日曆季，記憶體專題的價格資料），32 季，標準誤 0.097；上一季合約價的係數 0.028（標準誤 0.091）。都不顯著：歷史上記憶體合約價的季變化沒有直接反映在輝達的毛利率。"
+    },
+    {
+      "name": "邊緣運算營收季節性：第一季",
+      "value": 5.8,
+      "unit": "%",
+      "note": "第一季相對上一季的平均變化（每 13 週，含平均成長），全期 FY2017 第二季至 FY2027 第三季共 10 個樣本，對數平均的標準誤 4.7%；訓練期為 +2.5%。FY2028 扣除平均成長 +4.6%／季後只取季節性，成長改用情境假設。"
+    },
+    {
+      "name": "邊緣運算營收季節性：第二季",
+      "value": 5.6,
+      "unit": "%",
+      "note": "第二季相對上一季的平均變化（每 13 週，含平均成長），全期 FY2017 第二季至 FY2027 第三季共 11 個樣本，對數平均的標準誤 5.4%；訓練期為 +3.9%。FY2028 扣除平均成長 +4.6%／季後只取季節性，成長改用情境假設。"
+    },
+    {
+      "name": "邊緣運算營收季節性：第三季",
+      "value": 10.1,
+      "unit": "%",
+      "note": "第三季相對上一季的平均變化（每 13 週，含平均成長），全期 FY2017 第二季至 FY2027 第三季共 11 個樣本，對數平均的標準誤 5.2%；訓練期為 +10.6%。FY2028 扣除平均成長 +4.6%／季後只取季節性，成長改用情境假設。"
+    },
+    {
+      "name": "邊緣運算營收季節性：第四季",
+      "value": -2.7,
+      "unit": "%",
+      "note": "第四季相對上一季的平均變化（每 13 週，含平均成長），全期 FY2017 第二季至 FY2027 第三季共 10 個樣本，對數平均的標準誤 5.3%；訓練期為 −3.0%。FY2028 扣除平均成長 +4.6%／季後只取季節性，成長改用情境假設。"
+    },
+    {
+      "name": "營業費用對營收的彈性 ε",
+      "value": 0.093,
+      "note": "全期 FY2017 第二季至 FY2027 第三季估計（FY2023 第一季扣除 13.53 億美元的 Arm 收購終止費用；未扣除時 ε 為 0.238、迴歸殘差的標準差大 70%），標準誤 0.075；另有每季 +5.90% 的趨勢（標準誤 1.38%）。訓練期為 ε = 0.081（標準誤 0.082），與 0 沒有顯著差異，營業費用主要跟著趨勢成長。"
+    },
+    {
+      "name": "財測偏差：營收（訓練期中位數）",
+      "value": 4.67,
+      "unit": "%",
+      "note": "FY2017 第一季至 FY2025 第四季共 36 季；全部 43 季的第 10、50、90 百分位為 +0.76%、+4.81%、+11.87%（FY2027 第四季三個情境用）。"
+    },
+    {
+      "name": "財測偏差：毛利率（訓練期中位數）",
+      "value": 0.26,
+      "unit": "個百分點",
+      "note": "全部 43 季的第 10、50、90 百分位為 −1.85 個百分點、+0.20 個百分點、+1.55 個百分點。"
+    },
+    {
+      "name": "財測偏差：營業費用（訓練期中位數）",
+      "value": 0.33,
+      "unit": "%",
+      "note": "全部 43 季的中位數 +0.18%（FY2027 第四季用）；測試期 7 季平均 −1.5%。"
+    },
+    {
+      "name": "提列率（預測期）",
+      "value": 0.81,
+      "unit": "%",
+      "note": "FY2026 第四季至 FY2027 第三季的中位數，只用於核心毛利率的推算序列；預測的毛利率本身已含正常水準的提列。"
+    },
+    {
+      "name": "2026 年第四季雲端業者資本支出（基準情境反推）",
+      "value": 245039,
+      "unit": "百萬美元",
+      "note": "FY2027 第四季資料中心營收（換算 13 週）÷ 比例；加上 2026 年前三季實際 5,604 億美元，全年約 8,054 億美元（輝達引述的前五大雲端業者 2026 年預期接近 8,000 億美元，tr-fy2027q2）。保守、樂觀情境分別為 2,349 億美元、2,626 億美元。"
+    },
+    {
+      "name": "2027 年雲端業者資本支出的季成長（基準情境）",
+      "value": 11.91,
+      "unit": "%／季",
+      "note": "使 2027 年全年較 2026 年成長 62.5% 的固定季成長；保守 3.9%、樂觀 14.2%。"
+    },
+    {
+      "name": "FY2028 營收年增率（基準情境）",
+      "value": 54.8,
+      "unit": "%",
+      "note": "扣除 FY2027 多出的一週後為 58.4%。財務長在 2026-08-26 初步預期 FY2028 營收年增約 70%，屬供給受限的展望（tr-fy2027q2）；本模型基準情境較低，因為假設比例不變、資本支出成長採財務長引述的預期。"
+    }
+  ],
+  "derived": [
+    {
+      "id": "capture-ratio-quarter",
+      "name": "資料中心營收占五大雲端業者資本支出的比例（單季）",
+      "unit": "%",
+      "points": [
+        {
+          "period": "FY2018Q3",
+          "value": 4.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q4",
+          "value": 4.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q1",
+          "value": 4.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q2",
+          "value": 4.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": 5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": 3.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": 4.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 3.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 3.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 5.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 8.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 7.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 7.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 7.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 8.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 8.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 10.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 9.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 9.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 8.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 11.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 29.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 37.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 41.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 49.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 47.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 50.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 46.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 50.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 42.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 48.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 47.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 50.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 49,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 46.7,
+          "status": "estimate"
+        }
+      ],
+      "note": "輝達當季資料中心營收（每 13 週）÷ 對應日曆季的五大雲端業者資本支出（XBRL 現金購置不動產與設備，不含融資租賃；sec-xbrl-hyperscalers）。資本支出還包括土地、建築、電力與其他廠商的設備，所以這是「比例」而不是市占率。FY2024 生成式 AI 需求爆發時由約 10% 升到 40% 以上，FY2025 以來單季在 42–51% 之間。"
+    },
+    {
+      "id": "capture-ratio-4q",
+      "name": "資料中心營收占雲端業者資本支出的比例（四季合計，模型用）",
+      "unit": "%",
+      "points": [
+        {
+          "period": "FY2019Q2",
+          "value": 4.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": 4.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": 4.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": 4.3,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 4.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 3.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 4.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 4.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 5.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 6.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 6.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 7.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 7.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 7.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 8.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 8.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 9.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 9.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 9.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 9.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 14.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 21.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 30.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 40.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 44.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 47.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 48.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 48.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 46.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 46.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 47.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 47.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 49,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 48.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2028Q1",
+          "value": 48.4,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q2",
+          "value": 48.4,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q3",
+          "value": 48.4,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q4",
+          "value": 48.4,
+          "status": "forecast"
+        }
+      ],
+      "note": "截至該季的四季資料中心營收合計 ÷ 同期資本支出合計；選定模型用上一季的值乘上當季資本支出。會計年度合計：FY2025 48.2%、FY2026 47.1%。FY2028 為基準情境（固定在 FY2027 第三季的 48.4%）。"
+    },
+    {
+      "id": "hyperscaler-capex-path",
+      "name": "五大雲端業者資本支出（日曆季；2026 年第四季起為基準情境）",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "2023Q1",
+          "value": 36554,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q2",
+          "value": 35333,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q3",
+          "value": 38261,
+          "status": "actual"
+        },
+        {
+          "period": "2023Q4",
+          "value": 44014,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q1",
+          "value": 45963,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q2",
+          "value": 55650,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q3",
+          "value": 61165,
+          "status": "actual"
+        },
+        {
+          "period": "2024Q4",
+          "value": 76309,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q1",
+          "value": 77764,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q2",
+          "value": 97326,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q3",
+          "value": 105773,
+          "status": "actual"
+        },
+        {
+          "period": "2025Q4",
+          "value": 130665,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q1",
+          "value": 148385,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q2",
+          "value": 181543,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q3",
+          "value": 230422,
+          "status": "actual"
+        },
+        {
+          "period": "2026Q4",
+          "value": 245039,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q1",
+          "value": 274214,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q2",
+          "value": 306862,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q3",
+          "value": 343398,
+          "status": "forecast"
+        },
+        {
+          "period": "2027Q4",
+          "value": 384283,
+          "status": "forecast"
+        }
+      ],
+      "note": "2026 年第三季以前為五家公司 XBRL 資本支出合計（sec-xbrl-hyperscalers）。2026 年第四季為模型反推：基準情境的 FY2027 第四季資料中心營收（換算 13 週）÷ 比例 48.4%，2026 全年因此約 8,054 億美元，與輝達財務長引述的前五大雲端業者 2026 年資本支出「接近 8,000 億美元」相近（tr-fy2027q2，口徑可能不同）。2027 年各季以固定季成長 11.9% 使全年較 2026 年成長 62.5%（財務長引述的前五大雲端業者預期由接近 8,000 億增至 1.3 兆美元）。"
+    },
+    {
+      "id": "dc-revenue",
+      "name": "資料中心營收（FY2027 第四季起為基準情境）",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "FY2023Q1",
+          "value": 3750,
+          "status": "actual"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 3806,
+          "status": "actual"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 3833,
+          "status": "actual"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 3616,
+          "status": "actual"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 4284,
+          "status": "actual"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 10323,
+          "status": "actual"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 14514,
+          "status": "actual"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 18404,
+          "status": "actual"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 22563,
+          "status": "actual"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 26272,
+          "status": "actual"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 30771,
+          "status": "actual"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 35580,
+          "status": "actual"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 39112,
+          "status": "actual"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 41096,
+          "status": "actual"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 51215,
+          "status": "actual"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 62314,
+          "status": "actual"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 75246,
+          "status": "actual"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 89023,
+          "status": "actual"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 107610,
+          "status": "actual"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": 127623,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q1",
+          "value": 132617,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q2",
+          "value": 148407,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q3",
+          "value": 166076,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q4",
+          "value": 185850,
+          "status": "forecast"
+        }
+      ],
+      "note": "實際值取自市場平台營收（rev-fy2027q3 等）；兩套市場平台分類的資料中心營收相同。FY2027 第四季為營收預測減邊緣運算營收（季節性推算，含多出的一週），FY2028 為比例 × 雲端業者資本支出。"
+    },
+    {
+      "id": "edge-revenue",
+      "name": "邊緣運算（非資料中心）營收",
+      "unit": "百萬美元",
+      "points": [
+        {
+          "period": "FY2023Q1",
+          "value": 4538,
+          "status": "actual"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 2898,
+          "status": "actual"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 2098,
+          "status": "actual"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 2435,
+          "status": "actual"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 2908,
+          "status": "actual"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 3184,
+          "status": "actual"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 3606,
+          "status": "actual"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 3699,
+          "status": "actual"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 3481,
+          "status": "actual"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 3768,
+          "status": "actual"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 4311,
+          "status": "actual"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 3751,
+          "status": "actual"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 4950,
+          "status": "actual"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 5647,
+          "status": "actual"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 5791,
+          "status": "actual"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 5813,
+          "status": "actual"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 6369,
+          "status": "actual"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 7198,
+          "status": "actual"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 8234,
+          "status": "actual"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": 8631,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q1",
+          "value": 8095,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q2",
+          "value": 8159,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q3",
+          "value": 8576,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q4",
+          "value": 7967,
+          "status": "forecast"
+        }
+      ],
+      "note": "營收減資料中心營收：FY2026 以前等於遊戲、專業視覺化、車用與 OEM 及其他的合計，FY2025 起也等於公司新分類的「邊緣運算」（rev-fy2027q3）。FY2028 基準情境全年（52 週）較 FY2027（扣除多出的一週）年增 10%，各季依歷史季節性分配。"
+    },
+    {
+      "id": "hyperscale-share-of-dc",
+      "name": "超大規模雲端客戶占資料中心營收",
+      "unit": "%",
+      "points": [
+        {
+          "period": "FY2025Q1",
+          "value": 48.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 51.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 50.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 56.1,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 56.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 58.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 68.6,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 67.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 57.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 54.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 55.9,
+          "status": "estimate"
+        }
+      ],
+      "note": "資料中心－超大規模營收 ÷ 資料中心營收（FY2027 新分類，FY2025 起重編；rev-fy2027q3）；其餘為 ACIE（AI 雲、產業與企業）。比例固定的假設等於假設 ACIE 也跟著雲端業者的投資成長。"
+    },
+    {
+      "id": "provision-rate",
+      "name": "存貨與採購承諾提列占營收",
+      "unit": "%",
+      "points": [
+        {
+          "period": "FY2023Q2",
+          "value": 8.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 5.97,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 1.86,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 4.26,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 3.76,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 0.53,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 1.51,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 3.02,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 2.47,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 1.84,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 12.03,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 2.14,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 0.72,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 0.59,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 1.35,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 1.02,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 0.59,
+          "status": "estimate"
+        }
+      ],
+      "note": "10-Q 揭露的「存貨與超額採購承諾提列」÷ 營收；沒有揭露總額的季度（多為第四季與 FY2027 第三季）改用 XBRL 的存貨跌價（不含採購承諾，偏低），FY2023 第四季兩者都沒有，空白。FY2026 第一季的 12% 來自 H20 出口管制。"
+    },
+    {
+      "id": "gm-core",
+      "name": "核心毛利率（扣除存貨與採購承諾提列前）",
+      "unit": "%",
+      "points": [
+        {
+          "period": "FY2023Q2",
+          "value": 51.98,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 59.53,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 66.49,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 74.32,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 77.71,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 76.5,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 79.86,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 78.17,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 77.02,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 74.87,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 72.55,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 74.56,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 74.13,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 75.58,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 76.28,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 76,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 75.41,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": 72.5,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q1",
+          "value": 73.31,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q2",
+          "value": 73.31,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q3",
+          "value": 73.31,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q4",
+          "value": 73.31,
+          "status": "forecast"
+        }
+      ],
+      "note": "毛利率 + 提列率。FY2027 第四季起為基準情境的毛利率加上最近四季提列率的中位數 0.81%；FY2027 第四季比第三季低約 2.9 個百分點，財務長說明記憶體價格漲幅超出預期，毛利率在第四季觸底（tr-fy2027q2）。"
+    },
+    {
+      "id": "gm-bridge-provisions",
+      "name": "毛利率變動：存貨與採購承諾提列",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "FY2024Q2",
+          "value": -2.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 0.51,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 3.23,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": -0.98,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": -1.51,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 0.56,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 0.62,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": -10.19,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 9.89,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 1.42,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 0.13,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": -0.76,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 0.32,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 0.44,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": -0.22,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q1",
+          "value": 0,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q2",
+          "value": 0,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q3",
+          "value": 0,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q4",
+          "value": 0,
+          "status": "forecast"
+        }
+      ],
+      "note": "每季毛利率的變化拆成兩項，相加等於毛利率的季變化（個百分點）：提列的變化（提列減少時為正）與核心毛利率的變化（產品轉換與良率、記憶體等投入成本、售價與組合）。FY2027 第四季起為基準情境。FY2026 第一季 H20 費用使毛利率減少約 10 個百分點，下一季提列回到正常水準又加回來。"
+    },
+    {
+      "id": "gm-bridge-core",
+      "name": "毛利率變動：核心毛利率（產品轉換、記憶體成本、售價與組合）",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "FY2024Q2",
+          "value": 7.83,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 3.39,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": -1.21,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 3.36,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": -1.69,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": -1.15,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": -2.15,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": -2.32,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 2.01,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": -0.43,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 1.45,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 0.7,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": -0.28,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": -0.59,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q4",
+          "value": -2.91,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q1",
+          "value": 0.8,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q2",
+          "value": 0,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q3",
+          "value": 0,
+          "status": "forecast"
+        },
+        {
+          "period": "FY2028Q4",
+          "value": 0,
+          "status": "forecast"
+        }
+      ],
+      "note": "每季毛利率的變化拆成兩項，相加等於毛利率的季變化（個百分點）：提列的變化（提列減少時為正）與核心毛利率的變化（產品轉換與良率、記憶體等投入成本、售價與組合）。FY2027 第四季起為基準情境。FY2026 第三季毛利率年減，公司說明反映由 Hopper HGX 轉為 Blackwell 整櫃方案（cfo-fy2026q3）；FY2027 第四季的下降，財務長說明主因是記憶體漲價（tr-fy2027q2）。"
+    },
+    {
+      "id": "hbm-blended-price-index",
+      "name": "DRAM 合約價指數（一般型與 HBM 混合，日曆季）",
+      "unit": "指數（2024 年第二季 = 100）",
+      "points": [
+        {
+          "period": "2024Q3",
+          "value": 113,
+          "status": "estimate"
+        },
+        {
+          "period": "2024Q4",
+          "value": 117,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q1",
+          "value": 114,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q2",
+          "value": 123,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q3",
+          "value": 144,
+          "status": "estimate"
+        },
+        {
+          "period": "2025Q4",
+          "value": 220,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q1",
+          "value": 401,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q2",
+          "value": 624,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q3",
+          "value": 689,
+          "status": "estimate"
+        },
+        {
+          "period": "2026Q4",
+          "value": 810,
+          "status": "forecast"
+        }
+      ],
+      "note": "由 TrendForce「HBM Blended」季變化（記憶體專題的價格資料，區間取中值）串成的指數；2026 年第四季為 TrendForce 9 月的預測（tf-20260930-13258）。HBM 多為年度議價，輝達也簽有多年期記憶體採購承諾（pr-fy2027q3），實際採購成本可能落後合約價；TrendForce 預估 2027 年 HBM 混合平均售價年增 121%（tf-20260929-13255）。訓練期檢定過一般型 DRAM 合約價對輝達毛利率季變化的影響：每漲 1%，毛利率變化 −0.112 個百分點（標準誤 0.097），不顯著，所以模型沒有用記憶體價格估計毛利率。"
+    },
+    {
+      "id": "guidance-beat-revenue",
+      "name": "營收相對財測中值",
+      "unit": "%",
+      "points": [
+        {
+          "period": "FY2017Q1",
+          "value": 3.57,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q2",
+          "value": 5.78,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q3",
+          "value": 19.29,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q4",
+          "value": 3.48,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q1",
+          "value": 1.95,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q2",
+          "value": 14.36,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q3",
+          "value": 12.17,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q4",
+          "value": 9.85,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q1",
+          "value": 10.59,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q2",
+          "value": 0.74,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": -2.12,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": -18.33,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": 0.91,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 1.14,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 3.93,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 5.25,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 2.67,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 5.92,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 7.41,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 4.23,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 6.81,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 3.29,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 4.46,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 3.28,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 2.32,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": -17.23,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 0.53,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 0.85,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 10.65,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 22.79,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 13.25,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 10.52,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 8.52,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 7.29,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 7.94,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 4.88,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 2.47,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 3.87,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 5.57,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 4.81,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 4.63,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 5.74,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 7.26,
+          "status": "estimate"
+        }
+      ],
+      "note": "（實際營收 ÷ 上一季新聞稿的營收財測中值 − 1）× 100；正值代表實際高於財測。FY2017 以來 43 季中只有 3 季低於財測：FY2019 第三季（−2.1%）、FY2019 第四季（−18.3%）、FY2023 第二季（−17.2%）；FY2019 第四季與 FY2023 第二季公司在季末前就預告營收低於財測（sec-8k-20190128、sec-8k-20220808）。"
+    },
+    {
+      "id": "guidance-beat-gross-margin",
+      "name": "毛利率相對財測中值",
+      "unit": "個百分點",
+      "points": [
+        {
+          "period": "FY2017Q1",
+          "value": 0.35,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q2",
+          "value": 0.14,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q3",
+          "value": 1.23,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q4",
+          "value": 0.96,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q1",
+          "value": -0.13,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q2",
+          "value": -0.01,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q3",
+          "value": 0.92,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q4",
+          "value": 2.17,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q1",
+          "value": 1.78,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q2",
+          "value": -0.06,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": -2.21,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": -7.56,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": -0.42,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 0.55,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 1.57,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 0.8,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 0.06,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 0.25,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 0.13,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 0.28,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 0.31,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 0.18,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 0,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 0.11,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 0.33,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": -21.62,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": -8.83,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 0.14,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 0.53,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 1.45,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 2.45,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 1.47,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 2.05,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 0.35,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 0.16,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 0.03,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": -10.08,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q2",
+          "value": 0.62,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 0.11,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 0.2,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 0.03,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 0.08,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 0.82,
+          "status": "estimate"
+        }
+      ],
+      "note": "實際 GAAP 毛利率 − 上一季新聞稿的 GAAP 毛利率財測中值；正值代表實際高於財測。低於財測 2 個百分點以上的季度：FY2019 第三季（−2.2 個百分點）、FY2019 第四季（−7.6 個百分點）、FY2023 第二季（−21.6 個百分點）、FY2023 第三季（−8.8 個百分點）、FY2026 第一季（−10.1 個百分點）；其中 FY2019 第四季、FY2023 第二季與 FY2026 第一季的存貨或出口管制費用見大事記。"
+    },
+    {
+      "id": "supply-commitment-cover",
+      "name": "供應與產能承諾相當於幾季營收",
+      "unit": "季",
+      "points": [
+        {
+          "period": "FY2017Q1",
+          "value": 0.53,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q2",
+          "value": 0.58,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q3",
+          "value": 0.45,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2017Q4",
+          "value": 0.46,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q1",
+          "value": 0.41,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q2",
+          "value": 0.47,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q3",
+          "value": 0.44,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2018Q4",
+          "value": 0.46,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q1",
+          "value": 0.53,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q2",
+          "value": 0.61,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q3",
+          "value": 0.49,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2019Q4",
+          "value": 0.41,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q1",
+          "value": 0.35,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q2",
+          "value": 0.29,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q3",
+          "value": 0.33,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2020Q4",
+          "value": 0.37,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q1",
+          "value": 0.57,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q2",
+          "value": 0.53,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q3",
+          "value": 0.54,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2021Q4",
+          "value": 0.51,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q1",
+          "value": 0.61,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q2",
+          "value": 0.74,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q3",
+          "value": 0.97,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2022Q4",
+          "value": 1.18,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q1",
+          "value": 1.16,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q2",
+          "value": 1.38,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q3",
+          "value": 1.18,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2023Q4",
+          "value": 0.81,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q1",
+          "value": 1.01,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q2",
+          "value": 0.83,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q3",
+          "value": 0.94,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2024Q4",
+          "value": 0.73,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q1",
+          "value": 0.72,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q2",
+          "value": 0.93,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q3",
+          "value": 0.82,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2025Q4",
+          "value": 0.78,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q1",
+          "value": 0.68,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q3",
+          "value": 0.88,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2026Q4",
+          "value": 1.4,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q1",
+          "value": 1.46,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q2",
+          "value": 2.9,
+          "status": "estimate"
+        },
+        {
+          "period": "FY2027Q3",
+          "value": 3.37,
+          "status": "estimate"
+        }
+      ],
+      "note": "期末尚未履行的存貨採購與供應、產能承諾 ÷ 當季營收（FY2022 第一季以前只有存貨採購義務，之後加入長期供應與產能義務；不含雲端服務合約與投資承諾；FY2026 第二季公司只揭露含非存貨義務的總額，沒有可比數字）。FY2027 第二季起大增，公司說明主要是多年期記憶體採購（tr-fy2027q2、pr-fy2027q3）；承諾越大，需求轉弱時的存貨與採購承諾提列風險也越大。"
+    }
+  ],
+  "backtest": [
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 44062,
+      "predicted": 41310,
+      "candidate": "capex-share",
+      "benchmark": 43000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 46743,
+      "predicted": 52474,
+      "candidate": "capex-share",
+      "benchmark": 45000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 57006,
+      "predicted": 55839,
+      "candidate": "capex-share",
+      "benchmark": 54000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 68127,
+      "predicted": 66712,
+      "candidate": "capex-share",
+      "benchmark": 65000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "revenue",
+      "actual": 81615,
+      "predicted": 75815,
+      "candidate": "capex-share",
+      "benchmark": 78000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "revenue",
+      "actual": 96221,
+      "predicted": 93171,
+      "candidate": "capex-share",
+      "benchmark": 91000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "revenue",
+      "actual": 115844,
+      "predicted": 120978,
+      "candidate": "capex-share",
+      "benchmark": 108000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 60.52,
+      "predicted": 62.84,
+      "candidate": "capex-share",
+      "benchmark": 70.6,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 72.42,
+      "predicted": 70.41,
+      "candidate": "capex-share",
+      "benchmark": 71.8,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 73.41,
+      "predicted": 73.84,
+      "candidate": "capex-share",
+      "benchmark": 73.3,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 75,
+      "predicted": 73.54,
+      "candidate": "capex-share",
+      "benchmark": 74.8,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "grossMargin",
+      "actual": 74.93,
+      "predicted": 74.24,
+      "candidate": "capex-share",
+      "benchmark": 74.9,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "grossMargin",
+      "actual": 74.98,
+      "predicted": 75.26,
+      "candidate": "capex-share",
+      "benchmark": 74.9,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "grossMargin",
+      "actual": 74.82,
+      "predicted": 75.41,
+      "candidate": "capex-share",
+      "benchmark": 74,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 21638,
+      "predicted": 20982,
+      "candidate": "capex-share",
+      "benchmark": 25158,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 28440,
+      "predicted": 31554,
+      "candidate": "capex-share",
+      "benchmark": 26610,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 36010,
+      "predicted": 35428,
+      "candidate": "capex-share",
+      "benchmark": 33682,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 44299,
+      "predicted": 42810,
+      "candidate": "capex-share",
+      "benchmark": 41920,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "operatingIncome",
+      "actual": 53536,
+      "predicted": 49036,
+      "candidate": "capex-share",
+      "benchmark": 50722,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "operatingIncome",
+      "actual": 63734,
+      "predicted": 61973,
+      "candidate": "capex-share",
+      "benchmark": 59659,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "operatingIncome",
+      "actual": 77520,
+      "predicted": 82176,
+      "candidate": "capex-share",
+      "benchmark": 70720,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "netIncome",
+      "actual": 18775,
+      "predicted": 18757,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "netIncome",
+      "actual": 26422,
+      "predicted": 27861,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "netIncome",
+      "actual": 31910,
+      "predicted": 31486,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "netIncome",
+      "actual": 42960,
+      "predicted": 37836,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "netIncome",
+      "actual": 58321,
+      "predicted": 43971,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "netIncome",
+      "actual": 59688,
+      "predicted": 57935,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "netIncome",
+      "actual": 65287,
+      "predicted": 75741,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 0.76,
+      "predicted": 0.76,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 1.08,
+      "predicted": 1.13,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 1.3,
+      "predicted": 1.28,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 1.76,
+      "predicted": 1.55,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "eps",
+      "actual": 2.39,
+      "predicted": 1.8,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "eps",
+      "actual": 2.46,
+      "predicted": 2.38,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "eps",
+      "actual": 2.7,
+      "predicted": 3.12,
+      "candidate": "capex-share"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 44062,
+      "predicted": 46031,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 43000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 46743,
+      "predicted": 48274,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 45000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 57006,
+      "predicted": 58723,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 54000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 68127,
+      "predicted": 62331,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 65000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "revenue",
+      "actual": 81615,
+      "predicted": 76326,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 78000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "revenue",
+      "actual": 96221,
+      "predicted": 89764,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 91000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "revenue",
+      "actual": 115844,
+      "predicted": 112021,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 108000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 60.52,
+      "predicted": 72.72,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 70.6,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 72.42,
+      "predicted": 69.81,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 71.8,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 73.41,
+      "predicted": 72.26,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 73.3,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 75,
+      "predicted": 72.14,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 74.8,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "grossMargin",
+      "actual": 74.93,
+      "predicted": 74.15,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 74.9,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "grossMargin",
+      "actual": 74.98,
+      "predicted": 75.25,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 74.9,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "grossMargin",
+      "actual": 74.82,
+      "predicted": 75.13,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 74,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 21638,
+      "predicted": 28451,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 25158,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 28440,
+      "predicted": 28341,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 26610,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 36010,
+      "predicted": 36604,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 33682,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 44299,
+      "predicted": 38748,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 41920,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "operatingIncome",
+      "actual": 53536,
+      "predicted": 49349,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 50722,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "operatingIncome",
+      "actual": 63734,
+      "predicted": 59426,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 59659,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "operatingIncome",
+      "actual": 77520,
+      "predicted": 75159,
+      "candidate": "capex-share-ex-ante",
+      "benchmark": 70720,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "netIncome",
+      "actual": 18775,
+      "predicted": 25235,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "netIncome",
+      "actual": 26422,
+      "predicted": 25078,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "netIncome",
+      "actual": 31910,
+      "predicted": 32497,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "netIncome",
+      "actual": 42960,
+      "predicted": 34370,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "netIncome",
+      "actual": 58321,
+      "predicted": 44237,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "netIncome",
+      "actual": 59688,
+      "predicted": 55789,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "netIncome",
+      "actual": 65287,
+      "predicted": 69850,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 0.76,
+      "predicted": 1.02,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 1.08,
+      "predicted": 1.02,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 1.3,
+      "predicted": 1.32,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 1.76,
+      "predicted": 1.4,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "eps",
+      "actual": 2.39,
+      "predicted": 1.81,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "eps",
+      "actual": 2.46,
+      "predicted": 2.29,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "eps",
+      "actual": 2.7,
+      "predicted": 2.88,
+      "candidate": "capex-share-ex-ante"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 44062,
+      "predicted": 45385,
+      "candidate": "capex-regression",
+      "benchmark": 43000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 46743,
+      "predicted": 49293,
+      "candidate": "capex-regression",
+      "benchmark": 45000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 57006,
+      "predicted": 53719,
+      "candidate": "capex-regression",
+      "benchmark": 54000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 68127,
+      "predicted": 63553,
+      "candidate": "capex-regression",
+      "benchmark": 65000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "revenue",
+      "actual": 81615,
+      "predicted": 77431,
+      "candidate": "capex-regression",
+      "benchmark": 78000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "revenue",
+      "actual": 96221,
+      "predicted": 91873,
+      "candidate": "capex-regression",
+      "benchmark": 91000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "revenue",
+      "actual": 115844,
+      "predicted": 108217,
+      "candidate": "capex-regression",
+      "benchmark": 108000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 60.52,
+      "predicted": 63.36,
+      "candidate": "capex-regression",
+      "benchmark": 70.6,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 72.42,
+      "predicted": 72.81,
+      "candidate": "capex-regression",
+      "benchmark": 71.8,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 73.41,
+      "predicted": 73.96,
+      "candidate": "capex-regression",
+      "benchmark": 73.3,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 75,
+      "predicted": 74.72,
+      "candidate": "capex-regression",
+      "benchmark": 74.8,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "grossMargin",
+      "actual": 74.93,
+      "predicted": 74.22,
+      "candidate": "capex-regression",
+      "benchmark": 74.9,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "grossMargin",
+      "actual": 74.98,
+      "predicted": 74.65,
+      "candidate": "capex-regression",
+      "benchmark": 74.9,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "grossMargin",
+      "actual": 74.82,
+      "predicted": 75.06,
+      "candidate": "capex-regression",
+      "benchmark": 74,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 21638,
+      "predicted": 23742,
+      "candidate": "capex-regression",
+      "benchmark": 25158,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 28440,
+      "predicted": 30525,
+      "candidate": "capex-regression",
+      "benchmark": 26610,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 36010,
+      "predicted": 33945,
+      "candidate": "capex-regression",
+      "benchmark": 33682,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 44299,
+      "predicted": 41261,
+      "candidate": "capex-regression",
+      "benchmark": 41920,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "operatingIncome",
+      "actual": 53536,
+      "predicted": 50210,
+      "candidate": "capex-regression",
+      "benchmark": 50722,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "operatingIncome",
+      "actual": 63734,
+      "predicted": 60452,
+      "candidate": "capex-regression",
+      "benchmark": 59659,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "operatingIncome",
+      "actual": 77520,
+      "predicted": 72250,
+      "candidate": "capex-regression",
+      "benchmark": 70720,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "netIncome",
+      "actual": 18775,
+      "predicted": 21151,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "netIncome",
+      "actual": 26422,
+      "predicted": 26969,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "netIncome",
+      "actual": 31910,
+      "predicted": 30210,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "netIncome",
+      "actual": 42960,
+      "predicted": 36514,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "netIncome",
+      "actual": 58321,
+      "predicted": 44968,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "netIncome",
+      "actual": 59688,
+      "predicted": 56654,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "netIncome",
+      "actual": 65287,
+      "predicted": 67408,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 0.76,
+      "predicted": 0.86,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 1.08,
+      "predicted": 1.1,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 1.3,
+      "predicted": 1.23,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 1.76,
+      "predicted": 1.49,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "eps",
+      "actual": 2.39,
+      "predicted": 1.84,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "eps",
+      "actual": 2.46,
+      "predicted": 2.32,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "eps",
+      "actual": 2.7,
+      "predicted": 2.78,
+      "candidate": "capex-regression"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 44062,
+      "predicted": 45008,
+      "candidate": "guidance-bias",
+      "benchmark": 43000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 46743,
+      "predicted": 47101,
+      "candidate": "guidance-bias",
+      "benchmark": 45000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 57006,
+      "predicted": 56521,
+      "candidate": "guidance-bias",
+      "benchmark": 54000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 68127,
+      "predicted": 68035,
+      "candidate": "guidance-bias",
+      "benchmark": 65000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "revenue",
+      "actual": 81615,
+      "predicted": 81642,
+      "candidate": "guidance-bias",
+      "benchmark": 78000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "revenue",
+      "actual": 96221,
+      "predicted": 95249,
+      "candidate": "guidance-bias",
+      "benchmark": 91000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "revenue",
+      "actual": 115844,
+      "predicted": 113043,
+      "candidate": "guidance-bias",
+      "benchmark": 108000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 60.52,
+      "predicted": 70.86,
+      "candidate": "guidance-bias",
+      "benchmark": 70.6,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 72.42,
+      "predicted": 72.06,
+      "candidate": "guidance-bias",
+      "benchmark": 71.8,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 73.41,
+      "predicted": 73.56,
+      "candidate": "guidance-bias",
+      "benchmark": 73.3,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 75,
+      "predicted": 75.06,
+      "candidate": "guidance-bias",
+      "benchmark": 74.8,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "grossMargin",
+      "actual": 74.93,
+      "predicted": 75.16,
+      "candidate": "guidance-bias",
+      "benchmark": 74.9,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "grossMargin",
+      "actual": 74.98,
+      "predicted": 75.16,
+      "candidate": "guidance-bias",
+      "benchmark": 74.9,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "grossMargin",
+      "actual": 74.82,
+      "predicted": 74.26,
+      "candidate": "guidance-bias",
+      "benchmark": 74,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 21638,
+      "predicted": 26677,
+      "candidate": "guidance-bias",
+      "benchmark": 25158,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 28440,
+      "predicted": 28224,
+      "candidate": "guidance-bias",
+      "benchmark": 26610,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 36010,
+      "predicted": 35660,
+      "candidate": "guidance-bias",
+      "benchmark": 33682,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 44299,
+      "predicted": 44348,
+      "candidate": "guidance-bias",
+      "benchmark": 41920,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "operatingIncome",
+      "actual": 53536,
+      "predicted": 53640,
+      "candidate": "guidance-bias",
+      "benchmark": 50722,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "operatingIncome",
+      "actual": 63734,
+      "predicted": 63065,
+      "candidate": "guidance-bias",
+      "benchmark": 59659,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "operatingIncome",
+      "actual": 77520,
+      "predicted": 74720,
+      "candidate": "guidance-bias",
+      "benchmark": 70720,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "netIncome",
+      "actual": 18775,
+      "predicted": 23696,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "netIncome",
+      "actual": 26422,
+      "predicted": 24977,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "netIncome",
+      "actual": 31910,
+      "predicted": 31685,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "netIncome",
+      "actual": 42960,
+      "predicted": 39148,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "netIncome",
+      "actual": 58321,
+      "predicted": 47879,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "netIncome",
+      "actual": 59688,
+      "predicted": 58855,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "netIncome",
+      "actual": 65287,
+      "predicted": 69481,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 0.76,
+      "predicted": 0.96,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 1.08,
+      "predicted": 1.01,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 1.3,
+      "predicted": 1.29,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 1.76,
+      "predicted": 1.6,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "eps",
+      "actual": 2.39,
+      "predicted": 1.96,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "eps",
+      "actual": 2.46,
+      "predicted": 2.41,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "eps",
+      "actual": 2.7,
+      "predicted": 2.86,
+      "candidate": "guidance-bias"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 44062,
+      "predicted": 44095,
+      "candidate": "naive-momentum",
+      "benchmark": 43000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 46743,
+      "predicted": 49362,
+      "candidate": "naive-momentum",
+      "benchmark": 45000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 57006,
+      "predicted": 49587,
+      "candidate": "naive-momentum",
+      "benchmark": 54000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 68127,
+      "predicted": 69522,
+      "candidate": "naive-momentum",
+      "benchmark": 65000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "revenue",
+      "actual": 81615,
+      "predicted": 81418,
+      "candidate": "naive-momentum",
+      "benchmark": 78000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "revenue",
+      "actual": 96221,
+      "predicted": 97773,
+      "candidate": "naive-momentum",
+      "benchmark": 91000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "revenue",
+      "actual": 115844,
+      "predicted": 113441,
+      "candidate": "naive-momentum",
+      "benchmark": 108000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 60.52,
+      "predicted": 73.03,
+      "candidate": "naive-momentum",
+      "benchmark": 70.6,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 72.42,
+      "predicted": 60.52,
+      "candidate": "naive-momentum",
+      "benchmark": 71.8,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 73.41,
+      "predicted": 72.42,
+      "candidate": "naive-momentum",
+      "benchmark": 73.3,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 75,
+      "predicted": 73.41,
+      "candidate": "naive-momentum",
+      "benchmark": 74.8,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "grossMargin",
+      "actual": 74.93,
+      "predicted": 75,
+      "candidate": "naive-momentum",
+      "benchmark": 74.9,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "grossMargin",
+      "actual": 74.98,
+      "predicted": 74.93,
+      "candidate": "naive-momentum",
+      "benchmark": 74.9,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "grossMargin",
+      "actual": 74.82,
+      "predicted": 74.98,
+      "candidate": "naive-momentum",
+      "benchmark": 74,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 21638,
+      "predicted": 27198,
+      "candidate": "naive-momentum",
+      "benchmark": 25158,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 28440,
+      "predicted": 24508,
+      "candidate": "naive-momentum",
+      "benchmark": 26610,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 36010,
+      "predicted": 30162,
+      "candidate": "naive-momentum",
+      "benchmark": 33682,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 44299,
+      "predicted": 44764,
+      "candidate": "naive-momentum",
+      "benchmark": 41920,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "operatingIncome",
+      "actual": 53536,
+      "predicted": 53773,
+      "candidate": "naive-momentum",
+      "benchmark": 50722,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "operatingIncome",
+      "actual": 63734,
+      "predicted": 65089,
+      "candidate": "naive-momentum",
+      "benchmark": 59659,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "operatingIncome",
+      "actual": 77520,
+      "predicted": 76044,
+      "candidate": "naive-momentum",
+      "benchmark": 70720,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "netIncome",
+      "actual": 18775,
+      "predicted": 24148,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "netIncome",
+      "actual": 26422,
+      "predicted": 21759,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "netIncome",
+      "actual": 31910,
+      "predicted": 26955,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "netIncome",
+      "actual": 42960,
+      "predicted": 39503,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "netIncome",
+      "actual": 58321,
+      "predicted": 47992,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "netIncome",
+      "actual": 59688,
+      "predicted": 60560,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "netIncome",
+      "actual": 65287,
+      "predicted": 70593,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 0.76,
+      "predicted": 0.98,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 1.08,
+      "predicted": 0.88,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 1.3,
+      "predicted": 1.1,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 1.76,
+      "predicted": 1.61,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "eps",
+      "actual": 2.39,
+      "predicted": 1.96,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "eps",
+      "actual": 2.46,
+      "predicted": 2.48,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "eps",
+      "actual": 2.7,
+      "predicted": 2.91,
+      "candidate": "naive-momentum"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 44062,
+      "predicted": 39331,
+      "candidate": "naive",
+      "benchmark": 43000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 46743,
+      "predicted": 44062,
+      "candidate": "naive",
+      "benchmark": 45000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 57006,
+      "predicted": 46743,
+      "candidate": "naive",
+      "benchmark": 54000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 68127,
+      "predicted": 57006,
+      "candidate": "naive",
+      "benchmark": 65000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "revenue",
+      "actual": 81615,
+      "predicted": 68127,
+      "candidate": "naive",
+      "benchmark": 78000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "revenue",
+      "actual": 96221,
+      "predicted": 81615,
+      "candidate": "naive",
+      "benchmark": 91000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "revenue",
+      "actual": 115844,
+      "predicted": 96221,
+      "candidate": "naive",
+      "benchmark": 108000,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 60.52,
+      "predicted": 73.03,
+      "candidate": "naive",
+      "benchmark": 70.6,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 72.42,
+      "predicted": 60.52,
+      "candidate": "naive",
+      "benchmark": 71.8,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 73.41,
+      "predicted": 72.42,
+      "candidate": "naive",
+      "benchmark": 73.3,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 75,
+      "predicted": 73.41,
+      "candidate": "naive",
+      "benchmark": 74.8,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "grossMargin",
+      "actual": 74.93,
+      "predicted": 75,
+      "candidate": "naive",
+      "benchmark": 74.9,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "grossMargin",
+      "actual": 74.98,
+      "predicted": 74.93,
+      "candidate": "naive",
+      "benchmark": 74.9,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "grossMargin",
+      "actual": 74.82,
+      "predicted": 74.98,
+      "candidate": "naive",
+      "benchmark": 74,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 21638,
+      "predicted": 23765,
+      "candidate": "naive",
+      "benchmark": 25158,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 28440,
+      "predicted": 21349,
+      "candidate": "naive",
+      "benchmark": 26610,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 36010,
+      "predicted": 28130,
+      "candidate": "naive",
+      "benchmark": 33682,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 44299,
+      "predicted": 35675,
+      "candidate": "naive",
+      "benchmark": 41920,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "operatingIncome",
+      "actual": 53536,
+      "predicted": 43909,
+      "candidate": "naive",
+      "benchmark": 50722,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "operatingIncome",
+      "actual": 63734,
+      "predicted": 53099,
+      "candidate": "naive",
+      "benchmark": 59659,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "operatingIncome",
+      "actual": 77520,
+      "predicted": 63252,
+      "candidate": "naive",
+      "benchmark": 70720,
+      "benchmarkLabel": "輝達財測中值"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "netIncome",
+      "actual": 18775,
+      "predicted": 21170,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "netIncome",
+      "actual": 26422,
+      "predicted": 19024,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "netIncome",
+      "actual": 31910,
+      "predicted": 25206,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "netIncome",
+      "actual": 42960,
+      "predicted": 31748,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "netIncome",
+      "actual": 58321,
+      "predicted": 39619,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "netIncome",
+      "actual": 59688,
+      "predicted": 50458,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "netIncome",
+      "actual": 65287,
+      "predicted": 59853,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "eps",
+      "actual": 0.76,
+      "predicted": 0.86,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "eps",
+      "actual": 1.08,
+      "predicted": 0.77,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "eps",
+      "actual": 1.3,
+      "predicted": 1.03,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "eps",
+      "actual": 1.76,
+      "predicted": 1.3,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "eps",
+      "actual": 2.39,
+      "predicted": 1.62,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "eps",
+      "actual": 2.46,
+      "predicted": 2.07,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "eps",
+      "actual": 2.7,
+      "predicted": 2.46,
+      "candidate": "naive"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "revenue",
+      "actual": 44062,
+      "predicted": 43000,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "revenue",
+      "actual": 46743,
+      "predicted": 45000,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "revenue",
+      "actual": 57006,
+      "predicted": 54000,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "revenue",
+      "actual": 68127,
+      "predicted": 65000,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "revenue",
+      "actual": 81615,
+      "predicted": 78000,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "revenue",
+      "actual": 96221,
+      "predicted": 91000,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "revenue",
+      "actual": 115844,
+      "predicted": 108000,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "grossMargin",
+      "actual": 60.52,
+      "predicted": 70.6,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "grossMargin",
+      "actual": 72.42,
+      "predicted": 71.8,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "grossMargin",
+      "actual": 73.41,
+      "predicted": 73.3,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "grossMargin",
+      "actual": 75,
+      "predicted": 74.8,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "grossMargin",
+      "actual": 74.93,
+      "predicted": 74.9,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "grossMargin",
+      "actual": 74.98,
+      "predicted": 74.9,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "grossMargin",
+      "actual": 74.82,
+      "predicted": 74,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q1",
+      "metric": "operatingIncome",
+      "actual": 21638,
+      "predicted": 25158,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q2",
+      "metric": "operatingIncome",
+      "actual": 28440,
+      "predicted": 26610,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q3",
+      "metric": "operatingIncome",
+      "actual": 36010,
+      "predicted": 33682,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2026Q4",
+      "metric": "operatingIncome",
+      "actual": 44299,
+      "predicted": 41920,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2027Q1",
+      "metric": "operatingIncome",
+      "actual": 53536,
+      "predicted": 50722,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2027Q2",
+      "metric": "operatingIncome",
+      "actual": 63734,
+      "predicted": 59659,
+      "candidate": "guidance"
+    },
+    {
+      "period": "FY2027Q3",
+      "metric": "operatingIncome",
+      "actual": 77520,
+      "predicted": 70720,
+      "candidate": "guidance"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "bear",
+      "name": "保守",
+      "assumptions": [
+        {
+          "name": "FY2027 第四季營收",
+          "value": "1,310 億美元：財測中值 1,300 億美元（± 3%，14 週，不含中國資料中心運算營收）×（1 + 0.76%），後者為 FY2017 第一季以來 43 季實際營收相對財測中值的第 10 百分位",
+          "src": "pr-fy2027q3"
+        },
+        {
+          "name": "FY2027 第四季毛利率",
+          "value": "69.65%：財測中值 71.5%（71.0–72.0%）− 1.85 個百分點（歷史毛利率偏差的第 10 百分位）",
+          "src": "pr-fy2027q3"
+        },
+        {
+          "name": "FY2027 第四季營業費用、業外與稅率",
+          "value": "營業費用 110.2 億美元（財測約 110 億美元 ×（1 + 0.18%）歷史偏差中位數）；業外收支 2.5 億美元（第三季的非 GAAP 業外收支，不假設權益證券的評價損益；cfo-fy2027q3）；有效稅率 17%（公司預估 FY2027 全年 16–18%）",
+          "src": "pr-fy2027q3"
+        },
+        {
+          "name": "中國資料中心營收",
+          "value": "FY2027 第四季與 FY2028 都不另外加計（與財測口徑相同）；FY2027 第三季對中國的資料中心 Hopper 出貨為 24 億美元，若第四季再出貨相同金額，見敏感度",
+          "src": "cfo-fy2027q3"
+        },
+        {
+          "name": "2027 年五大雲端業者資本支出",
+          "value": "年增 30%（本模型假設，約為財務長引述的預期 62.5% 的一半，tr-fy2027q2）：五家公司 XBRL 資本支出 2023 年 −2%、2024 年 +55%、2025 年 +72%，假設 2027 年投資明顯放緩",
+          "src": "sec-xbrl-hyperscalers"
+        },
+        {
+          "name": "2026 年第四季雲端業者資本支出（模型反推）",
+          "value": "2,349 億美元：FY2027 第四季資料中心營收（換算 13 週）÷ 比例 48.4%；2026 全年約 7,953 億美元，2027 年各季固定成長 3.9%／季",
+          "src": "sec-xbrl-hyperscalers"
+        },
+        {
+          "name": "FY2028 資料中心營收占資本支出的比例",
+          "value": "43.5%：較最近四季低一成（本模型假設：雲端業者自研晶片與其他供應商的比重提高，或記憶體等其他設備吃掉更多預算）",
+          "src": "sec-xbrl-hyperscalers"
+        },
+        {
+          "name": "FY2028 邊緣運算營收",
+          "value": "268 億美元，全年（52 週）較 FY2027（扣除多出的一週，298 億美元）年增 −10%（本模型假設），各季依歷史季節性分配（隱含每季 −8.0% 的成長）：FY2027 前三季年增 33%（rev-fy2027q3）；TrendForce 指出 PC 品牌因成品庫存偏高，下修 2027 年初的記憶體採購（tf-20261111-13303）",
+          "src": "rev-fy2027q3"
+        },
+        {
+          "name": "FY2028 毛利率",
+          "value": "70.0%：比公司 FY2028 展望下緣（72%，tr-fy2027q2）低 2 個百分點（本模型假設：記憶體漲價多於產品漲價；TrendForce 預估 2027 年 HBM 混合平均售價年增 121%，tf-20260929-13255）",
+          "src": "tf-20260929-13255"
+        },
+        {
+          "name": "營業費用、業外、稅率與股數",
+          "value": "FY2028 營業費用依彈性規則隨營收成長（ε = 0.093、趨勢 +5.9%／季，從第四季換算 13 週後的水準出發）；業外收支每季 2.5 億美元（FY2027 第三季的非 GAAP 業外收支，不假設權益證券的評價損益；同季 GAAP 為 15.0 億美元，含權益證券淨利益 17.7 億美元，cfo-fy2027q3）；有效稅率 17%；稀釋股數 24,186 百萬股（pr-fy2027q3）",
+          "src": "cfo-fy2027q3"
+        },
+        {
+          "name": "隱含的營收成長與供給",
+          "value": "FY2028 營收年增 12.3%（扣除 FY2027 多出的一週為 14.8%），資料中心營收年增約 17%；財務長 8 月初步預期 FY2028 營收年增約 70%，並說供給瓶頸至少延續到 FY2028 年底（tr-fy2027q2）。高盛估台積電 CoWoS 2027 年產能年增 114%（tf-cowos-20261027，外部估計），輝達預期測試產能 2027 年倍增（nv-supply-20261021）",
+          "src": "tr-fy2027q2"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "FY2027Q4",
+          "revenue": 130993,
+          "grossMargin": 69.65,
+          "operatingIncome": 80213,
+          "netIncome": 66787,
+          "eps": 2.76,
+          "known": [],
+          "note": "14 週。資料中心 1,224 億美元、邊緣運算 86 億美元；財測：營收 1,261–1,339 億美元、毛利率 71.0–72.0%、營業費用約 110 億美元；本情境營業利益率 61.2%。"
+        },
+        {
+          "period": "FY2028Q1",
+          "revenue": 113660,
+          "grossMargin": 70,
+          "operatingIncome": 68775,
+          "netIncome": 57294,
+          "eps": 2.37,
+          "known": [],
+          "note": "資料中心 1,062 億美元（比例 43.5% × 對應日曆季資本支出 2,440 億美元）、邊緣運算 75 億美元；營業利益率 60.5%。"
+        },
+        {
+          "period": "FY2028Q2",
+          "revenue": 117221,
+          "grossMargin": 70,
+          "operatingIncome": 70579,
+          "netIncome": 58791,
+          "eps": 2.43,
+          "known": [],
+          "note": "資料中心 1,103 億美元（比例 43.5% × 對應日曆季資本支出 2,534 億美元）、邊緣運算 69 億美元；營業利益率 60.2%。"
+        },
+        {
+          "period": "FY2028Q3",
+          "revenue": 121255,
+          "grossMargin": 70,
+          "operatingIncome": 72667,
+          "netIncome": 60523,
+          "eps": 2.5,
+          "known": [],
+          "note": "資料中心 1,145 億美元（比例 43.5% × 對應日曆季資本支出 2,632 億美元）、邊緣運算 67 億美元；營業利益率 59.9%。"
+        },
+        {
+          "period": "FY2028Q4",
+          "revenue": 124704,
+          "grossMargin": 70,
+          "operatingIncome": 74305,
+          "netIncome": 61883,
+          "eps": 2.56,
+          "known": [],
+          "note": "資料中心 1,190 億美元（比例 43.5% × 對應日曆季資本支出 2,733 億美元）、邊緣運算 57 億美元；營業利益率 59.6%。"
+        },
+        {
+          "period": "FY2027",
+          "revenue": 424673,
+          "grossMargin": 73.28,
+          "operatingIncome": 275003,
+          "netIncome": 250083,
+          "eps": 10.31,
+          "known": [],
+          "note": "前三季實際加上第四季預測（53 週）；營收年增 +96.7%。"
+        },
+        {
+          "period": "FY2028",
+          "revenue": 476841,
+          "grossMargin": 70,
+          "operatingIncome": 286326,
+          "netIncome": 238491,
+          "eps": 9.86,
+          "known": [],
+          "note": "四季加總（52 週）；營收年增 +12.3%，毛利率為全年毛利 ÷ 全年營收，EPS 為四季加總。"
+        }
+      ]
+    },
+    {
+      "id": "base",
+      "name": "基準",
+      "assumptions": [
+        {
+          "name": "FY2027 第四季營收",
+          "value": "1,363 億美元：財測中值 1,300 億美元（± 3%，14 週，不含中國資料中心運算營收）×（1 + 4.81%），後者為 FY2017 第一季以來 43 季實際營收相對財測中值的第 50 百分位",
+          "src": "pr-fy2027q3"
+        },
+        {
+          "name": "FY2027 第四季毛利率",
+          "value": "71.70%：財測中值 71.5%（71.0–72.0%）+ 0.20 個百分點（歷史毛利率偏差的第 50 百分位）",
+          "src": "pr-fy2027q3"
+        },
+        {
+          "name": "FY2027 第四季營業費用、業外與稅率",
+          "value": "營業費用 110.2 億美元（財測約 110 億美元 ×（1 + 0.18%）歷史偏差中位數）；業外收支 2.5 億美元（第三季的非 GAAP 業外收支，不假設權益證券的評價損益；cfo-fy2027q3）；有效稅率 17%（公司預估 FY2027 全年 16–18%）",
+          "src": "pr-fy2027q3"
+        },
+        {
+          "name": "中國資料中心營收",
+          "value": "FY2027 第四季與 FY2028 都不另外加計（與財測口徑相同）；FY2027 第三季對中國的資料中心 Hopper 出貨為 24 億美元，若第四季再出貨相同金額，見敏感度",
+          "src": "cfo-fy2027q3"
+        },
+        {
+          "name": "2027 年五大雲端業者資本支出",
+          "value": "年增 62.5%：輝達財務長引述前五大雲端業者資本支出預期由 2026 年接近 8,000 億美元增至 2027 年 1.3 兆美元（tr-fy2027q2；該次未說明來源，先前兩次法說會稱這類數字為分析師預期，tr-fy2026q4、tr-fy2027q1）",
+          "src": "tr-fy2027q2"
+        },
+        {
+          "name": "2026 年第四季雲端業者資本支出（模型反推）",
+          "value": "2,450 億美元：FY2027 第四季資料中心營收（換算 13 週）÷ 比例 48.4%；2026 全年約 8,054 億美元，2027 年各季固定成長 11.9%／季",
+          "src": "sec-xbrl-hyperscalers"
+        },
+        {
+          "name": "FY2028 資料中心營收占資本支出的比例",
+          "value": "48.4%：維持最近四季的值（FY2025、FY2026 會計年度分別為 48.2%、47.1%；資料中心營收取自 rev-fy2027q3）",
+          "src": "sec-xbrl-hyperscalers"
+        },
+        {
+          "name": "FY2028 邊緣運算營收",
+          "value": "328 億美元，全年（52 週）較 FY2027（扣除多出的一週，298 億美元）年增 +10%（本模型假設），各季依歷史季節性分配（隱含每季 −0.1% 的成長）：FY2027 前三季年增 33%（rev-fy2027q3）；TrendForce 指出 PC 品牌因成品庫存偏高，下修 2027 年初的記憶體採購（tf-20261111-13303）",
+          "src": "rev-fy2027q3"
+        },
+        {
+          "name": "FY2028 毛利率",
+          "value": "72.5%：財務長在 2026-08-26 預期毛利率在 FY2027 第四季觸底，FY2028 約 72–73%（已執行的漲價自 FY2028 第一季生效），取中值；第三季的財務長評論只更新第四季財測（cfo-fy2027q3）",
+          "src": "tr-fy2027q2"
+        },
+        {
+          "name": "營業費用、業外、稅率與股數",
+          "value": "FY2028 營業費用依彈性規則隨營收成長（ε = 0.093、趨勢 +5.9%／季，從第四季換算 13 週後的水準出發）；業外收支每季 2.5 億美元（FY2027 第三季的非 GAAP 業外收支，不假設權益證券的評價損益；同季 GAAP 為 15.0 億美元，含權益證券淨利益 17.7 億美元，cfo-fy2027q3）；有效稅率 17%；稀釋股數 24,186 百萬股（pr-fy2027q3）",
+          "src": "cfo-fy2027q3"
+        },
+        {
+          "name": "隱含的營收成長與供給",
+          "value": "FY2028 營收年增 54.8%（扣除 FY2027 多出的一週為 58.4%），資料中心營收年增約 62%；財務長 8 月初步預期 FY2028 營收年增約 70%，並說供給瓶頸至少延續到 FY2028 年底（tr-fy2027q2）。高盛估台積電 CoWoS 2027 年產能年增 114%（tf-cowos-20261027，外部估計），輝達預期測試產能 2027 年倍增（nv-supply-20261021）",
+          "src": "tr-fy2027q2"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "FY2027Q4",
+          "revenue": 136254,
+          "grossMargin": 71.7,
+          "operatingIncome": 86670,
+          "netIncome": 72146,
+          "eps": 2.98,
+          "known": [],
+          "note": "14 週。資料中心 1,276 億美元、邊緣運算 86 億美元；財測：營收 1,261–1,339 億美元、毛利率 71.0–72.0%、營業費用約 110 億美元；本情境營業利益率 63.6%。"
+        },
+        {
+          "period": "FY2028Q1",
+          "revenue": 140712,
+          "grossMargin": 72.5,
+          "operatingIncome": 91054,
+          "netIncome": 75785,
+          "eps": 3.13,
+          "known": [],
+          "note": "資料中心 1,326 億美元（比例 48.4% × 對應日曆季資本支出 2,742 億美元）、邊緣運算 81 億美元；營業利益率 64.7%。"
+        },
+        {
+          "period": "FY2028Q2",
+          "revenue": 156565,
+          "grossMargin": 72.5,
+          "operatingIncome": 101765,
+          "netIncome": 84675,
+          "eps": 3.5,
+          "known": [],
+          "note": "資料中心 1,484 億美元（比例 48.4% × 對應日曆季資本支出 3,069 億美元）、邊緣運算 82 億美元；營業利益率 65.0%。"
+        },
+        {
+          "period": "FY2028Q3",
+          "revenue": 174652,
+          "grossMargin": 72.5,
+          "operatingIncome": 114037,
+          "netIncome": 94861,
+          "eps": 3.92,
+          "known": [],
+          "note": "資料中心 1,661 億美元（比例 48.4% × 對應日曆季資本支出 3,434 億美元）、邊緣運算 86 億美元；營業利益率 65.3%。"
+        },
+        {
+          "period": "FY2028Q4",
+          "revenue": 193816,
+          "grossMargin": 72.5,
+          "operatingIncome": 127036,
+          "netIncome": 105650,
+          "eps": 4.37,
+          "known": [],
+          "note": "資料中心 1,858 億美元（比例 48.4% × 對應日曆季資本支出 3,843 億美元）、邊緣運算 80 億美元；營業利益率 65.5%。"
+        },
+        {
+          "period": "FY2027",
+          "revenue": 429934,
+          "grossMargin": 73.89,
+          "operatingIncome": 281460,
+          "netIncome": 255442,
+          "eps": 10.53,
+          "known": [],
+          "note": "前三季實際加上第四季預測（53 週）；營收年增 +99.1%。"
+        },
+        {
+          "period": "FY2028",
+          "revenue": 665746,
+          "grossMargin": 72.5,
+          "operatingIncome": 433891,
+          "netIncome": 360970,
+          "eps": 14.92,
+          "known": [],
+          "note": "四季加總（52 週）；營收年增 +54.8%，毛利率為全年毛利 ÷ 全年營收，EPS 為四季加總。"
+        }
+      ]
+    },
+    {
+      "id": "bull",
+      "name": "樂觀",
+      "assumptions": [
+        {
+          "name": "FY2027 第四季營收",
+          "value": "1,454 億美元：財測中值 1,300 億美元（± 3%，14 週，不含中國資料中心運算營收）×（1 + 11.87%），後者為 FY2017 第一季以來 43 季實際營收相對財測中值的第 90 百分位",
+          "src": "pr-fy2027q3"
+        },
+        {
+          "name": "FY2027 第四季毛利率",
+          "value": "73.05%：財測中值 71.5%（71.0–72.0%）+ 1.55 個百分點（歷史毛利率偏差的第 90 百分位）",
+          "src": "pr-fy2027q3"
+        },
+        {
+          "name": "FY2027 第四季營業費用、業外與稅率",
+          "value": "營業費用 110.2 億美元（財測約 110 億美元 ×（1 + 0.18%）歷史偏差中位數）；業外收支 2.5 億美元（第三季的非 GAAP 業外收支，不假設權益證券的評價損益；cfo-fy2027q3）；有效稅率 17%（公司預估 FY2027 全年 16–18%）",
+          "src": "pr-fy2027q3"
+        },
+        {
+          "name": "中國資料中心營收",
+          "value": "FY2027 第四季與 FY2028 都不另外加計（與財測口徑相同）；FY2027 第三季對中國的資料中心 Hopper 出貨為 24 億美元，若第四季再出貨相同金額，見敏感度",
+          "src": "cfo-fy2027q3"
+        },
+        {
+          "name": "2027 年五大雲端業者資本支出",
+          "value": "年增 80%（本模型假設）：高於財務長引述的預期 62.5%（tr-fy2027q2），仍低於五家公司 2026 年前三季的年增 100%；Alphabet 表示 2027 年資本支出將大幅增加，但未給數字（ap-googl-20261028）",
+          "src": "sec-xbrl-hyperscalers"
+        },
+        {
+          "name": "2026 年第四季雲端業者資本支出（模型反推）",
+          "value": "2,626 億美元：FY2027 第四季資料中心營收（換算 13 週）÷ 比例 48.4%；2026 全年約 8,230 億美元，2027 年各季固定成長 14.2%／季",
+          "src": "sec-xbrl-hyperscalers"
+        },
+        {
+          "name": "FY2028 資料中心營收占資本支出的比例",
+          "value": "48.4%：維持最近四季的值（FY2025、FY2026 會計年度分別為 48.2%、47.1%；資料中心營收取自 rev-fy2027q3）",
+          "src": "sec-xbrl-hyperscalers"
+        },
+        {
+          "name": "FY2028 邊緣運算營收",
+          "value": "373 億美元，全年（52 週）較 FY2027（扣除多出的一週，298 億美元）年增 +25%（本模型假設），各季依歷史季節性分配（隱含每季 +5.0% 的成長）：FY2027 前三季年增 33%（rev-fy2027q3）；TrendForce 指出 PC 品牌因成品庫存偏高，下修 2027 年初的記憶體採購（tf-20261111-13303）",
+          "src": "rev-fy2027q3"
+        },
+        {
+          "name": "FY2028 毛利率",
+          "value": "74.0%：比公司 FY2028 展望上緣（73%，tr-fy2027q2）高 1 個百分點（本模型假設：記憶體價格趨穩、漲價效果完整；仍低於 FY2027 前三季的 74.8–75.0%，sec-companyfacts、pr-fy2027q3）",
+          "src": "tr-fy2027q2"
+        },
+        {
+          "name": "營業費用、業外、稅率與股數",
+          "value": "FY2028 營業費用依彈性規則隨營收成長（ε = 0.093、趨勢 +5.9%／季，從第四季換算 13 週後的水準出發）；業外收支每季 2.5 億美元（FY2027 第三季的非 GAAP 業外收支，不假設權益證券的評價損益；同季 GAAP 為 15.0 億美元，含權益證券淨利益 17.7 億美元，cfo-fy2027q3）；有效稅率 17%；稀釋股數 24,186 百萬股（pr-fy2027q3）",
+          "src": "cfo-fy2027q3"
+        },
+        {
+          "name": "隱含的營收成長與供給",
+          "value": "FY2028 營收年增 71.6%（扣除 FY2027 多出的一週為 75.8%），資料中心營收年增約 80%；財務長 8 月初步預期 FY2028 營收年增約 70%，並說供給瓶頸至少延續到 FY2028 年底（tr-fy2027q2）。高盛估台積電 CoWoS 2027 年產能年增 114%（tf-cowos-20261027，外部估計），輝達預期測試產能 2027 年倍增（nv-supply-20261021）",
+          "src": "tr-fy2027q2"
+        }
+      ],
+      "forecasts": [
+        {
+          "period": "FY2027Q4",
+          "revenue": 145425,
+          "grossMargin": 73.05,
+          "operatingIncome": 95212,
+          "netIncome": 79236,
+          "eps": 3.28,
+          "known": [],
+          "note": "14 週。資料中心 1,368 億美元、邊緣運算 86 億美元；財測：營收 1,261–1,339 億美元、毛利率 71.0–72.0%、營業費用約 110 億美元；本情境營業利益率 65.5%。"
+        },
+        {
+          "period": "FY2028Q1",
+          "revenue": 153613,
+          "grossMargin": 74,
+          "operatingIncome": 102688,
+          "netIncome": 85441,
+          "eps": 3.53,
+          "known": [],
+          "note": "資料中心 1,451 億美元（比例 48.4% × 對應日曆季資本支出 3,000 億美元）、邊緣運算 85 億美元；營業利益率 66.8%。"
+        },
+        {
+          "period": "FY2028Q2",
+          "revenue": 174770,
+          "grossMargin": 74,
+          "operatingIncome": 117536,
+          "netIncome": 97765,
+          "eps": 4.04,
+          "known": [],
+          "note": "資料中心 1,657 億美元（比例 48.4% × 對應日曆季資本支出 3,427 億美元）、邊緣運算 90 億美元；營業利益率 67.3%。"
+        },
+        {
+          "period": "FY2028Q3",
+          "revenue": 199308,
+          "grossMargin": 74,
+          "operatingIncome": 134824,
+          "netIncome": 112114,
+          "eps": 4.64,
+          "known": [],
+          "note": "資料中心 1,893 億美元（比例 48.4% × 對應日曆季資本支出 3,915 億美元）、邊緣運算 100 億美元；營業利益率 67.6%。"
+        },
+        {
+          "period": "FY2028Q4",
+          "revenue": 226020,
+          "grossMargin": 74,
+          "operatingIncome": 153662,
+          "netIncome": 127750,
+          "eps": 5.28,
+          "known": [],
+          "note": "資料中心 2,163 億美元（比例 48.4% × 對應日曆季資本支出 4,472 億美元）、邊緣運算 97 億美元；營業利益率 68.0%。"
+        },
+        {
+          "period": "FY2027",
+          "revenue": 439105,
+          "grossMargin": 74.29,
+          "operatingIncome": 290002,
+          "netIncome": 262532,
+          "eps": 10.83,
+          "known": [],
+          "note": "前三季實際加上第四季預測（53 週）；營收年增 +103.3%。"
+        },
+        {
+          "period": "FY2028",
+          "revenue": 753711,
+          "grossMargin": 74,
+          "operatingIncome": 508710,
+          "netIncome": 423069,
+          "eps": 17.49,
+          "known": [],
+          "note": "四季加總（52 週）；營收年增 +71.6%，毛利率為全年毛利 ÷ 全年營收，EPS 為四季加總。"
+        }
+      ]
+    }
+  ],
+  "sensitivities": [
+    {
+      "driver": "2027 年五大雲端業者資本支出成長",
+      "change": "多 10 個百分點",
+      "effect": "FY2028 營收 +390 億美元（+5.9%）、EPS +0.96 美元"
+    },
+    {
+      "driver": "2027 年五大雲端業者資本支出成長",
+      "change": "少 10 個百分點",
+      "effect": "FY2028 營收 −390 億美元（−5.9%）、EPS −0.96 美元"
+    },
+    {
+      "driver": "資料中心營收占雲端業者資本支出的比例",
+      "change": "少 2 個百分點（48.4% → 46.4%）",
+      "effect": "FY2028 營收 −262 億美元（−3.9%）、EPS −0.65 美元"
+    },
+    {
+      "driver": "FY2028 毛利率",
+      "change": "少 1 個百分點",
+      "effect": "FY2028 毛利率 −1.00 個百分點、EPS −0.23 美元（營收不變）"
+    },
+    {
+      "driver": "記憶體（含 HBM）等銷貨成本",
+      "change": "FY2028 多 5%（毛利率約少 1.4 個百分點）",
+      "effect": "FY2028 毛利率 −1.38 個百分點、EPS −0.31 美元（營收不變）"
+    },
+    {
+      "driver": "邊緣運算營收（PC、遊戲、工作站、車用等）",
+      "change": "FY2028 年增率少 10 個百分點",
+      "effect": "FY2028 營收 −30 億美元（−0.4%）、EPS −0.07 美元"
+    },
+    {
+      "driver": "營業費用",
+      "change": "FY2028 多 10%",
+      "effect": "FY2028 EPS −0.17 美元（營收不變）"
+    },
+    {
+      "driver": "有效稅率",
+      "change": "多 2 個百分點",
+      "effect": "FY2028 EPS −0.36 美元（營收不變）"
+    },
+    {
+      "driver": "業外收支（權益證券損益）",
+      "change": "每季維持第三季的 GAAP 數字 15.0 億美元（含權益證券淨利益 17.7 億美元；模型每季用非 GAAP 的 2.5 億美元，cfo-fy2027q3）",
+      "effect": "FY2028 EPS +0.17 美元（營收不變）"
+    },
+    {
+      "driver": "業外收支（權益證券損益）",
+      "change": "改用 FY2027 前三季 GAAP 平均（每季 85 億美元，主要是權益證券利益）",
+      "effect": "FY2028 EPS +1.14 美元（營收不變）"
+    },
+    {
+      "driver": "稀釋股數",
+      "change": "少 1%（買回庫藏股）",
+      "effect": "FY2028 EPS +0.15 美元（營收不變）"
+    },
+    {
+      "driver": "FY2027 第四季對中國的資料中心出貨",
+      "change": "與第三季相同（24 億美元，cfo-fy2027q3；財測不含中國資料中心運算營收）",
+      "effect": "FY2027 第四季營收 +24 億美元；FY2027 全年 EPS +0.06 美元（不影響 FY2028 的推算）"
+    }
+  ],
+  "limitations": [
+    "回測代入當季實際的雲端業者資本支出與存貨提列，衡量的是「這些已知時」模型的能力；即使如此，營收誤差（5.3%）仍大於延續上季成長的天真模型（3.5%）與公司財測（4.7%）。事前版本營收 5.1%、毛利率 2.9 個百分點，同樣不如財測。回測只有 7 季：毛利率與財測的比較主要由 FY2026 第一季（H20 費用）一季決定，兩個結構模型的選擇主要由連續推估決定，逐季的差距在統計上都不顯著。",
+    "「資料中心營收 ≈ 雲端業者資本支出 × 固定比例」只在 FY2025 以後穩定：FY2024 生成式 AI 需求爆發時比例由約 10% 跳到 40% 以上，逐季的資本支出成長也解釋不了資料中心營收的成長（斜率 −0.16，標準誤 0.33）。五大雲端業者只占資料中心營收約一半（tr-fy2026q4），AI 雲、產業與企業客戶（ACIE）若成長得更快或更慢，比例就會改變；雲端業者自研晶片（TPU、Trainium 等）與其他供應商的比重也會影響比例。",
+    "資本支出序列是五家公司 XBRL 的現金購置不動產與設備，不含融資租賃（微軟、Meta 自己公布的數字含融資租賃），微軟與甲骨文以會計季度對應日曆季；資本支出也包括土地、建築與電力。輝達財務長引述的「前五大雲端業者」資本支出預期（接近 8,000 億、1.3 兆美元；tr-fy2027q2 未說明來源，先前兩次法說會稱這類數字為分析師預期）口徑與本序列可能不同，所以模型只借用它的成長率。",
+    "毛利率沒有用記憶體價格估計：訓練期一般型 DRAM 合約價對毛利率的影響不顯著（−0.112 個百分點／1%，標準誤 0.097），HBM 混合價 2024 年下半年才有，輝達又簽有多年期記憶體採購承諾（pr-fy2027q3）。FY2028 毛利率以公司 8 月的展望（72–73%）為錨，記憶體漲價、產品漲價與 Vera Rubin 量產良率只透過情境假設反映；H20 這類一次性的存貨與採購承諾費用無法事前預測，而期末供應承諾已達 3,900 億美元（約 3.4 季營收）。",
+    "公司與政策事件沒有量化：2026-11-11 黃仁勳辭去總裁、執行長與董事職務，財務長 Colette Kress 代理執行長並續任財務長（sec-8k-20261111）；獨立董事委任外部律師進行調查（nv-board-20261110）；董事會新設國家安全與出口管制監督委員會（nv-natsec-20261117）。財測與本模型都不含中國資料中心運算營收，出口管制的變化（2022、2023、2025 年都曾發生）可能使營收與存貨提列大幅偏離。",
+    "供給限制只作對照：公司表示 FY2028 的展望受供給限制（tr-fy2027q2），CoWoS 產能只有外部估計（tf-cowos-20261027 等）；若記憶體、載板或封裝產能不足，即使雲端業者的預算更高，營收也不會跟著成長。GAAP 業外收支以權益證券的評價損益為主（FY2027 各季在 15–164 億美元之間），回測沿用歷史數字，預測則不假設這類損益（每季用第三季非 GAAP 業外收支 2.5 億美元，cfo-fy2027q3），所以 GAAP EPS 可能因投資損益大幅偏離；稅率與股數採簡化規則；FY2027 為 53 週，年增率要扣除多出的一週再比較。第三季法說會（2026-11-17）的逐字稿在 2026-11-18 尚未公布，FY2028 的營收與毛利率展望都採 8 月法說會的說法（tr-fy2027q2）。"
+  ],
+  "sourceKeys": [
+    "sec-companyfacts",
+    "sec-xbrl-hyperscalers",
+    "rev-fy2027q3",
+    "supp-fy2027q3",
+    "pres-fy2027q3",
+    "pr-fy2016q4",
+    "pr-fy2017q1",
+    "pr-fy2017q2",
+    "pr-fy2017q3",
+    "pr-fy2017q4",
+    "pr-fy2018q1",
+    "pr-fy2018q2",
+    "pr-fy2018q3",
+    "pr-fy2018q4",
+    "pr-fy2019q1",
+    "pr-fy2019q2",
+    "pr-fy2019q3",
+    "pr-fy2019q4",
+    "pr-fy2020q1",
+    "pr-fy2020q2",
+    "pr-fy2020q3",
+    "pr-fy2020q4",
+    "pr-fy2021q1",
+    "pr-fy2021q2",
+    "pr-fy2021q3",
+    "pr-fy2021q4",
+    "pr-fy2022q1",
+    "pr-fy2022q2",
+    "pr-fy2022q3",
+    "pr-fy2022q4",
+    "pr-fy2023q1",
+    "pr-fy2023q2",
+    "pr-fy2023q3",
+    "pr-fy2023q4",
+    "pr-fy2024q1",
+    "pr-fy2024q2",
+    "pr-fy2024q3",
+    "pr-fy2024q4",
+    "pr-fy2025q1",
+    "pr-fy2025q2",
+    "pr-fy2025q3",
+    "pr-fy2025q4",
+    "pr-fy2026q1",
+    "pr-fy2026q2",
+    "pr-fy2026q3",
+    "pr-fy2026q4",
+    "pr-fy2027q1",
+    "pr-fy2027q2",
+    "pr-fy2027q3",
+    "cfo-fy2027q3",
+    "cfo-fy2026q1",
+    "cfo-fy2026q3",
+    "tr-fy2026q4",
+    "tr-fy2027q2",
+    "sec-8k-20250409",
+    "tf-cowos-20261027",
+    "nv-supply-20261021",
+    "ap-googl-20261028",
+    "tf-20260929-13255",
+    "tf-20260930-13258",
+    "tf-20261111-13303",
+    "sec-8k-20261111",
+    "nv-board-20261110",
+    "nv-natsec-20261117"
+  ]
+}
